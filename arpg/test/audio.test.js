@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
-import { CombatAudio, eventSound, SFX } from '../js/audio.js';
+import { CombatAudio, eventSound, SFX, bindAudioControls } from '../js/audio.js';
 import { FEEL } from '../js/render/feel.js';
 
 class FakeContext {
@@ -82,4 +82,17 @@ test('local SFX delivery is Ogg, mono 48kHz, documented, short and below 400KB t
     assert.ok(info.prompt && info.sourceSha256 && info.duration <= 1.2 && info.sampleRate === 48000 && info.channels === 1);
   }
   assert.ok(bytes <= 400_000, bytes);
+});
+
+
+test('ritual presentation accepts only existing charge/success/fracture/destruction clips', () => {
+  const listeners=new Map(),played=[];
+  const document={addEventListener(name,callback){listeners.set(name,callback);},querySelectorAll(){return [];},querySelector(){return {};}};
+  const previous=globalThis.MutationObserver;
+  globalThis.MutationObserver=class {observe(){}};
+  try {bindAudioControls({play:clip=>played.push(clip)},document);}
+  finally {if(previous)globalThis.MutationObserver=previous;else delete globalThis.MutationObserver;}
+  for(const detail of ['dodge','critical','hurt','level-up','kill','external-url','swing'])listeners.get('arpg:presentation-sound')({detail});
+  assert.deepEqual(played,['dodge','critical','hurt','level-up','kill']);
+  assert.ok(played.every(clip=>SFX.includes(clip)));
 });

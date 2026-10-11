@@ -53,7 +53,7 @@ try {
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`CDP timeout: ${method}`));
-    }, 15000);
+    }, 30000);
     pending.set(id, (message) => {
       clearTimeout(timer);
       if (message.error) reject(new Error(JSON.stringify(message.error)));
@@ -62,7 +62,9 @@ try {
     socket.send(JSON.stringify({ id, method, params }));
   });
   const evaluate = async (expression) => {
-    const response = await command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+    let response;
+    try {response = await command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });}
+    catch(error) {throw new Error(`${error.message}: ${expression.slice(0,180)}`);}
     if (response.exceptionDetails) {
       throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text);
     }
@@ -113,7 +115,7 @@ try {
       expected=${level}<10?enchant(s,s.equipped.weapon,'scroll_enchant_weapon').result:null;
       if(!${JSON.stringify(outcome)}||expected.outcome===${JSON.stringify(outcome)})break;
     }
-    __fxContext.persistSave(s);__fxContext.hub.showForge();return {expected,seed:s.createdAt,uid:s.equipped.weapon};
+    __fxContext.persistSave(s);__fxContext.hub.forgeTab='enhance';__fxContext.hub.selectedUid=null;__fxContext.hub.forgeScroll='scroll_enchant_weapon';__fxContext.hub.showForge();return {expected,seed:s.createdAt,uid:s.equipped.weapon};
   })()`);
   const audit = async () => {
     const result=await evaluate(`(()=>{
@@ -129,29 +131,77 @@ try {
     await touch('touchStart',[{...p,radiusX:1,radiusY:1,force:1,id:1}]);await touch('touchEnd',[]);
   };
   const scenarios=[];
+  let screenshotCount=0;
+  const capture = async name => {
+    if(!process.env.ARPG_SCREENSHOT_PREFIX)return;
+    const image=await command('Page.captureScreenshot',{format:'png'});
+    await writeFile(`${process.env.ARPG_SCREENSHOT_PREFIX}-${name}.png`,Buffer.from(image.data,'base64'));screenshotCount++;
+  };
+  const cleaned = async () => {
+    assert.deepEqual(await evaluate(`({nodes:document.querySelectorAll('.enchant-fx,.enchant-particles,.enchant-cards').length,active:__fxContext.hub.enchantFx.active,cleaned:__fxContext.hub.enchantFx.stats.cleaned})`),{nodes:0,active:false,cleaned:true});
+  };
+  const tabsAudit = async () => {
+    assert.equal(await evaluate("document.querySelector('[data-forge-tab]').dataset.forgeTab"),'enhance');
+    assert.equal(await evaluate("document.querySelector('.forge-hero-art').getBoundingClientRect().width"),192);
+    assert.equal(await evaluate("!!document.querySelector('[data-action=\"craft-scroll\"],[data-action=\"dismantle\"],[data-action=\"sell\"],[data-action=\"craft\"]')"),false);
+    await click('[data-action="forge-tab"][data-tab="scrolls"]');await audit();
+    assert.equal(await evaluate("!!document.querySelector('[data-action=\"enhance\"]')"),false);
+    const before=await evaluate('__arpg.save.stacks.scroll_enchant_weapon');
+    await evaluate("__fxContext.hub.commit({...JSON.parse(JSON.stringify(__arpg.save)),stacks:{...__arpg.save.stacks,enhance_stone_1:10}})");
+    await evaluate('__fxContext.hub.showForge()');await click('[data-action="craft-scroll"][data-family="weapon"]');
+    assert.equal(await evaluate('__arpg.save.stacks.scroll_enchant_weapon'),before+1);
+    await click('[data-action="forge-tab"][data-tab="salvage"]');await audit();
+    for(const action of ['equip','dismantle','sell','craft'])assert.equal(await evaluate(`!!document.querySelector('[data-action="${action}"]')`),true);
+    await click('[data-action="forge-tab"][data-tab="enhance"]');await audit();
+  };
   for(const [width,height] of [[360,640],[390,844],[1280,900]]) {
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
     await command('Page.navigate',{url});await connect();
-    let f=await fixture(5);await audit();
+    let f=await fixture(5);await audit();await tabsAudit();if(width===390)await capture('forge');
     await click('[data-action="enhance"]');
     assert.equal(await evaluate("document.querySelector('[data-enchant-fx]').dataset.phase"),'charge');
     assert.equal(await evaluate('__arpg.save.items[0].enhance'),6);
     const saved=await evaluate('JSON.stringify(__arpg.save)');
     assert.equal(await evaluate('localStorage.getItem("arpg.save.v1")'),saved,'save precedes animation');
-    await evaluate(`__fxContext.hub.action('enhance',{uid:'starter:weapon',scroll:'scroll_enchant_weapon'})`);
+    await evaluate(`__fxContext.hub.action('enhance',{uid:'starter:weapon',scroll:'scroll_enchant_weapon'});__fxContext.hub.action('forge-tab',{tab:'salvage'});__fxContext.hub.action('inn',{})`);
+    assert.equal(await evaluate("document.querySelector('[data-forge-tab]').dataset.forgeTab"),'enhance');
     assert.equal(await evaluate('JSON.stringify(__arpg.save)'),saved,'double spending blocked');
     await tapFx();await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
     assert.equal(await evaluate("document.querySelector('.enchant-result').textContent"),'+6');await audit();
     await tapFx();await waitFor("!document.querySelector('[data-enchant-fx]')");
-    assert.equal(await evaluate('__fxSounds.at(-1)'), 'level-up');
+    assert.equal(await evaluate('__fxSounds.at(-1)'), 'level-up');await cleaned();
+    assert.equal(await evaluate('__fxContext.hub.selectedUid'),f.uid);
+    assert.equal(await evaluate("document.activeElement.dataset.action"),'enhance');
     scenarios.push({width,height,kind:'safe',touchSkip:true,persistBeforeAnimation:true});
     if(width===390) {
       await fixture(0);const started=Date.now();await click('[data-action="enhance"]');
       await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
-      const chargeMs=Date.now()-started;assert.ok(chargeMs>=90&&chargeMs<500,chargeMs);
+      const chargeMs=Date.now()-started;assert.ok(chargeMs>=160&&chargeMs<600,chargeMs);
       await waitFor("!document.querySelector('[data-enchant-fx]')");
-      const totalMs=Date.now()-started;assert.ok(totalMs>=280&&totalMs<800,totalMs);
+      const totalMs=Date.now()-started;assert.ok(totalMs>=570&&totalMs<1000,totalMs);
       scenarios.push({width,height,kind:'safe-natural',chargeMs,totalMs});
+      // Same gear stays selected and the next ritual can start immediately after a skipped result.
+      const chain=await fixture(0),beforeScrolls=await evaluate('__arpg.save.stacks.scroll_enchant_weapon');
+      for(let level=1;level<=6;level++) {
+        await click('[data-action="enhance"]');
+        assert.equal(await evaluate('__arpg.save.items[0].enhance'),level);
+        assert.equal(await evaluate('__arpg.save.stacks.scroll_enchant_weapon'),beforeScrolls-level);
+        const savedStep=await evaluate('JSON.stringify(__arpg.save)');assert.equal(await evaluate('localStorage.getItem("arpg.save.v1")'),savedStep);
+        await tapFx();await tapFx();await waitFor("!document.querySelector('[data-enchant-fx]')");await cleaned();
+        assert.equal(await evaluate('__fxContext.hub.selectedUid'),chain.uid);
+      }
+      assert.equal(await evaluate("document.querySelector('.forge-hero-art').dataset.enhance"),'6');
+      assert.equal(await evaluate("!!document.querySelector('[data-action=\"enhance\"].danger')"),true);
+      scenarios.push({width,height,kind:'safe-repeat',levels:6,persistEachStep:true,sameSelection:true});
+      // Native horizontal rack pan, not just programmatic clicks offscreen.
+      await evaluate(`(()=>{const s=JSON.parse(JSON.stringify(__arpg.save));for(let i=0;i<8;i++)s.items.push({...s.items[1],uid:'rack:'+i});__fxContext.hub.commit(s);__fxContext.hub.showForge();document.querySelector('.forge-picker').scrollIntoView({block:'center'});})()`);
+      const rack=await evaluate(`(()=>{const n=document.querySelector('.forge-picker'),r=n.getBoundingClientRect();return {x:r.left+r.width*.8,y:r.top+r.height/2,endX:r.left+r.width*.2,overflow:n.scrollWidth>n.clientWidth};})()`);
+      assert.equal(rack.overflow,true);
+      await touch('touchStart',[{x:rack.x,y:rack.y,radiusX:1,radiusY:1,force:1,id:2}]);
+      await touch('touchMove',[{x:(rack.x+rack.endX)/2,y:rack.y,radiusX:1,radiusY:1,force:1,id:2}]);
+      await touch('touchMove',[{x:rack.endX,y:rack.y,radiusX:1,radiusY:1,force:1,id:2}]);await touch('touchEnd',[]);
+      await waitFor("document.querySelector('.forge-picker').scrollLeft>20");await audit();
+      scenarios.push({width,height,kind:'rack-native-pan',scrollLeft:await evaluate("document.querySelector('.forge-picker').scrollLeft")});
     }
     for(const outcome of ['success','destroyed']) {
       f=await fixture(6,outcome);await audit();
@@ -164,32 +214,45 @@ try {
       const committed=await evaluate('JSON.stringify(__arpg.save)');await audit();
       await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
       const chargeMs=Date.now()-start;assert.ok(chargeMs>=1100&&chargeMs<2200,chargeMs);
+      if(width===390)await capture(outcome);
       const text=await evaluate("document.querySelector('.enchant-result').textContent+' / '+document.querySelector('.enchant-detail').textContent");
-      assert.ok(outcome==='success'?text.includes('+7 성공'):text.includes('장비가 산산조각 났다')&&text.includes('남은 강화석 '+f.expected.refund.enhance_stone_1+'개'));
+      assert.ok(outcome==='success'?text.includes('+7 강화 성공!'):text.includes('장비가 산산조각 났다')&&text.includes('남은 강화석 '+f.expected.refund.enhance_stone_1+'개'));
       await waitFor("!document.querySelector('[data-enchant-fx]')");
       assert.equal(await evaluate('JSON.stringify(__arpg.save)'),committed,'animation cannot change state');
       assert.equal(await evaluate('__fxSounds.at(-1)'),outcome==='destroyed'?'kill':'level-up');
-      scenarios.push({width,height,kind:outcome,seed:f.seed,chargeMs,text});
+      await cleaned();scenarios.push({width,height,kind:outcome,seed:f.seed,chargeMs,text});
     }
     await fixture(0);
     await evaluate("window.__fxCounts=[];window.__countObserver=new MutationObserver(()=>{const n=document.querySelector('.enchant-fx.crack .enchant-result');if(n?.textContent&&!__fxCounts.includes(n.textContent))__fxCounts.push(n.textContent);});__countObserver.observe(document.querySelector('#meta-screen'),{childList:true,subtree:true,characterData:true});");
+    await click('[data-action="forge-tab"][data-tab="scrolls"]');await audit();
     await click('[data-action="crack-greater"][data-family="weapon"]');
+    assert.equal(await evaluate("document.querySelectorAll('.enchant-cards i').length"),await evaluate('__fxContext.hub.lastCrack.count'));
+    await audit();
     assert.equal(await evaluate("document.querySelector('[data-enchant-fx]').dataset.enchantFx"),'crack');
     const crack=await evaluate('JSON.parse(JSON.stringify(__fxContext.hub.lastCrack))');
     await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
     assert.equal(await evaluate("document.querySelector('.enchant-result').textContent"),`주문서 ${crack.count}장`);
     await waitFor("!document.querySelector('[data-enchant-fx]')");
     const counts=await evaluate('__countObserver.disconnect();__fxCounts');assert.ok(counts.length>=3,JSON.stringify(counts));
-    scenarios.push({width,height,kind:'crack',count:crack.count,countup:counts});
+    await cleaned();scenarios.push({width,height,kind:'crack',count:crack.count,countup:counts});
   }
   await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   await fixture(6,'destroyed');await click('[data-action="enhance"]');
   await waitFor("document.querySelector('.enchant-fx.reduced')?.dataset.phase==='result'");
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.enchant-gear')).animationName"),'none');
+  assert.equal(await evaluate("document.querySelectorAll('.enchant-particles').length"),0);
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.enchant-shards')).display"),'none');
   await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
   await waitFor("!document.querySelector('[data-enchant-fx]')");
-  await command('Emulation.setEmulatedMedia',{features:[]});
+  await cleaned();await command('Emulation.setEmulatedMedia',{features:[]});
+  // Explicit keyboard skip on a blessed ritual; repeat closes it, not another attempt.
+  await fixture(6,'success');await click('[data-action="pick-scroll"][data-id="scroll_blessed_weapon"]');await click('[data-action="enhance"]');
+  assert.equal(await evaluate("document.querySelector('.enchant-fx').classList.contains('blessed')"),true);
+  assert.equal(await evaluate("document.querySelector('.enchant-fx').style.getPropertyValue('--fx-color')"),'#ffd36f');
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+  assert.equal(await evaluate("document.querySelector('.enchant-fx').dataset.phase"),'result');
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+  await waitFor("!document.querySelector('[data-enchant-fx]')");await cleaned();
   // Reload during the risky charge: no reroll or replay, only the committed save.
   await fixture(6,'success');await click('[data-action="enhance"]');
   const persisted=await evaluate('JSON.stringify(__arpg.save)');await command('Page.reload');await waitFor(page('inn'));
@@ -236,11 +299,30 @@ try {
     for(let batch=0;batch<80;batch++){const start=performance.now();for(let i=0;i<100;i++)v.update(entity,anim,1/60);samples.push((performance.now()-start)/100);}
     samples.sort((a,b)=>a-b);const result={sixXCPU:true,updates:8000,p95Ms:samples[Math.ceil(samples.length*.95)-1],maxMs:samples.at(-1),nodes,nodeCountStable:nodes===v.container.children[1].children.length,phoneEvidence:false};v.destroy();return result;
   })()`);
+  const ritualPerformance=[];
+  // Measure the actual risky ritual (not merely the separate weapon glow update).
+  await command('Emulation.setCPUThrottlingRate',{rate:1});
+  await command('Page.navigate',{url});await connect();
+  await command('Emulation.setCPUThrottlingRate',{rate:6});
+  for(const [width,height] of [[390,844],[1280,900]]) {
+    await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
+    for(const outcome of ['success','destroyed']) {
+      await fixture(6,outcome);
+      await evaluate("window.__fxFractureSeen=false;window.__fxFracturePaused=false;window.__fxBeatObserver=new MutationObserver(rows=>{if(rows.some(r=>r.target.dataset.beat==='fracture')){__fxFractureSeen=true;__fxFracturePaused=getComputedStyle(document.querySelector('.enchant-fx .ritual-runes')).animationPlayState==='paused';}});__fxBeatObserver.observe(document.querySelector('#meta-screen'),{subtree:true,attributes:true,attributeFilter:['data-beat']});");
+      await click('[data-action="enhance"]');
+      await waitFor("!document.querySelector('[data-enchant-fx]')");await cleaned();
+      assert.equal(await evaluate('__fxBeatObserver.disconnect();__fxFractureSeen'),outcome==='destroyed');
+      assert.equal(await evaluate('__fxFracturePaused'),outcome==='destroyed');
+      const perf=await evaluate(`(()=>{const s=__fxContext.hub.enchantFx.stats,p95=a=>[...a].sort((a,b)=>a-b)[Math.ceil(a.length*.95)-1];return {width:${width},height:${height},outcome:${JSON.stringify(outcome)},sixXCPU:true,fractureObserved:__fxFractureSeen,fullHitstop:__fxFracturePaused,frames:s.frames,drawP95Ms:p95(s.drawMs),rafP95Ms:p95(s.frameMs),rafMaxMs:Math.max(...s.frameMs),shards:s.shards,particleLimit:s.particleLimit,cleaned:s.cleaned,residualNodes:document.querySelectorAll('.enchant-fx,.enchant-particles').length};})()`);
+      assert.ok(perf.frames>30,JSON.stringify(perf));assert.ok(perf.drawP95Ms<16.7,JSON.stringify(perf));
+      assert.equal(perf.shards,outcome==='destroyed'?48:0);assert.equal(perf.residualNodes,0);ritualPerformance.push(perf);
+    }
+  }
   await command('Emulation.setCPUThrottlingRate',{rate:1});
   assert.equal(performanceSample.nodeCountStable,true);assert.ok(performanceSample.p95Ms<1,JSON.stringify(performanceSample));
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Runtime.consoleAPICalled'&&e.params.type==='error'||e.method==='Log.entryAdded'&&e.params.entry.level==='error');
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));
-  const report={ok:true,scenarios,reducedMotion:true,reloadAntiReroll:true,combat,kitPixels,performanceSample,consoleErrors:0,screenshots:0};
+  const report={ok:true,scenarios,reducedMotion:true,reloadAntiReroll:true,combat,kitPixels,performanceSample,ritualPerformance,consoleErrors:0,screenshots:screenshotCount};
   if(process.env.ARPG_REPORT)await writeFile(process.env.ARPG_REPORT,JSON.stringify(report,null,2));
   console.log(JSON.stringify(report));
 } finally {

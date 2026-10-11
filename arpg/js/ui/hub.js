@@ -17,7 +17,7 @@ import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } f
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave } from '../meta/save.js';
 import { icon, itemIcon } from './icons.js';
-import { playEnchantFx } from './enchant-fx.js';
+import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
   escape, amount, itemLabel, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
   linesHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml,
@@ -496,7 +496,7 @@ export class HubUI {
     'shop', button(disabled ? reason : `${price} G · 구매`, 'buy', 'id="shop-buy" class="primary"', disabled), { eyebrow: '보급' });
   }
 
-  // --- Forge: pick gear → enchant with a scroll; stones become scrolls; craft from scrap below. ---
+  // --- Forge workspaces: enchant ritual, scroll workshop, crafting and salvage. ---
 
   showForge() {
     const items = this.save.items.slice().sort((a, b) => Number(isWorn(this.save, b.uid)) - Number(isWorn(this.save, a.uid)));
@@ -517,7 +517,9 @@ export class HubUI {
       return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}</b><small>${parts}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
     }).join('');
+    this.forgeTab ||= 'enhance';
     const { html, footer } = this.forgeDetail();
+    const tabs = `<nav class="forge-tabs" aria-label="대장장이 작업">${[['enhance', '강화'], ['scrolls', '주문서 제작'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
     // Plain result line; the enchant animation layer replaces this presentation, not the outcome.
     // forgeNotice is one-shot; lastEnchant/lastCrack stay readable for the FX layer and debugging.
     const notice = this.forgeNotice;
@@ -527,11 +529,19 @@ export class HubUI {
       ? `<p class="enchant-notice destroyed" role="status">${escape(ITEMS[last.id].name)} +${last.from} — 강렬하게 빛나더니 산산조각 났다. 강화석 ${last.refund[STONE]}개가 남았다.</p>`
       : `<p class="enchant-notice success" role="status">${escape(ITEMS[last.id].name)} +${last.from} → <b>+${last.to}</b> 강화 성공</p>`)
       : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name} ${crack.count}장을 얻었다.</p>` : '';
-    this.showInnPanel('대장장이', `${noticeHtml}<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>
-      <div class="p2-grid forge-picker" role="group" aria-label="강화할 장비">${cards}</div>${html}
-      ${this.scrollWorkshopHtml()}
-      <details class="craft-list"><summary>제작 · 고철과 재료</summary><div class="recipe-grid">${recipes}</div></details>`,
-    'forge', footer, { eyebrow: `+${ENCHANT.safe}까지 안전 · 그 위는 파괴 위험` });
+    const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 장비 먼저 · 좌우로 넘기기</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
+    const content = this.forgeTab === 'scrolls' ? this.scrollWorkshopHtml()
+      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 고철과 재료</h3><div class="recipe-grid">${recipes}</div></section>`
+        : `${html}${picker}`;
+    this.showInnPanel('대장장이', `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
+      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `+${ENCHANT.safe}까지 안전 · 그 위는 파괴 위험` });
+  }
+
+  forgeSalvageHtml() {
+    const item = this.save.items.find(candidate => candidate.uid === this.selectedUid);
+    if (!item) return '<p class="minor">제작한 장비를 여기서 장착·분해·판매할 수 있습니다.</p>';
+    const uid = `data-uid="${escape(item.uid)}"`, worn = isWorn(this.save, item.uid);
+    return `<section class="forge-salvage"><div class="p2-item-heading">${emblem(item)}<h3>${escape(itemLabel(item))}</h3></div><div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
   }
 
   scrollWorkshopHtml() {
@@ -563,12 +573,15 @@ export class HubUI {
     const odds = preview.maxed ? '최대 강화'
       : preview.risky ? `성공 ${pct(preview.chance)} · 실패 시 장비 파괴 (강화석 ${preview.refund[STONE]}개 남음)`
         : `안전 구간 · 성공 확정${preview.blessed ? ' · 축복: 무작위 +1~+3 (최대 +' + ENCHANT.safe + ')' : ''}`;
-    const html = `<section class="forge-work ${preview.risky ? 'risky' : ''}"><div class="p2-item-heading">${emblem(item)}<div><h3>${escape(itemLabel(item))}${target}</h3>`
-      + `<small class="${preview.risky ? 'loss' : ''}">${odds}</small>${!preview.maxed ? `<strong class="forge-odds">${pct(preview.chance)}<span> 성공 확률</span></strong>` : ''}</div></div>`
-      + `${preview.maxed ? '' : linesHtml(compareItems(item, projected, this.save))}<div class="p2-stones scroll-picker" role="group" aria-label="사용할 주문서">${picker}</div>`
-      + `${!preview.maxed && preview.have < 1 ? `<p class="p2-hint">주문서 부족 · 아래에서 강화석으로 제작</p>` : ''}`
-      + `<div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}`
-      + `${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
+    const html = `<section class="forge-work ${preview.risky ? 'risky' : ''} ${preview.blessed ? 'blessed' : ''}" aria-label="강화 의식">
+      <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3></div>
+      <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
+      <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target.replace(' → ', '')}</strong></div>
+      <strong class="forge-odds">${preview.maxed ? '최대 강화' : pct(preview.chance)}<span>${preview.maxed ? '' : ' 성공 확률'}</span></strong>
+      <p class="forge-risk-band ${preview.risky && !preview.maxed ? 'loss' : ''}">${odds}</p>
+      <div class="p2-stones scroll-picker" role="group" aria-label="사용할 주문서">${picker}</div>
+      ${!preview.maxed && preview.have < 1 ? `<p class="p2-hint">주문서 부족 · ${button('주문서 제작으로', 'forge-tab', 'data-tab="scrolls"')}</p>` : ''}
+      ${preview.maxed ? '' : `<details class="forge-preview"><summary>강화 후 능력치</summary>${linesHtml(compareItems(item, projected, this.save))}</details>`}</section>`;
     const label = preview.maxed ? '최대 강화' : preview.have < 1 ? '강화 불가 · 주문서 부족'
       : preview.risky ? `강화 · 성공 ${pct(preview.chance)} · 파괴 위험` : '강화 · 주문서 1장';
     return { html, footer: button(label, 'enhance', `${uid} data-scroll="${this.forgeScroll}" class="primary ${preview.risky ? 'danger' : ''}"`, preview.maxed || preview.have < 1) };
@@ -851,7 +864,12 @@ export class HubUI {
         return this.showMerchant();
       // Forge
       case 'forge':
+        this.forgeTab = 'enhance';
         this.selectedUid = null;
+        return this.showForge();
+      case 'forge-tab':
+        if (!['enhance', 'scrolls', 'salvage'].includes(data.tab)) return;
+        this.forgeTab = data.tab;
         return this.showForge();
       case 'select-gear':
         this.selectedUid = data.uid;
@@ -884,6 +902,7 @@ export class HubUI {
       case 'craft':
         this.commit(craft(this.save, data.id));
         this.selectedUid = this.save.items.at(-1).uid;
+        this.forgeTab = 'enhance';
         return this.showForge();
       // Settlement reveal
       case 'reveal':

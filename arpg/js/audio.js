@@ -94,7 +94,7 @@ export class CombatAudio {
 // The icon sits next to existing settings; a second copy stays available during battle.
 export function bindAudioControls(audio, document) {
   document.addEventListener('arpg:presentation-sound', event => {
-    if (['level-up', 'kill'].includes(event.detail)) audio.play(event.detail);
+    if (['level-up', 'kill', 'dodge', 'critical', 'hurt'].includes(event.detail)) audio.play(event.detail);
   });
   const refresh = () => {
     for (const button of document.querySelectorAll('[data-sound-toggle]')) {

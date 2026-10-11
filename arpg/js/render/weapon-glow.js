@@ -1,9 +1,9 @@
 import { Container, Graphics, GraphicsContext } from '../../vendor/pixi-8.22.0.min.mjs';
 
-const COLORS = [0xcde8ee, 0x53b9ff, 0x9cdaff, 0xbe84ff, 0xffd36f];
+export const WEAPON_GLOW_COLORS = Object.freeze([0xcde8ee, 0x53b9ff, 0x9cdaff, 0xbe84ff, 0xffd36f]);
 export function weaponGlowSpec(enhance = 0, reduced = false) {
   const level = Math.max(0, Math.min(10, Math.floor(enhance)));
-  return { level, color: level >= 6 ? COLORS[level - 6] : null,
+  return { level, color: level >= 6 ? WEAPON_GLOW_COLORS[level - 6] : null,
     particles: reduced || level < 9 ? 0 : level === 9 ? 6 : 10,
     pulse: !reduced && level >= 8, trail: !reduced && level >= 8,
     ring: level >= 10 };

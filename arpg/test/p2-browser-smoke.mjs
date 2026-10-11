@@ -155,6 +155,7 @@ try {
     const gold=await evaluate('__arpg.save.gold'); await click(`[data-action="buy-gear"][data-uid="${offer}"]`);assert.ok(await evaluate('__arpg.save.gold')<gold);
     await click('[data-action="inn"]');await click('[data-action="forge"]');await audit();
     await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');await waitFor("!document.querySelector('[data-enchant-fx]')");assert.equal(await evaluate("__arpg.save.items.find(i=>i.uid==='craft:iron_sword:1').enhance"),1);
+    await click('[data-action="forge-tab"][data-tab="salvage"]');await audit();
     await click('[data-action="select-gear"][data-uid="starter:weapon"]');await click('[data-action="dismantle"][data-uid="starter:weapon"]');await audit();
     await click('[data-action="close-sheet"]');assert.ok(await evaluate("__arpg.save.items.some(i=>i.uid==='starter:weapon')"));
     await click('[data-action="inn"]');await click('[data-action="shop"]');await audit();

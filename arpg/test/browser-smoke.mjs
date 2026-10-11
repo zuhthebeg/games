@@ -468,9 +468,10 @@ try {
   await command('Page.reload');
   await waitFor(page('inn'));
   await click('[data-action="forge"]');
-  await evaluate("document.querySelector('.craft-list').open=true");
+  await click('[data-action="forge-tab"][data-tab="salvage"]');
   await click('[data-action="craft"][data-id="iron_sword"]');
   await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');await waitFor("!document.querySelector('[data-enchant-fx]')");
+  await click('[data-action="forge-tab"][data-tab="salvage"]');
   await click('[data-action="equip"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.equipped.weapon'), 'craft:iron_sword:1');
   assert.ok(await evaluate(

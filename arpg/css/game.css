@@ -562,46 +562,82 @@ select, input:not([type="checkbox"]) {
 .recipe .item-emblem .item-art{width:24px;height:24px}
 .p2-stones .item-art{width:32px;height:32px;flex:0 0 32px}
 
-/* Committed enchant results: a modal is display-only and blocks further spending. */
-.enchant-fx { border:0; padding:0; width:min(340px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); overflow:hidden; color:#e9f7ff; background:radial-gradient(ellipse at 50% 40%,#173a53,#0b121bef 70%); border-radius:20px; box-shadow:0 0 60px #4baeff40; }
-.enchant-fx::backdrop { background:#050810c9; }
-.enchant-fx .enchant-stage { position:relative; isolation:isolate; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; width:100%; min-height:300px; padding:170px 18px 22px; border:1px solid #76cfff66; border-radius:20px; background:none; color:inherit; }
-.enchant-scroll,.enchant-gear { position:absolute; display:block; width:88px; height:88px; top:60px; left:calc(50% - 44px); }
-.enchant-scroll .item-art,.enchant-gear .item-art { width:100%;height:100%; }
-.enchant-scroll { top:26px; width:64px;height:64px;left:calc(50% - 32px); filter:drop-shadow(0 0 12px #6cceff); animation:enchant-scroll-light var(--charge) ease-in both; }
-.enchant-gear { filter:drop-shadow(0 0 10px #8ddfff); }
-.enchant-fx.risky[data-phase="charge"] .enchant-scroll { animation:enchant-scroll-burn var(--charge) ease-in both; }
-.enchant-fx.risky[data-phase="charge"] .enchant-gear { animation:enchant-gather var(--charge) ease-in both; }
-.enchant-result { position:relative;z-index:2; display:block; min-height:38px; font-size:32px; line-height:1.2; text-wrap:balance; }
-.enchant-detail { min-height:24px; margin-top:8px; font-size:14px; }
-.enchant-skip { margin-top:18px; color:#bacbd2; font-size:12px; }
-.enchant-burst { position:absolute; z-index:-1; top:48px; left:calc(50% - 55px); width:110px; height:110px; border-radius:50%; opacity:0; background:radial-gradient(circle,#fff 0%,#c9f0ff 18%,#4dbaff88 40%,transparent 70%); }
-.enchant-fx[data-phase="result"] .enchant-burst { animation:enchant-explode .55s ease-out both; }
-.enchant-fx[data-phase="result"] .enchant-scroll { display:none; }
-.enchant-fx[data-phase="result"] .enchant-result { animation:enchant-pop .3s ease-out both; text-shadow:0 0 16px #70cfff; }
-.enchant-fx.success:not(.risky) .enchant-result { animation-duration:180ms; }
-.enchant-fx.success:not(.risky) .enchant-burst { animation-duration:220ms; }
-.enchant-fx.destroyed { color:#ffbaa5; background:radial-gradient(ellipse at 50% 40%,#682624,#170c13ef 70%); }
-.enchant-fx.destroyed .enchant-result { font-size:24px; }
-.enchant-fx.destroyed[data-phase="result"] .enchant-gear { animation:enchant-break .35s ease-in both; }
-.enchant-fx.destroyed .enchant-burst { background:radial-gradient(circle,#ffe2b0,#ff463c80,transparent 70%); }
-.enchant-shards { position:absolute;top:105px;left:50%;pointer-events:none; }
-.enchant-shards i { position:absolute;display:none;width:8px;height:13px;background:#ff8565;clip-path:polygon(0 0,100% 30%,50% 100%); }
-.enchant-fx.destroyed[data-phase="result"] .enchant-shards i { display:block; animation:enchant-shatter .7s ease-out both; }
-.enchant-fx.crack .enchant-gear { display:none; }
-.enchant-fx.crack .enchant-result { opacity:1; }
-.enchant-fx.reduced .enchant-scroll,.enchant-fx.reduced .enchant-gear,.enchant-fx.reduced .enchant-result,.enchant-fx.reduced .enchant-burst,.enchant-fx.reduced .enchant-shards i { animation:none!important; }
-.enchant-fx.reduced .enchant-shards,.enchant-fx.reduced .enchant-burst { display:none; }
-.enchant-fx.reduced[data-phase="result"] { animation:enchant-fade .12s ease-out; }
-.enchant-fx.reduced.destroyed[data-phase="result"] .enchant-gear { opacity:.15; }
-@keyframes enchant-scroll-light { to { filter:drop-shadow(0 0 25px #a9e5ff);opacity:.3; } }
-@keyframes enchant-scroll-burn { 55% { filter:drop-shadow(0 0 16px #ff974b); } to { filter:drop-shadow(0 0 30px #ff643c); transform:translateY(-10px) scale(.75);opacity:0; } }
-@keyframes enchant-gather { 0%,30% { transform:translateX(0);filter:drop-shadow(0 0 2px #8ddfff); } 45%,65%,85% { transform:translateX(-3px); } 55%,75%,95% { transform:translateX(3px); } 100% { transform:translateX(0);filter:drop-shadow(0 0 25px #e5f9ff); } }
-@keyframes enchant-explode { 0% {opacity:1;transform:scale(.3);} 40% {opacity:1;transform:scale(2.5);} 100% {opacity:0;transform:scale(3);} }
-@keyframes enchant-pop { from {opacity:0;transform:scale(.7) translateY(10px);} to {opacity:1;transform:none;} }
-@keyframes enchant-break { 30% {filter:drop-shadow(0 0 15px #ff463c);clip-path:polygon(0 0,48% 0,40% 40%,65% 60%,50% 100%,0 100%);} to {opacity:0;transform:scale(1.15);} }
-@keyframes enchant-shatter { from {opacity:1;transform:rotate(var(--angle)) translateY(0);} to {opacity:0;transform:rotate(var(--angle)) translateY(var(--distance)) rotate(120deg);} }
-@keyframes enchant-fade { from {opacity:.2;} to {opacity:1;} }
+/* Fullscreen ritual: CSS geometry + one capped 2D canvas; no backdrop filters. */
+.enchant-fx{position:fixed;inset:0;margin:0;padding:0;border:0;border-radius:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;overflow:hidden;background:#080e17;color:#e8f5ff;--fx-color:#70cfff}
+.enchant-fx::backdrop{background:#05090fed}
+#meta-screen .enchant-stage{position:relative;isolation:isolate;display:block;width:100%;height:100%;min-height:0;padding:0;overflow:hidden;border:0;border-radius:0;background:radial-gradient(ellipse at 50% 42%,#152d42 0%,#0b1421 42%,#070c14 80%);color:inherit;cursor:pointer}
+.enchant-veil,.enchant-particles,.enchant-beam,.enchant-burst{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.enchant-veil{background:#03070dcc;opacity:0;z-index:0}
+.enchant-fx.risky[data-phase="charge"] .enchant-veil{animation:ritual-darken var(--charge) ease-out both}
+.enchant-particles{z-index:2}
+.enchant-ritual{position:absolute;left:calc(50% - 180px);top:calc(42% - 40px);width:360px;height:360px;transform:scaleY(.36);pointer-events:none;z-index:1;color:var(--fx-color)}
+.ritual-circle{position:absolute;inset:0;border:2px solid currentColor;border-radius:50%;opacity:.65;box-shadow:0 0 18px #77bfff30,inset 0 0 18px #77bfff30}
+.ritual-circle:before,.ritual-circle:after{content:"";position:absolute;inset:15%;border:1px solid currentColor;border-radius:50%}
+.ritual-circle:after{inset:26%;border-style:dashed}
+.ritual-runes{position:absolute;inset:5%;border:1px solid currentColor;border-radius:50%;animation:ritual-turn 16s linear infinite}
+.ritual-runes i{position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px;font:20px Georgia,serif;transform:rotate(var(--r)) translateY(-145px)}
+.ritual-seal{position:absolute;inset:27%;border:1px solid currentColor;transform:rotate(45deg);animation:ritual-counter 12s linear infinite}
+.ritual-seal:after{content:"";position:absolute;inset:0;border:1px solid currentColor;transform:rotate(45deg)}
+.enchant-fx.risky[data-phase="charge"] .ritual-runes{animation:ritual-accelerate var(--charge) cubic-bezier(.7,0,1,.4) both}
+.enchant-fx.risky[data-phase="charge"] .ritual-circle{animation:ritual-heart .45s ease-in-out infinite alternate}
+.enchant-scroll,.enchant-gear{position:absolute;display:block;z-index:3;pointer-events:none}
+.enchant-gear{left:calc(50% - 112px);top:calc(42% - 112px);width:224px;height:224px;filter:drop-shadow(0 0 16px var(--fx-color))}
+.enchant-scroll{left:calc(50% - 42px);top:calc(42% + 125px);width:84px;height:84px;filter:drop-shadow(0 0 9px var(--fx-color));animation:ritual-absorb var(--charge) cubic-bezier(.4,0,.7,1) both}
+.enchant-gear .item-art,.enchant-scroll .item-art{width:100%;height:100%}
+.enchant-fx.risky[data-phase="charge"] .enchant-gear{animation:ritual-tremble var(--charge) ease-in both}
+.enchant-copy{position:absolute;z-index:5;left:16px;right:16px;top:72%;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;pointer-events:none}
+.enchant-caption{color:#d2c29e;font-size:12px;letter-spacing:.16em}
+.enchant-result{min-height:48px;display:block;font:700 clamp(32px,6vw,64px)/1.1 "AppleMyungjo","Batang",Georgia,serif;text-wrap:balance;text-shadow:0 0 24px var(--fx-color)}
+.enchant-detail{display:block;min-height:20px;font-size:14px;color:#d5e1e5}
+.enchant-skip{margin-top:8px;font-size:11px;color:#c5c5bd;letter-spacing:.04em}
+.enchant-burst{z-index:4;background:#f0fbff;opacity:0}
+.enchant-beam{z-index:1;left:calc(50% - 90px);width:180px;opacity:0;background:linear-gradient(90deg,transparent,#65bdff70 28%,#e1faff 50%,#65bdff70 72%,transparent);transform-origin:50% 42%}
+.enchant-fx[data-phase="result"] .enchant-scroll{display:none}
+.enchant-fx[data-phase="result"] .enchant-burst{animation:ritual-flash .48s ease-out both}
+.enchant-fx[data-phase="result"] .enchant-beam{animation:ritual-pillar .6s ease-out both}
+.enchant-fx[data-phase="result"] .enchant-result{animation:ritual-type .4s cubic-bezier(.16,1,.3,1) both}
+.enchant-fx.success[data-phase="result"] .enchant-gear{filter:drop-shadow(0 0 24px var(--tier-color))}
+.enchant-fx.success.risky[data-phase="result"] .enchant-stage{animation:ritual-camera .28s ease-out both}
+.enchant-fx:not(.risky):not(.crack) .enchant-result{font-size:48px}
+.enchant-fx:not(.risky):not(.crack)[data-phase="result"] .enchant-burst{animation-duration:.3s;opacity:.4}
+.enchant-fracture{display:none;position:absolute;inset:5%;background:#ff6654;filter:drop-shadow(0 0 6px #ff3020);clip-path:polygon(55% 0,47% 34%,63% 48%,45% 70%,48% 100%,40% 72%,55% 48%,39% 33%,48% 0)}
+.enchant-fx[data-beat="fracture"] .enchant-fracture{display:block}
+.enchant-fx[data-beat="fracture"] .enchant-gear{animation:none!important;filter:drop-shadow(0 0 24px #ff443a)}
+.enchant-fx.destroyed[data-phase="result"] .enchant-gear{opacity:0}
+.enchant-fx.destroyed[data-phase="result"] .enchant-beam{display:none}
+.enchant-fx.destroyed[data-phase="result"] .enchant-burst{background:#e13529;animation-duration:.5s}
+.enchant-fx.destroyed[data-phase="result"] .enchant-stage{animation:ritual-camera-hard .4s ease-out both}
+.enchant-fx.destroyed .enchant-result{font-size:clamp(26px,5vw,48px);color:#ffc1ae}
+.enchant-fx.destroyed .enchant-detail{color:#ffd19b;font-weight:700}
+.enchant-shards{display:none}
+.enchant-fx.blessed .enchant-stage{background:radial-gradient(ellipse at 50% 42%,#48331b,#171511 45%,#080d13 80%)}
+.enchant-fx.crack .enchant-scroll{display:none}
+.enchant-fx.crack .enchant-fracture{display:block;background:#fff0c0;animation:ritual-rock-crack .5s ease-in both}
+.enchant-fx.crack .enchant-gear{width:180px;height:180px;left:calc(50% - 90px);top:calc(42% - 90px);animation:ritual-stone .5s ease-in both}
+.enchant-cards{position:absolute;z-index:3;left:50%;top:calc(42% + 30px);pointer-events:none}
+.enchant-cards i{position:absolute;display:block;width:70px;height:90px;left:-35px;top:-45px;border:1px solid #e7c57d;background:#302d24;border-radius:3px;animation:ritual-card .45s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(280ms + var(--card) * 45ms);transform-origin:50% 170%}
+.enchant-cards .item-art{width:100%;height:100%}
+.enchant-fx.reduced .enchant-gear,.enchant-fx.reduced .enchant-scroll,.enchant-fx.reduced .enchant-result,.enchant-fx.reduced .enchant-stage,.enchant-fx.reduced .enchant-cards i{animation:none!important;filter:none}
+.enchant-fx.reduced .enchant-ritual,.enchant-fx.reduced .enchant-shards,.enchant-fx.reduced .enchant-burst,.enchant-fx.reduced .enchant-beam,.enchant-fx.reduced .enchant-scroll,.enchant-fx.reduced .enchant-veil{display:none}
+.enchant-fx.reduced .enchant-cards i{transform:rotate(var(--fan)) translateY(20px)}
+.enchant-fx.reduced[data-phase="result"]{animation:ritual-fade .12s ease-out}
+@keyframes ritual-accelerate{to{transform:rotate(720deg)}}
+@keyframes ritual-turn{to{transform:rotate(360deg)}}
+@keyframes ritual-counter{to{transform:rotate(-315deg)}}
+@keyframes ritual-heart{to{opacity:1;transform:scale(1.04)}}
+@keyframes ritual-darken{to{opacity:1}}
+@keyframes ritual-absorb{0%{opacity:1;transform:translateY(0) scale(1)}65%{opacity:1}100%{opacity:0;transform:translateY(-205px) rotate(-20deg) scale(.05)}}
+@keyframes ritual-tremble{0%,35%{transform:none}45%{transform:translateX(-1px)}55%{transform:translateX(2px)}65%{transform:translateX(-3px)}75%{transform:translateX(4px)}85%{transform:translateX(-6px)}95%{transform:translateX(7px)}100%{transform:none}}
+@keyframes ritual-flash{0%{opacity:.9}100%{opacity:0}}
+@keyframes ritual-pillar{0%{opacity:.9;transform:scaleX(.1)}35%{opacity:.8;transform:scaleX(1.4)}100%{opacity:0;transform:scaleX(2)}}
+@keyframes ritual-type{from{opacity:0;transform:translateY(26px) scale(.65)}to{opacity:1;transform:none}}
+@keyframes ritual-camera{15%,55%{transform:translate(-2px,2px)}35%,75%{transform:translate(2px,-1px)}100%{transform:none}}
+@keyframes ritual-camera-hard{10%,50%{transform:translate(-7px,4px)}30%,70%{transform:translate(6px,-5px)}90%{transform:translate(-2px,1px)}100%{transform:none}}
+@keyframes ritual-rock-crack{0%,55%{opacity:0}70%,100%{opacity:1}}
+@keyframes ritual-stone{60%{transform:scale(1.18)}100%{opacity:0;transform:scale(1.4)}}
+@keyframes ritual-card{from{opacity:0;transform:translateY(-80px) scale(.15)}to{opacity:1;transform:rotate(var(--fan)) translateY(20px)}}
+@keyframes ritual-fade{from{opacity:.2}to{opacity:1}}
+@media(max-height:650px){.enchant-copy{top:70%;gap:7px}.enchant-gear{width:192px;height:192px;left:calc(50% - 96px);top:calc(39% - 96px)}.enchant-ritual{top:calc(39% - 55px)}.enchant-scroll{top:calc(39% + 95px)}.enchant-result{min-height:38px}.enchant-skip{margin-top:2px}}
 
 /* Risk is not communicated by colour alone: probability and destruction copy remain. */
 .forge-work { border:1px solid var(--edge);padding:12px;border-radius:10px; }
@@ -649,3 +685,48 @@ select, input:not([type="checkbox"]) {
 .enchant-notice.success { background: rgba(80, 140, 230, .18); color: #cfe0ff; }
 .enchant-notice.destroyed { background: rgba(200, 60, 50, .22); color: #ffc9c2; }
 .forge-work.risky small.loss { font-weight: 700; }
+
+/* Forge workspaces: ritual first, horizontal equipment rack, unrelated actions in their own tab. */
+.forge-tabs{display:flex;gap:0;border-bottom:1px solid #77603e;margin:-4px 0 16px}
+.forge-tabs button{flex:1;min-width:0;padding:10px 4px;min-height:44px;border:0;border-bottom:2px solid transparent;border-radius:0;font-size:12px;background:transparent;color:#bbb6a8}
+.forge-tabs button[aria-pressed="true"]{color:#f0d9a3;border-bottom-color:#d3ad6d;background:#a4874920}
+.forge-tab-panel .forge-work{padding:0;border:0;border-radius:0;background:none;--fx-color:#70cfff}
+.forge-tab-panel .forge-work.blessed{--fx-color:#ffd36f}
+.forge-item-title{text-align:center}.forge-item-title h3{font:700 20px "AppleMyungjo","Batang",Georgia,serif;margin:6px 0 0}.forge-item-title small{font-size:11px;color:#bdb5a5}
+.forge-ritual{position:relative;height:220px;color:var(--fx-color);overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#517fa126,transparent 70%)}
+.forge-ritual>.ritual-circle{width:290px;height:290px;left:calc(50% - 145px);top:50px;transform:scaleY(.32)}
+.forge-ritual .ritual-runes i{transform:rotate(var(--r)) translateY(-115px)}
+.forge-hero-art{position:absolute;width:192px;height:192px;left:calc(50% - 96px);top:0;filter:drop-shadow(0 0 12px var(--enhance-color,var(--fx-color)))}
+.forge-hero-art .item-art{width:100%;height:100%}
+.forge-tier{position:absolute;bottom:12px;left:0;right:0;text-align:center;font:700 24px Georgia,serif;color:var(--enhance-color,#dfeef3);text-shadow:0 0 16px var(--fx-color)}
+.forge-progress{display:flex;align-items:center;justify-content:center;gap:24px;font:700 28px Georgia,serif}.forge-progress span{font-size:20px;color:#938b77}.forge-progress strong{color:#f1deaf}
+.forge-tab-panel .forge-odds{text-align:center;margin:8px 0;font-size:36px;line-height:1.1}.forge-odds span{font-size:11px;display:block;margin-top:5px;color:#bbb6a8}
+.forge-risk-band{font-size:12px;text-align:center;margin:12px 0;padding:10px 6px;background:#283d452e;border-block:1px solid #6d98a440;line-height:1.5;color:#badddf}
+.forge-work.risky .forge-risk-band{background:#74342e55;border-color:#e4826855;color:#ffc3b1;font-weight:700}
+.forge-preview{font-size:12px;margin:12px 0}.forge-preview summary{min-height:44px;padding:14px 0;color:#c0b49a}
+.forge-selection{margin-top:18px;border-top:1px solid #414739;padding-top:12px;min-width:0}
+.forge-picker{display:flex;gap:8px;overflow-x:auto;padding:8px 0 10px;margin:0;touch-action:pan-x;scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+.forge-picker .p2-card{flex:0 0 144px;min-width:0;scroll-snap-align:start;white-space:normal;padding:8px;min-height:82px}
+.forge-picker .p2-card[aria-pressed="true"]{border-color:#d3ad6d;background:#3d3727}
+.forge-picker .p2-card-copy strong{font-size:12px}.forge-picker .p2-card-copy small{font-size:10px}
+.forge-salvage{padding:16px 0;border-bottom:1px solid #414739}
+.forge-salvage .p2-item-heading{align-items:center}.forge-salvage h3{font-size:16px}
+@media(prefers-reduced-motion:reduce){.ritual-runes,.ritual-seal,.ritual-circle{animation:none!important}.forge-hero-art{filter:none}}
+
+.scroll-picker button .item-art{flex:0 0 40px}
+.forge-hero-art[data-enhance="6"]:after,.forge-hero-art[data-enhance="7"]:after,.forge-hero-art[data-enhance="8"]:after,.forge-hero-art[data-enhance="9"]:after,.forge-hero-art[data-enhance="10"]:after{content:"";position:absolute;inset:12px;border:1px solid var(--enhance-color);border-radius:50%;opacity:.5}
+.enchant-fx.reduced .enchant-fracture{display:none}
+/* Isolate fullscreen flashes/shake from repainting the background and item raster. */
+.enchant-stage{contain:layout paint;will-change:transform}
+.enchant-burst,.enchant-beam{will-change:transform,opacity}
+.enchant-gear,.enchant-scroll,.enchant-ritual .ritual-runes,.enchant-copy .enchant-result{will-change:transform}
+.enchant-fx.reduced .enchant-stage,.enchant-fx.reduced .enchant-gear,.enchant-fx.reduced .enchant-result{will-change:auto}
+.ritual-runes i svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2}
+.scroll-picker button>span:not(.item-art){font-size:12px;word-break:keep-all;line-height:1.4;text-align:left}
+
+/* Static sixteen-ray raster, composited once: avoid full-canvas triangle overdraw every frame. */
+.enchant-rays{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;background:repeating-conic-gradient(at 50% 42%,#ffdf8c55 0deg 3deg,transparent 4deg 18deg,#9bddff55 19deg 22deg,transparent 23deg 45deg);will-change:opacity}
+.enchant-fx.success.risky[data-phase="result"] .enchant-rays,.enchant-fx.crack[data-phase="result"] .enchant-rays{animation:ritual-rays .95s linear both}
+.enchant-fx.reduced .enchant-rays{display:none}
+@keyframes ritual-rays{from{opacity:1}to{opacity:0}}
+.enchant-fx[data-beat="fracture"] .enchant-stage *{animation-play-state:paused!important}
