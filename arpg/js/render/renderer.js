@@ -6,6 +6,7 @@ import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES } from '../content/combat.js';
 import { healingFeedback } from './healing-feedback.js';
+import { SkillVfx, SKILL_VFX } from './skill-vfx.js';
 import { bakeBiome } from './biome-map.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
@@ -15,7 +16,7 @@ export class ArenaRenderer {
     this.root = new Container();
     this.root.eventMode = 'none';
     this.layers = {};
-    for (const name of ['ground', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'numbers']) {
+    for (const name of ['ground', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'numbers']) {
       const layer = new Container();
       this.layers[name] = layer;
       this.root.addChild(layer);
@@ -40,6 +41,8 @@ export class ArenaRenderer {
     this.burstSerial = 0;
     this.trauma = 0;
     this.reduced = false;
+    // Friendly skill graphics stay below authoritative danger outlines/fills.
+    this.skillVfx = new SkillVfx(Graphics, this.layers.skillFx);
     this.ground = new Graphics();
     this.layers.ground.addChild(this.ground);
     for (let i = 0; i < FEEL.numbers.cap; i++) {
@@ -77,6 +80,7 @@ export class ArenaRenderer {
   }
 
   reset(world, reduced = false, equipmentSave) {
+    this.skillVfx.reset();
     for (const view of this.views.values()) {
       view.visual.destroy();
       view.shadow.destroy();
@@ -178,6 +182,7 @@ export class ArenaRenderer {
   }
 
   snapshot(world) {
+    this.skillVfx.snapshot(world);
     for (const entity of world.entities) {
       const view = this.ensure(entity);
       view.prevX = entity.x;
@@ -280,6 +285,7 @@ export class ArenaRenderer {
     this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const event of events) {
       const entity = world.entities.find(entity => entity.id === (event.dst ?? event.id));
+      if (this.skillVfx.event(event, world, this.reduced)) continue;
       if (healingFeedback(this, event)) continue;
       if (event.type === 'hit') {
         const tier = impactTier(event);
@@ -389,7 +395,7 @@ export class ArenaRenderer {
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
       const active = entity.act?.phase === 'active';
-      if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && view.lastAct !== entity.act) {
+      if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastAct !== entity.act) {
         this.effect(entity.x, entity.y, 0, 0xc9ece3, FEEL.trail.life, 'slash', entity.act.def.shape, entity.act.facing);
         view.lastAct = entity.act;
       }
@@ -445,6 +451,7 @@ export class ArenaRenderer {
     for (const [id, graphic] of this.projectiles)
       graphic.visible = false;
     for (const particle of world.projectiles) {
+      if (SKILL_VFX[particle.abilityId]?.projectileRadius) continue; // Fixed core/history pool owns this profile.
       let graphic = this.projectiles.get(particle.id);
       if (!graphic) {
         const pool = this.projectilePool.get(particle.abilityId);
@@ -502,6 +509,7 @@ export class ArenaRenderer {
         pool.push(graphic);
         this.projectiles.delete(id);
       }
+    this.skillVfx.update(world, alpha, visualDelta, this.reduced);
     for (const particle of this.numbers) {
       if (particle.left <= 0)
         continue;
