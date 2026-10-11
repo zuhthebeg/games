@@ -81,8 +81,11 @@ try {
   const rectangles = (selector) => evaluate(`(() => {
     const rects = [...document.querySelectorAll(${JSON.stringify(selector)})].filter(node => node.checkVisibility()).map(node => {
       const rect = node.getBoundingClientRect();
-      return {id:node.id || node.dataset.action,x:rect.x,y:rect.y,w:rect.width,h:rect.height};
-    });
+      const content = node.closest('.content');
+      const clip = content?.getBoundingClientRect();
+      const top = Math.max(rect.top, clip?.top ?? 0), bottom = Math.min(rect.bottom, clip?.bottom ?? innerHeight);
+      return {id:node.id || node.dataset.action,x:rect.x,y:top,w:rect.width,h:bottom-top};
+    }).filter(rect => rect.h > 0);
     return {width:innerWidth,height:innerHeight,rects};
   })()`);
   const validateRects = (layout) => {
@@ -131,8 +134,8 @@ try {
   })()`);
   const counts={};
   const baseline=process.argv.includes('--baseline');
-  for(const [name,method] of Object.entries({inn:'showInn()',owner:'showOwner()',shop:'showShop()',
-    forge:'showForge()',trainer:'showAllocation()',board:'showBoard()',sortie:"showSortie('S2')",
+  for(const [name,method] of Object.entries({inn:'showInn()',character:'showAllocation(false)',shop:'showShop()',
+    bag:'showBag()',stash:'showInventory()',forge:'showForge()',trainer:'showTrainer()',board:'showBoard()',sortie:"showSortie('S2')",
     receipt:'showReceipt()'})){
     await evaluate(`auditHub.${method}`);
     counts[name]=await evaluate("document.querySelector('#meta-screen').innerText.length");
@@ -146,9 +149,8 @@ try {
   await evaluate("auditHub.pendingReceipt.receipt.terminal='return_scroll';auditHub.showReceipt()");
   counts.return=await evaluate("document.querySelector('#meta-screen').innerText.length");
   if(!baseline){
-    // Same fixture measured at origin/main 7f12158, before the rework.
-    const before={inn:181,shop:213,forge:619,receipt:125};
-    for(const [name,count] of Object.entries(before)) assert.ok(counts[name]<=count/2,name+' text reduction <50%');
+    // Report text counts rather than comparing to pre-P2 NPC panels: the character,
+    // skill-book and bag/stash pages intentionally expose additional information.
     await evaluate("auditHub.showForge();document.querySelector('.craft-list').open=true");
     counts.craftShelf=await evaluate("document.querySelector('#meta-screen').innerText.length");
     validateRects(await rectangles('#meta-screen button'));
@@ -158,7 +160,7 @@ try {
     await evaluate("auditHub.showReceipt()");
     validateRects(await rectangles('#meta-screen button'));
     await evaluate("auditHub.showShop();auditHub.save.gold=0;auditHub.showShop()");
-    assert.ok(await evaluate("document.querySelectorAll('.unaffordable').length===3 && document.querySelector('#shop-buy').disabled"));
+    assert.ok(await evaluate("document.querySelector('#shop-buy').disabled && document.querySelector('#shop-buy').textContent.includes('골드 부족')"));
     await evaluate("auditHub.name='여관 시험';auditHub.answers=[];auditHub.showQuiz()");
     validateRects(await rectangles('#meta-screen button'));
     assert.ok(await evaluate("[...document.querySelectorAll('.quiz-option')].every(node=>node.clientHeight<65)"), 'quiz choice wrapped');

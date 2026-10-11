@@ -244,9 +244,13 @@ try {
   assert.deepEqual(persisted, beforeReload);
   assert.equal(await evaluate('JSON.stringify(__arpg.save)'), entireSave);
   assert.equal(await evaluate('__arpg.world'), null);
-  await click('[data-action="owner"]');
+  assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"), ['만물상','장비상','대장장이','교관','창고','가방']);
+  assert.equal(await evaluate("!!document.querySelector('[data-action=\"owner\"]')"), false);
+  await click('[data-action="character"]');
+  await waitFor(page('character'));
+  assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공격 속도')"));
   assert.ok(await evaluate(`document.querySelector('.receipt [aria-label="획득 경험치"]').textContent.includes('+50')`),
-    'innkeeper lost the persisted last-run summary');
+    'character panel lost the persisted last-run summary');
   await click('[data-action="inn"]');
 
   // Preserve M0 movement/hit/dodge/touch/death/scroll/weapon/visibility regression checks behind dev menu.
@@ -514,7 +518,7 @@ try {
   await command('Page.reload'); await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
   assert.equal(await evaluate('__arpg.save.items.some(item=>item.uid=== ' + JSON.stringify(boughtUid) + ')'), false);
-  assert.equal(await evaluate('__arpg.save.version'), 3);
+  assert.equal(await evaluate('__arpg.save.version'), 4);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));
