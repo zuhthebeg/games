@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { trained } from './fixtures/trained.js';
 import assert from 'node:assert/strict';
 import { createSave } from '../js/meta/save.js';
 import { HubUI } from '../js/ui/hub.js';
@@ -64,7 +65,7 @@ test('inn NPC contract has no owner; unspent points badge lives on the character
 });
 
 test('trainer shows all three families, exact ability numbers and learned/default equip choices', () => {
-  let s={...save(),gold:10000};s=equipSkill(learnSkill(s,'frost_lance'),'focus','frost_lance');
+  let s={...trained(save()),gold:10000};s=equipSkill(learnSkill(s,'frost_lance'),'focus','frost_lance');
   const h=renderHub(s);h.action('trainer',{});assert.equal(h.page,'trainer');
   assert.equal((h.html.match(/data-action="academy-tab"/g)||[]).length,3);
   assert.ok(!h.html.includes('allocation-row'));

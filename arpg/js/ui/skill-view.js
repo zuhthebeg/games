@@ -1,5 +1,6 @@
 import { ABILITIES } from '../content/combat.js';
-import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf } from '../meta/skills.js';
+import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf, bookRequirement } from '../meta/skills.js';
+import { STAT_NAMES } from '../meta/stats.js';
 import { escape, amount } from './gear-view.js';
 
 // Register generated local art here only when the file ships; absent entries never request an image.
@@ -35,9 +36,11 @@ export function skillIcon(id, art = SKILL_ART) {
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id), slot = slotOf(save,id), selected = slot >= 0;
   const state = selected ? `슬롯 ${slot + 1}` : known ? '배움' : `미습득 · ${book.price} G`;
-  const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`];
+  const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-state">${SKILL_DISPLAY[id].label} · ${state}</small></span>`;
   if (context === 'character') return `<button type="button" class="skill-card character-skill faculty-${a.family}" data-action="skill-detail" data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}">${copy}</button>`;
-  const control = context === 'detail' ? '' : `<button type="button" data-action="${known ? 'equip-skill' : 'learn-skill'}" data-id="${id}" ${known ? `data-family="${a.family}" aria-pressed="${selected}"` : ''} ${selected || !known && save.gold < book.price ? 'disabled' : ''}>${selected ? '장착 중' : known ? '장착' : '배우기'}</button>`;
-  return `<article class="skill-card faculty-${a.family}" data-skill="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><div class="skill-card-main">${copy}</div>${control}${!known && save.gold < book.price ? '<small class="loss">골드 부족</small>' : ''}</article>`;
+  const req = !known && book ? bookRequirement(save,id) : null, blocked = !known && (save.gold < book.price || !req.ok);
+  const control = context === 'detail' ? '' : `<button type="button" data-action="${known ? 'equip-skill' : 'learn-skill'}" data-id="${id}" ${known ? `data-family="${a.family}" aria-pressed="${selected}"` : ''} ${selected || blocked ? 'disabled' : ''}>${selected ? '장착 중' : known ? '장착' : '배우기'}</button>`;
+  const lack = !known ? [req && !req.ok ? req.label : '', save.gold < book.price ? '골드 부족' : ''].filter(Boolean) : [];
+  return `<article class="skill-card faculty-${a.family}" data-skill="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><div class="skill-card-main">${copy}</div>${control}${lack.length ? `<small class="loss">${lack.join(' · ')}</small>` : ''}</article>`;
 }

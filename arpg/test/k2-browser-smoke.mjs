@@ -132,6 +132,12 @@ try {
     assert.deepEqual(withBow.map(s=>s.id),['whirl','volley','frost_lance']);assert.deepEqual(withBow.map(s=>s.x),[false,true,false]);await audit();
     await command('Page.reload');await waitFor(page('inn'));
     assert.deepEqual(await evaluate('[...__arpg.save.loadout]'),['whirl','volley','frost_lance']);
+    // K2b: books need the family stat (숙련 30 / 상급 45); this starter lacks 민첩 30.
+    await nativeActivate('[data-action="trainer"]');await nativeActivate('[data-action="academy-tab"][data-family="bow"]');await audit();
+    const gate=await evaluate(`(()=>{const c=document.querySelector('[data-skill="pierce_shot"]');return {chip:c.textContent.includes('요구 민첩 30'),disabled:c.querySelector('[data-action="learn-skill"]').disabled,lack:c.querySelector('.loss')?.textContent||''}})()`);
+    assert.equal(gate.chip,true);assert.equal(gate.disabled,true);assert.match(gate.lack,/^민첩 \d+\/30( · 골드 부족)?$/);
+    assert.match(await evaluate(`document.querySelector('[data-skill="blast_arrow"]').textContent`),/요구 민첩 45/);
+    await nativeActivate('[data-action="inn"]');
     await nativeActivate('[data-action="board"]');await nativeActivate('[data-action="sortie"][data-stage="S2"]');await nativeActivate('[data-action="launch"]');
     await waitFor('document.querySelector("#meta-screen").hidden && __arpg.world?.round.state==="running"');
     const hud=await evaluate(`['skill','skill2','skill3'].map(id=>{const n=document.querySelector('#'+id),r=n.getBoundingClientRect();return {hidden:n.hidden,label:n.getAttribute('aria-label'),blocked:n.classList.contains('blocked'),x:!!n.querySelector('.slot-blocked'),disabled:n.disabled,r:[r.left,r.top,r.right,r.bottom]}})`);
@@ -150,7 +156,7 @@ try {
     const r=hud[2].r;await touch('touchStart',[{x:(r[0]+r[2])/2,y:(r[1]+r[3])/2}]);await sleep(80);await touch('touchEnd',[]);
     await waitFor(`(__arpg.world.entities[0].cds.frost_lance||0)>0`,4000);
     await key('KeyK','k');await waitFor(`(__arpg.world.entities[0].cds.whirl||0)>0`,4000);
-    states.push({width,height,migrated:true,slotSheet:true,blockedX:true,persisted:true,hud:hud.map(h=>h.label),keyAndTouch:true});
+    states.push({width,height,statGate:gate.lack,migrated:true,slotSheet:true,blockedX:true,persisted:true,hud:hud.map(h=>h.label),keyAndTouch:true});
   }
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Log.entryAdded'&&e.params.entry.level==='error'||e.method==='Runtime.consoleAPICalled'&&e.params.type==='error');
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));console.log(JSON.stringify({ok:true,states,consoleErrors:0}));

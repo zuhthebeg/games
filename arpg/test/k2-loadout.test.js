@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { trained } from './fixtures/trained.js';
 import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import { learnSkill, equipSkill, setSlot, loadoutOf, migrateLoadout, slotOf } from '../js/meta/skills.js';
@@ -6,7 +7,7 @@ import { buildRoundMods } from '../js/meta/run.js';
 import { createWorld, addPlayer } from '../js/sim/world.js';
 import { instance } from '../js/meta/items.js';
 
-const fresh = (weapon = 'blade') => ({ ...createSave({ name: '슬롯', answers: [0, 0, 0, 0, 0], weapon, createdAt: 1 }), gold: 100000 });
+const fresh = (weapon = 'blade') => ({ ...trained(createSave({ name: '슬롯', answers: [0, 0, 0, 0, 0], weapon, createdAt: 1 })), gold: 100000 });
 const learnAll = (s, ids) => ids.reduce((save, id) => learnSkill(save, id), s);
 const memoryStore = () => {
   const memory = new Map();

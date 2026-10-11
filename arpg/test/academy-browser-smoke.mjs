@@ -115,7 +115,7 @@ try {
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:!desktop});
     await command('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
     await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/?dev=1`});await waitFor('window.__arpg');
-    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');let s=createSave({name:'아카데미 검수',answers:[0,0,0,0,0],createdAt:1});s.gold=10000;s.items.push(instance('ui2:old','iron_sword_epic',1,[{k:'hp_flat',v:10},{k:'speed_pct',v:3},{k:'capacity_flat',v:3}]),{...instance('ui2:new','rune_blade_epic',1,[{k:'atk_pct',v:6},{k:'mana_pct',v:4},{k:'potion_pct',v:5}]),enhance:2});s.equipped.weapon='ui2:old';new SaveStore(localStorage).save(s);})()`);
+    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');let s=(await import('./test/fixtures/trained.js')).trained(createSave({name:'아카데미 검수',answers:[0,0,0,0,0],createdAt:1}));s.gold=10000;s.items.push(instance('ui2:old','iron_sword_epic',1,[{k:'hp_flat',v:10},{k:'speed_pct',v:3},{k:'capacity_flat',v:3}]),{...instance('ui2:new','rune_blade_epic',1,[{k:'atk_pct',v:6},{k:'mana_pct',v:4},{k:'potion_pct',v:5}]),enhance:2});s.equipped.weapon='ui2:old';new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
     await nativeActivate('[data-action="trainer"]',desktop);await audit();
     assert.equal(await evaluate(`document.querySelector('.panel-header h2').textContent`),'아카데미');

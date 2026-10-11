@@ -1,4 +1,5 @@
 import { toOldScale } from './fixtures/old-scale.js';
+import { trained } from './fixtures/trained.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -48,12 +49,12 @@ test('arrival notice contains actual region and quest, cleared maps are not call
   const s=fresh();assert.equal(arrivalNotice(s,'S12'),`녹슨 광산 · 새 퀘스트: ${STAGES.S12.name}`);s.cleared.S12=true;assert.ok(!arrivalNotice(s,'S12').includes('새 퀘스트'));
 });
 test('display-only catalog sorts learned + default grades descending and same-grade order stays stable', () => {
-  let s={...fresh(),gold:10000};for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);
+  let s={...trained(fresh()),gold:10000};for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);
   assert.deepEqual(characterSkills(s),['heavy_cleave','flame_ring','whirl','frost_lance','lunge','volley','ember_bolt']);
   assert.deepEqual(characterSkills(fresh()),['lunge','volley','ember_bolt']);assert.equal(SKILL_DISPLAY.heavy_cleave.label,'상급');assert.equal(SKILL_DISPLAY.whirl.label,'숙련');assert.equal(SKILL_DISPLAY.lunge.label,'입문');
 });
 test('every learned skill detail uses real damage/range/MP/cooldown/effects and equipped marker', () => {
-  let s={...fresh(),gold:10000};for(const id of Object.keys(SKILL_DISPLAY).filter(id=>!['lunge','volley','ember_bolt'].includes(id)))s=learnSkill(s,id);
+  let s={...trained(fresh()),gold:10000};for(const id of Object.keys(SKILL_DISPLAY).filter(id=>!['lunge','volley','ember_bolt'].includes(id)))s=learnSkill(s,id);
   s=equipSkill(s,'focus','frost_lance');const h=hubFor(s);h.mountSheet=html=>h.html=html;
   for(const id of characterSkills(s)) {h.openSkill(id);const a=ABILITIES[id];assert.ok(h.html.includes(a.heal?`최대 HP ${Math.round(a.heal.maxHpFrac*100)}%</dd>`:`>${a.damage}</dd>`));assert.ok(h.html.includes(`${a.manaCost||0} MP`));assert.ok(h.html.includes(`${amount(a.cooldownMs/1000)}초`));assert.ok(h.html.includes(`${a.projectile?.rangePx||a.dash?.distance||a.heal?.radius||a.shape?.range||a.shape?.radius} px`));assert.ok(a.heal?!h.html.includes('기본 피해'):h.html.includes(`경직 위력 ${a.poise}`));}
   h.openSkill('frost_lance');assert.match(h.html,/id="skill-slot-\d" data-id="frost_lance" data-slot="\d" aria-pressed="true"/);assert.match(h.html,/관통 2회/);

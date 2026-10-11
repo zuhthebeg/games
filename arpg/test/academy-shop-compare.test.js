@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { trained } from './fixtures/trained.js';
 import assert from 'node:assert/strict';
 import { createSave } from '../js/meta/save.js';
 import { ABILITIES } from '../js/content/combat.js';
@@ -46,7 +47,7 @@ test('all ten silhouettes are distinct SVG fallbacks and only registered local a
 });
 
 test('shared skill cards show type, honest heal/damage, MP/CD and learned/equipped/locked status', () => {
-  const s=fresh();
+  const s=trained(fresh());
   assert.match(skillCardHtml('lunge',s),/근접 · 돌진[\s\S]+장착 중/);
   assert.match(skillCardHtml('healing_light',s),/회복 최대 HP 30%/);
   assert.doesNotMatch(skillCardHtml('healing_light',s),/피해 0/);

@@ -139,7 +139,7 @@ try {
     await command('Page.navigate',{url:process.env.ARPG_TEST_URL || `http://127.0.0.1:${httpPort}/arpg/?dev=1`});
     await waitFor('window.__arpg');
     await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js'); const {addXp}=await import('./js/meta/progression.js'); const {craft}=await import('./js/meta/items.js');
-      let s=addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451);s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,wood:3,enhance_stone_1:10,scroll_enchant_weapon:10}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
+      let s=(await import('./test/fixtures/trained.js')).trained(addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451));s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,wood:3,enhance_stone_1:10,scroll_enchant_weapon:10}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload'); await waitFor(page('inn')); await audit();
     assert.equal(await evaluate("document.querySelectorAll('.p2-socket').length"),5);
     await click('[data-action="socket"][data-slot="weapon"]'); await audit();
@@ -159,19 +159,21 @@ try {
     await click('[data-action="inn"]');
     assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"),['만물상','장비상','대장장이','아카데미','창고','가방']);
     assert.equal(await evaluate("!!document.querySelector('[data-action=\"owner\"]')"),false);
-    assert.ok(await evaluate("document.querySelector('[data-action=\"character\"] .badge').textContent==='24'")); // 3 levels x 8 (10-12 scale)
+    // Fixture is a trained Lv15 (skill books need 힘 30); the badge shows exactly the unspent points.
+    assert.ok(await evaluate("document.querySelector('[data-action=\"character\"] .badge').textContent===String(__arpg.save.statPoints)&&__arpg.save.statPoints>0"));
     await click('[data-action="character"]');await audit();
     assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공격 속도')"));
+    const pointsBefore=await evaluate('__arpg.save.statPoints');
     await click('[data-action="stat-plus"][data-key="str"]:not([data-step])');await audit();
-    await click('#allocation-confirm');assert.equal(await evaluate('__arpg.save.statPoints'),23);
+    await click('#allocation-confirm');assert.equal(await evaluate('__arpg.save.statPoints'),pointsBefore-1);
     await click('[data-action="inn"]');await click('[data-action="trainer"]');await audit();
     assert.equal(await evaluate("document.querySelectorAll('.academy-tabs [role=tab]').length"),3);
     await click('[data-action="learn-skill"][data-id="whirl"]');await audit();
-    await click('[data-action="equip-skill"][data-id="whirl"]');
+    // K2: a learned book drops into the first empty slot.
+    assert.equal(await evaluate("document.querySelector('[data-action=\"equip-skill\"][data-id=\"whirl\"]').getAttribute('aria-pressed')"),'true');
     await click('[data-action="academy-tab"][data-family="focus"]');await click('[data-action="learn-skill"][data-id="frost_lance"]');
-    await click('[data-action="equip-skill"][data-id="frost_lance"]');await audit();
-    assert.equal(await evaluate('__arpg.save.skills.blade'),'whirl');
-    assert.equal(await evaluate('__arpg.save.skills.focus'),'frost_lance');
+    await audit();
+    assert.equal(await evaluate("__arpg.save.loadout.includes('whirl')&&__arpg.save.loadout.includes('frost_lance')"),true);
     await click('[data-action="inn"]');await click('[data-action="bag"]');await audit();
     assert.equal(await evaluate("document.querySelectorAll('.bag-equipped').length"),5);
     await click('[data-action="move-stack"][data-id="potion"][data-count="1"]');await audit();

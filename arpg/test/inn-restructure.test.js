@@ -1,4 +1,5 @@
 import { toOldScale } from './fixtures/old-scale.js';
+import { trained } from './fixtures/trained.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave, SAVE_VERSION } from '../js/meta/save.js';
@@ -76,7 +77,7 @@ test('stash moves 1/5/all, bag weight/cap are enforced only on withdrawal; scrol
 });
 
 test('books permanently learn at exact prices, defaults always known, equip per family with no level gate', () => {
-  let base = rich();
+  let base = trained(rich());
   assert.deepEqual(Object.fromEntries(Object.entries(BOOKS).map(([id, b]) => [id, b.price])), { whirl:150, heavy_cleave:250, pierce_shot:150, blast_arrow:250, healing_light:200, frost_lance:180, flame_ring:280 });
   for (const [family, id] of Object.entries(DEFAULT_SKILLS)) {
     assert.equal(hasSkill(base, id), true); assert.ok(equipSkill(base, family, id).loadout.includes(id));
@@ -91,6 +92,7 @@ test('books permanently learn at exact prices, defaults always known, equip per 
     assert.ok(validateSave(base));
   }
   assert.throws(() => learnSkill(fresh(), 'whirl'), /골드/);
+  assert.throws(() => learnSkill(rich(), 'whirl'), /능력치 부족 · 힘 \d+\/30/);
   assert.throws(() => learnSkill(base, 'nope'));
   assert.throws(() => learnSkill(base, 'lunge'));
   assert.throws(() => equipSkill(fresh(), 'blade', 'whirl'), /배우지/);

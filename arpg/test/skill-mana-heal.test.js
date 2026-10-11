@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { trained } from './fixtures/trained.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ABILITIES, WEAPONS, MONSTERS, PLAYER_BASE } from '../js/content/combat.js';
@@ -139,7 +140,7 @@ test('heal phases are observable and completion CD is 10s; windup dodge cancels 
 });
 
 test('heal book learn/equip/save/load works without schema changes; one focus slot and mods preserve it', () => {
-  const original = createSave({ name: '힐러', answers: [0,0,0,0,0], weapon: 'focus', createdAt: 1 }); original.gold = 500;
+  const original = trained(createSave({ name: '힐러', answers: [0,0,0,0,0], weapon: 'focus', createdAt: 1 })); original.gold = 500;
   const learned = learnSkill(original, 'healing_light');
   assert.equal(original.gold, 500); assert.equal(learned.gold, 300); assert.equal(BOOKS.healing_light.price, 200);
   assert.throws(() => learnSkill(learned, 'healing_light'));

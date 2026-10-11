@@ -1,16 +1,25 @@
 import { ABILITIES, WEAPONS, SKILL_SLOTS } from '../content/combat.js';
 import { cloneSave, equippedItem, ITEMS } from './items.js';
+import { effectiveStats, STAT_NAMES } from './stats.js';
 
 export const DEFAULT_SKILLS = Object.fromEntries(Object.entries(WEAPONS).map(([family, kit]) => [family, kit.skill]));
+// skills-v2 §3 (100-point scale): 숙련 30 / 상급 45 of the family stat, counted with gear
+// at the moment of learning. Learned books stay learned.
 export const BOOKS = {
-  whirl: { family: 'blade', type: '기술교본', price: 150 },
-  heavy_cleave: { family: 'blade', type: '기술교본', price: 250 },
-  pierce_shot: { family: 'bow', type: '기술교본', price: 150 },
-  blast_arrow: { family: 'bow', type: '기술교본', price: 250 },
-  healing_light: { family: 'focus', type: '마법교본', price: 200 },
-  frost_lance: { family: 'focus', type: '마법교본', price: 180 },
-  flame_ring: { family: 'focus', type: '마법교본', price: 280 },
+  whirl: { family: 'blade', type: '기술교본', price: 150, req: { stat: 'str', value: 30 } },
+  heavy_cleave: { family: 'blade', type: '기술교본', price: 250, req: { stat: 'str', value: 45 } },
+  pierce_shot: { family: 'bow', type: '기술교본', price: 150, req: { stat: 'agi', value: 30 } },
+  blast_arrow: { family: 'bow', type: '기술교본', price: 250, req: { stat: 'agi', value: 45 } },
+  healing_light: { family: 'focus', type: '마법교본', price: 200, req: { stat: 'int', value: 30 } },
+  frost_lance: { family: 'focus', type: '마법교본', price: 180, req: { stat: 'int', value: 30 } },
+  flame_ring: { family: 'focus', type: '마법교본', price: 280, req: { stat: 'int', value: 45 } },
 };
+export function bookRequirement(save, id) {
+  const req = BOOKS[id]?.req;
+  if (!req) return null;
+  const have = effectiveStats(save)[req.stat];
+  return { ...req, have, ok: have >= req.value, label: `${STAT_NAMES[req.stat]} ${have}/${req.value}` };
+}
 export const hasSkill = (save, id) => Object.values(DEFAULT_SKILLS).includes(id)
   || (Object.hasOwn(BOOKS, id) && (save.learned || []).includes(id));
 export const equippedSkill = (save, family) => save.skills?.[family] || DEFAULT_SKILLS[family];
@@ -20,6 +29,8 @@ export function learnSkill(save, id) {
   if (hasSkill(save, id)) throw new Error('이미 배운 기술입니다.');
   const book = BOOKS[id];
   if (save.gold < book.price) throw new Error('골드가 부족합니다.');
+  const req = bookRequirement(save, id);
+  if (!req.ok) throw new Error(`능력치 부족 · ${req.label}`);
   const next = cloneSave(save);
   next.gold -= book.price;
   next.learned.push(id);
