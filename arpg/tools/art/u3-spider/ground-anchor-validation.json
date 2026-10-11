@@ -1,0 +1,101 @@
+{
+  "old_anchor": {
+    "x": 0.5,
+    "y": 0.5740587711334229
+  },
+  "correct_anchor": {
+    "x": 0.5,
+    "y": 0.6975164711475372
+  },
+  "delta_px": 15.80258560180664,
+  "visible_meshes": [
+    "Cube",
+    "Cube_outline"
+  ],
+  "baked_ground_shadow": false,
+  "light_shadows": false,
+  "samples": 592,
+  "max_body_ground_offset_px": 7.260899128994243,
+  "states_directions": [
+    "attack_E",
+    "attack_N",
+    "attack_NE",
+    "attack_NW",
+    "attack_S",
+    "attack_SE",
+    "attack_SW",
+    "attack_W",
+    "death_E",
+    "death_N",
+    "death_NE",
+    "death_NW",
+    "death_S",
+    "death_SE",
+    "death_SW",
+    "death_W",
+    "hit_E",
+    "hit_N",
+    "hit_NE",
+    "hit_NW",
+    "hit_S",
+    "hit_SE",
+    "hit_SW",
+    "hit_W",
+    "idle_E",
+    "idle_N",
+    "idle_NE",
+    "idle_NW",
+    "idle_S",
+    "idle_SE",
+    "idle_SW",
+    "idle_W",
+    "run_E",
+    "run_N",
+    "run_NE",
+    "run_NW",
+    "run_S",
+    "run_SE",
+    "run_SW",
+    "run_W"
+  ],
+  "screenshots": 0,
+  "camera_boundary_reproduction": {
+    "stored": {
+      "x": 0.5,
+      "y": 0.5740587711334229
+    },
+    "evaluated": {
+      "x": 0.5,
+      "y": 0.6975164711475372
+    },
+    "bind_height": 1.944660210981965,
+    "target": [
+      0.0,
+      0.7981360554695129,
+      1.9235115051269531
+    ],
+    "ortho_scale": 10.057525634765625
+  },
+  "comparison_ground_anchor_error_px": {
+    "spider": 15.80258560180664,
+    "wolf": -3.0253503929560424,
+    "iron_boar": -5.845713211100659
+  },
+  "camera_boundary_after_fix": {
+    "stored": {
+      "x": 0.5,
+      "y": 0.6975164711475372
+    },
+    "evaluated": {
+      "x": 0.5,
+      "y": 0.6975164711475372
+    },
+    "bind_height": 1.944660210981965,
+    "target": [
+      0.0,
+      0.7981360554695129,
+      1.9235115051269531
+    ],
+    "ortho_scale": 10.057525634765625
+  }
+}
