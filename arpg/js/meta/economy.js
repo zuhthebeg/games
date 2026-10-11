@@ -25,6 +25,7 @@ export const SCROLLS = {
 };
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
+  questExtraGearChance: 0.1, // Per-player quest budget: 90% one slot, 10% two; never scales with threat.
   gearChance: 0.1, eliteGearChance: 0.35, stoneChance: 0.125, eliteStoneChance: 0.4,
   normalRarity: BALANCE.threats[0].rarity, bossRarity: BALANCE.threats[0].bossRarity,
   // [강화석, 상급 강화석] weight per stone drop event, by hunting tier.

@@ -233,7 +233,7 @@ test('settlement clear promotes loot and XP, first/replay rewards and pity only 
   assert.equal(first.save.gold, 40);
   assert.equal(first.save.stacks.potion, 2);
   assert.equal(first.save.stacks.return_scroll, 0);
-  assert.equal(first.save.items.length, 3);
+  assert.equal(first.save.items.length, 2); // Training never awards equipment, even at settlement.
   assert.equal(first.save.cleared.S1, true);
   assert.equal(first.receipt.xpGained, 50);
   assert.equal(first.receipt.levelsGained, 1);

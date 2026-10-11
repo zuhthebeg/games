@@ -1,4 +1,5 @@
-import { ECONOMY } from './economy.js';
+import { ECONOMY, rng } from './economy.js';
+import { STAGES } from '../content/combat.js';
 import { threatMultipliers, BALANCE } from '../content/balance.js';
 import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
@@ -30,7 +31,9 @@ export function buildRoundMods(save) {
 }
 
 export function createTracker(seed) {
-  return { seed: seed >>> 0, killIndex: 0, depositedXp: 0, tempLoot: emptyLoot(), skipped: 0 };
+  return { seed: seed >>> 0, killIndex: 0, depositedXp: 0, tempLoot: emptyLoot(), skipped: 0,
+    gearBudget: 1 + (rng(seed ^ 0x71b0d6e3)() < ECONOMY.questExtraGearChance ? 1 : 0),
+    gearAwarded: 0, bossGearAwarded: false };
 }
 
 export function usedConsumables(save, player) {
@@ -79,7 +82,24 @@ export function trackRound(save, tracker, events, used = {}) {
         else rejected = true;
       }
     }
-    for (const item of drop.items) {
+    // Filter only equipment AFTER the original roll: every non-gear RNG stream stays intact.
+    // Spend on award, not bag acceptance; overflow, sale/stash and reload cannot reroll a slot.
+    const boss = event.monster === 'goblin_chief';
+    const reservedBoss = STAGES[event.stageId]?.spawns.some(s => s.monster === 'goblin_chief');
+    let gear = drop.items;
+    if (boss) {
+      // Keep the original first rolled boss item (including rareless pity), not the best of N.
+      gear = [drop.items.find(item => item.uid.includes(':rolled:0:')) || drop.items[0]].filter(Boolean);
+      if (event.stageId === 'S4' && !save.flags.chiefPity) {
+        gear = [drop.items.find(item => item.id === 'chief_maul')
+          || instance(`drop:${seed}:chief-pity`, 'chief_maul', save.createdAt >>> 0)];
+      }
+    }
+    const limit = next.gearBudget - (reservedBoss && !boss && !next.bossGearAwarded ? 1 : 0);
+    gear = event.stageId === 'S1' ? [] : gear.slice(0, Math.max(0, limit - next.gearAwarded));
+    for (const item of gear) {
+      next.gearAwarded++;
+      if (boss) next.bossGearAwarded = true;
       if (pickup(item.id, 1, item)) picked.push(item.id);
       else rejected = true;
     }
@@ -92,6 +112,10 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   if (!Object.hasOwn(STAGE_XP, stageId)
     || !['clear', 'return_scroll', 'death'].includes(terminal)) throw new Error('Invalid settlement');
   if (!Number.isSafeInteger(depositedXp) || depositedXp < 0) throw new Error('Invalid XP deposit');
+  // Defense at the public settlement boundary, including the existing chief guarantee.
+  // Runtime trackers already enforce the smaller seeded budget; no blanket stack truncation.
+  tempLoot = structuredClone(tempLoot);
+  tempLoot.items = stageId === 'S1' ? [] : tempLoot.items.slice(0, 2);
   const threat = stageId === 'S1' ? 1 : save.threat ?? 1;
   selectThreat(save, stageId, threat);
   let next = cloneSave(save);
@@ -121,7 +145,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     lootLost: kept ? emptyLoot() : structuredClone(tempLoot),
     used: consumption,
     restored: {},
-    pityGranted: false,
+    pityGranted: kept && tempLoot.items.some(item => item.uid.endsWith(':chief-pity')),
   };
   if (kept) {
     next.gold += tempLoot.gold;
@@ -152,6 +176,15 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     if (stageId === 'S4' && !save.flags.chiefPity) {
       if (!tempLoot.items.some((item) => item.id === 'chief_maul')) {
         const item = instance(uniqueUid(next, 'pity:chief_maul'), 'chief_maul', save.createdAt >>> 0);
+        if (receipt.lootKept.items.length === 2) {
+          // Legacy/direct callers may provide two items. Replace the weaker one within the cap.
+          const ranks = { common: 0, fine: 1, rare: 2, epic: 3 };
+          const weakest = receipt.lootKept.items.reduce((best, candidate, i, items) =>
+            ranks[ITEMS[candidate.id].rarity] < ranks[ITEMS[items[best].id].rarity] ? i : best, 0);
+          receipt.lootKept.items.splice(weakest, 1);
+          // Collision recovery may have renamed the promoted item; locate its exact appended slot.
+          next.items.splice(save.items.length + weakest, 1);
+        }
         next.items.push(item);
         receipt.lootKept.items.push(item);
         receipt.pityGranted = true;
