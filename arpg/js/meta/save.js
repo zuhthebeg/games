@@ -1,11 +1,13 @@
 import { BALANCE } from '../content/balance.js';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, cap } from './stats.js';
 import { ITEMS, START_WEAPONS, RECIPES, carriedWeight, capacity } from './items.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill } from './skills.js';
+import { ABILITIES } from '../content/combat.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 
@@ -31,6 +33,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0, affixes: [], rolledAt: 0 },
     ],
     stacks: { potion: 3, mana_potion: 1, return_scroll: 1 },
+    stash: { stacks: {} }, learned: [], skills: {},
     cleared: Object.fromEntries(Object.keys(STAGE_XP).map((id) => [id, false])),
     flags: { chiefPity: false, starterRestoreUsed: false },
     quiz: { answers: [...answers], weapon: chosen, overridden: chosen !== result.weapon },
@@ -104,6 +107,14 @@ export function validateSave(save) {
     if (!Array.isArray(save.shopBought) || !save.shopBought.every((uid) => typeof uid === 'string')
       || new Set(save.shopBought).size !== save.shopBought.length) return false;
     if (!record(save.stacks)) return false;
+    if (!record(save.stash) || !record(save.stash.stacks)
+      || !Object.entries(save.stash.stacks).every(([id, count]) => Object.hasOwn(ITEMS, id)
+        && ITEMS[id].kind === 'consumable' && integer(count))) return false;
+    if (!Array.isArray(save.learned) || new Set(save.learned).size !== save.learned.length
+      || !save.learned.every(id => typeof id === 'string' && Object.hasOwn(BOOKS, id))) return false;
+    if (!record(save.skills) || !Object.entries(save.skills).every(([family, id]) =>
+      Object.hasOwn(DEFAULT_SKILLS, family) && typeof id === 'string' && hasSkill(save, id)
+        && ABILITIES[id]?.family === family)) return false;
     for (const [id, count] of Object.entries(save.stacks)) {
       if (!Object.hasOwn(ITEMS, id) || !['material', 'consumable'].includes(ITEMS[id].kind) || !integer(count)) {
         return false;
@@ -145,6 +156,9 @@ export class SaveStore {
       data = JSON.parse(raw);
     } catch {
       data = null;
+    }
+    if (record(data) && data.version === 3) {
+      data = { ...data, version: SAVE_VERSION, stash: { stacks: {} }, learned: [], skills: {} };
     }
     if (validateSave(data)) return structuredClone(data);
     // Back up before removing. A quota/storage failure leaves the original untouched.

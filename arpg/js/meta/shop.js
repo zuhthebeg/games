@@ -48,6 +48,23 @@ export function sellItem(save, uid) {
   next.gold += Math.floor(gearPrice(item) * ECONOMY.sellFraction);
   return next;
 }
+export function stackSellPrice(id) {
+  const item = Object.hasOwn(ITEMS, id) && ITEMS[id];
+  if (!item || !['material', 'consumable'].includes(item.kind)) throw new Error('매입하지 않는 물품입니다.');
+  return item.kind === 'material' ? item.sell : Math.floor(item.price * ECONOMY.sellFraction);
+}
+export function sellStack(save, id, count = 1, source = 'bag') {
+  const price = stackSellPrice(id);
+  if (!['bag', 'stash'].includes(source) || (source === 'stash' && ITEMS[id].kind !== 'consumable')) {
+    throw new Error('판매할 보관 위치를 확인하세요.');
+  }
+  const stacks = source === 'stash' ? save.stash.stacks : save.stacks;
+  if (!Number.isSafeInteger(count) || count < 1 || count > (stacks[id] || 0)) throw new Error('판매 수량이 올바르지 않습니다.');
+  const next = cloneSave(save);
+  (source === 'stash' ? next.stash.stacks : next.stacks)[id] -= count;
+  next.gold += price * count;
+  return next;
+}
 export const refreshPrice = (save) => ECONOMY.refreshGold * 2 ** save.paidRefreshes;
 export function refreshShop(save) {
   const cost = refreshPrice(save);

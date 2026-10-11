@@ -37,13 +37,13 @@ export const ITEMS = {
   frost_bow: { ...weapon('서리 장궁', 'bow', 'fine', 1.6, 9), huntTier: 3, requiredLevel: 10 },
   seal_staff: { ...weapon('봉인의 지팡이', 'focus', 'fine', 1.6, 7, 'staff'), huntTier: 3, requiredLevel: 10 },
   warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13), huntTier: 3, requiredLevel: 10 },
-  scrap: { name: '고철', kind: 'material', weight: 0.2 },
-  hide: { name: '가죽', kind: 'material', weight: 0.5 },
-  fang: { name: '송곳니', kind: 'material', weight: 0.3 },
+  scrap: { name: '고철', kind: 'material', weight: 0.2, sell: 1 },
+  hide: { name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
+  fang: { name: '송곳니', kind: 'material', weight: 0.3, sell: 2 },
   // [제안] One rune material and one web material; §10.2 frost_shard is shared with spirit drops.
-  rune_shard: { name: '룬 조각', kind: 'material', weight: 0.3 },
-  frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3 },
-  web: { name: '거미줄', kind: 'material', weight: 0.2 },
+  rune_shard: { name: '룬 조각', kind: 'material', weight: 0.3, sell: 4 },
+  frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3, sell: 4 },
+  web: { name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
   potion: { name: 'HP 물약', kind: 'consumable', weight: 1, price: 10 },
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 1, price: 6, maxCarry: 2 },
@@ -77,7 +77,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
 // cocy 10-11: no level gate on weapons (armor keeps its gate).
 for (const item of Object.values(ITEMS)) if (item.kind === 'weapon') item.requiredLevel = 1;
 for (let tier = 1; tier <= 3; tier++) {
-  ITEMS[`enhance_stone_${tier}`] = { name: ['하급', '중급', '상급'][tier - 1] + ' 강화석', kind: 'material', weight: 0.1 };
+  ITEMS[`enhance_stone_${tier}`] = { name: ['하급', '중급', '상급'][tier - 1] + ' 강화석', kind: 'material', weight: 0.1, sell: [5, 12, 25][tier - 1] };
 }
 export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rarity, ITEMS[id].huntTier, seed)) =>
   ({ uid, id, enhance: 0, affixes, rolledAt: seed >>> 0 });
@@ -176,7 +176,23 @@ export function buy(save, id, count = 1) {
   const next = spend(save, { gold: shopPrice(save, id) * count });
   next.stacks[id] = (next.stacks[id] || 0) + count;
   if (next.stacks[id] > (ITEMS[id].maxCarry ?? Infinity)) throw new Error('귀환 주문서는 최대 2장입니다.');
-  if (carriedWeight(next) > capacity(next) * 1.2) throw new Error('구매 후 무게가 120%를 넘습니다.');
+  if (carriedWeight(next) > capacity(next)) throw new Error('구매 후 소지 무게가 100%를 넘습니다. 창고에 보급을 맡겨 주세요.');
+  return next;
+}
+
+export function moveConsumable(save, id, count, destination) {
+  if (!CONSUMABLES.includes(id) || !['bag', 'stash'].includes(destination)) throw new Error('옮길 소모품을 확인하세요.');
+  const source = destination === 'stash' ? save.stacks : save.stash.stacks;
+  if (!Number.isSafeInteger(count) || count < 1 || count > (source[id] || 0)) throw new Error('이동 수량이 올바르지 않습니다.');
+  const next = cloneSave(save);
+  const from = destination === 'stash' ? next.stacks : next.stash.stacks;
+  const to = destination === 'stash' ? next.stash.stacks : next.stacks;
+  from[id] -= count;
+  to[id] = (to[id] || 0) + count;
+  if (destination === 'bag') {
+    if (to[id] > (ITEMS[id].maxCarry ?? Infinity)) throw new Error('귀환 주문서는 최대 2장입니다.');
+    if (carriedWeight(next) > capacity(next)) throw new Error('가방 소지 무게가 100%를 넘습니다.');
+  }
   return next;
 }
 

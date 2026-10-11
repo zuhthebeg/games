@@ -23,14 +23,14 @@ const storeWith = (raw) => {
   return { values, storage, store: new SaveStore(storage) };
 };
 
-test('old v1/v2 saves reset after corrupt backup; fresh v3 roundtrips without migration', () => {
+test('old v1/v2 saves reset after corrupt backup; fresh v4 roundtrips', () => {
   for (const version of [1,2]) {
     const old = { ...legacy(), version }, raw = JSON.stringify(old);
     const { values, storage } = storeWith(raw);
     const store = new SaveStore(storage, () => 1);
     assert.equal(store.load(), null); assert.equal(values.get(`${SAVE_KEY}.corrupt.1`), raw);
     assert.equal(values.has(SAVE_KEY), false);
-    const current = fresh(); assert.equal(current.version, 3); store.save(current);
+    const current = fresh(); assert.equal(current.version, 4); store.save(current);
     assert.deepEqual(store.load(), current);
   }
 });
