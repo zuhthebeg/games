@@ -40,6 +40,27 @@ export function linesHtml(comparison) {
   return `<dl class="p2-lines">${rows.join('')}</dl>`;
 }
 
+// Two item columns share each row; the existing comparison model remains the numeric source.
+export function splitComparisonHtml(item, save) {
+  const current = equippedItem(save, ITEMS[item.id].slot), c = comparisonFor(item, save);
+  const line = key => c.lines.find(row => row.key === key);
+  const short = { attack:'피해 배율', maxHp:'최대 HP', weight:'무게', basePower:'기본 공격', enhancePower:'강화 공격', baseHp:'기본 HP', enhanceHp:'강화 HP', capacity:'가방 한도', attackRate:'공격 속도', moveSpeed:'이동 속도', dodgeCooldown:'회피 재사용', potionEfficiency:'물약 효율', manaRegen:'마나 재생', goldBonus:'골드 보너스', materialBonus:'재료 보너스' };
+  const delta = row => `<small class="compare-delta ${row.delta === 0 ? 'neutral' : row.good ? 'gain' : 'loss'}" aria-label="${escape(deltaText(row))}">${row.delta === 0 ? '= 유지' : `${row.delta > 0 ? '▲+' : '▼−'}${amount(Math.abs(row.delta))}${row.unit === '%' ? '%p' : ''}`}</small>`;
+  const value = (row, side) => row.section === 'affix' && !(side === 'from' ? current : item)?.affixes?.some(a => a.k === row.key) ? '—' : lineValue(row,row[side]);
+  const rowHtml = row => `<tr data-line="${escape(row.key)}" data-from="${row.from}" data-to="${row.to}" data-delta="${row.delta}" data-section="${row.section || ''}"><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'from'))}</b></td><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'to'))}</b>${delta(row)}</td></tr>`;
+  const extraRow = (key,label,from,to) => rowHtml({key,label,from,to,delta:to-from,good:to === from ? null : key === 'requiredStr' ? to < from : to > from,section:'base',prefix:key === 'enhance' ? '+' : ''});
+  const affixes = c.lines.filter(row => row.section === 'affix');
+  const primaryKeys = ['attack','maxHp','basePower','baseHp','weight'];
+  const primary = c.lines.filter(row => primaryKeys.includes(row.key));
+  const table = rows => `<table class="compare-split"><thead><tr><th scope="col">현재 착용<br><strong>${current ? escape(itemLabel(current)) : '빈 슬롯'}</strong></th><th scope="col">후보<br><strong>${escape(itemLabel(item))}</strong></th></tr></thead><tbody>${rows}</tbody></table>`;
+  const summary = ['attack','maxHp','attackRate','moveSpeed'].map(key => { const row = line(key); return `<span>${short[key]} ${delta(row)}</span>`; }).join(' · ');
+  const more = affixes.slice(2), derived = c.lines.filter(row => row.section !== 'affix' && !primaryKeys.includes(row.key));
+  return `<section class="compare-sheet" aria-label="현재 착용과 후보 비교"><p class="compare-summary" aria-label="최종 캐릭터 변화">${summary}</p>`
+    + table(primary.map(rowHtml).join('') + extraRow('enhance','강화',current?.enhance || 0,item.enhance) + extraRow('requiredStr','요구 STR',ITEMS[current?.id]?.requiredStr || 0,ITEMS[item.id].requiredStr || 0) + affixes.slice(0,2).map(rowHtml).join(''))
+    + `${more.length ? `<details class="compare-more"><summary>옵션 ${more.length}개 더</summary>${table(more.map(rowHtml).join(''))}</details>` : ''}`
+    + `<details class="compare-more"><summary>추가 수치 · ${derived.length}행</summary>${table(derived.map(rowHtml).join(''))}</details></section>`;
+}
+
 // Cards are deliberately brief, but explicitly disclose every changed/lost affix count.
 export function optionHintHtml(comparison) {
   const changed = comparison.lines.filter(line => line.section === 'affix' && line.delta !== 0);

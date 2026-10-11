@@ -55,7 +55,7 @@ test('inn NPC contract has no owner; unspent points badge lives on the character
   assert.ok(h.html.includes('data-action="character"'));
   assert.ok(h.html.includes('캐릭터 · 미분배 1점'));
   assert.doesNotMatch(h.html, /data-action="owner"|약사|교관 · 미분배/);
-  for(const name of ['만물상','장비상','대장장이','교관','창고','가방']) assert.ok(h.html.includes(`<strong>${name}</strong>`));
+  for(const name of ['만물상','장비상','대장장이','아카데미','창고','가방']) assert.ok(h.html.includes(`<strong>${name}</strong>`));
   h.action('character',{});assert.equal(h.page,'character');
   for(const label of ['XP','HP / MP','공격 배율','공격 속도','장착 기술','지난 여정','allocation-confirm']) assert.ok(h.html.includes(label));
   const mods=deriveMods(h.save), rate=attackRate(mods.attackSpeedBonus,mods.weaponWeight,carriedWeight(h.save)/capacity(h.save));
@@ -66,11 +66,11 @@ test('inn NPC contract has no owner; unspent points badge lives on the character
 test('trainer shows all three families, exact ability numbers and learned/default equip choices', () => {
   let s={...save(),gold:10000};s=equipSkill(learnSkill(s,'frost_lance'),'focus','frost_lance');
   const h=renderHub(s);h.action('trainer',{});assert.equal(h.page,'trainer');
-  assert.equal((h.html.match(/class="skill-family"/g)||[]).length,3);
+  assert.equal((h.html.match(/data-action="academy-tab"/g)||[]).length,3);
   assert.ok(!h.html.includes('allocation-row'));
   for(const id of Object.keys(BOOKS)) {
-    const a=ABILITIES[id];assert.ok(h.html.includes(a.name));
-    assert.ok(h.html.includes(`${a.heal?`회복 최대 HP ${Math.round(a.heal.maxHpFrac*100)}%`:`피해 ${a.damage}`} · 재사용 ${amount(a.cooldownMs/1000)}초 · 마나 ${a.manaCost||0}`));
+    const a=ABILITIES[id];h.academyFamily=a.family;h.showTrainer();assert.ok(h.html.includes(a.name));
+    for(const chip of [a.heal?`회복 최대 HP ${Math.round(a.heal.maxHpFrac*100)}%`:`피해 ${a.damage}`,`재사용 ${amount(a.cooldownMs/1000)}초`,`${a.manaCost||0} MP`]) assert.ok(h.html.includes(chip));
   }
   assert.ok(h.html.includes('data-id="ember_bolt"'));
   assert.ok(h.html.includes('data-id="frost_lance" data-family="focus" aria-pressed="true"'));

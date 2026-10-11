@@ -18,10 +18,12 @@ import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } f
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave } from '../meta/save.js';
 import { icon, itemIcon } from './icons.js';
+import { ACADEMY, skillIcon, skillCardHtml } from './skill-view.js';
+import { supplyQuote, purchaseLedgerHtml } from './shop-view.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
   escape, amount, itemLabel, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
-  linesHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml,
+  linesHtml, splitComparisonHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml,
 } from './gear-view.js';
 
 export { getHeroPortrait } from './gear-view.js';
@@ -98,6 +100,14 @@ export class HubUI {
         this.error(error.message);
       }
     });
+    this.root.addEventListener('keydown', event => {
+      const tab = event.target.closest('[data-action="academy-tab"]');
+      if (!tab || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+      event.preventDefault();
+      const index = FAMILIES.indexOf(tab.dataset.family);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? FAMILIES.length-1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + FAMILIES.length) % FAMILIES.length;
+      this.action('academy-tab',{family:FAMILIES[next]});
+    });
     // Long-press on a bag card opens the same comparison sheet as a tap (mock §7.3).
     let pressTimer;
     let pressOrigin;
@@ -124,8 +134,8 @@ export class HubUI {
     });
     this.root.addEventListener('change', (event) => {
       if (event.target.id !== 'shop-count') return;
-      this.shopCount = Math.max(1, Math.min(99, Number(event.target.value) || 1));
-      this.showShop();
+      this.shopCount = Math.max(1, Math.min(99, Math.trunc(Number(event.target.value)) || 1));
+      this.openSupply();
     });
   }
 
@@ -262,7 +272,7 @@ export class HubUI {
     const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
       ['shop', '만물상', 'potion'], ['merchant', '장비상', 'weapon'], ['forge', '대장장이', 'forge'],
-      ['trainer', '교관', 'trainer'], ['inventory', '창고', 'load'], ['bag', '가방', 'load'],
+      ['trainer', '아카데미', 'trainer'], ['inventory', '창고', 'load'], ['bag', '가방', 'load'],
     ].map(([action, name, glyph]) => button(`${icon(glyph)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
     const devMenu = this.dev ? `<details class="dev-menu"><summary>M0 개발 메뉴</summary>
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
@@ -348,7 +358,9 @@ export class HubUI {
   }
 
   mountSheet(html) {
-    const origin = this.sheetOrigin || document.activeElement;
+    const active = document.activeElement;
+    const focusKey = active?.closest('dialog[open]') ? { id:active.id, action:active.dataset.action, step:active.dataset.step } : null;
+    const origin = this.sheetOrigin || active;
     this.root.querySelector('dialog')?.close();
     this.root.querySelector('dialog')?.remove();
     this.root.insertAdjacentHTML('beforeend', html);
@@ -360,6 +372,10 @@ export class HubUI {
       this.sheetOrigin = null;
     });
     dialog.showModal();
+    if (focusKey) {
+      const replacement = focusKey.id ? dialog.querySelector(`#${focusKey.id}`) : [...dialog.querySelectorAll('[data-action]')].find(node => node.dataset.action === focusKey.action && node.dataset.step === focusKey.step);
+      if (replacement && !replacement.disabled) replacement.focus({preventScroll:true});
+    }
   }
 
   closeSheet() {
@@ -368,7 +384,7 @@ export class HubUI {
 
   comparisonHtml(item) {
     const comparison = comparisonFor(item, this.save);
-    return `<h3>비교</h3>${linesHtml(comparison)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
+    return `${splitComparisonHtml(item, this.save)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
       + `${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
   }
@@ -402,7 +418,7 @@ export class HubUI {
     if (mode === 'buy') {
       const sold = this.save.shopBought.includes(uid);
       const short = this.save.gold < item.price;
-      footer = button(sold ? '품절' : short ? `골드 부족 · ${item.price} G` : `구매 · ${item.price} G`, 'buy-gear', `${args} class="primary"`, sold || short);
+      footer = button(sold ? '품절' : short ? '골드 부족' : `구매 · ${item.price} G`, 'buy-gear', `${args} class="primary" aria-describedby="purchase-reason"`, sold || short);
     } else if (mode === 'sell') {
       footer = button(`판매 · ${sellPrice(item)} G`, 'sell-shop', `${args} class="primary"`, worn);
     } else {
@@ -412,11 +428,11 @@ export class HubUI {
         + button(label, 'equip', `${args} class="primary"`, worn || comparison.locked);
     }
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
-    const body = `<div class="p2-item-heading">${emblem(item)}<div><h3>${escape(itemLabel(item))}</h3>`
-      + `<small>${GRADES[def.rarity]} · ${SLOT_NAMES[def.slot]}${def.requiredStr ? ` · 힘 ${def.requiredStr}` : ''} · ${def.weight} kg</small></div></div>`
-      + ` ${itemDetailsHtml(item)}<p class="compare-from">${current ? escape(itemLabel(current)) : '빈 슬롯'} → 이것</p>${this.comparisonHtml(item)}`
+    const buyQuote = { total:item.price, remaining:this.save.gold-item.price, weightAfter:carriedWeight(this.save), limit:capacity(this.save), reasons:this.save.shopBought.includes(uid) ? ['품절'] : this.save.gold < item.price ? ['골드 부족'] : [] };
+    const body = `${this.comparisonHtml(item)}`
       + `${otherFamily ? '<p class="p2-hint">다른 무기 계열 · 조작이 바뀐다</p>' : ''}`
-      + `${mode === 'buy' ? `<p class="minor">구매 후 ${this.save.gold - item.price} G · 창고 보관</p>` : ''}`;
+      + `<details class="compare-more own-details"><summary>후보 장비 상세 · 전체 옵션</summary>${itemDetailsHtml(item)}</details>`
+      + `${mode === 'buy' ? `<div class="quantity-row"><span>수량 · 개별 장비</span><div class="stepper">${button('−','noop','aria-label="수량 줄이기"',true)}<output>1</output>${button('+','noop','aria-label="수량 늘리기"',true)}${button('최대','noop','',true)}</div></div>${purchaseLedgerHtml(buyQuote,{stash:true})}` : ''}`;
     this.mountSheet(this.dialogHtml({ buy: '구매 전 비교', sell: '매입', equip: '장비 비교' }[mode], body, footer));
   }
 
@@ -445,7 +461,7 @@ export class HubUI {
         .filter(item => (mode === 'weapon') === (ITEMS[item.id].slot === 'weapon'));
     const cards = stock.map(item => cardHtml(item, this.save, {
       extra: `data-mode="${mode === 'sell' ? 'sell' : 'buy'}"`,
-      note: mode === 'sell' ? `매입 ${sellPrice(item)} G` : bought.includes(item.uid) ? '품절' : `${item.price} G`,
+      note: mode === 'sell' ? `매입 ${sellPrice(item)} G` : `${bought.includes(item.uid) ? '품절' : `${item.price} G / 1개`} · 보유 ${this.save.items.filter(own => own.id === item.id).length} · ${ITEMS[item.id].weight} kg`,
       disabled: mode !== 'sell' && bought.includes(item.uid),
     })).join('');
     const tabs = [['weapon', '무기'], ['armor', '방어구'], ['sell', '매입']].map(([tab, label]) =>
@@ -473,28 +489,20 @@ export class HubUI {
         <h3 class="section-title">창고 재료</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'material' })}`,
       'shop', '', { eyebrow: '보급 · 재료 매입' });
     }
-    const price = shopPrice(this.save, this.shopId) * this.shopCount;
-    const weight = carriedWeight(this.save) + ITEMS[this.shopId].weight * this.shopCount;
-    const limit = capacity(this.save);
-    const tooMany = this.shopId === 'return_scroll' && (this.save.stacks.return_scroll || 0) + this.shopCount > 2;
-    const disabled = this.save.gold < price || weight > limit || tooMany;
-    const reason = this.save.gold < price ? '골드 부족' : tooMany ? '귀환서는 최대 2장' : weight > limit ? '소지 무게 100% 초과 · 창고에 맡겨 주세요' : '';
-    const tone = { potion: 'hp-tone', mana_potion: 'mp-tone' };
+    const tone = { potion:'hp-tone', mana_potion:'mp-tone' };
     const cards = SUPPLIES.map(id => button(`<span class="item-emblem ${tone[id] || ''}">${itemIcon(id, ITEMS[id])}</span>`
-      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>보유 ${this.save.stacks[id] || 0}${id === 'return_scroll' ? ' / 2' : ''}</small></span>`
-      + `<span class="item-price">${shopPrice(this.save, id)} G</span>`, 'shop-select',
-    `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
-    const tier = weightDescription(weight, limit);
-    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><p class="minor">소모품은 가방에 바로 넣는다 · 소지 무게 100%까지</p><div class="shop-items">${cards}</div>
-      <div class="quantity-row"><label for="shop-count">수량</label><div class="stepper">
-        ${button('−', 'shop-count', 'data-step="-1" aria-label="수량 줄이기"', this.shopCount <= 1)}
-        <input id="shop-count" type="number" inputmode="numeric" value="${this.shopCount}" min="1" max="99">
-        ${button('+', 'shop-count', 'data-step="1" aria-label="수량 늘리기"', this.shopCount >= 99)}</div></div>
-      <div class="ledger"><div><span>총액</span><strong><span id="shop-total">${price}</span> G</strong></div>
-        <div><span>구매 후 골드</span><b class="${this.save.gold < price ? 'loss' : ''}">${this.save.gold - price} G</b></div>
-        <div><span>구매 후 소지</span><b class="${tier.tier === 'light' ? '' : 'loss'}">${amount(weight)} / ${amount(limit)} kg</b></div></div>
-      <p class="safe-note ${tier.tier === 'light' ? '' : 'loss'}">${icon(tier.tier === 'light' ? 'clear' : 'lock')}${tier.text}</p>`,
-    'shop', button(disabled ? reason : `${price} G · 구매`, 'buy', 'id="shop-buy" class="primary"', disabled), { eyebrow: '보급' });
+      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0}${id === 'return_scroll' ? ' / 2' : ''} · 창고 ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
+      `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
+    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><p class="minor">품목을 눌러 수량과 구매 결과 확인 · 가방에 바로 보관</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
+  }
+
+  openSupply() {
+    this.sheetOrigin ||= this.root?.querySelector(`[data-action="shop-select"][data-id="${this.shopId}"]`);
+    const quote = supplyQuote(this.save,this.shopId,this.shopCount);
+    const body = `<div class="p2-item-heading"><span class="item-emblem">${itemIcon(this.shopId,ITEMS[this.shopId])}</span><div><h3>${ITEMS[this.shopId].name}</h3><small>단가 ${quote.unit} G · 보유 ${this.save.stacks[this.shopId] || 0} · 개당 ${ITEMS[this.shopId].weight} kg</small></div></div>`
+      + `<div class="quantity-row"><label for="shop-count">수량</label><div class="stepper">${button('−','shop-count','data-step="-1" aria-label="수량 줄이기"',this.shopCount <= 1)}<input id="shop-count" aria-label="구매 수량" type="number" inputmode="numeric" value="${this.shopCount}" min="1" max="99">${button('+','shop-count','data-step="1" aria-label="수량 늘리기"',this.shopCount >= 99)}${button('최대','shop-max','aria-label="구매 가능한 최대 수량"',quote.maxCount < 1)}</div></div>`
+      + purchaseLedgerHtml(quote);
+    this.mountSheet(this.dialogHtml('보급 구매',body,button(quote.reasons.length ? quote.reasons.join(' · ') : `구매 · ${quote.total} G`,'buy','id="shop-buy" class="primary" aria-describedby="purchase-reason"',quote.reasons.length > 0)));
   }
 
   // --- Forge workspaces: enchant ritual, scroll workshop, crafting and salvage. ---
@@ -608,11 +616,8 @@ export class HubUI {
 
   showCharacterSkills() {
     this.panel = 'character-skills';
-    const rows = characterSkills(this.save).map(id => {
-      const a = ABILITIES[id], selected = equippedSkill(this.save,a.family) === id;
-      return button(`<strong>${escape(a.name)}</strong><span>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]}${selected ? ' · 장착 중' : ''}</span>`, 'skill-detail', `data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}" class="character-skill"`);
-    }).join('');
-    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<p class="minor">등급 높은 순 · 교본 단계 표시이며 마법 서클이 아니다</p><div class="character-skills">${rows}</div>`, 'character-skills');
+    const rows = characterSkills(this.save).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
+    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<p class="minor">등급 높은 순 · 무기 계열마다 기술 하나 장착</p><div class="character-skills">${rows}</div>`, 'character-skills');
   }
 
   openSkill(id) {
@@ -624,25 +629,16 @@ export class HubUI {
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
     const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const selected = equippedSkill(this.save,a.family) === id;
-    this.mountSheet(this.dialogHtml(a.name, `<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>기본 피해 (타격당)</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p><p class="minor">${a.heal ? '회복량은 공격 배율과 무관하게 각 대상 최대 HP 기준.' : '실전 피해는 기본 피해 × 해당 계열 캐릭터 공격 배율.'} 다른 계열은 그 무기 장착 시 사용.</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>기본 피해 (타격당)</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p><p class="minor">${a.heal ? '회복량은 공격 배율과 무관하게 각 대상 최대 HP 기준.' : '실전 피해는 기본 피해 × 해당 계열 캐릭터 공격 배율.'} 다른 계열은 그 무기 장착 시 사용.</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
   }
 
   showTrainer() {
-    const families = FAMILIES.map(family => {
-      const current = equippedSkill(this.save, family);
-      const ids = [DEFAULT_SKILLS[family], ...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)];
-      const rows = ids.map(id => {
-        const ability = ABILITIES[id], book = BOOKS[id], known = hasSkill(this.save, id);
-        const selected = current === id;
-        const control = known ? button(selected ? '장착 중' : '장착', 'equip-skill', `data-id="${id}" data-family="${family}" aria-pressed="${selected}"`, selected)
-          : button(`${book.price} G · 배우기`, 'learn-skill', `data-id="${id}"`, this.save.gold < book.price);
-        return `<article class="skill-book"><div><strong>${escape(ability.name)}</strong><small>${book?.type || '기본 기술 · 항상 습득'}${book && !known && this.save.gold < book.price ? ' · 골드 부족' : ''}</small>
-          <p class="minor">${ability.heal ? `회복 최대 HP ${Math.round(ability.heal.maxHpFrac * 100)}%` : `피해 ${ability.damage}`} · 재사용 ${amount(ability.cooldownMs / 1000)}초 · 마나 ${ability.manaCost || 0}</p></div>${control}</article>`;
-      }).join('');
-      return `<section class="skill-family"><h3>${WEAPON_NAMES[family]} 계열</h3>${rows}</section>`;
-    }).join('');
-    this.showInnPanel('교관', `<p class="npc-line">“배운 기술은 잊지 않는다.”</p><p class="minor">교본 구매 즉시 영구 습득 · 무게 없음 · 레벨 제한 없음<br>무기 계열마다 기술 하나를 장착한다. 피해는 기본 수치.</p>${families}`,
-      'trainer', '', { eyebrow: '기술교본 · 마법교본' });
+    this.academyFamily ||= ITEMS[equippedItem(this.save,'weapon')?.id]?.family || 'blade';
+    const family = this.academyFamily, school = ACADEMY[family];
+    const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
+    const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)].sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
+    const ladder = [0,1,2].map(grade => `<section class="academy-stage" data-grade="${grade}"><h3><span>${grade+1}</span>${['입문','숙련','상급'][grade]}</h3><div class="academy-stage-cards">${ids.filter(id => SKILL_DISPLAY[id].grade === grade).map(id => skillCardHtml(id,this.save)).join('')}</div></section>`).join('');
+    this.showInnPanel('아카데미', `<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><p class="minor academy-note">교본 구매 즉시 영구 습득 · 무게·레벨 제한 없음<br>무기 계열마다 기술 하나 장착 · 피해는 기본 수치</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법'});
   }
 
   showAllocation(required = false, initialize = true) {
@@ -844,13 +840,17 @@ export class HubUI {
       case 'shop-select':
         this.shopId = data.id;
         this.shopCount = 1;
-        return this.showShop();
+        return this.openSupply();
       case 'shop-count':
         this.shopCount = Math.max(1, Math.min(99, this.shopCount + Number(data.step)));
-        return this.showShop();
+        return this.openSupply();
+      case 'shop-max':
+        this.shopCount = Math.max(1,supplyQuote(this.save,this.shopId,this.shopCount).maxCount);
+        return this.openSupply();
       case 'buy':
         this.commit(buy(this.save, this.shopId, this.shopCount));
-        return this.showShop();
+        this.showShop();
+        return this.openSupply();
       // Bag, sockets and comparison
       case 'inventory': return this.showInventory();
       case 'bag': return this.showBag();
@@ -953,6 +953,12 @@ export class HubUI {
         return this.showReceipt();
       // Trainer
       case 'trainer': return this.showTrainer();
+      case 'academy-tab':
+        if (!ACADEMY[data.family]) return;
+        this.academyFamily = data.family;
+        this.showTrainer();
+        this.root?.querySelector(`[data-action="academy-tab"][data-family="${data.family}"]`)?.focus({preventScroll:true});
+        return;
       case 'learn-skill':
         this.commit(learnSkill(this.save, data.id));
         return this.showTrainer();

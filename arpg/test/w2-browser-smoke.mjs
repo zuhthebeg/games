@@ -87,7 +87,7 @@ try {
       const r=shell.getBoundingClientRect(); const c=content.getBoundingClientRect();
       const dialog=root.querySelector('dialog[open]'); const d=dialog?.getBoundingClientRect();
       const tiny=[...root.querySelectorAll('button')].filter(n=>n.checkVisibility()).filter(n=>{const b=n.getBoundingClientRect();return b.width<43.5||b.height<43.5}).map(n=>n.dataset.action);
-      const buttons=[...root.querySelectorAll('button')].filter(n=>n.checkVisibility()&&(!dialog||dialog.contains(n))).map(n=>{const r=n.getBoundingClientRect();const clip=dialog?dialog.getBoundingClientRect():content.contains(n)?c:shell.getBoundingClientRect();return {n,b:{left:Math.max(r.left,clip.left),right:Math.min(r.right,clip.right),top:Math.max(r.top,clip.top),bottom:Math.min(r.bottom,clip.bottom)}};}).filter(({b})=>b.bottom>b.top&&b.right>b.left);
+      const buttons=[...root.querySelectorAll('button')].filter(n=>n.checkVisibility()&&(!dialog||dialog.contains(n))).map(n=>{const r=n.getBoundingClientRect();const sheetBody=dialog?.querySelector('.p2-sheet-body');const clip=dialog?(sheetBody.contains(n)?sheetBody.getBoundingClientRect():dialog.getBoundingClientRect()):content.contains(n)?c:shell.getBoundingClientRect();return {n,b:{left:Math.max(r.left,clip.left),right:Math.min(r.right,clip.right),top:Math.max(r.top,clip.top),bottom:Math.min(r.bottom,clip.bottom)}};}).filter(({b})=>b.bottom>b.top&&b.right>b.left);
       const overlaps=[];for(let i=0;i<buttons.length;i++)for(let j=i+1;j<buttons.length;j++){const a=buttons[i].b,b=buttons[j].b;if(a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1)overlaps.push([buttons[i].n.dataset.action,buttons[j].n.dataset.action]);}
       return {overlaps,width:innerWidth,height:innerHeight,right:r.right,left:r.left,bottom:r.bottom,overflow:content.scrollWidth>content.clientWidth+1,tiny,
         footerOverlap:footer ? c.bottom>footer.getBoundingClientRect().top+1:false,dialog:d?{left:d.left,right:d.right,top:d.top,bottom:d.bottom}:null};
@@ -118,7 +118,7 @@ try {
     await nativeActivate('[data-action="socket"][data-slot="weapon"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('기본 공격 배율')&&document.querySelector('dialog').textContent.includes('= 유지')`));
     await nativeActivate('[data-action="open-item"][data-uid="w2:inventory"]',desktop);await audit();
-    for(const key of ['hp_flat','speed_pct','capacity_flat']) assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').textContent.includes('사라짐')`));
+    for(const key of ['hp_flat','speed_pct','capacity_flat']) assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').querySelector('.compare-delta').getAttribute('aria-label').includes('사라짐')`));
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await waitFor(`!document.querySelector('dialog[open]')`);
     await nativeActivate('[data-action="character"]',desktop);
     await nativeActivate('[data-action="character-tab"][data-tab="skills"]',desktop);await audit();
@@ -128,7 +128,7 @@ try {
     await nativeActivate('[data-action="equip-character-skill"]',desktop);assert.equal(await evaluate('__arpg.save.skills.focus'),'frost_lance');
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="inventory"]',desktop);
     await nativeActivate('[data-action="open-item"][data-uid="w2:inventory"]',desktop);await audit();
-    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="capacity_flat"]').textContent.includes('6 kg')&&document.querySelector('dialog[open] [data-line="capacity_flat"]').textContent.includes('사라짐')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="capacity_flat"]').textContent.includes('6 kg')&&document.querySelector('dialog[open] [data-line="capacity_flat"]').querySelector('.compare-delta').getAttribute('aria-label').includes('사라짐')`));
     await nativeActivate('[data-action="close-sheet"]',desktop);
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="merchant"]',desktop);
     await nativeActivate('[data-action="open-item"][data-mode="buy"]',desktop);await audit();
@@ -159,9 +159,9 @@ try {
     await nativeActivate('[data-action="reveal"]',desktop);await audit();
     await nativeActivate('[data-action="open-item"][data-uid="w2:sale"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('+6%')&&document.querySelector('dialog').textContent.includes('+10 HP')&&document.querySelector('dialog').textContent.includes('+4%')`));
-    for(const key of ['speed_pct','capacity_flat'])assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').textContent.includes('사라짐')`));
-    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="hp_flat"]').textContent.includes('감소')`));
-    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="mana_pct"]').textContent.includes('새로 추가')`));
+    for(const key of ['speed_pct','capacity_flat'])assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').querySelector('.compare-delta').getAttribute('aria-label').includes('사라짐')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="hp_flat"]').querySelector('.compare-delta').getAttribute('aria-label').includes('감소')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="mana_pct"]').querySelector('.compare-delta').getAttribute('aria-label').includes('새로 추가')`));
     await nativeActivate('[data-action="close-sheet"]',desktop);
     const beforeGold=await evaluate('w2Hub.save.gold');
     const price=await evaluate(`(async()=>{const {gearPrice}=await import('./js/meta/shop.js');const {ECONOMY}=await import('./js/meta/economy.js');return Math.floor(gearPrice(w2Hub.save.items.find(i=>i.uid==='w2:sale'))*ECONOMY.sellFraction);})()`);

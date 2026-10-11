@@ -239,6 +239,7 @@ try {
   assert.equal(innMobile.rects.length, 6);
   assert.ok(await evaluate("!document.querySelector('.dev-menu')"), 'dev menu leaked without query flag');
   await click('[data-action="shop"]');
+  await click('[data-action="shop-select"][data-id="potion"]');
   assert.ok(await evaluate("document.querySelector('#shop-total').textContent.trim()==='10'"));
   await click('#shop-buy');
   const beforeReload = await evaluate(`({
@@ -246,6 +247,7 @@ try {
   })`);
   assert.deepEqual(beforeReload, { gold: 20, potions: 4, level: 2 });
   const entireSave = await evaluate('JSON.stringify(__arpg.save)');
+  await click('[data-action="close-sheet"]');
   await click('[data-action="inn"]');
   await click('[data-action="board"]');
   assert.ok(await evaluate("document.querySelector('[data-stage=\"S3\"]').disabled"));
@@ -508,16 +510,19 @@ try {
   await click('[data-action="shop-select"][data-id="mana_potion"]');
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.mana_potion'), 2);
+  await click('[data-action="close-sheet"]');
   await click('[data-action="shop-select"][data-id="return_scroll"]');
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.return_scroll'), 2);
   assert.ok(await evaluate("document.querySelector('#shop-buy').disabled"), 'scroll cap not enforced');
+  await click('[data-action="close-sheet"]');
   await click('[data-action="shop-select"][data-id="potion"]');
   await evaluate("document.querySelector('#shop-count').value=2;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))");
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.potion'), 5);
   assert.equal(await evaluate('__arpg.save.gold'), 2902);
   // P2 cards open the shared comparison sheet before buying/selling.
+  await click('[data-action="close-sheet"]');
   await click('[data-action="inn"]');
   await click('[data-action="merchant"]');
   const beforeGearGold = await evaluate('__arpg.save.gold');
