@@ -155,3 +155,12 @@ test('lobby keeps startConfig callable and catches started-before-hook without o
     for (const [k, descriptor] of Object.entries(originals)) if (descriptor) Object.defineProperty(globalThis, k, descriptor); else delete globalThis[k];
   }
 });
+
+test('index.html loads the shared relay + lobby libs before the game module (merge regression 10-11)', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const at = s => html.indexOf(s);
+  assert.ok(at('/lib/multiplayer.js') > 0, 'multiplayer.js script tag missing');
+  assert.ok(at('/lib/mp-lobby.js') > at('/lib/multiplayer.js'), 'mp-lobby.js must load after multiplayer.js');
+  assert.ok(at('src="js/main.js') > at('/lib/mp-lobby.js'), 'lobby must load before the game module');
+});
