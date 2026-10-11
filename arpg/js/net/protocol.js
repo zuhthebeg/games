@@ -108,16 +108,20 @@ export function partyHpScale(count, highestLevel, stageId) {
 }
 const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'weapon', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
-const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln'];
+const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
+  // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
+  'mpRegen', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
 const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null) {
   return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
     round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat']), pending: world.round.pending.length,
     entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION),
+        pendingCounter: !!e.pendingCounter,
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter']) : null })),
+      act: e.act ? select(e.act, ['id', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter',
+        ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep'] : [])]) : null })),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'abilityId', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }

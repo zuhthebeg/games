@@ -1,9 +1,12 @@
-import { predictMovement, movementBlocked } from '../sim/movement.js';
+import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
+
+const TICK_MS = 1000 / 30;
+const lerp = (a, b, t) => a + (b - a) * t;
 
 // A display-only local pawn. Never owns a sim world or exposes predicted HUD/combat.
 export class LocalPrediction {
   constructor(uid) {
-    this.uid = uid; this.pending = []; this.state = null; this.arena = null;
+    this.uid = uid; this.pending = []; this.state = null; this.arena = null; this.others = [];
     this.enabled = false; this.offset = { x: 0, y: 0 }; this.smoothLeft = 0; this.preview = null;
     this.stats = { corrections: 0, snaps: 0, totalDistance: 0, maxDistance: 0 };
   }
@@ -13,11 +16,12 @@ export class LocalPrediction {
       this.enabled = false; this.state = null; this.pending = []; this.clearOffset(); return;
     }
     this.enabled = true; this.arena = world.arena;
+    this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
-    let next = structuredClone(p);
-    const blocked = movementBlocked(p);
+    let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null };
+    const blocked = predictionBlocked(p);
     if (blocked) this.pending = [];
-    else for (const row of this.pending) next = predictMovement(next, row.input, row.dt / 1000, this.arena, world.tick);
+    else for (const row of this.pending) next = predictPlayerTick(next, row.input, this);
     if (this.state) {
       const dx = this.state.x + this.offset.x - next.x, dy = this.state.y + this.offset.y - next.y;
       const distance = Math.hypot(dx, dy);
@@ -46,23 +50,29 @@ export class LocalPrediction {
       this.smoothLeft = Math.max(0, this.smoothLeft - dt);
       if (this.smoothLeft === 0) this.clearOffset();
     }
-    const movement = { mx: packet.v[0], my: packet.v[1], aimX: packet.v[2], aimY: packet.v[3], dodgeEdge: !!input.dodgeEdge };
-    if (!movementBlocked(this.state)) {
-      this.pending.push({ seq: packet.seq, input: movement, dt });
+    // The exact command the host will apply for this tick (quantized axes, held buttons, edges).
+    const command = { ...input, mx: packet.v[0], my: packet.v[1], aimX: packet.v[2], aimY: packet.v[3],
+      attack: !!packet.attack, autoAttack: !!packet.autoAttack };
+    if (!predictionBlocked(this.state)) {
+      this.pending.push({ seq: packet.seq, input: command, dt });
       // Bound memory through an outage. Stop predicting rather than invent lost history.
       if (this.pending.length > 256) { this.enabled = false; this.pending = []; this.clearOffset(); return; }
-      this.state = predictMovement(this.state, movement, dt / 1000, this.arena);
+      this.state = predictPlayerTick(this.state, command, this);
     }
   }
   // Display-only partial tick: the not-yet-committed fraction of the current tick,
   // so the pawn responds on the very next frame while commands stay whole 30Hz ticks.
   setPreview(input, ms) {
-    this.preview = ms > 0 ? { ms, input: { mx: input.mx || 0, my: input.my || 0, aimX: input.aimX || 0, aimY: input.aimY || 0, dodgeEdge: !!input.dodgeEdge } } : null;
+    this.preview = ms > 0 ? { ms, input: { ...input } } : null;
   }
   view(world) {
     if (!world || !this.enabled || !this.state) return world;
     let p = this.state;
-    if (this.preview && !movementBlocked(p)) p = predictMovement(p, this.preview.input, this.preview.ms / 1000, this.arena);
+    if (this.preview && !predictionBlocked(p)) {
+      // Blend toward the tick the current input will produce; continuous at tick boundaries.
+      const next = predictPlayerTick(p, this.preview.input, this), t = Math.min(1, this.preview.ms / TICK_MS);
+      p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving };
+    }
     return { ...world, entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
       ? { ...e, x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
   }

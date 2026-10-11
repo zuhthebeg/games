@@ -58,7 +58,8 @@ test('self prediction advances instantly, replays only unacknowledged dt without
   p.advance(tx(1), emptyInput(), 16); p.advance(tx(2), emptyInput(), 16);
   assert.ok(p.state.x > 307); assert.equal(p.view(b.frames[0].world).entities[0].hp, 100);
   b.push(frame(1, 303.68, 1), 33); p.reconcile(b.frames.at(-1).world);
-  assert.deepEqual(p.pending.map(row => row.seq), [2]); assert.ok(Math.abs(p.state.x - 307.36) < .01);
+  // One command = one whole host tick: replay seq 2 only from the acknowledged position.
+  assert.deepEqual(p.pending.map(row => row.seq), [2]); assert.ok(Math.abs(p.state.x - (303.68 + 230 / 30)) < .01);
   assert.equal(JSON.stringify(b.frames[0].world), authoritative);
 });
 test('correction below 24px converges in 150ms, sub-0.5px ignored, exactly 24px snaps', () => {
@@ -69,13 +70,24 @@ test('correction below 24px converges in 150ms, sub-0.5px ignored, exactly 24px 
   p.advance(tx(2, 0), emptyInput(), 75); assert.equal(p.offset.x, 0);
   b.push(frame(3, 334.4, 2), 99); p.reconcile(b.frames.at(-1).world); assert.equal(p.stats.snaps, 1); assert.equal(p.offset.x, 0);
 });
-for (const [name, override] of Object.entries({ knockback: { kx: 2 }, stagger: { staggerLeft: 4 }, hurt: { hurtInvuln: 3 },
-  death: { dead: true, terminal: 'death' }, channel: { channel: 10 }, lock: { act: { id: 'slash', phase: 'lock' } }, active: { act: { id: 'slash', phase: 'active' } } })) {
+// Host stepPlayer never freezes walking for these: prediction must keep replaying (no snap).
+for (const [name, override] of Object.entries({ knockback: { kx: 2 }, hurt: { hurtInvuln: 3 },
+  lock: { act: { id: 'slash', phase: 'lock', left: 2, elapsed: 3, phaseTicks: { windup: 3, lock: 2, active: 2, recovery: 4 } } },
+  active: { act: { id: 'slash', phase: 'active', left: 2, elapsed: 5, phaseTicks: { windup: 3, lock: 2, active: 2, recovery: 4 } } } })) {
+  test(`authoritative ${name} keeps replaying pending movement with host rules (no snap)`, () => {
+    const p = new LocalPrediction('g'), b = new SnapshotBuffer('g'); b.push(frame(0, 300), 0); p.reconcile(b.frames[0].world);
+    p.advance(tx(1), emptyInput(), 33); p.advance(tx(2), emptyInput(), 33);
+    const host = 300 + 230 / 30; // where the host put the pawn after command 1
+    const snapshot = frame(1, host, 1); Object.assign(snapshot.entities[0], override); b.push(snapshot, 33); p.reconcile(b.frames.at(-1).world);
+    assert.equal(p.pending.length, 1); assert.ok(p.state.x > host); assert.equal(p.stats.snaps, 0);
+  });
+}
+for (const [name, override] of Object.entries({ stagger: { staggerLeft: 4 }, death: { dead: true, terminal: 'death' }, channel: { channel: 10 } })) {
   test(`authoritative ${name} clears pending movement and takes immediate position priority`, () => {
-    const p = new LocalPrediction('g'), b = new SnapshotBuffer('g'); b.push(frame(0, 300), 0); p.reconcile(b.frames[0].world); p.advance(tx(1), emptyInput(), 16);
+    const p = new LocalPrediction('g'), b = new SnapshotBuffer('g'); b.push(frame(0, 300), 0); p.reconcile(b.frames[0].world); p.advance(tx(1), emptyInput(), 33);
     const snapshot = frame(1, 280); Object.assign(snapshot.entities[0], override); b.push(snapshot, 33); p.reconcile(b.frames.at(-1).world);
     assert.equal(p.state.x, 280); assert.equal(p.pending.length, 0); assert.equal(p.offset.x, 0);
-    p.advance(tx(2), emptyInput(), 16); assert.equal(p.state.x, 280);
+    p.advance(tx(2), emptyInput(), 33); assert.equal(p.state.x, 280);
   });
 }
 test('legacy packet without lastInputSeq disables prediction gracefully', () => {
