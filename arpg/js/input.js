@@ -19,11 +19,11 @@ export class InputLayer {
     this.pad = document.querySelector('#joystick');
     this.value = {
       mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false,
-      skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false,
+      skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false,
     };
     const edgeKeys = {
       Space: 'dodgeEdge', ShiftLeft: 'dodgeEdge', ShiftRight: 'dodgeEdge',
-      KeyK: 'skillEdge', KeyQ: 'potionEdge', KeyE: 'manaEdge', KeyR: 'scrollEdge',
+      KeyK: 'skillEdge', KeyL: 'skill2Edge', Semicolon: 'skill3Edge', KeyQ: 'potionEdge', KeyE: 'manaEdge', KeyR: 'scrollEdge',
     };
     const allowed = new Set([
       'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight',
@@ -165,7 +165,7 @@ export class InputLayer {
     value.attack = keys.has('KeyJ') || held || !!this.edges.attackTap;
     value.autoAttack = this.autoAttack;
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
-    for (const action of ['skillEdge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge']) {
+    for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge']) {
       value[action] = !!this.edges[action];
     }
     for (const action in this.edges) this.edges[action] = false;

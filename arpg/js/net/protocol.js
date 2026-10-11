@@ -2,7 +2,7 @@ import { emptyInput, getTelegraphs } from '../sim/world.js';
 import { ABILITIES } from '../content/combat.js';
 import { BALANCE } from '../content/balance.js';
 
-export const EDGES = ['skillEdge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
+export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
 const finite = v => Number.isFinite(v) ? v : 0;
 const q = v => Math.round(finite(v) * 100) / 100;
 // Cumulative edge counters survive dropped RT packets; receiver queues each press once.
@@ -50,7 +50,7 @@ export function partyHpScale(count, highestLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
-  'weapon', 'skill', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+  'weapon', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln'];
 const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));

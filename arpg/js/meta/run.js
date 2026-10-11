@@ -23,7 +23,7 @@ export function buildRoundMods(save) {
   const { capacity: ignoredCapacity, shopDiscount, family, ...mods } = deriveMods(save);
   return {
     ...mods, threat: save.threat ?? 1,
-    skill: save.skills?.[family], // sim falls back to the kit default if unset or off-family
+    skills: [save.skills?.[family]], // sim drops weapon-forbidden ids; empty slot 1 = kit default
     potions: save.stacks.potion || 0,
     manaPotions: save.stacks.mana_potion || 0,
     scrolls: save.stacks.return_scroll || 0,

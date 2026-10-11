@@ -95,10 +95,10 @@ test('books permanently learn at exact prices, defaults always known, equip per 
   assert.throws(() => equipSkill(base, 'blade', 'frost_lance'));
   assert.throws(() => equipSkill(base, 'other', 'whirl'));
   assert.throws(() => equipSkill(base, 'blade', 'slash'));
-  assert.equal(buildRoundMods(base).skill, base.skills.blade);
+  assert.equal(buildRoundMods(base).skills[0], base.skills.blade);
   for (const [family, weapon] of [['bow','short_bow'], ['focus','apprentice_wand']]) {
     base.items.push(instance(family, weapon)); base = equip(base, family);
-    assert.equal(buildRoundMods(base).skill, base.skills[family]);
+    assert.equal(buildRoundMods(base).skills[0], base.skills[family]);
   }
 });
 

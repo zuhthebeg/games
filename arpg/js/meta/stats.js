@@ -1,4 +1,5 @@
 import { BALANCE } from '../content/balance.js';
+import { SKILL_USE } from '../content/combat.js';
 const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
@@ -37,8 +38,13 @@ export function deriveMods(save) {
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
   const family = ITEMS[weapon?.id]?.family || 'blade';
-  const damage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
-    * (1 + 0.03 * (save.level - 1)) * (family === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
+  const weaponDamage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
+    * (1 + 0.03 * (save.level - 1));
+  // Skills-v2 §4: every family the held weapon may fire gets weapon damage × its share; magic always scales with INT.
+  const familyDamage = (skillFamily) => {
+    const share = SKILL_USE[skillFamily][family];
+    return share === undefined ? 1 : weaponDamage * share * (skillFamily === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
+  };
   return {
     maxHp: 100 + 8 * save.level + affixes.hp_flat,
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
@@ -49,7 +55,7 @@ export function deriveMods(save) {
     iframeBonusMs: Math.min(S.iframeCap, S.iframe * eff(stats.agi)),
     potionHealMult: (1 + Math.min(S.potionCap, S.potion * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
     poiseMult: 1 + S.poise * eff(stats.str),
-    dmgMult: { blade: 1, bow: 1, focus: 1, [family]: damage },
+    dmgMult: Object.fromEntries(Object.keys(SKILL_USE).map((f) => [f, familyDamage(f)])),
     attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)),
     weaponWeight: ITEMS[weapon?.id]?.weight ?? BALANCE.attackSpeed.weightReference,
     cdMult: 1,

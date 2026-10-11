@@ -180,6 +180,16 @@ export const WEAPONS = {
   focus: { kit: 'arcanist', basic: 'focus_pulse', skill: 'ember_bolt' },
 };
 
+// Skills-v2 §4 (cocy 10-11 22:10): which weapon may fire which skill family, and its damage share.
+// Absent = cannot use. [제안] 35%/60% are tuning proposals; matching family is always 1.
+export const SKILL_USE = {
+  blade: { blade: 1, focus: 0.35 },
+  bow: { bow: 1 },
+  focus: { focus: 1, blade: 0.6, bow: 0.6 },
+};
+export const SKILL_SLOTS = 3;
+export const canUseSkill = (abilityId, weapon) => SKILL_USE[ABILITIES[abilityId]?.family]?.[weapon] !== undefined;
+
 // Monster archetypes. Palette/equipment variants layer on top later (design §11) and never change these rules silently.
 export const MONSTERS = {
   scarecrow: {

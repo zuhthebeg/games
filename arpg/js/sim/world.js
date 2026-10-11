@@ -7,7 +7,7 @@ import {
   DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle, segmentCircleEntry,
   TEAM_PLAYER, TEAM_MONSTER,
 } from './core.js';
-import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
+import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseSkill } from '../content/combat.js';
 
 import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
@@ -18,9 +18,19 @@ const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
 const SPAWN_IN_MS = 700;
+export const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
+
+// Up to three skill slots (skills-v2 §2). Unknown or weapon-forbidden ids become empty;
+// an empty first slot falls back to the kit skill so a fresh character always has one.
+export function playerSkills(mods, weapon) {
+  const ids = Array.isArray(mods.skills) ? mods.skills : [mods.skill];
+  const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon) ? ids[i] : null));
+  if (!slots[0]) slots[0] = WEAPONS[weapon].skill;
+  return slots;
+}
 
 export function emptyInput() {
-  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
+  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
 export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 }, partyHpMult = 1 } = {}) {
@@ -55,8 +65,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
-    // Equipped skill (skill books): must belong to the weapon family, else the kit default.
-    skill: ABILITIES[mods.skill]?.family === weapon ? mods.skill : WEAPONS[weapon].skill,
+    skills: playerSkills(mods, weapon),
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
     bufferDodge: 0, bufferDodgeDir: [0, 0],
@@ -209,18 +218,21 @@ function stepPlayer(world, p, inp) {
   }
 
   const w = WEAPONS[p.weapon];
-  if (inp.skillEdge && canCancel(p.act)) {
-    const def = ABILITIES[p.skill];
-    if (!(p.cds[p.skill] > 0) && p.mp >= (def.manaCost || 0)) {
+  // First pressed slot wins this tick; an empty slot is a no-op.
+  const skillPressed = SKILL_EDGES.some((k) => inp[k]);
+  const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
+  if (skillId && canCancel(p.act)) {
+    const def = ABILITIES[skillId];
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
-      startAct(world, p, p.skill, resolveAim(world, p, inp, mlen));
+      startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
     }
   }
   // Explicit controls win; a pending counter reserves the next basic slot,
   // including the iframe tail after dash movement. Never cancel a running act.
   if (!p.act && p.pendingCounter && d.iframeLeft === 0 && p.bufferDodge === 0
-    && !inp.skillEdge && !inp.scrollEdge) {
+    && !skillPressed && !inp.scrollEdge) {
     const pending = p.pendingCounter;
     const target = world.entities.find((e) => e.id === pending.attackerId);
     const def = ABILITIES[w.basic];
@@ -243,7 +255,7 @@ function stepPlayer(world, p, inp) {
   const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
     ? basicReachTarget(world, p, ABILITIES[w.basic]) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
-    && (!p.pendingCounter || p.bufferDodge > 0 || inp.skillEdge || inp.scrollEdge)) {
+    && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
     startAct(world, p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(world, p, inp, mlen));
   }
 
@@ -369,7 +381,7 @@ const PHASES = ['windup', 'lock', 'active', 'recovery'];
 
 function startAct(world, ent, abilityId, facing) {
   const def = ABILITIES[abilityId];
-  const rate = ent.kind === 'player' && [WEAPONS[ent.weapon].basic, ent.skill].includes(abilityId)
+  const rate = ent.kind === 'player' && (abilityId === WEAPONS[ent.weapon].basic || ent.skills.includes(abilityId))
     ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
     const ms = def[`${phase}Ms`] || 0;

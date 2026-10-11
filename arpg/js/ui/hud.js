@@ -31,7 +31,7 @@ export class HUD {
 
   begin(world) {
     this.stage = world.round.stageId;
-    const name = ABILITIES[world.entities[0].skill].name;
+    const name = ABILITIES[world.entities[0].skills[0]].name;
     const skill = this.nodes.skill;
     skill.setAttribute('aria-label', name);
     skill.title = `${name} · K`;
@@ -98,7 +98,7 @@ export class HUD {
       : `${player.scrolls}${player.scrollRetry > 0 ? ` · ${seconds(player.scrollRetry)}` : ''}`);
     nodes.scroll.style.setProperty('--progress',
       `${player.channel > 0 ? (1 - player.channel / ticks(PLAYER_BASE.scroll.channelMs)) * 100 : 0}%`);
-    const skill = player.skill;
+    const skill = player.skills[0];
     const cooldown = player.cds[skill] || 0;
     const skillAct = player.act?.id === skill;
     const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);

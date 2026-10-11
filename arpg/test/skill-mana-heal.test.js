@@ -139,7 +139,7 @@ test('heal book learn/equip/save/load works without schema changes; one focus sl
   assert.equal(original.gold, 500); assert.equal(learned.gold, 300); assert.equal(BOOKS.healing_light.price, 200);
   assert.throws(() => learnSkill(learned, 'healing_light'));
   const equipped = equipSkill(learned, 'focus', 'healing_light');
-  assert.equal(buildRoundMods(equipped).skill, 'healing_light');
+  assert.equal(buildRoundMods(equipped).skills[0], 'healing_light');
   assert.throws(() => equipSkill(learned, 'blade', 'healing_light'));
   const storage = new Map(); const store = new SaveStore({ getItem: k => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,v), removeItem: k => storage.delete(k) });
   store.save(equipped); assert.deepEqual(store.load(), equipped); assert.ok(validateSave(store.load()));

@@ -51,7 +51,7 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   near(mods.potionHealMult, 1.18);
   near(mods.poiseMult, 1.48);
   near(mods.dmgMult.focus, 1.15 * 1.25 * 1.27 * 1.48);
-  assert.equal(mods.dmgMult.blade, 1);
+  near(mods.dmgMult.blade, 1.15 * 1.25 * 1.27 * 0.35); // skills-v2: blade skills from a staff at 35%, no INT scaling
   assert.equal(mods.dmgMult.bow, 1);
   assert.equal(mods.capacity, 124);
   assert.equal(mods.shopDiscount, 0.07);
