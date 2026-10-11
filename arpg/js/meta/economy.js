@@ -4,16 +4,16 @@ export const SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
 // cocy 10-11: Lineage-style enchant. Scrolls are the only cost; within the safe line every scroll
 // succeeds, above it a failure destroys the item. Rates are keyed by the CURRENT level (6 → 7 = 50%).
 export const ENCHANT = {
-  safe: 6, max: 10,
-  rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2 },
+  safe: 6, max: 12,
+  rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2, 10: 0.15, 11: 0.10 },
   stonesPerScroll: 5, greaterYield: [5, 10],
-  // Dismantle refund by enhance level (+0..+10); the greater stone is the "cash out" at +7 and above.
-  dismantleStones: [0, 0, 1, 2, 3, 5, 7, 10, 14, 18, 24],
-  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3],
+  // Dismantle refund by enhance level (+0..+12); the greater stone is the "cash out" at +7 and above.
+  dismantleStones: [0, 0, 1, 2, 3, 5, 7, 10, 14, 18, 24, 30, 38],
+  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5],
   // A destroyed item leaves this fraction of its dismantle stones, never the greater stone.
   failRefund: 0.5,
-  // Lineage blessed odds inside the safe line: +0~2 → +1/+2/+3 equally, +3~5 → +1/+2 equally.
-  blessedLow: [1, 2, 3], blessedHigh: [1, 2],
+  // Blessed +1/+2/+3: uniform for safe starts, weighted after a risky success.
+  blessedSteps: [1, 2, 3], blessedRiskWeights: [70, 25, 5],
   stoneCount: { normal: [1, 2], elite: [2, 3], boss: [3, 5] },
   blessedChance: { normal: 0.002, elite: 0.03, boss: 0.15 },
 };
@@ -76,5 +76,5 @@ export const RECIPES = {
   altar_staff: { scrap: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
   woven_armor: { scrap: 16, hide: 4, web: 4, gold: 140 },
 };
-// Above the safe line each risky level adds a further +4% so +7~+10 are worth the gamble.
+// Above the safe line each risky level adds a further +4% so +7~+12 are worth the gamble.
 export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2 + 0.04 * Math.max(0, level - ENCHANT.safe);

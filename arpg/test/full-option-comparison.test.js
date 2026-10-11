@@ -26,14 +26,15 @@ test('full comparison unions old rare HP/speed losses and new mana; no positive 
   assert.match(html,/10 HP → <b>0 HP/);assert.match(html,/3% → <b>0%/);assert.match(html,/0% → <b>4%/);
   assert.match(cardHtml(next,s),/옵션 4개 변경 · 2개 사라짐 · 자세히/);
 });
-test('old capacity/gold/mana losses and unchanged/increased/decreased values are explicit and unit-bearing',()=>{
+test('old capacity/gold/mana losses remain unit-bearing while unchanged values are hidden',()=>{
   const s=fresh(),old=item('old','iron_sword_epic',[{k:'capacity_flat',v:5},{k:'gold_pct',v:5},{k:'mana_pct',v:4}]);
   const next=item('next','iron_sword_epic',[{k:'potion_pct',v:6},{k:'hp_flat',v:8},{k:'material_pct',v:3}]);
   const c=compareItems(old,next,s),html=linesHtml(c);
   for(const k of ['capacity_flat','gold_pct','mana_pct']){assert.equal(row(c,k).to,0);assert.equal(row(c,k).good,false);assert.match(html.match(new RegExp(`<div data-line="${k}"[\\s\\S]*?</div>`))[0],/사라짐/);}
   assert.match(html,/5 kg → <b>0 kg/);
   const mixed=compareItems(old,{...next,affixes:[{k:'capacity_flat',v:5},{k:'gold_pct',v:6},{k:'mana_pct',v:2}]},s);
-  for(const [k,text] of [['capacity_flat','= 유지'],['gold_pct','증가 · 이득'],['mana_pct','감소 · 손해']])assert.ok(linesHtml(mixed).match(new RegExp(`<div data-line="${k}"[\\s\\S]*?</div>`))[0].includes(text));
+  assert.doesNotMatch(linesHtml(mixed),/data-line="capacity_flat"|= 유지/);
+  for(const [k,text] of [['gold_pct','증가 · 이득'],['mana_pct','감소 · 손해']])assert.ok(linesHtml(mixed).match(new RegExp(`<div data-line="${k}"[\\s\\S]*?</div>`))[0].includes(text));
 });
 test('equipment mass +kg is a loss but capacity +10kg is a gain and the explanations do not conflate them',()=>{
   const s=fresh(),old=s.items[0],next=item('next','rune_blade_epic',[{k:'capacity_flat',v:10}]);

@@ -1,4 +1,4 @@
-import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc } from './items.js';
+import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight } from './items.js';
 import { deriveMods } from './stats.js';
 import { attackRate } from '../content/balance.js';
 import { loadEffects } from '../sim/world.js';
@@ -29,7 +29,7 @@ export function compareItems(equipped, candidate, save) {
   line('attack', '공격력', before.dmgMult[before.family], after.dmgMult[after.family], false, { unit:'배율', prefix:'×', section:'derived' });
   line('maxHp', '최대 HP', before.maxHp, after.maxHp, false, { unit:'HP', section:'derived' });
   line('totalAc', '총 방어력', before.ac, after.ac, false, { unit:'', section:'derived' });
-  line('weight', '무게', ITEMS[equipped?.id]?.weight || 0, definition.weight, true, { unit:'kg', section:'base' });
+  line('weight', '무게', effectiveWeight(equipped), effectiveWeight(candidate), true, { unit:'kg', section:'base' });
   const keys = new Set([...(equipped?.affixes || []), ...(candidate.affixes || [])].map(({ k }) => k));
   for (const key of keys) line(key, AFFIX_LABELS[key],
     equipped?.affixes?.find(({ k }) => k === key)?.v || 0,

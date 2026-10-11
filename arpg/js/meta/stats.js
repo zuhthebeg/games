@@ -3,7 +3,7 @@ import { SKILL_USE } from '../content/combat.js';
 const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
-import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc } from './items.js';
+import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc, effectiveWeight } from './items.js';
 
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'cha'];
 export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, 5]));
@@ -57,7 +57,7 @@ export function deriveMods(save) {
     poiseMult: 1 + S.poise * eff(stats.str),
     dmgMult: Object.fromEntries(Object.keys(SKILL_USE).map((f) => [f, familyDamage(f)])),
     attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)),
-    weaponWeight: ITEMS[weapon?.id]?.weight ?? BALANCE.attackSpeed.weightReference,
+    weaponWeight: weapon ? effectiveWeight(weapon) : BALANCE.attackSpeed.weightReference,
     cdMult: 1,
     capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat,
     goldBonus: affixes.gold_pct, materialBonus: affixes.material_pct,

@@ -11,7 +11,7 @@ import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
-  ITEMS, RECIPES, equippedItem, carriedWeight, capacity,
+  ITEMS, RECIPES, equippedItem, carriedWeight, capacity, effectiveWeight,
   buy, equip, craft, dismantle, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } from '../meta/enchant.js';
@@ -337,7 +337,7 @@ export class HubUI {
     const items = this.save.items.filter(item => !isWorn(this.save, item.uid) && (this.filter === 'all' || ITEMS[item.id].slot === this.filter));
     const rank = item => GRADE_ORDER.indexOf(ITEMS[item.id].rarity);
     items.sort((a, b) => {
-      if (this.sort === 'weight') return ITEMS[a.id].weight - ITEMS[b.id].weight;
+      if (this.sort === 'weight') return effectiveWeight(a) - effectiveWeight(b);
       if (this.sort === 'recent') return this.save.items.indexOf(b) - this.save.items.indexOf(a);
       return rank(b) - rank(a) || b.enhance - a.enhance;
     });
@@ -460,7 +460,7 @@ export class HubUI {
         .filter(item => (mode === 'weapon') === (ITEMS[item.id].slot === 'weapon'));
     const cards = stock.map(item => cardHtml(item, this.save, {
       extra: `data-mode="${mode === 'sell' ? 'sell' : 'buy'}"`,
-      note: mode === 'sell' ? `매입 ${sellPrice(item)} G` : `${bought.includes(item.uid) ? '품절' : `${item.price} G / 1개`} · 보유 ${this.save.items.filter(own => own.id === item.id).length} · ${ITEMS[item.id].weight} kg`,
+      note: mode === 'sell' ? `매입 ${sellPrice(item)} G` : `${bought.includes(item.uid) ? '품절' : `${item.price} G / 1개`} · 보유 ${this.save.items.filter(own => own.id === item.id).length} · ${amount(effectiveWeight(item))} kg`,
       disabled: mode !== 'sell' && bought.includes(item.uid),
     })).join('');
     const tabs = [['weapon', '무기'], ['armor', '방어구'], ['sell', '매입']].map(([tab, label]) =>
@@ -534,15 +534,15 @@ export class HubUI {
     this.forgeNotice = null;
     const last = notice && !Number.isInteger(notice.count) ? notice : null, crack = notice && Number.isInteger(notice.count) ? notice : null;
     const noticeHtml = last ? (last.outcome === 'destroyed'
-      ? `<p class="enchant-notice destroyed" role="status">${escape(ITEMS[last.id].name)} +${last.from} — 강렬하게 빛나더니 산산조각 났다. 강화석 ${last.refund[STONE]}개가 남았다.</p>`
+      ? `<p class="enchant-notice destroyed" role="status">${escape(ITEMS[last.id].name)} +${last.from} · 산산조각 · 강화석 ${last.refund[STONE]}개</p>`
       : `<p class="enchant-notice success" role="status">${escape(ITEMS[last.id].name)} +${last.from} → <b>+${last.to}</b> 강화 성공</p>`)
-      : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name} ${crack.count}장을 얻었다.</p>` : '';
-    const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 장비 먼저 · 좌우로 넘기기</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
+      : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name}  · ${crack.count}장</p>` : '';
+    const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 · 보관</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
     const content = this.forgeTab === 'scrolls' ? this.scrollWorkshopHtml()
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 고철과 재료</h3><div class="recipe-grid">${recipes}</div></section>`
         : `${html}${picker}`;
     this.showInnPanel('대장장이', `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
-      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `+${ENCHANT.safe}까지 안전 · 그 위는 파괴 위험` });
+      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 파괴 위험` });
   }
 
   forgeSalvageHtml() {
@@ -577,16 +577,14 @@ export class HubUI {
     const projected = { ...item, enhance: preview.maxed ? item.enhance : preview.outcomes[0] };
     const picker = Object.values(ids).map(id => `<button type="button" data-action="pick-scroll" data-id="${id}" aria-pressed="${id === this.forgeScroll}">`
       + `${itemIcon(id, ITEMS[id])}<span>${ITEMS[id].name}<small>보유 ${this.save.stacks[id] || 0}장</small></span></button>`).join('');
-    const target = preview.maxed ? '' : preview.outcomes.length > 1 ? ` → +${preview.outcomes[0]}~+${preview.outcomes.at(-1)}` : ` → +${preview.outcomes[0]}`;
-    const odds = preview.maxed ? '최대 강화'
-      : preview.risky ? `성공 ${pct(preview.chance)} · 실패 시 장비 파괴 (강화석 ${preview.refund[STONE]}개 남음)`
-        : `안전 구간 · 성공 확정${preview.blessed ? ' · 축복: 무작위 +1~+3 (최대 +' + ENCHANT.safe + ')' : ''}`;
+    const target = preview.outcomes.map(level => `+${level}`).join(' / ');
+    const odds = preview.maxed ? '최대 강화' : preview.risky ? `성공 ${pct(preview.chance)}` : '';
     const html = `<section class="forge-work ${preview.risky ? 'risky' : ''} ${preview.blessed ? 'blessed' : ''}" aria-label="강화 의식">
       <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3></div>
       <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
-      <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target.replace(' → ', '')}</strong></div>
-      <strong class="forge-odds">${preview.maxed ? '최대 강화' : pct(preview.chance)}<span>${preview.maxed ? '' : ' 성공 확률'}</span></strong>
-      <p class="forge-risk-band ${preview.risky && !preview.maxed ? 'loss' : ''}">${odds}</p>
+      <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target}</strong></div>
+      ${preview.blessed ? '<p class="forge-blessing">축복 · +1~3</p>' : ''}
+      ${odds ? `<strong class="forge-odds">${odds}</strong>` : ''}
       <div class="p2-stones scroll-picker" role="group" aria-label="사용할 주문서">${picker}</div>
       ${!preview.maxed && preview.have < 1 ? `<p class="p2-hint">주문서 부족 · ${button('주문서 제작으로', 'forge-tab', 'data-tab="scrolls"')}</p>` : ''}
       ${preview.maxed ? '' : `<details class="forge-preview"><summary>강화 후 능력치</summary>${linesHtml(compareItems(item, projected, this.save))}</details>`}</section>`;

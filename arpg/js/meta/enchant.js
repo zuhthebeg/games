@@ -1,7 +1,7 @@
 // cocy 10-11 enchant: scrolls replace stone+gold upgrades. Stones only become scrolls.
 // Outcomes are seeded by (account, item, attempt counter), and the result is part of the
 // returned save, so a reload during the animation cannot reroll an attempt.
-import { SLOTS, ENCHANT, STONE, GREATER_STONE, SCROLLS, rng } from './economy.js';
+import { SLOTS, ENCHANT, STONE, GREATER_STONE, SCROLLS, rng, weighted } from './economy.js';
 import { ITEMS, START_WEAPONS, cloneSave, dismantleStones, uniqueUid, meetsRequirement } from './items.js';
 
 export const scrollFamily = (item) => (ITEMS[item.id].slot === 'weapon' ? 'weapon' : 'armor');
@@ -25,13 +25,12 @@ export function enchantPreview(save, uid, scrollId) {
   const level = item.enhance;
   const maxed = level >= ENCHANT.max;
   const risky = isRisky(level);
-  const steps = scroll.blessed && !risky ? (level <= 2 ? ENCHANT.blessedLow : ENCHANT.blessedHigh) : [1];
+  const steps = scroll.blessed ? ENCHANT.blessedSteps : [1];
   const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
   return {
     item, level, maxed, risky, blessed: !!scroll.blessed,
     chance: maxed ? 0 : risky ? ENCHANT.rates[level] : 1,
-    // Blessed jumps inside the safe line stop at the safe line, as in Lineage.
-    outcomes: steps.map((step) => Math.min(level + step, risky ? ENCHANT.max : ENCHANT.safe)),
+    outcomes: [...new Set(steps.map((step) => Math.min(level + step, ENCHANT.max)))],
     refund: { [STONE]: refund },
     have: save.stacks[scrollId] || 0,
   };
@@ -66,7 +65,11 @@ export function enchant(save, uid, scrollId) {
     if (refund) next.stacks[STONE] = (next.stacks[STONE] || 0) + refund;
     return { save: next, result: { outcome: 'destroyed', uid, id: preview.item.id, from, to: null, risky: true, refund: preview.refund } };
   }
-  const to = preview.outcomes[Math.floor(random() * preview.outcomes.length)];
+  const steps = preview.blessed ? ENCHANT.blessedSteps : [1];
+  const step = preview.blessed && preview.risky
+    ? weighted(steps.map((step, i) => [step, ENCHANT.blessedRiskWeights[i]]), random)
+    : steps[Math.floor(random() * steps.length)];
+  const to = Math.min(from + step, ENCHANT.max);
   next.items.find((candidate) => candidate.uid === uid).enhance = to;
   return { save: next, result: { outcome: 'success', uid, id: preview.item.id, from, to, risky: preview.risky, refund: null } };
 }

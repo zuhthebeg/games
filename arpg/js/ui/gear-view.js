@@ -1,4 +1,4 @@
-import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier } from '../meta/items.js';
+import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
@@ -34,7 +34,7 @@ export function deltaText(line) {
 export const lineValue = (line, value) => `${line.prefix || ''}${amount(value)}${line.unit && !line.prefix ? `${line.unit === '%' ? '' : ' '}${line.unit}` : ''}`;
 
 export function linesHtml(comparison) {
-  const rows = comparison.lines.map(line => `<div data-line="${escape(line.key)}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}" data-section="${line.section || ''}">`
+  const rows = comparison.lines.filter(line => line.delta !== 0).map(line => `<div data-line="${escape(line.key)}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}" data-section="${line.section || ''}">`
     + `<dt>${escape(line.label)}</dt><dd><span>${escape(lineValue(line,line.from))} → <b>${escape(lineValue(line,line.to))}</b></span>`
     + `<small class="${line.delta === 0 ? '' : line.good ? 'gain' : 'loss'}">${deltaText(line)}</small></dd></div>`);
   return `<dl class="p2-lines">${rows.join('')}</dl>`;
@@ -49,11 +49,11 @@ export function splitComparisonHtml(item, save) {
   const value = (row, side) => row.section === 'affix' && !(side === 'from' ? current : item)?.affixes?.some(a => a.k === row.key) ? '—' : lineValue(row,row[side]);
   const rowHtml = row => `<tr data-line="${escape(row.key)}" data-from="${row.from}" data-to="${row.to}" data-delta="${row.delta}" data-section="${row.section || ''}"><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'from'))}</b></td><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'to'))}</b>${delta(row)}</td></tr>`;
   const extraRow = (key,label,from,to) => rowHtml({key,label,from,to,delta:to-from,good:to === from ? null : key === 'requiredStr' ? to < from : to > from,section:'base',prefix:key === 'enhance' ? '+' : ''});
-  const affixes = c.lines.filter(row => row.section === 'affix');
-  const changedOrSet = (from, to) => from !== 0 || to !== 0;
+  const affixes = c.lines.filter(row => row.section === 'affix' && row.delta !== 0);
+  const changedOrSet = (from, to) => from !== to;
   const weapon = ITEMS[item.id].power !== undefined;
   const primaryKeys = [...(weapon ? ['attack','basePower'] : ['ac','totalAc']), 'weight', ...(line('maxHp')?.delta ? ['maxHp'] : [])];
-  const primary = c.lines.filter(row => primaryKeys.includes(row.key));
+  const primary = c.lines.filter(row => primaryKeys.includes(row.key) && row.delta !== 0);
   const table = rows => `<table class="compare-split"><thead><tr><th scope="col">현재 착용<br><strong>${current ? escape(itemLabel(current)) : '빈 슬롯'}</strong></th><th scope="col">후보<br><strong>${escape(itemLabel(item))}</strong></th></tr></thead><tbody>${rows}</tbody></table>`;
   const summary = ['attack','totalAc','maxHp','attackRate','moveSpeed'].map(line).filter(row => row?.delta).map(row => `<span>${short[row.key]} ${delta(row)}</span>`).join(' · ') || '<span>변화 없음</span>';
   const more = affixes.slice(2), derived = c.lines.filter(row => row.section !== 'affix' && !primaryKeys.includes(row.key) && row.delta !== 0);
@@ -85,7 +85,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
   const def = ITEMS[item.id];
   const locked = !meetsRequirement(save, def);
   const worn = isWorn(save, item.uid);
-  const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${def.weight} kg`}`;
+  const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${amount(effectiveWeight(item))} kg`}`;
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
     + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>`
@@ -129,7 +129,7 @@ export function itemDetailsHtml(item) {
   const rows = [row('family', '종류', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경갑',medium:'중갑',heavy:'판금'}[def.armorClass] || SLOT_NAMES[def.slot]),
     row('rarity', '등급', GRADES[def.rarity]),
     def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
-    row('weight', '무게', `${amount(def.weight)} kg`),
+    row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));
   return `<section class="item-details"><dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl></section>`;

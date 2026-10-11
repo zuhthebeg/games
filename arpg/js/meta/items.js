@@ -108,6 +108,8 @@ export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll'];
 export { RECIPES, enhanceMultiplier } from './economy.js';
 // Lineage-style: every armor enchant level is +1 AC on that piece.
 export const armorAc = (item) => item && ITEMS[item.id]?.power === undefined ? (ITEMS[item.id]?.ac || 0) + (item.enhance || 0) : 0;
+// Strength requirements remain tied to the definition’s original weight.
+export const effectiveWeight = (item) => (ITEMS[item?.id]?.weight || 0) * (1 - 0.03 * (item?.enhance || 0));
 export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
@@ -116,12 +118,12 @@ export function capacity(save) {
 }
 
 export function lootWeight(loot) {
-  return loot.items.reduce((sum, item) => sum + ITEMS[item.id].weight, 0)
+  return loot.items.reduce((sum, item) => sum + effectiveWeight(item), 0)
     + Object.entries(loot.stacks).reduce((sum, [id, count]) => sum + ITEMS[id].weight * count, 0);
 }
 
 export function carriedWeight(save, tempLoot = { items: [], stacks: {} }) {
-  const equipped = SLOTS.reduce((sum, slot) => sum + (ITEMS[equippedItem(save, slot)?.id]?.weight || 0), 0);
+  const equipped = SLOTS.reduce((sum, slot) => sum + effectiveWeight(equippedItem(save, slot)), 0);
   const supplies = CONSUMABLES.reduce((sum, id) => sum + (save.stacks[id] || 0) * ITEMS[id].weight, 0);
   return Math.round((equipped + supplies + lootWeight(tempLoot)) * 1000) / 1000;
 }
