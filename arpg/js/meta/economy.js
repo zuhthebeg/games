@@ -23,6 +23,7 @@ export const SCROLLS = {
   weapon: { normal: 'scroll_enchant_weapon', blessed: 'scroll_blessed_weapon' },
   armor: { normal: 'scroll_enchant_armor', blessed: 'scroll_blessed_armor' },
 };
+export const MATERIAL_STACK = { metal: 'scrap', leather: 'hide', wood: 'wood', cloth: 'web', rune: 'rune_shard' };
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
   questExtraGearChance: 0.1, // Per-player quest budget: 90% one slot, 10% two; never scales with threat.
@@ -66,15 +67,15 @@ export function weighted(entries, random) {
 
 export const RECIPES = {
   iron_sword: { scrap: 8, fang: 2, gold: 60 },
-  hunter_bow: { scrap: 8, hide: 2, gold: 60 },
-  ember_wand: { scrap: 8, fang: 3, gold: 60 },
-  boar_hide_armor: { scrap: 6, hide: 4, gold: 50 },
-  leather_vest: { scrap: 5, hide: 3, gold: 40 },
-  // [제안] Scrap remains the common sink; craft salvage refunds only 25% of scrap.
-  rune_blade: { scrap: 16, rune_shard: 2, fang: 2, gold: 140 },
-  pack_bow: { scrap: 16, hide: 4, web: 2, gold: 140 },
-  altar_staff: { scrap: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
-  woven_armor: { scrap: 16, hide: 4, web: 4, gold: 140 },
+  hunter_bow: { wood: 8, hide: 2, gold: 60 },
+  ember_wand: { wood: 8, fang: 3, gold: 60 },
+  boar_hide_armor: { hide: 6, scrap: 4, gold: 50 },
+  leather_vest: { hide: 5, scrap: 3, gold: 40 },
+  // Primary materials follow the result; craft salvage refunds only 25% of that ingredient.
+  rune_blade: { rune_shard: 16, scrap: 2, fang: 2, gold: 140 },
+  pack_bow: { wood: 16, hide: 4, web: 2, gold: 140 },
+  altar_staff: { wood: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
+  woven_armor: { web: 16, hide: 4, scrap: 4, gold: 140 },
 };
 // Above the safe line each risky level adds a further +4% so +7~+12 are worth the gamble.
 export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2 + 0.04 * Math.max(0, level - ENCHANT.safe);

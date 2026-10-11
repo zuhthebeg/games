@@ -9,10 +9,17 @@ import { itemIcon, icon } from '../js/ui/icons.js';
 const assets = new URL('../assets/items/', import.meta.url);
 const records = JSON.parse(readFileSync(new URL('manifest.json', assets)));
 
-test('all real item IDs resolve reviewed local art with inline SVG fallback', () => {
+test('existing item IDs retain reviewed art; C1 wood uses the existing SVG fallback without new assets', () => {
   const used = new Set();
   for (const [id, definition] of Object.entries(ITEMS)) {
     const key = itemArtKey(id, definition);
+    if (id === 'wood') {
+      assert.equal(key, null);
+      const fallback = itemIcon(id, definition);
+      assert.match(fallback, /<svg[^>]*aria-hidden="true"/);
+      assert.doesNotMatch(fallback, /<img|<picture|https:/);
+      continue;
+    }
     assert.ok(key, `uncovered item ${id}`);
     const path = itemArtPath(key);
     assert.ok(/^assets\/items\/[a-z0-9-]+\.webp$/.test(path), path);

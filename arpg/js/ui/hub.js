@@ -12,7 +12,7 @@ import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/s
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
   ITEMS, RECIPES, equippedItem, carriedWeight, capacity, effectiveWeight,
-  buy, equip, craft, dismantle, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
+  buy, equip, craft, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } from '../meta/enchant.js';
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
@@ -457,7 +457,7 @@ export class HubUI {
     } else {
       const label = worn ? '착용 중' : comparison.locked ? `장착 불가 · ${comparison.lockReason}` : '장착';
       footer = `<div class="p2-two">${button(`판매 ${sellPrice(item)} G`, 'sell', args, worn)}`
-        + `${button(`분해 · 고철 ${dismantleRefund(item)}`, 'dismantle', `${args} class="quiet-danger"`, worn)}</div>`
+        + `${button(`분해 · ${ITEMS[dismantleMaterial(item)].name}: ${dismantleRefund(item)}`, 'dismantle', `${args} class="quiet-danger"`, worn)}</div>`
         + button(label, 'equip', `${args} class="primary"`, worn || comparison.locked);
     }
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
@@ -479,7 +479,7 @@ export class HubUI {
 
   dismantleText(item) {
     const stones = dismantleStones(item);
-    return [`고철 ${dismantleRefund(item)}`, stones[STONE] && `강화석 ${stones[STONE]}`, stones[GREATER_STONE] && `상급 강화석 ${stones[GREATER_STONE]}`]
+    return [`${ITEMS[dismantleMaterial(item)].name}: ${dismantleRefund(item)}`, stones[STONE] && `강화석: ${stones[STONE]}`, stones[GREATER_STONE] && `상급 강화석: ${stones[GREATER_STONE]}`]
       .filter(Boolean).join(' · ');
   }
 
@@ -565,7 +565,7 @@ export class HubUI {
     })).join('');
     const recipes = Object.entries(RECIPES).map(([id, recipe]) => {
       const available = Object.entries(recipe).every(([key, count]) => (key === 'gold' ? this.save.gold : this.save.stacks[key] || 0) >= count);
-      const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name} ${count}`).join(' · ');
+      const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
       return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}</b><small>${parts}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
     }).join('');
@@ -583,7 +583,7 @@ export class HubUI {
       : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name}  · ${crack.count}장</p>` : '';
     const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 · 보관</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
     const content = this.forgeTab === 'scrolls' ? this.scrollWorkshopHtml()
-      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 고철과 재료</h3><div class="recipe-grid">${recipes}</div></section>`
+      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
         : `${html}${picker}`;
     this.showInnPanel('대장장이', `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
       'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 파괴 위험` });
@@ -814,7 +814,7 @@ export class HubUI {
       const rare = ['rare', 'epic'].includes(ITEMS[drop.id].rarity);
       const uid = `data-uid="${escape(drop.uid)}"`;
       const actions = item && !state
-        ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 ${dismantleRefund(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
+        ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 · ${ITEMS[dismantleMaterial(item)].name}: ${dismantleRefund(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
         : `<small class="p2-loot-status" role="status">${state || '보관함'}</small>`;
       return `<article class="p2-loot-card ${rare ? 'sheen' : ''}">${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
     }).join('');

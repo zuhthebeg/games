@@ -3,7 +3,7 @@ export const NEW_MONSTER_DROPS = {
   wolf: {
     gold: [8, 12], stacks: [
       { id: 'hide', count: 2 }, { id: 'fang', count: 1, chance: 0.7 },
-      { id: 'scrap', count: 2 }, { id: 'potion', count: 1, chance: 0.2 },
+      { id: 'wood', count: 2 }, { id: 'potion', count: 1, chance: 0.2 },
     ], items: [{ id: 'pack_bow', chance: 0.08 }],
   },
   rune_guardian: {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
-import { ITEMS, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, RECIPES } from '../js/meta/items.js';
+import { ITEMS, dismantleMaterial, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, RECIPES } from '../js/meta/items.js';
 import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { deriveMods } from '../js/meta/stats.js';
 import { rollAffixes, affixTotals, DEFERRED_AFFIXES, validAffixes } from '../js/meta/affixes.js';
@@ -274,7 +274,7 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
       assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5]);
       assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerScroll);
       assert.equal(salvaged.stacks.enhance_stone_3, made.stacks.enhance_stone_3);
-      assert.ok(salvaged.stacks.scrap < before.stacks.scrap);
+      assert.ok(salvaged.stacks[dismantleMaterial(item)] < before.stacks[dismantleMaterial(item)]);
       assert.ok(sellItem(made, item.uid).gold < before.gold);
     }
   }

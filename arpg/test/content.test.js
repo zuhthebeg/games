@@ -7,7 +7,7 @@ import { validateContent } from '../tools/validate-content.mjs';
 import { ABILITIES, MONSTERS, STAGES } from '../js/content/combat.js';
 import { DANGER_COLORS, MONSTER_PALETTES, MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { NEW_MONSTER_DROPS } from '../js/content/loot.js';
-import { ITEMS, RECIPES, CONSUMABLES, craft, equip, dismantle, rollDrops } from '../js/meta/items.js';
+import { ITEMS, RECIPES, CONSUMABLES, craft, equip, dismantle, dismantleMaterial, rollDrops } from '../js/meta/items.js';
 import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
 import { STAGE_XP, stageXp, deathLoss, addXp } from '../js/meta/progression.js';
@@ -157,7 +157,7 @@ test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances'
   const base = addXp(fresh(), 1200);
   base.gold = 10000;
   base.stats = { ...base.stats, str: base.stats.str + 1 }; base.statPoints -= 1; // STR 9: rune_blade 9, woven_armor 8
-  base.stacks = { ...base.stacks, scrap: 1000, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100, enhance_stone_1: 100 };
+  base.stacks = { ...base.stacks, scrap: 1000, wood: 100, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100, enhance_stone_1: 100 };
   for (const id of ['rune_blade', 'pack_bow', 'altar_staff', 'woven_armor']) {
     assert.equal(ITEMS[id].huntTier, 2);
     assert.equal(ITEMS[id].requiredLevel, 1); // no level gates (cocy 10-11)
@@ -167,7 +167,8 @@ test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances'
     assert.ok(validateSave(equip(save, item.uid)));
     save = enchant({ ...save, stacks: { ...save.stacks, [scrollsFor(item).normal]: 1 } }, item.uid, scrollsFor(item).normal).save;
     const salvage = dismantle(save, item.uid);
-    assert.equal(salvage.stacks.scrap, base.stacks.scrap - RECIPES[id].scrap + Math.floor(RECIPES[id].scrap / 4));
+    const primary = dismantleMaterial(item);
+    assert.equal(salvage.stacks[primary], base.stacks[primary] - RECIPES[id][primary] + Math.floor(RECIPES[id][primary] / 4));
     assert.ok(salvage.gold < base.gold);
     assert.ok(validateSave(salvage));
     assert.ok(equip({ ...save, level: 1 }, item.uid)); // level never gates

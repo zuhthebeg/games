@@ -6,7 +6,7 @@ import { STAT_KEYS, eff, cap, deriveMods, allocateStats } from '../js/meta/stats
 import { xpSpan, addXp, deathLoss, stageXp } from '../js/meta/progression.js';
 import {
   ITEMS, RECIPES, enhanceMultiplier, rollDrops, dropSeed,
-  equip, craft, dismantle, dismantleRefund, buy, shopPrice, carriedWeight, capacity,
+  equip, craft, dismantle, dismantleRefund, dismantleMaterial, buy, shopPrice, carriedWeight, capacity,
 } from '../js/meta/items.js';
 import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { resolve } from '../js/meta/quiz.js';
@@ -159,10 +159,11 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     const crafted = craft(base, id);
     const item = crafted.items.at(-1);
     assert.ok(item.uid.startsWith('craft:'));
-    assert.equal(dismantleRefund(item), Math.floor(recipe.scrap / 4));
+    const primary = dismantleMaterial(item);
+    assert.equal(dismantleRefund(item), Math.floor(recipe[primary] / 4));
     const cycle = dismantle(crafted, item.uid);
     assert.ok(cycle.gold < base.gold);
-    assert.ok(cycle.stacks.scrap < base.stacks.scrap);
+    assert.ok(cycle.stacks[primary] < base.stacks[primary]);
     assert.deepEqual(cycle.items, base.items);
     for (const material of Object.keys(recipe).filter((key) => key !== 'gold')) {
       assert.ok(cycle.stacks[material] <= base.stacks[material]);
@@ -178,7 +179,7 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     assert.equal(upgraded.stacks.enhance_stone_1, 100);
     near(enhanceMultiplier(5), 1.25);
     const refund = dismantle(upgraded, item.uid);
-    assert.equal(refund.stacks.scrap - upgraded.stacks.scrap, dismantleRefund(item));
+    assert.equal(refund.stacks[primary] - upgraded.stacks[primary], dismantleRefund(item));
     assert.equal(refund.stacks.enhance_stone_1 - upgraded.stacks.enhance_stone_1, 5);
     assert.equal(refund.gold, upgraded.gold);
     assert.throws(() => enchant({ ...upgraded, stacks: { ...upgraded.stacks, [scroll]: 0 } }, item.uid, scroll), /없습니다/);

@@ -1,18 +1,18 @@
 import { eff } from './stats.js';
-import { SLOTS, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
+import { SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
-  name, kind: 'weapon', slot: 'weapon', huntTier: 1, family, rarity, power, weight, form,
+  name, kind: 'weapon', slot: 'weapon', huntTier: 1, material: family === 'blade' ? 'metal' : 'wood', family, rarity, power, weight, form,
   requiredLevel: { common: 1, fine: 2, rare: 4 }[rarity],
 });
 // AC = old armor HP × 2/3: keeps effective HP within ~10% of the old HP model across hunting tiers.
 const toAc = (hp) => Math.round(hp * 2 / 3);
-const armor = (name, rarity, hp, weight) => ({
-  name, kind: 'body', slot: 'body', huntTier: 1, armorClass: weight <= 4 ? 'light' : weight <= 8 ? 'medium' : 'heavy', rarity, ac: toAc(hp), weight,
+const armor = (name, rarity, hp, weight, material = 'leather') => ({
+  name, kind: 'body', slot: 'body', huntTier: 1, material, armorClass: weight <= 4 ? 'light' : weight <= 8 ? 'medium' : 'heavy', rarity, ac: toAc(hp), weight,
   requiredLevel: rarity === 'common' ? 1 : 2,
 });
 
@@ -25,26 +25,27 @@ export const ITEMS = {
   hunter_bow: weapon('사냥꾼의 활', 'bow', 'fine', 1.15, 7),
   ember_wand: weapon('불씨 지팡이', 'focus', 'fine', 1.15, 5, 'wand'),
   chief_maul: weapon('대장의 망치', 'blade', 'rare', 1.32, 18),
-  cloth_tunic: armor('천 튜닉', 'common', 0, 4),
+  cloth_tunic: armor('천 튜닉', 'common', 0, 4, 'cloth'),
   leather_vest: armor('가죽 조끼', 'fine', 20, 8),
   boar_hide_armor: armor('멧돼지 가죽 갑옷', 'fine', 35, 12),
   // [제안] Next hunting tier, independent of rarity/enhancement; no old gear rebalance.
-  rune_blade: { ...weapon('룬철 검', 'blade', 'fine', 1.35, 13), huntTier: 2, requiredLevel: 5 },
+  rune_blade: { ...weapon('룬철 검', 'blade', 'fine', 1.35, 13), material: 'rune', huntTier: 2, requiredLevel: 5 },
   pack_bow: { ...weapon('늑대 사냥 활', 'bow', 'fine', 1.35, 8), huntTier: 2, requiredLevel: 5 },
   altar_staff: { ...weapon('제단 지팡이', 'focus', 'fine', 1.35, 6, 'staff'), huntTier: 2, requiredLevel: 5 },
-  woven_armor: { ...armor('거미줄 가죽 갑옷', 'fine', 50, 10), huntTier: 2, requiredLevel: 5 },
+  woven_armor: { ...armor('거미줄 가죽 갑옷', 'fine', 50, 10, 'cloth'), huntTier: 2, requiredLevel: 5 },
   // [제안] Hunting tier 3 for S11~S20: +0.25 power / +25 HP over tier 2, Lv10 gate.
   warden_blade: { ...weapon('파수꾼의 대검', 'blade', 'fine', 1.6, 15), huntTier: 3, requiredLevel: 10 },
   frost_bow: { ...weapon('서리 장궁', 'bow', 'fine', 1.6, 9), huntTier: 3, requiredLevel: 10 },
   seal_staff: { ...weapon('봉인의 지팡이', 'focus', 'fine', 1.6, 7, 'staff'), huntTier: 3, requiredLevel: 10 },
-  warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13), huntTier: 3, requiredLevel: 10 },
-  scrap: { name: '고철', kind: 'material', weight: 0.2, sell: 1 },
-  hide: { name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
+  warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13, 'metal'), huntTier: 3, requiredLevel: 10 },
+  scrap: { material: 'metal', name: '고철', kind: 'material', weight: 0.2, sell: 1 },
+  hide: { material: 'leather', name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
+  wood: { name: '목재', kind: 'material', material: 'wood', weight: 0.2, sell: 1 },
   fang: { name: '송곳니', kind: 'material', weight: 0.3, sell: 2 },
   // [제안] One rune material and one web material; §10.2 frost_shard is shared with spirit drops.
-  rune_shard: { name: '룬 조각', kind: 'material', weight: 0.3, sell: 4 },
+  rune_shard: { material: 'rune', name: '룬 조각', kind: 'material', weight: 0.3, sell: 4 },
   frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3, sell: 4 },
-  web: { name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
+  web: { material: 'cloth', name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
   potion: { name: 'HP 물약', kind: 'consumable', weight: 0.1, price: 10 },
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 6 },
@@ -56,7 +57,7 @@ for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3,
     for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2], ['fine', 3]]) {
       const id = `${slot}_${armorClass}_${rarity}_t${tier}`;
       ITEMS[id] = { name: `${{head:'머리',hands:'장갑',feet:'신발'}[slot]} · ${armorClass} T${tier}`,
-        kind: slot, slot, armorClass, rarity, huntTier: tier,
+        kind: slot, slot, material: slot === 'head' || armorClass === 'heavy' ? 'metal' : 'leather', armorClass, rarity, huntTier: tier,
         ac: toAc(Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity])),
         weight: weight * scale, requiredLevel: TIER_LEVEL[tier] ?? (rarity === 'common' ? 1 : 2) };
     }
@@ -146,30 +147,39 @@ export function equip(save, uid) {
   return next;
 }
 
+export const dismantleMaterial = (item) => MATERIAL_STACK[ITEMS[item.id].material];
+
 export function dismantleRefund(item) {
   // Craft provenance stays in the UID; affixes never increase salvage.
-  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id].scrap * ECONOMY.craftRefundFraction);
+  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id][dismantleMaterial(item)] * ECONOMY.craftRefundFraction);
   return SALVAGE[ITEMS[item.id].rarity];
 }
 
-// Enhanced gear also returns stones (cocy 10-11); scrap stays tied to rarity/provenance above.
+// Enhanced gear also returns stones; primary material stays tied to rarity/provenance above.
 export const dismantleStones = (item) => ({
   [STONE]: ENCHANT.dismantleStones[item.enhance] || 0,
   [GREATER_STONE]: ENCHANT.dismantleGreater[item.enhance] || 0,
 });
 
 export function dismantle(save, uid) {
-  const item = save.items.find((candidate) => candidate.uid === uid);
-  if (!item || !SLOTS.includes(ITEMS[item.id].kind)) throw new Error('분해할 장비가 없습니다.');
+  const matches = save.items.filter((candidate) => candidate.uid === uid);
+  if (matches.length > 1) throw new Error('장비 식별자가 중복됩니다.');
+  const item = matches[0];
+  if (!item || !SLOTS.includes(ITEMS[item.id]?.kind)) throw new Error('분해할 장비가 없습니다.');
   if (Object.values(save.equipped).includes(uid)) throw new Error('장착한 장비는 분해할 수 없습니다.');
   const next = cloneSave(save);
   next.items = next.items.filter((candidate) => candidate.uid !== uid);
-  next.stacks.scrap = (next.stacks.scrap || 0) + dismantleRefund(item);
+  const material = dismantleMaterial(item);
+  next.stacks[material] = (next.stacks[material] || 0) + dismantleRefund(item);
   for (const [id, count] of Object.entries(dismantleStones(item))) if (count) next.stacks[id] = (next.stacks[id] || 0) + count;
   return next;
 }
 
 function spend(save, cost) {
+  if (!Number.isSafeInteger(cost.gold) || cost.gold < 0 || Object.entries(cost).some(([id, count]) =>
+    id !== 'gold' && (!Number.isSafeInteger(count) || count < 1 || ITEMS[id]?.kind !== 'material'))) {
+    throw new Error('재료 수량이 올바르지 않습니다.');
+  }
   if (save.gold < cost.gold) throw new Error('골드가 부족합니다.');
   for (const [id, count] of Object.entries(cost)) {
     if (id !== 'gold' && (save.stacks[id] || 0) < count) throw new Error(`${ITEMS[id].name}이 부족합니다.`);
@@ -255,7 +265,7 @@ function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
       break;
     case 'goblin_slinger':
       loot.gold = integer(2, 5);
-      stack('scrap', 1, 0.5);
+      stack('wood', 1, 0.5);
       stack('hide', 1, 0.3);
       stack('mana_potion', 1, 0.15);
       break;
