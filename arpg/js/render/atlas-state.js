@@ -8,6 +8,7 @@ export const ATLAS_IDS = Object.freeze({
   goblin_slinger: 'goblin-archer',
   goblin_chief: 'goblin-chief',
   wolf: 'wolf',
+  poison_spider: 'poison-spider',
   // No verified boar artwork yet: keep its distinct procedural silhouette.
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);

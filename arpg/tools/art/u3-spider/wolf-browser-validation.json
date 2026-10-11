@@ -1,0 +1,431 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "viewport": [
+        1280,
+        800
+      ],
+      "native": "keyboard Enter/J",
+      "wolfCount": 2,
+      "states": [
+        {
+          "state": "idle",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "run",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "E",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "SE",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "S",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "SW",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "W",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "NW",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "N",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "NE",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "S",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "SW",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "W",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "NW",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "N",
+          "frame": 4
+        },
+        {
+          "state": "hit",
+          "direction": "NE",
+          "frame": 5
+        },
+        {
+          "state": "death",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NW",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NE",
+          "frame": 2
+        }
+      ],
+      "fallback": true,
+      "frozenHostUnchanged": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "native": "touch",
+      "wolfCount": 2,
+      "states": [
+        {
+          "state": "idle",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "run",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "E",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "SE",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "S",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "SW",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "W",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "NW",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "N",
+          "frame": 3
+        },
+        {
+          "state": "attack",
+          "direction": "NE",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "S",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "SW",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "W",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "NW",
+          "frame": 3
+        },
+        {
+          "state": "hit",
+          "direction": "N",
+          "frame": 4
+        },
+        {
+          "state": "hit",
+          "direction": "NE",
+          "frame": 5
+        },
+        {
+          "state": "death",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NW",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NE",
+          "frame": 2
+        }
+      ],
+      "fallback": true,
+      "frozenHostUnchanged": true
+    }
+  ],
+  "consoleErrors": 0,
+  "screenshots": 0
+}

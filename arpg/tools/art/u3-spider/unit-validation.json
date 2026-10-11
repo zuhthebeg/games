@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "command": "node --test arpg/test/*.test.js",
+  "tests": 410,
+  "pass": 410,
+  "fail": 0,
+  "tap_sha256": "1a7c8eee843292da6c9ad5c76ab7b91c5d443427e8cd56ec49ad8a05756d81a0",
+  "log_archive": "/mnt/c/Users/user/ai-tools/arpg-art/u3-spider/validation/tests-final.tap"
+}

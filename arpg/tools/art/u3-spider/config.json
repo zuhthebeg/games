@@ -1,0 +1,67 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/u3-spider/frames-v2",
+  "characters": [
+    {
+      "name": "poison-spider",
+      "model": "C:/Users/user/ai-tools/arpg-art/u3-spider/source/Quaternius-Spider.glb",
+      "keep": [
+        "Cube"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "FrontLeg.L",
+        "FrontLeg.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "pose_profile": "arachnid",
+      "animations": {
+        "idle": "SpiderArmature|Spider_Idle",
+        "run": "SpiderArmature|Spider_Walk",
+        "attack": "SpiderArmature|Spider_Attack",
+        "hit": "U3_Spider_Recoil",
+        "death": "SpiderArmature|Spider_Death"
+      },
+      "label": "독거미",
+      "content_ids": [
+        "poison_spider"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "recoil": {
+        "name": "U3_Spider_Recoil",
+        "bones": {
+          "Body": -12,
+          "Head": 18,
+          "Abdomen": -10,
+          "FrontLeg.L": 15,
+          "FrontLeg.R": -15
+        }
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/u3-spider/source",
+  "webp_quality": 52
+}

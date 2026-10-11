@@ -17,7 +17,8 @@ def verify_pose(record, skinned_count, profile="humanoid"):
     pose = record['pose']
     degrees = pose['arm_degrees_from_bind']
     assert len(degrees) == 2 and all(math.isfinite(value) for value in degrees), record['name']
-    if profile != 'quadruped':
+    assert profile in ('humanoid', 'quadruped', 'arachnid'), ('unknown pose profile', profile)
+    if profile == 'humanoid':
         assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
         assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
     else:
@@ -32,9 +33,12 @@ def verify_character(base, frames_root, entry):
     evidence = {record['name']: record for record in info['frames']}
     expected_skin = len(info['pose_check']['skinned_objects'])
     profile = info['pose_check'].get('profile', 'humanoid')
-    if profile == 'quadruped':
+    if profile in ('quadruped', 'arachnid'):
         source_proof = json.loads((frames_root.parent / 'source-validation.json').read_text())
-        assert source_proof['ok'] and source_proof['checked_mesh'] == 'Wolf'
+        assert source_proof['ok'] and source_proof['checked_mesh'] == ('Wolf' if profile == 'quadruped' else 'Cube')
+        if profile == 'arachnid':
+            assert len(source_proof['articulated_legs']) == 8
+            assert all(v > .001 for v in source_proof['walk_leg_motion_radians'].values())
         assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
         assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
         assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
@@ -74,6 +78,12 @@ def verify_character(base, frames_root, entry):
                 # floor + 16px extent, not the humanoid 5% area expectation.
                 assert 100 * 512 / 16384 <= coverage <= 60, (name, coverage)
                 assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 16, (name, 'end-on readability', bbox)
+            elif profile == 'arachnid':
+                # Eight thin legs enclose transparent gaps. Require independent
+                # articulated-leg proof plus 640 opaque px and 32px extents;
+                # never lower the humanoid coverage/quaternion/bind gates.
+                assert 100 * 640 / 16384 <= coverage <= 60, (name, coverage)
+                assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 32, (name, 'spider readability', bbox)
             else:
                 assert 5 <= coverage <= 60, (name, coverage)
             assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 128 and bbox[3] < 128, (name, bbox)

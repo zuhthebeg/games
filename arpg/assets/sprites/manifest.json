@@ -204,5 +204,35 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "poison-spider",
+    "label": "독거미",
+    "monster": true,
+    "content_ids": [
+      "poison_spider"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json",
+      "atlas-2.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5740587711334229
+    },
+    "bytes": 918346,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

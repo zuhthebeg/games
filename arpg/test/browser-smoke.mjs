@@ -480,7 +480,7 @@ try {
   await command('Page.reload');await waitFor(page('inn'));
   for (const [stage, types] of [['S6', ['rune_guardian', 'spirit']], ['S7', ['poison_spider']]]) {
     await devStart(stage);
-    await waitFor(`${JSON.stringify(types)}.every(type=>__arpg.art.visuals.some(v=>v.key===type && v.mode==="procedural"))`);
+    await waitFor(`${JSON.stringify(types)}.every(type=>__arpg.art.visuals.some(v=>v.key===type && (type==='poison_spider' ? v.mode==='atlas' && v.textureLoaded : v.mode==='procedural')))`);
     await key('KeyR');
     await key('KeyR', 'keyUp');
     await waitFor('__arpg.world.round.state==="returned"', 6000);
@@ -668,7 +668,7 @@ try {
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 1 → inn',
     shop: 'supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload',
     S2: 'sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return',
-    newStages: 'pre-S5 v1 → S5 board unlock → wolf atlas ×2 / S6 guardian+spirit / S7 spider procedural → return',
+    newStages: 'pre-S5 v1 → S5 board unlock → wolf atlas ×2 / S6 guardian+spirit / S7 spider atlas → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 6, buttons: 6, inside: true, noOverlap: true },
     combat, feedback, touch: true, edgeLatch: true, readonlyDebug: true,

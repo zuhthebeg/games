@@ -18,7 +18,7 @@ test('wolf exact individual CC0 listing binds downloaded GLB to independently ev
   assert.equal(source.ok, true);
   assert.equal(source.checked_mesh, 'Wolf');
   assert.equal(ATLAS_IDS.wolf, 'wolf');
-  assert.equal(ATLAS_IDS.poison_spider, undefined);
+  assert.equal(ATLAS_IDS.poison_spider, 'poison-spider');
   assert.equal(ATLAS_IDS.iron_boar, undefined);
 });
 

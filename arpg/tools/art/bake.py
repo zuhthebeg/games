@@ -126,6 +126,30 @@ for job in config['characters']:
             else:
                 meshes.append(obj)
     skinned = [obj for obj in meshes if any(mod.type == 'ARMATURE' for mod in obj.modifiers)]
+    # Optional model-specific recoil is authored on the imported rig, not a
+    # fixed sprite or a renamed locomotion clip. Originals remain untouched.
+    if job.get('recoil'):
+        spec = job['recoil']
+        assert job.get('pose_profile') == 'arachnid'
+        idle = bpy.data.actions[job['animations']['idle']]
+        rig.animation_data.action = idle
+        rig.animation_data.action_slot = idle.slots[0]
+        scene.frame_set(0); bpy.context.view_layer.update()
+        stance = {b.name: b.matrix_basis.copy() for b in rig.pose.bones}
+        recoil = bpy.data.actions.new(spec['name'])
+        recoil.use_fake_user = True
+        rig.animation_data.action = recoil
+        from mathutils import Quaternion
+        for frame, strength in [(0, 0), (2, 1), (5, .5), (8, 0)]:
+            for bone in rig.pose.bones:
+                bone.matrix_basis = stance[bone.name].copy()
+                if bone.name in spec['bones']:
+                    bone.rotation_quaternion = bone.rotation_quaternion @ Quaternion(Vector((1, 0, 0)), math.radians(spec['bones'][bone.name]) * strength)
+                bone.keyframe_insert('rotation_quaternion', frame=frame)
+                bone.keyframe_insert('location', frame=frame)
+                bone.keyframe_insert('scale', frame=frame)
+        rig.animation_data.action = None
+        for bone in rig.pose.bones: bone.matrix_basis = default_basis[bone.name].copy()
     actions = {action.name: action for action in bpy.data.actions}
 
     def action(name):
@@ -143,7 +167,7 @@ for job in config['characters']:
     else:
         rig.animation_data.action = None
         for bone in rig.pose.bones:
-            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') == 'quadruped' else Matrix.Identity(4)
+            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') in ('quadruped', 'arachnid') else Matrix.Identity(4)
     scene.frame_set(0)
     bpy.context.view_layer.update()
     arm_names = job.get('arm_bones', ['upperarm.l', 'upperarm.r'])
@@ -393,7 +417,7 @@ for job in config['characters']:
                     assert len(current) == len(rest)
                     square_distances.extend((inverse_facing @ point - original).length_squared for point, original in zip(current, rest))
                 rms = math.sqrt(sum(square_distances) / len(square_distances)) / bind_height
-                if job.get('pose_profile') != 'quadruped':
+                if job.get('pose_profile') not in ('quadruped', 'arachnid'):
                     assert max(arm_degrees) > 10, (job['name'], name, 'T-pose arms', arm_degrees)
                     assert rms > .015, (job['name'], name, 'bind/frozen skin', rms)
                 # Quadruped rest can equal an authored idle frame: validate clip

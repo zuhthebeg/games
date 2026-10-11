@@ -1,0 +1,29 @@
+{
+  "model_page": "https://poly.pizza/m/yRYJiAJyiM",
+  "download_url": "https://static.poly.pizza/4259fbdb-afb5-4d40-9108-363625dd6b6e.glb.br",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "individual_page_text": "Aug 19, 2021 • FBX/GLTF format • Public Domain (CC0)",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "archive": "C:/Users/user/ai-tools/arpg-art/u3-spider/source",
+  "files": [
+    {
+      "file": "Quaternius-Spider.glb",
+      "bytes": 449008,
+      "sha256": "d759e35f6cf5adc7eb7e3f70135cd2a808787fc36337a523015592ba840ccd6d"
+    },
+    {
+      "file": "poly-spider-cc0.html",
+      "bytes": 111160,
+      "sha256": "3d289e95623224c0b1813dd3ac5f0cccb81cd253e936e85c3c5f22011888ac2d"
+    }
+  ],
+  "clips": [
+    "SpiderArmature|Spider_Idle",
+    "SpiderArmature|Spider_Walk",
+    "SpiderArmature|Spider_Attack",
+    "U3_Spider_Recoil",
+    "SpiderArmature|Spider_Death"
+  ],
+  "original_missing_hit": "U3_Spider_Recoil is locally authored on original rig, 0/2/5/8 source frames, not Jump renamed as hit."
+}

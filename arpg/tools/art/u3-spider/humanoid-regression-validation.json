@@ -1,0 +1,51 @@
+[
+  {
+    "name": "hero-sword",
+    "format": "webp",
+    "frames": 392,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1152
+      ]
+    ],
+    "webp_bytes": 335424,
+    "json_bytes": 89640,
+    "total_bytes": 425064,
+    "alpha_coverage_percent": [
+      5.109,
+      10.278
+    ],
+    "max_idle_center_drift_px": 1.118,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "dodge": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 392,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.070685,
+    "lossless_alpha_matches_pose_evidence": 392,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      46.82,
+      28.72,
+      31.4,
+      38.5,
+      46.82,
+      28.72,
+      31.4,
+      38.5
+    ]
+  }
+]

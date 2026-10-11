@@ -1,0 +1,152 @@
+{
+  "ok": true,
+  "model_sha256": "d759e35f6cf5adc7eb7e3f70135cd2a808787fc36337a523015592ba840ccd6d",
+  "skinned_clip_motion": {
+    "idle": {
+      "samples": 42,
+      "max_skinned_rms_world": 0.2180399712804032,
+      "source": "SpiderArmature|Spider_Idle"
+    },
+    "run": {
+      "samples": 9,
+      "max_skinned_rms_world": 0.54045598537094,
+      "source": "SpiderArmature|Spider_Walk"
+    },
+    "attack": {
+      "samples": 8,
+      "max_skinned_rms_world": 0.6116787415382838,
+      "source": "SpiderArmature|Spider_Attack"
+    },
+    "hit": {
+      "samples": 4,
+      "max_skinned_rms_world": 0.25340502458395614,
+      "source": "U3_Spider_Recoil"
+    },
+    "death": {
+      "samples": 11,
+      "max_skinned_rms_world": 3.6720187688832087,
+      "source": "SpiderArmature|Spider_Death"
+    }
+  },
+  "direction_vectors": {
+    "E": {
+      "head_minus_abdomen_xy": [
+        0.9999716281890869,
+        -0.007527081295847893
+      ],
+      "expected_xy": [
+        1.0,
+        0.0
+      ],
+      "dot": 0.9999716281890869
+    },
+    "SE": {
+      "head_minus_abdomen_xy": [
+        0.7017642855644226,
+        -0.712409257888794
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9999717175960541
+    },
+    "S": {
+      "head_minus_abdomen_xy": [
+        -0.0075271232053637505,
+        -0.9999716281890869
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        -1.0
+      ],
+      "dot": 0.9999716281890869
+    },
+    "SW": {
+      "head_minus_abdomen_xy": [
+        -0.712409257888794,
+        -0.7017642855644226
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9999717175960541
+    },
+    "W": {
+      "head_minus_abdomen_xy": [
+        -0.9999716281890869,
+        0.0075271655805408955
+      ],
+      "expected_xy": [
+        -1.0,
+        -1.2246468525851679e-16
+      ],
+      "dot": 0.9999716281890869
+    },
+    "NW": {
+      "head_minus_abdomen_xy": [
+        -0.7017642855644226,
+        0.712409257888794
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9999717175960541
+    },
+    "N": {
+      "head_minus_abdomen_xy": [
+        0.007527038920670748,
+        0.9999716281890869
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        1.0
+      ],
+      "dot": 0.9999716281890869
+    },
+    "NE": {
+      "head_minus_abdomen_xy": [
+        0.712409257888794,
+        0.7017642855644226
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9999717175960541
+    }
+  },
+  "checked_mesh": "Cube",
+  "articulated_legs": [
+    "FrontLeg.L",
+    "MidFrontLeg.L",
+    "MidBackLeg.L",
+    "BackLeg.L",
+    "FrontLeg.R",
+    "MidFrontLeg.R",
+    "MidBackLeg.R",
+    "BackLeg.R"
+  ],
+  "walk_leg_motion_radians": {
+    "FrontLeg.L": 1.0555583238601685,
+    "MidFrontLeg.L": 0.6723166704177856,
+    "MidBackLeg.L": 0.5094349980354309,
+    "BackLeg.L": 0.4314458966255188,
+    "FrontLeg.R": 0.49569782614707947,
+    "MidFrontLeg.R": 0.5674470067024231,
+    "MidBackLeg.R": 0.42415428161621094,
+    "BackLeg.R": 0.5117857456207275
+  },
+  "local_recoil": {
+    "name": "U3_Spider_Recoil",
+    "bones": {
+      "Body": -12,
+      "Head": 18,
+      "Abdomen": -10,
+      "FrontLeg.L": 15,
+      "FrontLeg.R": -15
+    }
+  }
+}
