@@ -208,10 +208,10 @@ test('equipment, shop, storage weight, carry limit and no creation on failure', 
   const bought = buy(freeze(base), 'potion', 2);
   assert.equal(bought.gold, 10);
   assert.equal(bought.stacks.potion, 5);
-  assert.equal(carriedWeight(bought), weight + 2);
+  assert.equal(carriedWeight(bought), weight + 0.2);
   assert.throws(() => buy(base, 'potion', 4));
   assert.throws(() => buy(base, 'potion', -1));
-  assert.throws(() => buy(base, 'return_scroll', 2));
+  assert.equal(buy(base, 'return_scroll', 2).stacks.return_scroll, 3);
   assert.throws(() => buy(base, 'scrap'));
   assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 40 } }, 'potion'), 10);
   assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 6 } }, 'mana_potion'), 12);
@@ -299,13 +299,13 @@ test('round reducer: deposits XP, deterministic drops, rejects weight overflow, 
   assert.equal(tracker.depositedXp, 0);
   assert.equal(result.fx[0].type, 'drop');
   const full = structuredClone(base);
-  full.stacks.potion = Math.floor(capacity(full) * 1.2) - 12 - 2;
+  full.stacks.potion = Math.floor((capacity(full) * 1.2 - 12 - ITEMS.mana_potion.weight - ITEMS.return_scroll.weight) / ITEMS.potion.weight);
   const heavy = trackRound(full, createTracker(1), [event]);
   assert.ok(heavy.tracker.skipped > 0);
   assert.ok(heavy.load.ratio <= 1.2);
   assert.equal(heavy.fx[0].rejected, true);
   const lighter = currentLoad(base, createTracker(1), { potions: 1, manaPotions: 1 });
-  assert.equal(lighter.weight, carriedWeight(base) - 2);
+  near(lighter.weight, carriedWeight(base) - ITEMS.potion.weight - ITEMS.mana_potion.weight);
   const mods = buildRoundMods(base);
   const world = createWorld({ seed: 1 });
   const player = addPlayer(world, { pid: 'local', weapon: 'blade', mods });
@@ -345,7 +345,7 @@ test('save adapter: roundtrip, reset, corrupt/unknown versions back up before fr
   for (const mutate of [
     (save) => save.items[0].enhance = 11,
     (save) => save.equipped.weapon = 'missing',
-    (save) => save.stacks.return_scroll = 3,
+    (save) => save.stacks.return_scroll = -1,
     (save) => save.stats.str = 99,
     (save) => save.quiz.answers = [0],
     (save) => save.items.push({ ...save.items[0] }),

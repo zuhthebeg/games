@@ -45,9 +45,9 @@ export const ITEMS = {
   rune_shard: { name: '룬 조각', kind: 'material', weight: 0.3, sell: 4 },
   frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3, sell: 4 },
   web: { name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
-  potion: { name: 'HP 물약', kind: 'consumable', weight: 1, price: 10 },
-  mana_potion: { name: '마나 물약', kind: 'consumable', weight: 1, price: 12 },
-  return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 1, price: 6, maxCarry: 2 },
+  potion: { name: 'HP 물약', kind: 'consumable', weight: 0.1, price: 10 },
+  mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 12 },
+  return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 6 },
 };
 const TIER_LEVEL = { 2: 5, 3: 10 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
@@ -197,7 +197,6 @@ export function buy(save, id, count = 1) {
   if (!Number.isSafeInteger(count) || count < 1) throw new Error('구매 수량이 올바르지 않습니다.');
   const next = spend(save, { gold: shopPrice(save, id) * count });
   next.stacks[id] = (next.stacks[id] || 0) + count;
-  if (next.stacks[id] > (ITEMS[id].maxCarry ?? Infinity)) throw new Error('귀환 주문서는 최대 2장입니다.');
   if (carriedWeight(next) > capacity(next)) throw new Error('구매 후 소지 무게가 100%를 넘습니다. 창고에 보급을 맡겨 주세요.');
   return next;
 }
@@ -212,7 +211,6 @@ export function moveConsumable(save, id, count, destination) {
   from[id] -= count;
   to[id] = (to[id] || 0) + count;
   if (destination === 'bag') {
-    if (to[id] > (ITEMS[id].maxCarry ?? Infinity)) throw new Error('귀환 주문서는 최대 2장입니다.');
     if (carriedWeight(next) > capacity(next)) throw new Error('가방 소지 무게가 100%를 넘습니다.');
   }
   return next;

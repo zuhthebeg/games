@@ -38,8 +38,8 @@ test('sell 1/5/all from bag, stash, and materials without mutating the input; in
 });
 
 test('buy refuses above 100% capacity, accepts exact capacity, and gear/stash/materials have no carry weight', () => {
-  const base = rich(); base.stacks.potion = 0;
-  const room = capacity(base) - carriedWeight(base);
+  const base = rich(); base.stacks = { potion: 0, mana_potion: 0, return_scroll: 0 };
+  const room = Math.floor((capacity(base) - carriedWeight(base)) / ITEMS.potion.weight);
   const filled = buy(base, 'potion', room);
   assert.equal(carriedWeight(filled), capacity(filled));
   assert.throws(() => buy(filled, 'potion'), /100%/);
@@ -50,21 +50,22 @@ test('buy refuses above 100% capacity, accepts exact capacity, and gear/stash/ma
   assert.equal(base.stacks.potion, 0);
 });
 
-test('stash moves 1/5/all, bag weight/cap and scroll max are enforced only on withdrawal', () => {
+test('stash moves 1/5/all, bag weight/cap are enforced only on withdrawal; scrolls have no count cap', () => {
   const base = rich(); base.stacks.potion = 8;
   for (const count of [1, 5, 8]) {
     const stored = moveConsumable(base, 'potion', count, 'stash');
     assert.equal(stored.stacks.potion, 8 - count); assert.equal(stored.stash.stacks.potion, count);
-    assert.equal(carriedWeight(stored), carriedWeight(base) - count);
+    assert.equal(carriedWeight(stored), Math.round((carriedWeight(base) - count * ITEMS.potion.weight) * 1000) / 1000);
     assert.deepEqual(moveConsumable(stored, 'potion', count, 'bag'), { ...base, stash: { stacks: { potion: 0 } } });
   }
-  const full = buy({ ...base, stacks: { ...base.stacks, potion: 0 } }, 'potion', capacity(base) - carriedWeight({ ...base, stacks: { ...base.stacks, potion: 0 } }));
+  const empty = { ...base, stacks: { potion: 0, mana_potion: 0, return_scroll: 0 } };
+  const full = buy(empty, 'potion', Math.floor((capacity(empty) - carriedWeight(empty)) / ITEMS.potion.weight));
   full.stash.stacks.potion = 10;
   assert.throws(() => moveConsumable(full, 'potion', 1, 'bag'), /100%/);
   assert.doesNotThrow(() => moveConsumable(full, 'potion', 5, 'stash'));
   base.stash.stacks.return_scroll = 5;
   const scrolls = moveConsumable(base, 'return_scroll', 1, 'bag');
-  assert.throws(() => moveConsumable(scrolls, 'return_scroll', 1, 'bag'), /2장/);
+  assert.equal(moveConsumable(scrolls, 'return_scroll', 4, 'bag').stacks.return_scroll, 6);
   for (const count of [0, -1, 1.5, 9]) assert.throws(() => moveConsumable(base, 'potion', count, 'stash'));
   assert.throws(() => moveConsumable(base, 'scrap', 1, 'stash'));
   assert.throws(() => moveConsumable(base, 'potion', 1, 'other'));

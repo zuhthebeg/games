@@ -16,10 +16,10 @@ import {
 } from '../meta/items.js';
 import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } from '../meta/enchant.js';
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
-import { createSave } from '../meta/save.js';
+import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { icon, itemIcon } from './icons.js';
 import { ACADEMY, skillIcon, skillCardHtml } from './skill-view.js';
-import { supplyQuote, purchaseLedgerHtml } from './shop-view.js';
+import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
   escape, amount, itemLabel, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
@@ -490,9 +490,19 @@ export class HubUI {
     }
     const tone = { potion:'hp-tone', mana_potion:'mp-tone' };
     const cards = SUPPLIES.map(id => button(`<span class="item-emblem ${tone[id] || ''}">${itemIcon(id, ITEMS[id])}</span>`
-      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0}${id === 'return_scroll' ? ' / 2' : ''} · 창고 ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
+      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0} · 창고 ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
       `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
-    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
+    this.showInnPanel('만물상', `${tabs}<div class="p2-two">${button('자동 구매 설정', 'auto-buy-settings')}${button('자동 구매', 'auto-buy', 'class="primary"')}</div><p role="status" aria-live="polite">${escape(this.autoBuyResult || '')}</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
+  }
+
+  openAutoBuySettings() {
+    const targets = { ...DEFAULT_AUTO_BUY, ...this.save.autoBuy };
+    const body = SUPPLIES.map(id => `<div class="quantity-row"><span>${ITEMS[id].name}</span><div class="stepper">`
+      + button('−', 'auto-buy-target', `id="auto-buy-${id}-minus" data-id="${id}" data-step="-1" aria-label="${ITEMS[id].name} 목표 줄이기"`, targets[id] === 0)
+      + `<b data-auto-buy-target="${id}">${targets[id]}</b>`
+      + button('+', 'auto-buy-target', `id="auto-buy-${id}-plus" data-id="${id}" data-step="1" aria-label="${ITEMS[id].name} 목표 늘리기"`, targets[id] === Number.MAX_SAFE_INTEGER)
+      + '</div></div>').join('');
+    this.mountSheet(this.dialogHtml('자동 구매 설정', body));
   }
 
   openSupply() {
@@ -830,6 +840,20 @@ export class HubUI {
       case 'noop': return undefined;
       // Supplies
       case 'shop': return this.showShop();
+      case 'auto-buy-settings': return this.openAutoBuySettings();
+      case 'auto-buy-target': {
+        if (!SUPPLIES.includes(data.id) || ![-1, 1].includes(Number(data.step))) return;
+        const autoBuy = { ...DEFAULT_AUTO_BUY, ...this.save.autoBuy };
+        autoBuy[data.id] = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, autoBuy[data.id] + Number(data.step)));
+        this.commit({ ...this.save, autoBuy });
+        return this.openAutoBuySettings();
+      }
+      case 'auto-buy': {
+        const result = autoBuySupplies(this.save);
+        this.commit(result.save);
+        this.autoBuyResult = result.message;
+        return this.showShop();
+      }
       case 'shop-tab':
         this.shopTab = data.tab;
         return this.showShop();
@@ -986,6 +1010,16 @@ export class HubUI {
         this.sortieThreat = Number(data.threat);
         return this.showSortie(this.sortieStage, this.devWeapon);
       case 'launch':
+        if (!(this.save.stacks.potion || 0)) {
+          return this.mountSheet(this.dialogHtml('물약 없음', '',
+            button('그냥 출정', 'launch-without-potion', 'class="primary"') + button('상점', 'departure-shop')));
+        }
+        return this.launch(this.sortieStage, this.root.querySelector('#sortie-reduced').checked, this.devWeapon);
+      case 'departure-shop':
+        this.shopTab = 'buy';
+        return this.showShop();
+      case 'launch-without-potion':
+        this.closeSheet();
         return this.launch(this.sortieStage, this.root.querySelector('#sortie-reduced').checked, this.devWeapon);
       // Settings
       case 'settings':

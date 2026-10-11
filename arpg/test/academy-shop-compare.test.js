@@ -67,14 +67,14 @@ test('supply quote total, remainder and bag projection exactly match the unchang
   assert.deepEqual(s,before);
 });
 
-test('maximum quantity respects gold, exact capacity, 99 UI bound and return-scroll cap', () => {
+test('maximum quantity respects gold, exact capacity, 99 UI bound without a return-scroll cap', () => {
   const s=fresh();assert.equal(supplyQuote(s,'potion',1).maxCount,Math.min(99,Math.floor((capacity(s)-carriedWeight(s))/ITEMS.potion.weight)));
   const poor={...s,gold:shopPrice(s,'potion')*3};assert.equal(supplyQuote(poor,'potion',1).maxCount,3);
-  const empty={...s,stacks:{...s.stacks,potion:0}};
-  const full=buy(empty,'potion',capacity(empty)-carriedWeight(empty));
+  const empty={...s,stacks:{potion:0,mana_potion:0,return_scroll:0}};
+  const full=buy(empty,'potion',Math.floor((capacity(empty)-carriedWeight(empty))/ITEMS.potion.weight));
   assert.equal(supplyQuote(full,'potion',1).maxCount,0);assert.match(supplyQuote(full,'potion',1).reasons.join(),/무게 초과/);
-  assert.equal(supplyQuote(s,'return_scroll',1).maxCount,2-s.stacks.return_scroll);
-  assert.equal(supplyQuote(buy(s,'return_scroll'),'return_scroll',1).maxCount,0);
+  assert.equal(supplyQuote(s,'return_scroll',1).maxCount,99);
+  assert.equal(supplyQuote(buy(s,'return_scroll',10),'return_scroll',1).maxCount,99);
   assert.deepEqual(supplyQuote({...full,gold:0},'potion',1).reasons,['골드 부족','무게 초과']);
 });
 
@@ -86,7 +86,7 @@ test('purchase card opens sheet; stepper and maximum update totals, reasons and 
   h.action('shop-max',{});assert.equal(h.shopCount,supplyQuote(h.save,'potion',1).maxCount);
   const gold=h.save.gold;h.action('buy',{});assert.equal(h.save.gold,gold-shopPrice(h.save,'potion')*h.shopCount);
   const poor=hub({...fresh(),gold:0});poor.action('shop-select',{id:'potion'});assert.match(poor.sheet,/id="shop-buy"[^>]+disabled/);assert.match(poor.sheet,/id="purchase-reason"[^>]*>골드 부족/);
-  const cap=hub(buy(fresh(),'return_scroll'));cap.action('shop-select',{id:'return_scroll'});assert.match(cap.sheet,/귀환서는 최대 2장/);assert.match(cap.sheet,/id="shop-buy"[^>]+disabled/);
+  const cap=hub(buy(fresh(),'return_scroll'));cap.action('shop-select',{id:'return_scroll'});assert.doesNotMatch(cap.sheet,/최대 2장/);assert.doesNotMatch(cap.sheet,/id="shop-buy"[^>]+disabled/);
 });
 
 test('unique gear purchase shows fixed quantity, stash semantics, owned/weight cards and exact ledger', () => {

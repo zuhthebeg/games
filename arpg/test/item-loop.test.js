@@ -57,7 +57,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   assert.equal(base.family, 'blade');
   assert.equal(base.maxMp, 108);
   assert.equal(base.capacity, 106);
-  assert.equal(carriedWeight(save), 17);
+  assert.equal(carriedWeight(save), 12.41);
   const five = structuredClone(save);
   for (const slot of ['head', 'hands', 'feet']) {
     const item = instance(slot, `${slot}_heavy_common_t1`, 1, []);
@@ -68,7 +68,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   const ac = ['head', 'hands', 'feet'].reduce((sum, slot) => sum + ITEMS[`${slot}_heavy_common_t1`].ac + 5, 0);
   assert.equal(deriveMods(five).maxHp, 108);
   assert.equal(deriveMods(five).ac, ac); assert.ok(ac > 15);
-  assert.equal(carriedWeight(five), 27);
+  assert.equal(carriedWeight(five), 22.41);
   for (const [key, field] of Object.entries({ hp_flat: 'maxHp', speed_pct: 'speedMult', dodge_pct: 'dodgeCdMult', potion_pct: 'potionHealMult', mana_pct: 'mpRegen', capacity_flat: 'capacity', gold_pct: 'goldBonus', material_pct: 'materialBonus' })) {
     const changed = structuredClone(save);
     changed.items[1].affixes = [{ k: key, v: 4 }];
@@ -77,7 +77,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   const attack = structuredClone(save); attack.items[0].affixes = [{ k: 'atk_pct', v: 6 }];
   close(deriveMods(attack).dmgMult.blade, 1.06);
   const empty = structuredClone(save); empty.equipped = Object.fromEntries(SLOTS.map((slot) => [slot, null]));
-  assert.equal(deriveMods(empty).maxHp, 108); assert.equal(carriedWeight(empty), 5);
+  assert.equal(deriveMods(empty).maxHp, 108); assert.equal(carriedWeight(empty), 0.41);
   assert.equal(capacity(five), deriveMods(five).capacity);
   const savedFive = SLOTS.slice(1).reduce((next, slot) => equip(next, next.equipped[slot]), five);
   assert.ok(validateSave(savedFive));
@@ -289,16 +289,16 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   close(compare.lines.find(({ key }) => key === 'attack').to, 1.15 * 1.25 * 1.06);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').delta, 4);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').good, false);
-  assert.equal(compare.weightAfter, 21); assert.equal(compare.weightLimit, 106);
+  assert.equal(compare.weightAfter, 16.41); assert.equal(compare.weightLimit, 106);
   assert.equal(compare.locked, false); // weapons have no level gate (cocy 10-11)
   assert.equal(compare.lines.find(({ key }) => key === 'atk_pct').delta, 6);
   const head = instance('head', 'head_light_common_t1', 1, []);
   const empty = compareItems(null, head, save);
   assert.equal(empty.lines.find(({ key }) => key === 'maxHp').delta, 0);
   assert.equal(empty.lines.find(({ key }) => key === 'totalAc').delta, ITEMS.head_light_common_t1.ac);
-  assert.equal(empty.locked, false); assert.equal(empty.weightAfter, 19);
+  assert.equal(empty.locked, false); assert.equal(empty.weightAfter, 14.41);
   assert.throws(() => compareItems(old, head, save), /동일/);
-  const loaded = structuredClone(save); loaded.stacks.potion = 112;
+  const loaded = structuredClone(save); loaded.stacks.potion = 1120;
   const blocked = compareItems(null, instance('h', 'head_heavy_common_t1', 0, []), loaded);
   assert.equal(blocked.locked, true); assert.match(blocked.lockReason, /120%/);
   const capacityHead = instance('h', 'head_heavy_common_t1', 0, [{ k: 'capacity_flat', v: 6 }]);

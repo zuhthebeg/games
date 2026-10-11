@@ -140,13 +140,13 @@ try {
     await nativeActivate('[data-action="shop-count"][data-step="1"]',desktop);assert.equal(await evaluate(`+document.querySelector('#shop-count').value`),2);assert.equal(await evaluate(`+document.querySelector('#shop-total').textContent`),unit*2);
     assert.equal(await evaluate(`document.querySelector('#shop-remaining').textContent.trim()`),`${beforeGold-unit*2} G`);
     await nativeActivate('[data-action="shop-max"]',desktop);const max=await evaluate(`+document.querySelector('#shop-count').value`);assert.ok(max>2&&max<=99);await audit();
-    // Entered over-cap amount disables buying, then return to a valid explicit count and buy.
+    // Lighter potions allow 99; the ledger still follows an entered quantity before a two-item purchase.
     await evaluate(`document.querySelector('#shop-count').value=99;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))`);
-    assert.equal(await evaluate(`document.querySelector('#shop-buy').disabled`),true);assert.match(await evaluate(`document.querySelector('#purchase-reason').textContent`),/무게 초과/);
+    assert.equal(await evaluate(`document.querySelector('#shop-buy').disabled`),false);assert.equal(await evaluate(`+document.querySelector('#shop-total').textContent`),unit*99);
     await evaluate(`document.querySelector('#shop-count').value=2;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))`);
     const beforePotion=await evaluate('__arpg.save.stacks.potion');await nativeActivate('#shop-buy',desktop);assert.equal(await evaluate('__arpg.save.stacks.potion'),beforePotion+2);assert.equal(await evaluate('__arpg.save.gold'),beforeGold-unit*2);await close();
     assert.equal(await evaluate(`document.activeElement.dataset.id`),'potion','closing returns focus to the source card');
-    await nativeActivate('[data-action="shop-select"][data-id="return_scroll"]',desktop);await nativeActivate('#shop-buy',desktop);assert.equal(await evaluate(`document.querySelector('#shop-buy').disabled`),true);assert.match(await evaluate(`document.querySelector('#purchase-reason').textContent`),/최대 2장/);await close();
+    await nativeActivate('[data-action="shop-select"][data-id="return_scroll"]',desktop);await nativeActivate('#shop-buy',desktop);assert.equal(await evaluate(`document.querySelector('#shop-buy').disabled`),false);await nativeActivate('#shop-buy',desktop);assert.equal(await evaluate('__arpg.save.stacks.return_scroll'),3);await close();
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="inventory"]',desktop);await nativeActivate('[data-action="open-item"][data-uid="ui2:new"]',desktop);await audit();
     const compare=await metrics();assert.ok(compare.aligned);assert.equal(compare.scrollWidth,compare.clientWidth);assert.ok(compare.scrollHeight-compare.clientHeight<=compare.clientHeight,'comparison must require <= one viewport scroll');
     assert.equal(await evaluate(`document.querySelectorAll('dialog[open] .compare-sheet > .compare-split thead th').length`),2);
