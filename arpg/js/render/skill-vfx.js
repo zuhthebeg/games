@@ -5,6 +5,15 @@ import { shapePath } from './shapes.js';
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
 // drawProjectile hooks. Hooks receive this fixed-pool presenter, never a sim writer.
 export const SKILL_VFX = Object.freeze({
+  whirl: Object.freeze({ style: 'ring', radius: ABILITIES.whirl.shape.radius,
+    shape: ABILITIES.whirl.shape, color: 0xa8dce4, accent: 0xe3f5ef,
+    windup: 'runes', impact: 'spark', activeLife: .28, residueLife: .4, particles: 10, reducedParticles: 2 }),
+  flame_ring: Object.freeze({ style: 'ring', radius: ABILITIES.flame_ring.shape.radius,
+    shape: ABILITIES.flame_ring.shape, color: 0xf08c46, accent: 0xffe6ad,
+    windup: 'runes', impact: 'spark', activeLife: .32, residueLife: .4, particles: 12, reducedParticles: 2 }),
+  blast_arrow: Object.freeze({ style: 'ember', radius: ABILITIES.blast_arrow.projectile.explode.radius,
+    projectileRadius: ABILITIES.blast_arrow.projectile.radius, color: 0xf08c46, accent: 0xffe6ad,
+    windup: 'converge', impact: 'smoke', activeLife: .32, residueLife: .55, particles: 12, reducedParticles: 2 }),
   heavy_cleave: Object.freeze({ style: 'cleave', shape: ABILITIES.heavy_cleave.shape,
     color: 0xa8dce4, accent: 0xe3f5ef, windup: 'vertical', impact: 'spark',
     activeLife: .24, residueLife: .65, particles: 10, reducedParticles: 2 }),
@@ -124,7 +133,7 @@ export class SkillVfx {
     if (!profile) return false;
     if (profile.onEvent) return profile.onEvent(this, event, world, reduced);
     if (event.type === 'hit') {
-      if (profile.style === 'cleave' || profile.style === 'ember') this.emit(profile, 'spark', event.x, event.y, 0, 20, reduced);
+      if (profile.style === 'cleave' || profile.style === 'ember' || profile.style === 'ring') this.emit(profile, 'spark', event.x, event.y, 0, 20, reduced);
       return false; // Existing numbers, impact, hit-stop and camera remain untouched.
     }
     if (event.type === 'explode' && profile.style === 'ember') {
@@ -169,8 +178,8 @@ export class SkillVfx {
     }
     slot.seen = true;
     const charging = act.phase === 'windup' || act.phase === 'lock', p = windupProgress(act);
-    const x = entity.x + (profile.style === 'heal' ? 0 : Math.cos(act.facing) * (entity.r + 6));
-    const y = entity.y + (profile.style === 'heal' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
+    const x = entity.x + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
+    const y = entity.y + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
     slot.node.visible = charging; slot.node.position.set(x, y);
     slot.node.alpha = (reduced ? .35 : .8) * (.2 + p * .8);
     if (profile.style === 'heal') slot.node.rotation = reduced ? 0 : p * .55;
@@ -187,7 +196,9 @@ export class SkillVfx {
     // tick-elapsed identity prevents repeated waves when snapshots replace act objects.
     if (!charging && !slot.fired) {
       slot.fired = true;
-      if (profile.style === 'cleave') {
+      if (profile.style === 'ring') {
+        this.effect(profile, 'active', entity.x, entity.y, act.facing, act.def.shape.radius, act.def.shape, reduced);
+      } else if (profile.style === 'cleave') {
         const shape = act.def.shape;
         this.effect(profile, 'active', entity.x, entity.y, act.facing, 0, shape, reduced);
         this.effect(profile, 'residue', entity.x, entity.y, act.facing, 0, shape, reduced);

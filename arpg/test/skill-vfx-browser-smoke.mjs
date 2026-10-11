@@ -86,7 +86,8 @@ try {
     const { VisualProvider } = await import('../js/render/visual-provider.js');
     const { SKILL_VFX, VFX_CAPS } = await import('../js/render/skill-vfx.js');
     const { ABILITIES } = await import('../js/content/combat.js');
-    const { createWorld, addPlayer, startStage, step } = await import('../js/sim/world.js');
+    const { FEEL, impactTier } = await import('../js/render/feel.js');
+    const { createWorld, addPlayer, startStage, step, spawnMonster } = await import('../js/sim/world.js');
     const { encodeSnapshot, decodeSnapshot } = await import('../js/net/protocol.js');
     const check = (ok, why) => { if (!ok) throw Error(why); };
     const app = new Application();
@@ -109,10 +110,10 @@ try {
       if (ability !== 'heavy_cleave') check(renderer.skillVfx.actors[0].motes.filter(n => n.visible).length === (reduced?2:8), 'reduced charge');
       for (const p of world.entities.filter(p => p.kind === 'player')) { p.act.phase = 'active'; p.act.elapsed = 18; }
       world.tick = 110;
-      world.projectiles = ability === 'ember_bolt' ? [{ id: 999, abilityId: ability, x: 760, y: 430, r: 12, vx: 520, vy: 0 }] : [];
-      const events = world.entities.filter(p => p.kind === 'player').flatMap(p => ability === 'heavy_cleave' ?
+      world.projectiles = profile.style === 'ember' ? [{ id: 999, abilityId: ability, x: 760, y: 430, r: 12, vx: 520, vy: 0 }] : [];
+      const events = world.entities.filter(p => p.kind === 'player').flatMap(p => profile.style === 'cleave' || profile.style === 'ring' ?
         [{ type: 'hit', src: p.id, dst: world.entities[4].id, ability, x: 760, y: 430, dmg: 96 }] :
-        ability === 'ember_bolt' ? [{ type: 'explode', ability, x: 760, y: 430, radius: profile.radius }] :
+        profile.style === 'ember' ? [{ type: 'explode', ability, x: 760, y: 430, radius: profile.radius }] :
         [{ type: 'healCast', id: p.id, ability, x: p.x, y: p.y, radius: profile.radius },
         { type: 'heal', src: p.id, dst: p.id, ability, x: p.x, y: p.y, heal: 10 }]);
       renderer.events(world, events); renderer.render(world, 1, .016); app.render();
@@ -123,7 +124,11 @@ try {
       renderer.render(decodeSnapshot(encodeSnapshot(world), 'p0'), 1, .016); app.render();
       check(renderer.skillVfx.effects.filter(p => p.left > 0).length === count, 'guest replay');
       check(renderer.root.getChildIndex(renderer.layers.skillFx) < renderer.root.getChildIndex(renderer.layers.telegraphs), 'danger priority');
-      if (ability !== 'heavy_cleave') check(renderer.skillVfx.effects.find(p => p.left > 0).radius === profile.radius, 'exact radius');
+      if (profile.style === 'cleave') {
+        const arc = renderer.skillVfx.effects.find(p => p.kind === 'wave').node.context.instructions[0].data.path.instructions.find(p => p.action === 'arc');
+        check(arc.data[2] === 168.75, 'cleave exact expanded boundary');
+      }
+      if (profile.style !== 'cleave') check(renderer.skillVfx.effects.find(p => p.left > 0).radius === profile.radius, 'exact radius');
       for (let frame = 0; frame < 60; frame++) {
         const t = performance.now(); renderer.render(world, 1, 1/60); app.render(); app.renderer.gl.finish(); timings.push(performance.now()-t);
       }
@@ -132,7 +137,22 @@ try {
       checks.push({ ability, reduced, windup: true, active: true, impact: true, lifetime: true, guestReplay: false });
       world.projectiles = [];
     }
-    // Twelve simultaneous casts (four players x three profiles), intentionally saturating the fixed pools.
+    // R1 multi-enemy impact in real WebGL, including reduced motion and danger layering.
+    const enemies = [world.entities.find(e => e.kind === 'monster'), spawnMonster(world, 'goblin_grunt', 800, 430)];
+    const caster = world.entities.find(e => e.kind === 'player'), areaChecks = [];
+    enemies[0].act = { id:'goblin_slash', def:ABILITIES.goblin_slash, phase:'lock', elapsed:8, total:20, facing:0 };
+    for (const ability of ['whirl','heavy_cleave','blast_arrow','flame_ring']) for (const reduced of [false,true]) {
+      renderer.reset(world,reduced);
+      const hits = enemies.map(e => ({ type:'hit', ability, src:caster.id, dst:e.id, x:e.x, y:e.y, dmg:ABILITIES[ability].damage }));
+      renderer.events(world,hits);
+      for (const e of [caster,...enemies]) check(renderer.views.get(e.id).stopLeft === (reduced ? 0 : impactTier(hits[0]).stop+FEEL.area.stop),'multi-hit +1 frame');
+      check(renderer.trauma === (reduced ? 0 : 2*(impactTier(hits[0]).trauma+FEEL.area.trauma)), 'multi-hit shake/reduced zero');
+      renderer.render(world,1,1/60);app.render();
+      check(renderer.telegraphViews.some(g=>g.visible),'enemy danger remains visible');
+      check(renderer.root.getChildIndex(renderer.layers.skillFx)<renderer.root.getChildIndex(renderer.layers.telegraphs),'area danger priority');
+      areaChecks.push({ability,reduced,stopBonus:reduced?0:FEEL.area.stop,shakeZero:reduced});
+    }
+    // Saturate the fixed pools without allocation growth.
     renderer.reset(world);
     for (let i = 0; i < 100; i++) renderer.events(world, [
       { type: 'explode', ability: 'ember_bolt', x: 760, y: 430, radius: 78 },
@@ -145,16 +165,16 @@ try {
     let peakEffects = 0, peakParticles = 0;
     renderer.reset(world);
     for (let frame = 0; frame < 360; frame++) {
-      const t = performance.now(), ability = Object.keys(SKILL_VFX)[Math.floor(frame/60)%3];
+      const t = performance.now(), ability = Object.keys(SKILL_VFX)[Math.floor(frame/60)%Object.keys(SKILL_VFX).length], profile = SKILL_VFX[ability];
       world.tick = 1000 + frame;
       for (const p of players) p.act = { id: ability, def: ABILITIES[ability], phase: frame%60<18 ? 'windup' : 'active',
         elapsed: frame%60, total: 18, facing: .2 };
-      world.projectiles = ability === 'ember_bolt' ? players.map((p,i)=>({ id: 900+i, abilityId: ability, r: 12, x: 720+i*20+(frame%60)*3, y: 430, vx: 520, vy: 0 })) : [];
-      if (frame%12 === 0) for (const p of players) renderer.events(world, [
-        { type:'explode', ability:'ember_bolt', x:p.x+45, y:p.y, radius:78 },
-        { type:'healCast', ability:'healing_light', x:p.x, y:p.y, radius:160 },
-        { type:'heal', ability:'healing_light', x:p.x, y:p.y, heal:1 },
-        { type:'hit', ability:'heavy_cleave', x:p.x+45, y:p.y, dmg:96 }]);
+      world.projectiles = profile.style === 'ember' ? players.map((p,i)=>({ id: 900+i, abilityId: ability, r: 12, x: 720+i*20+(frame%60)*3, y: 430, vx: 520, vy: 0 })) : [];
+      if (frame%12 === 0) for (const p of players) renderer.events(world, profile.style === 'heal' ? [
+        { type:'healCast', ability, x:p.x, y:p.y, radius:profile.radius },
+        { type:'heal', ability, x:p.x, y:p.y, heal:1 }] : profile.style === 'ember' ? [
+        { type:'explode', ability, x:p.x+45, y:p.y, radius:profile.radius }] : [
+        { type:'hit', ability, src:p.id, dst:enemies[0].id, x:p.x+45, y:p.y, dmg:ABILITIES[ability].damage }]);
       renderer.render(world,1,1/60); app.render(); app.renderer.gl.finish();
       stressTimings.push(performance.now()-t);
       peakEffects = Math.max(peakEffects, renderer.skillVfx.effects.filter(p=>p.left>0).length);
@@ -165,8 +185,8 @@ try {
       frames:values.length,meanMs:values.reduce((a,b)=>a+b,0)/values.length,p95Ms:sorted[Math.floor(sorted.length*.95)],
       over16ms:values.filter(t=>t>1000/60).length }; };
     app.destroy({ removeView: true }, { children: true });
-    return { checks, fourPlayers: true, saturatedPools: VFX_CAPS, softwareWebGL: stats(timings),
-      continuousFourPlayerStress:{...stats(stressTimings),peakEffects,peakParticles,casts:'4 players x 3 profiles every 200ms; 4 fire projectiles'} };
+    return { checks, areaChecks, fourPlayers: true, saturatedPools: VFX_CAPS, softwareWebGL: stats(timings),
+      continuousFourPlayerStress:{...stats(stressTimings),peakEffects,peakParticles,casts:'4 players, rotating all 6 profiles; impact every 200ms; 4 fire projectiles for explosive profiles'} };
   })()`);
   const errors = events.filter(e => e.method === 'Runtime.exceptionThrown'
     || e.method === 'Runtime.consoleAPICalled' && e.params.type === 'error'

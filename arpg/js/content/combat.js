@@ -50,12 +50,12 @@ export const ABILITIES = {
   // ---------- learnable skills (교관 기술교본 / 마법교본, cocy 10-11). One skill slot per weapon family.
   whirl: {
     name: '회전 베기', windupMs: 220, lockMs: 0, activeMs: 120, recoveryMs: 300, manaCost: 20, cooldownMs: 6000,
-    delivery: 'shape', shape: { type: 'circle', radius: 105, offset: 0 },
+    delivery: 'shape', shape: { type: 'circle', radius: 136.5, offset: 0 },
     damage: 44, poise: 30, knockback: 200, family: 'blade', cancelInto: ['recovery'],
   },
   heavy_cleave: {
     name: '내려찍기', windupMs: 420, lockMs: 0, activeMs: 80, recoveryMs: 380, manaCost: 26, cooldownMs: 6500,
-    delivery: 'shape', shape: { type: 'cone', range: 135, arc: 70 },
+    delivery: 'shape', shape: { type: 'cone', range: 168.75, arc: 70 },
     damage: 96, poise: 70, knockback: 300, family: 'blade', cancelInto: ['recovery'],
   },
   pierce_shot: {
@@ -67,7 +67,7 @@ export const ABILITIES = {
   blast_arrow: {
     name: '폭발 화살', windupMs: 320, lockMs: 0, activeMs: 34, recoveryMs: 260, manaCost: 24, cooldownMs: 6000,
     delivery: 'projectile',
-    projectile: { speed: 640, radius: 9, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 80 } },
+    projectile: { speed: 640, radius: 9, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 108 } },
     damage: 54, poise: 26, knockback: 160, family: 'bow', element: 'fire', cancelInto: ['recovery'],
   },
   frost_lance: {
@@ -78,7 +78,7 @@ export const ABILITIES = {
   },
   flame_ring: {
     name: '화염 고리', windupMs: 360, lockMs: 0, activeMs: 100, recoveryMs: 280, cooldownMs: 5500, manaCost: 18,
-    delivery: 'shape', shape: { type: 'circle', radius: 130, offset: 0 },
+    delivery: 'shape', shape: { type: 'circle', radius: 169, offset: 0 },
     damage: 68, poise: 40, knockback: 240, family: 'focus', element: 'fire', cancelInto: ['recovery'],
   },
 
