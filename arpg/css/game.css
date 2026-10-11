@@ -695,6 +695,8 @@ select, input:not([type="checkbox"]) {
   font: 700 12px/1 system-ui, sans-serif; letter-spacing: .08em;
   color: #b9ad96; background: #1c211bcc; border: 1px solid #4c493a; border-radius: 17px;
 }
+/* #hud is pointer-events:none so taps reach the canvas; its buttons must opt back in (cocy 10-11: AUTO tap fell through). */
+.battle-auto, .battle-sound { pointer-events: auto; }
 .battle-auto.on { color: #14170f; background: #e3c46f; border-color: #ffe39a; box-shadow: 0 0 12px #e3c46f88; }
 #attack.auto { box-shadow: inset 0 0 0 2px #e3c46f88; }
 #attack.auto::after { content: 'AUTO'; position: absolute; top: 6px; right: 8px; font-size: 9px; color: #e3c46f; letter-spacing: .06em; }

@@ -214,6 +214,11 @@ try {
   assert.equal(roundMobile.rects.length, 6);
   // Auto attack toggle (cocy 10-11): visible, non-overlapping, persisted, reflected on the attack button.
   validateRects(await rectangles('#actions button, .battle-auto, .stage, .vitals'));
+  // A real tap must land on the HUD toggles, not fall through #hud (pointer-events:none) to the canvas.
+  for (const sel of ['.battle-auto', '.battle-sound']) {
+    assert.ok(await evaluate(`(()=>{const b=document.querySelector('${sel}'),r=b.getBoundingClientRect();
+      const top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !!top&&(top===b||b.contains(top));})()`), `${sel} is not hit-testable`);
+  }
   const autoBefore = await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')");
   await evaluate("document.querySelector('.battle-auto').click()");
   assert.notEqual(await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')"), autoBefore);
