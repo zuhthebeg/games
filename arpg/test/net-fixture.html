@@ -18,7 +18,7 @@ const start = roster => {
   session = new CoopSession({ uid, host: 'host', players: roster.players.map(p => p.user),
     profile: { level: 1, weapon: uid === 'host' ? 'blade' : 'bow', mods: {}, threats: { S2: 1 } }, config: { stageId: 'S2', threat: 1, seed: 11 },
     sendRt: p => transport.sendRt(p), sendAction: a => transport.sendAction(a),
-    onBegin: () => { if (session.isHost) { session.world.round.pending = []; session.world.round.goal = 'timer'; session.world.round.timerTicks = 1e6; } },
+    onBegin: () => { if (session.isHost) { session.world.entities = session.world.entities.filter(e => e.kind === 'player'); session.world.round.pending = []; session.world.round.goal = 'timer'; session.world.round.timerTicks = 1e6; } },
     onFrame: view => { if (!initialized) { renderer.reset(view, true); renderer.root.visible = renderer.warning.visible = true; initialized = true; } },
   });
   for (const action of pending.splice(0)) session.action(action);

@@ -38,13 +38,17 @@ test('snapshot JSON roundtrip covers personal HUD, projectiles, action phases an
 });
 test('snapshot interpolation clamps, ignores stale packets, and keeps newest telegraphs authoritative', () => {
   const w = makeWorld(), a = encodeSnapshot(w), buffer = new SnapshotBuffer('guest', 100, { adaptive: false });
-  buffer.push(a, 0); w.tick++; w.entities[1].x += 100;
-  const b = encodeSnapshot(w); b.telegraphs = [{ id: 3, phase: 'lock', ox: 100, oy: 200 }]; buffer.push(b, 100);
-  assert.equal(buffer.push(a, 110), false);
-  assert.equal(buffer.sample(150).entities[0].x, a.entities[1].x + 50);
-  assert.equal(buffer.sample(10).entities[0].x, a.entities[1].x);
-  assert.equal(buffer.sample(500).entities[0].x, b.entities[1].x + 60); // bounded extrapolation
-  assert.deepEqual(buffer.sample(150).telegraphs, b.telegraphs);
+  const t0 = w.tick * 1000 / 30;
+  buffer.push(a, t0); w.tick += 3; w.entities[1].x += 100;
+  const b = encodeSnapshot(w); b.telegraphs = [{ id: 3, phase: 'lock', ox: 100, oy: 200 }]; buffer.push(b, t0 + 100);
+  assert.equal(buffer.push(a, t0 + 110), false);
+  // Playback is on the host tick clock: halfway between the two ticks = halfway position.
+  assert.ok(Math.abs(buffer.sample(t0 + 150).entities[0].x - (a.entities[1].x + 50)) < 1e-6);
+  assert.equal(new SnapshotBuffer('guest', 100, { adaptive: false }).sample(0), null);
+  // Bounded extrapolation: at most 3 ticks past the newest frame (here = one more 3-tick step).
+  const far = new SnapshotBuffer('guest', 100, { adaptive: false }); far.push(a, t0); far.push(b, t0 + 100);
+  assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - (b.entities[1].x + 100)) < 1e-6);
+  assert.deepEqual(buffer.sample(t0 + 150).telegraphs, b.telegraphs);
 });
 test('party size HP scale is 1.6/2.2/2.8 at stage level and uses highest level, single unchanged', () => {
   assert.deepEqual([1, 2, 3, 4].map(n => partyHpScale(n, 2, 'S2')), [1, 1.6, 2.2, 2.8]);

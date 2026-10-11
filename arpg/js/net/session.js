@@ -1,9 +1,16 @@
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
-import { InputSender, InputLatch, SnapshotBuffer, encodeSnapshot, localView, partyHpScale } from './protocol.js';
+import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
 import { LocalPrediction } from './prediction.js';
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
+const TICK_MS = 1000 / 30;
+// Frame inputs merged into the next whole tick: newest axes/held buttons, any edge pressed in between.
+const mergeInput = (held, input) => {
+  const next = { ...input };
+  if (held) for (const k of EDGES) next[k] = !!(held[k] || input[k]);
+  return next;
+};
 
 // Pure transport adapter: no DOM/storage. Only the host ever owns or steps a sim world.
 export class CoopSession {
@@ -14,7 +21,7 @@ export class CoopSession {
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
     this.prediction = new LocalPrediction(uid); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
-    this.tickLeft = 0; this.netLeft = 0; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
+    this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
     this.bytes = 0; this.snapshots = 0; this.lost = false;
   }
   decorate(view) {
@@ -36,7 +43,8 @@ export class CoopSession {
       for (const [pid, p] of Object.entries(this.profiles)) {
         addPlayer(this.world, { pid, weapon: p.weapon, y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
         setLoad(this.world, pid, p.load ?? 0);
-        this.latches[pid] = new InputLatch();
+        // Host's own input has no latency: newest value. Guests: ordered per-tick commands.
+        this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
       }
       startStage(this.world, data.config.stageId);
       this.decorate(this.world);
@@ -120,12 +128,20 @@ export class CoopSession {
       if (this.helloLeft <= 0) { this.helloLeft = 500; this.sendRt({ t: 'profile', profile: this.profile }); this.tryStart(); }
       return;
     }
-    const packet = this.sender.packet(input, load, this.eventAck);
-    if (this.isHost) { this.latches[this.uid]?.receive(packet, this.now); setLoad(this.world, this.uid, load); }
+    if (this.isHost) { this.latches[this.uid]?.receive(this.sender.packet(input, load, this.eventAck), this.now); setLoad(this.world, this.uid, load); }
     else {
-      if (this.phase === 'running') this.prediction.advance(packet, input, dt);
-      this.inputLeft += dt;
-      if (this.inputLeft >= 1000 / 30) { this.inputLeft %= 1000 / 30; this.sendRt(packet); }
+      // One command per 30Hz sim tick, predicted with the host's exact tick step.
+      this.tickInput = mergeInput(this.tickInput, input);
+      this.inputLeft = Math.min(this.inputLeft + dt, 8 * TICK_MS);
+      while (this.inputLeft >= TICK_MS) {
+        this.inputLeft -= TICK_MS;
+        const packet = this.sender.packet(this.tickInput, load, this.eventAck);
+        if (this.phase === 'running') this.prediction.advance(packet, this.tickInput, TICK_MS);
+        this.sendRt(packet);
+        this.tickInput = mergeInput(null, this.tickInput);
+        for (const k of EDGES) this.tickInput[k] = false;
+      }
+      this.prediction.setPreview(this.tickInput, this.inputLeft);
       this.pingLeft -= dt;
       if (this.pingLeft <= 0) { this.pingLeft = 2000; this.sendRt({ t: 'ping', at: clock() }); }
       if (this.phase !== 'ended' && this.now - this.lastHostAt > 10000) {
@@ -143,6 +159,8 @@ export class CoopSession {
       for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);
       for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : [] });
+      // Even 15Hz on the tick clock (was ~12Hz alternating 66/100ms from the timer).
+      if (this.world.round.state === 'running' && this.world.tick % 2 === 0) this.broadcast();
       this.onFrame(localView(this.world, this.uid), events.filter(e => e.type !== 'kill' || participants.includes(this.uid)));
       this.tickLeft -= 1000 / 30;
       if (this.world.round.state !== 'running') {
@@ -150,8 +168,6 @@ export class CoopSession {
         this.sendAction({ type: 'ARPG_END', payload: { state: this.world.round.state }, __final: true });
       }
     }
-    this.netLeft += dt;
-    if (this.netLeft >= 1000 / 12) { this.netLeft %= 1000 / 12; this.broadcast(); }
   }
   view(now = this.now) {
     return this.isHost ? localView(this.world, this.uid) : this.decorate(this.prediction.view(this.buffer.sample(now)));

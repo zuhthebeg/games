@@ -4,7 +4,7 @@ import { predictMovement, movementBlocked } from '../sim/movement.js';
 export class LocalPrediction {
   constructor(uid) {
     this.uid = uid; this.pending = []; this.state = null; this.arena = null;
-    this.enabled = false; this.offset = { x: 0, y: 0 }; this.smoothLeft = 0;
+    this.enabled = false; this.offset = { x: 0, y: 0 }; this.smoothLeft = 0; this.preview = null;
     this.stats = { corrections: 0, snaps: 0, totalDistance: 0, maxDistance: 0 };
   }
   reconcile(world) {
@@ -21,7 +21,8 @@ export class LocalPrediction {
     if (this.state) {
       const dx = this.state.x + this.offset.x - next.x, dy = this.state.y + this.offset.y - next.y;
       const distance = Math.hypot(dx, dy);
-      if (distance > .01) {
+      // Sub-pixel disagreement is not worth a visible correction.
+      if (distance > .5) {
         this.stats.corrections++; this.stats.totalDistance += distance;
         this.stats.maxDistance = Math.max(this.stats.maxDistance, distance);
         if (distance >= 24 || blocked) {
@@ -31,7 +32,7 @@ export class LocalPrediction {
               act: p.act?.phase ?? null, terminal: p.terminal, channel: p.channel },
             previous: { x: this.state.x, y: this.state.y, dashLeft: this.state.dodge.dashLeft }, replayed: this.pending.length };
           this.clearOffset();
-        } else { this.offset = { x: dx, y: dy }; this.smoothLeft = 100; }
+        } else { this.offset = { x: dx, y: dy }; this.smoothLeft = 150; }
       } else this.clearOffset();
     }
     this.state = next;
@@ -53,9 +54,15 @@ export class LocalPrediction {
       this.state = predictMovement(this.state, movement, dt / 1000, this.arena);
     }
   }
+  // Display-only partial tick: the not-yet-committed fraction of the current tick,
+  // so the pawn responds on the very next frame while commands stay whole 30Hz ticks.
+  setPreview(input, ms) {
+    this.preview = ms > 0 ? { ms, input: { mx: input.mx || 0, my: input.my || 0, aimX: input.aimX || 0, aimY: input.aimY || 0, dodgeEdge: !!input.dodgeEdge } } : null;
+  }
   view(world) {
     if (!world || !this.enabled || !this.state) return world;
-    const p = this.state;
+    let p = this.state;
+    if (this.preview && !movementBlocked(p)) p = predictMovement(p, this.preview.input, this.preview.ms / 1000, this.arena);
     return { ...world, entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
       ? { ...e, x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
   }
