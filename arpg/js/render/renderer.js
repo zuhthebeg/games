@@ -5,6 +5,7 @@ import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES } from '../content/combat.js';
+import { healingFeedback } from './healing-feedback.js';
 import { bakeBiome } from './biome-map.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
@@ -279,6 +280,7 @@ export class ArenaRenderer {
     this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const event of events) {
       const entity = world.entities.find(entity => entity.id === (event.dst ?? event.id));
+      if (healingFeedback(this, event)) continue;
       if (event.type === 'hit') {
         const tier = impactTier(event);
         const source = world.entities.find(candidate => candidate.id === event.src);
@@ -387,7 +389,7 @@ export class ArenaRenderer {
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
       const active = entity.act?.phase === 'active';
-      if (entity.kind === 'player' && active && entity.act.def.shape && view.lastAct !== entity.act) {
+      if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && view.lastAct !== entity.act) {
         this.effect(entity.x, entity.y, 0, 0xc9ece3, FEEL.trail.life, 'slash', entity.act.def.shape, entity.act.facing);
         view.lastAct = entity.act;
       }

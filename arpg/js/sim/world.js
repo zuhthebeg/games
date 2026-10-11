@@ -462,7 +462,21 @@ function advanceAct(world, ent, target) {
 
 function doActive(world, ent, act) {
   const def = act.def;
-  if (def.delivery === 'shape') {
+  if (def.heal) {
+    if (act.fired) return;
+    act.fired = true;
+    world.events.push({ type: 'healCast', id: ent.id, ability: act.id,
+      x: ent.x, y: ent.y, radius: def.heal.radius });
+    for (const target of world.entities) {
+      if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
+        || dist2(ent.x, ent.y, target.x, target.y) > def.heal.radius ** 2) continue;
+      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * def.heal.maxHpFrac));
+      if (heal <= 0) continue;
+      target.hp += heal;
+      world.events.push({ type: 'heal', src: ent.id, dst: target.id, pid: target.pid, ability: act.id,
+        heal, hp: target.hp, maxHp: target.maxHp, x: target.x, y: target.y });
+    }
+  } else if (def.delivery === 'shape') {
     const activeTick = act.phaseTicks.active - act.left;
     if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);

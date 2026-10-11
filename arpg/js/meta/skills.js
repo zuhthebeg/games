@@ -7,6 +7,7 @@ export const BOOKS = {
   heavy_cleave: { family: 'blade', type: '기술교본', price: 250 },
   pierce_shot: { family: 'bow', type: '기술교본', price: 150 },
   blast_arrow: { family: 'bow', type: '기술교본', price: 250 },
+  healing_light: { family: 'focus', type: '마법교본', price: 200 },
   frost_lance: { family: 'focus', type: '마법교본', price: 180 },
   flame_ring: { family: 'focus', type: '마법교본', price: 280 },
 };
