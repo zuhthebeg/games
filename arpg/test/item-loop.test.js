@@ -31,7 +31,7 @@ test('old v1/v2 saves reset after corrupt backup; fresh v4 roundtrips', () => {
     const store = new SaveStore(storage, () => 1);
     assert.equal(store.load(), null); assert.equal(values.get(`${SAVE_KEY}.corrupt.1`), raw);
     assert.equal(values.has(SAVE_KEY), false);
-    const current = fresh(); assert.equal(current.version, 4); store.save(current);
+    const current = fresh(); assert.equal(current.version, 5); store.save(current);
     assert.deepEqual(store.load(), current);
   }
 });
@@ -98,7 +98,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
       const item = ITEMS[`${slot}_${armorClass}_${rarity}_t${tier}`];
       assert.equal(item.slot, slot); assert.equal(item.armorClass, armorClass);
       assert.equal(item.requiredLevel, 1); // cocy 10-11: no level gates
-      assert.equal(item.requiredStr, armorClass === 'heavy' ? 6 + 2 * (tier - 1) : 0);
+      assert.equal(item.requiredStr, armorClass === 'heavy' ? 10 + 6 * (1 + 2 * (tier - 1)) : 0); // old 6+2(t-1), 10-12 scale
     }
   }
 });

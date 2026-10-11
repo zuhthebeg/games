@@ -7,9 +7,11 @@ export const AFFIX_LABELS = {
   atk_pct: '공격력 %', hp_flat: '최대 HP', speed_pct: '이동속도 %', dodge_pct: '회피 재사용 감소 %',
   potion_pct: '물약 효율 %', mana_pct: '마나 재생 %', capacity_flat: '최대 휴대 무게',
   gold_pct: '골드 획득 %', material_pct: '재료 드랍 %',
+  str_flat: '힘', agi_flat: '민첩', int_flat: '지능', wis_flat: '지혜', con_flat: '체력', luk_flat: '행운', cha_flat: '카리스마',
 };
 // Display metadata only; flat capacity adds carrying limit, not equipment mass.
-export const AFFIX_UNITS = { atk_pct:'%', hp_flat:'HP', speed_pct:'%', dodge_pct:'%', potion_pct:'%', mana_pct:'%', capacity_flat:'kg', gold_pct:'%', material_pct:'%' };
+export const AFFIX_UNITS = { atk_pct:'%', hp_flat:'HP', speed_pct:'%', dodge_pct:'%', potion_pct:'%', mana_pct:'%', capacity_flat:'kg', gold_pct:'%', material_pct:'%',
+  str_flat:'', agi_flat:'', int_flat:'', wis_flat:'', con_flat:'', luk_flat:'', cha_flat:'' };
 export function rollAffixes(rarity, huntTier, seed) {
   const random = rng(seed);
   const pool = Object.keys(AFFIX_RANGES);

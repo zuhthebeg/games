@@ -29,22 +29,25 @@ const freeze = (value) => {
 
 // Every externally-facing transformation is checked against frozen inputs below.
 test('stats: effective points, cap, all derived formulas and allocation are pure', () => {
-  assert.equal(eff(4), 0);
-  assert.equal(eff(15), 7);
-  assert.equal(eff(25), 12);
-  assert.equal(cap(1), 9);
-  assert.equal(cap(20), 15);
-  assert.equal(cap(40), 19);
+  // cocy 10-12 scale: base 10, 6 points = one old point (old 15 -> 70, old 25 -> 130), cap 40 + 2/level to 100.
+  assert.equal(eff(9), 0);
+  assert.equal(eff(70), 7);
+  assert.equal(eff(130), 12);
+  assert.equal(cap(1), 42);
+  assert.equal(cap(20), 80);
+  assert.equal(cap(30), 100);
+  assert.equal(cap(40), 100);
   const save = fresh();
   save.level = 10;
-  save.stats = { str: 25, agi: 40, int: 25, wis: 40, cha: 40 };
+  save.stats = { str: 130, agi: 220, int: 130, wis: 220, con: 10, luk: 10, cha: 220 };
   save.items[0] = { uid: 'starter:weapon', id: 'ember_wand', enhance: 5 };
   save.items[1] = { uid: 'starter:armor', id: 'boar_hide_armor', enhance: 5 };
   const mods = deriveMods(freeze(save));
   near(mods.maxHp, 180);
   assert.equal(mods.ac, ITEMS.boar_hide_armor.ac + 5);
   near(mods.maxMp, 196);
-  near(mods.mpRegen, 5 * (1 + 0.06 * 19.5));
+  near(mods.mpRegen, 5 * (0.2 + 0.8 * 2.2)); // WIS 220: 0.2 floor + 0.8 x WIS/100, past 100 keeps rising
+  near(mods.hpRegen, 2.5 * 0.1); assert.equal(mods.critChance, 0); assert.equal(mods.dropLuck, 0);
   near(mods.speedMult, 1.07);
   near(mods.dodgeCdMult, .79);
   near(mods.iframeBonusMs, 42);
@@ -59,8 +62,8 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   freeze(base);
   const next = allocateStats(base, { agi: 1 });
   assert.equal(next.stats.agi, base.stats.agi + 1);
-  assert.equal(next.statPoints, 0);
-  assert.throws(() => allocateStats(base, { agi: 2 }));
+  assert.equal(next.statPoints, 7);
+  assert.throws(() => allocateStats(base, { agi: 9 }));
   assert.throws(() => allocateStats(base, { str: -1 }));
   assert.throws(() => allocateStats(base, { nope: 1 }));
   const capped = { ...base, stats: { ...base.stats, str: cap(base.level) } };
@@ -74,11 +77,11 @@ test('progression: multi-level, maximum, course loss factors and never level dow
   const multi = addXp(base, 50 + 141 + 25);
   assert.equal(multi.level, 3);
   assert.equal(multi.xp, 25);
-  assert.equal(multi.statPoints, 2);
+  assert.equal(multi.statPoints, 16);
   const max = addXp(base, 999999);
   assert.equal(max.level, 30);
   assert.equal(max.xp, 0);
-  assert.equal(max.statPoints, 29);
+  assert.equal(max.statPoints, 232);
   assert.deepEqual(addXp(max, 1000), max);
   const cappedReward = settleRound(max, { stageId: 'S4', terminal: 'clear', depositedXp: 40 });
   assert.equal(cappedReward.receipt.xpGained, 0);
@@ -107,8 +110,10 @@ test('quiz: exhaust all 4^5 choices, bounded six points, deterministic and Q5 ti
     const result = resolve(answers);
     assert.deepEqual(resolve(answers), result);
     const points = STAT_KEYS.map((key) => result.points[key]);
-    assert.equal(points.reduce((sum, value) => sum + value, 0), 6);
-    assert.ok(points.every((value) => Number.isInteger(value) && value >= 0 && value <= 3));
+    // Six old points over the five original stats, each worth 6 now; CON/LUK start at base.
+    assert.equal(points.reduce((sum, value) => sum + value, 0), 36);
+    assert.ok(points.every((value) => Number.isInteger(value) && value >= 0 && value <= 18 && value % 6 === 0));
+    assert.equal(result.points.con + result.points.luk, 0);
     weapons.add(result.weapon);
     const max = Math.max(...result.weaponScores);
     const q5Family = ['blade', 'bow', 'focus', 'blade'][answers[4]];
@@ -199,10 +204,10 @@ test('equipment, shop, storage weight, carry limit and no creation on failure', 
   base.items.push({ uid: 'loot', id: 'chief_maul', enhance: 0, affixes: [], rolledAt: 0 });
   base.stacks.scrap = 5000;
   assert.equal(carriedWeight(base), weight);
-  // no level gates; chief_maul asks STR 12 (cocy 10-11)
+  // no level gates; chief_maul asks STR 52 (cocy 10-11 old 12, 10-12 scale)
   const leveled = addXp(base, 1000);
-  assert.throws(() => equip(leveled, 'loot'), /힘 12/);
-  leveled.stats = { ...leveled.stats, str: 12 };
+  assert.throws(() => equip(leveled, 'loot'), /힘 52/);
+  leveled.stats = { ...leveled.stats, str: 52 };
   const changed = equip(leveled, 'loot');
   assert.equal(carriedWeight(changed), weight + 10);
   assert.equal(dismantleRefund({ uid: 'drop:1', id: 'chief_maul', enhance: 5 }), 12);
@@ -231,7 +236,7 @@ test('settlement clear promotes loot and XP, first/replay rewards and pity only 
     stageId: 'S1', terminal: 'clear', depositedXp: 0, tempLoot: loot(), used: { potions: 2, scrolls: 1 },
   });
   assert.equal(first.save.level, 2);
-  assert.equal(first.save.statPoints, 1);
+  assert.equal(first.save.statPoints, 8);
   assert.equal(first.save.gold, 40);
   assert.equal(first.save.stacks.potion, 2);
   assert.equal(first.save.stacks.return_scroll, 0);
@@ -381,7 +386,7 @@ test('integration: S1 timed clear reaches Lv2 using real sim API and settles val
   assert.equal(player.terminal, 'clear');
   const result = settleRound(save, { stageId: 'S1', terminal: player.terminal, ...tracker });
   assert.equal(result.save.level, 2);
-  assert.equal(result.save.statPoints, 1);
+  assert.equal(result.save.statPoints, 8);
   assert.equal(validateSave(result.save), true);
 });
 

@@ -88,6 +88,7 @@ export function predictPlayerTick(state, inp, { arena, others = [] } = {}) {
   if (p.bufferDodge > 0) p.bufferDodge--;
   for (const k in p.cds) if (p.cds[k] > 0) p.cds[k]--;
   p.mp = Math.min(p.maxMp, p.mp + (p.mpRegen || 0) * DT);
+  if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
   if (inp.dodgeEdge) {
     p.bufferDodge = ticks(PB.bufferMs);

@@ -1,7 +1,8 @@
 import { CoopSession } from '../../js/net/session.js';
 import { createMemoryTransport } from '../../js/net/loopback.js';
 import { createSave, validateSave, SaveStore } from '../../js/meta/save.js';
-import { allocateStats } from '../../js/meta/stats.js';
+import { allocateStats, statBudget } from '../../js/meta/stats.js';
+import { BALANCE } from '../../js/content/balance.js';
 import { ITEMS, instance } from '../../js/meta/items.js';
 import { equipmentVisual } from '../../js/render/paperdoll-state.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from '../../js/meta/run.js';
@@ -10,8 +11,8 @@ import { emptyInput } from '../../js/sim/world.js';
 
 export function fixtureSave(name, weapon = 'blade') {
   let save = createSave({ name, answers: [0,0,0,0,0], weapon, createdAt: name === 'host' ? 111 : 222 });
-  save.level = 12; save.statPoints = 11;
-  save = allocateStats(save, { str: 4, agi: 4, wis: 3 });
+  save.level = 12; save.statPoints = statBudget(12) - BALANCE.stats.startPoints;
+  save = allocateStats(save, { str: 24, agi: 24, wis: 18 }); // old 4/4/3 on the 10-12 scale
   save.cleared.S1 = true; save.stageThreat.S1 = 1;
   const bases = { weapon: weapon === 'blade' ? 'warden_blade_epic' : 'frost_bow_epic', body: 'warden_plate_epic',
     head: 'head_medium_fine_t3_epic', hands: 'hands_medium_fine_t3_epic', feet: 'feet_medium_fine_t3_epic' };

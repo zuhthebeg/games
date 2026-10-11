@@ -42,6 +42,8 @@ export const AFFIX_RANGES = {
   atk_pct: [2, 6], hp_flat: [4, 12], speed_pct: [1, 4], dodge_pct: [2, 6],
   potion_pct: [3, 8], mana_pct: [3, 8], capacity_flat: [2, 6],
   gold_pct: [2, 7], material_pct: [2, 7],
+  // cocy 10-12: gear can raise stats past the allocation cap of 100.
+  str_flat: [2, 5], agi_flat: [2, 5], int_flat: [2, 5], wis_flat: [2, 5], con_flat: [2, 5], luk_flat: [2, 5], cha_flat: [2, 5],
 };
 export const SLOT_BIASES = {
   wolf: { feet: 2, hands: 2, body: 0.5 },

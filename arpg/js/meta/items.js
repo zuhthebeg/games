@@ -1,4 +1,4 @@
-import { eff } from './stats.js';
+import { eff, effectiveStats } from './stats.js';
 import { SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
@@ -78,19 +78,21 @@ for (const [id, base] of Object.entries(ITEMS)) {
 }
 // cocy 10-11 16:04: no level gates at all. Heavy gear asks for strength instead — the weight is the reason.
 // [제안] Weapons from 12 kg, heavy armor of any slot; the hunting tier adds 2 per tier so tier-3 heavy
-// gear still lands mid-game (STR cap = 9 + level/3). Light/medium gear and bows/wands stay free.
+// gear still lands mid-game. Light/medium gear and bows/wands stay free.
+// cocy 10-12 stat scale: the 10-11 values (old points) map to base + 6 x (old - 5) — same timing.
+const oldStrToNew = (old) => old ? BALANCE.stats.base + BALANCE.stats.pointScale * (old - 5) : 0;
 export function strRequirement(def) {
   const tierStep = 2 * ((def?.huntTier || 1) - 1);
-  if (def?.kind === 'weapon') return def.weight >= 12 ? 4 + (def.weight - 10) + tierStep : 0;
+  if (def?.kind === 'weapon') return oldStrToNew(def.weight >= 12 ? 4 + (def.weight - 10) + tierStep : 0);
   if (def?.armorClass !== 'heavy') return 0;
-  return def.kind === 'body' ? 4 + (def.weight - 8) + tierStep : 6 + tierStep;
+  return oldStrToNew(def.kind === 'body' ? 4 + (def.weight - 8) + tierStep : 6 + tierStep);
 }
 for (const item of Object.values(ITEMS)) {
   if (!SLOTS.includes(item.kind)) continue;
   item.requiredLevel = 1;
   item.requiredStr = strRequirement(item);
 }
-export const meetsRequirement = (save, def) => (save.stats?.str ?? 5) >= (def?.requiredStr || 0);
+export const meetsRequirement = (save, def) => (save.stats?.str ?? BALANCE.stats.base) >= (def?.requiredStr || 0);
 export const requirementLabel = (def) => def?.requiredStr ? `힘 ${def.requiredStr}` : '';
 // cocy 10-11: one ungraded stone + the greater stone. enhance_stone_2 is legacy only (old receipts);
 // SaveStore.load converts held mid stones into plain stones.
@@ -115,7 +117,7 @@ export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
 export function capacity(save) {
-  return 100 + BALANCE.stats.capacity * eff(save.stats.str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
+  return 100 + BALANCE.stats.capacity * eff(effectiveStats(save).str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
 }
 
 export function lootWeight(loot) {
@@ -201,7 +203,7 @@ export function craft(save, id) {
 
 export function shopPrice(save, id) {
   if (!CONSUMABLES.includes(id)) throw new Error('판매하지 않는 물품입니다.');
-  const discount = Math.min(BALANCE.stats.discountCap, BALANCE.stats.discount * eff(save.stats.cha));
+  const discount = Math.min(BALANCE.stats.discountCap, BALANCE.stats.discount * eff(effectiveStats(save).cha));
   return Math.max(1, Math.ceil(ITEMS[id].price * (1 - discount)));
 }
 
@@ -303,7 +305,8 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
-  if (random() < Math.min(1, chance * threat.drop)) {
+  // LUK raises the gear drop chance (cocy 10-12); same single draw, so seeds stay aligned.
+  if (random() < Math.min(1, chance * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       let rarity = weighted(Object.entries((ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity)), random);

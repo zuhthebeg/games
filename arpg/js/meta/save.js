@@ -1,8 +1,8 @@
 import { BALANCE } from '../content/balance.js';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
-import { BASE_STATS, STAT_KEYS, cap } from './stats.js';
+import { BASE_STATS, STAT_KEYS, cap, statBudget } from './stats.js';
 import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity } from './items.js';
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
@@ -85,10 +85,11 @@ export function validateSave(save) {
     if (save.stageThreat !== undefined && (!record(save.stageThreat)
       || !Object.entries(save.stageThreat).every(([id, value]) => Object.hasOwn(STAGE_XP, id) && integer(value, 0, 3)
         && (value === 0 || save.cleared?.[id] === true)))) return false;
-    if (!record(save.stats) || Object.keys(save.stats).length !== 5) return false;
-    if (!STAT_KEYS.every((key) => integer(save.stats[key], 5, cap(save.level)))) return false;
-    const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - 5, 0);
-    if (spent + save.statPoints !== 6 + BALANCE.stats.pointsPerLevel * (save.level - 1)) return false;
+    if (!record(save.stats) || Object.keys(save.stats).length !== STAT_KEYS.length) return false;
+    const base = BALANCE.stats.base;
+    if (!STAT_KEYS.every((key) => integer(save.stats[key], base, cap(save.level)))) return false;
+    const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - base, 0);
+    if (spent + save.statPoints !== statBudget(save.level)) return false;
     if (!Array.isArray(save.items) || !save.items.length || !record(save.equipped)) return false;
     const uids = new Set();
     for (const item of save.items) {
@@ -146,6 +147,21 @@ export function validateSave(save) {
   }
 }
 
+// cocy 10-12: v4 stats (base 5, cap 19, 1 point/level) -> v5 (base 10, cap 100). One old point is
+// worth pointScale new points, so every allocation keeps its exact effect; CON/LUK start at base and
+// the extra per-level points they come with arrive unspent.
+export function migrateStatScale(data) {
+  if (!record(data.stats) || !integer(data.level, 1, MAX_LEVEL) || !integer(data.statPoints)) return data;
+  const { base, pointScale, pointsPerLevel } = BALANCE.stats;
+  const stats = Object.fromEntries(STAT_KEYS.map((key) => [key,
+    integer(data.stats[key]) ? base + pointScale * (data.stats[key] - 5) : base]));
+  const spent = STAT_KEYS.reduce((sum, key) => sum + stats[key] - base, 0);
+  // Remaining = new budget minus what the old points now occupy (old unspent x scale + the new CON/LUK share).
+  const statPoints = data.statPoints * pointScale + (pointsPerLevel - pointScale) * (data.level - 1);
+  if (spent + statPoints !== statBudget(data.level)) return data; // malformed: leave to validation/backup
+  return { ...data, version: SAVE_VERSION, stats, statPoints };
+}
+
 // Only this adapter knows about browser storage. Inject storage/clock in tests or future adapters.
 export class SaveStore {
   constructor(storage, now = () => Date.now()) {
@@ -163,8 +179,9 @@ export class SaveStore {
       data = null;
     }
     if (record(data) && data.version === 3) {
-      data = { ...data, version: SAVE_VERSION, stash: { stacks: {} }, learned: [], skills: {} };
+      data = { ...data, version: 4, stash: { stacks: {} }, learned: [], skills: {} };
     }
+    if (record(data) && data.version === 4) data = migrateStatScale(data);
     // cocy 10-11: stone grades were removed; a held mid stone becomes two plain stones.
     if (record(data) && record(data.stacks) && integer(data.stacks.enhance_stone_2, 1)) {
       data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };

@@ -1,3 +1,4 @@
+import { deriveMods } from './stats.js';
 // cocy 10-11 enchant: scrolls replace stone+gold upgrades. Stones only become scrolls.
 // Outcomes are seeded by (account, item, attempt counter), and the result is part of the
 // returned save, so a reload during the animation cannot reroll an attempt.
@@ -29,7 +30,8 @@ export function enchantPreview(save, uid, scrollId) {
   const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
   return {
     item, level, maxed, risky, blessed: !!scroll.blessed,
-    chance: maxed ? 0 : risky ? ENCHANT.rates[level] : 1,
+    // LUK adds up to +8 points on risky steps (cocy 10-12).
+    chance: maxed ? 0 : risky ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck) : 1,
     outcomes: [...new Set(steps.map((step) => Math.min(level + step, ENCHANT.max)))],
     refund: { [STONE]: refund },
     have: save.stacks[scrollId] || 0,

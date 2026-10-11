@@ -229,9 +229,21 @@ try {
   await waitFor(page('level-up'), 38000);
   assert.equal(await evaluate('__arpg.world.round.t'), 900);
   assert.equal(await evaluate('__arpg.save.level'), 2);
-  assert.equal(await evaluate('__arpg.save.statPoints'), 1);
+  assert.equal(await evaluate('__arpg.save.statPoints'), 8);
   assert.ok(await evaluate("document.querySelector('#allocation-confirm').disabled"));
-  for (let point = 0; point < 1; point++) await click('[data-action="stat-plus"][data-key="agi"]');
+  // 7 stat rows with − / + / +5 must fit a phone without sideways overflow or overlapping buttons.
+  const allocationLayout = await evaluate(`(() => {
+    const rows = [...document.querySelectorAll('.allocation-row')], root = document.querySelector('#meta-screen');
+    const boxes = rows.flatMap(r => [...r.querySelectorAll('button')].map(b => b.getBoundingClientRect()));
+    const overlap = boxes.some((a, i) => boxes.some((b, j) => j > i && a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1));
+    return { rows: rows.length, overflow: [...root.querySelectorAll('*')].some(n => n.scrollWidth > n.clientWidth + 1 && getComputedStyle(n).overflowX !== 'hidden' && n.closest('.allocation')),
+      offscreen: boxes.some(b => b.right > innerWidth + 1 || b.left < -1), overlap, tap: Math.min(...boxes.map(b => b.height)) };
+  })()`);
+  assert.deepEqual({ rows: allocationLayout.rows, overflow: allocationLayout.overflow, offscreen: allocationLayout.offscreen, overlap: allocationLayout.overlap },
+    { rows: 7, overflow: false, offscreen: false, overlap: false }, JSON.stringify(allocationLayout));
+  await click('[data-action="stat-plus"][data-key="agi"][data-step="5"]');
+  for (let point = 0; point < 3; point++) await click('[data-action="stat-plus"][data-key="agi"]:not([data-step])');
+  assert.equal(await evaluate("document.querySelector('#allocation-left b').textContent"), '0');
   await click('#allocation-confirm');
   await backToInn();
   const innMobile = await rectangles('.hotspot');
@@ -545,7 +557,7 @@ try {
   await command('Page.reload'); await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
   assert.equal(await evaluate('__arpg.save.items.some(item=>item.uid=== ' + JSON.stringify(boughtUid) + ')'), false);
-  assert.equal(await evaluate('__arpg.save.version'), 4);
+  assert.equal(await evaluate('__arpg.save.version'), 5);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));

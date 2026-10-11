@@ -50,7 +50,7 @@ test('item cards/details and compare weight show effective kg but original stren
   const c=compareItems(old,next,s),weight=c.lines.find(l=>l.key==='weight');
   close(weight.from,12);close(weight.to,7.68);assert.equal(weight.good,true);
   for(const html of [cardHtml(next,s),itemDetailsHtml(next)]) assert.match(html,/7\.68 kg/);
-  assert.match(itemDetailsHtml(next),/필요 힘<\/dt><dd>6/);
+  assert.match(itemDetailsHtml(next),/필요 힘<\/dt><dd>16/);
   assert.ok(c.lines.find(l=>l.key==='attackRate').delta>0);
 });
 

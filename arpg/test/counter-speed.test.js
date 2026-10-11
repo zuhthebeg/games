@@ -235,7 +235,7 @@ test('attackRate monotonic DEX/weight/load, finite modest caps, starter blade ba
 
 test('equipped weight and agi pass through meta without schema/stat changes, current carrying ratio used', () => {
   const save = createSave({ name: 'test', answers: [0, 0, 0, 0, 0], weapon: 'blade', createdAt: 1 });
-  save.stats.agi = 9;
+  save.stats.agi = 34; // old 9 on the 10-12 scale (10 + 6 x 4)
   const mods = buildRoundMods(save);
   assert.equal(mods.attackSpeedBonus, .08);
   assert.equal(mods.weaponWeight, ITEMS.training_sword.weight);

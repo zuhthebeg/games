@@ -58,6 +58,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing: 0,
     kx: 0, ky: 0, moving: false,
     hp: maxHp, maxHp, mp: maxMp, maxMp, mpRegen: mods.mpRegen ?? PB.mpRegen,
+    hpRegen: mods.hpRegen ?? 0, critChance: mods.critChance ?? 0, critMult: mods.critMult ?? 1.5,
     speed: PB.speed * (mods.speedMult ?? 1),
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     cdMult: mods.cdMult ?? 1,
@@ -151,6 +152,7 @@ function stepPlayer(world, p, inp) {
   if (p.pendingCounter && world.tick > p.pendingCounter.expiresTick) p.pendingCounter = null;
 
   p.mp = Math.min(p.maxMp, p.mp + p.mpRegen * DT);
+  if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
 
   if (inp.dodgeEdge) {
@@ -563,6 +565,12 @@ function applyHit(world, t, hit) {
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
   if (t.kind === 'player' && t.ac > 0 && !hit.periodic) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
+  // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
+  let crit = false;
+  if (mdef && !hit.periodic) {
+    const src = world.entities.find((e) => e.id === hit.srcId);
+    if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
+  }
   dmg = Math.max(1, Math.round(dmg));
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
@@ -572,7 +580,7 @@ function applyHit(world, t, hit) {
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}) });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}) });
 
   if (t.kind === 'player') {
     if (!hit.periodic) t.hurtInvuln = ticks(PB.hurtInvulnMs);

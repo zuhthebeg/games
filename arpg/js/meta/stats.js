@@ -5,14 +5,25 @@ import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
 import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc, effectiveWeight } from './items.js';
 
-export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'cha'];
-export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, 5]));
-export const STAT_NAMES = { str: '힘', agi: '민첩', int: '지능', wis: '지혜', cha: '카리스마' };
-export const cap = (level) => Math.min(S.capMax, S.capBase + Math.floor(level / S.capEvery));
+export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'con', 'luk', 'cha'];
+export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, S.base]));
+export const STAT_NAMES = { str: '힘', agi: '민첩', int: '지능', wis: '지혜', con: '체력', luk: '행운', cha: '카리스마' };
+export const cap = (level) => Math.min(S.capMax, S.capBase + S.capPerLevel * level);
+// Total points a level grants (allocated above base + unspent).
+export const statBudget = (level) => S.startPoints + S.pointsPerLevel * (level - 1);
 
 export function eff(value) {
-  const delta = Math.max(0, value - 5);
+  const delta = Math.max(0, value - S.base) / S.pointScale;
   return delta <= S.knee ? delta : S.knee + (delta - S.knee) * S.slope;
+}
+// 0 at base, 1 at 100, keeps rising past 100 (gear).
+export const norm = (value) => Math.max(0, value - S.base) / (S.capMax - S.base);
+
+// Allocated stats + flat stat affixes on equipped gear (gear is not capped).
+export function effectiveStats(save) {
+  const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
+  const affixes = affixTotals(gear);
+  return Object.fromEntries(STAT_KEYS.map((key) => [key, (save.stats[key] ?? S.base) + (affixes[`${key}_flat`] || 0)]));
 }
 
 export function allocateStats(save, allocation) {
@@ -33,7 +44,7 @@ export function allocateStats(save, allocation) {
 }
 
 export function deriveMods(save) {
-  const stats = save.stats;
+  const stats = effectiveStats(save);
   const weapon = equippedItem(save, 'weapon');
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
@@ -49,7 +60,10 @@ export function deriveMods(save) {
     maxHp: 100 + 8 * save.level + affixes.hp_flat,
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     maxMp: 100 + S.mp * eff(stats.int),
-    mpRegen: 5 * (1 + S.regen * eff(stats.wis)) * (1 + affixes.mana_pct / 100),
+    mpRegen: S.mpRegenAt100 * (S.mpRegenFloor + (1 - S.mpRegenFloor) * stats.wis / 100) * (1 + affixes.mana_pct / 100),
+    hpRegen: S.hpRegenAt100 * stats.con / 100,
+    critChance: S.luckCrit * norm(stats.luk), critMult: S.critMult,
+    dropLuck: S.luckDrop * norm(stats.luk), enchantLuck: S.luckEnchant * norm(stats.luk),
     speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
     dodgeCdMult: Math.max(S.dodgeFloor, 1 - S.dodge * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
     iframeBonusMs: Math.min(S.iframeCap, S.iframe * eff(stats.agi)),

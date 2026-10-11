@@ -1,3 +1,4 @@
+import { toOldScale } from './fixtures/old-scale.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave, SAVE_VERSION } from '../js/meta/save.js';
@@ -104,13 +105,14 @@ test('books permanently learn at exact prices, defaults always known, equip per 
 });
 
 test('v3 migrates to v4 preserving all old fields; malformed new fields and invalid learned/equipped skills fail validation', () => {
-  const old = rich(); old.version = 3; delete old.stash; delete old.learned; delete old.skills;
+  const modern = rich(), old = toOldScale(modern, 3); delete old.stash; delete old.learned; delete old.skills;
   const data = new Map([[SAVE_KEY, JSON.stringify(old)]]);
   const store = new SaveStore({ getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: k => data.delete(k) });
   const loaded = store.load();
-  assert.equal(SAVE_VERSION, 4);
-  assert.deepEqual(loaded, { ...old, version: 4, stash: { stacks: {} }, learned: [], skills: {} });
-  assert.ok(validateSave(loaded)); store.save(loaded); assert.equal(JSON.parse(data.get(SAVE_KEY)).version, 4);
+  assert.equal(SAVE_VERSION, 5);
+  // v3 -> v4 fields, then v4 -> v5 stat scale: exactly the modern save it came from.
+  assert.deepEqual(loaded, { ...modern, version: 5, stash: { stacks: {} }, learned: [], skills: {} });
+  assert.ok(validateSave(loaded)); store.save(loaded); assert.equal(JSON.parse(data.get(SAVE_KEY)).version, 5);
   for (const change of [
     s => s.stash.stacks.scrap = 1, s => s.stash.stacks.potion = -1,
     s => s.learned = ['nope'], s => s.learned = ['lunge'], s => s.learned = ['whirl','whirl'],

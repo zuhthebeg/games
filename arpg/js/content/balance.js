@@ -18,8 +18,15 @@ export const BALANCE = {
     { hp: 2.1, damage: 1.7, gold: 2.4, drop: 1.9, rarity: {common:40,fine:43,rare:14,epic:3}, bossRarity:{fine:20,rare:55,epic:25} },
   ],
   normalGold: 1.2, rewardCurve: 1.06,
-  // [제안] 1 level point, ~2x early point effect, earlier soft knee: balanced Lv30 stat impact ~69% old.
-  stats: { pointsPerLevel: 1, knee: 4, slope: .5, capBase: 9, capEvery: 3, capMax: 19,
+  // cocy 10-12: stats run to 100 (gear can push past it). 6 points = one pre-10-12 point, so every
+  // existing effect is unchanged at the same investment; +2/level funds the new CON/LUK.
+  // Effect units: eff(v) = knee curve over (v - base) / pointScale (same curve as before).
+  stats: { base: 10, startPoints: 36, pointsPerLevel: 8, pointScale: 6, knee: 4, slope: .5,
+    capBase: 40, capPerLevel: 2, capMax: 100,
+    // WIS 100 = the old flat 5 MP/s; CON 100 = half of it in HP/s; both keep scaling past 100.
+    mpRegenAt100: 5, mpRegenFloor: .2, hpRegenAt100: 2.5,
+    // LUK, normalized (luk - base) / 90: crit chance/multiplier, gear drop chance, enhance success.
+    luckCrit: .25, critMult: 1.5, luckDrop: .3, luckEnchant: .08,
     focusDamage: .04, mp: 8, regen: .06, speed: .01, speedCap: .07,
     dodge: .03, dodgeFloor: .79, iframe: 6, iframeCap: 42,
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },

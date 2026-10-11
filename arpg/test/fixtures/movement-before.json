@@ -2,46 +2,46 @@
   {
     "weapon": "blade",
     "seed": 1,
-    "sha256": "0d59858b93ed443136b5d6af07c9086722ceae5e0bb3ae0ee132504e277aa566"
+    "sha256": "3d123f02cfd4db913f388460154e9975569694fdf7b72c2816799d709a7400d3"
   },
   {
     "weapon": "blade",
     "seed": 42,
-    "sha256": "177d3d5b394cb08fbae62585b3177df17d7c80ef1fa64ede5c96996e33e319c6"
+    "sha256": "3d83132ea12fa6c924ed5862ca1d45d3a99c4da9cd297f925d893e47b7161e65"
   },
   {
     "weapon": "blade",
     "seed": 999,
-    "sha256": "42363efb2b3e16a0e6c2e5d0fe7f175bc0f2c36482c050aa4f9cf264353a0ee5"
+    "sha256": "bfe5053f5cbcfed8dfdef114093b4564b78a16898c16f291b80dd49a71441722"
   },
   {
     "weapon": "bow",
     "seed": 1,
-    "sha256": "46ae1e909395a72a4cc3a1632bf2789f170f0cfab3af7ab54a0aed2bbe26f780"
+    "sha256": "3e916ef9adf5b0c1ca691f617e8e6b74259b9c8ff710364ab15c17fbd95a7ea5"
   },
   {
     "weapon": "bow",
     "seed": 42,
-    "sha256": "9bc715df9cfbf85b4dbb78e1410dffa9263173f6acb83767dbb957cddc652822"
+    "sha256": "6988b316575489d55709bdc9a021427277df377fcf8f9a04b8bc901830e1bbcd"
   },
   {
     "weapon": "bow",
     "seed": 999,
-    "sha256": "f1760dad584cc8847e12ab21b68d7160f85d3a00fff2ba2b39df5a3a2246dfa4"
+    "sha256": "71fa6d5254f15c025711dca978949d4e60d5b1a156e195c555fa048af01a7ce2"
   },
   {
     "weapon": "focus",
     "seed": 1,
-    "sha256": "bf92f76cc489061fbd1a35e9fb04a05bd2537e18c0c788ed7830d22d5ae6b2a3"
+    "sha256": "560af633da5844b6c18dba3f7ef1721295ea42bc995bb1e4c57c8296d269f640"
   },
   {
     "weapon": "focus",
     "seed": 42,
-    "sha256": "eea581c60372ecb10a33f56cc7f3d9f7c233ef171b2a0152c2ca7120e62f7551"
+    "sha256": "08b60818a8de3525baa3218a30510b04a5ed45532fe56b7295801dd3d859f751"
   },
   {
     "weapon": "focus",
     "seed": 999,
-    "sha256": "7050036125e9a2c54665e579846b6e8e8c9c82b7bce2acf92a08bcfcf701df43"
+    "sha256": "b390770136ca90e157cd5299920b3e887e57e508a5637c160f4289a78130caaf"
   }
 ]

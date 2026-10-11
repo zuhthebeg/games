@@ -110,7 +110,7 @@ const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'm
   'weapon', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
-  'mpRegen', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
+  'mpRegen', 'hpRegen', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
 const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null) {

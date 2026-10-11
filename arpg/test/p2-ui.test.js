@@ -53,7 +53,7 @@ function renderHub(s) {
 test('inn NPC contract has no owner; unspent points badge lives on the character portrait', () => {
   const h=renderHub(addXp(save(),51));h.showInn();
   assert.ok(h.html.includes('data-action="character"'));
-  assert.ok(h.html.includes('캐릭터 · 미분배 1점'));
+  assert.ok(h.html.includes('캐릭터 · 미분배 8점'));
   assert.doesNotMatch(h.html, /data-action="owner"|약사|교관 · 미분배/);
   for(const name of ['만물상','장비상','대장장이','아카데미','창고','가방']) assert.ok(h.html.includes(`<strong>${name}</strong>`));
   h.action('character',{});assert.equal(h.page,'character');

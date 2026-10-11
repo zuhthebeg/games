@@ -1,3 +1,4 @@
+import { toOldScale } from './fixtures/old-scale.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -29,7 +30,7 @@ test('both fork entrances open at S10, castle unlock is OR and neither branch sk
 test('historical out-of-order clears remain replayable, debug all-clears open every node, without migration or mutation', () => {
   const s=fresh();s.cleared.S20=true;const before=structuredClone(s);assert.ok(mapUnlocked(s,'S20'));assert.deepEqual(s,before);assert.ok(validateSave(s));
   const old=JSON.parse(readFileSync(new URL('./fixtures/save-v1-s4.json',import.meta.url),'utf8'));
-  const v3={...fresh(),version:3,cleared:{...fresh().cleared,...old.cleared}};delete v3.stash;delete v3.learned;delete v3.skills;
+  const v3={...toOldScale(fresh(),3),cleared:{...fresh().cleared,...old.cleared}};delete v3.stash;delete v3.learned;delete v3.skills;
   const storage={getItem:()=>JSON.stringify(v3),setItem:()=>{},removeItem:()=>{}};const migrated=new SaveStore(storage).load();assert.ok(migrated);
   for(const [id,clear] of Object.entries(old.cleared)) if(clear) assert.ok(mapUnlocked(migrated,id));
   s.cleared=Object.fromEntries(Object.keys(STAGES).map(id=>[id,true]));assert.equal(availableStages(s).length,20);

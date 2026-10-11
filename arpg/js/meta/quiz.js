@@ -1,4 +1,7 @@
 import { STAT_KEYS } from './stats.js';
+import { BALANCE } from '../content/balance.js';
+// Answer vectors score the five original stats in this order (CON/LUK start at base).
+const QUIZ_STATS = ['str', 'agi', 'int', 'wis', 'cha'];
 
 const option = (text, w, a) => ({ text, w, a });
 export const FAMILIES = ['blade', 'bow', 'focus'];
@@ -83,7 +86,8 @@ export function resolve(answers) {
   }
   return {
     weapon: FAMILIES[weaponIndex],
-    points: Object.fromEntries(STAT_KEYS.map((key, index) => [key, points[index]])),
+    // Quiz still splits 6 'old' points over the five original stats; each is worth pointScale now.
+    points: Object.fromEntries(STAT_KEYS.map((key) => [key, (points[QUIZ_STATS.indexOf(key)] ?? 0) * BALANCE.stats.pointScale])),
     weaponScores,
     statScores,
   };

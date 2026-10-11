@@ -8,7 +8,7 @@ import { STAGES, ABILITIES } from '../content/combat.js';
 import { BOOKS, DEFAULT_SKILLS, hasSkill, equippedSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
-import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/stats.js';
+import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
   ITEMS, RECIPES, equippedItem, carriedWeight, capacity, effectiveWeight,
@@ -244,13 +244,13 @@ export class HubUI {
     const result = resolve(this.answers);
     this.chosenWeapon ??= result.weapon;
     const bars = STAT_KEYS.map((key) => `
-      <div class="stat-preview"><span>${STAT_NAMES[key]}</span><meter min="0" max="3"
-      value="${result.points[key]}"></meter><b>5 + ${result.points[key]}</b></div>`).join('');
+      <div class="stat-preview"><span>${STAT_NAMES[key]}</span><meter min="0" max="${3 * BALANCE.stats.pointScale}"
+      value="${result.points[key]}"></meter><b>${BALANCE.stats.base} + ${result.points[key]}</b></div>`).join('');
     const choices = FAMILIES.map((family) => button(WEAPON_NAMES[family], 'override',
       `data-family="${family}" aria-pressed="${family === this.chosenWeapon}"`)).join('');
     this.show(this.panelHtml('인장이 응답했다', `
       <p>${escape(this.name)}, 당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>.</p>
-      ${bars}<p class="muted">초기 능력치 6점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
+      ${bars}<p class="muted">초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>
       ${button('소환 시험으로 · 30초', 'create', 'id="quiz-start"')}`), 'quiz-result');
   }
@@ -687,14 +687,22 @@ export class HubUI {
     this.allocationRequired = required;
     const spent = Object.values(this.draft).reduce((sum, value) => sum + value, 0);
     const remaining = this.save.statPoints - spent;
-    const rows = STAT_KEYS.map((key) => `<div class="allocation-row ${this.draft[key] ? 'changed' : ''}"><span>${STAT_NAMES[key]}</span>
+    const gearStats = effectiveStats(this.save);
+    const rows = STAT_KEYS.map((key) => {
+      const full = remaining === 0 || this.save.stats[key] + this.draft[key] >= cap(this.save.level);
+      const gear = gearStats[key] - this.save.stats[key];
+      return `<div class="allocation-row ${this.draft[key] ? 'changed' : ''}"><span>${STAT_NAMES[key]}</span>
       ${button('−', 'stat-minus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 줄이기"`, this.draft[key] === 0)}
-      <b>${this.save.stats[key] + this.draft[key]}</b>
-      ${button('+', 'stat-plus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 올리기"`,
-        remaining === 0 || this.save.stats[key] + this.draft[key] >= cap(this.save.level))}</div>`).join('');
+      <b>${this.save.stats[key] + this.draft[key]}${gear ? `<small class="gain">+${gear}</small>` : ''}</b>
+      ${button('+', 'stat-plus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 올리기"`, full)}
+      ${button('+5', 'stat-plus', `data-key="${key}" data-step="5" aria-label="${STAT_NAMES[key]} 5 올리기"`, full)}</div>`;
+    }).join('');
     const before = deriveMods(this.save);
     const after = deriveMods(allocateStats(this.save, this.draft));
-    const preview = [['HP', before.maxHp, after.maxHp], ['MP', before.maxMp, after.maxMp], ['소지 kg', before.capacity, after.capacity]]
+    const pct = (v) => v * 100;
+    const preview = [['HP', before.maxHp, after.maxHp], ['MP', before.maxMp, after.maxMp],
+      ['MP/s', before.mpRegen, after.mpRegen], ['HP/s', before.hpRegen, after.hpRegen],
+      ['치명 %', pct(before.critChance), pct(after.critChance)], ['소지 kg', before.capacity, after.capacity]]
       .map(([label, from, to]) => `<span>${label} <b>${amount(to)}</b>${to !== from ? `<small class="gain">▲+${amount(to - from)}</small>` : ''}</span>`).join('');
     const tabs = required ? '' : this.characterTabs('stats');
     const content = `${tabs}${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
@@ -1030,7 +1038,13 @@ export class HubUI {
         return this.showTrainer();
       case 'stat-plus':
       case 'stat-minus':
-        this.draft[data.key] += action === 'stat-plus' ? 1 : -1;
+        if (action === 'stat-minus') this.draft[data.key] -= 1;
+        else {
+          // +5 stops at whatever is left of the points or the cap.
+          const left = this.save.statPoints - Object.values(this.draft).reduce((sum, value) => sum + value, 0);
+          const room = cap(this.save.level) - this.save.stats[data.key] - this.draft[data.key];
+          this.draft[data.key] += Math.max(0, Math.min(Number(data.step) || 1, left, room));
+        }
         return this.showAllocation(this.allocationRequired, false);
       case 'allocate':
         this.commit(allocateStats(this.save, this.draft));

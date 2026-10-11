@@ -156,7 +156,8 @@ test('new seeded tables always award region materials, stay bounded and never ad
 test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances', () => {
   const base = addXp(fresh(), 1200);
   base.gold = 10000;
-  base.stats = { ...base.stats, str: base.stats.str + 1 }; base.statPoints -= 1; // STR 9: rune_blade 9, woven_armor 8
+  // rune_blade asks STR 34 (old 9), woven_armor 28 (old 8): spend the needed points on STR.
+  { const need = 34 - base.stats.str; base.stats = { ...base.stats, str: 34 }; base.statPoints -= need; }
   base.stacks = { ...base.stacks, scrap: 1000, wood: 100, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100, enhance_stone_1: 100 };
   for (const id of ['rune_blade', 'pack_bow', 'altar_staff', 'woven_armor']) {
     assert.equal(ITEMS[id].huntTier, 2);
