@@ -514,10 +514,12 @@ function applyHit(world, t, hit) {
     if (!hit.periodic && t.dodge.iframeLeft > 0) {
       const sinceDodge = world.tick - t.dodge.startedTick;
       const attacker = world.entities.find((e) => e.id === hit.srcId);
-      if (!hit.counter && attacker && attacker.team !== t.team && !t.dodge.perfectPaid
+      // Orphaned hostile shots (owner already dead) still count as a perfect dodge, just without a counter.
+      const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
+      if (!hit.counter && hostile && !t.dodge.perfectPaid
         && sinceDodge >= 0 && sinceDodge <= ticks(PB.dodge.perfectMs)) {
         t.dodge.perfectPaid = true;
-        t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
+        if (attacker) t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
           expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
             ticks(PB.dodge.iframeMs + t.iframeBonusMs)) + ticks(BALANCE.counter.graceMs) };
         world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,

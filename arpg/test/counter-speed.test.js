@@ -338,7 +338,8 @@ test('unknown projectile owner is never inferred; an expired pending cannot fire
   const unknown = fixture();
   shot(unknown.w, unknown.g, 425, 400, { ownerId: 999999 });
   const ev = step(unknown.w, { a: input({ dodgeEdge: true, mx: 1 }) });
-  assert.ok(ev.some(e => e.type === 'miss')); assert.equal(unknown.p.pendingCounter, null);
+  // Orphaned hostile shot: still a perfect dodge (feedback), but no counter target is guessed.
+  assert.ok(ev.some(e => e.type === 'perfectDodge')); assert.equal(unknown.p.pendingCounter, null);
   const f = fixture(); perfect(f); run(f.w, 5);
   f.p.bufferDodge = 30; // existing dodge buffer blocks counter without manufacturing a new hit
   run(f.w, 25);
