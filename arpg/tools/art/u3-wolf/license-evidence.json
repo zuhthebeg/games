@@ -1,0 +1,28 @@
+{
+  "model_page": "https://poly.pizza/m/P1gU3Qkr9r",
+  "download_url": "https://static.poly.pizza/f1d12388-e39b-4157-b32a-646a1d089fc4.glb.br",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "individual_page_text": "Sep 7, 2021 \u2022 FBX/GLTF format \u2022 Public Domain (CC0)",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "archive": "C:/Users/user/ai-tools/arpg-art/u3-wolf/source",
+  "files": [
+    {
+      "file": "Quaternius-Wolf.glb",
+      "bytes": 986712,
+      "sha256": "16ac96339d06f7def9af20d5d9b27622d61e53580dab43970c9edb1bffbe8f84"
+    },
+    {
+      "file": "poly-wolf-cc0.html",
+      "bytes": 111470,
+      "sha256": "78729d0ee2364032e23b82eaaafe2469c62d5224d9b2f6de751aa6d5439e8d6c"
+    }
+  ],
+  "clips": [
+    "Idle",
+    "Gallop",
+    "Attack",
+    "Idle_HitReact_Left",
+    "Death"
+  ]
+}

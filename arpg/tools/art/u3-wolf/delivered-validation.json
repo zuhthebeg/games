@@ -1,0 +1,43 @@
+{
+  "name": "wolf",
+  "format": "webp",
+  "frames": 576,
+  "atlas_dimensions": [
+    [
+      2048,
+      1920
+    ],
+    [
+      2048,
+      2048
+    ],
+    [
+      2048,
+      768
+    ]
+  ],
+  "webp_bytes": 429684,
+  "json_bytes": 131356,
+  "total_bytes": 561040,
+  "alpha_coverage_percent": [
+    3.552,
+    8.508
+  ],
+  "max_idle_center_drift_px": 2.062,
+  "unique_direction_hashes": {
+    "idle": 8,
+    "run": 8,
+    "attack": 8,
+    "hit": 8,
+    "death": 8
+  },
+  "pose_profile": "quadruped",
+  "pose_checked_frames": 576,
+  "t_pose_frames": null,
+  "bind_pose_frames": null,
+  "min_max_arm_degrees_from_bind": 2.2079,
+  "min_skin_rms_from_bind_height": 0.013872,
+  "lossless_alpha_matches_pose_evidence": 576,
+  "clipped_frames": 0,
+  "idle_weapon_projected_span_px": []
+}

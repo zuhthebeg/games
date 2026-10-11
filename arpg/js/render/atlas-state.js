@@ -7,6 +7,7 @@ export const ATLAS_IDS = Object.freeze({
   goblin_grunt: 'goblin-grunt',
   goblin_slinger: 'goblin-archer',
   goblin_chief: 'goblin-chief',
+  wolf: 'wolf',
   // No verified boar artwork yet: keep its distinct procedural silhouette.
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
@@ -32,13 +33,14 @@ export function atlasAnimation(entity, animation) {
   return entity.moving ? 'run' : 'idle';
 }
 
-export function atlasFrame(state, count, age, fps, entity) {
+export function atlasFrame(state, count, age, fps, entity, duration) {
   if (state === 'attack' && entity.act) {
     const def = entity.act.def;
     const ticks = ['windup', 'lock', 'active', 'recovery']
       .reduce((sum, phase) => sum + Math.ceil((def[`${phase}Ms`] || 0) / (1000 / 30)), 0);
     return Math.min(count - 1, Math.floor(entity.act.elapsed / Math.max(1, ticks) * count));
   }
-  const frame = Math.floor(age * fps);
+  // Optional per-kit presentation duration; attack keeps authoritative phase timing.
+  const frame = Math.floor(age * (duration > 0 ? count / duration : fps));
   return state === 'idle' || state === 'run' ? frame % count : Math.min(count - 1, frame);
 }

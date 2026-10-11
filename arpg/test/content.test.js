@@ -63,12 +63,12 @@ test('validator enforces simple ≥400ms / elite ≥800ms and rejects danger pal
   }
 });
 
-test('new monsters keep explicit orthogonal identity and procedural-only model keys', () => {
+test('new monsters keep explicit orthogonal identity; only verified wolf has an atlas', () => {
   for (const id of Object.keys(NEW_MONSTER_DROPS)) {
     const variant = MONSTER_VARIANTS[id];
     assert.equal(variant.disposition, 'hostile');
     assert.ok(variant.speciesTags.length);
-    assert.equal(ATLAS_IDS[variant.baseModelId], undefined);
+    assert.equal(ATLAS_IDS[variant.baseModelId], id === 'wolf' ? 'wolf' : undefined);
     assert.ok(MONSTERS[id].abilities.some((ability) => ABILITIES[ability].recoveryMs >= 2500));
   }
   assert.deepEqual(MONSTER_VARIANTS.wolf.speciesTags, ['wolf', 'beast']);

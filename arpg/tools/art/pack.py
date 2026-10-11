@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('config')
     parser.add_argument('--repo', default='/mnt/c/Users/user/games')
+    parser.add_argument('--merge-manifest', action='store_true', help='Replace only configured kits; preserve other manifest entries')
     args = parser.parse_args()
     config_path = Path(args.config)
     config = json.loads(config_path.read_text())
@@ -111,7 +112,12 @@ def main():
         stats.append(record)
         manifest.append({'id': job['name'], 'label': job['label'], 'monster': job.get('neutral', False),
                          'content_ids': job['content_ids'], 'sheets': sheets, 'animations': list(job['animations']),
-                         'fps': config['fps'], 'anchor': anchor, 'bytes': total})
+                         'fps': config['fps'], 'anchor': anchor, 'bytes': total,
+                         **({'animation_durations': job['animation_durations']} if 'animation_durations' in job else {})})
+    if args.merge_manifest:
+        prior = json.loads((destination / 'manifest.json').read_text())
+        replaced = {entry['id'] for entry in manifest}
+        manifest = [entry for entry in prior if entry['id'] not in replaced] + manifest
     (destination / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
     (root.parent / 'verification.json').write_text(json.dumps(stats, indent=2))
     jobs = {job['name']: job for job in config['characters']}

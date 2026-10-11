@@ -174,5 +174,35 @@
       "y": 0.6659776270389557
     },
     "bytes": 437294
+  },
+  {
+    "id": "wolf",
+    "label": "늑대",
+    "monster": true,
+    "content_ids": [
+      "wolf"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json",
+      "atlas-2.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6296268105506897
+    },
+    "bytes": 561040,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

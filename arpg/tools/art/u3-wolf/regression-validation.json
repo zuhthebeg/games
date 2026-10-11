@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "canvas": true,
+  "sprites": {
+    "playerKits": [
+      "paperdoll-blade",
+      "paperdoll-bow",
+      "paperdoll-focus"
+    ],
+    "monsters": [
+      "goblin-grunt",
+      "goblin-archer",
+      "goblin-chief"
+    ],
+    "procedural": [
+      "iron_boar"
+    ],
+    "rendererReadonly": true,
+    "fallback": true
+  },
+  "onboarding": "name → 5 answers → S1 clear@900 → allocate 1 → inn",
+  "shop": "supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload",
+  "S2": "sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return",
+  "newStages": "pre-S5 v1 → S5 board unlock → wolf atlas ×2 / S6 guardian+spirit / S7 spider procedural → return",
+  "persisted": {
+    "gold": 20,
+    "potions": 4,
+    "level": 2
+  },
+  "fullSaveRestored": true,
+  "lastReceiptRestored": true,
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "hotspots": 6,
+    "buttons": 6,
+    "inside": true,
+    "noOverlap": true
+  },
+  "combat": {
+    "tick": 159,
+    "hp": 95.43333333333368,
+    "dodgeTick": 75,
+    "hits": 3,
+    "playerHits": 2
+  },
+  "feedback": {
+    "tick": 159,
+    "hits": 3,
+    "playerHits": 2,
+    "maxFrozen": 2,
+    "maxParticles": 13,
+    "maxVoices": 3,
+    "pools": {
+      "particles": 56,
+      "numbers": 32,
+      "effects": 40
+    },
+    "audio": {
+      "muted": false,
+      "state": "running",
+      "loaded": [
+        "swing",
+        "hit",
+        "critical",
+        "dodge",
+        "hurt",
+        "kill",
+        "level-up"
+      ],
+      "voices": 1
+    }
+  },
+  "touch": true,
+  "edgeLatch": true,
+  "readonlyDebug": true,
+  "weapons": [
+    "blade",
+    "bow",
+    "focus"
+  ],
+  "manaPotionE": true,
+  "innAutoRecovery": [
+    "clear",
+    "death",
+    "return_scroll",
+    "reload"
+  ],
+  "deathCause": true,
+  "scroll": "progress → returned",
+  "visibilityPause": true,
+  "forge": "craft → enhance → equip → unequip → dismantle → reload",
+  "debugMode": {
+    "mobile": true,
+    "desktopBackquote": true,
+    "gearSet": 20,
+    "receiptGold": 5,
+    "disabledNoImport": true
+  },
+  "resetDoubleConfirm": true,
+  "corruptBackup": true,
+  "consoleErrors": 0
+}

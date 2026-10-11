@@ -143,7 +143,7 @@ for job in config['characters']:
     else:
         rig.animation_data.action = None
         for bone in rig.pose.bones:
-            bone.matrix_basis = Matrix.Identity(4)
+            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') == 'quadruped' else Matrix.Identity(4)
     scene.frame_set(0)
     bpy.context.view_layer.update()
     arm_names = job.get('arm_bones', ['upperarm.l', 'upperarm.r'])
@@ -393,8 +393,11 @@ for job in config['characters']:
                     assert len(current) == len(rest)
                     square_distances.extend((inverse_facing @ point - original).length_squared for point, original in zip(current, rest))
                 rms = math.sqrt(sum(square_distances) / len(square_distances)) / bind_height
-                assert max(arm_degrees) > 10, (job['name'], name, 'T-pose arms', arm_degrees)
-                assert rms > .015, (job['name'], name, 'bind/frozen skin', rms)
+                if job.get('pose_profile') != 'quadruped':
+                    assert max(arm_degrees) > 10, (job['name'], name, 'T-pose arms', arm_degrees)
+                    assert rms > .015, (job['name'], name, 'bind/frozen skin', rms)
+                # Quadruped rest can equal an authored idle frame: validate clip
+                # motion and head/tail facing independently after packing.
                 # Fail before rasterisation if framing and delivered geometry
                 # disagree. Leave a 2px buffer for antialiasing and WebP alpha.
                 projected = [world_to_camera_view(scene, camera, point)
@@ -425,7 +428,7 @@ for job in config['characters']:
             'framing': {'ortho_scale': camera_data.ortho_scale, 'target': list(target),
                         'margin_factor': framing_margin, 'includes_outline_hulls': True, 'root_motion_drivers': root_drivers},
             'pose_check': {'bind_reference': 'evaluated T-Pose/rest mesh + local arm quaternion',
-                           'skinned_objects': [obj.name for obj in skinned], 'arm_bones': arm_names}}
+                           'skinned_objects': [obj.name for obj in skinned], 'arm_bones': arm_names, 'profile': job.get('pose_profile', 'humanoid')}}
     (out / job['name'] / 'frames.json').write_text(json.dumps(data, indent=2))
     root.rotation_euler.z = 0
     action(job['animations']['idle'])

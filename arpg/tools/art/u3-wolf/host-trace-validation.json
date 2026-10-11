@@ -1,0 +1,133 @@
+{
+  "unchanged": true,
+  "before": [
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "8f00932ecb11c080bc6e464fc19d9304f58a07e6bacd754acbf4ca0bf67aae25"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "20e863700fe80da2377f036d60c45cfcf13d8caf71dcfae3b8e8bea6934e9739"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "995953346874482c13cedea179db657b1e5339b14de906ef985abe1073939c32"
+    },
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "05a75627a1011a251720cb093a9b874a518f59a4e48ef5eaa9f838cc27fc1245"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "bfe94e71ccdb022f208c8b8a157cf7272f98d170e71fb4583dc1475697373aeb"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "03e2ff82ff69969f759bd148600a2c6e0f34952e005e0c5eeff1de8e5a8ca1db"
+    },
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "bc23e61dc9fc6edf9d46f4f0b7061a6d9f98b192d0fa59e231d3cc656e1d0178"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "146d342e13a43203339b4573d9e19b81b7052c93bbe7c76d883da66f2d317f9e"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "320aad04b80664a900145c48243a99656655af958ce14862ce093b6e5935c886"
+    }
+  ],
+  "after": [
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "8f00932ecb11c080bc6e464fc19d9304f58a07e6bacd754acbf4ca0bf67aae25"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "20e863700fe80da2377f036d60c45cfcf13d8caf71dcfae3b8e8bea6934e9739"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 1,
+      "ticks": 900,
+      "sha256": "995953346874482c13cedea179db657b1e5339b14de906ef985abe1073939c32"
+    },
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "05a75627a1011a251720cb093a9b874a518f59a4e48ef5eaa9f838cc27fc1245"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "bfe94e71ccdb022f208c8b8a157cf7272f98d170e71fb4583dc1475697373aeb"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 42,
+      "ticks": 900,
+      "sha256": "03e2ff82ff69969f759bd148600a2c6e0f34952e005e0c5eeff1de8e5a8ca1db"
+    },
+    {
+      "stage": "S5",
+      "weapon": "blade",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "bc23e61dc9fc6edf9d46f4f0b7061a6d9f98b192d0fa59e231d3cc656e1d0178"
+    },
+    {
+      "stage": "S5",
+      "weapon": "bow",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "146d342e13a43203339b4573d9e19b81b7052c93bbe7c76d883da66f2d317f9e"
+    },
+    {
+      "stage": "S5",
+      "weapon": "focus",
+      "seed": 999,
+      "ticks": 900,
+      "sha256": "320aad04b80664a900145c48243a99656655af958ce14862ce093b6e5935c886"
+    }
+  ]
+}

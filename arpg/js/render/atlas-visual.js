@@ -9,7 +9,9 @@ export function registerAtlasFactories(provider, fallbackFactory) {
   const library = new AtlasLibrary({
     baseUrl: new URL('../../assets/sprites/', import.meta.url),
     fetchManifest: async (url) => {
-      const response = await fetch(url);
+      // Revalidate the kit registry when a new stamped renderer boots; otherwise
+      // an old cached manifest can hide newly delivered monster art for hours.
+      const response = await fetch(url, { cache: 'no-cache' });
       if (!response.ok) throw new Error(`Atlas manifest HTTP ${response.status}`);
       return response.json();
     },
@@ -151,7 +153,7 @@ function spriteVisual(entity, { color }, asset) {
       stateName = next;
       direction = atlasDirection(state.facing);
       const textures = asset.animations[`${stateName}_${direction}`];
-      frame = atlasFrame(stateName, textures.length, age, asset.fps, state);
+      frame = atlasFrame(stateName, textures.length, age, asset.fps, state, asset.animation_durations?.[stateName]);
       sprite.texture = textures[frame];
       flash.texture = sprite.texture;
       sprite.tint = state.kind === 'monster' ? (state.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;

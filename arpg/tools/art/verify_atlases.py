@@ -13,12 +13,15 @@ from PIL import Image
 DIRECTIONS = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']
 
 
-def verify_pose(record, skinned_count):
+def verify_pose(record, skinned_count, profile="humanoid"):
     pose = record['pose']
     degrees = pose['arm_degrees_from_bind']
     assert len(degrees) == 2 and all(math.isfinite(value) for value in degrees), record['name']
-    assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
-    assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
+    if profile != 'quadruped':
+        assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
+        assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
+    else:
+        assert math.isfinite(pose['skin_rms_from_bind_height']) and pose['skin_rms_from_bind_height'] >= 0
     assert pose['armature_modifiers'] == skinned_count > 0, (record['name'], 'lost skin modifier')
 
 
@@ -28,6 +31,14 @@ def verify_character(base, frames_root, entry):
     assert not info['preview'], entry['id']
     evidence = {record['name']: record for record in info['frames']}
     expected_skin = len(info['pose_check']['skinned_objects'])
+    profile = info['pose_check'].get('profile', 'humanoid')
+    if profile == 'quadruped':
+        source_proof = json.loads((frames_root.parent / 'source-validation.json').read_text())
+        assert source_proof['ok'] and source_proof['checked_mesh'] == 'Wolf'
+        assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
+        assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
+        assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
+        assert all(r['dot'] > .9 for r in source_proof['direction_vectors'].values())
     records, groups, sizes = {}, {}, []
     webp_bytes, json_bytes = 0, 0
     pose_min, skin_min = 360, float('inf')
@@ -58,10 +69,16 @@ def verify_character(base, frames_root, entry):
             full_bbox = alpha.getbbox()
             assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < 128 and full_bbox[3] < 128, (name, 'any-alpha edge clipping', full_bbox)
             coverage = sum(mask.histogram()[128:]) / 16384 * 100
-            assert 5 <= coverage <= 60, (name, coverage)
+            if profile == 'quadruped':
+                # A long low animal foreshortens end-on: use a 512px opaque
+                # floor + 16px extent, not the humanoid 5% area expectation.
+                assert 100 * 512 / 16384 <= coverage <= 60, (name, coverage)
+                assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 16, (name, 'end-on readability', bbox)
+            else:
+                assert 5 <= coverage <= 60, (name, coverage)
             assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 128 and bbox[3] < 128, (name, bbox)
             record = evidence[name]
-            verify_pose(record, expected_skin)
+            verify_pose(record, expected_skin, profile)
             raw = Image.open(frames_root / entry['id'] / (name + '.png')).convert('RGBA')
             # WebP lossless alpha binds the Blender pose checks to the delivered
             # exact silhouette. Stale T-pose atlases cannot pass fresh bone logs.
@@ -97,7 +114,8 @@ def verify_character(base, frames_root, entry):
             'alpha_coverage_percent': [round(min(record['coverage'] for record in records.values()), 3),
                                        round(max(record['coverage'] for record in records.values()), 3)],
             'max_idle_center_drift_px': max(drift.values()), 'unique_direction_hashes': directions,
-            'pose_checked_frames': len(records), 't_pose_frames': 0, 'bind_pose_frames': 0,
+            'pose_profile': profile, 'pose_checked_frames': len(records), 't_pose_frames': 0 if profile == 'humanoid' else None,
+            'bind_pose_frames': 0 if profile == 'humanoid' else None,
             'min_max_arm_degrees_from_bind': round(pose_min, 4), 'min_skin_rms_from_bind_height': skin_min,
             'lossless_alpha_matches_pose_evidence': len(records), 'clipped_frames': 0,
             'idle_weapon_projected_span_px': weapon_sizes}
@@ -105,12 +123,16 @@ def verify_character(base, frames_root, entry):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--only', help='Verify one manifest kit against its own offline archive')
     parser.add_argument('--base', type=Path, default=Path('/mnt/c/Users/user/games/arpg/assets/sprites'))
     parser.add_argument('--frames', type=Path, default=Path('/mnt/c/Users/user/ai-tools/arpg-art/output/frames'))
     parser.add_argument('--report', type=Path, default=Path('/mnt/c/Users/user/ai-tools/arpg-art/output/final-atlas-verification.json'))
     args = parser.parse_args()
     assert not list(args.base.rglob('*.png')), 'PNG delivery forbidden'
     manifest = json.loads((args.base / 'manifest.json').read_text())
+    if args.only:
+        manifest = [entry for entry in manifest if entry['id'] == args.only]
+        assert len(manifest) == 1, 'Unknown/nonunique manifest kit'
     reports = [verify_character(args.base, args.frames, entry) for entry in manifest]
     args.report.write_text(json.dumps(reports, indent=2))
     print(json.dumps(reports, indent=2))
