@@ -21,12 +21,14 @@ const fixture = (id = 'healing_light') => {
     mods: { skill: id, mpRegen: 0 } });
   return { world, p };
 };
+// blast_arrow gets 54 (not 52) so its rounded 60% splash is still >= 2x the old 16.
+const boosted = (id, dmg) => id === 'blast_arrow' ? 54 : dmg * 2;
 const advance = (world, count, inputs = {}) => Array.from({ length: count }, () => step(world, inputs)).flat();
 
 test('only nine damage values and six mana costs change; basics, monsters, kits and counter data untouched', () => {
   for (const [id, old] of Object.entries(before.ABILITIES)) {
     const expected = structuredClone(old);
-    if (Object.hasOwn(costs, id)) { expected.damage *= 2; expected.manaCost = costs[id]; }
+    if (Object.hasOwn(costs, id)) { expected.damage = boosted(id, old.damage); expected.manaCost = costs[id]; }
     assert.deepEqual(ABILITIES[id], expected, id);
   }
   assert.deepEqual(WEAPONS, before.WEAPONS);
@@ -74,7 +76,7 @@ test('nine doubled skills deliver exact neutral damage per actual hit/projectile
       const events = [...step(world, { caster: input({ skillEdge: true }) }), ...advance(world, 50)];
       const hits = events.filter(e => e.type === 'hit' && e.dst === target.id);
       assert.equal(hits.length, 1, `${id} angle ${angle}`);
-      assert.equal(hits[0].dmg, before.ABILITIES[id].damage * 2, id);
+      assert.equal(hits[0].dmg, boosted(id, before.ABILITIES[id].damage), id);
       assert.equal(events.filter(e => e.type === 'act' && e.ability === id).length, 1);
     }
     if (def.projectile?.explode) {

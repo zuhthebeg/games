@@ -619,11 +619,12 @@ export class HubUI {
     if (!SKILL_DISPLAY[id] || !hasSkill(this.save,id)) throw new Error('아직 배우지 않은 기술입니다.');
     const a = ABILITIES[id], p = a.projectile, shape = a.shape;
     const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
+      : a.heal ? `회복 범위 반경 ${a.heal.radius} px · 자신과 범위 안 살아 있는 아군`
       : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
-    const effects = `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
+    const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const selected = equippedSkill(this.save,a.family) === id;
-    this.mountSheet(this.dialogHtml(a.name, `<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div><dt>기본 피해 (타격당)</dt><dd>${a.damage}</dd></div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p><p class="minor">실전 피해는 기본 피해 × 해당 계열 캐릭터 공격 배율. 다른 계열은 그 무기 장착 시 사용.</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
+    this.mountSheet(this.dialogHtml(a.name, `<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>기본 피해 (타격당)</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p><p class="minor">${a.heal ? '회복량은 공격 배율과 무관하게 각 대상 최대 HP 기준.' : '실전 피해는 기본 피해 × 해당 계열 캐릭터 공격 배율.'} 다른 계열은 그 무기 장착 시 사용.</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
   }
 
   showTrainer() {
@@ -636,7 +637,7 @@ export class HubUI {
         const control = known ? button(selected ? '장착 중' : '장착', 'equip-skill', `data-id="${id}" data-family="${family}" aria-pressed="${selected}"`, selected)
           : button(`${book.price} G · 배우기`, 'learn-skill', `data-id="${id}"`, this.save.gold < book.price);
         return `<article class="skill-book"><div><strong>${escape(ability.name)}</strong><small>${book?.type || '기본 기술 · 항상 습득'}${book && !known && this.save.gold < book.price ? ' · 골드 부족' : ''}</small>
-          <p class="minor">피해 ${ability.damage} · 재사용 ${amount(ability.cooldownMs / 1000)}초 · 마나 ${ability.manaCost || 0}</p></div>${control}</article>`;
+          <p class="minor">${ability.heal ? `회복 최대 HP ${Math.round(ability.heal.maxHpFrac * 100)}%` : `피해 ${ability.damage}`} · 재사용 ${amount(ability.cooldownMs / 1000)}초 · 마나 ${ability.manaCost || 0}</p></div>${control}</article>`;
       }).join('');
       return `<section class="skill-family"><h3>${WEAPON_NAMES[family]} 계열</h3>${rows}</section>`;
     }).join('');

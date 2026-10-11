@@ -39,7 +39,7 @@ export function equipSkill(save, family, id) {
 // Display-only grades. No combat, book-price or learning requirement changes.
 export const SKILL_DISPLAY = {
   lunge:{ grade:0, label:'입문' }, volley:{ grade:0, label:'입문' }, ember_bolt:{ grade:0, label:'입문' },
-  whirl:{ grade:1, label:'숙련' }, pierce_shot:{ grade:1, label:'숙련' }, frost_lance:{ grade:1, label:'숙련' },
+  whirl:{ grade:1, label:'숙련' }, pierce_shot:{ grade:1, label:'숙련' }, frost_lance:{ grade:1, label:'숙련' }, healing_light:{ grade:1, label:'숙련' },
   heavy_cleave:{ grade:2, label:'상급' }, blast_arrow:{ grade:2, label:'상급' }, flame_ring:{ grade:2, label:'상급' },
 };
 export const characterSkills = save => Object.keys(SKILL_DISPLAY).filter(id => hasSkill(save, id))

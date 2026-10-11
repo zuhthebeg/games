@@ -68,7 +68,7 @@ export const ABILITIES = {
     name: '폭발 화살', windupMs: 320, lockMs: 0, activeMs: 34, recoveryMs: 260, manaCost: 24, cooldownMs: 6000,
     delivery: 'projectile',
     projectile: { speed: 640, radius: 9, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 80 } },
-    damage: 52, poise: 26, knockback: 160, family: 'bow', element: 'fire', cancelInto: ['recovery'],
+    damage: 54, poise: 26, knockback: 160, family: 'bow', element: 'fire', cancelInto: ['recovery'],
   },
   frost_lance: {
     name: '서리 창', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 220, cooldownMs: 2400, manaCost: 12,

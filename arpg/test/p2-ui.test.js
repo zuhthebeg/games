@@ -70,7 +70,7 @@ test('trainer shows all three families, exact ability numbers and learned/defaul
   assert.ok(!h.html.includes('allocation-row'));
   for(const id of Object.keys(BOOKS)) {
     const a=ABILITIES[id];assert.ok(h.html.includes(a.name));
-    assert.ok(h.html.includes(`피해 ${a.damage} · 재사용 ${amount(a.cooldownMs/1000)}초 · 마나 ${a.manaCost||0}`));
+    assert.ok(h.html.includes(`${a.heal?`회복 최대 HP ${Math.round(a.heal.maxHpFrac*100)}%`:`피해 ${a.damage}`} · 재사용 ${amount(a.cooldownMs/1000)}초 · 마나 ${a.manaCost||0}`));
   }
   assert.ok(h.html.includes('data-id="ember_bolt"'));
   assert.ok(h.html.includes('data-id="frost_lance" data-family="focus" aria-pressed="true"'));
