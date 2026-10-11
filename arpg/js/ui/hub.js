@@ -646,7 +646,7 @@ export class HubUI {
     const open = ids.slice(0, lastOpen + 2).map((id, i) => row(id, i)).join('');
     const rest = ids.slice(lastOpen + 2);
     const locked = rest.length ? `<details class="locked-contracts"><summary>잠긴 계약 ${rest.length}개</summary>${rest.map((id, i) => row(id, i + lastOpen + 2)).join('')}</details>` : '';
-    this.showInnPanel('계약 게시판', `<div class="contracts">${open}</div>${locked}`, 'board', '', { eyebrow: `${Object.keys(this.save.cleared).filter(id => this.save.cleared[id]).length} / ${ids.length} 완료` });
+    this.showInnPanel('계약 게시판', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="contracts">${open}</div>${locked}`, 'board', '', { eyebrow: `${Object.keys(this.save.cleared).filter(id => this.save.cleared[id]).length} / ${ids.length} 완료` });
     this.root?.querySelector?.('.contract.depart')?.scrollIntoView?.({ block: 'center' });
   }
 
@@ -667,7 +667,7 @@ export class HubUI {
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
       <div class="departure-check"><h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      <p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 계약으로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
@@ -912,6 +912,7 @@ export class HubUI {
         this.commit(allocateStats(this.save, this.draft));
         return this.allocationRequired ? this.showReceipt() : this.showAllocation(false);
       // Board
+      case 'coop': return this.startCoop?.(this.sortieStage || 'S2', this.sortieThreat || 1);
       case 'board': return this.showBoard();
       case 'sortie': return this.showSortie(data.stage);
       case 'threat':

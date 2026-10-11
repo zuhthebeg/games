@@ -89,7 +89,7 @@ export class ArenaRenderer {
       for (const graphic of pool)
         graphic.destroy();
     this.projectilePool.clear();
-    this.telegraphs = getTelegraphs(world);
+    this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const tg of this.telegraphViews)
       tg.visible = false;
     for (const particle of this.numbers) {
@@ -260,7 +260,7 @@ export class ArenaRenderer {
   }
 
   events(world, events) {
-    this.telegraphs = getTelegraphs(world);
+    this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const event of events) {
       const entity = world.entities.find(entity => entity.id === (event.dst ?? event.id));
       if (event.type === 'hit') {
@@ -291,14 +291,14 @@ export class ArenaRenderer {
         this.number('반격!', entity.x, entity.y - 22, FEEL.colors.counter, FEEL.counter.scale);
         this.effect(entity.x, entity.y, FEEL.perfect.radius * 1.4, FEEL.colors.counter, FEEL.perfect.ringLife);
       }
-      else if (event.type === 'perfectDodge') {
+      else if (event.type === 'perfectDodge' && entity) {
         this.slowLeft = this.reduced ? 0 : FEEL.perfect.life;
         this.number('완벽 회피', entity.x, entity.y, FEEL.colors.perfect, true);
         this.effect(entity.x, entity.y, FEEL.perfect.radius, FEEL.colors.perfect, FEEL.perfect.ringLife);
       }
-      else if (event.type === 'potion')
+      else if (event.type === 'potion' && entity)
         this.number(`+${event.heal}`, entity.x, entity.y, 0xa5d894);
-      else if (event.type === 'manaPotion')
+      else if (event.type === 'manaPotion' && entity)
         this.number(`MP +${event.gain}`, entity.x, entity.y, 0x8abfe0);
       else if (event.type === 'drop') {
         this.effect(event.x, event.y, 19, 0xecc875, 0.6);
@@ -377,6 +377,11 @@ export class ArenaRenderer {
       }
       if (!entity.act)
         view.lastAct = null;
+    }
+    // Roster departures remove views, not just the authoritative entity.
+    const liveIds = new Set(world.entities.map(e => e.id));
+    for (const [id, view] of this.views) if (!liveIds.has(id)) {
+      view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); this.views.delete(id);
     }
     // Telegraph origin remains authoritative (no camera/animation lunge baked into geometry).
     const telegraphViews = this.telegraphs;

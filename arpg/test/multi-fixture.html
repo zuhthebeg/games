@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>ARPG coop loopback fixture</title></head>
+<body style="margin:0;background:#101814;color:white"><h1>Host / Guest — actual renderer, in-memory RT</h1><div id="host"></div><div id="guest"></div>
+<script type="module">
+import { Application } from '../vendor/pixi-8.22.0.min.mjs';
+import { ArenaRenderer } from '../js/render/renderer.js';
+import { runRound } from './fixtures/multi-round.js';
+window.ready = true;
+window.runCoop = async () => {
+  const renderers = [];
+  for (const uid of ['host', 'guest']) {
+    const app = new Application();
+    await app.init({ width: 390, height: 640, preference: 'webgl', antialias: false, autoStart: false });
+    document.querySelector(`#${uid}`).append(app.canvas); renderers.push(new ArenaRenderer(app));
+  }
+  const result = await runRound({ renderers, yieldFrame: () => new Promise(resolve => requestAnimationFrame(resolve)) });
+  result.visuals = renderers.map(r => ({ entities: r.views.size, players: [...r.views].filter(([,v]) => ['blade','bow'].includes(v.visual.debug.key)).length,
+    telegraphSeen: result.evidence.telegraphRendered }));
+  window.result = result; return result;
+};
+</script></body></html>

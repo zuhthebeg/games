@@ -662,3 +662,6 @@ select, input:not([type="checkbox"]) {
 .battle-auto.on { color: #14170f; background: #e3c46f; border-color: #ffe39a; box-shadow: 0 0 12px #e3c46f88; }
 #attack.auto { box-shadow: inset 0 0 0 2px #e3c46f88; }
 #attack.auto::after { content: 'AUTO'; position: absolute; top: 6px; right: 8px; font-size: 9px; color: #e3c46f; letter-spacing: .06em; }
+
+/* Coop status is informational and never steals combat touches. */
+#coop-status { position: absolute; top: 114px; left: 12px; right: 12px; font-size: 11px; color: #c5ddd0; pointer-events: none; text-shadow: 0 1px 3px #000; }

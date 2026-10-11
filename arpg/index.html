@@ -19,7 +19,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=8fe9cae3a2",
         "./js/debug/index.js": "./js/debug/index.js?v=58b25f9b3b",
         "./js/input.js": "./js/input.js?v=4b81ddfae4",
-        "./js/main.js": "./js/main.js?v=657b8d5b7a",
+        "./js/main.js": "./js/main.js?v=63c1b5dcf4",
         "./js/meta/affixes.js": "./js/meta/affixes.js?v=9e4de5e39d",
         "./js/meta/compare.js": "./js/meta/compare.js?v=d6a74766d5",
         "./js/meta/economy.js": "./js/meta/economy.js?v=3cd8055a21",
@@ -32,6 +32,10 @@
         "./js/meta/shop.js": "./js/meta/shop.js?v=e97348c43e",
         "./js/meta/skills.js": "./js/meta/skills.js?v=e990defbdc",
         "./js/meta/stats.js": "./js/meta/stats.js?v=d011f34005",
+        "./js/net/lobby.js": "./js/net/lobby.js?v=e9a32e9c08",
+        "./js/net/loopback.js": "./js/net/loopback.js?v=e228fd99d2",
+        "./js/net/protocol.js": "./js/net/protocol.js?v=3836fcc49a",
+        "./js/net/session.js": "./js/net/session.js?v=7fa7bb28bb",
         "./js/render/atlas-library.js": "./js/render/atlas-library.js?v=6c0628e3b1",
         "./js/render/atlas-state.js": "./js/render/atlas-state.js?v=16517328e2",
         "./js/render/atlas-visual.js": "./js/render/atlas-visual.js?v=7b952991ce",
@@ -39,15 +43,15 @@
         "./js/render/paperdoll-library.js": "./js/render/paperdoll-library.js?v=1e2131523f",
         "./js/render/paperdoll-portrait.js": "./js/render/paperdoll-portrait.js?v=b6f1f0adaf",
         "./js/render/paperdoll-state.js": "./js/render/paperdoll-state.js?v=7fb0e4a886",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=801429cf03",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=928dc1cd43",
         "./js/render/shapes.js": "./js/render/shapes.js?v=1f3d9c4a35",
-        "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=6837eaf51e",
+        "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=f864bcddb2",
         "./js/render/weapon-glow.js": "./js/render/weapon-glow.js?v=3bcbf27c28",
         "./js/sim/core.js": "./js/sim/core.js?v=c5b6377d77",
-        "./js/sim/world.js": "./js/sim/world.js?v=1ab953637b",
+        "./js/sim/world.js": "./js/sim/world.js?v=8c92c4116f",
         "./js/ui/enchant-fx.js": "./js/ui/enchant-fx.js?v=38ddf1f68b",
         "./js/ui/gear-view.js": "./js/ui/gear-view.js?v=e920e06485",
-        "./js/ui/hub.js": "./js/ui/hub.js?v=bca814b44b",
+        "./js/ui/hub.js": "./js/ui/hub.js?v=eb29a6d0a3",
         "./js/ui/hud.js": "./js/ui/hud.js?v=b8b9c7c81b",
         "./js/ui/icons.js": "./js/ui/icons.js?v=608d914e8e",
         "./js/ui/item-art.js": "./js/ui/item-art.js?v=60dd0d3dc2",
@@ -55,7 +59,7 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=9209b311d0">
+    <link rel="stylesheet" href="css/game.css?v=dcfd7d2ce9">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -89,6 +93,8 @@
     <section class="overlay" id="pause" hidden>
       <div class="story-panel"><h2>일시정지</h2><p>탭으로 돌아오면 전투가 재개됩니다.</p></div>
     </section>
-    <script type="module" src="js/main.js?v=657b8d5b7a"></script>
+    <script src="/lib/multiplayer.js?v=20260927rt"></script>
+    <script src="/lib/mp-lobby.js?v=20260927"></script>
+    <script type="module" src="js/main.js?v=63c1b5dcf4"></script>
   </body>
 </html>

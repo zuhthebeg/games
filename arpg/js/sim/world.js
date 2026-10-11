@@ -21,10 +21,10 @@ export function emptyInput() {
   return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
-export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 } } = {}) {
+export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 }, partyHpMult = 1 } = {}) {
   threatMultipliers(threat);
   return {
-    tick: 0, rng: seed >>> 0, nextId: 1, arena, threat,
+    tick: 0, rng: seed >>> 0, nextId: 1, arena, threat, partyHpMult,
     entities: [], projectiles: [], events: [],
     majorBusyBy: 0, // EncounterDirector majorAttackToken: one big attack at a time early on (design §7.1)
     round: null,
@@ -753,7 +753,7 @@ function stepRound(world) {
     const elite = !MONSTERS[s.monster].invulnerable && s.monster !== 'goblin_chief'
       && stage.eliteChance > 0 && rand(world) < stage.eliteChance;
     spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h, {
-      hpMult: BALANCE.monsterHp * (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1) * (s.monster === 'goblin_chief' ? (stage.bossHpMult || 1) : 1),
+      hpMult: (world.partyHpMult ?? 1) * BALANCE.monsterHp * (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1) * (s.monster === 'goblin_chief' ? (stage.bossHpMult || 1) : 1),
       dmgMult: (stage.dmgMult || 1) * threat.damage * (elite ? BALANCE.elite.damage : 1),
       elite, threat: rd.threat, stageId: rd.stageId,
     });

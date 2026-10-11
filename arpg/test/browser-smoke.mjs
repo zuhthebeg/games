@@ -83,8 +83,8 @@ try {
       node.click();
     })()`);
   };
-  const page = (name) => `document.querySelector('#meta-screen').dataset.page===${JSON.stringify(name)}
-    && !document.querySelector('#meta-screen').hidden`;
+  const page = (name) => `document.querySelector('#meta-screen')?.dataset.page===${JSON.stringify(name)}
+    && !document.querySelector('#meta-screen')?.hidden`;
   const key = (code, type = 'keyDown') => command('Input.dispatchKeyEvent', {
     type, code,
     key: { KeyD: 'd', KeyJ: 'j', KeyR: 'r', KeyK: 'k', KeyE: 'e', Space: ' ' }[code] || code,
@@ -361,6 +361,8 @@ try {
     await key('KeyJ');
     await sleep(1300);
     await key('KeyD', 'keyUp');
+    await key('KeyJ', 'keyUp');
+    await waitFor('!__arpg.world.entities[0].act'); // A skill edge during an uncancellable active basic is intentionally ignored.
     await key('KeyK');
     await sleep(5);
     await key('KeyK', 'keyUp');

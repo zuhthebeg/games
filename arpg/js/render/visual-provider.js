@@ -32,7 +32,7 @@ export class VisualProvider {
     const key = visualKey(entity);
     const variant = MONSTER_VARIANTS[key];
     const color = this.palette[key] ?? (variant ? MONSTER_PALETTES[variant.paletteId][0] : COLORS[key]);
-    const equipment = entity.kind === 'player' && this.equipmentSave ? equipmentVisual(this.equipmentSave, entity.weapon) : null;
+    const equipment = entity.kind === 'player' ? entity.equipmentVisual || (this.equipmentSave ? equipmentVisual(this.equipmentSave, entity.weapon) : null) : null;
     const visual = this.factories.has(key) ? this.factories.get(key)(entity, { color, equipment }) : procedural(entity, { color });
     return equipment ? withWeaponGlow(visual, equipment.enhance, entity.weapon) : visual;
   }
