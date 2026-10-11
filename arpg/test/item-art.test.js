@@ -1,0 +1,66 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { ITEMS } from '../js/meta/items.js';
+import { itemArtKey, itemArtPath } from '../js/ui/item-art.js';
+import { itemIcon, icon } from '../js/ui/icons.js';
+
+const assets = new URL('../assets/items/', import.meta.url);
+const records = JSON.parse(readFileSync(new URL('manifest.json', assets)));
+
+test('all real item IDs resolve reviewed local art with inline SVG fallback', () => {
+  const used = new Set();
+  for (const [id, definition] of Object.entries(ITEMS)) {
+    const key = itemArtKey(id, definition);
+    assert.ok(key, `uncovered item ${id}`);
+    const path = itemArtPath(key);
+    assert.ok(/^assets\/items\/[a-z0-9-]+\.webp$/.test(path), path);
+    assert.ok(existsSync(new URL('../'+path, import.meta.url)), `${id}: ${path}`);
+    const html = itemIcon(id, definition);
+    assert.ok(html.includes('<picture>') && html.includes('<svg'), id);
+    assert.ok(html.includes('alt=""') && html.includes('aria-hidden="true"'), id);
+    assert.ok(html.includes('loading="lazy"') && html.includes('decoding="async"'), id);
+    assert.ok(!html.includes('onerror=') && !html.includes('https:'), id);
+    used.add(path.split('/').pop());
+  }
+  assert.deepEqual([...used].sort(), records.map(r=>r.file).sort(), 'no unused delivered icons');
+});
+
+test('rarity/affix variants share base art; real forms and hunt tiers stay meaningful', () => {
+  for (const [id, definition] of Object.entries(ITEMS)) {
+    if (definition.baseId) assert.equal(itemArtKey(id, definition), itemArtKey(definition.baseId, ITEMS[definition.baseId]));
+  }
+  assert.notEqual(itemArtKey('training_sword', ITEMS.training_sword), itemArtKey('rune_blade', ITEMS.rune_blade));
+  assert.notEqual(itemArtKey('rune_blade', ITEMS.rune_blade), itemArtKey('warden_blade', ITEMS.warden_blade));
+  assert.notEqual(itemArtKey('short_bow', ITEMS.short_bow), itemArtKey('pack_bow', ITEMS.pack_bow));
+  assert.equal(itemArtKey('goblin_cleaver', ITEMS.goblin_cleaver), 'cleaver');
+  assert.equal(itemArtKey('chief_maul', ITEMS.chief_maul), 'maul');
+  assert.equal(itemArtKey('cloth_tunic', ITEMS.cloth_tunic), 'body-cloth');
+  assert.equal(itemArtKey('warden_plate', ITEMS.warden_plate), 'body-plate');
+  assert.ok(!records.some(r=>/crossbow|pistol|sneakers|garden_glove|item_helmet/.test(r.source)));
+});
+
+test('empty sockets and unknown/missing art retain SVG; forge gets real stone pictures', () => {
+  for (const slot of ['weapon','head','body','hands','feet']) assert.ok(!icon(slot).includes('<img'));
+  assert.ok(!itemIcon('future-unreviewed-item', {}).includes('<img'));
+  assert.equal(itemArtPath('unknown'), null);
+  assert.ok(!itemIcon('unknown-family', {slot:'weapon',family:'future'}).includes('<img'));
+  for (let n=1;n<=3;n++) assert.ok(icon(`enhance_stone_${n}`).includes('<picture>'));
+});
+
+test('delivered WebPs match source manifest and stay below 200 KiB total', () => {
+  let bytes = 0;
+  for (const record of records) {
+    const data = readFileSync(new URL(record.file, assets));
+    assert.equal(data.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(data.toString('ascii', 8, 12), 'WEBP');
+    assert.equal(createHash('sha256').update(data).digest('hex'), record.sha256);
+    assert.equal(data.length, record.bytes);
+    assert.ok(/^[a-f0-9]{64}$/.test(record.sourceSha256));
+    bytes += data.length;
+  }
+  assert.equal(records.filter(r=>r.method.startsWith('original')).length, 26);
+  assert.equal(records.filter(r=>r.method.startsWith('reviewed')).length, 5);
+  assert.ok(bytes < 200*1024, `${bytes} bytes`);
+});

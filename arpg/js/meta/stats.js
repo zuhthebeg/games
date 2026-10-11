@@ -49,6 +49,8 @@ export function deriveMods(save) {
     potionHealMult: (1 + Math.min(S.potionCap, S.potion * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
     poiseMult: 1 + S.poise * eff(stats.str),
     dmgMult: { blade: 1, bow: 1, focus: 1, [family]: damage },
+    attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)),
+    weaponWeight: ITEMS[weapon?.id]?.weight ?? BALANCE.attackSpeed.weightReference,
     cdMult: 1,
     capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat,
     goldBonus: affixes.gold_pct, materialBonus: affixes.material_pct,

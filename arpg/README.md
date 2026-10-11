@@ -197,3 +197,82 @@ Smoke retains all prior cases, checks a disabled session's absence of DBG/debug
 requests, and adds phone layout/touch-sized controls, gold/set grants, a normal
 S2 sortie, invulnerability/visible wipe with real drops, clear settlement, live
 registry, persisted activation/explicit disable, and desktop backtick toggling.
+
+## Perfect-dodge counter and DEX/weight attack speed (engine proposal)
+
+This user-requested combat extension supersedes design-v6 §8.1's old “AGI does
+not affect attack speed” restriction. DEX is the existing `agi` / 민첩 stat;
+no stat key or save-schema migration was added. Constants are proposals in
+`content/balance.js`, not difficulty/economy retuning.
+
+### Counter contract
+
+- Only a real non-periodic enemy hit avoided by existing dodge invulnerability
+  within the existing perfect window pays `dodge.perfectPaid`. An empty dodge,
+  late ordinary iframe dodge, poison pulse or a counter hit cannot trigger it.
+- `perfectDodge` includes `id`, `pid`, `attackerId`/`srcId`, `dodgeTick`, and the
+  incoming `ability`. Projectile and explosion source IDs are their `ownerId`,
+  never the projectile ID or a nearest-enemy guess. The first eligible hit pays
+  once; overlapping hits cannot queue multiple counters for the same dodge.
+- Each actor owns one pending counter. On the first free tick after BOTH dodge
+  movement and invulnerability finish, it starts the current weapon's actual
+  `slash` / `arrow` / `focus_pulse`. Damage ×1.35 and outgoing poise ×1.5 apply
+  only to that counter (also snapshotted on its projectiles). Focus basic costs
+  no mana. Existing exposure bonuses and gear modifiers still apply normally.
+- The original attacker must still be alive, targetable, hostile and in basic
+  range: blade uses its real shape facing that attacker; bow/focus use their
+  620/520px projectile ranges measured center-to-center. Failure consumes the
+  pending counter without selecting a substitute. No teleport, range extension,
+  forced hit, or projectile-blocking bypass. Facing locks at action start;
+  ordinary windup/shape/sweep mechanics can still miss or hit an intervening body.
+- A valid pending counter takes precedence over held basic attack on the first
+  free post-dodge tick. Held basic waits through any remaining iframe tail, then
+  resumes normally after the counter; no duplicate basic starts alongside it.
+  Explicit skill edges, scroll edges and buffered dodges retain priority. A
+  counter never cancels an existing act, changes input, or forces movement.
+  Its basic action retains ordinary movement slowdown and cancellation rules.
+  Death, terminal state, return channel and a newly started dodge discard it.
+  Expiry is `dodgeTick + max(dashTicks, iframeTicks) + ticks(300ms)`;
+  after that tick no deferred counter starts. Invalid sources consume pending
+  and allow held basic normally. HUD only shows “완벽 회피 · 반격 준비” and “자동 반격”; no render edits.
+
+### Attack-rate formula and phase snapshot
+
+Let `E = eff(save.stats.agi)` (existing soft knee), `W` be equipped weapon
+weight clamped to [0,24], and `L` be actual carrying-load ratio (equipped gear,
+remaining supplies and accumulated loot divided by current capacity):
+
+```
+A = clamp(0.02 * E, 0, 0.20)
+rate = clamp((1 + A) / (1 + 0.0125*(W - 8)
+                         + 0.5*max(0, min(L, 1.2) - 0.8)), 0.70, 1.20)
+phaseTicks = max(1, round(phaseMs / rate / (1000/30)))
+```
+
+Zero-duration phases remain zero except active, which is at least one tick.
+Player basic and current weapon skill alone use the rate; monster acts use 1.
+The action captures `rate` and all four `phaseTicks` at start: later loot/consumption
+or `setLoad` affects only the next action, never stretches an active action.
+`buildRoundMods` carries capped AGI bonus and equipped weight; `setLoad` supplies
+live carrying ratio. Direct sim callers without meta mods retain weight=8/bonus=0.
+
+Base AGI 5, starter blade weight8, load≤80% retains exact previous timings.
+Starter bow/focus rates are ~1.0256/~1.0526 (before 30Hz rounding). AGI bonus
+caps at +20%; final rate caps at 1.20, floor .70. Weapon weight and overload can
+only reduce rate; lighter gear and AGI cannot inflate it beyond the cap.
+Rounding means small stat changes do not necessarily cross a phase-tick boundary.
+
+Cooldown duration (started at act completion), dodge, potions, monster telegraphs,
+projectile speed/range and normal damage/poise per hit are unchanged. Skill dash
+step is distance/actual-active-ticks, preserving total dash distance (unless
+ordinary arena bounds/collision/interruption stop it). Faster skills therefore
+finish earlier and enter their unchanged cooldown earlier, not shorten that CD.
+
+Verification: `node --test arpg/test/counter-speed.test.js` exercises multi-hit,
+melee/projectile provenance, all families, exclusions, original-source validity,
+co-op actor identity, blocking, input priority/expiry/cancel, monotonic caps,
+meta/load plumbing, exact phase ticks, frozen load mutations, dash distance,
+projectile speed, unchanged CDs/telegraphs and same-seed replay. Existing full
+Node suite and isolated raw-CDP browser smoke remain required. Networking,
+parent-owned visual feedback/gear rate UI and human feel/balance tuning are not
+implemented by this engine patch.
