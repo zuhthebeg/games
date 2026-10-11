@@ -579,6 +579,8 @@ select, input:not([type="checkbox"]) {
 .enchant-fx[data-phase="result"] .enchant-burst { animation:enchant-explode .55s ease-out both; }
 .enchant-fx[data-phase="result"] .enchant-scroll { display:none; }
 .enchant-fx[data-phase="result"] .enchant-result { animation:enchant-pop .3s ease-out both; text-shadow:0 0 16px #70cfff; }
+.enchant-fx.success:not(.risky) .enchant-result { animation-duration:180ms; }
+.enchant-fx.success:not(.risky) .enchant-burst { animation-duration:220ms; }
 .enchant-fx.destroyed { color:#ffbaa5; background:radial-gradient(ellipse at 50% 40%,#682624,#170c13ef 70%); }
 .enchant-fx.destroyed .enchant-result { font-size:24px; }
 .enchant-fx.destroyed[data-phase="result"] .enchant-gear { animation:enchant-break .35s ease-in both; }

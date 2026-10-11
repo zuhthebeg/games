@@ -148,9 +148,10 @@ try {
     if(width===390) {
       await fixture(0);const started=Date.now();await click('[data-action="enhance"]');
       await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
-      const chargeMs=Date.now()-started;assert.ok(chargeMs>=250&&chargeMs<800,chargeMs);
+      const chargeMs=Date.now()-started;assert.ok(chargeMs>=90&&chargeMs<500,chargeMs);
       await waitFor("!document.querySelector('[data-enchant-fx]')");
-      scenarios.push({width,height,kind:'safe-natural',chargeMs});
+      const totalMs=Date.now()-started;assert.ok(totalMs>=280&&totalMs<800,totalMs);
+      scenarios.push({width,height,kind:'safe-natural',chargeMs,totalMs});
     }
     for(const outcome of ['success','destroyed']) {
       f=await fixture(6,outcome);await audit();

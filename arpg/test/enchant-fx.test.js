@@ -12,7 +12,8 @@ import { HubUI } from '../js/ui/hub.js';
 const success = {outcome:'success',id:'training_sword',from:5,to:6,risky:false,refund:null};
 test('safe/risky/destroyed/crack presentation uses only committed immutable results', () => {
   const result = Object.freeze(success), before = JSON.stringify(result);
-  assert.equal(enchantPresentation(result).chargeMs,300);
+  assert.equal(enchantPresentation(result).chargeMs,120);
+  assert.equal(enchantPresentation(result).chargeMs + enchantPresentation(result).holdMs,340);
   assert.equal(enchantPresentation(result).title,'+6');
   assert.equal(JSON.stringify(result),before);
   assert.equal(enchantPresentation({...result,risky:true,to:7}).chargeMs,1200);

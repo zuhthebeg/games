@@ -7,8 +7,8 @@ export function enchantPresentation(result, reduced = false) {
   const destroyed = result.outcome === 'destroyed';
   return {
     kind: crack ? 'crack' : destroyed ? 'destroyed' : 'success',
-    chargeMs: reduced ? 80 : crack ? 500 : result.risky ? 1200 : 300,
-    holdMs: reduced ? 700 : 1100,
+    chargeMs: reduced ? 80 : crack ? 500 : result.risky ? 1200 : 120,
+    holdMs: reduced ? 700 : crack ? 600 : result.risky ? 1100 : 220,
     title: crack ? `주문서 ${result.count}장` : destroyed ? '장비가 산산조각 났다' : `+${result.to}${result.risky ? ' 성공' : ''}`,
     detail: crack ? ITEMS[result.id].name : destroyed ? `남은 강화석 ${result.refund?.enhance_stone_1 || 0}개` : ITEMS[result.id].name,
     sound: destroyed ? 'kill' : 'level-up',
