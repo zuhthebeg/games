@@ -368,7 +368,7 @@ export class HubUI {
 
   comparisonHtml(item) {
     const comparison = comparisonFor(item, this.save);
-    return `${linesHtml(comparison)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
+    return `<h3>전체 비교 · 현재 → 후보</h3><p class="minor">장비 무게는 가벼울수록, 최대 휴대 무게는 높을수록 좋다. 공격이 늘어도 다른 옵션은 사라질 수 있다.</p>${linesHtml(comparison)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
       + `${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
   }
@@ -684,10 +684,10 @@ export class HubUI {
     }).join('');
     const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
-      return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>추천 Lv.${rec}</small></span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
+      return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}</section>`).join('');
-    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><p class="minor">출정 한 번에 맵 하나 · 광산 또는 늪을 끝내면 성채 개방</p><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`${Object.values(this.save.cleared).filter(Boolean).length} / 20 완료` });
+    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><p class="minor">출정 한 번에 맵 하나 · 광산 또는 늪을 끝내면 성채 개방</p><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.values(this.save.cleared).filter(Boolean).length} / 20 완료` });
   }
 
   showSortie(stage, devWeapon = null) {
@@ -706,7 +706,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p><h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>

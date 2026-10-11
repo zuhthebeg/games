@@ -74,3 +74,21 @@ test('reveal sale uses actual owned settled loot, pays once, blocks worn and mis
   let raw;const storage={setItem:(_,v)=>raw=v,getItem:()=>raw};new SaveStore(storage).save(h.save);const reloaded=new SaveStore(storage).load();assert.ok(reloaded);assert.ok(!reloaded.items.some(i=>i.uid===drop.uid));
   const loadedHub=hubFor(reloaded);assert.match(loadedHub.revealHtml(reloaded.lastReceipt),/보유하지 않음/);assert.ok(!loadedHub.revealHtml(reloaded.lastReceipt).includes('loot-sell'));
 });
+
+test('quest selection header and departure show actual player level beside recommendations', () => {
+  const previous = globalThis.matchMedia;
+  globalThis.matchMedia = () => ({matches:false});
+  try {
+    for (const level of [1, 10, 20]) {
+      const s=fresh();s.level=level;s.cleared.S17=true;
+      const h=hubFor(s);h.mapRegion='castle';
+      h.showInnPanel=(title,html,panel,footer,options)=>{h.html=html;h.options=options;};
+      h.showBoard();
+      assert.match(h.options.eyebrow,new RegExp(`내 레벨 ${level}`));
+      assert.ok(h.html.includes(`내 Lv.${level} · 추천 Lv.`));
+      h.showSortie('S14');
+      assert.ok(h.html.includes(`내 레벨 <b>${level}</b> · 추천 레벨`));
+      assert.equal(h.panel,undefined,'recommendation adds no level-based lock');
+    }
+  } finally {globalThis.matchMedia=previous;}
+});

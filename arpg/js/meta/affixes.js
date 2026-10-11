@@ -5,9 +5,11 @@ import { AFFIX_RANGES, ECONOMY, rng } from './economy.js';
 export const DEFERRED_AFFIXES = ['crit_chance', 'crit_damage', 'poise_resist'];
 export const AFFIX_LABELS = {
   atk_pct: '공격력 %', hp_flat: '최대 HP', speed_pct: '이동속도 %', dodge_pct: '회피 재사용 감소 %',
-  potion_pct: '물약 효율 %', mana_pct: '마나 재생 %', capacity_flat: '소지 한도',
+  potion_pct: '물약 효율 %', mana_pct: '마나 재생 %', capacity_flat: '최대 휴대 무게',
   gold_pct: '골드 획득 %', material_pct: '재료 드랍 %',
 };
+// Display metadata only; flat capacity adds carrying limit, not equipment mass.
+export const AFFIX_UNITS = { atk_pct:'%', hp_flat:'HP', speed_pct:'%', dodge_pct:'%', potion_pct:'%', mana_pct:'%', capacity_flat:'kg', gold_pct:'%', material_pct:'%' };
 export function rollAffixes(rarity, huntTier, seed) {
   const random = rng(seed);
   const pool = Object.keys(AFFIX_RANGES);

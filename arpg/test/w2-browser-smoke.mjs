@@ -112,11 +112,13 @@ try {
     const desktop=width>600;
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:!desktop});
     await command('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
-    await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/?dev=1`});await waitFor('window.__arpg');
-    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {learnSkill}=await import('./js/meta/skills.js');let s=createSave({name:'W2 터치',answers:[0,0,0,0,0],createdAt:1});s.gold=10000;s.cleared.S10=true;s.cleared.S17=true;for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);new SaveStore(localStorage).save(s);})()`);
+    await command('Page.navigate',{url:process.env.ARPG_TEST_URL || `http://127.0.0.1:${httpPort}/arpg/?dev=1`});await waitFor('window.__arpg');
+    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {learnSkill}=await import('./js/meta/skills.js');const {instance}=await import('./js/meta/items.js');let s=createSave({name:'W2 터치',answers:[0,0,0,0,0],createdAt:1});s.gold=10000;s.items.push(instance('w2:old','iron_sword_epic',1,[{k:'hp_flat',v:12},{k:'speed_pct',v:3},{k:'capacity_flat',v:6}]),instance('w2:inventory','training_sword_rare',1,[{k:'atk_pct',v:6},{k:'mana_pct',v:4}]));s.equipped.weapon='w2:old';s.cleared.S10=true;s.cleared.S17=true;for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
     await nativeActivate('[data-action="socket"][data-slot="weapon"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('기본 공격 배율')&&document.querySelector('dialog').textContent.includes('= 유지')`));
+    await nativeActivate('[data-action="open-item"][data-uid="w2:inventory"]',desktop);await audit();
+    for(const key of ['hp_flat','speed_pct','capacity_flat']) assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').textContent.includes('사라짐')`));
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await waitFor(`!document.querySelector('dialog[open]')`);
     await nativeActivate('[data-action="character"]',desktop);
     await nativeActivate('[data-action="character-tab"][data-tab="skills"]',desktop);await audit();
@@ -124,8 +126,18 @@ try {
     await nativeActivate('[data-action="skill-detail"][data-id="frost_lance"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('620 px')&&document.querySelector('dialog[open]').textContent.includes('12 MP')`));
     await nativeActivate('[data-action="equip-character-skill"]',desktop);assert.equal(await evaluate('__arpg.save.skills.focus'),'frost_lance');
+    await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="inventory"]',desktop);
+    await nativeActivate('[data-action="open-item"][data-uid="w2:inventory"]',desktop);await audit();
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="capacity_flat"]').textContent.includes('6 kg')&&document.querySelector('dialog[open] [data-line="capacity_flat"]').textContent.includes('사라짐')`));
+    await nativeActivate('[data-action="close-sheet"]',desktop);
+    await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="merchant"]',desktop);
+    await nativeActivate('[data-action="open-item"][data-mode="buy"]',desktop);await audit();
+    for(const key of ['hp_flat','speed_pct','capacity_flat'])assert.ok(await evaluate(`!!document.querySelector('dialog[open] [data-line="${key}"]')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('가방 한도를 늘리며 장비 자체 무게를 늘리지 않는다')`));
+    await nativeActivate('[data-action="close-sheet"]',desktop);
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="board"]',desktop);await audit();
     assert.equal(await evaluate(`document.querySelectorAll('[data-action="sortie"]').length`),20);
+    assert.ok(await evaluate(`document.querySelector('.panel-header').textContent.includes('내 레벨 1')`));
     await nativeActivate('[data-action="map-region"][data-region="swamp"]',desktop);await audit();
     assert.equal(await evaluate(`document.querySelector('[data-stage="S11"]').disabled`),false);
     assert.equal(await evaluate(`document.querySelector('[data-stage="S18"]').disabled`),true);
@@ -133,6 +145,7 @@ try {
     assert.equal(await evaluate(`document.querySelector('[data-stage="S14"]').disabled`),false);
     assert.equal(await evaluate(`document.querySelector('[data-stage="S20"]').disabled`),true);
     await nativeActivate('[data-action="sortie"][data-stage="S14"]',desktop);await audit();
+    assert.ok(await evaluate(`document.querySelector('.quest-level-comparison').textContent.includes('내 레벨 1')&&document.querySelector('.quest-level-comparison').textContent.includes('추천 레벨')`));
     await nativeActivate('[data-action="launch"]',desktop);await waitFor('__arpg.world?.round?.stageId==="S14"');
     assert.ok(await evaluate(`document.querySelector('#notice').textContent.includes('무너진 성채')`));
     // Reload abandons this local fixture fight (no production storage/authority). Native current-index AUTO and sound taps preserve baseline fix.
@@ -146,6 +159,9 @@ try {
     await nativeActivate('[data-action="reveal"]',desktop);await audit();
     await nativeActivate('[data-action="open-item"][data-uid="w2:sale"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('+6%')&&document.querySelector('dialog').textContent.includes('+10 HP')&&document.querySelector('dialog').textContent.includes('+4%')`));
+    for(const key of ['speed_pct','capacity_flat'])assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').textContent.includes('사라짐')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="hp_flat"]').textContent.includes('감소')`));
+    assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="mana_pct"]').textContent.includes('새로 추가')`));
     await nativeActivate('[data-action="close-sheet"]',desktop);
     const beforeGold=await evaluate('w2Hub.save.gold');
     const price=await evaluate(`(async()=>{const {gearPrice}=await import('./js/meta/shop.js');const {ECONOMY}=await import('./js/meta/economy.js');return Math.floor(gearPrice(w2Hub.save.items.find(i=>i.uid==='w2:sale'))*ECONOMY.sellFraction);})()`);

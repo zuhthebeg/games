@@ -1,5 +1,5 @@
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier } from '../meta/items.js';
-import { AFFIX_LABELS } from '../meta/affixes.js';
+import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
 import { equipmentVisual, paperdollEnabled } from '../render/paperdoll-state.js';
@@ -25,21 +25,34 @@ export const comparisonFor = (item, save) => compareItems(equippedItem(save, ITE
 
 export function deltaText(line) {
   if (line.delta === 0) return '= 유지';
-  return `${line.delta > 0 ? '▲+' : '▼−'}${amount(Math.abs(line.delta))} · ${line.good ? '이득' : '손해'}`;
+  const change = line.section === 'affix' && line.from > 0 && line.to === 0 ? '사라짐'
+    : line.section === 'affix' && line.from === 0 && line.to > 0 ? '새로 추가' : line.delta > 0 ? '증가' : '감소';
+  const unit = line.unit === '%' ? '%p' : line.unit ? ` ${line.unit}` : '';
+  return `${line.delta > 0 ? '▲+' : '▼−'}${amount(Math.abs(line.delta))}${unit} · ${change} · ${line.good ? '이득' : '손해'}`;
 }
 
+export const lineValue = (line, value) => `${line.prefix || ''}${amount(value)}${line.unit && !line.prefix ? `${line.unit === '%' ? '' : ' '}${line.unit}` : ''}`;
+
 export function linesHtml(comparison) {
-  const rows = comparison.lines.map(line => `<div data-line="${escape(line.key)}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}">`
-    + `<dt>${escape(line.label)}</dt><dd><span>${amount(line.from)} → <b>${amount(line.to)}</b></span>`
+  const rows = comparison.lines.map(line => `<div data-line="${escape(line.key)}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}" data-section="${line.section || ''}">`
+    + `<dt>${escape(line.label)}</dt><dd><span>${escape(lineValue(line,line.from))} → <b>${escape(lineValue(line,line.to))}</b></span>`
     + `<small class="${line.delta === 0 ? '' : line.good ? 'gain' : 'loss'}">${deltaText(line)}</small></dd></div>`);
   return `<dl class="p2-lines">${rows.join('')}</dl>`;
 }
 
-// Two most relevant changes, arrows for direction and colour for judgement (weight ▲ is a loss).
+// Cards are deliberately brief, but explicitly disclose every changed/lost affix count.
+export function optionHintHtml(comparison) {
+  const changed = comparison.lines.filter(line => line.section === 'affix' && line.delta !== 0);
+  if (!changed.length) return '';
+  const lost = changed.filter(line => line.from > 0 && line.to === 0).length;
+  return `<small class="option-change-hint" data-option-changes="${changed.length}">옵션 ${changed.length}개 변경${lost ? ` · ${lost}개 사라짐` : ''} · 자세히</small>`;
+}
+// Two headline changes are never a complete recommendation; the full sheet contains all rows.
 export function summaryHtml(item, save) {
-  const lines = comparisonFor(item, save).lines.filter(line => line.delta !== 0).slice(0, 2);
+  const comparison = comparisonFor(item, save);
+  const lines = comparison.lines.filter(line => line.delta !== 0).slice(0, 2);
   if (!lines.length) return '<span class="muted">동일 능력치</span>';
-  return lines.map(line => `<span class="${line.good ? 'gain' : 'loss'}">${escape(line.label)} ${line.delta > 0 ? '▲' : '▼'}${amount(Math.abs(line.delta))}</span>`).join(' ');
+  return lines.map(line => `<span class="${line.good ? 'gain' : 'loss'}">${escape(line.label)} ${line.delta > 0 ? '▲' : '▼'}${amount(Math.abs(line.delta))}${line.unit ? ` ${line.unit}` : ''}</span>`).join(' ') + optionHintHtml(comparison);
 }
 
 export function cardHtml(item, save, { action = 'open-item', compact = false, extra = '', note = '', disabled = false } = {}) {
@@ -50,7 +63,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
     + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>`
-    + `${compact ? '' : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
+    + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
     + `${locked ? `<small class="loss">${icon('lock')}힘 ${def.requiredStr}</small>` : ''}</span></button>`;
 }
 
@@ -88,7 +101,7 @@ export function itemDetailsHtml(item) {
   const def = ITEMS[item.id], mult = enhanceMultiplier(item.enhance);
   const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
   const rows = [row('family', '무기 계열 / 방어구', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경장',medium:'중장',heavy:'중갑'}[def.armorClass] || SLOT_NAMES[def.slot]),
-    row('rarity', '등급', GRADES[def.rarity]), row('str', '필요 힘', def.requiredStr || 0), row('weight', '무게', `${amount(def.weight)} kg`)];
+    row('rarity', '등급', GRADES[def.rarity]), row('str', '필요 힘', def.requiredStr || 0), row('weight', '장비 무게 (가벼울수록 좋음)', `${amount(def.weight)} kg`)];
   if (def.power !== undefined) {
     rows.push(row('power', '기본 공격 배율', `×${amount(def.power)}`),
       row('enhance', `강화 +${item.enhance} 공격 기여`, `+${amount(def.power * (mult - 1))} 배율`),
@@ -98,6 +111,6 @@ export function itemDetailsHtml(item) {
       row('enhance', `강화 +${item.enhance} HP 기여`, `+${amount((def.hp || 0) * (mult - 1))} HP`),
       row('hp', '강화 포함 HP 보호 기여', `${amount((def.hp || 0) * mult)} HP`));
   }
-  const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${k.endsWith('_pct') ? '%' : k === 'capacity_flat' ? ' kg' : k === 'hp_flat' ? ' HP' : ''}`));
-  return `<section class="item-details"><h3>장비 상세</h3><dl class="p2-lines">${rows.join('')}</dl><h3>전체 옵션</h3>${affixes.length ? `<dl class="p2-lines">${affixes.join('')}</dl>` : '<p class="minor">추가 옵션 없음</p>'}<p class="minor">방어구는 최대 HP를 더한다. 피해 감소 DEF 수치는 없다.${def.power !== undefined ? ' 실전 피해는 기술 기본 피해 × 캐릭터 공격 배율(레벨·능력치·전체 착용 옵션 포함).' : ''}</p></section>`;
+  const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));
+  return `<section class="item-details"><h3>장비 상세</h3><dl class="p2-lines">${rows.join('')}</dl><h3>전체 옵션</h3>${affixes.length ? `<dl class="p2-lines">${affixes.join('')}</dl>` : '<p class="minor">추가 옵션 없음</p>'}<p class="minor">최대 휴대 무게 옵션은 가방 한도를 늘리며 장비 자체 무게를 늘리지 않는다.</p><p class="minor">방어구는 최대 HP를 더한다. 피해 감소 DEF 수치는 없다.${def.power !== undefined ? ' 실전 피해는 기술 기본 피해 × 캐릭터 공격 배율(레벨·능력치·전체 착용 옵션 포함).' : ''}</p></section>`;
 }
