@@ -22,6 +22,10 @@ let socket;
 let sequence = 0;
 const pending = new Map();
 const events = [];
+const consoleErrors = [];
+const unexpectedLogErrors = [];
+const expectedBlockedNetworkErrors = [];
+let deliberateMissingAssets = false;
 
 try {
   let targets;
@@ -46,7 +50,16 @@ try {
     if (message.id) {
       pending.get(message.id)?.(message);
       pending.delete(message.id);
-    } else events.push(message);
+    } else {
+      events.push(message);
+      if (message.method === 'Runtime.exceptionThrown'
+        || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') consoleErrors.push(message);
+      if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
+        if (deliberateMissingAssets && message.params.entry.source === 'network'
+          && message.params.entry.text.includes('ERR_BLOCKED_BY_CLIENT')) expectedBlockedNetworkErrors.push(message);
+        else unexpectedLogErrors.push(message);
+      }
+    }
   };
   const command = (method, params = {}) => new Promise((resolveCommand, reject) => {
     const id = ++sequence;
@@ -136,7 +149,7 @@ try {
     assert.deepEqual(result.tiny,[]); assert.deepEqual(result.overlaps,[]); if(result.dialog) assert.ok(result.dialog.left>=-1&&result.dialog.right<=result.width+1&&result.dialog.top>=-1&&result.dialog.bottom<=result.height+1,JSON.stringify(result));
   };
 
-  const samples=[];
+  const samples=[],liveSwaps=[];
   const configurations=[
     ['iron_sword','head_heavy_common_t1'],['chief_maul',null],
     ['short_bow','head_light_common_t1'],['hunter_bow','head_medium_common_t1'],
@@ -149,15 +162,31 @@ try {
     const [weapon,head]=configurations[i];
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
     await command('Page.navigate',{url}); await waitFor('window.__arpg');
-    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {addXp}=await import('./js/meta/progression.js');const {instance,ITEMS}=await import('./js/meta/items.js');
-      const s=addXp(createSave({name:'P5 외형 시험',answers:[0,0,0,0,0],createdAt:1}),451);
+    await evaluate(`(async()=>{const {createSave,SaveStore,validateSave}=await import('./js/meta/save.js');const {addXp}=await import('./js/meta/progression.js');const {instance,ITEMS}=await import('./js/meta/items.js');
+      const s=addXp(createSave({name:'P5 외형 시험',answers:[0,0,0,0,0],createdAt:1}),851);
       for(const id of ${JSON.stringify([weapon,head,'leather_vest','hands_medium_fine_t1','feet_heavy_fine_t1'].filter(Boolean))}) {s.items.push(instance('test:'+id,id));s.equipped[ITEMS[id].slot]='test:'+id;}
+      if(${i}===0)s.items.push(instance('test:spare-head','head_medium_common_t1'));
+      if(!validateSave(s))throw Error('invalid P5 fixture: '+${JSON.stringify(weapon)});
       new SaveStore(localStorage).save(s);})()`);
     events.length=0;await command('Page.reload');await waitFor(page('inn'));
     await waitFor("document.querySelector('[data-paperdoll-ready]')",20000);await audit();
     const portrait=await evaluate(`(()=>{const n=document.querySelector('[data-paperdoll-ready]'),c=n.querySelector('canvas');const a=c.getContext('2d').getImageData(0,0,128,128).data;
       return {key:n.dataset.paperdollReady,alphaPixels:Array.from(a).filter((v,i)=>i%4===3&&v>0).length,canvasVisible:!c.hidden,bg:n.style.backgroundImage};})()`);
     assert.ok(portrait.alphaPixels>200);assert.equal(portrait.canvasVisible,true);assert.equal(portrait.bg,'none');
+    if(i===0) {
+      await evaluate("window.__p5HeadAlpha=Array.from(document.querySelector('[data-paperdoll-ready] canvas').getContext('2d').getImageData(0,0,128,128).data).filter((v,i)=>i%4===3)");
+      await click('[data-action="socket"][data-slot="head"]');
+      await click('[data-action="open-item"][data-uid="test:spare-head"]');
+      await click('[data-action="equip"][data-uid="test:spare-head"]');
+      await waitFor("document.querySelector('[data-paperdoll-ready]')");
+      const changed=await evaluate(`(()=>{const n=document.querySelector('[data-paperdoll-ready]');const alpha=Array.from(n.querySelector('canvas').getContext('2d').getImageData(0,0,128,128).data).filter((v,i)=>i%4===3);return {key:n.dataset.paperdollReady,alphaChanges:alpha.filter((v,i)=>v!==__p5HeadAlpha[i]).length};})()`);
+      assert.notEqual(changed.key,portrait.key);assert.ok(changed.alphaChanges>10,'head swap must change silhouette, not just colour');
+      await click('[data-action="socket"][data-slot="head"]');
+      await click(`[data-action="open-item"][data-uid="test:${head}"]`);
+      await click(`[data-action="equip"][data-uid="test:${head}"]`);
+      await waitFor(`document.querySelector('[data-paperdoll-ready]')?.dataset.paperdollReady===${JSON.stringify(portrait.key)}`);
+      liveSwaps.push({from:head,to:'head_medium_common_t1',...changed,restored:true});
+    }
     await click('[data-action="board"]');await click('[data-action="sortie"][data-stage="S1"]');await click('#sortie-confirm');
     await waitFor("__arpg.art.visuals.some(v=>v.mode==='paperdoll'&&v.textureLoaded)",20000);
     const combat=await evaluate("JSON.parse(JSON.stringify(__arpg.art.visuals.find(v=>v.mode==='paperdoll')))");
@@ -196,6 +225,25 @@ try {
     app.destroy(true,{children:true});return {results,cache:paperdolls.status(),phoneEvidence:false};
   })()`);
   assert.ok(animations.results.every(r=>r.clips===48));assert.ok(animations.cache.peakOutputs<=2);
+  const tintRegions=await evaluate(`(async()=>{
+    const {paperdolls}=await import('./js/render/paperdoll-library.js');const {equipmentVisual}=await import('./js/render/paperdoll-state.js');
+    const results=[];
+    for(const kit of ['blade','bow','focus']) {
+    const original=equipmentVisual(__arpg.save,kit),base={...original,colours:[null,null,null]},name='idle_S_000';
+    const pixels=asset=>{const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');const {rect,trim}=asset.manifest.layout.frames[name];ctx.drawImage(asset.canvas,...rect,...trim);return ctx.getImageData(0,0,128,128).data;};
+    const lease=await paperdolls.acquire({...base,key:kit+':tint-baseline'});const raw=pixels(lease.asset),m=lease.asset.manifest;
+    const layer=m.layers.mask,f=layer.frames[name],rect=layer.rects[f.index];
+    const bitmap=await createImageBitmap(await (await fetch('./assets/sprites/paperdoll/'+m.kit+'/'+layer.image)).blob());
+    const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');ctx.drawImage(bitmap,...rect,...f.offset,rect[2],rect[3]);bitmap.close();const mask=ctx.getImageData(0,0,128,128).data;lease.release();
+    for(let slot=0;slot<3;slot++) {
+      const colours=[null,null,null];colours[slot]=[125,205,135];const next=await paperdolls.acquire({...base,colours,key:kit+':tint-slot-'+slot});const rgb=pixels(next.asset);next.release();let changed=0,outside=0;
+      for(let p=0;p<rgb.length;p+=4) if(rgb[p+3]&&[0,1,2].some(i=>rgb[p+i]!==raw[p+i])) {changed++;if(mask[p+slot]<=128)outside++;}
+      if(changed<4||outside)throw Error('tint escaped material region '+slot+': '+changed+'/'+outside);
+      results.push({kit,slot,changedPixels:changed,outsidePixels:outside});
+    }
+    }
+    return results;
+  })()`);
   // 6x CPU slowdown is explicitly a desktop approximation, never phone evidence.
   await command('Emulation.setCPUThrottlingRate',{rate:6});
   const performanceSamples=await evaluate(`(async()=>{
@@ -206,24 +254,27 @@ try {
   })()`);
   await command('Emulation.setCPUThrottlingRate',{rate:1});
   const failures=[];
+  // Intentional blocked-network diagnostics are expected; JS errors never are.
+  deliberateMissingAssets=true;
   // Missing assets must restore the original combat atlas, not freeze the boot.
   await command('Network.setBlockedURLs',{urls:['*assets/sprites/paperdoll/*']});
   await command('Page.navigate',{url});await waitFor(page('inn'));await waitFor("document.querySelector('[data-paperdoll-failed]')",10000);
   await click('[data-action="board"]');await click('[data-action="sortie"][data-stage="S1"]');await click('#sortie-confirm');
   await waitFor("__arpg.art.visuals.some(v=>v.key==='focus'&&v.mode==='atlas'&&v.textureLoaded)",20000);
   failures.push('missing paperdoll => original atlas');
-  await command('Network.setBlockedURLs',{urls:[]});events.length=0;
+  await command('Network.setBlockedURLs',{urls:[]});events.length=0;deliberateMissingAssets=false;
   await command('Page.navigate',{url:url+'&paperdoll=0'});await waitFor(page('inn'));
   assert.equal(await evaluate("document.querySelectorAll('[data-paperdoll]').length"),0);
   await click('[data-action="board"]');await click('[data-action="sortie"][data-stage="S1"]');await click('#sortie-confirm');
   await waitFor("__arpg.art.visuals.some(v=>v.key==='focus'&&v.mode==='atlas'&&v.textureLoaded)",20000);
   assert.ok(!events.some(e=>e.method==='Network.requestWillBeSent'&&e.params.request.url.includes('/sprites/paperdoll/')));
   failures.push('paperdoll=0 => no B requests, original atlas');
-  const errors=events.filter(e=>e.method==='Runtime.exceptionThrown');assert.equal(errors.length,0,JSON.stringify(errors));
-  const report={ok:true,samples,animations,performanceSamples,failures,phoneEvidence:false,screenshots:0};
+  assert.equal(consoleErrors.length,0,JSON.stringify(consoleErrors));
+  assert.equal(unexpectedLogErrors.length,0,JSON.stringify(unexpectedLogErrors));
+  const report={ok:true,samples,liveSwaps,animations,tintRegions,performanceSamples,failures,consoleErrors:consoleErrors.length,unexpectedLogErrors:unexpectedLogErrors.length,expectedBlockedNetworkErrors:expectedBlockedNetworkErrors.length,phoneEvidence:false,screenshots:0};
   const values=performanceSamples.runs.map(r=>r.composeMs).sort((a,b)=>a-b);report.composeP95SixX=values[Math.ceil(values.length*.95)-1];
   await writeFile(new URL('../tools/art/p5b/browser-validation.json',import.meta.url),JSON.stringify(report,null,2));
-  console.log(JSON.stringify({ok:true,combatCases:samples.length,clips:144,composeP95SixX:report.composeP95SixX,cache:performanceSamples.cache,failures,phoneEvidence:false,screenshots:0}));
+  console.log(JSON.stringify({ok:true,combatCases:samples.length,clips:144,composeP95SixX:report.composeP95SixX,cache:performanceSamples.cache,failures,consoleErrors:consoleErrors.length,unexpectedLogErrors:unexpectedLogErrors.length,phoneEvidence:false,screenshots:0}));
 } finally {
   socket?.close();
   const stopped = [chrome, server].map(async (child) => {

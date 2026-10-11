@@ -3,7 +3,7 @@ import hashlib,json,sys
 from pathlib import Path
 from PIL import Image
 base=Path(sys.argv[1]);report=json.loads((base/'validation.json').read_text());assert report['status']=='PASS';assert len(report['kits'])==3
-actual=0
+actual=0;budgets=[]
 for kit in report['kits']:
  folder=base/kit['kit'];m=json.loads((folder/'manifest.json').read_text());assert len(m['animations'])==48;assert len(m['frames']) in [384,392]
  assert set(m['animations'])=={a+'_'+d for a in ['idle','run','attack','dodge','hit','death'] for d in ['E','SE','S','SW','W','NW','N','NE']}
@@ -17,6 +17,7 @@ for kit in report['kits']:
    if frame is None:continue
    x,y,w,h=layer['rects'][frame[0]];assert 0<=x<x+w<=im.width and 0<=y<y+h<=im.height
    ox,oy=frame[1:];assert 0<=ox<ox+w<=128 and 0<=oy<oy+h<=128
+ kit_peak=0
  for h in ['none','knight','barbarian','mage']:
   for w in ['standard','alternate']:
    keys=['base','mask']+(['head-'+h] if h!='none' else [])+[f'weapon-{w}-{h}']
@@ -27,6 +28,8 @@ for kit in report['kits']:
    output=m['layout']['size'][0]*m['layout']['size'][1]*4
    peak=source+staging+3*output+128*128*8
    assert peak<=64*1024*1024,(kit['kit'],h,w,'CPU RGBA budget',peak)
+   kit_peak=max(kit_peak,peak)
+ budgets.append({'kit':kit['kit'],'accountedPeakCPUBytes':kit_peak,'uniqueSourcePages':len(seen),'sourceBytes':kit['sourceBytes']})
  assert kit['rawWorstPixels']<=4
 assert actual==report['totalSourceBytes'];assert actual<=3_000_000,('source byte budget',actual)
-print(json.dumps({'status':'PASS','totalSourceBytes':actual,'frameCombinations':sum(k['combinations'] for k in report['kits']),'cpuRGBABudgetMiB':64,'realPhone':False,'gpuMemoryMeasured':False}))
+print(json.dumps({'status':'PASS','totalSourceBytes':actual,'frameCombinations':sum(k['combinations'] for k in report['kits']),'cpuRGBABudgetMiB':64,'kits':budgets,'realPhone':False,'gpuMemoryMeasured':False}))

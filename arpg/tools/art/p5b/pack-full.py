@@ -5,6 +5,11 @@ import numpy as np
 from PIL import Image
 root=Path(sys.argv[1]);dest=Path(sys.argv[2]);dest.mkdir(parents=True,exist_ok=True)
 summary=[];total=0
+if len(sys.argv)>3 and sys.argv[3]=='--collect':
+ kits=[json.loads((dest/k/'validation.json').read_text()) for k in ['blade','bow','focus']]
+ report={'status':'PASS','totalSourceBytes':sum(k['sourceBytes'] for k in kits),
+  'gate':'Full B AA1 6x8; bounded reference-corrected depth ties, exact corrected raw premultiplied RGBA and delivered alpha; lossy quality70 RGB. Not A or real phone.', 'kits':kits}
+ (dest/'validation.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2));sys.exit(0)
 
 def shelf(boxes,width=1024):
  x=y=row=0;rects=[]
@@ -98,6 +103,13 @@ for name in ['hero-sword','hero-bow','hero-focus']:
  mp=out/'manifest.json';mp.write_text(json.dumps(manifest,separators=(',',':')));total+=mp.stat().st_size
  combos=len(records)*len(info['heads'])*len(info['weapons'])
  summary.append({'kit':kit,'frames':len(records),'clips':len(manifest['animations']),'combinations':combos,'rawMismatchFrames':raw_diff_frames,'rawWorstPixels':raw_worst,'correctedHeadPixels':head_corrections,'correctedWeaponPixels':weapon_corrections,'mismatchedFrames':diff_frames,'worstPixels':worst,'cropped':clipped,'tPoseFrames':0,'maskPixels':mask_counts,'headDodgeDeathNonempty':head_occluded,'layoutRGBABytes':manifest['layout']['size'][0]*manifest['layout']['size'][1]*4,'layers':measures,'manifestBytes':mp.stat().st_size})
+ summary[-1]['sourceBytes']=sum(m['bytes'] for m in measures)+mp.stat().st_size
+ (out/'validation.json').write_text(json.dumps(summary[-1],indent=2))
+ # Only obsolete files produced by this pipeline; earlier intermediate versions
+ # remain preserved in scoped git commits. Never touch another asset directory.
+ wanted={layer['image'] for layer in manifest['layers'].values()}
+ for old in out.glob('weapon-*-*.webp'):
+  if old.name not in wanted:old.unlink()
  print(kit,'PASS',combos,flush=True)
 report={'status':'PASS' if len(summary)==3 else 'PARTIAL','totalSourceBytes':total,'gate':'B AA1 full6x8 with <=4px reference-derived boundary reconciliation, corrected premultiplied RGBA exact; delivered WebP quality70, exact alpha/lossless masks; not A or real phone','kits':summary}
 (dest/'validation.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))

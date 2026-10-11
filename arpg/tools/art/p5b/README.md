@@ -17,7 +17,11 @@ parallel item-icon paths. Use this worktree only. No network models or paid asse
    skinned meshes; preserve `pose-validation.json` in this directory.
 4. Run `python3 arpg/tools/art/p5b/pack-full.py
    /mnt/c/Users/user/ai-tools/arpg-art/p5b arpg/assets/sprites/paperdoll`.
-   Optional final arg `hero-sword` packs that kit with status PARTIAL, not full PASS.
+   Optional final arg `hero-sword`, `hero-bow`, or `hero-focus` resumes one kit
+   with status PARTIAL. After all three per-kit `validation.json` files exist,
+   run the same command with final arg `--collect`, then run step 5; collecting
+   prior counters does not re-render or replace the independent delivered gate.
+   Weapon/head-dependent frame maps share two weapon pages per kit.
    All full reference comparisons must complete. A raw >4px mismatch stops;
    don't relax that guard to cover a rig/camera/art failure. Correct only measured
    depth-tie boundary pixels against 3D reference and keep raw/corrected counters.

@@ -1,7 +1,7 @@
 {
-  "status": "PARTIAL",
-  "totalSourceBytes": 1289610,
-  "gate": "B AA1 full6x8 with <=4px reference-derived boundary reconciliation, corrected premultiplied RGBA exact; delivered WebP quality70, exact alpha/lossless masks; not A or real phone",
+  "status": "PASS",
+  "totalSourceBytes": 2823418,
+  "gate": "Full B AA1 6x8; bounded reference-corrected depth ties, exact corrected raw premultiplied RGBA and delivered alpha; lossy quality70 RGB. Not A or real phone.",
   "kits": [
     {
       "kit": "blade",
@@ -25,16 +25,20 @@
       "layoutRGBABytes": 6782976,
       "layers": [
         {
-          "layer": "base",
+          "layers": [
+            "base"
+          ],
           "bytes": 171908,
           "rgbaBytes": 3031040,
           "unique": 366,
           "alphaExact": true,
-          "colourPixelsOver24": 73017,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 38309,
+          "maxPremultipliedColourError": 113
         },
         {
-          "layer": "mask",
+          "layers": [
+            "mask"
+          ],
           "bytes": 65324,
           "rgbaBytes": 3031040,
           "unique": 366,
@@ -43,106 +47,285 @@
           "maxPremultipliedColourError": 0
         },
         {
-          "layer": "head-knight",
+          "layers": [
+            "head-knight"
+          ],
           "bytes": 92806,
           "rgbaBytes": 1802240,
           "unique": 360,
           "alphaExact": true,
-          "colourPixelsOver24": 25265,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 2386,
+          "maxPremultipliedColourError": 57
         },
         {
-          "layer": "head-barbarian",
+          "layers": [
+            "head-barbarian"
+          ],
           "bytes": 72056,
           "rgbaBytes": 1556480,
           "unique": 360,
           "alphaExact": true,
-          "colourPixelsOver24": 8158,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 1339,
+          "maxPremultipliedColourError": 54
         },
         {
-          "layer": "head-mage",
+          "layers": [
+            "head-mage"
+          ],
           "bytes": 152550,
           "rgbaBytes": 3506176,
           "unique": 360,
           "alphaExact": true,
-          "colourPixelsOver24": 73534,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 29424,
+          "maxPremultipliedColourError": 122
         },
         {
-          "layer": "weapon-standard-none",
-          "bytes": 39362,
-          "rgbaBytes": 1556480,
-          "unique": 355,
+          "layers": [
+            "weapon-standard-none",
+            "weapon-standard-knight",
+            "weapon-standard-barbarian",
+            "weapon-standard-mage"
+          ],
+          "bytes": 72254,
+          "rgbaBytes": 3129344,
+          "unique": 769,
           "alphaExact": true,
-          "colourPixelsOver24": 8015,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 3576,
+          "maxPremultipliedColourError": 82
         },
         {
-          "layer": "weapon-standard-knight",
-          "bytes": 38608,
-          "rgbaBytes": 1441792,
-          "unique": 336,
+          "layers": [
+            "weapon-alternate-none",
+            "weapon-alternate-knight",
+            "weapon-alternate-barbarian",
+            "weapon-alternate-mage"
+          ],
+          "bytes": 155446,
+          "rgbaBytes": 4112384,
+          "unique": 919,
           "alphaExact": true,
-          "colourPixelsOver24": 7987,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-standard-barbarian",
-          "bytes": 38408,
-          "rgbaBytes": 1507328,
-          "unique": 348,
-          "alphaExact": true,
-          "colourPixelsOver24": 7922,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-standard-mage",
-          "bytes": 32030,
-          "rgbaBytes": 1392640,
-          "unique": 336,
-          "alphaExact": true,
-          "colourPixelsOver24": 6628,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-alternate-none",
-          "bytes": 68036,
-          "rgbaBytes": 1753088,
-          "unique": 353,
-          "alphaExact": true,
-          "colourPixelsOver24": 23589,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-alternate-knight",
-          "bytes": 64940,
-          "rgbaBytes": 1654784,
-          "unique": 350,
-          "alphaExact": true,
-          "colourPixelsOver24": 21823,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-alternate-barbarian",
-          "bytes": 65800,
-          "rgbaBytes": 1720320,
-          "unique": 353,
-          "alphaExact": true,
-          "colourPixelsOver24": 22795,
-          "maxPremultipliedColourError": 256
-        },
-        {
-          "layer": "weapon-alternate-mage",
-          "bytes": 56274,
-          "rgbaBytes": 1556480,
-          "unique": 333,
-          "alphaExact": true,
-          "colourPixelsOver24": 17229,
-          "maxPremultipliedColourError": 256
+          "colourPixelsOver24": 29056,
+          "maxPremultipliedColourError": 104
         }
       ],
-      "manifestBytes": 331508
+      "manifestBytes": 228067,
+      "sourceBytes": 1010411
+    },
+    {
+      "kit": "bow",
+      "frames": 392,
+      "clips": 48,
+      "combinations": 3136,
+      "rawMismatchFrames": 21,
+      "rawWorstPixels": 1,
+      "correctedHeadPixels": 713,
+      "correctedWeaponPixels": 15,
+      "mismatchedFrames": 0,
+      "worstPixels": 0,
+      "cropped": 0,
+      "tPoseFrames": 0,
+      "maskPixels": [
+        147597,
+        13157,
+        14890
+      ],
+      "headDodgeDeathNonempty": 288,
+      "layoutRGBABytes": 5799936,
+      "layers": [
+        {
+          "layers": [
+            "base"
+          ],
+          "bytes": 165406,
+          "rgbaBytes": 3031040,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 37548,
+          "maxPremultipliedColourError": 104
+        },
+        {
+          "layers": [
+            "mask"
+          ],
+          "bytes": 61884,
+          "rgbaBytes": 3031040,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 0,
+          "maxPremultipliedColourError": 0
+        },
+        {
+          "layers": [
+            "head-knight"
+          ],
+          "bytes": 93892,
+          "rgbaBytes": 1802240,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 4467,
+          "maxPremultipliedColourError": 63
+        },
+        {
+          "layers": [
+            "head-barbarian"
+          ],
+          "bytes": 72264,
+          "rgbaBytes": 1556480,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 1364,
+          "maxPremultipliedColourError": 59
+        },
+        {
+          "layers": [
+            "head-mage"
+          ],
+          "bytes": 151394,
+          "rgbaBytes": 3506176,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 30941,
+          "maxPremultipliedColourError": 126
+        },
+        {
+          "layers": [
+            "weapon-standard-none",
+            "weapon-standard-knight",
+            "weapon-standard-barbarian",
+            "weapon-standard-mage"
+          ],
+          "bytes": 99208,
+          "rgbaBytes": 2080768,
+          "unique": 916,
+          "alphaExact": true,
+          "colourPixelsOver24": 18692,
+          "maxPremultipliedColourError": 77
+        },
+        {
+          "layers": [
+            "weapon-alternate-none",
+            "weapon-alternate-knight",
+            "weapon-alternate-barbarian",
+            "weapon-alternate-mage"
+          ],
+          "bytes": 60940,
+          "rgbaBytes": 1032192,
+          "unique": 753,
+          "alphaExact": true,
+          "colourPixelsOver24": 9995,
+          "maxPremultipliedColourError": 66
+        }
+      ],
+      "manifestBytes": 221833,
+      "sourceBytes": 926821
+    },
+    {
+      "kit": "focus",
+      "frames": 384,
+      "clips": 48,
+      "combinations": 3072,
+      "rawMismatchFrames": 4,
+      "rawWorstPixels": 1,
+      "correctedHeadPixels": 673,
+      "correctedWeaponPixels": 0,
+      "mismatchedFrames": 0,
+      "worstPixels": 0,
+      "cropped": 0,
+      "tPoseFrames": 0,
+      "maskPixels": [
+        144981,
+        12627,
+        14459
+      ],
+      "headDodgeDeathNonempty": 288,
+      "layoutRGBABytes": 5439488,
+      "layers": [
+        {
+          "layers": [
+            "base"
+          ],
+          "bytes": 164624,
+          "rgbaBytes": 2949120,
+          "unique": 352,
+          "alphaExact": true,
+          "colourPixelsOver24": 36212,
+          "maxPremultipliedColourError": 106
+        },
+        {
+          "layers": [
+            "mask"
+          ],
+          "bytes": 60752,
+          "rgbaBytes": 2949120,
+          "unique": 352,
+          "alphaExact": true,
+          "colourPixelsOver24": 0,
+          "maxPremultipliedColourError": 0
+        },
+        {
+          "layers": [
+            "head-knight"
+          ],
+          "bytes": 92772,
+          "rgbaBytes": 1654784,
+          "unique": 352,
+          "alphaExact": true,
+          "colourPixelsOver24": 2395,
+          "maxPremultipliedColourError": 51
+        },
+        {
+          "layers": [
+            "head-barbarian"
+          ],
+          "bytes": 69726,
+          "rgbaBytes": 1556480,
+          "unique": 352,
+          "alphaExact": true,
+          "colourPixelsOver24": 3380,
+          "maxPremultipliedColourError": 65
+        },
+        {
+          "layers": [
+            "head-mage"
+          ],
+          "bytes": 146956,
+          "rgbaBytes": 3555328,
+          "unique": 352,
+          "alphaExact": true,
+          "colourPixelsOver24": 27181,
+          "maxPremultipliedColourError": 122
+        },
+        {
+          "layers": [
+            "weapon-standard-none",
+            "weapon-standard-knight",
+            "weapon-standard-barbarian",
+            "weapon-standard-mage"
+          ],
+          "bytes": 71138,
+          "rgbaBytes": 1949696,
+          "unique": 1007,
+          "alphaExact": true,
+          "colourPixelsOver24": 12711,
+          "maxPremultipliedColourError": 99
+        },
+        {
+          "layers": [
+            "weapon-alternate-none",
+            "weapon-alternate-knight",
+            "weapon-alternate-barbarian",
+            "weapon-alternate-mage"
+          ],
+          "bytes": 51154,
+          "rgbaBytes": 966656,
+          "unique": 897,
+          "alphaExact": true,
+          "colourPixelsOver24": 9312,
+          "maxPremultipliedColourError": 83
+        }
+      ],
+      "manifestBytes": 229064,
+      "sourceBytes": 886186
     }
   ]
 }

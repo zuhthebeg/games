@@ -1,0 +1,1442 @@
+{
+  "ok": true,
+  "samples": [
+    {
+      "width": 360,
+      "height": 640,
+      "weapon": "iron_sword",
+      "head": "head_heavy_common_t1",
+      "portrait": {
+        "key": "{\"kit\":\"blade\",\"head\":\"knight\",\"weapon\":\"standard\",\"weaponColour\":[218,234,244],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1380,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-blade",
+        "mode": "paperdoll",
+        "key": "blade",
+        "state": "idle",
+        "direction": "E",
+        "frame": 1,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "blade",
+          "head": "knight",
+          "weapon": "standard",
+          "weaponColour": [
+            218,
+            234,
+            244
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"blade\",\"head\":\"knight\",\"weapon\":\"standard\",\"weaponColour\":[218,234,244],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "weapon": "chief_maul",
+      "head": null,
+      "portrait": {
+        "key": "{\"kit\":\"blade\",\"head\":\"none\",\"weapon\":\"alternate\",\"weaponColour\":[216,205,178],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1441,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-blade",
+        "mode": "paperdoll",
+        "key": "blade",
+        "state": "",
+        "direction": "E",
+        "frame": 0,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "blade",
+          "head": "none",
+          "weapon": "alternate",
+          "weaponColour": [
+            216,
+            205,
+            178
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"blade\",\"head\":\"none\",\"weapon\":\"alternate\",\"weaponColour\":[216,205,178],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "weapon": "short_bow",
+      "head": "head_light_common_t1",
+      "portrait": {
+        "key": "{\"kit\":\"bow\",\"head\":\"mage\",\"weapon\":\"alternate\",\"weaponColour\":[219,176,119],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1683,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-bow",
+        "mode": "paperdoll",
+        "key": "bow",
+        "state": "",
+        "direction": "E",
+        "frame": 0,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "bow",
+          "head": "mage",
+          "weapon": "alternate",
+          "weaponColour": [
+            219,
+            176,
+            119
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"bow\",\"head\":\"mage\",\"weapon\":\"alternate\",\"weaponColour\":[219,176,119],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "weapon": "hunter_bow",
+      "head": "head_medium_common_t1",
+      "portrait": {
+        "key": "{\"kit\":\"bow\",\"head\":\"barbarian\",\"weapon\":\"standard\",\"weaponColour\":[179,216,148],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1194,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-bow",
+        "mode": "paperdoll",
+        "key": "bow",
+        "state": "",
+        "direction": "E",
+        "frame": 0,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "bow",
+          "head": "barbarian",
+          "weapon": "standard",
+          "weaponColour": [
+            179,
+            216,
+            148
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"bow\",\"head\":\"barbarian\",\"weapon\":\"standard\",\"weaponColour\":[179,216,148],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "weapon": "apprentice_wand",
+      "head": "head_heavy_common_t1",
+      "portrait": {
+        "key": "{\"kit\":\"focus\",\"head\":\"knight\",\"weapon\":\"alternate\",\"weaponColour\":[218,184,143],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1208,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-focus",
+        "mode": "paperdoll",
+        "key": "focus",
+        "state": "idle",
+        "direction": "E",
+        "frame": 0,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "focus",
+          "head": "knight",
+          "weapon": "alternate",
+          "weaponColour": [
+            218,
+            184,
+            143
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"focus\",\"head\":\"knight\",\"weapon\":\"alternate\",\"weaponColour\":[218,184,143],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "weapon": "altar_staff",
+      "head": "head_light_common_t1",
+      "portrait": {
+        "key": "{\"kit\":\"focus\",\"head\":\"mage\",\"weapon\":\"standard\",\"weaponColour\":[186,149,235],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+        "alphaPixels": 1660,
+        "canvasVisible": true,
+        "bg": "none"
+      },
+      "combat": {
+        "id": "paperdoll-focus",
+        "mode": "paperdoll",
+        "key": "focus",
+        "state": "",
+        "direction": "E",
+        "frame": 0,
+        "tint": 16777215,
+        "scale": 1,
+        "equipment": {
+          "kit": "focus",
+          "head": "mage",
+          "weapon": "standard",
+          "weaponColour": [
+            186,
+            149,
+            235
+          ],
+          "colours": [
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              172,
+              135,
+              99
+            ],
+            [
+              135,
+              158,
+              178
+            ]
+          ],
+          "key": "{\"kit\":\"focus\",\"head\":\"mage\",\"weapon\":\"standard\",\"weaponColour\":[186,149,235],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+        },
+        "textureLoaded": true
+      },
+      "phoneEvidence": false
+    }
+  ],
+  "liveSwaps": [
+    {
+      "from": "head_heavy_common_t1",
+      "to": "head_medium_common_t1",
+      "key": "{\"kit\":\"blade\",\"head\":\"barbarian\",\"weapon\":\"standard\",\"weaponColour\":[218,234,244],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+      "alphaChanges": 74,
+      "restored": true
+    }
+  ],
+  "animations": {
+    "results": [
+      {
+        "kit": "blade",
+        "clips": 48,
+        "rows": [
+          {
+            "state": "idle",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1909
+          },
+          {
+            "state": "run",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 2017
+          },
+          {
+            "state": "attack",
+            "direction": "E",
+            "frame": 1,
+            "alpha": 2107
+          },
+          {
+            "state": "dodge",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1909
+          },
+          {
+            "state": "hit",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1978
+          },
+          {
+            "state": "death",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1909
+          },
+          {
+            "state": "idle",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1718
+          },
+          {
+            "state": "run",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1696
+          },
+          {
+            "state": "attack",
+            "direction": "SE",
+            "frame": 1,
+            "alpha": 1884
+          },
+          {
+            "state": "dodge",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1718
+          },
+          {
+            "state": "hit",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1787
+          },
+          {
+            "state": "death",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1718
+          },
+          {
+            "state": "idle",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1689
+          },
+          {
+            "state": "run",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1572
+          },
+          {
+            "state": "attack",
+            "direction": "S",
+            "frame": 1,
+            "alpha": 1732
+          },
+          {
+            "state": "dodge",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1689
+          },
+          {
+            "state": "hit",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1758
+          },
+          {
+            "state": "death",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1689
+          },
+          {
+            "state": "idle",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1832
+          },
+          {
+            "state": "run",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1644
+          },
+          {
+            "state": "attack",
+            "direction": "SW",
+            "frame": 1,
+            "alpha": 1750
+          },
+          {
+            "state": "dodge",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1832
+          },
+          {
+            "state": "hit",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1901
+          },
+          {
+            "state": "death",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1832
+          },
+          {
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1836
+          },
+          {
+            "state": "run",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1737
+          },
+          {
+            "state": "attack",
+            "direction": "W",
+            "frame": 1,
+            "alpha": 1777
+          },
+          {
+            "state": "dodge",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1836
+          },
+          {
+            "state": "hit",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1905
+          },
+          {
+            "state": "death",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1836
+          },
+          {
+            "state": "idle",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "run",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1882
+          },
+          {
+            "state": "attack",
+            "direction": "NW",
+            "frame": 1,
+            "alpha": 1872
+          },
+          {
+            "state": "dodge",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "hit",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2018
+          },
+          {
+            "state": "death",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "idle",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2063
+          },
+          {
+            "state": "run",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2010
+          },
+          {
+            "state": "attack",
+            "direction": "N",
+            "frame": 1,
+            "alpha": 2018
+          },
+          {
+            "state": "dodge",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2063
+          },
+          {
+            "state": "hit",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2132
+          },
+          {
+            "state": "death",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2063
+          },
+          {
+            "state": "idle",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2155
+          },
+          {
+            "state": "run",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2083
+          },
+          {
+            "state": "attack",
+            "direction": "NE",
+            "frame": 1,
+            "alpha": 2029
+          },
+          {
+            "state": "dodge",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2155
+          },
+          {
+            "state": "hit",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2224
+          },
+          {
+            "state": "death",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2155
+          }
+        ]
+      },
+      {
+        "kit": "bow",
+        "clips": 48,
+        "rows": [
+          {
+            "state": "idle",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1684
+          },
+          {
+            "state": "run",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1823
+          },
+          {
+            "state": "attack",
+            "direction": "E",
+            "frame": 1,
+            "alpha": 1755
+          },
+          {
+            "state": "dodge",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1684
+          },
+          {
+            "state": "hit",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1753
+          },
+          {
+            "state": "death",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1684
+          },
+          {
+            "state": "idle",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "run",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1669
+          },
+          {
+            "state": "attack",
+            "direction": "SE",
+            "frame": 1,
+            "alpha": 1758
+          },
+          {
+            "state": "dodge",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "hit",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1769
+          },
+          {
+            "state": "death",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "idle",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1725
+          },
+          {
+            "state": "run",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1622
+          },
+          {
+            "state": "attack",
+            "direction": "S",
+            "frame": 1,
+            "alpha": 1689
+          },
+          {
+            "state": "dodge",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1725
+          },
+          {
+            "state": "hit",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1794
+          },
+          {
+            "state": "death",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1725
+          },
+          {
+            "state": "idle",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "run",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1683
+          },
+          {
+            "state": "attack",
+            "direction": "SW",
+            "frame": 1,
+            "alpha": 1648
+          },
+          {
+            "state": "dodge",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "hit",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1769
+          },
+          {
+            "state": "death",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1700
+          },
+          {
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1699
+          },
+          {
+            "state": "run",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1761
+          },
+          {
+            "state": "attack",
+            "direction": "W",
+            "frame": 1,
+            "alpha": 1724
+          },
+          {
+            "state": "dodge",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1699
+          },
+          {
+            "state": "hit",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1768
+          },
+          {
+            "state": "death",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1699
+          },
+          {
+            "state": "idle",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2036
+          },
+          {
+            "state": "run",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1961
+          },
+          {
+            "state": "attack",
+            "direction": "NW",
+            "frame": 1,
+            "alpha": 1987
+          },
+          {
+            "state": "dodge",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2036
+          },
+          {
+            "state": "hit",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2105
+          },
+          {
+            "state": "death",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2036
+          },
+          {
+            "state": "idle",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2141
+          },
+          {
+            "state": "run",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2029
+          },
+          {
+            "state": "attack",
+            "direction": "N",
+            "frame": 1,
+            "alpha": 2035
+          },
+          {
+            "state": "dodge",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2141
+          },
+          {
+            "state": "hit",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2210
+          },
+          {
+            "state": "death",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2141
+          },
+          {
+            "state": "idle",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1968
+          },
+          {
+            "state": "run",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1932
+          },
+          {
+            "state": "attack",
+            "direction": "NE",
+            "frame": 1,
+            "alpha": 1977
+          },
+          {
+            "state": "dodge",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1968
+          },
+          {
+            "state": "hit",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2037
+          },
+          {
+            "state": "death",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1968
+          }
+        ]
+      },
+      {
+        "kit": "focus",
+        "clips": 48,
+        "rows": [
+          {
+            "state": "idle",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1695
+          },
+          {
+            "state": "run",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1833
+          },
+          {
+            "state": "attack",
+            "direction": "E",
+            "frame": 1,
+            "alpha": 1661
+          },
+          {
+            "state": "dodge",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1695
+          },
+          {
+            "state": "hit",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1764
+          },
+          {
+            "state": "death",
+            "direction": "E",
+            "frame": 0,
+            "alpha": 1695
+          },
+          {
+            "state": "idle",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1627
+          },
+          {
+            "state": "run",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1645
+          },
+          {
+            "state": "attack",
+            "direction": "SE",
+            "frame": 1,
+            "alpha": 1561
+          },
+          {
+            "state": "dodge",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1627
+          },
+          {
+            "state": "hit",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1696
+          },
+          {
+            "state": "death",
+            "direction": "SE",
+            "frame": 0,
+            "alpha": 1627
+          },
+          {
+            "state": "idle",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1639
+          },
+          {
+            "state": "run",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1564
+          },
+          {
+            "state": "attack",
+            "direction": "S",
+            "frame": 1,
+            "alpha": 1591
+          },
+          {
+            "state": "dodge",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1639
+          },
+          {
+            "state": "hit",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1708
+          },
+          {
+            "state": "death",
+            "direction": "S",
+            "frame": 0,
+            "alpha": 1639
+          },
+          {
+            "state": "idle",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1660
+          },
+          {
+            "state": "run",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1609
+          },
+          {
+            "state": "attack",
+            "direction": "SW",
+            "frame": 1,
+            "alpha": 1676
+          },
+          {
+            "state": "dodge",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1660
+          },
+          {
+            "state": "hit",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1729
+          },
+          {
+            "state": "death",
+            "direction": "SW",
+            "frame": 0,
+            "alpha": 1660
+          },
+          {
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1682
+          },
+          {
+            "state": "run",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1730
+          },
+          {
+            "state": "attack",
+            "direction": "W",
+            "frame": 1,
+            "alpha": 1716
+          },
+          {
+            "state": "dodge",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1682
+          },
+          {
+            "state": "hit",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1751
+          },
+          {
+            "state": "death",
+            "direction": "W",
+            "frame": 0,
+            "alpha": 1682
+          },
+          {
+            "state": "idle",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "run",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1881
+          },
+          {
+            "state": "attack",
+            "direction": "NW",
+            "frame": 1,
+            "alpha": 2000
+          },
+          {
+            "state": "dodge",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "hit",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 2018
+          },
+          {
+            "state": "death",
+            "direction": "NW",
+            "frame": 0,
+            "alpha": 1949
+          },
+          {
+            "state": "idle",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2065
+          },
+          {
+            "state": "run",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 1988
+          },
+          {
+            "state": "attack",
+            "direction": "N",
+            "frame": 1,
+            "alpha": 2081
+          },
+          {
+            "state": "dodge",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2065
+          },
+          {
+            "state": "hit",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2134
+          },
+          {
+            "state": "death",
+            "direction": "N",
+            "frame": 0,
+            "alpha": 2065
+          },
+          {
+            "state": "idle",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1986
+          },
+          {
+            "state": "run",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1954
+          },
+          {
+            "state": "attack",
+            "direction": "NE",
+            "frame": 1,
+            "alpha": 1970
+          },
+          {
+            "state": "dodge",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1986
+          },
+          {
+            "state": "hit",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 2055
+          },
+          {
+            "state": "death",
+            "direction": "NE",
+            "frame": 0,
+            "alpha": 1986
+          }
+        ]
+      }
+    ],
+    "cache": {
+      "compositions": 3,
+      "peakOutputs": 2,
+      "last": {
+        "totalMs": 776,
+        "decodeMs": 727.0999999046326,
+        "composeMs": 48.90000009536743,
+        "sourceRGBABytes": 11649024,
+        "stagingRGBABytes": 8142848,
+        "readbackRGBABytes": 5799936,
+        "outputRGBABytes": 5799936,
+        "frames": 392,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      "outputs": 1,
+      "references": 1,
+      "outputRGBABytes": 5439488
+    },
+    "phoneEvidence": false
+  },
+  "tintRegions": [
+    {
+      "kit": "blade",
+      "slot": 0,
+      "changedPixels": 348,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "blade",
+      "slot": 1,
+      "changedPixels": 30,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "blade",
+      "slot": 2,
+      "changedPixels": 55,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "bow",
+      "slot": 0,
+      "changedPixels": 341,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "bow",
+      "slot": 1,
+      "changedPixels": 44,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "bow",
+      "slot": 2,
+      "changedPixels": 55,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "focus",
+      "slot": 0,
+      "changedPixels": 327,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "focus",
+      "slot": 1,
+      "changedPixels": 34,
+      "outsidePixels": 0
+    },
+    {
+      "kit": "focus",
+      "slot": 2,
+      "changedPixels": 55,
+      "outsidePixels": 0
+    }
+  ],
+  "performanceSamples": {
+    "runs": [
+      {
+        "totalMs": 1167.3000001907349,
+        "decodeMs": 869.7000002861023,
+        "composeMs": 297.59999990463257,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1152.1999998092651,
+        "decodeMs": 863.1999998092651,
+        "composeMs": 289,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1156.8999996185303,
+        "decodeMs": 861.3999996185303,
+        "composeMs": 295.5,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1207.7999997138977,
+        "decodeMs": 880.8999996185303,
+        "composeMs": 326.90000009536743,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1219.2999997138977,
+        "decodeMs": 874.3999996185303,
+        "composeMs": 344.90000009536743,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1261.6999998092651,
+        "decodeMs": 877,
+        "composeMs": 384.69999980926514,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1259.3000001907349,
+        "decodeMs": 959,
+        "composeMs": 300.30000019073486,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1175.6999998092651,
+        "decodeMs": 881.5,
+        "composeMs": 294.19999980926514,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1135.0999999046326,
+        "decodeMs": 839.0999999046326,
+        "composeMs": 296,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      {
+        "totalMs": 1153.0999999046326,
+        "decodeMs": 863,
+        "composeMs": 290.09999990463257,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      }
+    ],
+    "cache": {
+      "compositions": 25,
+      "peakOutputs": 2,
+      "last": {
+        "totalMs": 1153.0999999046326,
+        "decodeMs": 863,
+        "composeMs": 290.09999990463257,
+        "sourceRGBABytes": 11403264,
+        "stagingRGBABytes": 7847936,
+        "readbackRGBABytes": 5439488,
+        "outputRGBABytes": 5439488,
+        "frames": 384,
+        "sourceImages": 4,
+        "phoneEvidence": false
+      },
+      "outputs": 1,
+      "references": 1,
+      "outputRGBABytes": 5439488
+    },
+    "phoneEvidence": false
+  },
+  "failures": [
+    "missing paperdoll => original atlas",
+    "paperdoll=0 => no B requests, original atlas"
+  ],
+  "consoleErrors": 0,
+  "unexpectedLogErrors": 0,
+  "expectedBlockedNetworkErrors": 0,
+  "phoneEvidence": false,
+  "screenshots": 0,
+  "composeP95SixX": 384.69999980926514
+}

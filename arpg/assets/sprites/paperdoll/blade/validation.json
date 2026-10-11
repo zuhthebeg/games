@@ -1,0 +1,108 @@
+{
+  "kit": "blade",
+  "frames": 392,
+  "clips": 48,
+  "combinations": 3136,
+  "rawMismatchFrames": 12,
+  "rawWorstPixels": 1,
+  "correctedHeadPixels": 706,
+  "correctedWeaponPixels": 8,
+  "mismatchedFrames": 0,
+  "worstPixels": 0,
+  "cropped": 0,
+  "tPoseFrames": 0,
+  "maskPixels": [
+    148082,
+    13300,
+    14621
+  ],
+  "headDodgeDeathNonempty": 288,
+  "layoutRGBABytes": 6782976,
+  "layers": [
+    {
+      "layers": [
+        "base"
+      ],
+      "bytes": 171908,
+      "rgbaBytes": 3031040,
+      "unique": 366,
+      "alphaExact": true,
+      "colourPixelsOver24": 38309,
+      "maxPremultipliedColourError": 113
+    },
+    {
+      "layers": [
+        "mask"
+      ],
+      "bytes": 65324,
+      "rgbaBytes": 3031040,
+      "unique": 366,
+      "alphaExact": true,
+      "colourPixelsOver24": 0,
+      "maxPremultipliedColourError": 0
+    },
+    {
+      "layers": [
+        "head-knight"
+      ],
+      "bytes": 92806,
+      "rgbaBytes": 1802240,
+      "unique": 360,
+      "alphaExact": true,
+      "colourPixelsOver24": 2386,
+      "maxPremultipliedColourError": 57
+    },
+    {
+      "layers": [
+        "head-barbarian"
+      ],
+      "bytes": 72056,
+      "rgbaBytes": 1556480,
+      "unique": 360,
+      "alphaExact": true,
+      "colourPixelsOver24": 1339,
+      "maxPremultipliedColourError": 54
+    },
+    {
+      "layers": [
+        "head-mage"
+      ],
+      "bytes": 152550,
+      "rgbaBytes": 3506176,
+      "unique": 360,
+      "alphaExact": true,
+      "colourPixelsOver24": 29424,
+      "maxPremultipliedColourError": 122
+    },
+    {
+      "layers": [
+        "weapon-standard-none",
+        "weapon-standard-knight",
+        "weapon-standard-barbarian",
+        "weapon-standard-mage"
+      ],
+      "bytes": 72254,
+      "rgbaBytes": 3129344,
+      "unique": 769,
+      "alphaExact": true,
+      "colourPixelsOver24": 3576,
+      "maxPremultipliedColourError": 82
+    },
+    {
+      "layers": [
+        "weapon-alternate-none",
+        "weapon-alternate-knight",
+        "weapon-alternate-barbarian",
+        "weapon-alternate-mage"
+      ],
+      "bytes": 155446,
+      "rgbaBytes": 4112384,
+      "unique": 919,
+      "alphaExact": true,
+      "colourPixelsOver24": 29056,
+      "maxPremultipliedColourError": 104
+    }
+  ],
+  "manifestBytes": 228067,
+  "sourceBytes": 1010411
+}
