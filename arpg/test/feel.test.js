@@ -35,7 +35,10 @@ test('importance tiers, pop easing, and effect caps have bounded tuning', () => 
   assert.equal(impactTier({ dmg: 26 }), FEEL.impact.heavy);
   assert.equal(impactTier({ dmg: 10, exposed: true }), FEEL.impact.weak);
   assert.equal(impactTier({ dmg: 10, critical: true }), FEEL.impact.critical);
-  for (const tier of Object.values(FEEL.impact)) assert.ok(tier.stop >= .04 && tier.stop <= .09);
+  for (const [name, tier] of Object.entries(FEEL.impact)) if (name !== 'counter') assert.ok(tier.stop >= .04 && tier.stop <= .09);
+  // The counter is the one deliberately heavier beat (cocy 10-11), still bounded.
+  assert.equal(impactTier({ dmg: 10, counter: true, critical: true }), FEEL.impact.counter);
+  assert.ok(FEEL.impact.counter.stop > FEEL.impact.kill.stop && FEEL.impact.counter.stop <= .15);
   assert.equal(numberScale(0), 1.4);
   assert.equal(numberScale(1), 1);
   assert.ok(numberScale(.04) < 1.4 && numberScale(.04) > 1);

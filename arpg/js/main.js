@@ -62,6 +62,12 @@ try {
     document.querySelector('#actions'),
     (x, y, vector) => renderer.aim(x, y, vector),
   );
+  // Pointer-only toggle; tapping it must not leak into combat input.
+  for (const node of document.querySelectorAll('[data-auto-toggle]')) {
+    node.addEventListener('pointerdown', (event) => event.stopPropagation());
+    node.addEventListener('click', () => input.setAutoAttack(!input.autoAttack));
+  }
+  input.setAutoAttack(input.autoAttack);
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);

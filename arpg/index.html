@@ -11,15 +11,15 @@
     {
       "imports": {
         "./js/audio.js": "./js/audio.js?v=0f30b27793",
-        "./js/content/balance.js": "./js/content/balance.js?v=3d6d853a2f",
+        "./js/content/balance.js": "./js/content/balance.js?v=3370f6466a",
         "./js/content/combat.js": "./js/content/combat.js?v=bdc36deff1",
         "./js/content/loot.js": "./js/content/loot.js?v=250cc881b3",
         "./js/content/monsters.js": "./js/content/monsters.js?v=7eadf54d80",
         "./js/debug/actions.js": "./js/debug/actions.js?v=03e86e04c7",
         "./js/debug/combat.js": "./js/debug/combat.js?v=8fe9cae3a2",
         "./js/debug/index.js": "./js/debug/index.js?v=58b25f9b3b",
-        "./js/input.js": "./js/input.js?v=fb40ab1d9a",
-        "./js/main.js": "./js/main.js?v=5c98daca74",
+        "./js/input.js": "./js/input.js?v=4b81ddfae4",
+        "./js/main.js": "./js/main.js?v=657b8d5b7a",
         "./js/meta/affixes.js": "./js/meta/affixes.js?v=9e4de5e39d",
         "./js/meta/compare.js": "./js/meta/compare.js?v=d6a74766d5",
         "./js/meta/economy.js": "./js/meta/economy.js?v=3cd8055a21",
@@ -35,27 +35,27 @@
         "./js/render/atlas-library.js": "./js/render/atlas-library.js?v=6c0628e3b1",
         "./js/render/atlas-state.js": "./js/render/atlas-state.js?v=16517328e2",
         "./js/render/atlas-visual.js": "./js/render/atlas-visual.js?v=7b952991ce",
-        "./js/render/feel.js": "./js/render/feel.js?v=6bbba1ce51",
+        "./js/render/feel.js": "./js/render/feel.js?v=682b437f3a",
         "./js/render/paperdoll-library.js": "./js/render/paperdoll-library.js?v=1e2131523f",
         "./js/render/paperdoll-portrait.js": "./js/render/paperdoll-portrait.js?v=b6f1f0adaf",
         "./js/render/paperdoll-state.js": "./js/render/paperdoll-state.js?v=7fb0e4a886",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=9af5bf8f59",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=801429cf03",
         "./js/render/shapes.js": "./js/render/shapes.js?v=1f3d9c4a35",
         "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=6837eaf51e",
         "./js/render/weapon-glow.js": "./js/render/weapon-glow.js?v=3bcbf27c28",
         "./js/sim/core.js": "./js/sim/core.js?v=c5b6377d77",
-        "./js/sim/world.js": "./js/sim/world.js?v=9b54a73667",
+        "./js/sim/world.js": "./js/sim/world.js?v=1ab953637b",
         "./js/ui/enchant-fx.js": "./js/ui/enchant-fx.js?v=38ddf1f68b",
         "./js/ui/gear-view.js": "./js/ui/gear-view.js?v=e920e06485",
         "./js/ui/hub.js": "./js/ui/hub.js?v=bca814b44b",
-        "./js/ui/hud.js": "./js/ui/hud.js?v=70a167b8ba",
+        "./js/ui/hud.js": "./js/ui/hud.js?v=b8b9c7c81b",
         "./js/ui/icons.js": "./js/ui/icons.js?v=608d914e8e",
         "./js/ui/item-art.js": "./js/ui/item-art.js?v=60dd0d3dc2",
         "./vendor/pixi-8.22.0.min.mjs": "./vendor/pixi-8.22.0.min.mjs?v=66257bc467"
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=ba3505eb5c">
+    <link rel="stylesheet" href="css/game.css?v=9209b311d0">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -68,6 +68,7 @@
       </div>
       <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
       <button data-sound-toggle class="battle-sound" aria-label="음소거" aria-pressed="false">🔊</button>
+      <button data-auto-toggle class="battle-auto" aria-label="자동 공격" aria-pressed="false" title="자동 공격 · T">AUTO</button>
       <div id="temp-loot"></div>
       <div id="notice" role="status" aria-live="polite"></div>
       <div id="joystick" hidden><i></i></div>
@@ -88,6 +89,6 @@
     <section class="overlay" id="pause" hidden>
       <div class="story-panel"><h2>일시정지</h2><p>탭으로 돌아오면 전투가 재개됩니다.</p></div>
     </section>
-    <script type="module" src="js/main.js?v=5c98daca74"></script>
+    <script type="module" src="js/main.js?v=657b8d5b7a"></script>
   </body>
 </html>

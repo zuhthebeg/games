@@ -14,10 +14,11 @@ import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, mon
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
 const AUTO_AIM_RANGE = 560;
+const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
 const SPAWN_IN_MS = 700;
 
 export function emptyInput() {
-  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
+  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
 export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 } } = {}) {
@@ -251,9 +252,13 @@ function stepPlayer(world, p, inp) {
     }
   }
 
-  if (!p.act && inp.attack && !(p.cds[w.basic] > 0)
+  // Auto attack (cocy 10-11 option): the basic attack is held for the player only while a
+  // hostile is inside its real reach, aimed at that hostile. Dodge and skills stay manual.
+  const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
+    ? basicReachTarget(world, p, ABILITIES[w.basic]) : null;
+  if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || inp.skillEdge || inp.scrollEdge)) {
-    startAct(world, p, w.basic, resolveAim(world, p, inp, mlen));
+    startAct(world, p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(world, p, inp, mlen));
   }
 
   if (p.act) advanceAct(world, p);
@@ -270,6 +275,21 @@ function stepPlayer(world, p, inp) {
     else if (mlen > 0.15) p.facing = Math.atan2(my, mx);
   }
   decayKnock(p);
+}
+
+// Nearest hostile the basic attack would actually reach from here (shape) or comfortably reach (shot).
+function basicReachTarget(world, p, def) {
+  let best = null, bestD = Infinity;
+  for (const e of world.entities) {
+    if (e.team === p.team || !isTargetable(e)) continue;
+    const d2 = dist2(p.x, p.y, e.x, e.y);
+    if (d2 >= bestD) continue;
+    const reach = def.delivery === 'shape'
+      ? shapeHitsCircle(def.shape, p.x, p.y, Math.atan2(e.y - p.y, e.x - p.x), e.x, e.y, e.r)
+      : d2 <= (def.projectile.rangePx * AUTO_SHOT_REACH) ** 2;
+    if (reach) { bestD = d2; best = e; }
+  }
+  return best;
 }
 
 function resolveAim(world, p, inp, mlen) {
@@ -549,7 +569,7 @@ function applyHit(world, t, hit) {
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}) });
 
   if (t.kind === 'player') {
     if (!hit.periodic) t.hurtInvuln = ticks(PB.hurtInvulnMs);

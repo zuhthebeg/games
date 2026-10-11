@@ -212,6 +212,15 @@ try {
   const roundMobile = await rectangles('#actions button');
   validateRects(roundMobile);
   assert.equal(roundMobile.rects.length, 6);
+  // Auto attack toggle (cocy 10-11): visible, non-overlapping, persisted, reflected on the attack button.
+  validateRects(await rectangles('#actions button, .battle-auto, .stage, .vitals'));
+  const autoBefore = await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')");
+  await evaluate("document.querySelector('.battle-auto').click()");
+  assert.notEqual(await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')"), autoBefore);
+  assert.equal(await evaluate("localStorage.getItem('arpg.autoAttack')"), autoBefore === 'true' ? '0' : '1');
+  assert.equal(await evaluate("document.querySelector('#attack').classList.contains('auto')"), autoBefore !== 'true');
+  await evaluate("document.querySelector('.battle-auto').click()");
+  assert.equal(await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')"), autoBefore);
   await waitFor(page('level-up'), 38000);
   assert.equal(await evaluate('__arpg.world.round.t'), 900);
   assert.equal(await evaluate('__arpg.save.level'), 2);

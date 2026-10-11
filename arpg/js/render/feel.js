@@ -6,6 +6,8 @@ export const FEEL = Object.freeze({
     weak: Object.freeze({ stop: .07, trauma: .28, kick: 9, sparks: 9 }),
     critical: Object.freeze({ stop: .08, trauma: .3, kick: 10, sparks: 10 }),
     kill: Object.freeze({ stop: .09, trauma: .34, kick: 11, sparks: 14 }),
+    // cocy 10-11: the counter is the reward for the one manual skill left in auto mode.
+    counter: Object.freeze({ stop: .14, trauma: .55, kick: 16, sparks: 22 }),
   }),
   heavyDamage: 20,
   hurtLife: .12,
@@ -17,12 +19,14 @@ export const FEEL = Object.freeze({
   effects: Object.freeze({ cap: 40, reducedAlpha: .3, ringGrow: .5 }),
   trail: Object.freeze({ life: .16, dodgeInterval: .035, slashWidth: 5, tailLength: 36, tailAlpha: .25, slashAlpha: .7 }),
   perfect: Object.freeze({ life: .18, scale: .35, ringLife: .32, radius: 32 }),
-  colors: Object.freeze({ normal: 0xffebc2, weak: 0xffca66, critical: 0xff9679, hurt: 0xff9d8c, dust: 0xa18b68, perfect: 0xa9ffef }),
+  counter: Object.freeze({ slow: .26, ring: 58, ringLife: .38, scale: 1.7 }),
+  colors: Object.freeze({ counter: 0xffd36b, normal: 0xffebc2, weak: 0xffca66, critical: 0xff9679, hurt: 0xff9d8c, dust: 0xa18b68, perfect: 0xa9ffef }),
   audio: Object.freeze({ voices: 6, pitch: .05, gain: .45, cooldown: .025 }),
 });
 
 export function impactTier(event) {
   if (event.type === 'kill' || event.type === 'death') return FEEL.impact.kill;
+  if (event.counter) return FEEL.impact.counter;
   if (event.critical) return FEEL.impact.critical;
   if (event.exposed) return FEEL.impact.weak;
   return event.dmg >= FEEL.heavyDamage ? FEEL.impact.heavy : FEEL.impact.normal;

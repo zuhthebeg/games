@@ -122,7 +122,7 @@
         "id": "paperdoll-bow",
         "mode": "paperdoll",
         "key": "bow",
-        "state": "idle",
+        "state": "",
         "direction": "E",
         "frame": 0,
         "tint": 16777215,
@@ -175,7 +175,7 @@
         "id": "paperdoll-bow",
         "mode": "paperdoll",
         "key": "bow",
-        "state": "idle",
+        "state": "",
         "direction": "E",
         "frame": 0,
         "tint": 16777215,
@@ -228,7 +228,7 @@
         "id": "paperdoll-focus",
         "mode": "paperdoll",
         "key": "focus",
-        "state": "",
+        "state": "idle",
         "direction": "E",
         "frame": 0,
         "tint": 16777215,
@@ -1218,9 +1218,9 @@
       "compositions": 3,
       "peakOutputs": 2,
       "last": {
-        "totalMs": 795.0999999046326,
-        "decodeMs": 730.1999998092651,
-        "composeMs": 64.90000009536743,
+        "totalMs": 747.9000000953674,
+        "decodeMs": 694.8000001907349,
+        "composeMs": 53.09999990463257,
         "sourceRGBABytes": 11649024,
         "stagingRGBABytes": 8142848,
         "readbackRGBABytes": 5799936,
@@ -1294,9 +1294,9 @@
   "performanceSamples": {
     "runs": [
       {
-        "totalMs": 1166.9000000953674,
-        "decodeMs": 870.9000000953674,
-        "composeMs": 296,
+        "totalMs": 1175.5,
+        "decodeMs": 879.2999997138977,
+        "composeMs": 296.2000002861023,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1306,9 +1306,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1141.5999999046326,
-        "decodeMs": 840.0999999046326,
-        "composeMs": 301.5,
+        "totalMs": 1167.4000000953674,
+        "decodeMs": 867.2000002861023,
+        "composeMs": 300.19999980926514,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1318,9 +1318,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1142.9000000953674,
-        "decodeMs": 850.8000001907349,
-        "composeMs": 292.09999990463257,
+        "totalMs": 1210.5,
+        "decodeMs": 886.8000001907349,
+        "composeMs": 323.69999980926514,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1330,9 +1330,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1143.4000000953674,
-        "decodeMs": 854.5,
-        "composeMs": 288.90000009536743,
+        "totalMs": 1249.2000002861023,
+        "decodeMs": 906.7000002861023,
+        "composeMs": 342.5,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1342,9 +1342,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1169.8000001907349,
-        "decodeMs": 857,
-        "composeMs": 312.80000019073486,
+        "totalMs": 1181.6999998092651,
+        "decodeMs": 890.5999999046326,
+        "composeMs": 291.09999990463257,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1354,9 +1354,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1223.8000001907349,
-        "decodeMs": 880.2000002861023,
-        "composeMs": 343.59999990463257,
+        "totalMs": 1139.3000001907349,
+        "decodeMs": 851.3000001907349,
+        "composeMs": 288,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1366,9 +1366,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1197.0999999046326,
-        "decodeMs": 881.5,
-        "composeMs": 315.59999990463257,
+        "totalMs": 1266.2999997138977,
+        "decodeMs": 941.9000000953674,
+        "composeMs": 324.3999996185303,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1378,9 +1378,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1166.0999999046326,
-        "decodeMs": 870.8000001907349,
-        "composeMs": 295.2999997138977,
+        "totalMs": 1181.1999998092651,
+        "decodeMs": 888.1999998092651,
+        "composeMs": 293,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1390,9 +1390,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1159.7999997138977,
-        "decodeMs": 850.5,
-        "composeMs": 309.2999997138977,
+        "totalMs": 1174.2999997138977,
+        "decodeMs": 871.0999999046326,
+        "composeMs": 303.19999980926514,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1402,9 +1402,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1277.5999999046326,
-        "decodeMs": 946.6999998092651,
-        "composeMs": 330.90000009536743,
+        "totalMs": 1200.9000000953674,
+        "decodeMs": 905.1000003814697,
+        "composeMs": 295.7999997138977,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1418,9 +1418,9 @@
       "compositions": 25,
       "peakOutputs": 2,
       "last": {
-        "totalMs": 1277.5999999046326,
-        "decodeMs": 946.6999998092651,
-        "composeMs": 330.90000009536743,
+        "totalMs": 1200.9000000953674,
+        "decodeMs": 905.1000003814697,
+        "composeMs": 295.7999997138977,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1444,5 +1444,5 @@
   "expectedBlockedNetworkErrors": 0,
   "phoneEvidence": false,
   "screenshots": 0,
-  "composeP95SixX": 343.59999990463257
+  "composeP95SixX": 342.5
 }

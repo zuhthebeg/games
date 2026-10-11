@@ -13,10 +13,12 @@ export class InputLayer {
     this.mouseY = 0;
     this.mouseAim = false;
     this.mouseAttack = false;
+    // Auto attack is a control preference (not save data); the sim only receives a per-tick flag.
+    this.autoAttack = globalThis.localStorage?.getItem('arpg.autoAttack') === '1';
     this.aimVector = aimVector;
     this.pad = document.querySelector('#joystick');
     this.value = {
-      mx: 0, my: 0, aimX: 0, aimY: 0, attack: false,
+      mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false,
       skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false,
     };
     const edgeKeys = {
@@ -28,6 +30,7 @@ export class InputLayer {
       'KeyJ', ...Object.keys(edgeKeys),
     ]);
     window.addEventListener('keydown', (event) => {
+      if (this.enabled && event.code === 'KeyT' && !event.repeat && !event.target.closest('select,input,form')) this.setAutoAttack(!this.autoAttack);
       if (!this.enabled || !allowed.has(event.code) || event.target.closest('select,input,form')) return;
       event.preventDefault();
       if (!this.keys.has(event.code) && edgeKeys[event.code]) this.latch(edgeKeys[event.code]);
@@ -121,6 +124,16 @@ export class InputLayer {
     surface.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
   }
 
+  setAutoAttack(on) {
+    this.autoAttack = !!on;
+    globalThis.localStorage?.setItem('arpg.autoAttack', on ? '1' : '0');
+    for (const node of document.querySelectorAll('[data-auto-toggle]')) {
+      node.setAttribute('aria-pressed', String(this.autoAttack));
+      node.classList.toggle('on', this.autoAttack);
+    }
+    document.querySelector('#attack')?.classList.toggle('auto', this.autoAttack);
+  }
+
   latch(action) {
     this.edges[action] = true;
   }
@@ -150,6 +163,7 @@ export class InputLayer {
     let held = this.mouseAttack;
     for (const action of this.pointers.values()) if (action === 'attack') held = true;
     value.attack = keys.has('KeyJ') || held || !!this.edges.attackTap;
+    value.autoAttack = this.autoAttack;
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
     for (const action of ['skillEdge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge']) {
       value[action] = !!this.edges[action];

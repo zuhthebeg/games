@@ -5,7 +5,8 @@ export const BALANCE = {
   // [제안] Player actions only; no cooldown/telegraph scaling.
   attackSpeed: { agiPerEff: .02, agiCap: .2, weightReference: 8, weightPerUnit: .0125,
     weightCap: 24, loadStart: .8, loadCap: 1.2, loadSlope: .5, min: .7, max: 1.2 },
-  counter: { damage: 1.35, poise: 1.5, graceMs: 300 },
+  // cocy 10-11: dodge is the one manual skill auto-attack players keep, so the counter must pay off.
+  counter: { damage: 2.2, poise: 3, graceMs: 300 },
   // cocy 10-11: monsters felt too spongy — global stage-spawn HP ×0.7 (bosses included).
   monsterHp: 0.7,
   elite: { hp: 2.2, damage: 1.3, tint: 0xb994ed, scale: 1.15 },

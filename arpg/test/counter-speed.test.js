@@ -33,7 +33,7 @@ function perfect(f, count = 1) {
 }
 
 for (const weapon of ['blade', 'bow', 'focus']) {
-  test(`${weapon}: actual dodged multi-hit schedules ONE delayed real basic counter, modest bonus/free MP`, () => {
+  test(`${weapon}: actual dodged multi-hit schedules ONE delayed real basic counter, counter bonus/free MP`, () => {
     const f = fixture(weapon, { mpRegen: 0 });
     const first = perfect(f, 4);
     const event = first.find(e => e.type === 'perfectDodge');
@@ -56,7 +56,7 @@ for (const weapon of ['blade', 'bow', 'focus']) {
     assert.equal(firstCounterTick, ticks(PLAYER_BASE.dodge.iframeMs));
     assert.equal(counters.length, 1); assert.equal(hits.length, 1);
     assert.equal(hits[0].dst, f.g.id);
-    assert.equal(hits[0].dmg, Math.round(ABILITIES[WEAPONS[weapon].basic].damage * 1.35 * 1.3));
+    assert.equal(hits[0].dmg, Math.round(ABILITIES[WEAPONS[weapon].basic].damage * BALANCE.counter.damage * 1.3));
     assert.equal(f.p.mp, f.p.maxMp); assert.equal(f.p.pendingCounter, null);
   });
 }
@@ -361,10 +361,10 @@ test('normal damage/poise per hit unchanged by attack rate; counter poise boost 
         evs.push(...ev);
         const landed = ev.find(e => e.type === 'hit' && e.src === f.p.id);
         if (landed) {
-          assert.equal(landed.dmg, Math.round(def.damage * (isCounter ? 1.35 : 1)));
+          assert.equal(landed.dmg, Math.round(def.damage * (isCounter ? BALANCE.counter.damage : 1)));
           // Shapes hit before monster idle regen; projectiles sweep after monster stepping.
           const regen = def.delivery === 'shape' ? 5 : 0;
-          assert.equal(f.g.poise, before - def.poise * (isCounter ? 1.5 : 1) + regen);
+          assert.equal(f.g.poise, before - def.poise * (isCounter ? BALANCE.counter.poise : 1) + regen);
           return;
         }
       }

@@ -266,12 +266,17 @@ export class ArenaRenderer {
       if (event.type === 'hit') {
         const tier = impactTier(event);
         const source = world.entities.find(candidate => candidate.id === event.src);
-        const color = entity?.kind === 'player' ? FEEL.colors.hurt
+        const color = entity?.kind === 'player' ? FEEL.colors.hurt : event.counter ? FEEL.colors.counter
           : event.critical ? FEEL.colors.critical : event.exposed ? FEEL.colors.weak : FEEL.colors.normal;
         this.impact(entity, source, tier);
-        const size = event.critical ? FEEL.numbers.criticalScale : event.exposed ? FEEL.numbers.weakScale : 1;
-        this.number(`${event.dmg}${event.exposed ? '!' : ''}`, event.x, event.y, color, size);
+        const size = event.counter ? FEEL.counter.scale : event.critical ? FEEL.numbers.criticalScale : event.exposed ? FEEL.numbers.weakScale : 1;
+        this.number(`${event.dmg}${event.exposed || event.counter ? '!' : ''}`, event.x, event.y, color, size);
         this.burst(event.x, event.y, tier, color, source?.facing);
+        if (event.counter) {
+          this.effect(event.x, event.y, FEEL.counter.ring, FEEL.colors.counter, FEEL.counter.ringLife);
+          this.effect(event.x, event.y, FEEL.counter.ring * .55, 0xffffff, FEEL.counter.ringLife * .6);
+          if (!this.reduced) this.slowLeft = Math.max(this.slowLeft, FEEL.counter.slow);
+        }
       }
       else if (event.type === 'projectileBlocked')
         this.burst(event.x, event.y, FEEL.impact.normal, FEEL.colors.normal);
@@ -282,6 +287,10 @@ export class ArenaRenderer {
       }
       else if (event.type === 'explode')
         this.effect(event.x, event.y, event.radius, 0xffaf56, .4);
+      else if (event.type === 'counter' && entity) {
+        this.number('반격!', entity.x, entity.y - 22, FEEL.colors.counter, FEEL.counter.scale);
+        this.effect(entity.x, entity.y, FEEL.perfect.radius * 1.4, FEEL.colors.counter, FEEL.perfect.ringLife);
+      }
       else if (event.type === 'perfectDodge') {
         this.slowLeft = this.reduced ? 0 : FEEL.perfect.life;
         this.number('완벽 회피', entity.x, entity.y, FEEL.colors.perfect, true);

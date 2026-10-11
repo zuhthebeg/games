@@ -649,3 +649,16 @@ select, input:not([type="checkbox"]) {
 .enchant-notice.success { background: rgba(80, 140, 230, .18); color: #cfe0ff; }
 .enchant-notice.destroyed { background: rgba(200, 60, 50, .22); color: #ffc9c2; }
 .forge-work.risky small.loss { font-weight: 700; }
+
+/* cocy 10-11 auto attack toggle + counter-ready attack button state */
+.battle-auto {
+  position: absolute;
+  right: calc(14px + env(safe-area-inset-right));
+  top: calc(64px + env(safe-area-inset-top));
+  min-width: 56px; height: 34px; padding: 0 10px;
+  font: 700 12px/1 system-ui, sans-serif; letter-spacing: .08em;
+  color: #b9ad96; background: #1c211bcc; border: 1px solid #4c493a; border-radius: 17px;
+}
+.battle-auto.on { color: #14170f; background: #e3c46f; border-color: #ffe39a; box-shadow: 0 0 12px #e3c46f88; }
+#attack.auto { box-shadow: inset 0 0 0 2px #e3c46f88; }
+#attack.auto::after { content: 'AUTO'; position: absolute; top: 6px; right: 8px; font-size: 9px; color: #e3c46f; letter-spacing: .06em; }
