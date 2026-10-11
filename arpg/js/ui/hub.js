@@ -26,6 +26,8 @@ import {
   linesHtml, splitComparisonHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml,
 } from './gear-view.js';
 
+import { setPortraitDirection, PORTRAIT_DIRECTIONS } from '../render/paperdoll-portrait.js';
+
 export { getHeroPortrait } from './gear-view.js';
 
 const button = (label, action, extra = '', disabled = false) =>
@@ -80,6 +82,7 @@ export class HubUI {
     this.onOverlay = onOverlay;
     this.recoverVitals = recoverVitals;
     this.selectedUid = null;
+    this.portraitDirection = 'SW';
     this.root = document.querySelector('#meta-screen');
     this.dev = new URLSearchParams(location.search).get('dev') === '1';
     this.answers = [];
@@ -94,6 +97,11 @@ export class HubUI {
     this.root.addEventListener('click', (event) => {
       const target = event.target.closest('[data-action]');
       if (!target || target.disabled) return;
+      if (target.matches('.character-portrait') && event.detail > 0 && this.portraitDragged) {
+        this.portraitDragged = false;
+        event.preventDefault();
+        return;
+      }
       try {
         this.action(target.dataset.action, target.dataset);
       } catch (error) {
@@ -108,6 +116,32 @@ export class HubUI {
       const next = event.key === 'Home' ? 0 : event.key === 'End' ? FAMILIES.length-1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + FAMILIES.length) % FAMILIES.length;
       this.action('academy-tab',{family:FAMILIES[next]});
     });
+    // Capture keeps rotation working when a finger leaves the portrait hitbox.
+    let rotation;
+    this.root.addEventListener('pointerdown', event => {
+      const node = event.target.closest('.character-portrait');
+      if (!node || !event.isPrimary || event.button !== 0) return;
+      this.portraitDragged = false;
+      rotation = { node, id: event.pointerId, x: event.clientX,
+        index: PORTRAIT_DIRECTIONS.indexOf(this.portraitDirection) };
+      node.setPointerCapture(event.pointerId);
+    });
+    this.root.addEventListener('pointermove', event => {
+      if (!rotation || rotation.id !== event.pointerId) return;
+      const dx = event.clientX - rotation.x;
+      if (Math.abs(dx) < 12 && !this.portraitDragged) return;
+      this.portraitDragged = true;
+      const step = Math.trunc(dx / 24);
+      const index = ((rotation.index + step) % 8 + 8) % 8;
+      this.portraitDirection = PORTRAIT_DIRECTIONS[index];
+      setPortraitDirection(rotation.node.querySelector('.p2-hero'), this.portraitDirection);
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      this.root.addEventListener(type, event => {
+        if (!rotation || rotation.id !== event.pointerId) return;
+        rotation = null;
+      });
+    }
     // Long-press on a bag card opens the same comparison sheet as a tap (mock §7.3).
     let pressTimer;
     let pressOrigin;
@@ -267,7 +301,7 @@ export class HubUI {
     this.recoverVitals();
     const mods = deriveMods(this.save);
     const pins = SLOTS.map(slot => `<i class="pin-${slot} ${equippedItem(this.save, slot) ? 'worn' : ''}"></i>`).join('');
-    const portrait = button(`${portraitHtml(this.save)}${this.save.statPoints ? `<b class="badge alert">${this.save.statPoints}</b>` : ''}`, 'character',
+    const portrait = button(`${portraitHtml(this.save, this.portraitDirection || 'SW')}${this.save.statPoints ? `<b class="badge alert">${this.save.statPoints}</b>` : ''}`, 'character',
       `class="character-portrait" aria-label="캐릭터${this.save.statPoints ? ` · 미분배 ${this.save.statPoints}점` : ''}"`);
     const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
@@ -397,7 +431,7 @@ export class HubUI {
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
     this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
-      button(`${icon('weapon')}장비상 둘러보기`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)));
+      `<div class="socket-actions">${button(`${icon('weapon')}장비상 둘러보기`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}</div>`));
   }
 
   findOffer(uid) {
@@ -919,6 +953,14 @@ export class HubUI {
         this.commit(refreshShop(this.save));
         return this.showMerchant();
       // Forge
+      case 'socket-forge': {
+        const item = this.save.items.find(candidate => candidate.uid === data.uid);
+        if (!item || item.enhance >= ENCHANT.max) return;
+        this.forgeTab = 'enhance';
+        this.selectedUid = item.uid;
+        this.forgeScroll = scrollsFor(item).normal;
+        return this.showForge();
+      }
       case 'forge':
         this.forgeTab = 'enhance';
         this.selectedUid = null;

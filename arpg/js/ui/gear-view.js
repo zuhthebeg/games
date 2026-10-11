@@ -3,7 +3,7 @@ import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
 import { equipmentVisual, paperdollEnabled } from '../render/paperdoll-state.js';
-import { installPaperdollPortraits } from '../render/paperdoll-portrait.js';
+import { installPaperdollPortraits, PORTRAIT_DIRECTIONS, PORTRAIT_FRAMES } from '../render/paperdoll-portrait.js';
 
 // Pure HTML builders shared by the inn, bag, merchant, forge and reveal screens (ui-mock §7.4).
 export const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -94,14 +94,16 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
 }
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
-export function getHeroPortrait(save) {
+export function getHeroPortrait(save, direction = 'SW') {
   const family = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   const kit = { blade:'sword', bow:'bow', focus:'focus' }[family];
-  return { url:`assets/sprites/hero-${kit}/atlas-0.webp`, frame:'idle_SW_000', x:128, y:256, width:128, height:128, atlasWidth:2048, atlasHeight:2048 };
+  const index = PORTRAIT_DIRECTIONS.indexOf(direction);
+  const [x,y] = PORTRAIT_FRAMES[index < 0 ? 3 : index];
+  return { url:`assets/sprites/hero-${kit}/atlas-0.webp`, frame:`idle_${index < 0 ? 'SW' : direction}_000`, x, y, width:128, height:128, atlasWidth:2048, atlasHeight:2048 };
 }
 
-export function portraitHtml(save) {
-  const p = getHeroPortrait(save);
+export function portraitHtml(save, direction = 'SW') {
+  const p = getHeroPortrait(save, direction);
   const enabled = paperdollEnabled();
   if (enabled) installPaperdollPortraits();
   const parts = enabled ? ` data-paperdoll-fallback="${p.url}" data-paperdoll="${escape(JSON.stringify(equipmentVisual(save)))}"` : '';
@@ -109,7 +111,7 @@ export function portraitHtml(save) {
   const enhance = Math.min(10, equippedItem(save, 'weapon')?.enhance || 0);
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
-  return `<div class="sprite p2-hero"${parts} role="img" aria-label="현재 장비의 기사" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
+  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="현재 장비의 기사" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
 }
 
 export function socketsHtml(save) {
