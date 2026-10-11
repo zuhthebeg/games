@@ -11,8 +11,10 @@ import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/co
 
 import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
+import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
+export { loadEffects } from './movement.js';
+
 const PB = PLAYER_BASE;
-const KNOCK_DECAY = 0.82; // per tick
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
 const SPAWN_IN_MS = 700;
@@ -102,12 +104,6 @@ export function setLoad(world, pid, ratio) {
   if (p) p.loadRatio = ratio;
 }
 
-export function loadEffects(ratio) {
-  if (ratio < 0.8) return { speed: 1, dodgeCd: 1 };
-  if (ratio <= 1) return { speed: 1, dodgeCd: 1.15 };
-  return { speed: 1 - 0.25 * Math.min(1, (ratio - 1) / 0.2), dodgeCd: 1.3 };
-}
-
 const alive = (e) => !e.dead && !e.terminal;
 const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
@@ -146,9 +142,7 @@ function stepPlayer(world, p, inp) {
   if (p.pendingCounter && world.tick > p.pendingCounter.expiresTick) p.pendingCounter = null;
 
   p.mp = Math.min(p.maxMp, p.mp + p.mpRegen * DT);
-  const mlen = Math.hypot(inp.mx, inp.my);
-  const mx = mlen > 1 ? inp.mx / mlen : inp.mx;
-  const my = mlen > 1 ? inp.my / mlen : inp.my;
+  const { mlen, mx, my } = movementInput(inp);
 
   if (inp.dodgeEdge) {
     p.bufferDodge = ticks(PB.bufferMs);
@@ -175,26 +169,18 @@ function stepPlayer(world, p, inp) {
 
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(world, p, true);
-    const [dx, dy] = p.bufferDodgeDir;
-    const dashTicks = ticks(PB.dodge.dashMs);
-    d.dashLeft = dashTicks;
-    d.dx = (dx * PB.dodge.distance) / dashTicks;
-    d.dy = (dy * PB.dodge.distance) / dashTicks;
-    d.iframeLeft = ticks(PB.dodge.iframeMs + p.iframeBonusMs);
-    d.cdLeft = ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd);
-    d.startedTick = world.tick;
-    d.perfectPaid = false;
+    const movement = dodgeStart(p, p.bufferDodgeDir, world.tick);
+    Object.assign(d, movement.dodge);
+    p.facing = movement.facing;
     p.pendingCounter = null;
     p.bufferDodge = 0;
-    p.facing = Math.atan2(dy, dx);
     world.events.push({ type: 'dodge', id: p.id });
   }
 
   if (d.dashLeft > 0) {
-    d.dashLeft--;
-    p.x += d.dx;
-    p.y += d.dy;
-    p.moving = true;
+    const movement = dashPosition(p);
+    Object.assign(d, movement.dodge);
+    p.x = movement.x; p.y = movement.y; p.moving = movement.moving;
     decayKnock(p);
     return;
   }
@@ -263,17 +249,7 @@ function stepPlayer(world, p, inp) {
 
   if (p.act) advanceAct(world, p);
 
-  const phase = p.act ? p.act.phase : null;
-  const f = !phase ? 1 : phase === 'recovery' ? 0.55 : p.act.def.delivery === 'dash' ? 0 : 0.3;
-  const sp = p.speed * loadEffects(p.loadRatio).speed;
-  p.x += mx * sp * f * DT;
-  p.y += my * sp * f * DT;
-  p.moving = mlen > 0.15 && f > 0;
-  if (!p.act) {
-    const ax = inp.aimX, ay = inp.aimY;
-    if (ax || ay) p.facing = Math.atan2(ay, ax);
-    else if (mlen > 0.15) p.facing = Math.atan2(my, mx);
-  }
+  Object.assign(p, walkingPosition(p, inp));
   decayKnock(p);
 }
 
@@ -709,12 +685,7 @@ function explode(world, pr, def) {
 // ---------------------------------------------------------------- physics helpers
 
 function decayKnock(e) {
-  e.x += e.kx;
-  e.y += e.ky;
-  e.kx *= KNOCK_DECAY;
-  e.ky *= KNOCK_DECAY;
-  if (Math.abs(e.kx) < 0.05) e.kx = 0;
-  if (Math.abs(e.ky) < 0.05) e.ky = 0;
+  Object.assign(e, knockPosition(e));
 }
 
 function separate(world) {
@@ -747,9 +718,7 @@ function separate(world) {
 const isDashing = (e) => e.act && e.act.phase === 'active' && e.act.def.delivery === 'dash';
 
 function clampToArena(world, e) {
-  const { w, h } = world.arena;
-  e.x = Math.max(e.r, Math.min(w - e.r, e.x));
-  e.y = Math.max(e.r, Math.min(h - e.r, e.y));
+  Object.assign(e, arenaPosition(e, world.arena));
 }
 
 // ---------------------------------------------------------------- round

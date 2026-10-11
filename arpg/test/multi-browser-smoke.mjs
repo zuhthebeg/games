@@ -13,6 +13,8 @@ const chrome=spawn('/home/cocy/bin/chromium',['--headless=new','--no-sandbox','-
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const errors=[], clients=[];
 const relayTest=process.env.ARPG_USE_LOCAL_RELAY==='1';
+const network = { latency: Number(process.env.ARPG_NET_LATENCY) || 0, jitter: Number(process.env.ARPG_NET_JITTER) || 0, loss: Number(process.env.ARPG_NET_LOSS) || 0 };
+const netQuery = relayTest ? '' : `&netLatency=${network.latency}&netJitter=${network.jitter}&netLoss=${network.loss}`;
 class CDP {
   constructor(url) {
     this.ws=new WebSocket(url);this.seq=0;this.pending=new Map();
@@ -27,7 +29,7 @@ class CDP {
     await this.open;const id=++this.seq;
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{this.pending.delete(id);reject(Error(`CDP timeout ${method}`));},180000);
-      this.pending.set(id,d=>{clearTimeout(timer);d.error?reject(Error(JSON.stringify(d.error))):resolve(d.result);});
+      this.pending.set(id,d=>{clearTimeout(timer);d.error?reject(Error(`${method}: ${JSON.stringify(d.error)}`)):resolve(d.result);});
       this.ws.send(JSON.stringify({id,method,params}));
     });
   }
@@ -46,10 +48,10 @@ try {
   let targets;
   for(let i=0;i<80;i++){
     try{targets=await(await fetch(`http://127.0.0.1:${port}/json`)).json();}catch{}
-    if(targets?.[0]?.webSocketDebuggerUrl)break;await sleep(100);
+    if(targets?.some(t=>t.type==='page'))break;await sleep(100);
   }
   assert.equal(server.exitCode,null);
-  const host=new CDP(targets[0].webSocketDebuggerUrl);clients.push(host);
+  const host=new CDP(targets.find(t=>t.type==='page').webSocketDebuggerUrl);clients.push(host);
   await host.cmd('Runtime.enable');await host.cmd('Page.enable');await host.cmd('Log.enable');
   const origin=`http://127.0.0.1:${httpPort}`;
   await host.navigate(`${origin}/arpg/test/multi-fixture.html`);await host.wait('window.ready===true');
@@ -62,14 +64,14 @@ try {
   // Two actual app documents exercise the inn entry, InputLayer, personal HUD and disconnect UX.
   await host.eval("(async()=>{const {fixtureSave}=await import('./fixtures/multi-round.js');localStorage.setItem('arpg.save.v1',JSON.stringify(fixtureSave('host')));})()");
   const room=`smoke-${Date.now()}`;
-  await host.navigate(`${origin}/arpg/?dev=1&room=${room}${relayTest?'&coopRelayTest=1':'&coopTest=host'}`);
+  await host.navigate(`${origin}/arpg/?dev=1&room=${room}${relayTest?'&coopRelayTest=1':'&coopTest=host'}${netQuery}`);
   await host.wait("!!window.__arpg && document.querySelector('#boot')?.hidden");
   const second=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(origin+'/arpg/test/multi-fixture.html')}`,{method:'PUT'})).json();
   const guest=new CDP(second.webSocketDebuggerUrl);clients.push(guest);
   await guest.cmd('Runtime.enable');await guest.cmd('Page.enable');await guest.cmd('Log.enable');
   await guest.wait('window.ready===true');
   await guest.eval("(async()=>{const {fixtureSave}=await import('./fixtures/multi-round.js');localStorage.setItem('arpg.save.v1',JSON.stringify(fixtureSave('guest','bow')));})()");
-  await guest.navigate(`${origin}/arpg/?dev=1&room=${room}${relayTest?'&coopRelayTest=1':'&coopTest=guest'}`);
+  await guest.navigate(`${origin}/arpg/?dev=1&room=${room}${relayTest?'&coopRelayTest=1':'&coopTest=guest'}${netQuery}`);
   if(relayTest) {
     await guest.wait("document.querySelectorAll('#mpl-list .mpl-pl').length===2 && !!document.querySelector('#mpl-ready') && getComputedStyle(document.querySelector('#mpl-ready')).display!=='none'");
     await guest.eval("document.querySelector('#mpl-ready').click()");
@@ -86,6 +88,12 @@ try {
   assert.equal(await guest.eval('__arpg.world.entities[0].weapon'),'bow');
   const guestSelector=`__arpg.world.entities.find(p=>p.pid===${JSON.stringify(guestUid)})`;
   const x=await host.eval(`${guestSelector}.x`);
+  await guest.eval(`window.__guestReaction=null;window.addEventListener('keydown',function measure(e){
+    if(e.code!=='KeyD')return; const start=performance.now(), x=__arpg.multi.displayed.find(p=>p.pid===__arpg.multi.uid).x; let frames=0;
+    function observe(now){frames++;const p=__arpg.multi.displayed.find(p=>p.pid===__arpg.multi.uid);
+      if(Math.abs(p.x-x)>.01)window.__guestReaction={ms:performance.now()-start,frames};else requestAnimationFrame(observe);}
+    requestAnimationFrame(observe);
+  },{once:true});`);
   await guest.cmd('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyD',key:'d',windowsVirtualKeyCode:68});
   await host.wait(`${guestSelector}.x>${x+30}`);
   await guest.cmd('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyD',key:'d',windowsVirtualKeyCode:68});
@@ -98,7 +106,8 @@ try {
   assert.ok(hp.endsWith('/'+Math.ceil(await guest.eval('__arpg.world.entities[0].maxHp'))));
   const actual={guestInputMoved:true,guestDodgeLatched:true,guestTelegraph:true,ownHud:hp,
     companion:await guest.eval('__arpg.art.visuals.filter(v=>["blade","bow"].includes(v.key)).length'),
-    rtt:await guest.eval('__arpg.multi.rtt')};
+    rtt:await guest.eval('__arpg.multi.rtt'), movementReaction:await guest.eval('__guestReaction'), prediction:await guest.eval('JSON.parse(JSON.stringify(__arpg.multi.prediction))')};
+  assert.equal(actual.movementReaction.frames,1); assert.ok(actual.movementReaction.ms >= 0);
   assert.equal(actual.companion,2);
   assert.ok(Number.isFinite(actual.rtt) && actual.rtt >= 0);
   // Host departure => honest progress-preserving return receipt, not migrated sim.
@@ -108,7 +117,7 @@ try {
   assert.equal(await guest.eval('__arpg.save.lastReceipt.terminal'),'return_scroll');
   actual.hostDeparture='return_scroll';
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));
-  const result={passed:true,relayTest,consoleErrors:0,loopback,actual};
+  const result={passed:true,relayTest,network,consoleErrors:0,loopback,actual};
   console.log(JSON.stringify(result,null,2));
   if(process.env.ARPG_MULTI_RESULT)await writeFile(process.env.ARPG_MULTI_RESULT,JSON.stringify(result,null,2));
 } finally {

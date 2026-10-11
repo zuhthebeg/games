@@ -79,6 +79,7 @@ export class CoopLobby {
   openTest(query) {
     this.uid = query.get('coopTest');
     this.transport = connectBroadcast({ room: query.get('room') || 'local', uid: this.uid, host: 'host',
+      network: { latency: Number(query.get('netLatency')) || 0, jitter: Number(query.get('netJitter')) || 0, loss: Math.max(0, Math.min(1, Number(query.get('netLoss')) || 0)) },
       onReady: roster => this.makeSession(roster, this.config),
       onRoster: roster => this.session?.roster(roster),
       onRt: (from, data) => this.session?.rt(from, data), onAction: a => this.action(a) });

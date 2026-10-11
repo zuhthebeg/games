@@ -51,12 +51,14 @@ export function partyHpScale(count, highestLevel, stageId) {
 }
 const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'weapon', 'skill', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln'];
 const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
-export function encodeSnapshot(world) {
+export function encodeSnapshot(world, inputSeqs = null) {
   return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
     round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat']), pending: world.round.pending.length,
-    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.kind === 'player' ? select(e, HUD) : {}),
+    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION),
+        ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
       act: e.act ? select(e.act, ['id', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter']) : null })),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'abilityId', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
@@ -72,25 +74,47 @@ export function decodeSnapshot(packet, uid) {
   return copy;
 }
 export class SnapshotBuffer {
-  constructor(uid, delay = 100) { this.uid = uid; this.delay = delay; this.frames = []; }
+  constructor(uid, delay = 125, { adaptive = true } = {}) {
+    this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
+    this.jitter = 0; this.interval = 1000 / 12;
+  }
   push(packet, at) {
-    if (this.frames.length && packet.tick <= this.frames.at(-1).world.tick) return false;
+    const last = this.frames.at(-1);
+    if (last && packet.tick <= last.world.tick) return false;
     const world = decodeSnapshot(packet, this.uid);
-    if (!world) return false;
-    this.frames.push({ world, at }); if (this.frames.length > 2) this.frames.shift();
+    if (!world || !Number.isFinite(at)) return false;
+    if (last) at = Math.max(at, last.at + .001);
+    if (last) {
+      const expected = (packet.tick - last.world.tick) * 1000 / 30;
+      this.jitter += (Math.abs(at - last.at - expected) - this.jitter) * .1;
+      const target = Math.max(100, Math.min(200, this.interval * 1.5 + this.jitter * 2));
+      if (this.adaptive) this.delay += (target - this.delay) * .04;
+    }
+    this.frames.push({ world, at }); if (this.frames.length > 8) this.frames.shift();
     return true;
   }
   sample(now) {
-    const b = this.frames.at(-1), a = this.frames[0];
-    if (!b) return null;
-    if (a === b) return b.world;
-    const alpha = Math.max(0, Math.min(1, (now - this.delay - a.at) / (b.at - a.at || 1)));
-    const interpolate = key => b.world[key].map(e => {
-      const old = a.world[key].find(v => v.id === e.id);
-      return old ? { ...e, x: old.x + (e.x - old.x) * alpha, y: old.y + (e.y - old.y) * alpha } : e;
+    const latest = this.frames.at(-1);
+    if (!latest) return null;
+    const target = now - this.delay;
+    let a = this.frames[0], b = a, alpha = 0;
+    if (target >= latest.at && this.frames.length > 1) {
+      a = this.frames.at(-2); b = latest;
+      alpha = 1 + Math.min(60, target - b.at) / (b.at - a.at);
+    } else {
+      for (let i = 1; i < this.frames.length; i++) {
+        b = this.frames[i];
+        if (target <= b.at) { alpha = Math.max(0, (target - a.at) / (b.at - a.at)); break; }
+        a = b;
+      }
+    }
+    const interpolate = key => latest.world[key].map(e => {
+      const from = a.world[key].find(v => v.id === e.id), to = b.world[key].find(v => v.id === e.id);
+      if (!from || !to || e.dead || e.terminal) return e;
+      return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
-    // Telegraphs remain newest authoritative geometry/phase (never position-interpolated).
-    return { ...b.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') };
+    // Only x/y are buffered. HP, action phases and warning geometry stay newest.
+    return { ...latest.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') };
   }
 }
 export function localView(world, uid) {

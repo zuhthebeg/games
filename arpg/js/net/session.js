@@ -1,6 +1,8 @@
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, SnapshotBuffer, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
+import { LocalPrediction } from './prediction.js';
+
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
 
 // Pure transport adapter: no DOM/storage. Only the host ever owns or steps a sim world.
@@ -10,6 +12,7 @@ export class CoopSession {
     Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
+    this.prediction = new LocalPrediction(uid); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.netLeft = 0; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
     this.bytes = 0; this.snapshots = 0; this.lost = false;
@@ -69,6 +72,7 @@ export class CoopSession {
       this.lastHostAt = now;
       if (this.phase === 'prepare' && data.start) this.begin(data.start);
       if (this.phase === 'prepare' || !this.buffer.push(data, now)) return;
+      this.prediction.reconcile(this.buffer.frames.at(-1).world);
       const events = [];
       for (const row of data.events || []) if (row.seq > this.eventAck) {
         // Host repeats unacknowledged events. Consume in order, exactly once.
@@ -100,7 +104,7 @@ export class CoopSession {
   broadcast() {
     // Only recent corpses are render-relevant; never grow packets with the whole kill history.
     const visible = this.world.entities.filter(e => e.kind === 'player' || !e.dead || this.world.tick - (this.deathTicks.get(e.id) ?? 0) < 30);
-    const packet = { ...encodeSnapshot({ ...this.world, entities: visible }), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
+    const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
       events: this.journal, eventSeq: this.eventSeq };
     this.bytes += new TextEncoder().encode(JSON.stringify(packet)).length; this.snapshots++;
     this.sendRt(packet);
@@ -119,6 +123,7 @@ export class CoopSession {
     const packet = this.sender.packet(input, load, this.eventAck);
     if (this.isHost) { this.latches[this.uid]?.receive(packet, this.now); setLoad(this.world, this.uid, load); }
     else {
+      if (this.phase === 'running') this.prediction.advance(packet, input, dt);
       this.inputLeft += dt;
       if (this.inputLeft >= 1000 / 30) { this.inputLeft %= 1000 / 30; this.sendRt(packet); }
       this.pingLeft -= dt;
@@ -134,6 +139,8 @@ export class CoopSession {
       const participants = this.world.entities.filter(e => e.kind === 'player' && !e.terminal).map(p => p.pid);
       this.onBeforeTick(localView(this.world, this.uid));
       const events = step(this.world, inputs);
+      // Acknowledgements describe consumed sim inputs, never merely received packets.
+      for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);
       for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : [] });
       this.onFrame(localView(this.world, this.uid), events.filter(e => e.type !== 'kill' || participants.includes(this.uid)));
@@ -147,6 +154,6 @@ export class CoopSession {
     if (this.netLeft >= 1000 / 12) { this.netLeft %= 1000 / 12; this.broadcast(); }
   }
   view(now = this.now) {
-    return this.isHost ? localView(this.world, this.uid) : this.decorate(this.buffer.sample(now));
+    return this.isHost ? localView(this.world, this.uid) : this.decorate(this.prediction.view(this.buffer.sample(now)));
   }
 }

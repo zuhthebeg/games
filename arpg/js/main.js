@@ -176,7 +176,7 @@ try {
     running = false; input.reset(); input.enabled = false; renderer.root.visible = false;
     coop = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
       onSession: session => {
-        coopSession = session;
+        coopSession = session; guestTime = performance.now();
         hub.root.hidden = false; hub.root.replaceChildren();
         const panel = document.createElement('div'); panel.className = 'story-panel';
         const message = document.createElement('p'); message.id = 'coop-preparing'; message.textContent = '동료의 빌드를 동기화하는 중…';
@@ -230,10 +230,13 @@ try {
   const coopStatus = document.createElement('div'); coopStatus.id = 'coop-status'; coopStatus.hidden = true;
   document.querySelector('#hud').append(coopStatus);
   // Network ticks continue while a phone/tab is backgrounded. Single-player pause remains unchanged.
-  let netTime = performance.now();
+  let netTime = performance.now(), guestTime = netTime;
   setInterval(() => {
     const now = performance.now(), elapsed = now - netTime; netTime = now;
-    if (coopSession) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : input.consume(), coopLoad);
+    if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : input.consume(), coopLoad);
+    else if (coopSession && hidden) {
+      coopSession.update(now - guestTime, emptyInput(), coopLoad); guestTime = now;
+    }
   }, TICK_MS);
   document.addEventListener('click', event => {
     if (event.target.closest('[data-action="result-inn"]') && coop) closeCoop();
@@ -246,6 +249,8 @@ try {
         phase: coopSession.phase, ownsSim: !!coopSession.world, rtt: coopSession.rtt,
         bytes: coopSession.bytes, snapshots: coopSession.snapshots,
         telegraphs: renderer.telegraphs.length, views: renderer.views.size,
+        prediction: coopSession.prediction.diagnostics(), delay: coopSession.buffer.delay,
+        displayed: coopSession.view()?.entities.map(e => ({ id: e.id, pid: e.pid, kind: e.kind, x: e.x, y: e.y })),
       } : null); },
       get save() { return readonly(hub.save); },
       get tracker() { return readonly(tracker); },
@@ -313,8 +318,11 @@ try {
   function frame(now) {
     const elapsed = Math.min(250, Math.max(0, now - lastTime));
     lastTime = now;
+    if (coopSession && !coopSession.isHost && !hidden) {
+      coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : input.consume(), coopLoad); guestTime = now;
+    }
     if (coopSession && running && coopRenderReady && !hidden) {
-      const renderNow = coopSession.now + Math.max(0, now - netTime);
+      const renderNow = coopSession.isHost ? coopSession.now + Math.max(0, now - netTime) : coopSession.now;
       const view = coopSession.view(renderNow);
       if (view) {
         if (!coopSession.isHost) renderer.snapshot(view);
