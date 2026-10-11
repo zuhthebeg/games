@@ -271,7 +271,7 @@ export class HubUI {
       <p class="recovery inn-recovery">${icon('clear')}<strong>HP·MP 회복</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family])}</b></span></p>
       ${this.weightHtml()}<nav class="npc-grid" aria-label="여관 사람들">${npcs}</nav>${devMenu}`;
-    this.show(this.shellHtml(this.topBar(), content, button(`<span>계약 고르기</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
+    this.show(this.shellHtml(this.topBar(), content, button(`<span>퀘스트 고르기</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
   characterHtml() {
@@ -658,8 +658,8 @@ export class HubUI {
     };
     const open = ids.slice(0, lastOpen + 2).map((id, i) => row(id, i)).join('');
     const rest = ids.slice(lastOpen + 2);
-    const locked = rest.length ? `<details class="locked-contracts"><summary>잠긴 계약 ${rest.length}개</summary>${rest.map((id, i) => row(id, i + lastOpen + 2)).join('')}</details>` : '';
-    this.showInnPanel('계약 게시판', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="contracts">${open}</div>${locked}`, 'board', '', { eyebrow: `${Object.keys(this.save.cleared).filter(id => this.save.cleared[id]).length} / ${ids.length} 완료` });
+    const locked = rest.length ? `<details class="locked-contracts"><summary>잠긴 퀘스트 ${rest.length}개</summary>${rest.map((id, i) => row(id, i + lastOpen + 2)).join('')}</details>` : '';
+    this.showInnPanel('퀘스트 게시판', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="contracts">${open}</div>${locked}`, 'board', '', { eyebrow: `${Object.keys(this.save.cleared).filter(id => this.save.cleared[id]).length} / ${ids.length} 완료` });
     this.root?.querySelector?.('.contract.depart')?.scrollIntoView?.({ block: 'center' });
   }
 
@@ -680,7 +680,7 @@ export class HubUI {
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
       <div class="departure-check"><h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 계약으로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
