@@ -4,6 +4,13 @@ import { createSave } from '../js/meta/save.js';
 import { HubUI } from '../js/ui/hub.js';
 import { socketsHtml, cardHtml, getHeroPortrait, comparisonFor, linesHtml } from '../js/ui/gear-view.js';
 import { readFileSync } from 'node:fs';
+import { addXp } from '../js/meta/progression.js';
+import { deriveMods } from '../js/meta/stats.js';
+import { attackRate } from '../js/content/balance.js';
+import { ABILITIES } from '../js/content/combat.js';
+import { BOOKS, learnSkill, equipSkill } from '../js/meta/skills.js';
+import { carriedWeight, capacity, instance } from '../js/meta/items.js';
+import { amount } from '../js/ui/gear-view.js';
 
 const save = () => createSave({name:'UI 시험',answers:[0,0,0,0,0],createdAt:1});
 
@@ -35,6 +42,51 @@ test('item cards and comparison rows use real affixes and escape supplied attrib
   const rows=linesHtml(comparison);
   assert.ok(rows.includes('data-line="attack"'));
   assert.ok(rows.includes('이득'));
+});
+
+function renderHub(s) {
+  const h = Object.create(HubUI.prototype);
+  Object.assign(h, { save:s, receipt:null, dev:false, recoverVitals:()=>{}, show:(html,page)=>{ h.html=html; h.page=page; } });
+  return h;
+}
+
+test('inn NPC contract has no owner; unspent points badge lives on the character portrait', () => {
+  const h=renderHub(addXp(save(),51));h.showInn();
+  assert.ok(h.html.includes('data-action="character"'));
+  assert.ok(h.html.includes('캐릭터 · 미분배 1점'));
+  assert.doesNotMatch(h.html, /data-action="owner"|약사|교관 · 미분배/);
+  for(const name of ['만물상','장비상','대장장이','교관','창고','가방']) assert.ok(h.html.includes(`<strong>${name}</strong>`));
+  h.action('character',{});assert.equal(h.page,'character');
+  for(const label of ['XP','HP / MP','공격 배율','공격 속도','장착 기술','지난 여정','allocation-confirm']) assert.ok(h.html.includes(label));
+  const mods=deriveMods(h.save), rate=attackRate(mods.attackSpeedBonus,mods.weaponWeight,carriedWeight(h.save)/capacity(h.save));
+  assert.ok(h.html.includes(`공격 속도</span><b>×${amount(rate)}`));
+  h.showAllocation(true);assert.equal(h.page,'level-up');assert.ok(!h.html.includes('character-summary'));
+});
+
+test('trainer shows all three families, exact ability numbers and learned/default equip choices', () => {
+  let s={...save(),gold:10000};s=equipSkill(learnSkill(s,'frost_lance'),'focus','frost_lance');
+  const h=renderHub(s);h.action('trainer',{});assert.equal(h.page,'trainer');
+  assert.equal((h.html.match(/class="skill-family"/g)||[]).length,3);
+  assert.ok(!h.html.includes('allocation-row'));
+  for(const id of Object.keys(BOOKS)) {
+    const a=ABILITIES[id];assert.ok(h.html.includes(a.name));
+    assert.ok(h.html.includes(`피해 ${a.damage} · 재사용 ${amount(a.cooldownMs/1000)}초 · 마나 ${a.manaCost||0}`));
+  }
+  assert.ok(h.html.includes('data-id="ember_bolt"'));
+  assert.ok(h.html.includes('data-id="frost_lance" data-family="focus" aria-pressed="true"'));
+});
+
+test('bag and stash show only their belongings; supply merchant sells both locations and materials', () => {
+  const s=save();s.items.push(instance('stored','iron_sword'));s.stash.stacks.potion=7;s.stacks.enhance_stone_1=8;
+  const h=renderHub(s);h.showBag();assert.equal(h.page,'bag');assert.ok(h.html.includes('data-destination="stash"'));
+  assert.ok(!h.html.includes('강화석'));
+  h.showInventory();assert.equal(h.page,'inventory');assert.ok(h.html.includes('data-uid="stored"'));
+  assert.ok(!h.html.includes('data-uid="starter:weapon"'));
+  h.stashTab='consumable';h.showInventory();assert.ok(h.html.includes('7개'));assert.ok(h.html.includes('data-destination="bag"'));
+  h.stashTab='material';h.showInventory();assert.ok(h.html.includes('강화석'));
+  h.shopTab='sell';h.showShop();assert.ok(h.html.includes('data-source="stash"'));
+  assert.ok(h.html.includes('data-id="enhance_stone_1"'));assert.ok(h.html.includes('전부'));
+  assert.ok(!h.html.includes('data-action="sell-shop"'));
 });
 
 test('settlement keeps unrevealed equipment hidden and reveals one item at a time', () => {

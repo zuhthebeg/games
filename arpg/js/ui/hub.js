@@ -1,16 +1,17 @@
-import { BALANCE } from '../content/balance.js';
+import { BALANCE, attackRate } from '../content/balance.js';
 import { unlockedThreat, clearedThreat, selectThreat } from '../meta/run.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
-import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice } from '../meta/shop.js';
+import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, stackSellPrice, sellStack } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
-import { STAGES } from '../content/combat.js';
+import { STAGES, ABILITIES } from '../content/combat.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, equippedSkill, learnSkill, equipSkill } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
   ITEMS, RECIPES, enhanceCost, equippedItem, carriedWeight, capacity,
-  buy, equip, craft, enhance, dismantle, dismantleRefund, shopPrice,
+  buy, equip, craft, enhance, dismantle, dismantleRefund, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { createSave } from '../meta/save.js';
 import { icon, itemIcon } from './icons.js';
@@ -251,14 +252,13 @@ export class HubUI {
     this.recoverVitals();
     const mods = deriveMods(this.save);
     const pins = SLOTS.map(slot => `<i class="pin-${slot} ${equippedItem(this.save, slot) ? 'worn' : ''}"></i>`).join('');
-    const room = `<div class="p2-room">${ROOM_ART}${portraitHtml(this.save)}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
+    const portrait = button(`${portraitHtml(this.save)}${this.save.statPoints ? `<b class="badge alert">${this.save.statPoints}</b>` : ''}`, 'character',
+      `class="character-portrait" aria-label="캐릭터${this.save.statPoints ? ` · 미분배 ${this.save.statPoints}점` : ''}"`);
+    const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
-      ['shop', '약사', 'potion'], ['merchant', '장비상', 'weapon'], ['forge', '대장장이', 'forge'],
-      ['trainer', '교관', 'trainer', this.save.statPoints], ['owner', '주인', 'owner'],
-      ['inventory', '가방', 'load', this.save.items.length],
-    ].map(([action, name, glyph, count]) => button(`${icon(glyph)}<strong>${name}</strong>`
-      + `${count ? `<b class="badge ${action === 'trainer' ? 'alert' : ''}">${count}</b>` : ''}`, action,
-    `class="hotspot hotspot-${action}"${action === 'trainer' && count ? ` aria-label="교관 · 미분배 ${count}점"` : ''}`)).join('');
+      ['shop', '만물상', 'potion'], ['merchant', '장비상', 'weapon'], ['forge', '대장장이', 'forge'],
+      ['trainer', '교관', 'trainer'], ['inventory', '창고', 'load'], ['bag', '가방', 'load'],
+    ].map(([action, name, glyph]) => button(`${icon(glyph)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
     const devMenu = this.dev ? `<details class="dev-menu"><summary>M0 개발 메뉴</summary>
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
@@ -270,17 +270,56 @@ export class HubUI {
     this.show(this.shellHtml(this.topBar(), content, button(`<span>계약 고르기</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
-  showOwner() {
-    const summary = this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>';
-    this.showInnPanel('지난 여정', `<p class="npc-line">“돌아왔으면 됐지.”</p>${summary}`, 'owner', '', { eyebrow: '여관 주인' });
+  characterHtml() {
+    const mods = deriveMods(this.save);
+    const weight = carriedWeight(this.save), limit = capacity(this.save);
+    const rate = attackRate(mods.attackSpeedBonus, mods.weaponWeight, weight / limit);
+    return `<section class="character-summary"><h3>${escape(this.save.name)} · Lv.${this.save.level}</h3>
+      <p class="minor">XP ${amount(this.save.xp)} / ${this.save.level === MAX_LEVEL ? 'MAX' : xpSpan(this.save.level)}</p>
+      <div class="ledger"><div><span>HP / MP</span><b>${amount(mods.maxHp)} / ${amount(mods.maxMp)}</b></div>
+      <div><span>공격 배율</span><b>×${amount(mods.dmgMult[mods.family])}</b></div>
+      <div><span>공격 속도</span><b>×${amount(rate)}</b></div>
+      <div><span>장착 기술</span><b>${escape(ABILITIES[equippedSkill(this.save, mods.family)].name)}</b></div></div>${this.weightHtml()}</section>
+      <h3 class="section-title">능력치 분배</h3>`;
   }
 
-  // --- Bag ---
+  // --- Bag / weightless stash ---
+
+  stackRowsHtml(stacks, { source = 'bag', sell = false, destination = null, kind = null } = {}) {
+    const rows = Object.entries(stacks).filter(([id, count]) => count > 0 && (!kind || ITEMS[id].kind === kind)).map(([id, count]) => {
+      const args = `data-id="${id}" data-source="${source}"${destination ? ` data-destination="${destination}"` : ''}`;
+      const controls = (sell || destination) ? `<div class="stack-counts" role="group" aria-label="${ITEMS[id].name} ${sell ? '판매' : '이동'} 수량">${[1, 5, count].map((n, i) =>
+        button(i === 2 ? '전부' : String(n), sell ? 'sell-stack' : 'move-stack', `${args} data-count="${n}"`, n > count)).join('')}</div>` : '';
+      return `<article class="stack-row"><div class="stack-heading"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span>
+        <div><strong>${ITEMS[id].name}</strong><small>${count}개${sell ? ` · 개당 ${stackSellPrice(id)} G` : destination ? ` · ${destination === 'stash' ? '창고로 맡기기' : '가방으로 꺼내기'}` : ''}</small></div></div>${controls}</article>`;
+    }).join('');
+    return `<div class="stack-list">${rows || '<p class="muted">보관 중인 물품이 없다.</p>'}</div>`;
+  }
+
+  showBag() {
+    const worn = SLOTS.map(slot => {
+      const item = equippedItem(this.save, slot);
+      return button(`<span>${SLOT_NAMES[slot]}</span><strong>${item ? escape(itemLabel(item)) : '비어 있음'}</strong>`, 'socket', `data-slot="${slot}" class="bag-equipped"`);
+    }).join('');
+    this.showInnPanel('가방', `${this.weightHtml()}<h3 class="section-title">착용 장비</h3><div class="bag-equipment">${worn}</div>
+      <h3 class="section-title">소지 소모품</h3><p class="minor">사냥에 가져갈 보급 · 수량을 눌러 창고로 맡기기</p>
+      ${this.stackRowsHtml(this.save.stacks, { destination: 'stash', kind: 'consumable' })}`, 'bag', '', { eyebrow: '출정 시 가져가는 물품' });
+  }
 
   showInventory() {
+    this.stashTab ??= 'gear';
+    const tabs = [['gear', '장비'], ['material', '재료'], ['consumable', '소모품']].map(([tab, label]) =>
+      button(label, 'stash-tab', `data-tab="${tab}" aria-pressed="${this.stashTab === tab}"`)).join('');
+    const tabHtml = `<div class="p2-merchant-tabs" role="group" aria-label="창고 종류">${tabs}</div>`;
+    if (this.stashTab !== 'gear') {
+      const supplies = this.stashTab === 'consumable';
+      return this.showInnPanel('창고', `${tabHtml}<p class="minor">${supplies ? '수량을 눌러 가방으로 꺼내기 · 소지 무게 100%까지' : '제작·강화 재료 · 소지 무게에 포함하지 않음'}</p>
+        ${this.stackRowsHtml(supplies ? this.save.stash.stacks : this.save.stacks, { source: supplies ? 'stash' : 'bag', kind: this.stashTab, destination: supplies ? 'bag' : null })}`,
+      'inventory', '', { eyebrow: '창고 · 무게 없음' });
+    }
     this.filter ??= 'all';
     this.sort ??= 'grade';
-    const items = this.save.items.filter(item => this.filter === 'all' || ITEMS[item.id].slot === this.filter);
+    const items = this.save.items.filter(item => !isWorn(this.save, item.uid) && (this.filter === 'all' || ITEMS[item.id].slot === this.filter));
     const rank = item => GRADE_ORDER.indexOf(ITEMS[item.id].rarity);
     items.sort((a, b) => {
       if (this.sort === 'weight') return ITEMS[a.id].weight - ITEMS[b.id].weight;
@@ -290,10 +329,10 @@ export class HubUI {
     const filters = ['all', ...SLOTS].map(slot => button(slot === 'all' ? '전체' : SLOT_NAMES[slot], 'filter',
       `data-slot="${slot}" aria-pressed="${this.filter === slot}"`)).join('');
     const cards = items.map(item => cardHtml(item, this.save, { compact: true, note: isWorn(this.save, item.uid) ? '착용 중' : '' })).join('');
-    this.showInnPanel('가방', `<div class="p2-filters" role="group" aria-label="부위">${filters}</div>
+    this.showInnPanel('창고', `${tabHtml}<div class="p2-filters" role="group" aria-label="부위">${filters}</div>
       <div class="p2-toolbar"><span>${items.length}개</span>${button(`정렬 · ${{ grade: '등급', recent: '최근', weight: '무게' }[this.sort]}`, 'sort')}</div>
       <div class="p2-grid">${cards || '<p class="muted">비어 있음 · 몬스터 드랍이나 장비상에서 얻는다</p>'}</div>
-      <p class="minor">탭하면 착용 장비와 비교</p>`, 'inventory', this.weightHtml(), { eyebrow: '창고 · 무게 없음' });
+      <p class="minor">탭하면 착용 장비와 비교 · 착용 중인 장비는 가방에 표시</p>`, 'inventory', '', { eyebrow: '창고 · 무게 없음' });
   }
 
   // --- Comparison sheet: current → candidate per line, then one primary action. ---
@@ -372,7 +411,7 @@ export class HubUI {
       + `<small>${GRADES[def.rarity]} · ${SLOT_NAMES[def.slot]} · Lv${def.requiredLevel} · ${def.weight} kg</small></div></div>`
       + `<p class="compare-from">${current ? escape(itemLabel(current)) : '빈 슬롯'} → 이것</p>${this.comparisonHtml(item)}`
       + `${otherFamily ? '<p class="p2-hint">다른 무기 계열 · 조작이 바뀐다</p>' : ''}`
-      + `${mode === 'buy' ? `<p class="minor">구매 후 ${this.save.gold - item.price} G · 가방 보관</p>` : ''}`;
+      + `${mode === 'buy' ? `<p class="minor">구매 후 ${this.save.gold - item.price} G · 창고 보관</p>` : ''}`;
     this.mountSheet(this.dialogHtml({ buy: '구매 전 비교', sell: '매입', equip: '장비 비교' }[mode], body, footer));
   }
 
@@ -413,19 +452,29 @@ export class HubUI {
   // --- Supply shop ---
 
   showShop() {
+    this.shopTab ??= 'buy';
+    const tabs = `<div class="p2-two" role="group" aria-label="만물상 거래">${[['buy', '구매'], ['sell', '판매']].map(([tab, label]) =>
+      button(label, 'shop-tab', `data-tab="${tab}" aria-pressed="${this.shopTab === tab}"`)).join('')}</div>`;
+    if (this.shopTab === 'sell') {
+      return this.showInnPanel('만물상', `${tabs}<p class="minor">수량을 눌러 판매 · 장비 매입은 장비상에서</p>
+        <h3 class="section-title">가방 소모품</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'consumable' })}
+        <h3 class="section-title">창고 소모품</h3>${this.stackRowsHtml(this.save.stash.stacks, { sell: true, source: 'stash' })}
+        <h3 class="section-title">창고 재료</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'material' })}`,
+      'shop', '', { eyebrow: '보급 · 재료 매입' });
+    }
     const price = shopPrice(this.save, this.shopId) * this.shopCount;
     const weight = carriedWeight(this.save) + ITEMS[this.shopId].weight * this.shopCount;
     const limit = capacity(this.save);
     const tooMany = this.shopId === 'return_scroll' && (this.save.stacks.return_scroll || 0) + this.shopCount > 2;
-    const disabled = this.save.gold < price || weight > limit * 1.2 || tooMany;
-    const reason = this.save.gold < price ? '골드 부족' : tooMany ? '귀환서는 최대 2장' : weight > limit * 1.2 ? '무게 120% 초과' : '';
+    const disabled = this.save.gold < price || weight > limit || tooMany;
+    const reason = this.save.gold < price ? '골드 부족' : tooMany ? '귀환서는 최대 2장' : weight > limit ? '소지 무게 100% 초과 · 창고에 맡겨 주세요' : '';
     const tone = { potion: 'hp-tone', mana_potion: 'mp-tone' };
     const cards = SUPPLIES.map(id => button(`<span class="item-emblem ${tone[id] || ''}">${itemIcon(id, ITEMS[id])}</span>`
       + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>보유 ${this.save.stacks[id] || 0}${id === 'return_scroll' ? ' / 2' : ''}</small></span>`
       + `<span class="item-price">${shopPrice(this.save, id)} G</span>`, 'shop-select',
     `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
     const tier = weightDescription(weight, limit);
-    this.showInnPanel('약사', `<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><div class="shop-items">${cards}</div>
+    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><p class="minor">소모품은 가방에 바로 넣는다 · 소지 무게 100%까지</p><div class="shop-items">${cards}</div>
       <div class="quantity-row"><label for="shop-count">수량</label><div class="stepper">
         ${button('−', 'shop-count', 'data-step="-1" aria-label="수량 줄이기"', this.shopCount <= 1)}
         <input id="shop-count" type="number" inputmode="numeric" value="${this.shopCount}" min="1" max="99">
@@ -497,11 +546,31 @@ export class HubUI {
     if (this.panel === 'forge') return this.showForge();
     if (this.panel === 'merchant') return this.showMerchant();
     if (this.panel === 'inventory') return this.showInventory();
+    if (this.panel === 'bag') return this.showBag();
+    if (this.panel === 'character') return this.showAllocation(false);
     if (this.panel === 'shop') return this.showShop();
     return this.showInn();
   }
 
-  // --- Trainer / level-up allocation ---
+  // --- Skill books / character allocation ---
+
+  showTrainer() {
+    const families = FAMILIES.map(family => {
+      const current = equippedSkill(this.save, family);
+      const ids = [DEFAULT_SKILLS[family], ...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)];
+      const rows = ids.map(id => {
+        const ability = ABILITIES[id], book = BOOKS[id], known = hasSkill(this.save, id);
+        const selected = current === id;
+        const control = known ? button(selected ? '장착 중' : '장착', 'equip-skill', `data-id="${id}" data-family="${family}" aria-pressed="${selected}"`, selected)
+          : button(`${book.price} G · 배우기`, 'learn-skill', `data-id="${id}"`, this.save.gold < book.price);
+        return `<article class="skill-book"><div><strong>${escape(ability.name)}</strong><small>${book?.type || '기본 기술 · 항상 습득'}${book && !known && this.save.gold < book.price ? ' · 골드 부족' : ''}</small>
+          <p class="minor">피해 ${ability.damage} · 재사용 ${amount(ability.cooldownMs / 1000)}초 · 마나 ${ability.manaCost || 0}</p></div>${control}</article>`;
+      }).join('');
+      return `<section class="skill-family"><h3>${WEAPON_NAMES[family]} 계열</h3>${rows}</section>`;
+    }).join('');
+    this.showInnPanel('교관', `<p class="npc-line">“배운 기술은 잊지 않는다.”</p><p class="minor">교본 구매 즉시 영구 습득 · 무게 없음 · 레벨 제한 없음<br>무기 계열마다 기술 하나를 장착한다. 피해는 기본 수치.</p>${families}`,
+      'trainer', '', { eyebrow: '기술교본 · 마법교본' });
+  }
 
   showAllocation(required = false, initialize = true) {
     if (initialize) this.draft = Object.fromEntries(STAT_KEYS.map((key) => [key, 0]));
@@ -517,12 +586,12 @@ export class HubUI {
     const after = deriveMods(allocateStats(this.save, this.draft));
     const preview = [['HP', before.maxHp, after.maxHp], ['MP', before.maxMp, after.maxMp], ['소지 kg', before.capacity, after.capacity]]
       .map(([label, from, to]) => `<span>${label} <b>${amount(to)}</b>${to !== from ? `<small class="gain">▲+${amount(to - from)}</small>` : ''}</span>`).join('');
-    const content = `<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
-      <div class="allocation">${rows}</div><p class="p2-stat-summary">${preview}</p>`;
+    const content = `${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
+      <div class="allocation">${rows}</div><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
     const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
-    this.panel = required ? null : 'trainer';
-    this.show(this.shellHtml(this.panelHeader(required ? '레벨이 올랐다' : '교관', required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '능력치 분배', required ? '' : 'inn'), content, footer),
-      required ? 'level-up' : 'trainer', { shell: true });
+    this.panel = required ? null : 'character';
+    this.show(this.shellHtml(this.panelHeader(required ? '레벨이 올랐다' : '캐릭터', required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),
+      required ? 'level-up' : 'character', { shell: true });
   }
 
   // --- Contract board and departure check ---
@@ -678,11 +747,17 @@ export class HubUI {
         return this.launch('S1');
       case 'inn':
       case 'result-inn': return this.showInn();
-      case 'owner': return this.showOwner();
+      case 'character': return this.showAllocation(false);
       case 'close-sheet': return this.closeSheet();
       case 'noop': return undefined;
       // Supplies
       case 'shop': return this.showShop();
+      case 'shop-tab':
+        this.shopTab = data.tab;
+        return this.showShop();
+      case 'sell-stack':
+        this.commit(sellStack(this.save, data.id, Number(data.count), data.source));
+        return this.showShop();
       case 'shop-select':
         this.shopId = data.id;
         this.shopCount = 1;
@@ -695,6 +770,13 @@ export class HubUI {
         return this.showShop();
       // Bag, sockets and comparison
       case 'inventory': return this.showInventory();
+      case 'bag': return this.showBag();
+      case 'stash-tab':
+        this.stashTab = data.tab;
+        return this.showInventory();
+      case 'move-stack':
+        this.commit(moveConsumable(this.save, data.id, Number(data.count), data.destination));
+        return this.panel === 'bag' ? this.showBag() : this.showInventory();
       case 'filter':
         this.filter = data.slot;
         return this.showInventory();
@@ -758,14 +840,20 @@ export class HubUI {
         this.lootState[data.uid] = '보관함';
         return this.showReceipt();
       // Trainer
-      case 'trainer': return this.showAllocation(false);
+      case 'trainer': return this.showTrainer();
+      case 'learn-skill':
+        this.commit(learnSkill(this.save, data.id));
+        return this.showTrainer();
+      case 'equip-skill':
+        this.commit(equipSkill(this.save, data.family, data.id));
+        return this.showTrainer();
       case 'stat-plus':
       case 'stat-minus':
         this.draft[data.key] += action === 'stat-plus' ? 1 : -1;
         return this.showAllocation(this.allocationRequired, false);
       case 'allocate':
         this.commit(allocateStats(this.save, this.draft));
-        return this.allocationRequired ? this.showReceipt() : this.showInn();
+        return this.allocationRequired ? this.showReceipt() : this.showAllocation(false);
       // Board
       case 'board': return this.showBoard();
       case 'sortie': return this.showSortie(data.stage);
