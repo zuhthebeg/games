@@ -75,7 +75,7 @@ test('maximum quantity respects gold, exact capacity, 99 UI bound and return-scr
   assert.equal(supplyQuote(full,'potion',1).maxCount,0);assert.match(supplyQuote(full,'potion',1).reasons.join(),/무게 초과/);
   assert.equal(supplyQuote(s,'return_scroll',1).maxCount,2-s.stacks.return_scroll);
   assert.equal(supplyQuote(buy(s,'return_scroll'),'return_scroll',1).maxCount,0);
-  assert.deepEqual(supplyQuote({...full,gold:0},'potion',1).reasons,['골드 부족','무게 초과 · 창고에 맡겨 주세요']);
+  assert.deepEqual(supplyQuote({...full,gold:0},'potion',1).reasons,['골드 부족','무게 초과']);
 });
 
 test('purchase card opens sheet; stepper and maximum update totals, reasons and disabled button', () => {
@@ -92,7 +92,7 @@ test('purchase card opens sheet; stepper and maximum update totals, reasons and 
 test('unique gear purchase shows fixed quantity, stash semantics, owned/weight cards and exact ledger', () => {
   const h=hub(),offer=shopStock(h.save.createdAt,h.save.shopRefresh)[0],before=structuredClone(h.save);
   h.showMerchant();assert.match(h.html,/보유 \d+ · [\d.]+ kg/);assert.match(h.html,/class="p2-delta"/);
-  h.openItem(offer.uid,'buy');assert.match(h.sheet,/수량 · 개별 장비/);assert.match(h.sheet,/창고로 보관/);
+  h.openItem(offer.uid,'buy');assert.doesNotMatch(h.sheet,/수량 · 개별 장비|창고로 보관|data-action="noop"/);assert.match(h.sheet,/id="shop-remaining"/);
   const after=buyGear(h.save,offer.uid);assert.ok(h.sheet.includes(`>${after.gold} G`));assert.equal(carriedWeight(before),carriedWeight(after));assert.deepEqual(h.save,before);
   h.save={...h.save,gold:0};h.openItem(offer.uid,'buy');assert.match(h.sheet,/data-action="buy-gear"[^>]+disabled/);assert.match(h.sheet,/id="purchase-reason"[^>]*>골드 부족/);
 });
@@ -104,7 +104,8 @@ function pair() {
 test('split comparison has matching left/right row labels and preserves every existing numeric line', () => {
   const {s,current,candidate}=pair(),before=structuredClone(s),c=compareItems(current,candidate,s),html=splitComparisonHtml(candidate,s);
   assert.match(html,/<th scope="col">현재 착용/);assert.match(html,/<th scope="col">후보/);
-  for(const line of c.lines) {
+  // Unchanged derived rows are hidden (cocy 10-11: no noise); every changed or primary line keeps exact data.
+  for(const line of c.lines.filter(l=>l.delta!==0||['attack','basePower','weight'].includes(l.key))) {
     assert.ok(html.includes(`data-line="${line.key}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}"`));
     const row=html.match(new RegExp(`<tr data-line="${line.key}"[^>]*>([\\s\\S]*?)</tr>`))[1];
     assert.equal((row.match(/<td>/g)||[]).length,2);const labels=[...row.matchAll(/<td><span>([^<]*)<\/span>/g)].map(m=>m[1]);assert.equal(labels[0],labels[1]);
@@ -122,6 +123,6 @@ test('split comparison shows signed gain/loss, neutral, missing options and all 
 
 test('empty slot and own-item zero deltas remain explicit without fabricated DEF or damage', () => {
   const s=fresh(),armor=instance('body','leather_vest');s.equipped.body=null;const html=splitComparisonHtml(armor,s);
-  assert.match(html,/빈 슬롯/);assert.match(html,/data-line="baseHp" data-from="0"/);assert.match(html,/data-line="maxHp"/);assert.doesNotMatch(html,/DEF/);
-  assert.match(splitComparisonHtml(equippedItem(s,'weapon'),s),/= 유지/);
+  assert.match(html,/빈 슬롯/);assert.match(html,new RegExp(`data-line="ac" data-from="0" data-to="${ITEMS.leather_vest.ac}"`));assert.doesNotMatch(html,/DEF|HP 보호/);
+  assert.match(splitComparisonHtml(equippedItem(s,'weapon'),s),/변화 없음/);
 });

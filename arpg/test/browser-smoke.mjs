@@ -264,7 +264,7 @@ try {
   assert.deepEqual(persisted, beforeReload);
   assert.equal(await evaluate('JSON.stringify(__arpg.save)'), entireSave);
   assert.equal(await evaluate('__arpg.world'), null);
-  assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"), ['만물상','장비상','대장장이','교관','창고','가방']);
+  assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"), ['만물상','장비상','대장장이','아카데미','창고','가방']);
   assert.equal(await evaluate("!!document.querySelector('[data-action=\"owner\"]')"), false);
   await click('[data-action="character"]');
   await waitFor(page('character'));

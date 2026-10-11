@@ -154,7 +154,7 @@ try {
     const more=await evaluate(`document.querySelector('dialog[open] details summary').textContent`);assert.equal(more,'옵션 4개 더');
     const firstSummary='dialog[open] details:first-of-type summary';await nativeActivate(firstSummary,desktop);assert.equal(await evaluate(`document.querySelector('dialog[open] details').open`),true);await audit();const expanded=await metrics();await nativeActivate(firstSummary,desktop);await close();
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="merchant"]',desktop);await nativeActivate('[data-action="open-item"][data-mode="buy"]',desktop);await audit();const buyCompare=await metrics();
-    assert.ok(buyCompare.scrollHeight-buyCompare.clientHeight<=buyCompare.clientHeight);assert.match(await evaluate(`document.querySelector('dialog[open]').textContent`),/창고로 보관/);await close();
+    assert.ok(buyCompare.scrollHeight-buyCompare.clientHeight<=buyCompare.clientHeight);assert.doesNotMatch(await evaluate(`document.querySelector('dialog[open]').textContent`),/창고로 보관|가벼울수록|DEF 수치/);await close();
     // Poor fixture is loaded through the existing SaveStore, not a debug mutation seam.
     await evaluate(`(async()=>{const {SaveStore}=await import('./js/meta/save.js');const store=new SaveStore(localStorage),s=store.load();s.gold=0;store.save(s)})()`);await command('Page.reload');await waitFor(page('inn'));
     await nativeActivate('[data-action="shop"]',desktop);await nativeActivate('[data-action="shop-select"][data-id="potion"]',desktop);assert.equal(await evaluate(`document.querySelector('#shop-buy').disabled`),true);assert.match(await evaluate(`document.querySelector('#purchase-reason').textContent`),/골드 부족/);await audit();

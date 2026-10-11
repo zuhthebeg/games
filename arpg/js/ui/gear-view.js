@@ -44,21 +44,26 @@ export function linesHtml(comparison) {
 export function splitComparisonHtml(item, save) {
   const current = equippedItem(save, ITEMS[item.id].slot), c = comparisonFor(item, save);
   const line = key => c.lines.find(row => row.key === key);
-  const short = { attack:'피해 배율', maxHp:'최대 HP', weight:'무게', basePower:'기본 공격', enhancePower:'강화 공격', baseHp:'기본 HP', enhanceHp:'강화 HP', capacity:'가방 한도', attackRate:'공격 속도', moveSpeed:'이동 속도', dodgeCooldown:'회피 재사용', potionEfficiency:'물약 효율', manaRegen:'마나 재생', goldBonus:'골드 보너스', materialBonus:'재료 보너스' };
+  const short = { attack:'피해 배율', maxHp:'최대 HP', weight:'무게', basePower:'기본 공격', enhancePower:'강화 공격', ac:'방어력', totalAc:'총 방어력', capacity:'가방 한도', attackRate:'공격 속도', moveSpeed:'이동 속도', dodgeCooldown:'회피 재사용', potionEfficiency:'물약 효율', manaRegen:'마나 재생', goldBonus:'골드 보너스', materialBonus:'재료 보너스' };
   const delta = row => `<small class="compare-delta ${row.delta === 0 ? 'neutral' : row.good ? 'gain' : 'loss'}" aria-label="${escape(deltaText(row))}">${row.delta === 0 ? '= 유지' : `${row.delta > 0 ? '▲+' : '▼−'}${amount(Math.abs(row.delta))}${row.unit === '%' ? '%p' : ''}`}</small>`;
   const value = (row, side) => row.section === 'affix' && !(side === 'from' ? current : item)?.affixes?.some(a => a.k === row.key) ? '—' : lineValue(row,row[side]);
   const rowHtml = row => `<tr data-line="${escape(row.key)}" data-from="${row.from}" data-to="${row.to}" data-delta="${row.delta}" data-section="${row.section || ''}"><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'from'))}</b></td><td><span>${escape(short[row.key] || row.label)}</span><b>${escape(value(row,'to'))}</b>${delta(row)}</td></tr>`;
   const extraRow = (key,label,from,to) => rowHtml({key,label,from,to,delta:to-from,good:to === from ? null : key === 'requiredStr' ? to < from : to > from,section:'base',prefix:key === 'enhance' ? '+' : ''});
   const affixes = c.lines.filter(row => row.section === 'affix');
-  const primaryKeys = ['attack','maxHp','basePower','baseHp','weight'];
+  const changedOrSet = (from, to) => from !== 0 || to !== 0;
+  const weapon = ITEMS[item.id].power !== undefined;
+  const primaryKeys = [...(weapon ? ['attack','basePower'] : ['ac','totalAc']), 'weight', ...(line('maxHp')?.delta ? ['maxHp'] : [])];
   const primary = c.lines.filter(row => primaryKeys.includes(row.key));
   const table = rows => `<table class="compare-split"><thead><tr><th scope="col">현재 착용<br><strong>${current ? escape(itemLabel(current)) : '빈 슬롯'}</strong></th><th scope="col">후보<br><strong>${escape(itemLabel(item))}</strong></th></tr></thead><tbody>${rows}</tbody></table>`;
-  const summary = ['attack','maxHp','attackRate','moveSpeed'].map(key => { const row = line(key); return `<span>${short[key]} ${delta(row)}</span>`; }).join(' · ');
-  const more = affixes.slice(2), derived = c.lines.filter(row => row.section !== 'affix' && !primaryKeys.includes(row.key));
+  const summary = ['attack','totalAc','maxHp','attackRate','moveSpeed'].map(line).filter(row => row?.delta).map(row => `<span>${short[row.key]} ${delta(row)}</span>`).join(' · ') || '<span>변화 없음</span>';
+  const more = affixes.slice(2), derived = c.lines.filter(row => row.section !== 'affix' && !primaryKeys.includes(row.key) && row.delta !== 0);
   return `<section class="compare-sheet" aria-label="현재 착용과 후보 비교"><p class="compare-summary" aria-label="최종 캐릭터 변화">${summary}</p>`
-    + table(primary.map(rowHtml).join('') + extraRow('enhance','강화',current?.enhance || 0,item.enhance) + extraRow('requiredStr','요구 STR',ITEMS[current?.id]?.requiredStr || 0,ITEMS[item.id].requiredStr || 0) + affixes.slice(0,2).map(rowHtml).join(''))
+    + table(primary.map(rowHtml).join('')
+      + (changedOrSet(current?.enhance || 0, item.enhance || 0) ? extraRow('enhance','강화',current?.enhance || 0,item.enhance || 0) : '')
+      + (changedOrSet(ITEMS[current?.id]?.requiredStr || 0, ITEMS[item.id].requiredStr || 0) ? extraRow('requiredStr','필요 힘',ITEMS[current?.id]?.requiredStr || 0,ITEMS[item.id].requiredStr || 0) : '')
+      + affixes.slice(0,2).map(rowHtml).join(''))
     + `${more.length ? `<details class="compare-more"><summary>옵션 ${more.length}개 더</summary>${table(more.map(rowHtml).join(''))}</details>` : ''}`
-    + `<details class="compare-more"><summary>추가 수치 · ${derived.length}행</summary>${table(derived.map(rowHtml).join(''))}</details></section>`;
+    + `${derived.length ? `<details class="compare-more"><summary>세부 변화 ${derived.length}</summary>${table(derived.map(rowHtml).join(''))}</details>` : ''}</section>`;
 }
 
 // Cards are deliberately brief, but explicitly disclose every changed/lost affix count.
@@ -121,15 +126,11 @@ export function socketsHtml(save) {
 export function itemDetailsHtml(item) {
   const def = ITEMS[item.id], mult = enhanceMultiplier(item.enhance);
   const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
-  const rows = [row('family', '무기 계열 / 방어구', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경장',medium:'중장',heavy:'중갑'}[def.armorClass] || SLOT_NAMES[def.slot]),
-    row('rarity', '등급', GRADES[def.rarity]), row('str', '필요 힘', def.requiredStr || 0), row('weight', '무게', `${amount(def.weight)} kg`)];
-  if (def.power !== undefined) {
-    rows.push(row('power', '기본 공격 배율', `×${amount(def.power)}`),
-      row('enhance', `강화 +${item.enhance} 공격 기여`, `+${amount(def.power * (mult - 1))} 배율`),
-      row('attack', '강화 포함 공격 배율', `×${amount(def.power * mult)}`));
-  } else {
-    rows.push(row('ac', '방어력', item.enhance ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`));
-  }
+  const rows = [row('family', '종류', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경갑',medium:'중갑',heavy:'판금'}[def.armorClass] || SLOT_NAMES[def.slot]),
+    row('rarity', '등급', GRADES[def.rarity]),
+    def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
+    row('weight', '무게', `${amount(def.weight)} kg`),
+    ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));
-  return `<section class="item-details"><h3>장비 상세</h3><dl class="p2-lines">${rows.join('')}</dl><h3>전체 옵션</h3>${affixes.length ? `<dl class="p2-lines">${affixes.join('')}</dl>` : '<p class="minor">추가 옵션 없음</p>'}</section>`;
+  return `<section class="item-details"><dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl></section>`;
 }

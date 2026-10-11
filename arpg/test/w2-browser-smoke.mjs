@@ -116,7 +116,7 @@ try {
     await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {learnSkill}=await import('./js/meta/skills.js');const {instance}=await import('./js/meta/items.js');let s=createSave({name:'W2 터치',answers:[0,0,0,0,0],createdAt:1});s.gold=10000;s.items.push(instance('w2:old','iron_sword_epic',1,[{k:'hp_flat',v:12},{k:'speed_pct',v:3},{k:'capacity_flat',v:6}]),instance('w2:inventory','training_sword_rare',1,[{k:'atk_pct',v:6},{k:'mana_pct',v:4}]));s.equipped.weapon='w2:old';s.cleared.S10=true;s.cleared.S17=true;for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
     await nativeActivate('[data-action="socket"][data-slot="weapon"]',desktop);await audit();
-    assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('기본 공격 배율')&&document.querySelector('dialog').textContent.includes('= 유지')`));
+    assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('공격 배율')&&!document.querySelector('dialog .compare-sheet')`));
     await nativeActivate('[data-action="open-item"][data-uid="w2:inventory"]',desktop);await audit();
     for(const key of ['hp_flat','speed_pct','capacity_flat']) assert.ok(await evaluate(`document.querySelector('dialog[open] [data-line="${key}"]').querySelector('.compare-delta').getAttribute('aria-label').includes('사라짐')`));
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await waitFor(`!document.querySelector('dialog[open]')`);

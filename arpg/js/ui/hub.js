@@ -317,7 +317,7 @@ export class HubUI {
       return button(`<span>${SLOT_NAMES[slot]}</span><strong>${item ? escape(itemLabel(item)) : '비어 있음'}</strong>`, 'socket', `data-slot="${slot}" class="bag-equipped"`);
     }).join('');
     this.showInnPanel('가방', `${this.weightHtml()}<h3 class="section-title">착용 장비</h3><div class="bag-equipment">${worn}</div>
-      <h3 class="section-title">소지 소모품</h3><p class="minor">사냥에 가져갈 보급 · 수량을 눌러 창고로 맡기기</p>
+      <h3 class="section-title">소지 소모품</h3>
       ${this.stackRowsHtml(this.save.stacks, { destination: 'stash', kind: 'consumable' })}`, 'bag', '', { eyebrow: '출정 시 가져가는 물품' });
   }
 
@@ -328,7 +328,7 @@ export class HubUI {
     const tabHtml = `<div class="p2-merchant-tabs" role="group" aria-label="창고 종류">${tabs}</div>`;
     if (this.stashTab !== 'gear') {
       const supplies = this.stashTab === 'consumable';
-      return this.showInnPanel('창고', `${tabHtml}<p class="minor">${supplies ? '수량을 눌러 가방으로 꺼내기 · 소지 무게 100%까지' : '제작·강화 재료 · 소지 무게에 포함하지 않음'}</p>
+      return this.showInnPanel('창고', `${tabHtml}
         ${this.stackRowsHtml(supplies ? this.save.stash.stacks : this.save.stacks, { source: supplies ? 'stash' : 'bag', kind: this.stashTab, destination: supplies ? 'bag' : null })}`,
       'inventory', '', { eyebrow: '창고 · 무게 없음' });
     }
@@ -346,8 +346,7 @@ export class HubUI {
     const cards = items.map(item => cardHtml(item, this.save, { compact: true, note: isWorn(this.save, item.uid) ? '착용 중' : '' })).join('');
     this.showInnPanel('창고', `${tabHtml}<div class="p2-filters" role="group" aria-label="부위">${filters}</div>
       <div class="p2-toolbar"><span>${items.length}개</span>${button(`정렬 · ${{ grade: '등급', recent: '최근', weight: '무게' }[this.sort]}`, 'sort')}</div>
-      <div class="p2-grid">${cards || '<p class="muted">비어 있음 · 몬스터 드랍이나 장비상에서 얻는다</p>'}</div>
-      <p class="minor">탭하면 착용 장비와 비교 · 착용 중인 장비는 가방에 표시</p>`, 'inventory', '', { eyebrow: '창고 · 무게 없음' });
+      <div class="p2-grid">${cards || '<p class="muted">비어 있음 · 몬스터 드랍이나 장비상에서 얻는다</p>'}</div>`, 'inventory', '', { eyebrow: '창고 · 무게 없음' });
   }
 
   // --- Comparison sheet: current → candidate per line, then one primary action. ---
@@ -397,7 +396,7 @@ export class HubUI {
       : `<p class="minor">${SLOT_NAMES[slot]} · 비어 있음</p>`;
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
-    this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) + this.comparisonHtml(current) : ''}<h3>장비 변경 · 보유 목록</h3><div class="p2-stock">${list}</div>`,
+    this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
       button(`${icon('weapon')}장비상 둘러보기`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)));
   }
 
@@ -429,11 +428,11 @@ export class HubUI {
     }
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
     const buyQuote = { total:item.price, remaining:this.save.gold-item.price, weightAfter:carriedWeight(this.save), limit:capacity(this.save), reasons:this.save.shopBought.includes(uid) ? ['품절'] : this.save.gold < item.price ? ['골드 부족'] : [] };
-    const body = `${this.comparisonHtml(item)}`
-      + `${otherFamily ? '<p class="p2-hint">다른 무기 계열 · 조작이 바뀐다</p>' : ''}`
-      + `<details class="compare-more own-details"><summary>후보 장비 상세 · 전체 옵션</summary>${itemDetailsHtml(item)}</details>`
-      + `${mode === 'buy' ? `<div class="quantity-row"><span>수량 · 개별 장비</span><div class="stepper">${button('−','noop','aria-label="수량 줄이기"',true)}<output>1</output>${button('+','noop','aria-label="수량 늘리기"',true)}${button('최대','noop','',true)}</div></div>${purchaseLedgerHtml(buyQuote,{stash:true})}` : ''}`;
-    this.mountSheet(this.dialogHtml({ buy: '구매 전 비교', sell: '매입', equip: '장비 비교' }[mode], body, footer));
+    // Compare only when actually choosing against a worn piece (cocy 10-11: no compare while just viewing).
+    const choosing = mode !== 'sell' && !worn && !!current;
+    const body = (choosing ? `${this.comparisonHtml(item)}${otherFamily ? '<p class="p2-hint">다른 무기 계열</p>' : ''}<details class="compare-more own-details"><summary>상세</summary>${itemDetailsHtml(item)}</details>` : itemDetailsHtml(item))
+      + `${mode === 'buy' ? purchaseLedgerHtml(buyQuote) : ''}`;
+    this.mountSheet(this.dialogHtml(mode === 'sell' ? '매입' : mode === 'buy' ? '구매' : choosing ? '장비 비교' : '장비 정보', body, footer));
   }
 
   confirmDismantle(uid) {
@@ -483,7 +482,7 @@ export class HubUI {
     const tabs = `<div class="p2-two" role="group" aria-label="만물상 거래">${[['buy', '구매'], ['sell', '판매']].map(([tab, label]) =>
       button(label, 'shop-tab', `data-tab="${tab}" aria-pressed="${this.shopTab === tab}"`)).join('')}</div>`;
     if (this.shopTab === 'sell') {
-      return this.showInnPanel('만물상', `${tabs}<p class="minor">수량을 눌러 판매 · 장비 매입은 장비상에서</p>
+      return this.showInnPanel('만물상', `${tabs}
         <h3 class="section-title">가방 소모품</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'consumable' })}
         <h3 class="section-title">창고 소모품</h3>${this.stackRowsHtml(this.save.stash.stacks, { sell: true, source: 'stash' })}
         <h3 class="section-title">창고 재료</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'material' })}`,
@@ -493,7 +492,7 @@ export class HubUI {
     const cards = SUPPLIES.map(id => button(`<span class="item-emblem ${tone[id] || ''}">${itemIcon(id, ITEMS[id])}</span>`
       + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0}${id === 'return_scroll' ? ' / 2' : ''} · 창고 ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
       `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
-    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><p class="minor">품목을 눌러 수량과 구매 결과 확인 · 가방에 바로 보관</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
+    this.showInnPanel('만물상', `${tabs}<p class="npc-line">“돌아올 몫까지 챙겨 가게.”</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
   }
 
   openSupply() {
@@ -548,7 +547,7 @@ export class HubUI {
 
   forgeSalvageHtml() {
     const item = this.save.items.find(candidate => candidate.uid === this.selectedUid);
-    if (!item) return '<p class="minor">제작한 장비를 여기서 장착·분해·판매할 수 있습니다.</p>';
+    if (!item) return '';
     const uid = `data-uid="${escape(item.uid)}"`, worn = isWorn(this.save, item.uid);
     return `<section class="forge-salvage"><div class="p2-item-heading">${emblem(item)}<h3>${escape(itemLabel(item))}</h3></div><div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
   }
@@ -617,7 +616,7 @@ export class HubUI {
   showCharacterSkills() {
     this.panel = 'character-skills';
     const rows = characterSkills(this.save).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
-    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<p class="minor">등급 높은 순 · 무기 계열마다 기술 하나 장착</p><div class="character-skills">${rows}</div>`, 'character-skills');
+    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<div class="character-skills">${rows}</div>`, 'character-skills');
   }
 
   openSkill(id) {
@@ -629,7 +628,7 @@ export class HubUI {
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
     const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const selected = equippedSkill(this.save,a.family) === id;
-    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>기본 피해 (타격당)</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p><p class="minor">${a.heal ? '회복량은 공격 배율과 무관하게 각 대상 최대 HP 기준.' : '실전 피해는 기본 피해 × 해당 계열 캐릭터 공격 배율.'} 다른 계열은 그 무기 장착 시 사용.</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
   }
 
   showTrainer() {
@@ -638,7 +637,7 @@ export class HubUI {
     const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
     const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)].sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
     const ladder = [0,1,2].map(grade => `<section class="academy-stage" data-grade="${grade}"><h3><span>${grade+1}</span>${['입문','숙련','상급'][grade]}</h3><div class="academy-stage-cards">${ids.filter(id => SKILL_DISPLAY[id].grade === grade).map(id => skillCardHtml(id,this.save)).join('')}</div></section>`).join('');
-    this.showInnPanel('아카데미', `<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><p class="minor academy-note">교본 구매 즉시 영구 습득 · 무게·레벨 제한 없음<br>무기 계열마다 기술 하나 장착 · 피해는 기본 수치</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법'});
+    this.showInnPanel('아카데미', `<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법'});
   }
 
   showAllocation(required = false, initialize = true) {
@@ -684,7 +683,7 @@ export class HubUI {
       return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}</section>`).join('');
-    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><p class="minor">출정 한 번에 맵 하나 · 광산 또는 늪을 끝내면 성채 개방</p><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.values(this.save.cleared).filter(Boolean).length} / 20 완료` });
+    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.values(this.save.cleared).filter(Boolean).length} / 20 완료` });
   }
 
   showSortie(stage, devWeapon = null) {

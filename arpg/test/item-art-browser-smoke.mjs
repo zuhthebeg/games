@@ -141,7 +141,7 @@ try {
     await click('[data-action="select-gear"][data-uid="starter:weapon"]');await click('[data-action="dismantle"][data-uid="starter:weapon"]');await audit();
     await click('[data-action="close-sheet"]');assert.ok(await evaluate("__arpg.save.items.some(i=>i.uid==='starter:weapon')"));
     await click('[data-action="inn"]');
-    assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"),['만물상','장비상','대장장이','교관','창고','가방']);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('.npc-grid strong')].map(n=>n.textContent)"),['만물상','장비상','대장장이','아카데미','창고','가방']);
     assert.equal(await evaluate("!!document.querySelector('[data-action=\"owner\"]')"),false);
     assert.ok(await evaluate("document.querySelector('[data-action=\"character\"] .badge').textContent==='3'"));
     await click('[data-action="character"]');await audit();
@@ -149,10 +149,10 @@ try {
     await click('[data-action="stat-plus"][data-key="str"]');await audit();
     await click('#allocation-confirm');assert.equal(await evaluate('__arpg.save.statPoints'),2);
     await click('[data-action="inn"]');await click('[data-action="trainer"]');await audit();
-    assert.equal(await evaluate("document.querySelectorAll('.skill-family').length"),3);
+    assert.equal(await evaluate("document.querySelectorAll('.academy-tabs [role=tab]').length"),3);
     await click('[data-action="learn-skill"][data-id="whirl"]');await audit();
     await click('[data-action="equip-skill"][data-id="whirl"]');
-    await click('[data-action="learn-skill"][data-id="frost_lance"]');
+    await click('[data-action="academy-tab"][data-family="focus"]');await click('[data-action="learn-skill"][data-id="frost_lance"]');
     await click('[data-action="equip-skill"][data-id="frost_lance"]');await audit();
     assert.equal(await evaluate('__arpg.save.skills.blade'),'whirl');
     assert.equal(await evaluate('__arpg.save.skills.focus'),'frost_lance');
@@ -170,7 +170,7 @@ try {
     assert.equal(await evaluate('__arpg.save.stacks.potion'),3);
     // Move five/all through UI, then sell stored supplies and materials.
     await click('[data-action="inn"]');await click('[data-action="shop"]');await audit();
-    await click('[data-action="shop-tab"][data-tab="buy"]');
+    await click('[data-action="shop-tab"][data-tab="buy"]');await click('[data-action="shop-select"][data-id="potion"]');
     await evaluate("document.querySelector('#shop-count').value=5;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))");
     await click('#shop-buy');
     await click('[data-action="inn"]');await click('[data-action="bag"]');
@@ -189,9 +189,9 @@ try {
     // A valid legacy-overweight bag must refuse both purchase and withdrawal at 100%.
     await evaluate(`(async()=>{const {SaveStore}=await import('./js/meta/save.js');const {capacity,carriedWeight}=await import('./js/meta/items.js');const s=JSON.parse(JSON.stringify(__arpg.save));s.stacks.potion=0;s.stacks.potion=capacity(s)-carriedWeight(s);s.stash.stacks.potion=1;new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
-    await click('[data-action="shop"]');await audit();
+    await click('[data-action="shop"]');await click('[data-action="shop-select"][data-id="potion"]');await audit();
     assert.equal(await evaluate("document.querySelector('#shop-buy').disabled"),true);
-    assert.ok(await evaluate("document.querySelector('#shop-buy').textContent.includes('100%')"));
+    assert.ok(await evaluate("document.querySelector('#purchase-reason').textContent.includes('무게 초과')"));
     await click('[data-action="inn"]');await click('[data-action="inventory"]');
     await click('[data-action="stash-tab"][data-tab="consumable"]');
     await click('[data-action="move-stack"][data-id="potion"][data-count="1"]');
