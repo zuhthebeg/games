@@ -117,8 +117,12 @@ try {
   };
   const artEvidence = { playerKits: [], monsters: [], procedural: [], rendererReadonly: false, fallback: false };
   const atlasReady = async (key) => {
-    await waitFor(`__arpg.art.visuals.some(v=>v.key===${JSON.stringify(key)} && v.mode==='atlas' && v.textureLoaded)`, 20000);
-    return evaluate(`JSON.parse(JSON.stringify(__arpg.art.visuals.find(v=>v.key===${JSON.stringify(key)} && v.mode==='atlas')))`);
+    // Player art now uses B by default; monsters and the query-only fallback
+    // retain the original atlas contract. Require the selected mode, not either.
+    const mode = ['blade','bow','focus'].includes(key)
+      && await evaluate("new URLSearchParams(location.search).get('paperdoll')!=='0'") ? 'paperdoll' : 'atlas';
+    await waitFor(`__arpg.art.visuals.some(v=>v.key===${JSON.stringify(key)} && v.mode===${JSON.stringify(mode)} && v.textureLoaded)`, 20000);
+    return evaluate(`JSON.parse(JSON.stringify(__arpg.art.visuals.find(v=>v.key===${JSON.stringify(key)} && v.mode===${JSON.stringify(mode)})))`);
   };
   const requestedArt = () => events.filter(event => event.method === 'Network.requestWillBeSent')
     .map(event => event.params.request.url).filter(url => url.includes('/assets/sprites/'));
@@ -166,10 +170,10 @@ try {
   await click('#quiz-start');
   await waitFor('__arpg.world?.round.stageId==="S1" && __arpg.world.tick>0');
   const firstArt = await atlasReady('blade');
-  assert.equal(firstArt.id, 'hero-sword');
+  assert.equal(firstArt.id, firstArt.mode==='paperdoll' ? 'paperdoll-blade' : 'hero-sword');
   artEvidence.playerKits.push(firstArt.id);
   assert.ok(await evaluate("__arpg.art.visuals.some(v=>v.key==='scarecrow' && v.mode==='procedural')"));
-  assert.ok(requestedArt().every(url => url.includes('manifest.json') || url.includes('/hero-sword/')),
+  assert.ok(requestedArt().every(url => url.includes('manifest.json') || url.includes('/hero-sword/') || url.includes('/paperdoll/blade/')),
     'S1 fetched an unequipped kit or future monster');
   const initialFrame = await evaluate('__arpg.art.visuals.find(v=>v.key===\"blade\").frame');
   await waitFor(`__arpg.art.visuals.find(v=>v.key==='blade').frame!==${initialFrame}`);
@@ -336,9 +340,9 @@ try {
   for (const weapon of ['bow', 'focus']) {
     await devStart('S1', weapon);
     const playerArt=await atlasReady(weapon);
-    assert.equal(playerArt.id, weapon==='bow' ? 'hero-bow' : 'hero-focus');
+    assert.equal(playerArt.id, playerArt.mode==='paperdoll' ? `paperdoll-${weapon}` : weapon==='bow' ? 'hero-bow' : 'hero-focus');
     artEvidence.playerKits.push(playerArt.id);
-    assert.deepEqual(await evaluate('JSON.parse(JSON.stringify(__arpg.art.loaded))'),[weapon], 'prior-round assets were not released');
+    assert.deepEqual(await evaluate('JSON.parse(JSON.stringify(__arpg.art.loaded))'),playerArt.mode==='paperdoll' ? [] : [weapon], 'prior-round assets were not released');
     const hitsBefore = await evaluate('smokeHits.playerHits');
     await key('KeyD');
     await key('KeyJ');

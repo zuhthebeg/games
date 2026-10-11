@@ -41,19 +41,19 @@
       "noOverlap": true
     },
     "combat": {
-      "tick": 161,
-      "hp": 95,
-      "dodgeTick": 76,
-      "hits": 3,
-      "playerHits": 2
+      "tick": 166,
+      "hp": 116,
+      "dodgeTick": 81,
+      "hits": 4,
+      "playerHits": 4
     },
     "feedback": {
-      "tick": 161,
-      "hits": 3,
-      "playerHits": 2,
+      "tick": 166,
+      "hits": 4,
+      "playerHits": 4,
       "maxFrozen": 2,
-      "maxParticles": 13,
-      "maxVoices": 3,
+      "maxParticles": 9,
+      "maxVoices": 2,
       "pools": {
         "particles": 56,
         "numbers": 32,

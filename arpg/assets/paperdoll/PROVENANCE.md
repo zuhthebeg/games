@@ -57,7 +57,27 @@ body/hands/feet change via material-region tint, not independent silhouettes.
   performance/memory/GPU/thermal evidence**. Production integration/deployment
   and actual phone review belong to the parent.
 
-## Evidence (filled by full validation run)
+## Delivered B gate
+- Blade/bow/focus: 392/392/384 frames, 48 clips each, 9,344 head/weapon
+  reference combinations. Corrected raw premultiplied RGBA, delivered alpha and
+  lossless mask gates PASS; crop/T-pose/mismatch counts are zero.
+- Raw AA1 holdouts differ in 37 combinations, at most one pixel each. Boundary
+  reconciliation remains recorded, not represented as an initially exact bake.
+- Seven shared WebP pages per family. WebP + frame manifests: blade 1,010,411,
+  bow 926,821, focus 886,186 bytes; all families total **2,823,418 bytes**.
+  Including per-kit and aggregate validation JSON, asset directory is 2,838,792 bytes.
+- Conservative accounted CPU RGBA peak: blade 44,335,104, bow 38,305,792,
+  focus 37,044,224 bytes (including the largest prior family output on a swap).
+  These bounds include selected source/staging/output
+  ownership, not measured GPU allocations or actual browser process memory.
+- Browser evidence covers six equipped portrait/combat cases, 144 rendered clip
+  samples, a live head silhouette swap/restoration, all nine family/slot tint
+  regions, lazy-kit/cache/fallback guards and JS/console error checks.
+  Offline validation, not the 144 sampled browser poses, covers every baked frame.
+- See `browser-validation.json` for decode/compose timings. Desktop 6x CPU is
+  not a phone gate; no <300ms real-phone claim, thermal or WAN measurement.
+
+## Evidence (full validation run)
 - Delivered sources and frame manifests: `../sprites/paperdoll/`.
 - All-source hashes, bytes, full-animation/depth/crop gate:
   `../sprites/paperdoll/validation.json`.
