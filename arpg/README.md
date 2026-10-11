@@ -336,3 +336,64 @@ item is subsequently sold/stored, preventing the clear fallback from minting a
 third piece. It adds no required save fields or schema version; persisted receipt
 validation accepts optional loot metadata. The budget counter remains on the
 tracker, and never uses the currently carried item count to refill slots.
+
+## Active skill damage / mana / healing (combat-only handoff)
+
+Nine damaging skills use doubled **content base damage**, not a global multiplier:
+`lunge 52`, `volley 18` per projectile, `ember_bolt 60`, `whirl 44`,
+`heavy_cleave 96`, `pierce_shot 48`, `blast_arrow 52`, `frost_lance 48`,
+`flame_ring 68`. Basics, counter multipliers, monsters, geometry, projectile
+blocking, phases and existing cooldowns are unchanged.
+
+Every accepted skill cast pays MP once up front: blade `16/20/26`, bow
+`16/18/24`, focus damage skills `14/12/18` (default / first / second book).
+Insufficient MP does not cancel the current act, start an act or set a cooldown.
+Existing cancellation consumes the paid MP without refund and starts the normal
+completion/interruption cooldown. AUTO casts basics only, never these skills.
+
+`healing_light` / **회복의 빛** is a 200 G focus magic book, first focus book
+in catalog order, using the existing one-slot-per-family learning/equip/save path.
+MP 28, cooldown 10s from completion/cancellation (existing `cdMult` applies).
+Base phases are 500/100/100/300ms (windup/lock/active/recovery); normal attack-rate
+snapshot applies. Windup/recovery can be dodge-canceled, like basic casting;
+lock/active are committed. Existing lethal damage also cancels the action;
+nonlethal damage does not interrupt player actions in this engine.
+On the first active tick only, the caster and living, non-terminal same-team
+players at center distance ≤160px gain `round(their own maxHp * .30)`, capped to
+missing HP. No enemy/monster/dead healing, resurrection or periodic ticks.
+Healing ignores damage/poise/potion multipliers and costs no extra MP per target.
+
+The shape is a normal circle with `damage:0` and `heal:{radius,maxHpFrac}`;
+`doActive` takes the heal path *instead of* damage. This preserves existing
+shape-type helpers. Host-only sim emits `healCast` once, plus `heal` per positive
+HP change. Existing snapshots already include every player's HP/MP/CD; the
+existing acknowledged event journal deduplicates feedback, so no net/save schema
+changes are required. A display-only module adds one green cast ring and green
+`+actualHeal` numbers without hit-stop, shake, or combat mutation.
+
+Parent integration: trainer/catalog detail should render **회복 30% 최대 HP ·
+자신/160px 내 아군** instead of **피해 0**, and mark this first focus book **숙련**
+when the shared grade helper lands. Add `healing_light:200` to the old exhaustive
+price expectation in `inn-restructure.test.js`; that parent-owned UI test was
+intentionally left unchanged here. Do not overwrite other parent book additions.
+
+Damage rounding remains unchanged: explosion splash is 60% base, rounded once
+at hit delivery. Ember splash is 18→36; blast-arrow splash is 16→31
+(unrounded 15.6→31.2). Thus base damage is exactly doubled, while strict ≥2×
+*displayed integer damage* is not guaranteed for every rounded splash/gear case.
+Changing that requires a separate rounding policy decision, not silently raising
+52 to 54 or retuning the shared damage path.
+
+```sh
+node --test arpg/test/skill-mana-heal.test.js
+node arpg/tools/stamp-assets.mjs --check
+ARPG_HTTP_PORT=8798 ARPG_CDP_PORT=9368 node arpg/test/skill-mana-heal-browser-smoke.mjs
+```
+
+The dedicated smoke uses the actual index, persisted focus book, existing manual
+K input, real phases, healing ring/numbers, and two actual app documents over the
+existing local BroadcastChannel co-op adapter. Only its host debug fixture seeds
+missing HP and stationary enemies; healing itself travels through normal input,
+host simulation, snapshots, journal and personal HUD. No screenshots or external
+relay writes are needed. Existing full unit and general browser/co-op smokes are
+still required before parent deployment.

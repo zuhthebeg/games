@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ABILITIES, WEAPONS, MONSTERS, PLAYER_BASE } from '../js/content/combat.js';
-import { createWorld, addPlayer, spawnMonster, step, emptyInput, startStage } from '../js/sim/world.js';
+import { createWorld, addPlayer, spawnMonster, step, emptyInput } from '../js/sim/world.js';
 import { ticks } from '../js/sim/core.js';
 import { createSave, SaveStore, validateSave } from '../js/meta/save.js';
 import { learnSkill, equipSkill, BOOKS } from '../js/meta/skills.js';
