@@ -133,7 +133,7 @@ try {
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="merchant"]',desktop);
     await nativeActivate('[data-action="open-item"][data-mode="buy"]',desktop);await audit();
     for(const key of ['hp_flat','speed_pct','capacity_flat'])assert.ok(await evaluate(`!!document.querySelector('dialog[open] [data-line="${key}"]')`));
-    assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('가방 한도를 늘리며 장비 자체 무게를 늘리지 않는다')`));
+    assert.ok(await evaluate(`!/가방 한도를 늘리며|가벼울수록|DEF 수치/.test(document.querySelector('dialog[open]').textContent)`));
     await nativeActivate('[data-action="close-sheet"]',desktop);
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="board"]',desktop);await audit();
     assert.equal(await evaluate(`document.querySelectorAll('[data-action="sortie"]').length`),20);

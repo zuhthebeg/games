@@ -52,7 +52,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
-    potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0,
+    potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
     // Equipped skill (skill books): must belong to the weapon family, else the kit default.
     skill: ABILITIES[mods.skill]?.family === weapon ? mods.skill : WEAPONS[weapon].skill,
     weapon, act: null, cds: {},
@@ -574,6 +574,7 @@ function applyHit(world, t, hit) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
+  if (t.kind === 'player' && t.ac > 0 && !hit.periodic) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
   dmg = Math.max(1, Math.round(dmg));
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;

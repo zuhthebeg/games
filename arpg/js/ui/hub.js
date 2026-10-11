@@ -368,7 +368,7 @@ export class HubUI {
 
   comparisonHtml(item) {
     const comparison = comparisonFor(item, this.save);
-    return `<h3>전체 비교 · 현재 → 후보</h3><p class="minor">장비 무게는 가벼울수록, 최대 휴대 무게는 높을수록 좋다. 공격이 늘어도 다른 옵션은 사라질 수 있다.</p>${linesHtml(comparison)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
+    return `<h3>비교</h3>${linesHtml(comparison)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
       + `${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
   }

@@ -1,4 +1,4 @@
-import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier } from './items.js';
+import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc } from './items.js';
 import { deriveMods } from './stats.js';
 import { attackRate } from '../content/balance.js';
 import { loadEffects } from '../sim/world.js';
@@ -26,9 +26,10 @@ export function compareItems(equipped, candidate, save) {
     const delta = Math.round((to - from) * 1e9) / 1e9;
     lines.push({ key, label, from, to, delta, good: delta === 0 ? null : lower ? delta < 0 : delta > 0, ...display });
   };
-  line('attack', '공격력 (실전 배율)', before.dmgMult[before.family], after.dmgMult[after.family], false, { unit:'배율', prefix:'×', section:'derived' });
-  line('maxHp', '캐릭터 최대 HP', before.maxHp, after.maxHp, false, { unit:'HP', section:'derived' });
-  line('weight', '장비 무게 (가벼울수록 좋음)', ITEMS[equipped?.id]?.weight || 0, definition.weight, true, { unit:'kg', section:'base' });
+  line('attack', '공격력', before.dmgMult[before.family], after.dmgMult[after.family], false, { unit:'배율', prefix:'×', section:'derived' });
+  line('maxHp', '최대 HP', before.maxHp, after.maxHp, false, { unit:'HP', section:'derived' });
+  line('totalAc', '총 방어력', before.ac, after.ac, false, { unit:'', section:'derived' });
+  line('weight', '무게', ITEMS[equipped?.id]?.weight || 0, definition.weight, true, { unit:'kg', section:'base' });
   const keys = new Set([...(equipped?.affixes || []), ...(candidate.affixes || [])].map(({ k }) => k));
   for (const key of keys) line(key, AFFIX_LABELS[key],
     equipped?.affixes?.find(({ k }) => k === key)?.v || 0,
@@ -40,18 +41,17 @@ export function compareItems(equipped, candidate, save) {
     line('basePower', '무기 기본 공격 배율', oldDefinition?.power || 0, definition.power, false, { unit:'배율', prefix:'×', section:'base' });
     line('enhancePower', '강화 공격 기여', (oldDefinition?.power || 0) * (oldEnhance - 1), definition.power * (newEnhance - 1), false, { unit:'배율', section:'base' });
   } else {
-    line('baseHp', '방어구 기본 HP 보호 기여', oldDefinition?.hp || 0, definition.hp || 0, false, { unit:'HP', section:'base' });
-    line('enhanceHp', '강화 HP 기여', (oldDefinition?.hp || 0) * (oldEnhance - 1), (definition.hp || 0) * (newEnhance - 1), false, { unit:'HP', section:'base' });
+    line('ac', '방어력', armorAc(equipped), armorAc(candidate), false, { unit:'', section:'base' });
   }
-  line('capacity', '최대 휴대 무게 (높을수록 좋음)', before.capacity, after.capacity, false, { unit:'kg', section:'derived' });
+  line('capacity', '최대 휴대 무게', before.capacity, after.capacity, false, { unit:'kg', section:'derived' });
   const beforeRatio = carriedWeight(beforeSave) / capacity(beforeSave), afterRatio = carriedWeight(afterSave) / capacity(afterSave);
-  line('attackRate', '공격 행동 속도 (현재 보급·소지 적용)', attackRate(before.attackSpeedBonus,before.weaponWeight,beforeRatio), attackRate(after.attackSpeedBonus,after.weaponWeight,afterRatio), false, { unit:'배율', prefix:'×', section:'derived' });
-  line('moveSpeed', '이동속도 (현재 소지 적용)', before.speedMult * loadEffects(beforeRatio).speed, after.speedMult * loadEffects(afterRatio).speed, false, { unit:'배율', prefix:'×', section:'derived' });
-  line('dodgeCooldown', '회피 재사용 (낮을수록 좋음)', before.dodgeCdMult * loadEffects(beforeRatio).dodgeCd, after.dodgeCdMult * loadEffects(afterRatio).dodgeCd, true, { unit:'배율', prefix:'×', section:'derived' });
+  line('attackRate', '공격 속도', attackRate(before.attackSpeedBonus,before.weaponWeight,beforeRatio), attackRate(after.attackSpeedBonus,after.weaponWeight,afterRatio), false, { unit:'배율', prefix:'×', section:'derived' });
+  line('moveSpeed', '이동속도', before.speedMult * loadEffects(beforeRatio).speed, after.speedMult * loadEffects(afterRatio).speed, false, { unit:'배율', prefix:'×', section:'derived' });
+  line('dodgeCooldown', '회피 재사용', before.dodgeCdMult * loadEffects(beforeRatio).dodgeCd, after.dodgeCdMult * loadEffects(afterRatio).dodgeCd, true, { unit:'배율', prefix:'×', section:'derived' });
   line('potionEfficiency', '물약 회복 배율', before.potionHealMult, after.potionHealMult, false, { unit:'배율', prefix:'×', section:'derived' });
   line('manaRegen', '마나 재생', before.mpRegen, after.mpRegen, false, { unit:'MP/초', section:'derived' });
-  line('goldBonus', '적용 골드 획득 보너스 (공유 상한 적용)', before.goldBonus, after.goldBonus, false, { unit:'%', section:'derived' });
-  line('materialBonus', '적용 재료 드랍 보너스 (공유 상한 적용)', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
+  line('goldBonus', '골드 획득', before.goldBonus, after.goldBonus, false, { unit:'%', section:'derived' });
+  line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
   const weightAfter = carriedWeight(afterSave);
   const weightLimit = capacity(afterSave);
   const lockReason = !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`

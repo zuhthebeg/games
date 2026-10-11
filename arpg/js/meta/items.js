@@ -9,8 +9,10 @@ const weapon = (name, family, rarity, power, weight, form) => ({
   name, kind: 'weapon', slot: 'weapon', huntTier: 1, family, rarity, power, weight, form,
   requiredLevel: { common: 1, fine: 2, rare: 4 }[rarity],
 });
+// AC = old armor HP × 2/3: keeps effective HP within ~10% of the old HP model across hunting tiers.
+const toAc = (hp) => Math.round(hp * 2 / 3);
 const armor = (name, rarity, hp, weight) => ({
-  name, kind: 'body', slot: 'body', huntTier: 1, armorClass: weight <= 4 ? 'light' : weight <= 8 ? 'medium' : 'heavy', rarity, hp, weight,
+  name, kind: 'body', slot: 'body', huntTier: 1, armorClass: weight <= 4 ? 'light' : weight <= 8 ? 'medium' : 'heavy', rarity, ac: toAc(hp), weight,
   requiredLevel: rarity === 'common' ? 1 : 2,
 });
 
@@ -55,7 +57,7 @@ for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3,
       const id = `${slot}_${armorClass}_${rarity}_t${tier}`;
       ITEMS[id] = { name: `${{head:'머리',hands:'장갑',feet:'신발'}[slot]} · ${armorClass} T${tier}`,
         kind: slot, slot, armorClass, rarity, huntTier: tier,
-        hp: Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity]),
+        ac: toAc(Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity])),
         weight: weight * scale, requiredLevel: TIER_LEVEL[tier] ?? (rarity === 'common' ? 1 : 2) };
     }
   }
@@ -69,7 +71,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
-      ...(base.power !== undefined ? { power: base.power * ratio } : { hp: base.hp ? Math.round(base.hp * ratio) : ECONOMY.starterBodyHp[rarity] }),
+      ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
@@ -104,6 +106,8 @@ export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rari
 export const START_WEAPONS = { blade: 'training_sword', bow: 'short_bow', focus: 'apprentice_wand' };
 export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll'];
 export { RECIPES, enhanceMultiplier } from './economy.js';
+// Lineage-style: every armor enchant level is +1 AC on that piece.
+export const armorAc = (item) => item && ITEMS[item.id]?.power === undefined ? (ITEMS[item.id]?.ac || 0) + (item.enhance || 0) : 0;
 export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 

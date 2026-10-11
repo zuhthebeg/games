@@ -9,6 +9,8 @@ export const BALANCE = {
   counter: { damage: 2.2, poise: 3, graceMs: 300 },
   // cocy 10-11: monsters felt too spongy — global stage-spawn HP ×0.7 (bosses included).
   monsterHp: 0.7,
+  // cocy 10-11 20:00: armor is 방어력(AC), not HP. Hit damage on a player ×k/(k+AC); poison ticks bypass.
+  armor: { k: 100 },
   elite: { hp: 2.2, damage: 1.3, tint: 0xb994ed, scale: 1.15 },
   threats: [
     { hp: 1, damage: 1, gold: 1, drop: 1, rarity: {common:70,fine:27,rare:3}, bossRarity:{fine:50,rare:40,epic:10} },

@@ -64,8 +64,10 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
     item.enhance = 5;
     five.items.push(item); five.equipped[slot] = item.uid;
   }
-  const hp = ['head', 'hands', 'feet'].reduce((sum, slot) => sum + ITEMS[`${slot}_heavy_common_t1`].hp * 1.25, 0);
-  close(deriveMods(five).maxHp, 108 + hp);
+  // Armor is AC, never HP: +1 AC per enchant level per piece.
+  const ac = ['head', 'hands', 'feet'].reduce((sum, slot) => sum + ITEMS[`${slot}_heavy_common_t1`].ac + 5, 0);
+  assert.equal(deriveMods(five).maxHp, 108);
+  assert.equal(deriveMods(five).ac, ac); assert.ok(ac > 15);
   assert.equal(carriedWeight(five), 27);
   for (const [key, field] of Object.entries({ hp_flat: 'maxHp', speed_pct: 'speedMult', dodge_pct: 'dodgeCdMult', potion_pct: 'potionHealMult', mana_pct: 'mpRegen', capacity_flat: 'capacity', gold_pct: 'goldBonus', material_pct: 'materialBonus' })) {
     const changed = structuredClone(save);
@@ -292,7 +294,8 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(compare.lines.find(({ key }) => key === 'atk_pct').delta, 6);
   const head = instance('head', 'head_light_common_t1', 1, []);
   const empty = compareItems(null, head, save);
-  assert.equal(empty.lines.find(({ key }) => key === 'maxHp').delta, 4);
+  assert.equal(empty.lines.find(({ key }) => key === 'maxHp').delta, 0);
+  assert.equal(empty.lines.find(({ key }) => key === 'totalAc').delta, ITEMS.head_light_common_t1.ac);
   assert.equal(empty.locked, false); assert.equal(empty.weightAfter, 19);
   assert.throws(() => compareItems(old, head, save), /동일/);
   const loaded = structuredClone(save); loaded.stacks.potion = 112;

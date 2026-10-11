@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance.js';
 const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
-import { ITEMS, equippedItem, enhanceMultiplier, cloneSave } from './items.js';
+import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc } from './items.js';
 
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'cha'];
 export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, 5]));
@@ -40,7 +40,8 @@ export function deriveMods(save) {
   const damage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
     * (1 + 0.03 * (save.level - 1)) * (family === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
   return {
-    maxHp: 100 + 8 * save.level + gear.reduce((sum, item) => sum + (ITEMS[item.id].hp || 0) * enhanceMultiplier(item.enhance), 0) + affixes.hp_flat,
+    maxHp: 100 + 8 * save.level + affixes.hp_flat,
+    ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     maxMp: 100 + S.mp * eff(stats.int),
     mpRegen: 5 * (1 + S.regen * eff(stats.wis)) * (1 + affixes.mana_pct / 100),
     speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100),

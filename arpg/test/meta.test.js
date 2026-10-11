@@ -41,7 +41,8 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   save.items[0] = { uid: 'starter:weapon', id: 'ember_wand', enhance: 5 };
   save.items[1] = { uid: 'starter:armor', id: 'boar_hide_armor', enhance: 5 };
   const mods = deriveMods(freeze(save));
-  near(mods.maxHp, 223.75);
+  near(mods.maxHp, 180);
+  assert.equal(mods.ac, ITEMS.boar_hide_armor.ac + 5);
   near(mods.maxMp, 196);
   near(mods.mpRegen, 5 * (1 + 0.06 * 19.5));
   near(mods.speedMult, 1.07);
