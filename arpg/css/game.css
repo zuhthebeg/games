@@ -743,3 +743,6 @@ select, input:not([type="checkbox"]) {
 .enchant-fx.reduced .enchant-rays{display:none}
 @keyframes ritual-rays{from{opacity:1}to{opacity:0}}
 .enchant-fx[data-beat="fracture"] .enchant-stage *{animation-play-state:paused!important}
+
+/* Coop status is informational and never steals combat touches. */
+#coop-status { position: absolute; top: 114px; left: 12px; right: 12px; font-size: 11px; color: #c5ddd0; pointer-events: none; text-shadow: 0 1px 3px #000; }
