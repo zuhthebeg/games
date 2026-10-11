@@ -516,7 +516,14 @@ export class HubUI {
         + `${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
     }).join('');
     const { html, footer } = this.forgeDetail();
-    this.showInnPanel('대장장이', `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>
+    // Plain result line; the enchant animation layer replaces this presentation, not the outcome.
+    const last = this.lastEnchant, crack = this.lastCrack;
+    this.lastEnchant = this.lastCrack = null;
+    const notice = last ? (last.outcome === 'destroyed'
+      ? `<p class="enchant-result destroyed" role="status">${escape(ITEMS[last.id].name)} +${last.from} — 강렬하게 빛나더니 산산조각 났다. 강화석 ${last.refund[STONE]}개가 남았다.</p>`
+      : `<p class="enchant-result success" role="status">${escape(ITEMS[last.id].name)} +${last.from} → <b>+${last.to}</b> 강화 성공</p>`)
+      : crack ? `<p class="enchant-result success" role="status">${ITEMS[crack.id].name} ${crack.count}장을 얻었다.</p>` : '';
+    this.showInnPanel('대장장이', `${notice}<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>
       <div class="p2-grid forge-picker" role="group" aria-label="강화할 장비">${cards}</div>${html}
       ${this.scrollWorkshopHtml()}
       <details class="craft-list"><summary>제작 · 고철과 재료</summary><div class="recipe-grid">${recipes}</div></details>`,

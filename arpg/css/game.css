@@ -561,3 +561,10 @@ select, input:not([type="checkbox"]) {
 .item-emblem .item-art{width:32px;height:32px}
 .recipe .item-emblem .item-art{width:24px;height:24px}
 .p2-stones .item-art{width:32px;height:32px;flex:0 0 32px}
+
+/* cocy 10-11 enchant: minimal result line + risky forge state (animation layer comes separately). */
+.enchant-result { margin: 0 0 8px; padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+.enchant-result.success { background: rgba(80, 140, 230, .18); color: #cfe0ff; }
+.enchant-result.destroyed { background: rgba(200, 60, 50, .22); color: #ffc9c2; }
+.forge-work.risky small.loss { font-weight: 700; }
+button.primary.danger { background: #8d2f27; border-color: #c4503f; }
