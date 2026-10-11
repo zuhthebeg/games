@@ -123,7 +123,7 @@ try {
     await command('Page.navigate',{url:process.env.ARPG_TEST_URL || `http://127.0.0.1:${httpPort}/arpg/?dev=1`});
     await waitFor('window.__arpg');
     await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js'); const {addXp}=await import('./js/meta/progression.js'); const {craft}=await import('./js/meta/items.js');
-      let s=addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451);s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:10,scroll_enchant_weapon:3}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
+      let s=addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451);s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:10,scroll_enchant_weapon:10}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload'); await waitFor(page('inn')); await audit();
     assert.equal(await evaluate("document.querySelectorAll('.p2-socket').length"),5);
     await click('[data-action="socket"][data-slot="weapon"]'); await audit();
@@ -136,7 +136,7 @@ try {
     const offer=await evaluate("document.querySelector('[data-action=\"open-item\"]').dataset.uid");await click(`[data-action="open-item"][data-uid="${offer}"]`);await audit();
     const gold=await evaluate('__arpg.save.gold'); await click(`[data-action="buy-gear"][data-uid="${offer}"]`);assert.ok(await evaluate('__arpg.save.gold')<gold);
     await click('[data-action="inn"]');await click('[data-action="forge"]');await audit();
-    await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');assert.equal(await evaluate("__arpg.save.items.find(i=>i.uid==='craft:iron_sword:1').enhance"),1);
+    await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');await waitFor("!document.querySelector('[data-enchant-fx]')");assert.equal(await evaluate("__arpg.save.items.find(i=>i.uid==='craft:iron_sword:1').enhance"),1);
     await click('[data-action="select-gear"][data-uid="starter:weapon"]');await click('[data-action="dismantle"][data-uid="starter:weapon"]');await audit();
     await click('[data-action="close-sheet"]');assert.ok(await evaluate("__arpg.save.items.some(i=>i.uid==='starter:weapon')"));
     await click('[data-action="inn"]');
@@ -181,7 +181,7 @@ try {
     assert.equal(await evaluate('__arpg.save.stash.stacks.potion'),0);
     const materialGold=await evaluate('__arpg.save.gold');
     await click('[data-action="sell-stack"][data-id="enhance_stone_1"][data-count="5"]');
-    assert.equal(await evaluate('__arpg.save.gold'),materialGold+10); // 강화석 2 G × 5 (cocy 10-11)
+    assert.equal(await evaluate('__arpg.save.gold'),materialGold+await evaluate("(async()=>{const {stackSellPrice}=await import('./js/meta/shop.js');return stackSellPrice('enhance_stone_1')*5;})()"));
     await click('[data-action="sell-stack"][data-id="scrap"]:last-child');await audit();
     assert.equal(await evaluate('__arpg.save.stacks.scrap'),0);
     await click('[data-action="shop-tab"][data-tab="buy"]');
@@ -210,7 +210,7 @@ try {
     for(const src of paths){const im=new Image();im.src=src;await im.decode();if(im.naturalWidth!==96)throw Error(src);}
     return {ids:Object.keys(ITEMS).length,paths:paths.size};
   })()`);
-  assert.equal(coverage.paths,31);
+  assert.equal(coverage.paths,35);
   // Use real invalid image bytes (not a synthetic error event) to exercise decode failure.
   await click('[data-action="board"]');await click('[data-action="inn"]');await audit();
   await evaluate(`(()=>{const im=document.querySelector('img.item-art-image');im.dataset.goodSrc=im.src;im.src='data:image/webp;base64,AAAA';})()`);

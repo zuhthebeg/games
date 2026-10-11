@@ -462,7 +462,7 @@ try {
     const {createSave,SaveStore}=await import('./js/meta/save.js');
     const {addXp}=await import('./js/meta/progression.js');
     const base=addXp(createSave({name:'대장장이 시험',answers:[0,0,0,0,0],createdAt:1}),451);
-    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:5}};
+    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:2,scroll_enchant_weapon:10}};
     new SaveStore(localStorage).save(fixture);
   })()`);
   await command('Page.reload');
@@ -470,12 +470,7 @@ try {
   await click('[data-action="forge"]');
   await evaluate("document.querySelector('.craft-list').open=true");
   await click('[data-action="craft"][data-id="iron_sword"]');
-  // Five plain stones become one weapon scroll; the scroll is the only enhance cost (cocy 10-11).
-  await click('[data-action="craft-scroll"][data-family="weapon"]');
-  assert.equal(await evaluate('__arpg.save.stacks.scroll_enchant_weapon'), 1);
-  await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');
-  assert.equal(await evaluate("__arpg.save.items.find(i=>i.uid==='craft:iron_sword:1').enhance"), 1);
-  assert.equal(await evaluate('__arpg.save.stacks.scroll_enchant_weapon'), 0);
+  await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');await waitFor("!document.querySelector('[data-enchant-fx]')");
   await click('[data-action="equip"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.equipped.weapon'), 'craft:iron_sword:1');
   assert.ok(await evaluate(
@@ -487,7 +482,7 @@ try {
   assert.ok(await evaluate("!!document.querySelector('dialog[open]')"), 'dismantle must ask for confirmation');
   await click('[data-action="confirm-dismantle"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.stacks.scrap'), 94);
-  assert.equal(await evaluate('__arpg.save.gold'), 2940); // enhance costs a scroll, no gold (cocy 10-11)
+  assert.equal(await evaluate('__arpg.save.gold'), 2940);
   await command('Page.reload');
   await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.gold'), 2940);

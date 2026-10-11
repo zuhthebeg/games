@@ -47,7 +47,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"blade\",\"head\":\"knight\",\"weapon\":\"standard\",\"weaponColour\":[218,234,244],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"blade\",\"head\":\"knight\",\"weapon\":\"standard\",\"weaponColour\":[218,234,244],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -99,7 +100,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"blade\",\"head\":\"none\",\"weapon\":\"alternate\",\"weaponColour\":[216,205,178],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"blade\",\"head\":\"none\",\"weapon\":\"alternate\",\"weaponColour\":[216,205,178],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -120,7 +122,7 @@
         "id": "paperdoll-bow",
         "mode": "paperdoll",
         "key": "bow",
-        "state": "",
+        "state": "idle",
         "direction": "E",
         "frame": 0,
         "tint": 16777215,
@@ -151,7 +153,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"bow\",\"head\":\"mage\",\"weapon\":\"alternate\",\"weaponColour\":[219,176,119],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"bow\",\"head\":\"mage\",\"weapon\":\"alternate\",\"weaponColour\":[219,176,119],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -172,7 +175,7 @@
         "id": "paperdoll-bow",
         "mode": "paperdoll",
         "key": "bow",
-        "state": "",
+        "state": "idle",
         "direction": "E",
         "frame": 0,
         "tint": 16777215,
@@ -203,7 +206,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"bow\",\"head\":\"barbarian\",\"weapon\":\"standard\",\"weaponColour\":[179,216,148],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"bow\",\"head\":\"barbarian\",\"weapon\":\"standard\",\"weaponColour\":[179,216,148],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -255,7 +259,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"focus\",\"head\":\"knight\",\"weapon\":\"alternate\",\"weaponColour\":[218,184,143],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"focus\",\"head\":\"knight\",\"weapon\":\"alternate\",\"weaponColour\":[218,184,143],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -307,7 +312,8 @@
               178
             ]
           ],
-          "key": "{\"kit\":\"focus\",\"head\":\"mage\",\"weapon\":\"standard\",\"weaponColour\":[186,149,235],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}"
+          "key": "{\"kit\":\"focus\",\"head\":\"mage\",\"weapon\":\"standard\",\"weaponColour\":[186,149,235],\"colours\":[[172,135,99],[172,135,99],[135,158,178]]}",
+          "enhance": 0
         },
         "textureLoaded": true
       },
@@ -1212,9 +1218,9 @@
       "compositions": 3,
       "peakOutputs": 2,
       "last": {
-        "totalMs": 797,
-        "decodeMs": 730.9000000953674,
-        "composeMs": 66.09999990463257,
+        "totalMs": 795.0999999046326,
+        "decodeMs": 730.1999998092651,
+        "composeMs": 64.90000009536743,
         "sourceRGBABytes": 11649024,
         "stagingRGBABytes": 8142848,
         "readbackRGBABytes": 5799936,
@@ -1288,9 +1294,9 @@
   "performanceSamples": {
     "runs": [
       {
-        "totalMs": 1163.8000001907349,
-        "decodeMs": 871.2000002861023,
-        "composeMs": 292.59999990463257,
+        "totalMs": 1166.9000000953674,
+        "decodeMs": 870.9000000953674,
+        "composeMs": 296,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1300,9 +1306,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1144.5999999046326,
-        "decodeMs": 845,
-        "composeMs": 299.59999990463257,
+        "totalMs": 1141.5999999046326,
+        "decodeMs": 840.0999999046326,
+        "composeMs": 301.5,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1312,9 +1318,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1178.7000002861023,
-        "decodeMs": 885.2000002861023,
-        "composeMs": 293.5,
+        "totalMs": 1142.9000000953674,
+        "decodeMs": 850.8000001907349,
+        "composeMs": 292.09999990463257,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1324,9 +1330,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1256.2999997138977,
-        "decodeMs": 912.9000000953674,
-        "composeMs": 343.3999996185303,
+        "totalMs": 1143.4000000953674,
+        "decodeMs": 854.5,
+        "composeMs": 288.90000009536743,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1336,9 +1342,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1293.4000000953674,
-        "decodeMs": 922.0999999046326,
-        "composeMs": 371.30000019073486,
+        "totalMs": 1169.8000001907349,
+        "decodeMs": 857,
+        "composeMs": 312.80000019073486,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1348,9 +1354,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1291.8000001907349,
-        "decodeMs": 937.9000000953674,
-        "composeMs": 353.90000009536743,
+        "totalMs": 1223.8000001907349,
+        "decodeMs": 880.2000002861023,
+        "composeMs": 343.59999990463257,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1360,9 +1366,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1278.1999998092651,
-        "decodeMs": 972.7999997138977,
-        "composeMs": 305.40000009536743,
+        "totalMs": 1197.0999999046326,
+        "decodeMs": 881.5,
+        "composeMs": 315.59999990463257,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1372,9 +1378,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1153.7000002861023,
-        "decodeMs": 861.8000001907349,
-        "composeMs": 291.90000009536743,
+        "totalMs": 1166.0999999046326,
+        "decodeMs": 870.8000001907349,
+        "composeMs": 295.2999997138977,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1384,9 +1390,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1158.7999997138977,
-        "decodeMs": 867.4000000953674,
-        "composeMs": 291.3999996185303,
+        "totalMs": 1159.7999997138977,
+        "decodeMs": 850.5,
+        "composeMs": 309.2999997138977,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1396,9 +1402,9 @@
         "phoneEvidence": false
       },
       {
-        "totalMs": 1172.9000000953674,
-        "decodeMs": 871,
-        "composeMs": 301.90000009536743,
+        "totalMs": 1277.5999999046326,
+        "decodeMs": 946.6999998092651,
+        "composeMs": 330.90000009536743,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1412,9 +1418,9 @@
       "compositions": 25,
       "peakOutputs": 2,
       "last": {
-        "totalMs": 1172.9000000953674,
-        "decodeMs": 871,
-        "composeMs": 301.90000009536743,
+        "totalMs": 1277.5999999046326,
+        "decodeMs": 946.6999998092651,
+        "composeMs": 330.90000009536743,
         "sourceRGBABytes": 11403264,
         "stagingRGBABytes": 7847936,
         "readbackRGBABytes": 5439488,
@@ -1438,5 +1444,5 @@
   "expectedBlockedNetworkErrors": 0,
   "phoneEvidence": false,
   "screenshots": 0,
-  "composeP95SixX": 371.30000019073486
+  "composeP95SixX": 343.59999990463257
 }

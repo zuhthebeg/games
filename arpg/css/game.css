@@ -562,9 +562,90 @@ select, input:not([type="checkbox"]) {
 .recipe .item-emblem .item-art{width:24px;height:24px}
 .p2-stones .item-art{width:32px;height:32px;flex:0 0 32px}
 
+/* Committed enchant results: a modal is display-only and blocks further spending. */
+.enchant-fx { border:0; padding:0; width:min(340px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); overflow:hidden; color:#e9f7ff; background:radial-gradient(ellipse at 50% 40%,#173a53,#0b121bef 70%); border-radius:20px; box-shadow:0 0 60px #4baeff40; }
+.enchant-fx::backdrop { background:#050810c9; }
+.enchant-fx .enchant-stage { position:relative; isolation:isolate; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; width:100%; min-height:300px; padding:170px 18px 22px; border:1px solid #76cfff66; border-radius:20px; background:none; color:inherit; }
+.enchant-scroll,.enchant-gear { position:absolute; display:block; width:88px; height:88px; top:60px; left:calc(50% - 44px); }
+.enchant-scroll .item-art,.enchant-gear .item-art { width:100%;height:100%; }
+.enchant-scroll { top:26px; width:64px;height:64px;left:calc(50% - 32px); filter:drop-shadow(0 0 12px #6cceff); animation:enchant-scroll-light var(--charge) ease-in both; }
+.enchant-gear { filter:drop-shadow(0 0 10px #8ddfff); }
+.enchant-fx.risky[data-phase="charge"] .enchant-scroll { animation:enchant-scroll-burn var(--charge) ease-in both; }
+.enchant-fx.risky[data-phase="charge"] .enchant-gear { animation:enchant-gather var(--charge) ease-in both; }
+.enchant-result { position:relative;z-index:2; display:block; min-height:38px; font-size:32px; line-height:1.2; text-wrap:balance; }
+.enchant-detail { min-height:24px; margin-top:8px; font-size:14px; }
+.enchant-skip { margin-top:18px; color:#bacbd2; font-size:12px; }
+.enchant-burst { position:absolute; z-index:-1; top:48px; left:calc(50% - 55px); width:110px; height:110px; border-radius:50%; opacity:0; background:radial-gradient(circle,#fff 0%,#c9f0ff 18%,#4dbaff88 40%,transparent 70%); }
+.enchant-fx[data-phase="result"] .enchant-burst { animation:enchant-explode .55s ease-out both; }
+.enchant-fx[data-phase="result"] .enchant-scroll { display:none; }
+.enchant-fx[data-phase="result"] .enchant-result { animation:enchant-pop .3s ease-out both; text-shadow:0 0 16px #70cfff; }
+.enchant-fx.success:not(.risky) .enchant-result { animation-duration:180ms; }
+.enchant-fx.success:not(.risky) .enchant-burst { animation-duration:220ms; }
+.enchant-fx.destroyed { color:#ffbaa5; background:radial-gradient(ellipse at 50% 40%,#682624,#170c13ef 70%); }
+.enchant-fx.destroyed .enchant-result { font-size:24px; }
+.enchant-fx.destroyed[data-phase="result"] .enchant-gear { animation:enchant-break .35s ease-in both; }
+.enchant-fx.destroyed .enchant-burst { background:radial-gradient(circle,#ffe2b0,#ff463c80,transparent 70%); }
+.enchant-shards { position:absolute;top:105px;left:50%;pointer-events:none; }
+.enchant-shards i { position:absolute;display:none;width:8px;height:13px;background:#ff8565;clip-path:polygon(0 0,100% 30%,50% 100%); }
+.enchant-fx.destroyed[data-phase="result"] .enchant-shards i { display:block; animation:enchant-shatter .7s ease-out both; }
+.enchant-fx.crack .enchant-gear { display:none; }
+.enchant-fx.crack .enchant-result { opacity:1; }
+.enchant-fx.reduced .enchant-scroll,.enchant-fx.reduced .enchant-gear,.enchant-fx.reduced .enchant-result,.enchant-fx.reduced .enchant-burst,.enchant-fx.reduced .enchant-shards i { animation:none!important; }
+.enchant-fx.reduced .enchant-shards,.enchant-fx.reduced .enchant-burst { display:none; }
+.enchant-fx.reduced[data-phase="result"] { animation:enchant-fade .12s ease-out; }
+.enchant-fx.reduced.destroyed[data-phase="result"] .enchant-gear { opacity:.15; }
+@keyframes enchant-scroll-light { to { filter:drop-shadow(0 0 25px #a9e5ff);opacity:.3; } }
+@keyframes enchant-scroll-burn { 55% { filter:drop-shadow(0 0 16px #ff974b); } to { filter:drop-shadow(0 0 30px #ff643c); transform:translateY(-10px) scale(.75);opacity:0; } }
+@keyframes enchant-gather { 0%,30% { transform:translateX(0);filter:drop-shadow(0 0 2px #8ddfff); } 45%,65%,85% { transform:translateX(-3px); } 55%,75%,95% { transform:translateX(3px); } 100% { transform:translateX(0);filter:drop-shadow(0 0 25px #e5f9ff); } }
+@keyframes enchant-explode { 0% {opacity:1;transform:scale(.3);} 40% {opacity:1;transform:scale(2.5);} 100% {opacity:0;transform:scale(3);} }
+@keyframes enchant-pop { from {opacity:0;transform:scale(.7) translateY(10px);} to {opacity:1;transform:none;} }
+@keyframes enchant-break { 30% {filter:drop-shadow(0 0 15px #ff463c);clip-path:polygon(0 0,48% 0,40% 40%,65% 60%,50% 100%,0 100%);} to {opacity:0;transform:scale(1.15);} }
+@keyframes enchant-shatter { from {opacity:1;transform:rotate(var(--angle)) translateY(0);} to {opacity:0;transform:rotate(var(--angle)) translateY(var(--distance)) rotate(120deg);} }
+@keyframes enchant-fade { from {opacity:.2;} to {opacity:1;} }
+
+/* Risk is not communicated by colour alone: probability and destruction copy remain. */
+.forge-work { border:1px solid var(--edge);padding:12px;border-radius:10px; }
+.forge-work .p2-item-heading>div { min-width:0; }
+.forge-work.risky { border-color:#d47665; background:linear-gradient(135deg,#49232455,#201d20); }
+.forge-odds { display:block; margin-top:8px; font-size:28px; line-height:1.2; color:#a6d9ed; }
+.forge-odds span { font-size:12px; font-weight:normal; }
+.risky .forge-odds { color:#ffa995; }
+#meta-screen button.primary.danger { background:linear-gradient(#9d4439,#6e2c29); border-color:#f49d80; color:#fff2e9; box-shadow:inset 0 1px #ffc7a540; }
+.scroll-picker { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.scroll-picker button { display:flex; align-items:center; gap:6px; min-width:0; white-space:normal; padding:8px; }
+.scroll-picker button .item-art { width:40px;height:40px;flex-shrink:0; }
+.scroll-picker button span { min-width:0; }
+.scroll-picker button small { display:block; margin-top:3px; }
+.scroll-picker button[aria-pressed="true"] { border-color:#d9ba75; background:#55442e; box-shadow:inset 0 0 0 1px #d9ba75; }
+.scroll-recipe { display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr); }
+.scroll-recipe>div { grid-column:2 / span 2; }
+.scroll-recipe .item-emblem { width:32px; }
+.scroll-recipe button { min-width:0;white-space:normal; }
+.scroll-recipe button:first-of-type { grid-column:1 / span 2; }
+.scroll-recipe button:last-of-type { grid-column:3; }
+
+/* Enhancement borders override grade colour, but never its explicit text label. */
+[data-enhance="6"] { --enhance-color:#cde8ee; }
+[data-enhance="7"] { --enhance-color:#53b9ff; }
+[data-enhance="8"] { --enhance-color:#9cdaff; }
+[data-enhance="9"] { --enhance-color:#be84ff; }
+[data-enhance="10"] { --enhance-color:#ffd36f; }
+.p2-emblem[data-enhance="6"],.p2-emblem[data-enhance="7"],.p2-emblem[data-enhance="8"],.p2-emblem[data-enhance="9"],.p2-emblem[data-enhance="10"] { border-color:var(--enhance-color);box-shadow:inset 0 0 7px var(--enhance-color); }
+.enhance-badge[data-enhance="6"],.enhance-badge[data-enhance="7"],.enhance-badge[data-enhance="8"],.enhance-badge[data-enhance="9"],.enhance-badge[data-enhance="10"] { color:var(--enhance-color);border:1px solid var(--enhance-color); }
+.portrait-weapon-glow { position:absolute;left:43%;top:43%;width:7px;height:40px;border-radius:50%;transform:rotate(35deg);background:var(--enhance-color);opacity:.5;box-shadow:0 0 5px 2px var(--enhance-color);pointer-events:none; }
+.portrait-weapon-glow[data-kit="bow"] { width:20px;height:36px;left:38%;background:transparent;border:3px solid var(--enhance-color);border-left:0; }
+.portrait-weapon-glow[data-kit="focus"] { width:14px;height:14px;top:44%;border:2px solid var(--enhance-color); }
+.portrait-weapon-glow[data-enhance="7"] { box-shadow:0 0 10px 4px var(--enhance-color); }
+.portrait-weapon-glow[data-enhance="8"],.portrait-weapon-glow[data-enhance="9"],.portrait-weapon-glow[data-enhance="10"] { box-shadow:0 0 12px 5px var(--enhance-color),-5px 4px 9px var(--enhance-color);animation:weapon-pulse 1.4s ease-in-out infinite alternate; }
+.portrait-weapon-glow i { display:none; }
+.portrait-weapon-glow[data-enhance="9"] i,.portrait-weapon-glow[data-enhance="10"] i { display:block;position:absolute;width:3px;height:3px;border-radius:50%;background:#ffd36f;left:calc((var(--i) - 2) * 8px);top:calc(var(--i) * 7px);animation:weapon-mote 1.8s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.3s); }
+.portrait-weapon-glow i:nth-child(1) {--i:0;} .portrait-weapon-glow i:nth-child(2) {--i:1;} .portrait-weapon-glow i:nth-child(3) {--i:2;} .portrait-weapon-glow i:nth-child(4) {--i:3;} .portrait-weapon-glow i:nth-child(5) {--i:4;} .portrait-weapon-glow i:nth-child(6) {--i:5;}
+.portrait-weapon-glow[data-enhance="10"]:after { content:"";position:absolute;left:-15px;top:6px;width:30px;height:25px;border:2px solid #ffd36f;border-radius:50%;box-shadow:0 0 8px #ffe7a7; }
+@keyframes weapon-pulse { to {opacity:.85;} }
+@keyframes weapon-mote { to {transform:translateY(-8px);opacity:.2;} }
+@media (prefers-reduced-motion:reduce) { .portrait-weapon-glow,.portrait-weapon-glow i {animation:none!important;} .portrait-weapon-glow i {display:none!important;} }
 /* cocy 10-11 enchant: minimal result line + risky forge state (animation layer comes separately). */
-.enchant-result { margin: 0 0 8px; padding: 8px 10px; border-radius: 6px; font-size: 14px; }
-.enchant-result.success { background: rgba(80, 140, 230, .18); color: #cfe0ff; }
-.enchant-result.destroyed { background: rgba(200, 60, 50, .22); color: #ffc9c2; }
+.enchant-notice { margin: 0 0 8px; padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+.enchant-notice.success { background: rgba(80, 140, 230, .18); color: #cfe0ff; }
+.enchant-notice.destroyed { background: rgba(200, 60, 50, .22); color: #ffc9c2; }
 .forge-work.risky small.loss { font-weight: 700; }
-button.primary.danger { background: #8d2f27; border-color: #c4503f; }

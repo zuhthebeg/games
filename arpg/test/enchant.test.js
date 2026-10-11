@@ -157,7 +157,7 @@ test('forge renders risky odds, danger button and a one-shot result line for suc
   hub.showInnPanel = (_title, html, _panel, footer) => { hub.html = html; hub.footer = footer; };
   hub.showForge();
   assert.match(hub.html, /성공 40% · 실패 시 장비 파괴/); assert.match(hub.footer, /danger/); assert.match(hub.footer, /성공 40%/);
-  hub.lastEnchant = { outcome: 'destroyed', id: 'training_sword', from: 7, to: null, refund: { enhance_stone_1: 5 } };
+  hub.forgeNotice = { outcome: 'destroyed', id: 'training_sword', from: 7, to: null, refund: { enhance_stone_1: 5 } };
   hub.showForge();
   assert.match(hub.html, /산산조각.*강화석 5개/);
   hub.showForge();

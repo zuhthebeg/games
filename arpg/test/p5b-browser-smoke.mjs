@@ -65,7 +65,7 @@ try {
     const id = ++sequence;
     const timer = setTimeout(() => {
       pending.delete(id);
-      reject(new Error(`CDP timeout: ${method}`));
+      reject(new Error(`CDP timeout: ${method} ${params.expression?.slice(0,160) || ""}`));
     }, 15000);
     pending.set(id, (message) => {
       clearTimeout(timer);
@@ -132,6 +132,25 @@ try {
   };
 
   await command('Runtime.enable'); await command('Page.enable'); await command('Log.enable');
+  await command('Page.setLifecycleEventsEnabled',{enabled:true});
+  // Both navigation and reload acknowledge before the previous context is gone.
+  // Evaluate the destination document only, and scope requests to its loader.
+  let activeLoader;
+  const freshDocument = async (method, params = {}) => {
+    const first=events.length,start=Date.now(),result=await command(method,params);
+    let loaderId=result.loaderId;
+    while(!loaderId) {
+      loaderId=events.slice(first).find(e=>e.method==='Page.frameNavigated'&&!e.params.frame.parentId)?.params.frame.loaderId;
+      if(Date.now()-start>15000)throw Error('destination frame did not navigate');
+      if(!loaderId)await sleep(50);
+    }
+    while(!events.some(e=>e.method==='Page.lifecycleEvent'&&e.params.loaderId===loaderId&&e.params.name==='load')) {
+      if(Date.now()-start>15000)throw Error('destination document did not load');
+      await sleep(50);
+    }
+    activeLoader=loaderId;
+  };
+  const navigate=params=>freshDocument('Page.navigate',params);
   const audit = async () => {
     const result = await evaluate(`(() => {
       const root=document.querySelector('#meta-screen'); const shell=root.querySelector('.inn-shell');
@@ -161,14 +180,14 @@ try {
     const [width,height]=[[360,640],[390,844],[1280,900]][i%3];
     const [weapon,head]=configurations[i];
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
-    await command('Page.navigate',{url}); await waitFor('window.__arpg');
+    await navigate({url}); await waitFor('Boolean(window.__arpg)');
     await evaluate(`(async()=>{const {createSave,SaveStore,validateSave}=await import('./js/meta/save.js');const {addXp}=await import('./js/meta/progression.js');const {instance,ITEMS}=await import('./js/meta/items.js');
       const s=addXp(createSave({name:'P5 외형 시험',answers:[0,0,0,0,0],createdAt:1}),851);
       for(const id of ${JSON.stringify([weapon,head,'leather_vest','hands_medium_fine_t1','feet_heavy_fine_t1'].filter(Boolean))}) {s.items.push(instance('test:'+id,id));s.equipped[ITEMS[id].slot]='test:'+id;}
       if(${i}===0)s.items.push(instance('test:spare-head','head_medium_common_t1'));
       if(!validateSave(s))throw Error('invalid P5 fixture: '+${JSON.stringify(weapon)});
       new SaveStore(localStorage).save(s);})()`);
-    events.length=0;await command('Page.reload');await waitFor(page('inn'));
+    events.length=0;await freshDocument('Page.reload');await waitFor(page('inn'));
     await waitFor("document.querySelector('[data-paperdoll-ready]')",20000);await audit();
     const portrait=await evaluate(`(()=>{const n=document.querySelector('[data-paperdoll-ready]'),c=n.querySelector('canvas');const a=c.getContext('2d').getImageData(0,0,128,128).data;
       return {key:n.dataset.paperdollReady,alphaPixels:Array.from(a).filter((v,i)=>i%4===3&&v>0).length,canvasVisible:!c.hidden,bg:n.style.backgroundImage};})()`);
@@ -193,9 +212,10 @@ try {
     assert.equal(combat.equipment.key,portrait.key);assert.equal(combat.tint,0xffffff);
     const before=await evaluate('JSON.stringify(__arpg.save)');await key('KeyD');await key('KeyJ');await sleep(350);await key('KeyD','keyUp');await key('KeyJ','keyUp');
     assert.equal(await evaluate('JSON.stringify(__arpg.save)'),before);
-    const network=events.filter(e=>e.method==='Network.requestWillBeSent').map(e=>e.params.request.url);
+    const network=events.filter(e=>e.method==='Network.requestWillBeSent'&&e.params.loaderId===activeLoader).map(e=>e.params.request.url);
+    assert.ok(network.some(u=>u.includes(`/sprites/paperdoll/${combat.equipment.kit}/`)), 'equipped kit must be captured for destination loader');
     const otherKits=['blade','bow','focus'].filter(k=>k!==combat.equipment.kit);
-    assert.ok(!network.some(u=>otherKits.some(k=>u.includes(`/paperdoll/${k}/`))), 'non-equipped kit fetched');
+    assert.ok(!network.some(u=>otherKits.some(k=>u.includes(`/paperdoll/${k}/`))), 'non-equipped kit fetched: '+JSON.stringify(network.filter(u=>u.includes('/paperdoll/'))));
     assert.ok(!network.some(u=>/\/hero-(sword|bow|focus)\/atlas-[0-9]+\.json/.test(u)), 'original hero atlas downloaded on successful B combat');
     samples.push({width,height,weapon,head,portrait,combat,phoneEvidence:false});events.length=0;
   }
@@ -258,12 +278,12 @@ try {
   deliberateMissingAssets=true;
   // Missing assets must restore the original combat atlas, not freeze the boot.
   await command('Network.setBlockedURLs',{urls:['*assets/sprites/paperdoll/*']});
-  await command('Page.navigate',{url});await waitFor(page('inn'));await waitFor("document.querySelector('[data-paperdoll-failed]')",10000);
+  await navigate({url});await waitFor(page('inn'));await waitFor("document.querySelector('[data-paperdoll-failed]')",10000);
   await click('[data-action="board"]');await click('[data-action="sortie"][data-stage="S1"]');await click('#sortie-confirm');
   await waitFor("__arpg.art.visuals.some(v=>v.key==='focus'&&v.mode==='atlas'&&v.textureLoaded)",20000);
   failures.push('missing paperdoll => original atlas');
   await command('Network.setBlockedURLs',{urls:[]});events.length=0;deliberateMissingAssets=false;
-  await command('Page.navigate',{url:url+'&paperdoll=0'});await waitFor(page('inn'));
+  await navigate({url:url+'&paperdoll=0'});await waitFor(page('inn'));
   assert.equal(await evaluate("document.querySelectorAll('[data-paperdoll]').length"),0);
   await click('[data-action="board"]');await click('[data-action="sortie"][data-stage="S1"]');await click('#sortie-confirm');
   await waitFor("__arpg.art.visuals.some(v=>v.key==='focus'&&v.mode==='atlas'&&v.textureLoaded)",20000);
@@ -273,7 +293,7 @@ try {
   assert.equal(unexpectedLogErrors.length,0,JSON.stringify(unexpectedLogErrors));
   const report={ok:true,samples,liveSwaps,animations,tintRegions,performanceSamples,failures,consoleErrors:consoleErrors.length,unexpectedLogErrors:unexpectedLogErrors.length,expectedBlockedNetworkErrors:expectedBlockedNetworkErrors.length,phoneEvidence:false,screenshots:0};
   const values=performanceSamples.runs.map(r=>r.composeMs).sort((a,b)=>a-b);report.composeP95SixX=values[Math.ceil(values.length*.95)-1];
-  await writeFile(new URL('../tools/art/p5b/browser-validation.json',import.meta.url),JSON.stringify(report,null,2));
+  await writeFile(process.env.ARPG_REPORT || new URL('../tools/art/p5b/browser-validation.json',import.meta.url),JSON.stringify(report,null,2));
   console.log(JSON.stringify({ok:true,combatCases:samples.length,clips:144,composeP95SixX:report.composeP95SixX,cache:performanceSamples.cache,failures,consoleErrors:consoleErrors.length,unexpectedLogErrors:unexpectedLogErrors.length,phoneEvidence:false,screenshots:0}));
 } finally {
   socket?.close();

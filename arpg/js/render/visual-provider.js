@@ -1,6 +1,7 @@
 import { BALANCE } from '../content/balance.js';
 import { Container, Graphics } from '../../vendor/pixi-8.22.0.min.mjs';
 import { registerAtlasFactories } from './atlas-visual.js';
+import { withWeaponGlow } from './weapon-glow.js';
 import { equipmentVisual } from './paperdoll-state.js';
 import { visualKey } from './atlas-state.js';
 import { MONSTER_VARIANTS, MONSTER_PALETTES } from '../content/monsters.js';
@@ -32,7 +33,8 @@ export class VisualProvider {
     const variant = MONSTER_VARIANTS[key];
     const color = this.palette[key] ?? (variant ? MONSTER_PALETTES[variant.paletteId][0] : COLORS[key]);
     const equipment = entity.kind === 'player' && this.equipmentSave ? equipmentVisual(this.equipmentSave, entity.weapon) : null;
-    return this.factories.has(key) ? this.factories.get(key)(entity, { color, equipment }) : procedural(entity, { color });
+    const visual = this.factories.has(key) ? this.factories.get(key)(entity, { color, equipment }) : procedural(entity, { color });
+    return equipment ? withWeaponGlow(visual, equipment.enhance, entity.weapon) : visual;
   }
 }
 function procedural(entity, { color }) {
