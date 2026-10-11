@@ -276,3 +276,56 @@ projectile speed, unchanged CDs/telegraphs and same-seed replay. Existing full
 Node suite and isolated raw-CDP browser smoke remain required. Networking,
 parent-owned visual feedback/gear rate UI and human feel/balance tuning are not
 implemented by this engine patch.
+
+## Personal quest equipment budget (10-11)
+
+Equipment frequency is controlled in the existing reward reducer, independently
+for each player's tracker (solo or co-op); it is **not** a shared party cap.
+`createTracker(seed)` chooses `B = 1 + [mulberry32(seed XOR 0x71b0d6e3) < 0.10]`:
+90% of quests have one equipment slot, 10% have two, never more than two. S1
+training awards zero. The budget is an upper limit, not a completion-time mint:
+non-boss quests still need actual successful equipment rolls from killed monsters.
+Empty aborted quests award nothing; returning after an earned kill keeps only
+that kill's accepted rewards, and death loses the existing temporary loot.
+
+Every original `rollDrops` call still executes unchanged. Only its equipment
+candidates are filtered; gold, materials, consumables, enhancement stones and
+blessed/enchant scroll streams/probabilities are not retuned. A non-boss uses the
+first original candidate(s) until its allowed slots are spent. On chief stages,
+one slot is reserved until the chief is killed. The chief uses its original first
+rolled item (including the existing rareless guarantee), **not** the highest
+rarity from multiple discarded candidates. Threat still uses the original rarity
+tables and elite/drop probabilities, but cannot increase the quest slot budget.
+
+The first S4 chief still grants the existing fixed rare `chief_maul`; it occupies
+the reserved boss slot instead of adding another item after a full bag of gear.
+The existing clear-settlement chief fallback remains for direct/legacy callers;
+if their two slots are full it replaces the weaker awarded item instead of adding
+a third. Settlement also defensively clamps equipment to two (zero for training),
+without truncating stacks. Natural item IDs, drop seeds, affixes and UIDs are
+retained, with the existing deterministic collision recovery on re-entry.
+
+`gearAwarded` is spent before pickup: weight overflow does not refund/reroll a
+slot. Selling, storage or clearing `tempLoot.items` cannot reset it. Staged loot
+continues to count in carrying weight; existing pickup/120%-load rules and death
+loss are unchanged. Rareless boss gear, like ordinary gear, remains subject to
+those existing weight/death rules. Trackers are round-local, not a new save
+schema: serialized tracker continuation is deterministic, but the current main
+module does not persist/resume an active round across a full page reload.
+Saved stats, equipped gear, learned skills and receipts retain their format.
+
+Verification:
+- `node --test arpg/test/*.test.js`
+- `node arpg/tools/stamp-assets.mjs --check`
+- `node arpg/tools/balance/quest-gear.mjs 1000`
+
+The diagnostic uses complete production encounter rosters (S2=30, S4=19,
+S10=25, S20=33 kills), stage-rate seeded elite variants and threats 1–3. It is a
+reward simulation assuming all monsters are killed, not a combat-success/AI
+simulation. 1,000 seeds per scenario yield mean 1.087–1.096 equipment, absolute
+maximum two; only S2/threat1 has zero drops in 5/1,000 completed rosters. It also
+checks 900 first-chief/rareless scenarios and 100 training runs. Regression tests
+exercise boss-last ordering, overflow, empty aborts, JSON tracker continuation,
+SaveStore reload, repeated-seed UID collisions, unchanged non-gear rolls and
+actual 2/4-player loopback event-journal settlement/duplicate delivery.
+No parent main hook, networking authority or save migration is required.
