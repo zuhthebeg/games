@@ -60,7 +60,7 @@ export function setLevel(save, level) {
 export function mutateSave(save, action) {
   const next = structuredClone(save);
   if (action.startsWith('gold:')) next.gold += Number(action.split(':')[1]);
-  else if (action === 'stones') for (let i = 1; i <= 3; i++) next.stacks[`enhance_stone_${i}`] = (next.stacks[`enhance_stone_${i}`] || 0) + 10;
+  else if (action === 'stones') for (const [id, n] of [['enhance_stone_1', 50], ['enhance_stone_3', 2], ['scroll_enchant_weapon', 10], ['scroll_enchant_armor', 10], ['scroll_blessed_weapon', 2], ['scroll_blessed_armor', 2]]) next.stacks[id] = (next.stacks[id] || 0) + n;
   else if (action === 'materials') {
     for (const [id, item] of Object.entries(ITEMS)) if (item.kind === 'material') next.stacks[id] = (next.stacks[id] || 0) + 20;
   } else if (action === 'potions') {
@@ -78,7 +78,7 @@ export function mutateSave(save, action) {
 export function summarizeLoot(loot) {
   const gear = Object.fromEntries(RARITIES.map(rarity => [rarity, 0]));
   for (const item of loot.items) gear[ITEMS[item.id].rarity]++;
-  return { gold: loot.gold, gear, stones: Object.fromEntries([1, 2, 3].map(tier => [tier, loot.stacks[`enhance_stone_${tier}`] || 0])) };
+  return { gold: loot.gold, gear, stones: Object.fromEntries([1, 3].map(tier => [tier, loot.stacks[`enhance_stone_${tier}`] || 0])) };
 }
 export function previewDrops(monster, count, ctx = {}, roll = rollDrops) {
   if (![100, 1000].includes(count)) throw new Error('횟수는 100/1000');

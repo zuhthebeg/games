@@ -1,14 +1,34 @@
 import { BALANCE } from '../content/balance.js';
 // M1.5 proposal constants: P3 tunes this file, not simulation code.
 export const SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
-export const ENHANCE_GOLD = [45, 71, 101, 138, 180];
-export const ENHANCE_STONES = [1, 1, 1, 2, 2];
-export const ENHANCE_STONE_IDS = ['enhance_stone_1', 'enhance_stone_1', 'enhance_stone_2', 'enhance_stone_2', 'enhance_stone_3'];
+// cocy 10-11: Lineage-style enchant. Scrolls are the only cost; within the safe line every scroll
+// succeeds, above it a failure destroys the item. Rates are keyed by the CURRENT level (6 → 7 = 50%).
+export const ENCHANT = {
+  safe: 6, max: 10,
+  rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2 },
+  stonesPerScroll: 5, greaterYield: [5, 10],
+  // Dismantle refund by enhance level (+0..+10); the greater stone is the "cash out" at +7 and above.
+  dismantleStones: [0, 0, 1, 2, 3, 5, 7, 10, 14, 18, 24],
+  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3],
+  // A destroyed item leaves this fraction of its dismantle stones, never the greater stone.
+  failRefund: 0.5,
+  // Lineage blessed odds inside the safe line: +0~2 → +1/+2/+3 equally, +3~5 → +1/+2 equally.
+  blessedLow: [1, 2, 3], blessedHigh: [1, 2],
+  stoneCount: { normal: [1, 2], elite: [2, 3], boss: [3, 5] },
+  blessedChance: { normal: 0.002, elite: 0.03, boss: 0.15 },
+};
+export const STONE = 'enhance_stone_1';
+export const GREATER_STONE = 'enhance_stone_3';
+export const SCROLLS = {
+  weapon: { normal: 'scroll_enchant_weapon', blessed: 'scroll_blessed_weapon' },
+  armor: { normal: 'scroll_enchant_armor', blessed: 'scroll_blessed_armor' },
+};
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
   gearChance: 0.1, eliteGearChance: 0.35, stoneChance: 0.125, eliteStoneChance: 0.4,
   normalRarity: BALANCE.threats[0].rarity, bossRarity: BALANCE.threats[0].bossRarity,
-  stoneWeights: { 1: [85, 14, 1], 2: [45, 45, 10], 3: [20, 45, 35] },
+  // [강화석, 상급 강화석] weight per stone drop event, by hunting tier.
+  stoneWeights: { 1: [97, 3], 2: [92, 8], 3: [82, 18] },
   rarityPrice: { common: 1, fine: 1.6, rare: 3, epic: 5 },
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },
   starterBodyHp: { common: 0, fine: 12, rare: 20, epic: 28 },
@@ -42,7 +62,6 @@ export function weighted(entries, random) {
   for (const [key, weight] of entries) { value -= weight; if (value < 0) return key; }
   return entries.at(-1)[0];
 }
-export const enhanceCost = (level) => ({ gold: ENHANCE_GOLD[level], [ENHANCE_STONE_IDS[level]]: ENHANCE_STONES[level] });
 
 export const RECIPES = {
   iron_sword: { scrap: 8, fang: 2, gold: 60 },
@@ -56,4 +75,5 @@ export const RECIPES = {
   altar_staff: { scrap: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
   woven_armor: { scrap: 16, hide: 4, web: 4, gold: 140 },
 };
-export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2;
+// Above the safe line each risky level adds a further +4% so +7~+10 are worth the gamble.
+export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2 + 0.04 * Math.max(0, level - ENCHANT.safe);

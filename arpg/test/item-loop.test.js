@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
-import { ITEMS, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, enhance, RECIPES } from '../js/meta/items.js';
+import { ITEMS, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, RECIPES } from '../js/meta/items.js';
+import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { deriveMods } from '../js/meta/stats.js';
 import { rollAffixes, affixTotals, DEFERRED_AFFIXES, validAffixes } from '../js/meta/affixes.js';
-import { SLOTS, ECONOMY, AFFIX_RANGES, ENHANCE_GOLD } from '../js/meta/economy.js';
+import { SLOTS, ECONOMY, AFFIX_RANGES, ENCHANT } from '../js/meta/economy.js';
 import { shopStock, gearPrice, buyGear, sellItem, refreshShop, refreshPrice } from '../js/meta/shop.js';
 import { compareItems } from '../js/meta/compare.js';
 import { settleRound, trackRound, createTracker } from '../js/meta/run.js';
@@ -127,7 +128,7 @@ test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones 
   ]) {
     let gearKills = 0, stoneKills = 0, bossExtra = 0;
     const rarities = { common: 0, fine: 0, rare: 0, epic: 0 };
-    const stoneTypes = [0, 0, 0];
+    const stoneTypes = [0, 0];
     for (let seed = 0; seed < 10000; seed++) {
       const loot = rollDrops(monster, seed, ctx);
       assert.deepEqual(loot, rollDrops(monster, seed, ctx));
@@ -135,9 +136,11 @@ test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones 
       if (rolled.length) gearKills++;
       if (rolled.length === 2) bossExtra++;
       for (const item of rolled) rarities[ITEMS[item.id].rarity]++;
-      const stones = stoneTypes.map((_, i) => loot.stacks[`enhance_stone_${i + 1}`] || 0);
+      // One drop event is a pile of plain stones or a single greater stone; count events, not stones.
+      const stones = [loot.stacks.enhance_stone_1 || 0, loot.stacks.enhance_stone_3 || 0];
+      assert.equal(loot.stacks.enhance_stone_2, undefined);
       if (stones.some(Boolean)) stoneKills++;
-      stones.forEach((count, i) => stoneTypes[i] += count);
+      stoneTypes[0] += stones[0] ? 1 : 0; stoneTypes[1] += stones[1] ? 1 : 0;
       if (monster === 'goblin_chief') assert.equal(loot.stacks.scrap, 3);
     }
     sigma(gearKills, 10000, gearP, `${monster} gear`); sigma(stoneKills, 10000, stoneP, `${monster} stones`);
@@ -146,19 +149,14 @@ test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones 
     const weights = gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity;
     for (const [rarity, weight] of Object.entries(weights)) sigma(rarities[rarity], total, weight / 100, `${monster} ${rarity}`);
     const stoneTotal = stoneTypes.reduce((a, b) => a + b, 0);
-    stoneTypes.forEach((count, i) => sigma(count, stoneTotal, ECONOMY.stoneWeights[1][i] / 100, `${monster} stone ${i + 1}`));
+    if (gearP !== 1) stoneTypes.forEach((count, i) => sigma(count, stoneTotal, ECONOMY.stoneWeights[1][i] / 100, `${monster} stone ${i + 1}`));
     console.log(`P1 distribution ${monster} elite=${ctx.elite || false}: gear=${gearKills}, stones=${stoneKills}, rarity=${JSON.stringify(rarities)}, stoneTypes=${stoneTypes}`);
   }
   const mixes = [];
   for (const tier of [1, 2, 3]) {
-    const types = [0, 0, 0];
-    for (let seed = 0; seed < 10000; seed++) {
-      const drop = rollDrops('goblin_chief', seed, { huntTier: tier });
-      types.forEach((_, i) => types[i] += drop.stacks[`enhance_stone_${i + 1}`] || 0);
-    }
-    const total = types.reduce((a, b) => a + b, 0);
-    types.forEach((count, i) => sigma(count, total, ECONOMY.stoneWeights[tier][i] / 100, `tier ${tier} stone ${i + 1}`));
-    mixes.push(types[2] / total);
+    let greater = 0;
+    for (let seed = 0; seed < 10000; seed++) greater += rollDrops('goblin_chief', seed, { huntTier: tier }).stacks.enhance_stone_3 || 0;
+    mixes.push(greater / 10000);
   }
   assert.ok(mixes[0] < mixes[1] && mixes[1] < mixes[2]);
 });
@@ -264,11 +262,15 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
     for (const id of Object.keys(RECIPES)) {
       let made = craft(before, id); const item = made.items.at(-1);
       const sellBefore = gearPrice(item);
-      for (let level = 0; level < 5; level++) made = enhance(made, item.uid);
+      const scroll = scrollsFor(item).normal;
+      for (let level = 0; level < 5; level++) made = enchant(made, item.uid, scroll).save;
       assert.equal(gearPrice(made.items.at(-1)), sellBefore);
-      assert.equal(made.gold, before.gold - RECIPES[id].gold - ENHANCE_GOLD.reduce((a, b) => a + b, 0));
+      assert.equal(made.gold, before.gold - RECIPES[id].gold);
       const salvaged = dismantle(made, item.uid);
-      for (const stone of ['enhance_stone_1', 'enhance_stone_2', 'enhance_stone_3']) assert.equal(salvaged.stacks[stone], made.stacks[stone]);
+      // Refunded stones never pay back the scrolls that made the +5 (5 scrolls = 25 stones).
+      assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5]);
+      assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerScroll);
+      assert.equal(salvaged.stacks.enhance_stone_3, made.stacks.enhance_stone_3);
       assert.ok(salvaged.stacks.scrap < before.stacks.scrap);
       assert.ok(sellItem(made, item.uid).gold < before.gold);
     }
@@ -307,7 +309,7 @@ test('temporary hub wiring renders five slots, comparison, stock, stone costs an
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   hub.showForge();
   for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
-  assert.match(hub.html, /하급 강화석 1/);
+  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /강화석 5 → 1장/); assert.match(hub.html, /성공 확정/);
   assert.match(hub.gearShopHtml(), /refresh-shop/);
   assert.match(hub.gearShopHtml(), /공격력/);
   const receipt = settleRound(hub.save, { stageId: 'S2', terminal: 'clear', tempLoot: { gold: 1, stacks: {}, items: [instance('drop', 'iron_sword', 1)] } }).receipt;

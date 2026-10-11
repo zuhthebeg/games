@@ -36,6 +36,7 @@ export function itemArtKey(id, definition = {}) {
   if (definition.slot === 'head' && definition.armorClass === 'light') return 'head-light';
   if (['hands', 'feet'].includes(definition.slot) && definition.armorClass === 'heavy') return `${definition.slot}-heavy`;
   if (definition.slot) return Object.hasOwn(artwork, definition.slot) ? definition.slot : null;
+  if (definition.enchant) return 'return_scroll'; // [임시] enchant scrolls share the scroll art until their own lands
   return { enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high' }[id]
     || (Object.hasOwn(artwork, id) ? id : null);
 }

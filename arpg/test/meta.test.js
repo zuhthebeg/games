@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 import { STAT_KEYS, eff, cap, deriveMods, allocateStats } from '../js/meta/stats.js';
 import { xpSpan, addXp, deathLoss, stageXp } from '../js/meta/progression.js';
 import {
-  ITEMS, RECIPES, ENHANCE_GOLD, enhanceMultiplier, rollDrops, dropSeed,
-  equip, craft, dismantle, dismantleRefund, enhance, buy, shopPrice, carriedWeight, capacity,
+  ITEMS, RECIPES, enhanceMultiplier, rollDrops, dropSeed,
+  equip, craft, dismantle, dismantleRefund, buy, shopPrice, carriedWeight, capacity,
 } from '../js/meta/items.js';
+import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { resolve } from '../js/meta/quiz.js';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import {
@@ -167,24 +168,25 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     }
     assert.throws(() => dismantle(cycle, item.uid));
     let upgraded = crafted;
-    for (let level = 0; level < 5; level++) upgraded = enhance(upgraded, item.uid);
+    const scroll = scrollsFor(item).normal;
+    for (let level = 0; level < 5; level++) upgraded = enchant(upgraded, item.uid, scroll).save;
     assert.equal(upgraded.items.at(-1).enhance, 5);
-    assert.equal(upgraded.gold, crafted.gold - ENHANCE_GOLD.reduce((sum, value) => sum + value, 0));
+    assert.equal(upgraded.gold, crafted.gold);
     assert.equal(upgraded.stacks.scrap, crafted.stacks.scrap);
-    assert.equal(upgraded.stacks.enhance_stone_1, 98);
-    assert.equal(upgraded.stacks.enhance_stone_2, 97);
-    assert.equal(upgraded.stacks.enhance_stone_3, 98);
+    assert.equal(upgraded.stacks[scroll], 95);
+    assert.equal(upgraded.stacks.enhance_stone_1, 100);
     near(enhanceMultiplier(5), 1.25);
     const refund = dismantle(upgraded, item.uid);
     assert.equal(refund.stacks.scrap - upgraded.stacks.scrap, dismantleRefund(item));
+    assert.equal(refund.stacks.enhance_stone_1 - upgraded.stacks.enhance_stone_1, 5);
     assert.equal(refund.gold, upgraded.gold);
-    assert.throws(() => enhance(upgraded, item.uid));
+    assert.throws(() => enchant({ ...upgraded, stacks: { ...upgraded.stacks, [scroll]: 0 } }, item.uid, scroll), /없습니다/);
     const again = craft(crafted, id);
     assert.notEqual(again.items.at(-1).uid, item.uid);
   }
   const poor = freeze(fresh());
   assert.throws(() => craft(poor, 'iron_sword'));
-  assert.throws(() => enhance(poor, poor.equipped.weapon));
+  assert.throws(() => enchant(poor, poor.equipped.weapon, 'scroll_enchant_weapon'));
   assert.throws(() => dismantle(poor, poor.equipped.weapon));
   assert.throws(() => dismantle(poor, poor.equipped.body));
 });
@@ -338,7 +340,7 @@ test('save adapter: roundtrip, reset, corrupt/unknown versions back up before fr
     assert.equal(storage.getItem(SAVE_KEY), null);
   }
   for (const mutate of [
-    (save) => save.items[0].enhance = 9,
+    (save) => save.items[0].enhance = 11,
     (save) => save.equipped.weapon = 'missing',
     (save) => save.stacks.return_scroll = 3,
     (save) => save.stats.str = 99,

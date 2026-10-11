@@ -4,6 +4,7 @@ import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, cap } from './stats.js';
 import { ITEMS, START_WEAPONS, RECIPES, carriedWeight, capacity } from './items.js';
+import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
 import { BOOKS, DEFAULT_SKILLS, hasSkill } from './skills.js';
@@ -66,7 +67,7 @@ function validReceipt(receipt) {
       && ['material', 'consumable'].includes(ITEMS[id].kind) && integer(count))) return false;
     if (!loot.items.every((item) => record(item) && typeof item.uid === 'string'
       && Object.hasOwn(ITEMS, item.id) && SLOTS.includes(ITEMS[item.id].kind)
-      && integer(item.enhance, 0, 5) && validAffixes(item, ITEMS[item.id]) && integer(item.rolledAt, 0, 0xffffffff))) return false;
+      && integer(item.enhance, 0, ENCHANT.max) && validAffixes(item, ITEMS[item.id]) && integer(item.rolledAt, 0, 0xffffffff))) return false;
   }
   return true;
 }
@@ -93,7 +94,7 @@ export function validateSave(save) {
       if (!record(item) || typeof item.uid !== 'string' || !item.uid || uids.has(item.uid)) return false;
       if (!Object.hasOwn(ITEMS, item.id) || !SLOTS.includes(ITEMS[item.id].kind)) return false;
       if (!validAffixes(item, ITEMS[item.id]) || !integer(item.rolledAt, 0, 0xffffffff)) return false;
-      if (!integer(item.enhance, 0, 5) || (item.uid.startsWith('craft:') && !RECIPES[item.id])) return false;
+      if (!integer(item.enhance, 0, ENCHANT.max) || (item.uid.startsWith('craft:') && !RECIPES[item.id])) return false;
       uids.add(item.uid);
     }
     // A weapon is still mandatory to launch main.js; newly added armor slots may be empty.
@@ -104,6 +105,7 @@ export function validateSave(save) {
       if (!item || ITEMS[item.id].kind !== slot || ITEMS[item.id].requiredLevel > save.level) return false;
     }
     if (!['completedRounds', 'shopRefresh', 'paidRefreshes', 'rarelessRounds'].every((key) => integer(save[key]))) return false;
+    if (save.enchantCount !== undefined && !integer(save.enchantCount)) return false;
     if (!Array.isArray(save.shopBought) || !save.shopBought.every((uid) => typeof uid === 'string')
       || new Set(save.shopBought).size !== save.shopBought.length) return false;
     if (!record(save.stacks)) return false;
@@ -159,6 +161,11 @@ export class SaveStore {
     }
     if (record(data) && data.version === 3) {
       data = { ...data, version: SAVE_VERSION, stash: { stacks: {} }, learned: [], skills: {} };
+    }
+    // cocy 10-11: stone grades were removed; a held mid stone becomes two plain stones.
+    if (record(data) && record(data.stacks) && integer(data.stacks.enhance_stone_2, 1)) {
+      data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };
+      delete data.stacks.enhance_stone_2;
     }
     if (validateSave(data)) return structuredClone(data);
     // Back up before removing. A quota/storage failure leaves the original untouched.

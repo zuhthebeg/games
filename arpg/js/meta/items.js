@@ -1,7 +1,6 @@
 import { eff } from './stats.js';
-import { SLOTS, SALVAGE, ECONOMY, enhanceCost, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
+import { SLOTS, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
-export { ENHANCE_GOLD, enhanceCost } from './economy.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
@@ -76,9 +75,15 @@ for (const [id, base] of Object.entries(ITEMS)) {
 }
 // cocy 10-11: no level gate on weapons (armor keeps its gate).
 for (const item of Object.values(ITEMS)) if (item.kind === 'weapon') item.requiredLevel = 1;
-for (let tier = 1; tier <= 3; tier++) {
-  ITEMS[`enhance_stone_${tier}`] = { name: ['하급', '중급', '상급'][tier - 1] + ' 강화석', kind: 'material', weight: 0.1, sell: [5, 12, 25][tier - 1] };
-}
+// cocy 10-11: one ungraded stone + the greater stone. enhance_stone_2 is legacy only (old receipts);
+// SaveStore.load converts held mid stones into plain stones.
+ITEMS.enhance_stone_1 = { name: '강화석', kind: 'material', weight: 0.1, sell: 2 };
+ITEMS.enhance_stone_2 = { name: '중급 강화석', kind: 'material', weight: 0.1, sell: 2, legacy: true };
+ITEMS.enhance_stone_3 = { name: '상급 강화석', kind: 'material', weight: 0.1, sell: 25 };
+ITEMS.scroll_enchant_weapon = { name: '무기 강화 주문서', kind: 'material', weight: 0, sell: 8, enchant: 'weapon' };
+ITEMS.scroll_enchant_armor = { name: '방어구 강화 주문서', kind: 'material', weight: 0, sell: 8, enchant: 'armor' };
+ITEMS.scroll_blessed_weapon = { name: '축복받은 무기 강화 주문서', kind: 'material', weight: 0, sell: 30, enchant: 'weapon', blessed: true };
+ITEMS.scroll_blessed_armor = { name: '축복받은 방어구 강화 주문서', kind: 'material', weight: 0, sell: 30, enchant: 'armor', blessed: true };
 export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rarity, ITEMS[id].huntTier, seed)) =>
   ({ uid, id, enhance: 0, affixes, rolledAt: seed >>> 0 });
 
@@ -122,10 +127,16 @@ export function equip(save, uid) {
 }
 
 export function dismantleRefund(item) {
-  // Craft provenance stays in the UID; enhancement/affixes never increase salvage.
+  // Craft provenance stays in the UID; affixes never increase salvage.
   if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id].scrap * ECONOMY.craftRefundFraction);
   return SALVAGE[ITEMS[item.id].rarity];
 }
+
+// Enhanced gear also returns stones (cocy 10-11); scrap stays tied to rarity/provenance above.
+export const dismantleStones = (item) => ({
+  [STONE]: ENCHANT.dismantleStones[item.enhance] || 0,
+  [GREATER_STONE]: ENCHANT.dismantleGreater[item.enhance] || 0,
+});
 
 export function dismantle(save, uid) {
   const item = save.items.find((candidate) => candidate.uid === uid);
@@ -134,6 +145,7 @@ export function dismantle(save, uid) {
   const next = cloneSave(save);
   next.items = next.items.filter((candidate) => candidate.uid !== uid);
   next.stacks.scrap = (next.stacks.scrap || 0) + dismantleRefund(item);
+  for (const [id, count] of Object.entries(dismantleStones(item))) if (count) next.stacks[id] = (next.stacks[id] || 0) + count;
   return next;
 }
 
@@ -154,14 +166,6 @@ export function craft(save, id) {
   if (!RECIPES[id]) throw new Error('없는 제작법입니다.');
   const next = spend(save, RECIPES[id]);
   next.items.push(instance(uniqueUid(save, `craft:${id}`), id, save.createdAt ^ save.items.length));
-  return next;
-}
-
-export function enhance(save, uid) {
-  const item = save.items.find((candidate) => candidate.uid === uid);
-  if (!item || !SLOTS.includes(ITEMS[item.id]?.kind) || item.enhance >= 5) throw new Error('더 강화할 수 없습니다.');
-  const next = spend(save, enhanceCost(item.enhance));
-  next.items.find((candidate) => candidate.uid === uid).enhance++;
   return next;
 }
 
@@ -288,10 +292,19 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
   if (random() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
+    // A drop event is either a pile of plain stones (5 = one scroll) or a single greater stone.
+    const [min, max] = ENCHANT.stoneCount[boss ? 'boss' : elite ? 'elite' : 'normal'];
     for (let i = 0; i < count; i++) {
-      const stone = weighted(ECONOMY.stoneWeights[tier].map((weight, i) => [`enhance_stone_${i + 1}`, weight]), random);
-      loot.stacks[stone] = (loot.stacks[stone] || 0) + 1;
+      const stone = weighted([[STONE, ECONOMY.stoneWeights[tier][0]], [GREATER_STONE, ECONOMY.stoneWeights[tier][1]]], random);
+      const amount = stone === STONE ? min + Math.floor(random() * (max - min + 1)) : 1;
+      loot.stacks[stone] = (loot.stacks[stone] || 0) + amount;
     }
+  }
+  // Blessed scrolls use their own stream so earlier gear/stone/gold rolls keep their seeds.
+  const blessedRandom = rng(seed ^ 0x5b1e55ed);
+  if (blessedRandom() < ENCHANT.blessedChance[boss ? 'boss' : elite ? 'elite' : 'normal'] * threat.drop) {
+    const id = blessedRandom() < 0.5 ? 'scroll_blessed_weapon' : 'scroll_blessed_armor';
+    loot.stacks[id] = (loot.stacks[id] || 0) + 1;
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];

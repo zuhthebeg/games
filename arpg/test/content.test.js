@@ -7,7 +7,8 @@ import { validateContent } from '../tools/validate-content.mjs';
 import { ABILITIES, MONSTERS, STAGES } from '../js/content/combat.js';
 import { DANGER_COLORS, MONSTER_PALETTES, MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { NEW_MONSTER_DROPS } from '../js/content/loot.js';
-import { ITEMS, RECIPES, CONSUMABLES, craft, equip, enhance, dismantle, rollDrops } from '../js/meta/items.js';
+import { ITEMS, RECIPES, CONSUMABLES, craft, equip, dismantle, rollDrops } from '../js/meta/items.js';
+import { enchant, scrollsFor } from '../js/meta/enchant.js';
 import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
 import { STAGE_XP, stageXp, deathLoss, addXp } from '../js/meta/progression.js';
 import { settleRound } from '../js/meta/run.js';
@@ -163,7 +164,7 @@ test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances'
     const item = save.items.find((entry) => entry.id === id);
     assert.deepEqual(Object.keys(item).sort(), ['affixes', 'enhance', 'id', 'rolledAt', 'uid']);
     assert.ok(validateSave(equip(save, item.uid)));
-    save = enhance(save, item.uid);
+    save = enchant({ ...save, stacks: { ...save.stacks, [scrollsFor(item).normal]: 1 } }, item.uid, scrollsFor(item).normal).save;
     const salvage = dismantle(save, item.uid);
     assert.equal(salvage.stacks.scrap, base.stacks.scrap - RECIPES[id].scrap + Math.floor(RECIPES[id].scrap / 4));
     assert.ok(salvage.gold < base.gold);
