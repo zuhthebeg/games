@@ -9,6 +9,7 @@ import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
 import { BOOKS, DEFAULT_SKILLS, hasSkill } from './skills.js';
 import { ABILITIES } from '../content/combat.js';
+import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
@@ -35,7 +36,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0, affixes: [], rolledAt: 0 },
     ],
     stacks: { potion: 3, mana_potion: 1, return_scroll: 1 },
-    stash: { stacks: {} }, learned: [], skills: {}, autoBuy: { ...DEFAULT_AUTO_BUY },
+    stash: { stacks: {} }, learned: [], skills: {}, autoBuy: { ...DEFAULT_AUTO_BUY }, autoUse: { ...DEFAULT_AUTO_USE },
     cleared: Object.fromEntries(Object.keys(STAGE_XP).map((id) => [id, false])),
     flags: { chiefPity: false, starterRestoreUsed: false },
     quiz: { answers: [...answers], weapon: chosen, overridden: chosen !== result.weapon },
@@ -112,6 +113,7 @@ export function validateSave(save) {
       || new Set(save.shopBought).size !== save.shopBought.length) return false;
     if (save.autoBuy !== undefined && (!record(save.autoBuy)
       || !Object.entries(save.autoBuy).every(([id, target]) => CONSUMABLES.includes(id) && integer(target)))) return false;
+    if (save.autoUse !== undefined && !validAutoUse(save.autoUse)) return false;
     if (!record(save.stacks)) return false;
     if (!record(save.stash) || !record(save.stash.stacks)
       || !Object.entries(save.stash.stacks).every(([id, count]) => Object.hasOwn(ITEMS, id)
@@ -187,7 +189,7 @@ export class SaveStore {
       data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };
       delete data.stacks.enhance_stone_2;
     }
-    if (validateSave(data)) return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy } });
+    if (validateSave(data)) return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse } });
     // Back up before removing. A quota/storage failure leaves the original untouched.
     this.storage.setItem(`${SAVE_KEY}.corrupt.${this.now()}`, raw);
     this.storage.removeItem(SAVE_KEY);

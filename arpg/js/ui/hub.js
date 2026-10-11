@@ -17,6 +17,7 @@ import {
 import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } from '../meta/enchant.js';
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
+import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
 import { icon, itemIcon } from './icons.js';
 import { ACADEMY, skillIcon, skillCardHtml } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
@@ -844,8 +845,18 @@ export class HubUI {
     this.show(this.shellHtml('', content, button('<span>여관으로</span>' + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
   }
 
+  autoUseHtml() {
+    const auto = autoUseSettings(this.save);
+    const group = (key, label, options) => `<div class="quantity-row"><span>${label}</span></div><div class="${options.length === 3 ? 'p2-three' : 'p2-two'}" role="group" aria-label="${label}">${
+      options.map(([value, text]) => button(text, 'auto-use', `id="auto-use-${key}-${value}" data-key="${key}" data-value="${value}" aria-pressed="${auto[key] === value}"`)).join('')}</div>`;
+    const onOff = [[true, '켜짐'], [false, '꺼짐']];
+    const levels = AUTO_USE_LEVELS.map(level => [level, `${level}%`]);
+    return `<section class="auto-use" aria-label="자동 사용">${group('potion', '자동 물약', onOff)}${auto.potion
+      ? group('hp', 'HP 기준', levels) + group('mp', 'MP 기준', levels) : ''}${group('recall', '자동 귀환', onOff)}</section>`;
+  }
+
   showSettings() {
-    this.showInnPanel('설정', `
+    this.showInnPanel('설정', `${this.autoUseHtml()}
       <p class="minor">캐릭터는 이 브라우저에 저장된다. 전투 중 새로고침하면 마지막 여관으로 돌아온다.</p>
       <p class="p2-lock">${icon('lock')}초기화하면 캐릭터·보급·장비·진척을 모두 잃는다.</p>
       ${this.resetStep === 0 ? button('저장 초기화', 'reset-first') : this.resetStep === 1
@@ -1079,6 +1090,13 @@ export class HubUI {
       case 'settings':
         this.resetStep = 0;
         return this.showSettings();
+      case 'auto-use': {
+        const value = data.value === 'true' ? true : data.value === 'false' ? false : Number(data.value);
+        const autoUse = { ...autoUseSettings(this.save), [data.key]: value };
+        if (!validAutoUse(autoUse)) return undefined;
+        this.commit({ ...this.save, autoUse });
+        return this.showSettings();
+      }
       case 'reset-first':
       case 'reset-second':
         this.resetStep++;

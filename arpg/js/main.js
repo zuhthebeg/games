@@ -8,6 +8,7 @@ import { availableStages, arrivalNotice } from './content/world-map.js';
 import { STAGES } from './content/combat.js';
 import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
+import { applyAutoUse, autoUseSettings } from './meta/auto-use.js';
 import { CombatAudio, bindAudioControls } from './audio.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
@@ -81,6 +82,15 @@ try {
     node.addEventListener('click', () => input.setAutoAttack(!input.autoAttack));
   }
   input.setAutoAttack(input.autoAttack);
+  // Auto potions/return become ordinary edges for the local pawn; manual input still wins.
+  const combatInput = player => applyAutoUse(input.consume(), player, autoUseSettings(hub.save));
+  const coopLocalPlayer = () => {
+    if (!coopSession || coopSession.phase !== 'running') return null;
+    const own = view => view?.entities.find(e => e.kind === 'player' && e.pid === coopSession.uid) || null;
+    if (coopSession.isHost) return own(coopSession.world);
+    const prediction = coopSession.prediction;
+    return prediction.enabled && prediction.state ? prediction.state : own(coopSession.buffer.frames.at(-1)?.world);
+  };
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
@@ -233,7 +243,7 @@ try {
   let netTime = performance.now(), guestTime = netTime;
   setInterval(() => {
     const now = performance.now(), elapsed = now - netTime; netTime = now;
-    if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : input.consume(), coopLoad);
+    if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad);
     else if (coopSession && hidden) {
       coopSession.update(now - guestTime, emptyInput(), coopLoad); guestTime = now;
     }
@@ -319,7 +329,7 @@ try {
     const elapsed = Math.min(250, Math.max(0, now - lastTime));
     lastTime = now;
     if (coopSession && !coopSession.isHost && !hidden) {
-      coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : input.consume(), coopLoad); guestTime = now;
+      coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad); guestTime = now;
     }
     if (coopSession && running && coopRenderReady && !hidden) {
       const renderNow = coopSession.isHost ? coopSession.now + Math.max(0, now - netTime) : coopSession.now;
@@ -338,7 +348,7 @@ try {
       while (accumulator >= TICK_MS && count < 5) {
         debug?.beforeTick();
         renderer.snapshot(world);
-        inputs.local = input.consume();
+        inputs.local = combatInput(world.entities[0]);
         const events = step(world, inputs);
         const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, world.entities[0]));
         tracker = progress.tracker;
