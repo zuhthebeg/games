@@ -1,0 +1,30 @@
+{
+  "model_page": "https://poly.pizza/m/u35l6uP5vj",
+  "download_url": "https://static.poly.pizza/6277c120-ea5c-405d-9614-0d3d7e0b829d.glb.br",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "individual_page_text": "Nov 15, 2023 \u2022 FBX/GLTF format \u2022 Public Domain (CC0)",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "archive": "C:/Users/user/ai-tools/arpg-art/u3-boar/source",
+  "files": [
+    {
+      "file": "Quaternius-Pig.glb",
+      "bytes": 300940,
+      "sha256": "39a6187a43130b6d758090294ff4292c06a113df6b03243e124644eb8c71aee4"
+    },
+    {
+      "file": "poly-pig-cc0.html",
+      "bytes": 111251,
+      "sha256": "5240554fe1e02041817055e006805388708b1878d14b520d45a4b1d6e2d9d724"
+    }
+  ],
+  "clips": [
+    "AnimalArmature|AnimalArmature|AnimalArmature|Idle",
+    "AnimalArmature|AnimalArmature|AnimalArmature|Run",
+    "AnimalArmature|AnimalArmature|AnimalArmature|Headbutt",
+    "U3_Boar_Recoil",
+    "AnimalArmature|AnimalArmature|AnimalArmature|Death"
+  ],
+  "original_missing_hit": "U3_Boar_Recoil locally authored on original rig, 0/2/5/8 source frames; not Jump renamed as hit.",
+  "local_geometry": "Three segmented bone-attached iron shell plates and two curved Head-attached tusks, original CC0 contribution."
+}

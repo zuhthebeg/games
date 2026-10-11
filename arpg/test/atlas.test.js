@@ -83,7 +83,7 @@ test('every registered content key has eight-direction WebP clips and <=1.5MB ki
     assert.ok(bytes <= 1_500_000, `${id}: ${bytes}`);
     assert.equal(bytes, entry.bytes);
   }
-  assert.equal(ATLAS_IDS.iron_boar, undefined, 'boar must keep its silhouette, not be disguised as a skeleton');
+  assert.equal(ATLAS_IDS.iron_boar, 'iron-boar', 'boar uses its verified pig rig and armor, never a skeleton');
   assert.equal(ATLAS_IDS.scarecrow, undefined);
 });
 

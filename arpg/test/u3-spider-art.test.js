@@ -19,7 +19,7 @@ test('spider individual CC0 license binds exact original GLB, distinct locally a
   assert.equal(source.skinned_clip_motion.hit.source,'U3_Spider_Recoil');
   assert.equal(source.local_recoil.name,'U3_Spider_Recoil');
   assert.equal(ATLAS_IDS.poison_spider,'poison-spider');assert.equal(ATLAS_IDS.wolf,'wolf');
-  assert.equal(ATLAS_IDS.iron_boar,undefined);
+  assert.equal(ATLAS_IDS.iron_boar,'iron-boar');
 });
 
 test('spider has eight articulated walking legs, moving clips and all eight anatomical facings',()=>{

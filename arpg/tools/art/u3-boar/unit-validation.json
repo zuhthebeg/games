@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "command": "node --test arpg/test/*.test.js",
+  "tests": 414,
+  "pass": 414,
+  "fail": 0,
+  "log": "/home/cocy/.openclaw/workspace/tmp/arpg-u3-boar-logs/unit.log",
+  "sha256": "fc0e6d0d79da113eeced733133668dd1422df306d32a2d09299d49dc00b685a3"
+}

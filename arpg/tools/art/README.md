@@ -15,7 +15,7 @@ Manual `bone.location` edits alone do not survive Blender's render depsgraph eva
 
 ## Integration contract
 
-Only the equipped hero kit and spawned registered monsters load. Failure keeps existing procedural visuals. Atlas textures are shared; round reset destroys views before releasing previous kits. Rendering writes only view/animation state. Combat shapes, telegraphs and collision radii are unchanged. Chief is 1.3× with a raised eight-point crown and coral tint. `iron_boar` is still a procedural boar; Skeleton Minion is a viewer-only sample, never a boar replacement.
+Only the equipped hero kit and spawned registered monsters load. Failure keeps existing procedural visuals. Atlas textures are shared; round reset destroys views before releasing previous kits. Rendering writes only view/animation state. Combat shapes, telegraphs and collision radii are unchanged. Chief is 1.3× with a raised eight-point crown and coral tint. `iron_boar` uses the independently verified CC0 pig rig with original bone-attached iron armor/tusks (see `u3-boar/README.md`); Skeleton Minion remains a viewer-only sample, never a boar replacement.
 
 ## Source license evidence
 

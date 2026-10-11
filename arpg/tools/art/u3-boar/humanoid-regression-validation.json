@@ -1,0 +1,332 @@
+[
+  {
+    "name": "hero-sword",
+    "format": "webp",
+    "frames": 392,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1152
+      ]
+    ],
+    "webp_bytes": 335424,
+    "json_bytes": 89640,
+    "total_bytes": 425064,
+    "alpha_coverage_percent": [
+      5.109,
+      10.278
+    ],
+    "max_idle_center_drift_px": 1.118,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "dodge": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 392,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.070685,
+    "lossless_alpha_matches_pose_evidence": 392,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      46.82,
+      28.72,
+      31.4,
+      38.5,
+      46.82,
+      28.72,
+      31.4,
+      38.5
+    ]
+  },
+  {
+    "name": "hero-bow",
+    "format": "webp",
+    "frames": 392,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1152
+      ]
+    ],
+    "webp_bytes": 381708,
+    "json_bytes": 89640,
+    "total_bytes": 471348,
+    "alpha_coverage_percent": [
+      6.683,
+      12.262
+    ],
+    "max_idle_center_drift_px": 1.0,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "dodge": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 392,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.070685,
+    "lossless_alpha_matches_pose_evidence": 392,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      32.33,
+      33.04,
+      33.18,
+      33.04,
+      32.33,
+      33.05,
+      33.17,
+      33.05
+    ]
+  },
+  {
+    "name": "hero-focus",
+    "format": "webp",
+    "frames": 384,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1024
+      ]
+    ],
+    "webp_bytes": 341270,
+    "json_bytes": 87802,
+    "total_bytes": 429072,
+    "alpha_coverage_percent": [
+      6.024,
+      11.945
+    ],
+    "max_idle_center_drift_px": 1.0,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "dodge": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 384,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.070685,
+    "lossless_alpha_matches_pose_evidence": 384,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      35.9,
+      35.71,
+      35.68,
+      35.85,
+      35.73,
+      35.84,
+      35.69,
+      35.7
+    ]
+  },
+  {
+    "name": "skeleton",
+    "format": "webp",
+    "frames": 392,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1280
+      ]
+    ],
+    "webp_bytes": 389466,
+    "json_bytes": 89602,
+    "total_bytes": 479068,
+    "alpha_coverage_percent": [
+      5.438,
+      11.133
+    ],
+    "max_idle_center_drift_px": 0.5,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 392,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 31.3707,
+    "min_skin_rms_from_bind_height": 0.06288,
+    "lossless_alpha_matches_pose_evidence": 392,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": []
+  },
+  {
+    "name": "goblin-grunt",
+    "format": "webp",
+    "frames": 448,
+    "atlas_dimensions": [
+      [
+        2048,
+        1920
+      ],
+      [
+        2048,
+        1792
+      ]
+    ],
+    "webp_bytes": 325858,
+    "json_bytes": 102026,
+    "total_bytes": 427884,
+    "alpha_coverage_percent": [
+      6.805,
+      11.566
+    ],
+    "max_idle_center_drift_px": 1.118,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 448,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 75.4693,
+    "min_skin_rms_from_bind_height": 0.199464,
+    "lossless_alpha_matches_pose_evidence": 448,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      14.76,
+      14.7,
+      14.54,
+      14.7,
+      14.76,
+      14.7,
+      14.54,
+      14.7
+    ]
+  },
+  {
+    "name": "goblin-archer",
+    "format": "webp",
+    "frames": 448,
+    "atlas_dimensions": [
+      [
+        2048,
+        1920
+      ],
+      [
+        2048,
+        1792
+      ]
+    ],
+    "webp_bytes": 366616,
+    "json_bytes": 102026,
+    "total_bytes": 468642,
+    "alpha_coverage_percent": [
+      6.873,
+      11.89
+    ],
+    "max_idle_center_drift_px": 1.414,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 448,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 75.4693,
+    "min_skin_rms_from_bind_height": 0.199464,
+    "lossless_alpha_matches_pose_evidence": 448,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      25.08,
+      25.63,
+      25.73,
+      25.63,
+      25.08,
+      25.63,
+      25.73,
+      25.63
+    ]
+  },
+  {
+    "name": "goblin-chief",
+    "format": "webp",
+    "frames": 448,
+    "atlas_dimensions": [
+      [
+        2048,
+        1920
+      ],
+      [
+        2048,
+        1792
+      ]
+    ],
+    "webp_bytes": 335268,
+    "json_bytes": 102026,
+    "total_bytes": 437294,
+    "alpha_coverage_percent": [
+      5.09,
+      9.29
+    ],
+    "max_idle_center_drift_px": 1.0,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 448,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 75.4693,
+    "min_skin_rms_from_bind_height": 0.199464,
+    "lossless_alpha_matches_pose_evidence": 448,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      12.71,
+      12.66,
+      12.53,
+      12.66,
+      12.7,
+      12.67,
+      12.53,
+      12.66
+    ]
+  }
+]

@@ -19,7 +19,7 @@ test('wolf exact individual CC0 listing binds downloaded GLB to independently ev
   assert.equal(source.checked_mesh, 'Wolf');
   assert.equal(ATLAS_IDS.wolf, 'wolf');
   assert.equal(ATLAS_IDS.poison_spider, 'poison-spider');
-  assert.equal(ATLAS_IDS.iron_boar, undefined);
+  assert.equal(ATLAS_IDS.iron_boar, 'iron-boar');
 });
 
 test('wolf has genuinely moving skinned clips, anatomical eight-facing proof and lossless transparent delivery', () => {

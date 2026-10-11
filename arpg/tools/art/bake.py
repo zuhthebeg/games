@@ -130,7 +130,7 @@ for job in config['characters']:
     # fixed sprite or a renamed locomotion clip. Originals remain untouched.
     if job.get('recoil'):
         spec = job['recoil']
-        assert job.get('pose_profile') == 'arachnid'
+        assert job.get('pose_profile') in ('arachnid', 'boar')
         idle = bpy.data.actions[job['animations']['idle']]
         rig.animation_data.action = idle
         rig.animation_data.action_slot = idle.slots[0]
@@ -167,7 +167,7 @@ for job in config['characters']:
     else:
         rig.animation_data.action = None
         for bone in rig.pose.bones:
-            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') in ('quadruped', 'arachnid') else Matrix.Identity(4)
+            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') in ('quadruped', 'arachnid', 'boar') else Matrix.Identity(4)
     scene.frame_set(0)
     bpy.context.view_layer.update()
     arm_names = job.get('arm_bones', ['upperarm.l', 'upperarm.r'])
@@ -231,6 +231,38 @@ for job in config['characters']:
         obj.parent_bone = 'Head'
         obj.matrix_basis = parent_world.inverted() @ Matrix.Translation((0, 0, bind_height * 1.01))
         meshes.append(obj)
+    if job.get('iron_armor'):
+        assert job.get('pose_profile') == 'boar'
+        steel = material('boar iron steel', (.46, .50, .56))
+        ivory = material('boar tusk ivory', (.93, .90, .78))
+        def bone_attach_world(obj, bone_name):
+            bone = rig.pose.bones[bone_name]
+            parent_world = rig.matrix_world @ bone.matrix @ Matrix.Translation((0, bone.length, 0))
+            desired = obj.matrix_world.copy()
+            obj.parent = rig; obj.parent_type = 'BONE'; obj.parent_bone = bone_name
+            obj.matrix_basis = parent_world.inverted() @ desired
+            meshes.append(obj)
+        # Original faceted iron shells follow Body, never a screen-space decal.
+        # Three separate arches leave leg/head articulation and snout exposed.
+        for index, y in enumerate([-.27, .10, .47]):
+            vertices = []
+            for z_offset in (0, -.055):
+                for dy in (-.15, .15):
+                    for x, z in [(-.43, 1.06), (-.34, 1.35), (0, 1.47), (.34, 1.35), (.43, 1.06)]:
+                        vertices.append((x, y + dy, z + z_offset))
+            faces=[]
+            for i in range(4):
+                faces.extend([(i, i+1, i+6, i+5), (i+10, i+15, i+16, i+11),
+                              (i, i+10, i+11, i+1), (i+5, i+6, i+16, i+15)])
+            faces.extend([(0,5,15,10),(4,14,19,9)])
+            data=bpy.data.meshes.new('iron shell'); data.from_pydata(vertices,[],faces); data.update()
+            obj=bpy.data.objects.new('BoarArmor'+str(index),data);bpy.context.collection.objects.link(obj)
+            data.materials.append(steel);bone_attach_world(obj,'Body')
+        for side in (-1,1):
+            obj=tube('BoarTusk'+('L' if side<0 else 'R'),
+                     [(side*.23,-.91,1.06),(side*.32,-1.07,1.10),
+                      (side*.35,-1.13,1.22),(side*.30,-1.10,1.37)],.052,ivory)
+            bone_attach_world(obj,'Head')
     for obj in skinned:
         assert any(mod.type == 'ARMATURE' and mod.object == rig for mod in obj.modifiers), f'Frozen skin: {obj.name}'
     if job.get('neutral'):
@@ -250,7 +282,7 @@ for job in config['characters']:
                 mix.inputs[2].default_value = (.86, .86, .83, 1)
                 mat.node_tree.links.new(original, mix.inputs[1])
                 mat.node_tree.links.new(mix.outputs[0], color)
-            elif mat.name not in ('chief crown gold', 'weapon walnut', 'goblin blade', 'weapon ivory'):
+            elif mat.name not in ('chief crown gold', 'weapon walnut', 'goblin blade', 'weapon ivory', 'boar iron steel', 'boar tusk ivory'):
                 # Neutral albedo makes Sprite.tint genuine color variation, not
                 # a green texture multiplied by another hue.
                 old = color.default_value
@@ -355,7 +387,8 @@ for job in config['characters']:
     projected_x, projected_y = [], []
     for clip_name in job['animations'].values():
         clip = action(clip_name)
-        begin, end = clip.frame_range
+        begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
+        assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
         count = max(2, math.ceil((end - begin) / scene.render.fps * config['fps'] - 1e-5))
         for angle in config['directions'].values():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
@@ -392,7 +425,8 @@ for job in config['characters']:
     records = []
     for animation, clip_name in job['animations'].items():
         clip = action(clip_name)
-        begin, end = clip.frame_range
+        begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
+        assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
         count = max(2, math.ceil((end - begin) / scene.render.fps * config['fps'] - 1e-5))
         if preview:
             count = 1
@@ -417,7 +451,7 @@ for job in config['characters']:
                     assert len(current) == len(rest)
                     square_distances.extend((inverse_facing @ point - original).length_squared for point, original in zip(current, rest))
                 rms = math.sqrt(sum(square_distances) / len(square_distances)) / bind_height
-                if job.get('pose_profile') not in ('quadruped', 'arachnid'):
+                if job.get('pose_profile') not in ('quadruped', 'arachnid', 'boar'):
                     assert max(arm_degrees) > 10, (job['name'], name, 'T-pose arms', arm_degrees)
                     assert rms > .015, (job['name'], name, 'bind/frozen skin', rms)
                 # Quadruped rest can equal an authored idle frame: validate clip

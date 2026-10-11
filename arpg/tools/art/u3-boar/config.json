@@ -1,0 +1,72 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/u3-boar/frames-v2",
+  "characters": [
+    {
+      "name": "iron-boar",
+      "model": "C:/Users/user/ai-tools/arpg-art/u3-boar/source/Quaternius-Pig.glb",
+      "keep": [
+        "Pig"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "FrontLeg.L",
+        "FrontLeg.R"
+      ],
+      "root_bones": [],
+      "pose_profile": "boar",
+      "animations": {
+        "idle": "AnimalArmature|AnimalArmature|AnimalArmature|Idle",
+        "run": "AnimalArmature|AnimalArmature|AnimalArmature|Run",
+        "attack": "AnimalArmature|AnimalArmature|AnimalArmature|Headbutt",
+        "hit": "U3_Boar_Recoil",
+        "death": "AnimalArmature|AnimalArmature|AnimalArmature|Death"
+      },
+      "label": "철갑 멧돼지",
+      "content_ids": [
+        "iron_boar"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "recoil": {
+        "name": "U3_Boar_Recoil",
+        "bones": {
+          "Body": -10,
+          "Neck": 12,
+          "Head": 20,
+          "FrontLeg.L": 14,
+          "FrontLeg.R": -14
+        }
+      },
+      "iron_armor": true,
+      "clip_ranges": {
+        "AnimalArmature|AnimalArmature|AnimalArmature|Idle": [
+          0,
+          80
+        ]
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/u3-boar/source",
+  "webp_quality": 52
+}

@@ -1,0 +1,176 @@
+{
+  "ok": true,
+  "model_sha256": "39a6187a43130b6d758090294ff4292c06a113df6b03243e124644eb8c71aee4",
+  "skinned_clip_motion": {
+    "idle": {
+      "samples": 34,
+      "max_skinned_rms_world": 0.2715557548307855,
+      "source": "AnimalArmature|AnimalArmature|AnimalArmature|Idle"
+    },
+    "run": {
+      "samples": 7,
+      "max_skinned_rms_world": 0.4927643796492501,
+      "source": "AnimalArmature|AnimalArmature|AnimalArmature|Run"
+    },
+    "attack": {
+      "samples": 7,
+      "max_skinned_rms_world": 0.4669854877929232,
+      "source": "AnimalArmature|AnimalArmature|AnimalArmature|Headbutt"
+    },
+    "hit": {
+      "samples": 4,
+      "max_skinned_rms_world": 0.23452476397010819,
+      "source": "U3_Boar_Recoil"
+    },
+    "death": {
+      "samples": 9,
+      "max_skinned_rms_world": 1.7552665352956227,
+      "source": "AnimalArmature|AnimalArmature|AnimalArmature|Death"
+    }
+  },
+  "direction_vectors": {
+    "E": {
+      "head_minus_body_xy": [
+        0.9999372363090515,
+        -0.011203485541045666
+      ],
+      "expected_xy": [
+        1.0,
+        0.0
+      ],
+      "dot": 0.9999372363090515
+    },
+    "SE": {
+      "head_minus_body_xy": [
+        0.6991403102874756,
+        -0.7149844765663147
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9999372065067291
+    },
+    "S": {
+      "head_minus_body_xy": [
+        -0.011203530244529247,
+        -0.9999372363090515
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        -1.0
+      ],
+      "dot": 0.9999372363090515
+    },
+    "SW": {
+      "head_minus_body_xy": [
+        -0.7149844765663147,
+        -0.6991403102874756
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9999372065067291
+    },
+    "W": {
+      "head_minus_body_xy": [
+        -0.9999372363090515,
+        0.011203574948012829
+      ],
+      "expected_xy": [
+        -1.0,
+        -1.2246468525851679e-16
+      ],
+      "dot": 0.9999372363090515
+    },
+    "NW": {
+      "head_minus_body_xy": [
+        -0.6991403102874756,
+        0.7149844765663147
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9999372065067291
+    },
+    "N": {
+      "head_minus_body_xy": [
+        0.011203442700207233,
+        0.9999372363090515
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        1.0
+      ],
+      "dot": 0.9999372363090515
+    },
+    "NE": {
+      "head_minus_body_xy": [
+        0.7149844765663147,
+        0.6991403102874756
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9999372065067291
+    }
+  },
+  "checked_mesh": "Pig",
+  "articulated_legs": [
+    "FrontLeg.L",
+    "BackLeg.L",
+    "FrontLeg.R",
+    "BackLeg.R"
+  ],
+  "run_leg_motion_radians": {
+    "FrontLeg.L": 2.0739834308624268,
+    "BackLeg.L": 2.4014134407043457,
+    "FrontLeg.R": 2.2450010776519775,
+    "BackLeg.R": 1.6537224054336548
+  },
+  "local_recoil": {
+    "name": "U3_Boar_Recoil",
+    "bones": {
+      "Body": -10,
+      "Neck": 12,
+      "Head": 20,
+      "FrontLeg.L": 14,
+      "FrontLeg.R": -14
+    }
+  },
+  "bone_attached_accessories": {
+    "BoarArmor0": {
+      "bone": "Body",
+      "vertices": 20,
+      "max_world_motion": 0.4345259740263134,
+      "sampled_clip": "run"
+    },
+    "BoarArmor1": {
+      "bone": "Body",
+      "vertices": 20,
+      "max_world_motion": 0.4345259740263134,
+      "sampled_clip": "run"
+    },
+    "BoarArmor2": {
+      "bone": "Body",
+      "vertices": 20,
+      "max_world_motion": 0.4345259740263134,
+      "sampled_clip": "run"
+    },
+    "BoarTuskL": {
+      "bone": "Head",
+      "vertices": 24,
+      "max_world_motion": 0.3863818791775787,
+      "sampled_clip": "attack"
+    },
+    "BoarTuskR": {
+      "bone": "Head",
+      "vertices": 24,
+      "max_world_motion": 0.3863818791775787,
+      "sampled_clip": "attack"
+    }
+  }
+}

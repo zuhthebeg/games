@@ -416,8 +416,8 @@ try {
   await waitFor('__arpg.world.round.state==="returned"',6000);
   await backToInn();
   await devStart('S3');
-  await waitFor("__arpg.art.visuals.some(v=>v.key==='iron_boar' && v.mode==='procedural')");
-  artEvidence.procedural.push('iron_boar');
+  const boarArt=await atlasReady('iron_boar');
+  assert.equal(boarArt.id,'iron-boar');
   assert.ok(!requestedArt().some(url=>url.includes('/skeleton/')), 'boar was incorrectly replaced by skeleton');
   await key('KeyR');
   await key('KeyR','keyUp');

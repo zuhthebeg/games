@@ -17,7 +17,7 @@ def verify_pose(record, skinned_count, profile="humanoid"):
     pose = record['pose']
     degrees = pose['arm_degrees_from_bind']
     assert len(degrees) == 2 and all(math.isfinite(value) for value in degrees), record['name']
-    assert profile in ('humanoid', 'quadruped', 'arachnid'), ('unknown pose profile', profile)
+    assert profile in ('humanoid', 'quadruped', 'arachnid', 'boar'), ('unknown pose profile', profile)
     if profile == 'humanoid':
         assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
         assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
@@ -33,12 +33,18 @@ def verify_character(base, frames_root, entry):
     evidence = {record['name']: record for record in info['frames']}
     expected_skin = len(info['pose_check']['skinned_objects'])
     profile = info['pose_check'].get('profile', 'humanoid')
-    if profile in ('quadruped', 'arachnid'):
+    if profile in ('quadruped', 'arachnid', 'boar'):
         source_proof = json.loads((frames_root.parent / 'source-validation.json').read_text())
-        assert source_proof['ok'] and source_proof['checked_mesh'] == ('Wolf' if profile == 'quadruped' else 'Cube')
+        assert source_proof['ok'] and source_proof['checked_mesh'] == ({'quadruped': 'Wolf', 'arachnid': 'Cube', 'boar': 'Pig'}[profile])
         if profile == 'arachnid':
             assert len(source_proof['articulated_legs']) == 8
             assert all(v > .001 for v in source_proof['walk_leg_motion_radians'].values())
+        if profile == 'boar':
+            assert len(source_proof['articulated_legs']) == 4
+            assert all(v > .001 for v in source_proof['run_leg_motion_radians'].values())
+            assert source_proof['local_recoil']['name'] == 'U3_Boar_Recoil'
+            assert len(source_proof['bone_attached_accessories']) == 5
+            assert all(r['max_world_motion'] > .001 for r in source_proof['bone_attached_accessories'].values())
         assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
         assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
         assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
@@ -73,7 +79,7 @@ def verify_character(base, frames_root, entry):
             full_bbox = alpha.getbbox()
             assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < 128 and full_bbox[3] < 128, (name, 'any-alpha edge clipping', full_bbox)
             coverage = sum(mask.histogram()[128:]) / 16384 * 100
-            if profile == 'quadruped':
+            if profile in ('quadruped', 'boar'):
                 # A long low animal foreshortens end-on: use a 512px opaque
                 # floor + 16px extent, not the humanoid 5% area expectation.
                 assert 100 * 512 / 16384 <= coverage <= 60, (name, coverage)

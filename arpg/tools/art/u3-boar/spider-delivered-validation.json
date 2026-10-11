@@ -1,0 +1,45 @@
+[
+  {
+    "name": "poison-spider",
+    "format": "webp",
+    "frames": 592,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        768
+      ]
+    ],
+    "webp_bytes": 783560,
+    "json_bytes": 134786,
+    "total_bytes": 918346,
+    "alpha_coverage_percent": [
+      4.266,
+      7.068
+    ],
+    "max_idle_center_drift_px": 2.0,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "arachnid",
+    "pose_checked_frames": 592,
+    "t_pose_frames": null,
+    "bind_pose_frames": null,
+    "min_max_arm_degrees_from_bind": 1.351,
+    "min_skin_rms_from_bind_height": 0.034172,
+    "lossless_alpha_matches_pose_evidence": 592,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": []
+  }
+]

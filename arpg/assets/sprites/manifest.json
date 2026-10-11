@@ -234,5 +234,34 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "iron-boar",
+    "label": "철갑 멧돼지",
+    "monster": true,
+    "content_ids": [
+      "iron_boar"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6255070865154266
+    },
+    "bytes": 453624,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

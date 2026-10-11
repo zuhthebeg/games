@@ -1,0 +1,217 @@
+{
+  "ok": true,
+  "baseline": "f3a6100",
+  "simulation_diff_empty": true,
+  "traces": {
+    "S3": {
+      "script": "u3-boar/host-trace.mjs",
+      "byte_identical": true,
+      "file_sha256": "99938daa6cc7dc8273599135b48760aa4a9e848ac4c5437874c6016f8e0f2edf",
+      "scenarios": [
+        {
+          "stage": "S3",
+          "weapon": "blade",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "84975606f3f87195816bc0fafb8a8b8e462f63883a9a68003c0559114147c2b1"
+        },
+        {
+          "stage": "S3",
+          "weapon": "bow",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "56bb8fb91d49bfcb2ff1d7e96a613657281a5afbd69e994179f0c1ccaa1b624d"
+        },
+        {
+          "stage": "S3",
+          "weapon": "focus",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "1eb78009b2a21542dc77d0ccb78cd387a56c810b712d450c50700e18235dc871"
+        },
+        {
+          "stage": "S3",
+          "weapon": "blade",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "a5a18f6cafdd1dcc5fd2cb223697b2ba8b6061aefb78e5695578cfdd7723ee6e"
+        },
+        {
+          "stage": "S3",
+          "weapon": "bow",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "599634dbd6341d160044e5e3e14ff53cdc71376796019c398b37dfbd6c2ae960"
+        },
+        {
+          "stage": "S3",
+          "weapon": "focus",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "5101675212e0ea12bcb3c89a9f622222121754f72b86fc4198af0b60b4fd102e"
+        },
+        {
+          "stage": "S3",
+          "weapon": "blade",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "3b604304fb7d17c49671b72ad6cd74ad65a3313e6ffeb0a842a23147b337c235"
+        },
+        {
+          "stage": "S3",
+          "weapon": "bow",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "0d398679a235f7be6af1de68ff0c8119a611733aea684e087118e2f7afb05275"
+        },
+        {
+          "stage": "S3",
+          "weapon": "focus",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "1203dca9dff40accd7021739762947ed46eb1501da1bd505ffe6dbee8bb2cf9d"
+        }
+      ]
+    },
+    "S5": {
+      "script": "u3-wolf/host-trace.mjs",
+      "byte_identical": true,
+      "file_sha256": "6b69b30414f9ae4d46991d002442ef6d532bd9cb1a9f8a725814011c48911ba8",
+      "scenarios": [
+        {
+          "stage": "S5",
+          "weapon": "blade",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "8f00932ecb11c080bc6e464fc19d9304f58a07e6bacd754acbf4ca0bf67aae25"
+        },
+        {
+          "stage": "S5",
+          "weapon": "bow",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "20e863700fe80da2377f036d60c45cfcf13d8caf71dcfae3b8e8bea6934e9739"
+        },
+        {
+          "stage": "S5",
+          "weapon": "focus",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "995953346874482c13cedea179db657b1e5339b14de906ef985abe1073939c32"
+        },
+        {
+          "stage": "S5",
+          "weapon": "blade",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "05a75627a1011a251720cb093a9b874a518f59a4e48ef5eaa9f838cc27fc1245"
+        },
+        {
+          "stage": "S5",
+          "weapon": "bow",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "bfe94e71ccdb022f208c8b8a157cf7272f98d170e71fb4583dc1475697373aeb"
+        },
+        {
+          "stage": "S5",
+          "weapon": "focus",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "03e2ff82ff69969f759bd148600a2c6e0f34952e005e0c5eeff1de8e5a8ca1db"
+        },
+        {
+          "stage": "S5",
+          "weapon": "blade",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "bc23e61dc9fc6edf9d46f4f0b7061a6d9f98b192d0fa59e231d3cc656e1d0178"
+        },
+        {
+          "stage": "S5",
+          "weapon": "bow",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "146d342e13a43203339b4573d9e19b81b7052c93bbe7c76d883da66f2d317f9e"
+        },
+        {
+          "stage": "S5",
+          "weapon": "focus",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "320aad04b80664a900145c48243a99656655af958ce14862ce093b6e5935c886"
+        }
+      ]
+    },
+    "S7": {
+      "script": "u3-spider/host-trace.mjs",
+      "byte_identical": true,
+      "file_sha256": "251f64eea40d94015244dffed00716e8a4d4cb8fd60990e4072f95b16a58728b",
+      "scenarios": [
+        {
+          "stage": "S7",
+          "weapon": "blade",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "0dbdeea5a2f7c9737eac0eac423b6a97d58b72e05ccdcec630f72e747f445030"
+        },
+        {
+          "stage": "S7",
+          "weapon": "bow",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "f4a0e8bebf7e14ca557daca5c664adcd44494e17a95869fac909ba58cc5c9ee9"
+        },
+        {
+          "stage": "S7",
+          "weapon": "focus",
+          "seed": 1,
+          "ticks": 900,
+          "sha256": "18de9b3424cc52840498ec98f444f047dc95864c47f7ff32bbde778ad7fa7890"
+        },
+        {
+          "stage": "S7",
+          "weapon": "blade",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "b2fba0cdc324693a1b1d9ea010b1afc070ab49ce63bf513e25fdb2c7fc6b317c"
+        },
+        {
+          "stage": "S7",
+          "weapon": "bow",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "748c1c01b75a8d52a1ae7bb0d0d4c0167464f5a384f55507997effed331a3fe1"
+        },
+        {
+          "stage": "S7",
+          "weapon": "focus",
+          "seed": 42,
+          "ticks": 900,
+          "sha256": "eab707bee8cc44cc24941cb0d3bb6ce8e675e954c40d15cb2d64ae9c8c174890"
+        },
+        {
+          "stage": "S7",
+          "weapon": "blade",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "c2e207f2a68327dc0cdc6fd1b45094e466b12f0e3294b9d707b9e06d338d4bf9"
+        },
+        {
+          "stage": "S7",
+          "weapon": "bow",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "af2ed29745a22a9e3bc806e048c4d4cb1394923d33da89e8f0859d05318c17b8"
+        },
+        {
+          "stage": "S7",
+          "weapon": "focus",
+          "seed": 999,
+          "ticks": 900,
+          "sha256": "a3252d4bb38c4e690f46afec39d4d3947df06f84770aa5e747de155e3ddeaea3"
+        }
+      ]
+    }
+  }
+}
