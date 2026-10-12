@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "baseline": "9103d1fcfba876bf79cacb45f6d0ab068e636ef4",
+  "host_trace_cases": 180,
+  "host_trace_ticks_per_case": 900,
+  "before_sha256": "0e251a24efe596f4fa3c992884fd3caf6c817d62d4e942262a8832fa796a42ee",
+  "after_sha256": "0e251a24efe596f4fa3c992884fd3caf6c817d62d4e942262a8832fa796a42ee",
+  "js_diff": "",
+  "non_dragon_atlas_diff": "",
+  "index_stamp_changed": false,
+  "native_screenshots": 0,
+  "main_worktree_written": false
+}

@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "geometry": {
+    "legs": 4,
+    "wings": 2,
+    "claws": 12,
+    "neck_segments": 4,
+    "tail_segments": 6,
+    "mesh_objects": 91
+  },
+  "frames": 264,
+  "eight_directions": true,
+  "all_clips_animate": true,
+  "frame_size": 256,
+  "ground_anchor": {
+    "x": 0.5,
+    "y": 0.5199252963066101
+  },
+  "ground_anchor_constant": true,
+  "idle_paw_world_drift": 0.0,
+  "idle_paw_min_world_z": [
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418
+  ],
+  "all_animation_geometry_in_frame": true,
+  "lossless_alpha_verified": 264,
+  "clipped_frames": 0,
+  "coverage_range": [
+    0.0593109130859375,
+    0.1598052978515625
+  ],
+  "bytes": 1483416,
+  "non_dragon_manifest_unchanged": true,
+  "js_unchanged": true,
+  "source_blend_bytes": 159660,
+  "source_sha256": "771194052be31d090a8ce43d3bc38e320d09fcef19065f6ca615dc2f884e81cd",
+  "screenshots": 0
+}

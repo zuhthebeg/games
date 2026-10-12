@@ -277,8 +277,7 @@
       "atlas-2.webp.json",
       "atlas-3.webp.json",
       "atlas-4.webp.json",
-      "atlas-5.webp.json",
-      "atlas-6.webp.json"
+      "atlas-5.webp.json"
     ],
     "animations": [
       "idle",
@@ -290,9 +289,9 @@
     "fps": 10,
     "anchor": {
       "x": 0.5,
-      "y": 0.6693471968173981
+      "y": 0.5199252963066101
     },
-    "bytes": 1493195,
+    "bytes": 1483416,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6

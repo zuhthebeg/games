@@ -1,0 +1,13 @@
+{
+  "title": "Original copper western training dragon",
+  "created": "2026-10-12",
+  "author": "Sol for cocy",
+  "method": "Original procedural Blender geometry, materials and object-keyed animation",
+  "external_models": [],
+  "external_textures": [],
+  "paid_apis": [],
+  "license_note": "Project-authored source and output follow repository licensing. No third-party license assertion.",
+  "pack_derivation": "Derived from repository arpg/tools/art/pack.py; preserves Pixi metadata API with strict <2048px sheets and original-source app label.",
+  "source_directory": "C:/Users/user/ai-tools/arpg-art/original-dragon/source",
+  "not_used": "Historical d0-dragon downloaded model and rig"
+}

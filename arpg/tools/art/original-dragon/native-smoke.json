@@ -1,0 +1,605 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "viewport": [
+        1280,
+        800
+      ],
+      "native": "keyboard Enter/WDS/J",
+      "positions": {
+        "player": {
+          "x": 308,
+          "y": 430
+        },
+        "scarecrow": {
+          "x": 868,
+          "y": 430
+        },
+        "dragon": {
+          "x": 1148,
+          "y": 430,
+          "r": 30.19778482913971,
+          "sizeScale": 0.9436807759106159,
+          "hp": 1
+        },
+        "dragonDistance": 840,
+        "scarecrowDistance": 560
+      },
+      "gpu": {
+        "maxTextureSize": 8192,
+        "contextLost": false
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-2.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-3.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-4.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-5.webp.json",
+          "status": 200
+        }
+      ],
+      "impactState": "hit",
+      "invulnerable": true,
+      "stationaryWithin4px": true,
+      "emptyLoot": true,
+      "states": [
+        {
+          "state": "idle",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "run",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "E",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "SE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "S",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "SW",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "NW",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SW",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "NW",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "N",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "NE",
+          "frame": 3
+        },
+        {
+          "state": "death",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NE",
+          "frame": 1
+        }
+      ],
+      "motion": {
+        "idle": {
+          "uniqueFrames": 8,
+          "lastFrame": 3
+        },
+        "run": {
+          "uniqueFrames": 8,
+          "lastFrame": 3
+        },
+        "hit": {
+          "uniqueFrames": 4,
+          "lastFrame": 3
+        },
+        "death": {
+          "uniqueFrames": 7,
+          "lastFrame": 6
+        },
+        "attack": {
+          "frames": [
+            0,
+            1,
+            5
+          ]
+        }
+      }
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "native": "touch UI/joystick/attack",
+      "positions": {
+        "player": {
+          "x": 308,
+          "y": 430
+        },
+        "scarecrow": {
+          "x": 868,
+          "y": 430
+        },
+        "dragon": {
+          "x": 1148,
+          "y": 430,
+          "r": 35.102705252170566,
+          "sizeScale": 1.0969595391303302,
+          "hp": 1
+        },
+        "dragonDistance": 840,
+        "scarecrowDistance": 560
+      },
+      "gpu": {
+        "maxTextureSize": 8192,
+        "contextLost": false
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-2.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-3.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-4.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-5.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-2.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-3.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-4.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8897/arpg/assets/sprites/dragon/atlas-5.webp.json",
+          "status": 200
+        }
+      ],
+      "impactState": "hit",
+      "invulnerable": true,
+      "stationaryWithin4px": true,
+      "emptyLoot": true,
+      "states": [
+        {
+          "state": "idle",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "idle",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "run",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "N",
+          "frame": 0
+        },
+        {
+          "state": "run",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "E",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "SE",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "S",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "SW",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "NW",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "attack",
+          "direction": "NE",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "hit",
+          "direction": "SW",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "W",
+          "frame": 1
+        },
+        {
+          "state": "hit",
+          "direction": "NW",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "N",
+          "frame": 2
+        },
+        {
+          "state": "hit",
+          "direction": "NE",
+          "frame": 3
+        },
+        {
+          "state": "death",
+          "direction": "E",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SE",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "S",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "SW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "W",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "NW",
+          "frame": 0
+        },
+        {
+          "state": "death",
+          "direction": "N",
+          "frame": 1
+        },
+        {
+          "state": "death",
+          "direction": "NE",
+          "frame": 1
+        }
+      ],
+      "motion": {
+        "idle": {
+          "uniqueFrames": 8,
+          "lastFrame": 3
+        },
+        "run": {
+          "uniqueFrames": 8,
+          "lastFrame": 3
+        },
+        "hit": {
+          "uniqueFrames": 4,
+          "lastFrame": 3
+        },
+        "death": {
+          "uniqueFrames": 7,
+          "lastFrame": 6
+        },
+        "attack": {
+          "frames": [
+            0,
+            1,
+            5
+          ]
+        }
+      }
+    }
+  ],
+  "consoleErrors": 0,
+  "screenshots": 0
+}
