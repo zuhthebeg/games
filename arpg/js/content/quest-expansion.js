@@ -20,4 +20,11 @@ export const OBJECTIVE_QUESTS = Object.freeze({
     spawns: Object.freeze([{monster:'iron_boar',at:0,fx:.56,fy:.50},
       {monster:'goblin_slinger',at:0,fx:.80,fy:.72}, {monster:'goblin_grunt',at:2000,fx:.68,fy:.28}]),
   }),
+  QS1: Object.freeze({ id: 'QS1', mapId: 'M_MARSH_MARKERS', name: '안개 속 길 표식', mapName: '늪 우회길',
+    regionId: 'swamp', requires: ['S11'], anchor: 'S13', firstXp: 510, rec: 12, huntTier: 3,
+    objective: Object.freeze({ kind: 'visit-markers', questId: 'QS1', entry: [.18,.5],
+      markers: [[.40,.25],[.52,.75],[.78,.5]], radius: 64, dwellMs: 500 }),
+    spawns: Object.freeze([{monster:'poison_spider',at:0,fx:.62,fy:.70},
+      {monster:'spirit',at:0,fx:.74,fy:.28}, {monster:'wolf',at:0,fx:.42,fy:.42}]),
+  }),
 });

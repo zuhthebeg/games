@@ -6,13 +6,13 @@ import {createWorld,addPlayer,startStage,emptyInput} from '../js/sim/world.js';
 import {createMemoryTransport} from '../js/net/loopback.js';
 const id='M_MINE_CART', dt=1000/30;
 const profile={level:11,weapon:'bow',mods:{maxHp:10000},threats:{[id]:1}};
-function pair(){
+function pair(stageId=id){
  const wire=createMemoryTransport(),frames={host:[],guest:[]};const sessions={};
  for(const uid of ['host','guest']){
   const transport=wire.connect(uid,(from,data)=>data.t==='action'?sessions[uid].action(data.action):sessions[uid].rt(from,data));
-  sessions[uid]=new CoopSession({uid,host:'host',players:['host','guest'],profile,config:{stageId:id,threat:1,seed:42},...transport,onFrame:(w,e)=>frames[uid].push({w:structuredClone(w),e})});
+  sessions[uid]=new CoopSession({uid,host:'host',players:['host','guest'],profile,config:{stageId,threat:1,seed:42},...transport,onFrame:(w,e)=>frames[uid].push({w:structuredClone(w),e})});
  }
- const start={config:{stageId:id,threat:1},seed:42,profiles:{host:profile,guest:profile}};
+ const start={config:{stageId,threat:1},seed:42,profiles:{host:profile,guest:profile}};
  sessions.guest.begin(start);sessions.host.begin(start);return {...sessions,frames};
 }
 const player=(s,pid)=>s.world.entities.find(e=>e.pid===pid);
@@ -58,4 +58,29 @@ test('host repeats objective final packet until event ack without advancing froz
  p.host.update(250,emptyInput());assert.ok(p.host.snapshots>count);assert.equal(JSON.stringify(p.host.world),w);
  p.guest.update(dt,emptyInput());p.host.update(250,emptyInput());assert.equal(p.host.journal.length,0);
  const last=p.host.snapshots;p.host.update(250,emptyInput());assert.equal(p.host.snapshots,last);
+});
+
+const qsId='M_MARSH_MARKERS';
+function netVisit(p,pid,i){move(player(p.host,pid),p.host.world.round.objective.markers[i]);ticks(p,15);}
+test('QS1 snapshot deep-copies visited bitset, positions and per-player dwell; guest cannot mutate host',()=>{
+ const w=createWorld();addPlayer(w,{pid:'h'});startStage(w,qsId);w.round.objective.visited=1;w.round.objective.progress['h:1']=8;
+ const packet=encodeSnapshot(w),g=decodeSnapshot(packet,'h');assert.deepEqual(g.round.objective,w.round.objective);g.round.objective.markers[1].x=0;g.round.objective.progress['h:1']=0;assert.notEqual(w.round.objective.markers[1].x,0);assert.equal(w.round.objective.progress['h:1'],8);assert.equal(partyHpScale(2,12,qsId),1.6);
+});
+test('QS1 guest receives divided party visits, final event once, repeat final ack and no sim ownership',()=>{
+ const p=pair(qsId);assert.equal(p.guest.world,null);p.host.rt('guest',{t:'objective',visited:7});assert.equal(p.host.world.round.objective.visited,0);
+ netVisit(p,'host',0);netVisit(p,'guest',1);assert.equal(p.host.world.round.objective.visited,3);assert.equal(p.guest.buffer.frames.at(-1).world.round.objective.visited,3);
+ netVisit(p,'guest',2);assert.equal(p.host.phase,'ended');assert.equal(p.guest.phase,'ended');assert.equal(p.guest.buffer.frames.at(-1).world.round.objective.visited,7);
+ for(const uid of ['host','guest'])assert.equal(p.frames[uid].flatMap(f=>f.e).filter(e=>e.type==='objectiveComplete').length,1);
+ const frozen=JSON.stringify(p.host.world);p.host.broadcast();p.host.update(250,emptyInput());assert.equal(JSON.stringify(p.host.world),frozen);assert.equal(p.frames.guest.flatMap(f=>f.e).filter(e=>e.type==='objectiveComplete').length,1);
+ p.guest.update(dt,emptyInput());p.host.update(250,emptyInput());assert.equal(p.host.journal.length,0);p.guest.begin(p.host.startData);assert.equal(p.guest.phase,'ended');
+});
+for(const terminal of ['death','return_scroll'])test(`QS1 ${terminal} guest retains terminal and receives no clear eligibility`,()=>{
+ const p=pair(qsId);netVisit(p,'guest',0);const g=player(p.host,'guest');g.terminal=terminal;g.dead=terminal==='death';netVisit(p,'host',1);netVisit(p,'host',2);
+ assert.equal(g.terminal,terminal);assert.equal(p.host.world.round.objective.visited,7);assert.equal(p.guest.buffer.frames.at(-1).world.entities[0].terminal,terminal);assert.equal(p.frames.guest.flatMap(f=>f.e).filter(e=>e.type==='objectiveComplete').length,0);
+});
+test('QS1 same-tick missing marker journal repaired by retransmit without duplicate settlement',()=>{
+ const w=createWorld();addPlayer(w,{pid:'guest'});startStage(w,qsId);w.tick=30;w.round.state='clear';w.round.objective.state='complete';w.round.objective.visited=7;w.entities[0].terminal='clear';
+ const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:qsId,threat:1},onFrame:(w,e)=>frames.push(e)});g.begin({config:{stageId:qsId,threat:1},seed:42,profiles:{host:profile,guest:profile}});
+ const row1={seq:1,event:{type:'markerVisited',marker:2,pid:'guest'},participants:[]},row2={seq:2,event:{type:'objectiveComplete',participants:['guest']},participants:['guest']};const packet={...encodeSnapshot(w),eventSeq:2,events:[row2]};g.rt('host',packet);assert.equal(g.phase,'running');assert.equal(frames.length,0);
+ g.rt('host',{...packet,events:[row1,row2]});assert.equal(g.phase,'ended');assert.equal(g.buffer.frames.at(-1).world.round.objective.visited,7);g.rt('host',{...packet,events:[row1,row2]});assert.equal(frames.flat().filter(e=>e.type==='objectiveComplete').length,1);
 });

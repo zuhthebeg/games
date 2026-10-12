@@ -3,7 +3,7 @@ export const MAX_LEVEL = 30;
 // [제안] S8~S20: +12%/stage first-clear XP; boss stages (S10/S15/S20) ×1.5.
 export const STAGE_XP = { S1: 50, S2: 100, S3: 180, S4: 260, S5: 340, S6: 480, S7: 520,
   S8: 580, S9: 650, S10: 1090, S11: 820, S12: 910, S13: 1020, S14: 1150, S15: 1930,
-  S16: 1440, S17: 1610, S18: 1800, S19: 2020, S20: 3390, TD1: 2020, M_MINE_CART: 910 };
+  S16: 1440, S17: 1610, S18: 1800, S19: 2020, S20: 3390, TD1: 2020, M_MINE_CART: 910, M_MARSH_MARKERS: 510 };
 export const xpSpan = (level) => Math.round(50 * level ** 1.5);
 // Objective contracts (M_*) can be finished in ~9s without fighting: first clear only, no repeat XP farm.
 const repeatXpFactor = (stageId) => String(stageId).startsWith('M_') ? 0 : 0.25;
@@ -27,7 +27,7 @@ export function addXp(save, amount) {
 }
 
 export function deathLoss(save, stageId) {
-  const factor = stageId === 'TD1' || stageId === 'M_MINE_CART' || Number(String(stageId).slice(1)) >= 4 ? 0.5 : 0;
+  const factor = stageId === 'TD1' || stageId === 'M_MINE_CART' || stageId === 'M_MARSH_MARKERS' || Number(String(stageId).slice(1)) >= 4 ? 0.5 : 0;
   // Keep the specified round-before-factor order (a half-XP loss is possible).
   return Math.min(save.xp, Math.round(0.2 * xpSpan(save.level)) * factor);
 }

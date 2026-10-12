@@ -789,7 +789,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}${STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
