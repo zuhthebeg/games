@@ -22,9 +22,10 @@ for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 18, 
         bbox = alpha.getbbox()
         if bbox:
             assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 256 and bbox[3] < 160, ('clipping', path, bbox)
+        support = 32 if label == 'projectile' else 64
         mask = Image.new('L', im.size); draw = ImageDraw.Draw(mask)
         cx, cy = anchor[0]*256, anchor[1]*160
-        draw.ellipse((cx-63,cy-63,cx+63,cy+63),fill=255)
+        draw.ellipse((cx-support+1,cy-support+1,cx+support-1,cy+support-1),fill=255)
         im.putalpha(ImageChops.multiply(alpha,mask))
         key = path.stem
         index = len(images)
@@ -33,7 +34,7 @@ for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 18, 
         ids.append(key)
         checks.append({'id': key, 'sourceSha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bbox': bbox, 'alphaRange': alpha.getextrema()})
         images.append(im)
-    clips[label] = {'frames': ids, 'fps': 20, 'duration': expected / 20, 'anchor': anchor, 'support': 64}
+    clips[label] = {'frames': ids, 'fps': 20, 'duration': expected / 20, 'anchor': anchor, 'support': 32 if label == 'projectile' else 64}
 atlas = Image.new('RGBA', (2048, 640))
 for index, im in enumerate(images):
     atlas.paste(im, ((index % 8) * 256, (index // 8) * 160))

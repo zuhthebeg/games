@@ -60,3 +60,9 @@ test('FX2 lazy load, reduced/classic zero fetch, one attempt per skill, isolated
     assert.equal(vfx.layer.children.length,classic.layer.children.length);
   }finally{globalThis.fetch=original;}
 });
+
+test('FX2 registry covers all mana-cost player skills, excluding basics/monsters',()=>{
+  const ids=Object.entries(ABILITIES).filter(([,d])=>d.family&&d.manaCost>0).map(([id])=>id).sort();
+  assert.deepEqual(Object.keys(VFX_ATLASES).sort(),ids);
+  assert.equal(effekseerEnabled(''),true);assert.equal(effekseerEnabled('?fx=classic'),false);
+});

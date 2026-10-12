@@ -7,7 +7,7 @@ import { SkillVfx, effekseerEnabled } from '../../../js/render/skill-vfx.js';
 import { createWorld, addPlayer, spawnMonster, startStage, step, emptyInput } from '../../../js/sim/world.js';
 import { encodeSnapshot } from '../../../js/net/protocol.js';
 
-const base = execFileSync('git', ['show', '2f94a9e:arpg/js/render/skill-vfx.js'], { encoding: 'utf8' });
+const base = execFileSync('git', ['show', '74a6237:arpg/js/render/skill-vfx.js'], { encoding: 'utf8' });
 const fixed = base.replace(/from '([^']+)'/g, (_, path) => `from '${new URL(path, new URL('../../../js/render/skill-vfx.js', import.meta.url)).href}'`);
 const { SkillVfx: Baseline } = await import('data:text/javascript;base64,' + Buffer.from(fixed).toString('base64'));
 const summary = vfx => [...vfx.effects, ...vfx.particles, ...vfx.actors, ...vfx.projectiles].map(slot => ({
@@ -18,8 +18,9 @@ const summary = vfx => [...vfx.effects, ...vfx.particles, ...vfx.actors, ...vfx.
     width: item.data.style?.width })),
 }));
 
-test('FX1 exact opt-in; off creates no loading task or extra sprites', () => {
-  for (const search of ['', '?fx=0', '?fx=Effekseer', '?fx=other', '?dev=1']) assert.equal(effekseerEnabled(search), false);
+test('FX2 default on; classic/off creates no loading task or extra sprites', () => {
+  for (const search of ['', '?fx=0', '?fx=Effekseer', '?fx=other', '?dev=1']) assert.equal(effekseerEnabled(search), true);
+  assert.equal(effekseerEnabled('?dev=1&fx=classic'), false);
   assert.equal(effekseerEnabled('?dev=1&fx=effekseer'), true);
   const layer = new Container(), vfx = new SkillVfx(Graphics, layer, { effekseer: false });
   const baselineLayer = new Container(); new Baseline(Graphics, baselineLayer);
@@ -27,7 +28,7 @@ test('FX1 exact opt-in; off creates no loading task or extra sprites', () => {
   assert.equal(vfx.fxLoad, null); assert.equal(vfx.fxReady, false); assert.equal(vfx.fxImpacts.length, 0);
 });
 
-test('FX1 flag off: base host trace and vector drawing commands unchanged', () => {
+test('FX2 classic: 74a6237 host trace and vector drawing commands unchanged', () => {
   const run = Type => {
     const world = createWorld({ seed: 20261013 });
     addPlayer(world, { pid: 'fx1', weapon: 'focus', x: 300, y: 400, mods: { skills: ['ember_bolt'], maxMp: 200 } });
@@ -48,7 +49,7 @@ test('FX1 flag off: base host trace and vector drawing commands unchanged', () =
   const before = run(Baseline), after = run(SkillVfx);
   assert.equal(after.digest, before.digest);
   assert.deepEqual(after.drawings, before.drawings);
-  console.log(JSON.stringify({ base: '2f94a9e', hostTraceSha256: after.digest, drawingCheckpoints: after.drawings.length, flagOffEquivalent: true }));
+  console.log(JSON.stringify({ base: '74a6237', hostTraceSha256: after.digest, drawingCheckpoints: after.drawings.length, flagOffEquivalent: true }));
 });
 
 test('FX1 failed metadata load retains vector fallback without rejection', async () => {

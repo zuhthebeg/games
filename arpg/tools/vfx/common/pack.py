@@ -34,8 +34,10 @@ for clip in config['clips']:
         assert not bbox or (bbox[0]>0 and bbox[1]>0 and bbox[2]<256 and bbox[3]<160), ('raw clipping/empty',path,bbox)
         im = raw.resize((128,80), Image.Resampling.LANCZOS)
         if shape == 'cone':
-            # Move the source origin with the atlas pivot; no geometry stretching.
-            shifted=Image.new('RGBA',im.size); shifted.paste(im,(-32,0)); im=shifted
+            # Magnify the native 3.3-unit slash to the full cone footprint, preserving
+            # angles and pivot; the authoritative 70deg support mask clips spill.
+            enlarged=im.resize((282,176),Image.Resampling.LANCZOS)
+            shifted=Image.new('RGBA',im.size); shifted.paste(enlarged,(-109,-48)); im=shifted
         im.putalpha(ImageChops.multiply(im.getchannel('A'),mask))
         key=path.stem; n=len(images); keys.append(key)
         frames[key]={'frame':{'x':n%8*128,'y':n//8*80,'w':128,'h':80}}

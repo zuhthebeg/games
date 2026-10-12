@@ -14,31 +14,36 @@
       "name": "T_Glow01.png",
       "sha256": "4fcc24005087b2fa0d61c36be60c4535d9ce524b3bca269647816dec0748b994",
       "source": "MIT vfxkit procedural math texture (pinned generator)",
-      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
     },
     {
       "name": "T_WispTrail01.png",
       "sha256": "96d4d555addd7f57eb03666a15ff442f4a62233827f72998e7b4f4aeebec54a0",
-      "source": "MIT vfxkit procedural math texture (pinned generator)",
-      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+      "source": "MIT AI-generated upstream example texture",
+      "sourceAtCommit": "skills/effekseer-vfx/assets/examples/textures/T_WispTrail01.png",
+      "matchesOriginal": true
     },
     {
       "name": "T_NoiseStreak01.png",
       "sha256": "79062d98ab0e58cd215d39ab55282a363bf7b40b95ddaa2cfece03c629f04e0f",
       "source": "MIT vfxkit procedural math texture (pinned generator)",
-      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
     },
     {
       "name": "T_Flare01.png",
       "sha256": "b752dc643b0efa8e5a265e0d89c0b76b49f7d091b2b1effd62000937b4a2f5f2",
       "source": "MIT vfxkit procedural math texture (pinned generator)",
-      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
     },
     {
       "name": "T_Spark01.png",
       "sha256": "ec7374345f9b5b08485184fa38971c4d791502f70196a81b84656b3a25783c4f",
       "source": "MIT vfxkit procedural math texture (pinned generator)",
-      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
     }
   ],
   "licenseEvidence": "../fireball/licenses/",

@@ -22,12 +22,14 @@ for skill,(style,c,a) in PALETTES.items():
    if style=='frost':
     layers=["sprite('Ice spear','T_IceShard01',C,life=36,scale_start=[2.4,.5,1],fade_in=0,fade_out=4)","slice_line('Ice glint',A,2.0,width=.04,life=36)","motes('Ice dust',8,C,life=(20,36),distance=(.2,.8),size=(.03,.09),turbulence=0)"]
    else:
-    layers=[f"sprite('Arrow shaft','T_Streak01',A,life=36,scale_start=[3.0,.6,1],fade_in=0,fade_out=4)",f"sprite('Arrow head','T_Shard01',C,life=36,scale_start=[.5,.3,1],position=[1.0,0,0],fade_in=0,fade_out=4)",f"slice_line('Piercing glint',A,{3.0 if style=='pierce' else 1.9},width=.05,life=36)"]
+    layers=[f"sprite('Arrow shaft','T_Streak01',A,life=36,scale_start=[3.0,6.0,1],fade_in=0,fade_out=4)",f"sprite('Arrow head','T_Shard01',C,life=36,scale_start=[.5,.3,1],position=[1.0,0,0],fade_in=0,fade_out=4)",f"slice_line('Piercing glint',A,{3.0 if style=='pierce' else 1.9},width=.05,life=36)"]
     if style=='blast':layers += ["motes('Fuse embers',6,C,life=(18,36),distance=(.1,.7),size=(.04,.1),turbulence=0)"]
+   layers += ["sprite('Projectile core','T_Glow01',A,life=36,scale_start=[2.5,.7,1],fade_in=0,fade_out=4,emissive=2.0)"]
   elif label=='active' and style in ('blade','cleave','whirl'):
    if style=='whirl':layers=["slash_arc('Spin blade A',A,radius=3.3,width=.45,sweep=(-20,200),life=24)","slash_arc('Spin blade B',C,radius=2.5,width=.3,sweep=(160,380),life=28,delay=3)","shock_ring('Spin boundary',C,3.3,life=30,thickness=.08)"]
-   elif style=='cleave':layers=["slash_arc('Cleave blade',A,radius=3.3,width=.65,sweep=(55,125),life=20)","slice_line('Cleave fissure',C,3.0,width=.12,position=[1.4,0,0],life=30)","radial_sparks('Cleave sparks',12,A,color_end=C,life=(12,26),distance=(.4,1.8),width=.04,position=[1.4,0,0])"]
-   else:layers=["sprite('Dash cut','T_Streak01',A,life=24,scale_start=[3.0,1.4,1],position=[-1.2,0,0],fade_in=0,fade_out=18)","slice_line('Blade trail',C,2.6,width=.08,position=[-1.2,0,0],life=30)"]
+   elif style=='cleave':layers=["slash_arc('Cleave blade',A,radius=3.3,width=.65,sweep=(235,305),life=20)","slice_line('Cleave fissure',C,3.0,width=.12,position=[1.4,0,0],life=30)","radial_sparks('Cleave sparks',12,A,color_end=C,life=(12,26),distance=(.4,1.8),width=.04,position=[1.4,0,0])"]
+   else:layers=["sprite('Dash cut','T_Streak01',A,life=24,scale_start=[3.0,6.0,1],position=[-1.2,0,0],fade_in=0,fade_out=18)","slice_line('Blade trail',C,2.6,width=.08,position=[-1.2,0,0],life=30)"]
+   if style=='blade':layers += ["sprite('Blade glow','T_Glow01',C,life=24,scale_start=[2.8,.8,1],position=[-1.2,0,0],fade_in=0,fade_out=16)"]
   elif label=='active' and style=='fire':layers=["shock_ring('Fire ring',C,3.2,life=30,thickness=.22)","wisps('Flame arcs',A,2.6,count=4,width=.25,sweep=(0,120),life=(18,30),tilt=(0,0,(0,360)),size=1,emissive=1.3)","motes('Ember rim',16,C,life=(18,34),radius=(1.8,2.7),distance=(.1,.4),turbulence=0)"]
   elif style=='heal':layers=["shock_ring('Healing halo',C,3.2,life=32,thickness=.12)","sprite('Healing cross','T_Cross01',A,size=1.4,life=30,fade_in=0,fade_out=20)","motes('Restoration glints',16,C,life=(20,34),radius=(.6,2.6),distance=(.1,.6),size=(.05,.12),turbulence=0)"]
   elif style=='blast' and label=='impact':layers=["flash('Contact flash',(255,250,225,255),2.8,life=5)","glow('Hot core',A,1.0,life=12,fade_in=0)","shock_ring('Blast wave',C,3.2,life=24,thickness=.2)","billow('Fire bloom',[(0,A),(35,C),(100,(120,40,10,0))],size=[1.0,2.2],life=[18,24],count=3)","radial_sparks('Blast embers',12,A,color_end=C,life=(12,24),distance=(.4,2.4),width=.05)"]

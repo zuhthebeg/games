@@ -11,11 +11,11 @@
   "alphaLossless": true,
   "supportMasked": true,
   "clippedFrames": 0,
-  "atlasBytes": 82780,
+  "atlasBytes": 79776,
   "jsonBytes": 3131,
-  "totalBytes": 85911,
+  "totalBytes": 82907,
   "budgetBytes": 250000,
-  "sha256": "0f7a53500a5e1d3a33f39803ca1557e42084fdaccd6d0fb3fb9d1899b6bf7b38",
+  "sha256": "017b7baf75343fa1b79474875493b27227a92b8361886a535ec4fe7e9eb8f0bb",
   "framesProof": [
     {
       "id": "projectile-000",

@@ -1,0 +1,276 @@
+[
+  {
+    "skill": "blast_arrow",
+    "folder": "blast_arrow",
+    "bytes": 16413,
+    "KiB": 16.03,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "projectile",
+        "frames": 12,
+        "nonempty": 12,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 8,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "ember_bolt",
+    "folder": "fireball",
+    "bytes": 82907,
+    "KiB": 80.96,
+    "frames": 30,
+    "decodedBytes": 5242880,
+    "clips": [
+      {
+        "clip": "projectile",
+        "frames": 12,
+        "nonempty": 12,
+        "support": 32
+      },
+      {
+        "clip": "impact",
+        "frames": 18,
+        "nonempty": 18,
+        "support": 64
+      }
+    ]
+  },
+  {
+    "skill": "flame_ring",
+    "folder": "flame_ring",
+    "bytes": 17092,
+    "KiB": 16.69,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "active",
+        "frames": 12,
+        "nonempty": 11,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "frost_lance",
+    "folder": "frost_lance",
+    "bytes": 7494,
+    "KiB": 7.32,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "projectile",
+        "frames": 12,
+        "nonempty": 12,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 8,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "healing_light",
+    "folder": "healing_light",
+    "bytes": 24784,
+    "KiB": 24.2,
+    "frames": 30,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "active",
+        "frames": 12,
+        "nonempty": 11,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 12,
+        "nonempty": 11,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "heavy_cleave",
+    "folder": "heavy_cleave",
+    "bytes": 7423,
+    "KiB": 7.25,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "active",
+        "frames": 12,
+        "nonempty": 4,
+        "support": 68
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "lunge",
+    "folder": "lunge",
+    "bytes": 6014,
+    "KiB": 5.87,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "active",
+        "frames": 12,
+        "nonempty": 8,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "pierce_shot",
+    "folder": "pierce_shot",
+    "bytes": 7055,
+    "KiB": 6.89,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "projectile",
+        "frames": 12,
+        "nonempty": 12,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "volley",
+    "folder": "volley",
+    "bytes": 6869,
+    "KiB": 6.71,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "projectile",
+        "frames": 12,
+        "nonempty": 12,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  },
+  {
+    "skill": "whirl",
+    "folder": "whirl",
+    "bytes": 15668,
+    "KiB": 15.3,
+    "frames": 26,
+    "decodedBytes": 1310720,
+    "clips": [
+      {
+        "clip": "windup",
+        "frames": 6,
+        "nonempty": 6,
+        "support": 34
+      },
+      {
+        "clip": "active",
+        "frames": 12,
+        "nonempty": 10,
+        "support": 34
+      },
+      {
+        "clip": "impact",
+        "frames": 8,
+        "nonempty": 7,
+        "support": 34
+      }
+    ]
+  }
+]

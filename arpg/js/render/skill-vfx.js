@@ -2,9 +2,9 @@ import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
 import { Assets, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
 
-// Off: no fetch, textures or extra sprite pool. Opt-in presentation-only spike.
+// Presentation-only default. Classic opts out completely; reduced motion never loads atlases.
 export const effekseerEnabled = (search = globalThis.location?.search || '') =>
-  new URLSearchParams(search).get('fx') === 'effekseer';
+  new URLSearchParams(search).get('fx') !== 'classic';
 
 // Presentation only: dimensions come from combat content, never duplicate tuning.
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
@@ -43,6 +43,7 @@ export const SKILL_VFX = Object.freeze({
     motif: 'heal', activeLife: .5, residueLife: .8, particles: 22, reducedParticles: 2 })
 });
 export const VFX_ATLASES = Object.freeze({ lunge: 'lunge', volley: 'volley', frost_lance: 'frost_lance', whirl: 'whirl', pierce_shot: 'pierce_shot', flame_ring: 'flame_ring', blast_arrow: 'blast_arrow', heavy_cleave: 'heavy_cleave', healing_light: 'healing_light', ember_bolt: 'fireball' });
+const VFX_REVISION = 'af4408539bbd'; // Cache key for the complete baked asset set.
 const PROFILE_IDS = new Map(Object.entries(SKILL_VFX).map(([id, profile]) => [profile, id]));
 export const VFX_CAPS = Object.freeze({ effects: 48, particles: 96, actors: 8, projectiles: 24, trail: 6 });
 export const particleCount = (profile, reduced) => reduced ? profile.reducedParticles : profile.particles;
@@ -88,10 +89,12 @@ export class SkillVfx {
   async loadEffekseer(ability = 'ember_bolt') {
     try {
       const url = new URL(`../../assets/vfx/${VFX_ATLASES[ability]}/atlas.json`, import.meta.url);
+      url.searchParams.set('v', VFX_REVISION);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`FX2 ${ability} metadata: ${response.status}`);
       const meta = await response.json();
-      const sheet = await Assets.load(new URL(meta.image, url).href);
+      const imageUrl = new URL(meta.image, url); imageUrl.searchParams.set('v', VFX_REVISION);
+      const sheet = await Assets.load(imageUrl.href);
       const frames = {};
       for (const [id, item] of Object.entries(meta.frames)) {
         const { x, y, w, h } = item.frame;
@@ -117,7 +120,7 @@ export class SkillVfx {
     const index = Math.min(clip.textures.length - 1, Math.floor(clamp01(progress) * clip.textures.length));
     node.texture = clip.textures[index];
     node.position.set(x, y); node.rotation = rotation || 0;
-    node.scale.set(extent / (clip.support || (label === 'projectile' ? 64 : 64)));
+    node.scale.set(extent / clip.support);
     node.alpha = 1; node.visible = true;
     slot.bakedClip = clip; slot.bakedActive = true;
     return true;
@@ -131,11 +134,22 @@ export class SkillVfx {
     const label = kind === 'residue' ? 'impact' : profile.projectileRadius ? 'impact' : 'active';
     // Residue for the dash is its observed travelled segment, never full dash range.
     const dash = profile.style === 'dash';
-    if (kind === 'residue' && !dash) return;
+    if (kind === 'residue' && !dash && !profile.projectile) return;
     const selected = dash ? 'active' : label;
     const extent = shape?.range || radius;
     if (this.baked(slot, ability, selected, x, y, profile.style === 'cleave' || dash ? facing : 0, extent)) {
-      slot.node.visible = false; slot.wave.visible = false;
+      slot.node.visible = false;
+      // Native fill stays within the hit footprint; the exact gameplay boundary
+      // remains a thin vector guide instead of asking smoke/glow to telegraph it.
+      slot.bakedBoundary = !dash && (shape?.type === 'cone' || radius > 0);
+      slot.wave.clear();
+      if (slot.bakedBoundary) {
+        if (shape?.type === 'cone') shapePath(slot.wave, shape);
+        else slot.wave.circle(0, 0, radius);
+        slot.wave.stroke({ color: profile.color, width: 1.5, alignment: 1, alpha: .55 });
+        slot.wave.scale.set(1);
+      }
+      slot.wave.visible = slot.bakedBoundary;
     }
   }
   reset() {
@@ -525,7 +539,8 @@ export class SkillVfx {
           const clip = slot.bakedClip;
           slot.baked.texture = clip.textures[Math.min(clip.textures.length - 1, Math.floor(age * clip.textures.length))];
           slot.baked.alpha = Math.pow(1 - age, .6);
-          slot.node.visible = false; slot.wave.visible = false;
+          slot.node.visible = false;
+          slot.wave.visible = !!slot.bakedBoundary; slot.wave.scale.set(1);
         }
       }
     }
