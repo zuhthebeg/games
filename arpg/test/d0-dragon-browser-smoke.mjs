@@ -181,14 +181,15 @@ try {
     }finally{if(desktop)await command('Input.dispatchKeyEvent',{type:'keyUp',key:'j',code:'KeyJ',windowsVirtualKeyCode:74});else await touch('touchEnd',[]);}
     assert.equal(impact.entity.dead,false);assert.equal(impact.entity.hp,1);assert.equal(impact.entity.act,null);assert.equal(impact.entity.moving,false);
     assert.equal(impact.tracker.killIndex,0);assert.equal(impact.tracker.depositedXp,0);assert.deepEqual(impact.tracker.tempLoot,{gold:0,items:[],stacks:{}});
-    assert.equal(impact.entity.x,positions.dragon.x);assert.equal(impact.entity.y,positions.dragon.y);
+    // Body separation may nudge a stationary sample by a pixel when the hero walks into it; it never walks or is knocked back.
+    assert.ok(Math.hypot(impact.entity.x-positions.dragon.x,impact.entity.y-positions.dragon.y)<4,JSON.stringify([impact.entity.x,impact.entity.y,positions.dragon]));
     await waitFor(`__arpg.art.visuals.some(v=>v.key==='training_dragon' && v.state==='idle')`,5000);
     const gpu=await evaluate(`(()=>{const c=document.querySelector('canvas'),g=c.getContext('webgl2')||c.getContext('webgl');return {maxTextureSize:g.getParameter(g.MAX_TEXTURE_SIZE),contextLost:g.isContextLost()};})()`);
     assert.ok(gpu.maxTextureSize>=2048);assert.equal(gpu.contextLost,false);
     const requests=events.filter(e=>e.method==='Network.responseReceived'&&e.params.response.url.includes('/sprites/dragon/')).map(e=>({url:e.params.response.url,status:e.params.response.status}));
     assert.ok(requests.filter(r=>[200,304].includes(r.status)).length>=1&&requests.every(r=>r.status<400),JSON.stringify(requests)); // Pixi decodes .webp off the page network log; textureLoaded above proves pixels.
     assert.equal(await evaluate("document.querySelector('#boot-error').textContent"),'');
-    results.push({viewport:[width,height],native:desktop?'keyboard Enter/WDS/J':'touch UI/joystick/attack',positions,gpu,requests,impactState:impact.visual.state,invulnerable:true,unchangedPosition:true,emptyLoot:true,states:proof.samples,motion:proof.motion});
+    results.push({viewport:[width,height],native:desktop?'keyboard Enter/WDS/J':'touch UI/joystick/attack',positions,gpu,requests,impactState:impact.visual.state,invulnerable:true,stationaryWithin4px:true,emptyLoot:true,states:proof.samples,motion:proof.motion});
   }
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Log.entryAdded'&&e.params.entry.level==='error'||e.method==='Runtime.consoleAPICalled'&&e.params.type==='error');
   assert.equal(errors.length,0,JSON.stringify(errors));

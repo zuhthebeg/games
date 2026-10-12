@@ -173,8 +173,8 @@ try {
   assert.equal(firstArt.id, firstArt.mode==='paperdoll' ? 'paperdoll-blade' : 'hero-sword');
   artEvidence.playerKits.push(firstArt.id);
   assert.ok(await evaluate("__arpg.art.visuals.some(v=>v.key==='scarecrow' && v.mode==='procedural')"));
-  assert.ok(requestedArt().every(url => url.includes('manifest.json') || url.includes('/hero-sword/') || url.includes('/paperdoll/blade/')),
-    'S1 fetched an unequipped kit or future monster');
+  assert.ok(requestedArt().every(url => url.includes('manifest.json') || url.includes('/hero-sword/') || url.includes('/paperdoll/blade/') || url.includes('/dragon/')),
+    'S1 fetched an unequipped kit or future monster'); // D0: the S1 training dragon is a present monster.
   const initialFrame = await evaluate('__arpg.art.visuals.find(v=>v.key===\"blade\").frame');
   await waitFor(`__arpg.art.visuals.find(v=>v.key==='blade').frame!==${initialFrame}`);
 
@@ -374,7 +374,8 @@ try {
     const playerArt=await atlasReady(weapon);
     assert.equal(playerArt.id, playerArt.mode==='paperdoll' ? `paperdoll-${weapon}` : weapon==='bow' ? 'hero-bow' : 'hero-focus');
     artEvidence.playerKits.push(playerArt.id);
-    assert.deepEqual(await evaluate('JSON.parse(JSON.stringify(__arpg.art.loaded))'),playerArt.mode==='paperdoll' ? [] : [weapon], 'prior-round assets were not released');
+    // S1 always holds its training dragon atlas (D0); everything else from the prior round must be released.
+    assert.deepEqual((await evaluate('JSON.parse(JSON.stringify(__arpg.art.loaded))')).filter(k=>k!=='training_dragon'),playerArt.mode==='paperdoll' ? [] : [weapon], 'prior-round assets were not released');
     const hitsBefore = await evaluate('smokeHits.playerHits');
     await key('KeyD');
     await key('KeyJ');
