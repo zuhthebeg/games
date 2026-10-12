@@ -5,6 +5,7 @@ import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
 import { loadoutOf } from './skills.js';
+import { questGain, settleQuests } from './quest-progress.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
@@ -108,6 +109,11 @@ export function trackRound(save, tracker, events, used = {}) {
         if (event.stageId === 'S4' && item.id === 'chief_maul') next.tempLoot.chiefAwarded = true;
       } else rejected = true;
     }
+    // Side contracts count only units actually accepted into the bag on this sortie.
+    for (const [id, count] of Object.entries(questGain(save, event, picked))) {
+      next.tempLoot.quest ??= { run: next.seed, gains: {} };
+      next.tempLoot.quest.gains[id] = (next.tempLoot.quest.gains[id] || 0) + count;
+    }
     fx.push({ type: 'drop', x: event.x, y: event.y, gold: drop.gold, picked, rejected });
   }
   return { tracker: next, fx, load: load() };
@@ -120,6 +126,8 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   // Defense at the public settlement boundary, including the existing chief guarantee.
   // Runtime trackers already enforce the smaller seeded budget; no blanket stack truncation.
   tempLoot = structuredClone(tempLoot);
+  const questLoot = tempLoot.quest;
+  delete tempLoot.quest;
   tempLoot.items = stageId === 'S1' ? [] : tempLoot.items.slice(0, 2);
   const threat = stageId === 'S1' ? 1 : save.threat ?? 1;
   selectThreat(save, stageId, threat);
@@ -209,6 +217,18 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
       next.flags.starterRestoreUsed = true;
     }
   }
+  const quests = settleQuests(save, next, { kept, gains: questLoot?.gains, run: questLoot?.run });
+  const questXp = quests.reduce((sum, quest) => sum + quest.rewardXp, 0);
+  if (questXp) {
+    const before = next;
+    next = addXp(next, questXp);
+    let gained = 0;
+    for (let level = before.level; level < next.level; level++) gained += xpSpan(level);
+    gained += next.xp - before.xp;
+    receipt.xpGained += gained;
+    receipt.xpDiscarded += questXp - gained;
+  }
+  if (quests.length) receipt.quests = quests;
   const receivedRare = receipt.lootKept.items.some((item) => ['rare', 'epic'].includes(ITEMS[item.id].rarity));
   if (receivedRare) next.rarelessRounds = 0;
   else if (terminal === 'clear' && stageId !== 'S1') next.rarelessRounds = save.rarelessRounds + 1;

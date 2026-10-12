@@ -805,3 +805,4 @@ select, input:not([type="checkbox"]) {
 .character-skill.use-blocked{border-color:#a8574b;background:#2d1d1a}.character-skill.use-blocked .skill-warn{color:var(--loss);border-color:#a8574b;background:#3a2420}.character-skill.use-blocked .skill-icon{filter:grayscale(.8);opacity:.6}
 .loadout-slot.weak{border-color:#c99a45}.slot-weak{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#f0c46a;pointer-events:none}
 .weapon-warn.use-weak>div:nth-child(2) dd{color:#f0c46a}.weapon-warn.use-blocked>div:nth-child(2) dd{color:var(--loss)}
+.side-contract{border-style:dashed}.side-contract.active{border-color:var(--brass)}.side-contract.clear{opacity:.75}.side-quest-receipt{display:flex;align-items:center;gap:6px;font-size:12px;margin-top:12px}.side-quest-receipt svg{width:16px;height:16px;flex:0 0 16px;color:var(--brass)}

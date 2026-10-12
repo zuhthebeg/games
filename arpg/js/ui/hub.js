@@ -1,4 +1,6 @@
 import { REGIONS, REGION_EDGES, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
+import { SIDE_QUESTS } from '../content/quest-expansion.js';
+import { acceptQuest, questOffered, questState } from '../meta/quest-progress.js';
 import { BALANCE, attackRate } from '../content/balance.js';
 import { unlockedThreat, clearedThreat, selectThreat } from '../meta/run.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
@@ -752,8 +754,22 @@ export class HubUI {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
       return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
-    }).join('')}</section>`).join('');
+    }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
     this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id)).length} / 20 완료` });
+  }
+
+  sideQuestsHtml(regionId) {
+    return Object.values(SIDE_QUESTS).filter(q => q.regions.includes(regionId) && questOffered(this.save, q.id)).map(q => {
+      const state = questState(this.save, q.id), progress = state?.progress || 0;
+      const label = `${icon(state?.state === 'done' ? 'clear' : 'depart')}<span><strong>의뢰 · ${escape(q.name)}</strong><small>${escape(ITEMS[q.item].name)} ${progress} / ${q.target} · ${q.maps.join(' · ')}</small><small>보상 XP ${q.rewardXp}</small></span>`;
+      if (!state) return button(`${label}<small>수락</small>`, 'quest-accept', `data-quest="${q.id}" class="contract side-contract depart"`);
+      return `<div class="contract side-contract ${state.state === 'done' ? 'clear' : 'active'}" data-quest="${q.id}">${label}<small>${state.state === 'done' ? '완료' : '진행 중'}</small></div>`;
+    }).join('');
+  }
+
+  sideQuestLine(stage) {
+    return Object.values(SIDE_QUESTS).filter(q => q.maps.includes(stage) && questState(this.save, q.id)?.state === 'active')
+      .map(q => `<p class="quest-level-comparison side-quest-line" data-quest="${q.id}">${escape(q.name)} <b>${questState(this.save, q.id).progress} / ${q.target}</b></p>`).join('');
   }
 
   showSortie(stage, devWeapon = null) {
@@ -772,7 +788,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p><h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
@@ -851,6 +867,10 @@ export class HubUI {
       ${left ? button(`${this.revealed ? '다음 장비' : '장비'} 공개 · ${left}개 남음`, 'reveal', 'class="reveal-button"') : ''}</section>`;
   }
 
+  questReceiptHtml(receipt) {
+    return (receipt.quests || []).filter(q => SIDE_QUESTS[q.id]).map(q => `<p class="side-quest-receipt" data-quest="${q.id}">${icon(q.done ? 'clear' : 'depart')}${escape(SIDE_QUESTS[q.id].name)} · ${escape(ITEMS[SIDE_QUESTS[q.id].item].name)} +${q.gained} · <b>${q.progress} / ${q.target}</b>${q.done ? ` · 완료 · XP +${q.rewardXp}` : ''}</p>`).join('');
+  }
+
   showReceipt() {
     const { receipt, cause } = this.pendingReceipt;
     const title = { clear: '완료', return_scroll: '귀환', death: '사망' }[receipt.terminal];
@@ -859,7 +879,7 @@ export class HubUI {
       ? `<p class="loss">잃은 전리품: ${receipt.lootLost.gold} G${receipt.lootLost.items.length ? ` · 장비 ${receipt.lootLost.items.length}개` : ''}</p>` : '';
     const content = `<div class="result-intro" data-terminal="${receipt.terminal}"><span class="result-stamp">${icon(glyph)}</span>
       <div><small>${receipt.stageId} · 위협 ${receipt.threat}</small><h1>${title}</h1>${receipt.terminal === 'death' ? `<p id="cause">${escape(cause)}</p>` : ''}</div></div>
-      ${this.receiptHtml(receipt, false)}${lost}${this.revealHtml(receipt)}`;
+      ${this.receiptHtml(receipt, false)}${this.questReceiptHtml(receipt)}${lost}${this.revealHtml(receipt)}`;
     this.panel = null;
     this.show(this.shellHtml('', content, button('<span>여관으로</span>' + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
   }
@@ -1106,6 +1126,9 @@ export class HubUI {
         this.mapRegion = data.region;
         return this.showBoard();
       case 'board': return this.showBoard();
+      case 'quest-accept':
+        this.commit(acceptQuest(this.save, data.quest));
+        return this.showBoard();
       case 'sortie': return this.showSortie(data.stage);
       case 'threat':
         selectThreat(this.save, this.sortieStage, Number(data.threat));

@@ -10,6 +10,7 @@ import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
 import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf } from './skills.js';
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
+import { validQuests } from './quest-progress.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
@@ -144,6 +145,8 @@ export function validateSave(save) {
     const quiz = resolve(save.quiz.answers);
     if (save.quiz.overridden !== (save.quiz.weapon !== quiz.weapon)) return false;
     if (save.lastReceipt !== undefined && !validReceipt(save.lastReceipt)) return false;
+    // Optional side-contract ledger; absent on every older save means no contract taken.
+    if (save.quests !== undefined && !validQuests(save.quests)) return false;
     return true;
   } catch {
     return false;
