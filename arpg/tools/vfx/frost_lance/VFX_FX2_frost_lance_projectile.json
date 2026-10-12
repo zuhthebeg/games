@@ -128,6 +128,26 @@
       "fade_out": 6,
       "emissive": 1.5,
       "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Projectile core",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        233,
+        250,
+        255,
+        255
+      ],
+      "life": 36,
+      "scale_start": [
+        2.5,
+        0.7,
+        1
+      ],
+      "fade_in": 0,
+      "fade_out": 4,
+      "emissive": 2.0,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     }
   ],
   "design": "FX2 frost_lance projectile: frost palette and circle gameplay-support. Native transparent bake; gameplay boundary remains authoritative.",
