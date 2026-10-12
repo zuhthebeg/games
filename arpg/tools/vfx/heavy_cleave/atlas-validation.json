@@ -4,14 +4,14 @@
     1024,
     320
   ],
-  "atlasBytes": 3800,
+  "atlasBytes": 5200,
   "jsonBytes": 2223,
-  "totalBytes": 6023,
+  "totalBytes": 7423,
   "decodedBytes": 1310720,
   "alphaLossless": true,
   "rawClippedFrames": 0,
   "supportMasked": true,
-  "sha256": "8ad1fa6b709c9003dc1a99c74dfcb6581a01996a8efb9d57de39de7f7e29dc3d",
+  "sha256": "f660cc59311573e4b0bf2824a3b4a55cdfee1f45ca2b3f40802aa18ea3e3e5c5",
   "framesProof": [
     {
       "id": "windup-000",
@@ -125,10 +125,10 @@
         107
       ],
       "bbox": [
-        41,
-        37,
-        48,
-        43
+        52,
+        33,
+        67,
+        47
       ],
       "shape": "cone"
     },
@@ -142,10 +142,10 @@
         98
       ],
       "bbox": [
-        39,
-        36,
-        61,
-        47
+        47,
+        27,
+        96,
+        55
       ],
       "shape": "cone"
     },
@@ -159,10 +159,10 @@
         88
       ],
       "bbox": [
-        33,
-        31,
-        62,
-        42
+        35,
+        20,
+        97,
+        44
       ],
       "shape": "cone"
     },
@@ -176,10 +176,10 @@
         78
       ],
       "bbox": [
-        57,
-        28,
-        62,
-        37
+        87,
+        14,
+        98,
+        34
       ],
       "shape": "cone"
     },
