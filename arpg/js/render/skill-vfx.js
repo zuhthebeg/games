@@ -42,7 +42,7 @@ export const SKILL_VFX = Object.freeze({
     color: 0x79dca0, accent: 0xc5d799, windup: 'runes', impact: 'rise',
     motif: 'heal', activeLife: .5, residueLife: .8, particles: 22, reducedParticles: 2 })
 });
-export const VFX_ATLASES = Object.freeze({ lunge: 'lunge', volley: 'volley', frost_lance: 'frost_lance', whirl: 'whirl', pierce_shot: 'pierce_shot', flame_ring: 'flame_ring', ember_bolt: 'fireball' });
+export const VFX_ATLASES = Object.freeze({ lunge: 'lunge', volley: 'volley', frost_lance: 'frost_lance', whirl: 'whirl', pierce_shot: 'pierce_shot', flame_ring: 'flame_ring', blast_arrow: 'blast_arrow', ember_bolt: 'fireball' });
 const PROFILE_IDS = new Map(Object.entries(SKILL_VFX).map(([id, profile]) => [profile, id]));
 export const VFX_CAPS = Object.freeze({ effects: 48, particles: 96, actors: 8, projectiles: 24, trail: 6 });
 export const particleCount = (profile, reduced) => reduced ? profile.reducedParticles : profile.particles;

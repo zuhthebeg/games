@@ -136,3 +136,7 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 ### FX2 flame_ring
 - Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/flame_ring/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
 - Distribution: `assets/vfx/flame_ring/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/flame_ring/atlas-validation.json`. No independent artist or physical-device certification claimed.
+
+### FX2 blast_arrow
+- Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/blast_arrow/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
+- Distribution: `assets/vfx/blast_arrow/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/blast_arrow/atlas-validation.json`. No independent artist or physical-device certification claimed.
