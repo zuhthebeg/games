@@ -4,14 +4,14 @@
     1024,
     320
   ],
-  "atlasBytes": 3752,
+  "atlasBytes": 3800,
   "jsonBytes": 2223,
-  "totalBytes": 5975,
+  "totalBytes": 6023,
   "decodedBytes": 1310720,
   "alphaLossless": true,
   "rawClippedFrames": 0,
   "supportMasked": true,
-  "sha256": "5487da18aa326e8fecfc333e01e1317979c053ad1336c1d243f7714f6ef479d1",
+  "sha256": "8ad1fa6b709c9003dc1a99c74dfcb6581a01996a8efb9d57de39de7f7e29dc3d",
   "framesProof": [
     {
       "id": "windup-000",
@@ -117,12 +117,12 @@
     },
     {
       "id": "active-000",
-      "sourceSha256": "10fd58cae2917a40d2892dda5607190383e70e06961b57d0d8d288e1d6efcd90",
+      "sourceSha256": "840ae60308145f4297e62b93d446451cb456517fa27bfc9084169a612a5cc11f",
       "rawBbox": [
+        146,
         79,
-        53,
-        160,
-        81
+        177,
+        107
       ],
       "bbox": [
         41,
@@ -134,48 +134,53 @@
     },
     {
       "id": "active-003",
-      "sourceSha256": "47a08e429b04c2c5a50f0cf0cc792484c0593e58f5339bd158e08fba218638a8",
+      "sourceSha256": "d194118e47b3fde92cea2113cc2ffab1d33ed3cd1d09a957a6b680d7993b25e6",
       "rawBbox": [
+        117,
         69,
-        62,
-        163,
-        83
+        187,
+        98
       ],
       "bbox": [
         39,
         36,
-        49,
-        41
+        61,
+        47
       ],
       "shape": "cone"
     },
     {
       "id": "active-006",
-      "sourceSha256": "f03ea53000e6913aa23380974231044c198aefa95355794e14b269bd97d4ce0a",
+      "sourceSha256": "db3b7203efa6c56dc32d2c2b4c53af838ddf3a96a4ee0f0ee481b77bee8e3cf1",
       "rawBbox": [
-        69,
-        64,
-        156,
-        98
+        128,
+        62,
+        187,
+        88
       ],
       "bbox": [
         33,
-        39,
-        46,
-        41
+        31,
+        62,
+        42
       ],
       "shape": "cone"
     },
     {
       "id": "active-009",
-      "sourceSha256": "e08a9efc2c99c646762bf1eb5151e6475b1003bd1c34cad4c9ece5de2f3119af",
+      "sourceSha256": "bf591d02d6dd1c5bcca32455614140daaf4a1e72703e22e6159d5cc9e659e393",
       "rawBbox": [
-        70,
+        118,
         57,
-        135,
-        103
+        186,
+        78
       ],
-      "bbox": null,
+      "bbox": [
+        57,
+        28,
+        62,
+        37
+      ],
       "shape": "cone"
     },
     {

@@ -69,12 +69,12 @@
           255
         ],
         "angle_start": [
-          55,
-          83.0
+          235,
+          263.0
         ],
         "angle_end": [
-          63.4,
-          125
+          243.4,
+          305
         ],
         "angle_easing": "EaseOutQuartic",
         "angle_fade": [
