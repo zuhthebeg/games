@@ -91,7 +91,7 @@ try {
       const app=new Application();await app.init({width:390,height:400,preference:'webgl',autoStart:false});
       document.body.appendChild(app.canvas);
       const layer=new Container();app.stage.addChild(layer);const vfx=new SkillVfx(Graphics,layer);
-      if(vfx.fxLoad) await vfx.fxLoad;
+      if(vfx.fxRequested) await vfx.requestSkill('ember_bolt');
       window.fx1={app,vfx,layer,clicks:0};
       const button=document.createElement('button');button.textContent='FX1';button.id='fx1-fire';
       button.style='position:fixed;left:12px;top:420px;width:120px;height:50px';document.body.appendChild(button);
@@ -104,22 +104,22 @@ try {
     const proof=await evaluate(`(()=>{
       const {vfx,app,layer}=fx1;const world={tick:1,entities:[],projectiles:[{id:7,abilityId:'ember_bolt',x:150,y:200,r:8,vx:300,vy:0}]};
       const before=JSON.stringify(world);vfx.update(world,1,.05,false);app.render();
-      const slot=vfx.projectiles[0],impact=vfx.fxImpacts.find(s=>s.left>0);
-      const initial=slot.baked?.texture;const firstImpact=impact?.node.texture;
+      const slot=vfx.projectiles[0],impact=vfx.effects.find(s=>s.left>0&&s.bakedActive);
+      const initial=slot.baked?.texture;const firstImpact=impact?.baked.texture;
       const visibleBaked=!!slot.baked?.visible,visibleVector=slot.node.visible;
-      const activeImpact=!!impact?.node.visible;
+      const activeImpact=!!impact?.baked.visible;
       vfx.update(world,1,.05,false);app.render();
       const advanced=!vfx.fxReady||slot.baked.texture!==initial;
-      const impactAdvanced=!vfx.fxReady||impact.node.texture!==firstImpact;
+      const impactAdvanced=!vfx.fxReady||impact.baked.texture!==firstImpact;
       const children=layer.children.length;
       for(let i=0;i<20;i++)vfx.event({type:'explode',ability:'ember_bolt',x:210,y:230,radius:78},world,false);
       const bounded=children===layer.children.length;
       vfx.update(world,1,.01,true);app.render();
       const reducedLegacy=slot.node.visible&&!slot.baked?.visible;
-      vfx.reset();app.render();const reset=vfx.fxImpacts.every(s=>!s.node.visible)&&vfx.projectiles.every(s=>!s.baked?.visible);
+      vfx.reset();app.render();const reset=vfx.effects.every(s=>!s.baked?.visible)&&vfx.projectiles.every(s=>!s.baked?.visible);
       vfx.update({tick:2,entities:[],projectiles:[{...world.projectiles[0],abilityId:'blast_arrow'}]},1,.016,false);app.render();
       const unrelatedLegacy=vfx.projectiles[0].node.visible&&!vfx.projectiles[0].baked?.visible;
-      return {clicks:fx1.clicks,visibleBaked,visibleVector,activeImpact,advanced,impactAdvanced,bounded,reducedLegacy,reset,unrelatedLegacy,readOnly:before===JSON.stringify(world),sprites:vfx.fxImpacts.length+vfx.projectiles.filter(s=>s.baked).length};
+      return {clicks:fx1.clicks,visibleBaked,visibleVector,activeImpact,advanced,impactAdvanced,bounded,reducedLegacy,reset,unrelatedLegacy,readOnly:before===JSON.stringify(world),sprites:[...vfx.effects,...vfx.actors,...vfx.projectiles].filter(s=>s.baked).length};
     })()`);
     assert.equal(proof.clicks,1);assert.equal(proof.visibleBaked,!!flag);assert.equal(proof.visibleVector,!flag);
     if(flag)assert.equal(proof.activeImpact,true);
@@ -129,7 +129,8 @@ try {
   // Actual game boot with the flag as well, not only the renderer fixture.
   await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/?dev=1&fx=effekseer`});
   await waitFor('window.__arpg');
-  await waitFor(`performance.getEntriesByType('resource').some(e=>e.name.includes('/assets/vfx/fireball/atlas.json'))`);
+  // Default boot must be lazy; load only on first matching skill use.
+  await evaluate(`window.__arpg.renderer?.skillVfx?.requestSkill?.('ember_bolt')`);
   const gameResources = await evaluate(`performance.getEntriesByType('resource').filter(e=>e.name.includes('/assets/vfx/fireball/')).map(e=>e.name)`);
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Log.entryAdded'&&e.params.entry.level==='error'||e.method==='Runtime.consoleAPICalled'&&e.params.type==='error');
   assert.equal(errors.length,0,JSON.stringify(errors));

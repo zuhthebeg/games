@@ -1,0 +1,23 @@
+{
+  "beforeContact0": {
+    "whitePixels": 0,
+    "opaquePixels": 0
+  },
+  "beforePeak9": {
+    "whitePixels": 158,
+    "opaquePixels": 1344
+  },
+  "afterContact0": {
+    "whitePixels": 74,
+    "opaquePixels": 74
+  },
+  "afterPeak3": {
+    "whitePixels": 81,
+    "opaquePixels": 81
+  },
+  "afterPeak9": {
+    "whitePixels": 206,
+    "opaquePixels": 1311
+  },
+  "definition": "RGB min>=210, alpha>=100; fixed native RGBA; old frame9 vs new frame3 intentionally advances contact peak"
+}

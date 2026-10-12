@@ -16,11 +16,12 @@ def recipe():
   decal('Scorch','T_Crack01',(36,24,18,180),3.4,life=48,delay=7,blend='Blend',position=[0,GROUND+.03,0],size_curve=[[0,.5],[8,1],[100,1.02]],fade_in=0,fade_out=26,angle=40),
   decal('Glowing cracks','T_Crack01',(255,100,25,255),3.4,life=34,delay=7,position=[0,GROUND+.04,0],size_curve=[[0,.5],[8,1],[100,1.02]],color_end=fade(red),fade_in=0,fade_out=24,emissive=1.6,angle=40),
   shadow('Dark backing',(40,18,10,150),5.0,life=22,delay=7),
-  glow('Gather',(255,150,60,200),1.6,life=6,size_curve=[[0,1],[100,.15]],fade_in=2,fade_out=1),
+  glow('Contact bloom',(255,150,60,200),1.6,life=6,size_curve=[[0,1],[100,.15]],fade_in=0,fade_out=1),
   radial_sparks('Inward fuse',6,(255,170,75,255),color_end=(255,220,140,255),life=(7,7),width=.055,length=(.3,.5),
    spawn=dict(shape='Sphere',radius=[.7,1.0]),travel=dict(end=[0,[-1.0,-.7],0],easing='EaseInCubic'),fade_in=1,fade_out=2),
-  flash('Detonation flash',white,6,life=3,delay=9),
-  glow('Fire core',(255,205,90,200),3.0,life=5,delay=9,emissive=1.3),
+  flash('Detonation flash',white,4.2,life=5,delay=0),
+  sprite('White-hot contact core','T_Glow01',white,size=2.4,life=12,delay=0,fade_in=0,fade_out=10,emissive=2.4),
+  glow('Fire core',(255,220,120,240),2.0,life=14,delay=0,emissive=1.8),
   # The same billow, alpha-blended and dark, takes over as the fire burns out, so smoke grows out of the fireball.
   # Listed before the fire so the fire draws on top of it instead of being blotted out.
   billow('Smoke billow',[(0,(110,92,80,0)),(20,(140,125,112,240)),(60,(110,104,98,210)),(100,(75,75,80,0))],size=[2.0,3.8],life=[48,56],count=4,delay=14,interval=2,blend='Blend',
@@ -44,5 +45,5 @@ def recipe():
   smoke('Ground dust',(150,138,126,170),count=8,size=(.6,.9),grow=1.8,life=(22,28),delay=8,spawn=dict(shape='Circle',radius=[.8,1.3],rotate=True,division=8),
    travel=dict(end=[[1.2,2.0],0,0],easing='EaseOutCubic'),rise=.0001,position=[0,GROUND+.2,0]),
   motes('Rising embers',18,orange,color_end=(255,30,0,255),life=(30,48),distance=(.6,2.0),delay=9,rise=.0006,radius=(.2,.9)),
- ],attach='body',peak=.17,impact=1,light=(1,.6,.25),delivery=dict(kind='projectile',projectile='VFX_Projectile_Fire'),
+ ],attach='body',peak=.05,impact=1,light=(1,.6,.25),delivery=dict(kind='projectile',projectile='VFX_Projectile_Fire'),
  design='Inward gather, white detonation, a lopsided flipbook fireball thrown along the shot that rolls, cools white to red and burns open, a climbing mushroom head, two broken ground licks that go out as grey smoke, blow-through streaks, char debris that lands, a dust roll, glowing cracks over a dark scorch, ground flames, then the same billow as smoke.')

@@ -1,0 +1,40 @@
+'\\wsl.localhost\Debian\home\cocy\.openclaw\workspace\tmp\worktrees\arpg-fx2'
+위의 경로를 현재 디렉터리로 하여 CMD.EXE가 실행되었습니다. UNC 경로는
+지원되지 않습니다. Windows 디렉터리를 기본으로 합니다.
+{"lint_warnings": {"VFX_Fire_Explosion": ["Detonation flash: contact flash lives 7 frames; contact should be 2-5"]}}
+{"source": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\effects\\VFX_Fire_Explosion.efkefc", "runtime": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\exports\\VFX_Fire_Explosion.efk", "writes": 2083}
+{"source": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\effects\\VFX_Projectile_Fire.efkefc", "runtime": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\exports\\VFX_Projectile_Fire.efk", "writes": 864}
+{"ok": true, "effects": 2, "built": ["VFX_Fire_Explosion", "VFX_Projectile_Fire"]}
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3080 Ti
+
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-000.png","error":0,"frame":0,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-003.png","error":0,"frame":3,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-006.png","error":0,"frame":6,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-009.png","error":0,"frame":9,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-012.png","error":0,"frame":12,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-015.png","error":0,"frame":15,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-018.png","error":0,"frame":18,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-021.png","error":0,"frame":21,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-024.png","error":0,"frame":24,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-027.png","error":0,"frame":27,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-030.png","error":0,"frame":30,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/projectile-033.png","error":0,"frame":33,"size":[256,160]}
+{"alpha":1,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-000.png","error":0,"frame":0,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-003.png","error":0,"frame":3,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-006.png","error":0,"frame":6,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-009.png","error":0,"frame":9,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-012.png","error":0,"frame":12,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-015.png","error":0,"frame":15,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-018.png","error":0,"frame":18,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-021.png","error":0,"frame":21,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-024.png","error":0,"frame":24,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-027.png","error":0,"frame":27,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-030.png","error":0,"frame":30,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-033.png","error":0,"frame":33,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-036.png","error":0,"frame":36,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-039.png","error":0,"frame":39,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-042.png","error":0,"frame":42,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-045.png","error":0,"frame":45,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-048.png","error":0,"frame":48,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\fireball-frames/impact-051.png","error":0,"frame":51,"size":[256,160]}

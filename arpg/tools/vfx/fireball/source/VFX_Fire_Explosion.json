@@ -6,7 +6,7 @@
   "duration": 1.3,
   "loop": false,
   "attach": "body",
-  "peak": 0.17,
+  "peak": 0.05,
   "impact": 1,
   "light": [
     1,
@@ -17,7 +17,7 @@
   "layers": [
     {
       "name": "Scorch",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Crack01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Crack01.png",
       "color": [
         36,
         24,
@@ -61,11 +61,11 @@
           1.02
         ]
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Glowing cracks",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Crack01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Crack01.png",
       "color": [
         255,
         100,
@@ -115,11 +115,11 @@
         0
       ],
       "emissive": 1.6,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Dark backing",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_SoftCircle.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_SoftCircle.png",
       "color": [
         40,
         18,
@@ -147,11 +147,11 @@
       "blend": "Blend",
       "fade_in": 2,
       "fade_out": 15.399999999999999,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
-      "name": "Gather",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "name": "Contact bloom",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
       "color": [
         255,
         150,
@@ -172,13 +172,13 @@
         ]
       ],
       "billboard": "Billboard",
-      "fade_in": 2,
+      "fade_in": 0,
       "fade_out": 1,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Inward fuse",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Spark01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Spark01.png",
       "color": [
         255,
         170,
@@ -234,20 +234,20 @@
       "fade_in": 1,
       "fade_out": 2,
       "emissive": 1.5,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Detonation flash",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Flare01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Flare01.png",
       "color": [
         255,
         250,
         225,
         255
       ],
-      "life": 3,
-      "delay": 9,
-      "size": 6,
+      "life": 5,
+      "delay": 0,
+      "size": 4.2,
       "size_curve": [
         [
           0,
@@ -268,22 +268,39 @@
         0
       ],
       "fade_in": 0,
-      "fade_out": 1.7999999999999998,
+      "fade_out": 3.0,
       "emissive": 1.6,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "White-hot contact core",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        255,
+        250,
+        225,
+        255
+      ],
+      "size": 2.4,
+      "life": 12,
+      "delay": 0,
+      "fade_in": 0,
+      "fade_out": 10,
+      "emissive": 2.4,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Fire core",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
       "color": [
         255,
-        205,
-        90,
-        200
+        220,
+        120,
+        240
       ],
-      "life": 5,
-      "delay": 9,
-      "size": 3.0,
+      "life": 14,
+      "delay": 0,
+      "size": 2.0,
       "size_curve": [
         [
           0,
@@ -300,13 +317,13 @@
       ],
       "billboard": "Billboard",
       "fade_in": 0,
-      "fade_out": 4.0,
-      "emissive": 1.3,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "fade_out": 11.200000000000001,
+      "emissive": 1.8,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Smoke billow",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
       "color": [
         110,
         92,
@@ -447,11 +464,11 @@
         0.1,
         0
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Fireball",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
       "color": [
         255,
         210,
@@ -606,7 +623,7 @@
         ]
       ],
       "emissive": 0.85,
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
       "cutoff": {
         "start": 0,
         "end": 0.8,
@@ -626,11 +643,11 @@
         "threshold": 0.05,
         "scaling": 2
       },
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Mushroom",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
       "color": [
         255,
         120,
@@ -766,7 +783,7 @@
         "easing": "EaseOutCubic"
       },
       "emissive": 0.85,
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
       "cutoff": {
         "start": 0,
         "end": 0.6,
@@ -782,12 +799,12 @@
         "threshold": 0.05,
         "scaling": 2
       },
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Ground lick A",
       "renderer": "Ring",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
       "color": [
         255,
         150,
@@ -854,7 +871,7 @@
           6
         ]
       },
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
       "alpha_scroll": [
         -0.05,
         0
@@ -873,12 +890,12 @@
         -0.8700000000000001,
         0
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Ground lick B",
       "renderer": "Ring",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
       "color": [
         255,
         190,
@@ -945,7 +962,7 @@
           6
         ]
       },
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
       "alpha_scroll": [
         0.05,
         0
@@ -964,12 +981,12 @@
         -0.8700000000000001,
         0
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Ground lick A smoke",
       "renderer": "Ring",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
       "color": [
         90,
         78,
@@ -1036,7 +1053,7 @@
           6
         ]
       },
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
       "alpha_scroll": [
         -0.020000000000000004,
         0.0
@@ -1055,12 +1072,12 @@
         0
       ],
       "blend": "Blend",
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Ground lick B smoke",
       "renderer": "Ring",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_WispTrail01.png",
       "color": [
         90,
         78,
@@ -1127,7 +1144,7 @@
           6
         ]
       },
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseStreak01.png",
       "alpha_scroll": [
         0.020000000000000004,
         0.0
@@ -1146,11 +1163,11 @@
         0
       ],
       "blend": "Blend",
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Refraction wave",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_DistortRing01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_DistortRing01.png",
       "color": [
         255,
         255,
@@ -1184,11 +1201,11 @@
       ],
       "fade_in": 0,
       "fade_out": 11.2,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Heat haze",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_DistortHaze01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_DistortHaze01.png",
       "color": [
         255,
         255,
@@ -1221,11 +1238,11 @@
       ],
       "fade_in": 3,
       "fade_out": 30.0,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Ground licks",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_ExplosionSheet01.png",
       "color": [
         255,
         245,
@@ -1323,7 +1340,7 @@
         "frame_length": 2,
         "loop": "Once"
       },
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
       "cutoff": {
         "start": 0.04,
         "end": 0.5,
@@ -1363,11 +1380,11 @@
         -0.93,
         0
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Shrapnel sparks streaks",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Spark01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Spark01.png",
       "color": [
         255,
         255,
@@ -1427,11 +1444,11 @@
       "fade_in": 0,
       "fade_out": 3,
       "emissive": 2.2,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Shrapnel sparks",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Spark01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Spark01.png",
       "color": [
         255,
         250,
@@ -1500,11 +1517,11 @@
       "fade_in": 0,
       "fade_out": 5,
       "emissive": 1.5,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Shrapnel sparks heavy",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Spark01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Spark01.png",
       "color": [
         255,
         250,
@@ -1582,11 +1599,11 @@
         "friction": 0.4,
         "reduction": 0.35
       },
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Blow-through streaks",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Spark01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Spark01.png",
       "color": [
         255,
         250,
@@ -1649,11 +1666,11 @@
       "fade_in": 0,
       "fade_out": 5,
       "emissive": 1.5,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     },
     {
       "name": "Char debris",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Shard01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Shard01.png",
       "color": [
         112,
         96,
@@ -1743,11 +1760,11 @@
         "friction": 0.6,
         "reduction": 0.2
       },
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Ground dust",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_SmokeSheet01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_SmokeSheet01.png",
       "color": [
         150,
         138,
@@ -1821,7 +1838,7 @@
           ]
         }
       ],
-      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
+      "alpha_texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_NoiseTile01.png",
       "fade_in": 2,
       "fade_out": 10,
       "flipbook": {
@@ -1851,11 +1868,11 @@
         -0.73,
         0
       ],
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Alpha.vfxmat.json"
     },
     {
       "name": "Rising embers",
-      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
       "color": [
         255,
         120,
@@ -1922,7 +1939,7 @@
       "fade_in": 1,
       "fade_out": 6,
       "emissive": 1.5,
-      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx1\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     }
   ],
   "design": "Inward gather, white detonation, a lopsided flipbook fireball thrown along the shot that rolls, cools white to red and burns open, a climbing mushroom head, two broken ground licks that go out as grey smoke, blow-through streaks, char debris that lands, a dust roll, glowing cracks over a dark scorch, ground flames, then the same billow as smoke.",

@@ -42,6 +42,8 @@ export const SKILL_VFX = Object.freeze({
     color: 0x79dca0, accent: 0xc5d799, windup: 'runes', impact: 'rise',
     motif: 'heal', activeLife: .5, residueLife: .8, particles: 22, reducedParticles: 2 })
 });
+export const VFX_ATLASES = Object.freeze({ ember_bolt: 'fireball' });
+const PROFILE_IDS = new Map(Object.entries(SKILL_VFX).map(([id, profile]) => [profile, id]));
 export const VFX_CAPS = Object.freeze({ effects: 48, particles: 96, actors: 8, projectiles: 24, trail: 6 });
 export const particleCount = (profile, reduced) => reduced ? profile.reducedParticles : profile.particles;
 const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -75,13 +77,19 @@ export class SkillVfx {
         const node = graphic(); node.moveTo(0, 0).lineTo(1, 0).stroke({ color: 0xffffff, width: 11 - i * 1.5 }); return node;
       }) }));
     this.fxRequested = options.effekseer ?? effekseerEnabled();
-    this.fxLoad = this.fxRequested ? this.loadEffekseer() : null;
+    this.fxAssets = new Map(); this.fxLoads = new Map(); this.fxErrors = new Map();
+    this.fxLoad = null; // No eager network/decode, including in the default-on mode.
   }
-  async loadEffekseer() {
+  requestSkill(ability, reduced = false) {
+    if (!this.fxRequested || reduced || !VFX_ATLASES[ability]) return null;
+    if (!this.fxLoads.has(ability)) this.fxLoads.set(ability, this.loadEffekseer(ability));
+    return this.fxLoads.get(ability);
+  }
+  async loadEffekseer(ability = 'ember_bolt') {
     try {
-      const url = new URL('../../assets/vfx/fireball/atlas.json', import.meta.url);
+      const url = new URL(`../../assets/vfx/${VFX_ATLASES[ability]}/atlas.json`, import.meta.url);
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`FX1 metadata: ${response.status}`);
+      if (!response.ok) throw new Error(`FX2 ${ability} metadata: ${response.status}`);
       const meta = await response.json();
       const sheet = await Assets.load(new URL(meta.image, url).href);
       const frames = {};
@@ -89,30 +97,56 @@ export class SkillVfx {
         const { x, y, w, h } = item.frame;
         frames[id] = new Texture({ source: sheet.source, frame: new Rectangle(x, y, w, h) });
       }
-      this.fxClips = Object.fromEntries(Object.entries(meta.clips).map(([id, clip]) =>
+      const clips = Object.fromEntries(Object.entries(meta.clips).map(([id, clip]) =>
         [id, { ...clip, textures: clip.frames.map(key => frames[key]) }]));
-      const sprite = clip => {
-        const node = new Sprite(this.fxClips[clip].textures[0]);
-        node.anchor.set(...this.fxClips[clip].anchor); node.visible = false;
-        this.layer.addChild(node); return node;
-      };
-      for (const slot of this.projectiles) { slot.baked = sprite('projectile'); slot.bakedAge = 0; }
-      this.fxImpacts = Array.from({ length: 12 }, () => ({ node: sprite('impact'), left: 0, total: 0 }));
+      this.fxAssets.set(ability, { clips, meta });
+      // One shared bounded pool, not one pool per skill. Allocate only after success.
+      const sprite = () => { const node = new Sprite(Texture.EMPTY); node.visible = false; this.layer.addChild(node); return node; };
+      for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) if (!slot.baked) slot.baked = sprite();
       this.fxReady = true;
       return true;
     } catch (error) {
-      // Missing atlas/decoder/network: keep the existing vector presentation.
-      this.fxError = String(error); return false;
+      this.fxErrors.set(ability, String(error)); this.fxError = String(error); return false;
+    }
+  }
+  baked(slot, ability, label, x, y, rotation, extent, progress = 0) {
+    const clip = this.fxAssets.get(ability)?.clips[label];
+    if (!clip || !slot.baked) return false;
+    const node = slot.baked;
+    node.anchor.set(...clip.anchor);
+    const index = Math.min(clip.textures.length - 1, Math.floor(clamp01(progress) * clip.textures.length));
+    node.texture = clip.textures[index];
+    node.position.set(x, y); node.rotation = rotation || 0;
+    node.scale.set(extent / (clip.support || (label === 'projectile' ? 64 : 64)));
+    node.alpha = 1; node.visible = true;
+    slot.bakedClip = clip; slot.bakedActive = true;
+    return true;
+  }
+  bakeEffect(slot, profile, kind, x, y, facing, radius, shape, reduced) {
+    const ability = PROFILE_IDS.get(profile);
+    this.requestSkill(ability, reduced);
+    slot.bakedActive = false;
+    if (slot.baked) slot.baked.visible = false;
+    if (reduced || !this.fxRequested) return;
+    const label = kind === 'residue' ? 'impact' : profile.projectileRadius ? 'impact' : 'active';
+    // Residue for the dash is its observed travelled segment, never full dash range.
+    const dash = profile.style === 'dash';
+    if (kind === 'residue' && !dash) return;
+    const selected = dash ? 'active' : label;
+    const extent = shape?.range || radius;
+    if (this.baked(slot, ability, selected, x, y, profile.style === 'cleave' || dash ? facing : 0, extent)) {
+      slot.node.visible = false; slot.wave.visible = false;
     }
   }
   reset() {
-    for (const slot of this.fxImpacts) { slot.left = 0; slot.node.visible = false; }
+    for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) { if (slot.baked) slot.baked.visible = false; slot.bakedActive = false; }
     for (const slot of this.projectiles) { if (slot.baked) slot.baked.visible = false; slot.bakedAge = 0; }
     for (const item of [...this.effects, ...this.particles]) { item.left = 0; item.node.visible = false; if (item.wave) item.wave.visible = false; }
     for (const slot of this.actors) { slot.id = null; slot.node.visible = false; for (const node of slot.motes) node.visible = false; }
     for (const slot of this.projectiles) { slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false; }
   }
   effect(profile, kind, x, y, facing, radius, shape, reduced) {
+    this.requestSkill(PROFILE_IDS.get(profile), reduced);
     const slot = this.effects.find(item => item.left <= 0);
     if (!slot) return false;
     Object.assign(slot, { kind, radius, reduced, left: kind === 'residue' ? (reduced ? .2 : profile.residueLife) : profile.activeLife });
@@ -197,6 +231,7 @@ export class SkillVfx {
       }
       if (profile.style === 'heal') g.circle(0, 0, radius - 6).stroke({ color: profile.accent, width: reduced ? 1 : 2, alpha: reduced ? .3 : .6 });
     }
+    this.bakeEffect(slot, profile, kind, x, y, facing, radius, shape, reduced);
     return true;
   }
   // Decoration inside an area's exact radius; never draws past it.
@@ -258,6 +293,7 @@ export class SkillVfx {
   event(event, world, reduced = false) {
     const profile = SKILL_VFX[event.ability];
     if (!profile) return false;
+    this.requestSkill(event.ability, reduced);
     if (profile.onEvent) return profile.onEvent(this, event, world, reduced);
     if (event.type === 'hit') {
       if (profile.style !== 'heal') this.emit(profile, profile.impact === 'shard' ? 'shard' : 'spark', event.x, event.y, 0, 20, reduced);
@@ -269,17 +305,6 @@ export class SkillVfx {
       return false; // Existing numbers, impact, hit-stop and camera remain untouched.
     }
     if (event.type === 'explode' && profile.style === 'ember') {
-      if (this.fxReady && event.ability === 'ember_bolt' && !reduced) {
-        const slot = this.fxImpacts.find(item => item.left <= 0);
-        if (slot) {
-          slot.left = slot.total = profile.activeLife;
-          slot.node.texture = this.fxClips.impact.textures[0];
-          slot.node.position.set(event.x, event.y);
-          slot.node.scale.set(event.radius / 64); slot.node.visible = true;
-          return true;
-        }
-        // Pool full: bounded legacy fallback, never allocate per event.
-      }
       this.effect(profile, 'active', event.x, event.y, 0, event.radius, null, reduced);
       this.emit(profile, 'smoke', event.x, event.y, 0, event.radius, reduced);
       return true;
@@ -295,6 +320,7 @@ export class SkillVfx {
   actor(entity, worldTick, reduced) {
     const act = entity.act, profile = SKILL_VFX[act?.id];
     if (!profile || entity.dead || entity.kind !== 'player') return false;
+    this.requestSkill(act.id, reduced);
     if (profile.onActor) return profile.onActor(this, entity, worldTick, reduced);
     let slot = this.actors.find(item => item.id === entity.id);
     if (!slot) slot = this.actors.find(item => item.id === null);
@@ -399,10 +425,18 @@ export class SkillVfx {
         }
       }
     }
+    if (slot.baked) slot.baked.visible = false;
+    if (!reduced && this.fxRequested && charging) this.baked(slot, act.id, 'windup', x, y,
+      profile.windup === 'bow' || profile.windup === 'blade' || profile.windup === 'crystal' ? act.facing : 0, 24, p);
+    if (!reduced && this.fxRequested && profile.style === 'dash' && act.phase === 'active') {
+      this.baked(slot, act.id, 'impact', entity.x, entity.y, act.facing, entity.r + profile.dash.bodyPad,
+        clamp01(act.elapsed / Math.max(1, act.total)));
+    }
     return true;
   }
   projectile(particle, alpha, reduced, dt) {
     const profile = SKILL_VFX[particle.abilityId];
+    this.requestSkill(particle.abilityId, reduced);
     let slot = this.projectiles.find(item => item.id === particle.id);
     if (!slot) slot = this.projectiles.find(item => item.id === null);
     if (!slot) return;
@@ -444,19 +478,18 @@ export class SkillVfx {
       node.alpha = (reduced ? .1 : .7) * (1 - i / VFX_CAPS.trail);
       lastX = hx; lastY = hy;
     }
-    if (slot.baked) {
-      slot.baked.visible = this.fxReady && particle.abilityId === 'ember_bolt' && !reduced;
-      if (slot.baked.visible) {
-        const clip = this.fxClips.projectile;
-        slot.bakedAge += dt;
-        slot.baked.texture = clip.textures[Math.floor(slot.bakedAge * clip.fps) % clip.textures.length];
-        slot.baked.position.set(x, y); slot.baked.rotation = slot.node.rotation;
-        slot.baked.scale.set(particle.r / 8);
+    if (slot.baked) slot.baked.visible = false;
+    if (!reduced && this.fxRequested) {
+      const clip = this.fxAssets.get(particle.abilityId)?.clips.projectile;
+      slot.bakedAge += dt;
+      if (clip && this.baked(slot, particle.abilityId, 'projectile', x, y, slot.node.rotation,
+          particle.r, (slot.bakedAge * clip.fps % clip.textures.length) / clip.textures.length)) {
         slot.node.visible = false;
         for (const node of slot.tail) node.visible = false;
       }
     }
   }
+
   snapshot(world) {
     for (const slot of this.projectiles) {
       const particle = world.projectiles.find(item => item.id === slot.id);
@@ -468,20 +501,13 @@ export class SkillVfx {
     for (const entity of world.entities) this.actor(entity, world.tick, reduced);
     for (const slot of this.actors) if (!slot.seen) {
       slot.id = null; slot.node.visible = false; for (const node of slot.motes) node.visible = false;
+      if (slot.baked) slot.baked.visible = false;
     }
     for (const slot of this.projectiles) slot.seen = false;
     for (const particle of world.projectiles) if (SKILL_VFX[particle.abilityId]?.projectileRadius) this.projectile(particle, alpha, reduced, dt);
     for (const slot of this.projectiles) if (!slot.seen) {
       slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false;
       if (slot.baked) slot.baked.visible = false;
-    }
-    for (const slot of this.fxImpacts) {
-      if (slot.left <= 0) continue;
-      slot.left = Math.max(0, slot.left - dt);
-      slot.node.visible = slot.left > 0 && !reduced;
-      const clip = this.fxClips.impact;
-      const index = Math.min(clip.textures.length - 1, Math.floor((1 - slot.left / slot.total) * clip.textures.length));
-      slot.node.texture = clip.textures[index];
     }
     for (const slot of this.effects) {
       if (slot.left <= 0) continue;
@@ -493,6 +519,15 @@ export class SkillVfx {
       slot.wave.visible = slot.left > 0 && slot.kind === 'wave' && !reduced;
       slot.wave.scale.set(.3 + .7 * Math.min(1, age * 5));
       slot.wave.alpha = slot.node.alpha;
+      if (slot.baked) {
+        slot.baked.visible = slot.left > 0 && slot.bakedActive && !reduced;
+        if (slot.baked.visible) {
+          const clip = slot.bakedClip;
+          slot.baked.texture = clip.textures[Math.min(clip.textures.length - 1, Math.floor(age * clip.textures.length))];
+          slot.baked.alpha = Math.pow(1 - age, .6);
+          slot.node.visible = false; slot.wave.visible = false;
+        }
+      }
     }
     for (const slot of this.particles) {
       if (slot.left <= 0) continue;

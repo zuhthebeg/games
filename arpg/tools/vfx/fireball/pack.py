@@ -4,13 +4,13 @@ Usage: python3 pack.py FRAMES_DIR OUTPUT_DIR
 """
 import hashlib, json, sys
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw
 
 source, output = map(Path, sys.argv[1:])
 output.mkdir(parents=True, exist_ok=True)
 frames, clips, checks = {}, {}, []
 images = []
-for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 28, [0.5, 0.64])]:
+for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 18, [0.5, 0.64])]:
     paths = sorted(source.glob(label + '-*.png'))
     assert len(paths) == expected, (label, len(paths))
     ids = []
@@ -22,6 +22,10 @@ for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 28, 
         bbox = alpha.getbbox()
         if bbox:
             assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 256 and bbox[3] < 160, ('clipping', path, bbox)
+        mask = Image.new('L', im.size); draw = ImageDraw.Draw(mask)
+        cx, cy = anchor[0]*256, anchor[1]*160
+        draw.ellipse((cx-63,cy-63,cx+63,cy+63),fill=255)
+        im.putalpha(ImageChops.multiply(alpha,mask))
         key = path.stem
         index = len(images)
         x, y = (index % 8) * 256, (index // 8) * 160
@@ -29,20 +33,20 @@ for label, expected, anchor in [('projectile', 12, [0.5, 0.55]), ('impact', 28, 
         ids.append(key)
         checks.append({'id': key, 'sourceSha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bbox': bbox, 'alphaRange': alpha.getextrema()})
         images.append(im)
-    clips[label] = {'frames': ids, 'fps': 20, 'duration': expected / 20, 'anchor': anchor}
-atlas = Image.new('RGBA', (2048, 800))
+    clips[label] = {'frames': ids, 'fps': 20, 'duration': expected / 20, 'anchor': anchor, 'support': 64}
+atlas = Image.new('RGBA', (2048, 640))
 for index, im in enumerate(images):
     atlas.paste(im, ((index % 8) * 256, (index // 8) * 160))
 file = output / 'atlas.webp'
 atlas.save(file, 'WEBP', quality=78, method=6, exact=True)
 decoded = Image.open(file).convert('RGBA')
 assert decoded.getchannel('A').tobytes() == atlas.getchannel('A').tobytes(), 'alpha changed'
-meta = {'version': 1, 'image': 'atlas.webp', 'size': [2048, 800], 'frameSize': [256, 160], 'frames': frames, 'clips': clips,
+meta = {'version': 1, 'image': 'atlas.webp', 'size': [2048, 640], 'frameSize': [256, 160], 'frames': frames, 'clips': clips,
         'source': 'Godot 4.7.2 Forward+ / Effekseer 1.80.7 / fire example', 'blendMode': 'normal'}
 (output / 'atlas.json').write_text(json.dumps(meta, separators=(',', ':')) + '\n')
 bytes_total = sum((output / name).stat().st_size for name in ['atlas.webp', 'atlas.json'])
-assert bytes_total <= 400_000, bytes_total
+assert bytes_total <= 250_000, bytes_total
 report = {'frames': len(images), 'atlasSize': atlas.size, 'frameSize': [256, 160], 'alphaLossless': True,
-          'clippedFrames': 0, 'atlasBytes': file.stat().st_size, 'jsonBytes': (output / 'atlas.json').stat().st_size,
-          'totalBytes': bytes_total, 'budgetBytes': 400_000, 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'framesProof': checks}
+          'supportMasked': True, 'clippedFrames': 0, 'atlasBytes': file.stat().st_size, 'jsonBytes': (output / 'atlas.json').stat().st_size,
+          'totalBytes': bytes_total, 'budgetBytes': 250_000, 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'framesProof': checks}
 print(json.dumps(report, indent=2))

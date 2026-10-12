@@ -25,7 +25,7 @@ func _ready() -> void:
 	add_child(env)
 	await get_tree().process_frame
 	await bake("projectile", "VFX_Projectile_Fire", 36)
-	await bake("impact", "VFX_Fire_Explosion", 84)
+	await bake("impact", "VFX_Fire_Explosion", 54)
 	get_tree().quit()
 
 func bake(label: String, id: String, frames: int) -> void:

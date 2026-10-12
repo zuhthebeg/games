@@ -56,7 +56,7 @@ test('FX1 failed metadata load retains vector fallback without rejection', async
   globalThis.fetch = async () => ({ ok: false, status: 503 });
   try {
     const vfx = new SkillVfx(Graphics, new Container(), { effekseer: true });
-    assert.equal(await vfx.fxLoad, false);
+    assert.equal(await vfx.requestSkill('ember_bolt'), false);
     assert.equal(vfx.fxReady, false); assert.match(vfx.fxError, /503/);
     assert.equal(vfx.event({ type: 'explode', ability: 'ember_bolt', x: 300, y: 400, radius: 100 }, {}, false), true);
     assert.ok(vfx.effects.some(slot => slot.left > 0));

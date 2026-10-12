@@ -53,3 +53,6 @@ node --test arpg/test/*.test.js
 
 ## Expansion cost
 Observed first pair includes one-time Windows installation plus capture/packing/integration/testing. Reuse installed toolchain and camera/packer for later effects; no browser runtime or paid API is needed. **Estimate**, not benchmark: 20–60 minutes art/pacing iteration per new pair, 1–3 minutes build/review/bake per round, one extra ~100–250KB pair plus decoded texture memory. Larger effects/directional captures can break the 400KB target rapidly. The upstream independent-review workflow remains pending whenever child-spawn is forbidden; do not forge reviewer reports.
+
+## FX2 revision
+Contact is recaptured from a larger immediate white core, 54 engine ticks / 18 impact captures, ≤250KB. Reimport `.efkefc` with Godot `--headless --editor --import` **before** capture (a copied `.godot` cache is stale). `fx2-core-metrics.json` measures actual raw contact/peak pixels. Packer constrains native alpha to radius64 around clip pivots; the runtime scales that support to the actual projectile/explosion radius. Shared lazy atlas/pool runtime preserves classic commands; no eager texture decode.
