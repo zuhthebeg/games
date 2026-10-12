@@ -324,7 +324,7 @@ export class ArenaRenderer {
         this.effect(entity.x, entity.y, FEEL.perfect.radius, FEEL.colors.perfect, FEEL.perfect.ringLife);
       }
       else if (event.type === 'potion' && entity)
-        this.number(`+${event.heal}`, entity.x, entity.y, 0xa5d894);
+        this.number(`+${Math.max(1, Math.round(event.heal))}`, entity.x, entity.y, 0xa5d894);
       else if (event.type === 'manaPotion' && entity)
         this.number(`MP +${event.gain}`, entity.x, entity.y, 0x8abfe0);
       else if (event.type === 'drop') {

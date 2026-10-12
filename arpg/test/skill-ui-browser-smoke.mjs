@@ -148,6 +148,22 @@ try {
     await tapAt(pick('frost_lance',2));
     assert.deepEqual(await evaluate('[...__arpg.save.loadout]'),['whirl','heavy_cleave',null]);
     assert.match(await evaluate(`document.querySelector('#loadout-slot-3').textContent`),/비어 있음/);
+    // Weapon mismatch: coloured card + small warning button with the details; equipping stays allowed.
+    const warn=id=>evaluate(`(()=>{const c=document.querySelector('.character-skill[data-id="${id}"]');return {weak:c.classList.contains('use-weak'),blocked:c.classList.contains('use-blocked'),label:c.querySelector('[data-action="skill-warn"]')?.textContent||null}})()`);
+    assert.deepEqual(await warn('frost_lance'),{weak:true,blocked:false,label:'60%'});
+    await tapAt('.character-skill[data-id="frost_lance"] [data-action="skill-warn"]');await audit();
+    assert.match(await evaluate(`document.querySelector('dialog[open]').textContent`),/현재 무기검[\s\S]*위력60%[\s\S]*지팡이 100%/);
+    await nativeActivate('[data-action="close-sheet"]');
+    await nativeActivate('[data-action="skill-family-tab"][data-family="bow"]');
+    assert.deepEqual(await warn('volley'),{weak:false,blocked:true,label:'✕'});
+    await tapAt('.character-skill[data-id="volley"] [data-action="skill-warn"]');
+    assert.match(await evaluate(`document.querySelector('dialog[open]').textContent`),/사냥 중 사용불가/);await nativeActivate('[data-action="close-sheet"]');
+    await tapAt(pick('volley',2));
+    assert.equal(await evaluate('__arpg.save.loadout[2]'),'volley');
+    assert.equal(await evaluate(`document.querySelector('#loadout-slot-3').classList.contains('blocked')`),true);
+    await tapAt(pick('volley',2));
+    await nativeActivate('[data-action="skill-family-tab"][data-family="blade"]');
+    assert.deepEqual(await warn('whirl'),{weak:false,blocked:false,label:null});
     // Moving an equipped skill to another slot swaps with the occupant.
     await nativeActivate('[data-action="skill-family-tab"][data-family="blade"]');
     await tapAt(pick('whirl',1));

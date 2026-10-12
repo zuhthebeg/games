@@ -19,7 +19,7 @@ import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
 import { icon, itemIcon } from './icons.js';
-import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml } from './skill-view.js';
+import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
@@ -690,7 +690,7 @@ export class HubUI {
     const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const slot = slotOf(this.save,id);
     const slotButtons = `<div class="p2-three" role="group" aria-label="슬롯">${[0, 1, 2].map(i => button(`슬롯 ${i + 1}`, 'skill-slot', `id="skill-slot-${i + 1}" data-id="${id}" data-slot="${i}" aria-pressed="${slot === i}"`)).join('')}</div>`;
-    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>`, slotButtons));
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save)) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
   }
 
   showTrainer({ keepScroll = false } = {}) {
@@ -911,6 +911,9 @@ export class HubUI {
         this.root?.querySelector(`[data-action="skill-family-tab"][data-family="${data.family}"]`)?.focus({preventScroll:true});
         return;
       case 'skill-detail': return this.openSkill(data.id);
+      case 'skill-warn':
+        if (!ABILITIES[data.id] || !hasSkill(this.save, data.id)) return;
+        return this.mountSheet(this.dialogHtml(`${ABILITIES[data.id].name} · 무기 경고`, weaponWarnHtml(data.id, this.save)));
       case 'skill-slot': {
         const slot = Number(data.slot);
         // Tapping the slot a skill already occupies takes it out.

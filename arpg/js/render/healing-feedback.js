@@ -5,7 +5,7 @@ export function healingFeedback(renderer, event) {
     return true;
   }
   if (event.type === 'heal') {
-    renderer.number(`+${event.heal}`, event.x, event.y, 0x79dca0);
+    renderer.number(`+${Math.max(1, Math.round(event.heal))}`, event.x, event.y, 0x79dca0);
     return true;
   }
   return false;

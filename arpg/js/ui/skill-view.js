@@ -1,6 +1,7 @@
-import { ABILITIES, canUseSkill } from '../content/combat.js';
+import { ABILITIES, SKILL_USE, canUseSkill } from '../content/combat.js';
 import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf, bookRequirement, loadoutOf, weaponFamily } from '../meta/skills.js';
 import { STAT_NAMES } from '../meta/stats.js';
+import { WEAPON_NAMES } from '../meta/quiz.js';
 import { escape, amount } from './gear-view.js';
 
 // Register generated local art here only when the file ships; absent entries never request an image.
@@ -34,6 +35,16 @@ export function skillIcon(id, art = SKILL_ART) {
   return `<span class="skill-icon faculty-${family}" data-skill-icon="${id}">${face}</span>`;
 }
 export const FAMILY_LABELS = { blade:'검술', bow:'궁술', focus:'마법' };
+// Damage share of a skill with the equipped weapon: 1 full, <1 weakened, undefined = cannot fire.
+export const skillUse = (id, weapon) => SKILL_USE[ABILITIES[id].family]?.[weapon];
+const useClass = (id, weapon) => { const use = skillUse(id, weapon); return use === undefined ? ' use-blocked' : use < 1 ? ' use-weak' : ''; };
+export function weaponWarnHtml(id, save) {
+  const weapon = weaponFamily(save), use = skillUse(id, weapon), table = SKILL_USE[ABILITIES[id].family];
+  const allowed = Object.entries(table).map(([w, v]) => `${WEAPON_NAMES[w]} ${Math.round(v * 100)}%`).join(' · ');
+  return `<dl class="p2-lines weapon-warn${useClass(id, weapon)}"><div><dt>현재 무기</dt><dd>${WEAPON_NAMES[weapon]}</dd></div>`
+    + `<div><dt>${use === undefined ? '사냥 중 사용' : '위력'}</dt><dd>${use === undefined ? '불가' : `${Math.round(use * 100)}%`}</dd></div>`
+    + `<div><dt>사용 가능 무기</dt><dd>${allowed}</dd></div></dl>`;
+}
 // Direct slot choice on every learned card: tap a number to put the skill there, tap the lit number to take it out.
 export function slotPickHtml(id, save, context) {
   const slot = slotOf(save,id), name = escape(ABILITIES[id].name);
@@ -44,9 +55,9 @@ export function loadoutHtml(save, { interactive = true } = {}) {
   const weapon = weaponFamily(save);
   return `<div class="loadout" aria-label="기술 슬롯">${loadoutOf(save).map((id, i) => {
     if (!id) return `<div class="loadout-slot empty" id="loadout-slot-${i + 1}"><b>${i + 1}</b><span>비어 있음</span></div>`;
-    const usable = canUseSkill(id, weapon);
-    const face = `<b>${i + 1}</b>${skillIcon(id)}<span>${escape(ABILITIES[id].name)}</span>${usable ? '' : '<i class="slot-blocked" aria-label="이 무기로 사용 불가">✕</i>'}`;
-    const cls = `loadout-slot${usable ? '' : ' blocked'}`;
+    const usable = canUseSkill(id, weapon), use = skillUse(id, weapon);
+    const face = `<b>${i + 1}</b>${skillIcon(id)}<span>${escape(ABILITIES[id].name)}</span>${usable ? '' : '<i class="slot-blocked" aria-label="이 무기로 사용 불가">✕</i>'}${usable && use < 1 ? `<i class="slot-weak" aria-label="이 무기로 위력 ${Math.round(use * 100)}%">${Math.round(use * 100)}%</i>` : ''}`;
+    const cls = `loadout-slot${usable ? use < 1 ? ' weak' : '' : ' blocked'}`;
     return interactive ? `<button type="button" data-action="skill-detail" id="loadout-slot-${i + 1}" data-id="${id}" class="${cls}">${face}</button>`
       : `<div id="loadout-slot-${i + 1}" data-id="${id}" class="${cls}">${face}</div>`;
   }).join('')}</div>`;
@@ -56,7 +67,11 @@ export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
   const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
-  if (context === 'character') return `<article class="skill-card character-skill faculty-${a.family}" data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><button type="button" class="skill-card-main" data-action="skill-detail" data-id="${id}">${copy}</button>${slotPickHtml(id, save, 'character')}</article>`;
+  if (context === 'character') {
+    const weapon = weaponFamily(save), use = skillUse(id, weapon), mark = useClass(id, weapon);
+    const warn = mark ? `<button type="button" class="skill-warn" data-action="skill-warn" data-id="${id}" aria-label="무기 경고 · ${use === undefined ? '사용 불가' : `위력 ${Math.round(use * 100)}%`}">${use === undefined ? '✕' : `${Math.round(use * 100)}%`}</button>` : '';
+    return `<article class="skill-card character-skill faculty-${a.family}${mark}" data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><button type="button" class="skill-card-main" data-action="skill-detail" data-id="${id}">${copy}</button><div class="slot-row">${slotPickHtml(id, save, 'character')}${warn}</div></article>`;
+  }
   const req = !known && book ? bookRequirement(save,id) : null, blocked = !known && (save.gold < book.price || !req.ok);
   const control = context === 'detail' ? '' : known ? slotPickHtml(id, save, 'academy')
     : `<button type="button" data-action="learn-skill" data-id="${id}" ${blocked ? 'disabled' : ''}>배우기</button>`;

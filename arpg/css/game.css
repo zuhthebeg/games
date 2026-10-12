@@ -799,3 +799,8 @@ select, input:not([type="checkbox"]) {
 .slot-pick{display:grid;grid-template-columns:repeat(3,minmax(44px,1fr));gap:4px}.skill-card .slot-pick button{width:auto;min-width:44px;font-weight:650;font-variant-numeric:tabular-nums}.slot-pick button[aria-pressed="true"]{background:var(--raised);border-color:var(--faculty,var(--brass));color:var(--faculty,var(--brass));box-shadow:inset 0 -3px var(--faculty,var(--brass))}
 .skill-tabs{margin-top:4px}.skill-tabs button span{font-variant-numeric:tabular-nums}
 .character-skills .character-skill{flex-direction:column;align-items:stretch;gap:8px;min-height:0;padding:8px}.character-skill>.skill-card-main{display:flex;flex-direction:row;align-items:center;gap:12px;text-align:left;width:100%;min-height:80px;padding:4px;border:0;background:transparent}.character-skill>.skill-card-main:hover{background:var(--raised)}
+.slot-row{display:flex;gap:4px}.slot-row>.slot-pick{flex:1}.skill-card .skill-warn{width:auto;flex:0 0 auto;min-width:52px;font-weight:700;font-variant-numeric:tabular-nums}
+.character-skill.use-weak{border-color:#c99a45;background:#2a2516}.character-skill.use-weak .skill-warn{color:#f0c46a;border-color:#c99a45;background:#3a3018}
+.character-skill.use-blocked{border-color:#a8574b;background:#2d1d1a}.character-skill.use-blocked .skill-warn{color:var(--loss);border-color:#a8574b;background:#3a2420}.character-skill.use-blocked .skill-icon{filter:grayscale(.8);opacity:.6}
+.loadout-slot.weak{border-color:#c99a45}.slot-weak{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#f0c46a;pointer-events:none}
+.weapon-warn.use-weak>div:nth-child(2) dd{color:#f0c46a}.weapon-warn.use-blocked>div:nth-child(2) dd{color:var(--loss)}
