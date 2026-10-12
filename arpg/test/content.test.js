@@ -23,7 +23,7 @@ test('§11.4 content CLI is a failing-build gate integrated into node tests', ()
   assert.deepEqual(validateContent(), []);
   const result = spawnSync(process.execPath, [new URL('../tools/validate-content.mjs', import.meta.url).pathname]);
   assert.equal(result.status, 0, result.stderr.toString());
-  assert.match(result.stdout.toString(), /10 monsters, 20 stages/);
+  assert.match(result.stdout.toString(), /11 monsters, 21 stages/);
 });
 
 test('validator rejects missing ability/archetype/model/palette/name/spawn/drop/recipe references', () => {
@@ -68,8 +68,8 @@ test('new monsters keep explicit orthogonal identity; only verified wolf and spi
     const variant = MONSTER_VARIANTS[id];
     assert.equal(variant.disposition, 'hostile');
     assert.ok(variant.speciesTags.length);
-    assert.equal(ATLAS_IDS[variant.baseModelId], {wolf:'wolf',poison_spider:'poison-spider'}[id]);
-    assert.ok(MONSTERS[id].abilities.some((ability) => ABILITIES[ability].recoveryMs >= 2500));
+    assert.equal(ATLAS_IDS[variant.baseModelId], {wolf:'wolf',poison_spider:'poison-spider',throne_dragon:'throne-dragon'}[id]);
+    assert.ok(MONSTERS[id].abilities.some((ability) => ABILITIES[ability].recoveryMs >= (id==='throne_dragon'?1500:2500)));
   }
   assert.deepEqual(MONSTER_VARIANTS.wolf.speciesTags, ['wolf', 'beast']);
   assert.equal(MONSTER_VARIANTS.spirit.lifeState, 'spirit');

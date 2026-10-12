@@ -49,7 +49,8 @@ export const dist2 = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
 //   cone:   { type:'cone', range, arc }          arc in degrees, apex at origin
 //   rect:   { type:'rect', length, width, offset } starts `offset` ahead of origin, extends `length`
 export function shapeHitsCircle(shape, ox, oy, facing, cx, cy, cr) {
-  const cos = Math.cos(facing), sin = Math.sin(facing);
+  const angle = facing + (shape.facingOffsetDeg || 0) * Math.PI / 180;
+  const cos = Math.cos(angle), sin = Math.sin(angle);
   const dx = cx - ox, dy = cy - oy;
   const lx = dx * cos + dy * sin;
   const ly = -dx * sin + dy * cos;

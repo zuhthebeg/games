@@ -6,13 +6,14 @@ export const REGIONS = [
   { id:'pass', name:'잿빛 고개', maps:['S8','S9','S10'], pos:[50,46] },
   { id:'mine', name:'녹슨 광산', maps:['S12','S17'], pos:[24,65] },
   { id:'swamp', name:'늑대 언덕·늪', maps:['S11','S13','S16','S18'], pos:[76,65] },
+  { id:'throne', name:'왕좌 앞뜰 · 시험 도전', maps:['TD1'], pos:[82,89] },
   { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[50,89] },
 ];
 export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle']];
 export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map((id, index) => [id, {
   id, regionId:region.id, mainQuest:id,
   // Castle accepts EITHER completed branch, never both.
-  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18']}[region.id],
+  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:[]}[region.id],
 }])));
 export function mapUnlocked(save, id) {
   const map = MAPS[id];

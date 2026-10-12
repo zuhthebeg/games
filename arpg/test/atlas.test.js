@@ -56,7 +56,7 @@ test('display-state priority and bounded frame indices never mutate frozen simul
   assert.equal(atlasFrame('attack', 12, 0, 10, { act: { ...attacking.act, elapsed: 100 } }), 11);
 });
 
-test('every registered content key has eight-direction WebP clips and <=1.5MB kit; no PNG delivery', async () => {
+test('every registered content key has eight-direction WebP clips and bounded kit (legacy <=1.5MB / 504-frame throne <=4MB); no PNG delivery', async () => {
   for (const [key, id] of Object.entries(ATLAS_IDS)) {
     const entry = manifest.find((candidate) => candidate.id === id);
     assert.ok(entry?.content_ids.includes(key), key);
@@ -72,7 +72,7 @@ test('every registered content key has eight-direction WebP clips and <=1.5MB ki
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {
         // 128px kits; the large display-scaled dragon ships 256px frames for sharpness.
-        assert.equal(frame.frame.w, id === 'dragon' ? 256 : 128);
+        assert.equal(frame.frame.w, id === 'throne-dragon' ? 320 : id === 'dragon' ? 256 : 128);
         assert.equal(frame.frame.h, frame.frame.w);
         assert.equal(frame.anchor.x, entry.anchor.x);
         assert.equal(frame.anchor.y, entry.anchor.y);
@@ -81,7 +81,7 @@ test('every registered content key has eight-direction WebP clips and <=1.5MB ki
     }
     for (const state of entry.animations)
       for (const direction of DIRECTIONS) assert.ok(animations[`${state}_${direction}`].length > 1);
-    assert.ok(bytes <= 1_500_000, `${id}: ${bytes}`);
+    assert.ok(bytes <= (id === 'throne-dragon' ? 4_000_000 : 1_500_000), `${id}: ${bytes}`);
     assert.equal(bytes, entry.bytes);
   }
   assert.equal(ATLAS_IDS.iron_boar, 'iron-boar', 'boar uses its verified pig rig and armor, never a skeleton');

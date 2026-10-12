@@ -339,7 +339,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];
-  const curve = stage ? BALANCE.rewardCurve ** (Number(ctx.stageId.slice(1)) - 1) : 1;
+  const curve = stage ? BALANCE.rewardCurve ** ((stage.rewardRank ?? Number(ctx.stageId.slice(1))) - 1) : 1;
   const scaled = loot.gold * (boss ? 1 : BALANCE.normalGold) * curve * threat.gold;
   // Dedicated stream: material/gear bonus branches must not alter baseline gold rounding.
   const goldRandom = rng(seed ^ 0x43e7a129);

@@ -103,6 +103,12 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
 export function startStage(world, stageId) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
+  if (st.arena) {
+    for (const p of world.entities.filter(e => e.kind === 'player')) {
+      p.x *= st.arena.w / world.arena.w; p.y *= st.arena.h / world.arena.h;
+    }
+    world.arena = { ...st.arena };
+  }
   world.round = {
     stageId, threat: st.goal === 'timer' ? 1 : world.threat, state: 'running', t: 0, goal: st.goal,
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
@@ -335,7 +341,7 @@ function stepMonster(world, m) {
       const pool = notLast2.length ? notLast2 : notLast1.length ? notLast1 : cands;
       if (pool.length) {
         const pick = pickWeighted(world, pool);
-        startAct(world, m, pick.id, Math.atan2(target.y - m.y, target.x - m.x));
+        startAct(world, m, pick.id, Math.atan2(target.y - m.y, target.x - m.x) + (ABILITIES[pick.id].aimOffsetDeg || 0) * Math.PI / 180);
         started = true;
       }
     }

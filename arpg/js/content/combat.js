@@ -89,6 +89,24 @@ export const ABILITIES = {
     damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['windup', 'recovery'],
   },
 
+  // Independent throne test challenge. Timings are never threat-scaled; one hit per active act.
+  dragon_flame: {
+    name: '화염 숨결', windupMs: 1400, lockMs: 400, activeMs: 650, recoveryMs: 1900, cooldownMs: 6200,
+    delivery: 'shape', shape: { type: 'cone', range: 390, arc: 64 }, trackTurnDeg: 45,
+    damage: 26, knockback: 100, rangeMin: 0, rangeMax: 480, weight: 1, major: true,
+  },
+  dragon_stomp: {
+    name: '앞발 내려찍기', windupMs: 1050, lockMs: 350, activeMs: 150, recoveryMs: 1700, cooldownMs: 4600,
+    delivery: 'shape', shape: { type: 'circle', radius: 145, offset: 105 }, trackTurnDeg: 55,
+    damage: 20, knockback: 180, rangeMin: 0, rangeMax: 240, weight: 1, major: true,
+  },
+  dragon_tail: {
+    name: '꼬리 휩쓸기', windupMs: 1200, lockMs: 400, activeMs: 250, recoveryMs: 1850, cooldownMs: 5400,
+    delivery: 'shape', shape: { type: 'cone', range: 255, arc: 140, facingOffsetDeg: 180 },
+    // Turn the body away at cue start, then commit to the rear sector without tracking/snap.
+    aimOffsetDeg: 180, damage: 22, knockback: 210, rangeMin: 0, rangeMax: 260, weight: 1, major: true,
+  },
+
   // ---------- monsters
   goblin_slash: {
     windupMs: 520, lockMs: 160, activeMs: 100, recoveryMs: 620, cooldownMs: 1300,
@@ -195,6 +213,10 @@ export const MONSTERS = {
   scarecrow: {
     hp: 1, r: 22, speed: 0, poise: 0, kbResist: 1, abilities: [], invulnerable: true,
     xp: 0, keepRange: [0, 0],
+  },
+  throne_dragon: {
+    hp: 1100, r: 48, speed: 48, poise: 280, kbResist: 1,
+    abilities: ['dragon_flame', 'dragon_stomp', 'dragon_tail'], xp: 40, keepRange: [100, 190],
   },
   training_dragon: {
     hp: 1, r: 32, speed: 0, poise: 0, kbResist: 1, abilities: [], invulnerable: true,
@@ -304,6 +326,8 @@ export const STAGES = {
   S18: stage('거미 여왕의 둥지', [['poison_spider', 0, .74, .3], ['poison_spider', 2000, .8, .7], ['poison_spider', 4000, .88, .5], ['spirit', 6000, .92, .2]]),
   S19: stage('봉인의 회랑', [['rune_guardian', 0, .76, .5], ['spirit', 2000, .84, .25], ['spirit', 4000, .84, .75], ['goblin_slinger', 6000, .92, .5]]),
   S20: stage('왕좌의 문', [['goblin_chief', 0, .78, .5], ['rune_guardian', 3000, .86, .25], ['wolf', 5000, .86, .75], ['wolf', 7000, .9, .4], ['spirit', 9000, .92, .6]]),
+  TD1: { name: '왕좌의 수호룡', goal: 'killAll', testChallenge: true, arena: { w: 1680, h: 1000 },
+    maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };
 
 // P3 encounters are data only. Chief appears once; additional waves contain its escorts.

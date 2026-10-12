@@ -1,5 +1,5 @@
 import { BALANCE } from '../content/balance.js';
-import { Assets, Container, Graphics, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
+import { Assets, Container, Graphics, Sprite, Text, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
 import { paperdolls } from './paperdoll-library.js';
 import { paperdollEnabled } from './paperdoll-state.js';
 import { AtlasLibrary } from './atlas-library.js';
@@ -113,6 +113,10 @@ function spriteVisual(entity, { color }, asset) {
   flash.scale.copyFrom(sprite.scale);
   flash.blendMode = 'add';
   flash.visible = false;
+  const dragon = entity.type === 'throne_dragon';
+  const cue = dragon ? new Text({ text:'', style:{fontFamily:'sans-serif',fontSize:17,fill:0xffe1a8,
+    stroke:{color:0x17151a,width:4}} }) : null;
+  if (cue) { cue.anchor.set(.5); cue.y=-250; container.addChild(cue); }
   const stars = new Graphics();
   for (let index = 0; index < 3; index++)
     stars.star((index - 1) * 14, -62 - (index % 2) * 6, 4, 4, 2).fill(0xffd57a);
@@ -120,6 +124,7 @@ function spriteVisual(entity, { color }, asset) {
   // Drawn from x=0 and shifted left so scale.x drains right-to-left, not toward the middle.
   const health = new Graphics().rect(0, -66, entity.r * 2, 4).fill(0xb26d50);
   health.x = -entity.r;
+  if (dragon) { bar.y=health.y=-164; } // Boss bar above wings; training atlas is untouched.
   container.addChild(sprite, flash, stars, bar, health);
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {
@@ -165,6 +170,8 @@ function spriteVisual(entity, { color }, asset) {
       // Training samples (scarecrow, dragon) never lose HP, so no bar.
       bar.visible = health.visible = state.kind === 'monster' && !state.dead && state.type !== 'training_dragon';
       health.scale.x = Math.max(0, state.hp / state.maxHp);
+      if (cue) { cue.visible=!!state.act && !state.dead;
+        cue.text=state.act ? `공격: ${state.act.def.name} · 단계: ${state.act.phase==='recovery'?'회복':state.act.phase==='active'?'발동':'준비'}` : ''; }
     },
     destroy() {
       container.removeFromParent();

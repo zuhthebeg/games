@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "original_meshes": 91,
+  "separate_legs": 4,
+  "membrane_wings": 2,
+  "idle_paw_world_drift": 0.0,
+  "idle_paw_min_world_z": [
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418
+  ],
+  "source_clip_mesh_motion": {
+    "idle": 0.672743725615366,
+    "run": 1.2372078008782943,
+    "breath": 4.160491714639557,
+    "stomp": 3.220563666120573,
+    "tail": 7.413887918186768,
+    "hit": 3.7618387040480923,
+    "death": 15.107672812632487
+  },
+  "clip_start_frames": {
+    "idle": 1,
+    "run": 31,
+    "breath": 61,
+    "stomp": 91,
+    "tail": 121,
+    "hit": 151,
+    "death": 181
+  },
+  "source_type": "original procedural object-keyed meshes",
+  "imported_armatures": 0
+}

@@ -296,5 +296,49 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "throne-dragon",
+    "label": "왕좌의 수호룡",
+    "monster": true,
+    "content_ids": [
+      "throne_dragon"
+    ],
+    "sheets": [
+      "throne-v1-atlas-0.webp.json",
+      "throne-v1-atlas-1.webp.json",
+      "throne-v1-atlas-2.webp.json",
+      "throne-v1-atlas-3.webp.json",
+      "throne-v1-atlas-4.webp.json",
+      "throne-v1-atlas-5.webp.json",
+      "throne-v1-atlas-6.webp.json",
+      "throne-v1-atlas-7.webp.json",
+      "throne-v1-atlas-8.webp.json",
+      "throne-v1-atlas-9.webp.json",
+      "throne-v1-atlas-10.webp.json",
+      "throne-v1-atlas-11.webp.json",
+      "throne-v1-atlas-12.webp.json",
+      "throne-v1-atlas-13.webp.json",
+      "throne-v1-atlas-14.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "breath",
+      "stomp",
+      "tail",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5246005654335022
+    },
+    "bytes": 3561536,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

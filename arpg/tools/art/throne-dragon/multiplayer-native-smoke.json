@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "transport": "two actual app documents / local BroadcastChannel (no relay credentials)",
+  "nativeQuestSelection": true,
+  "hostOwnsSim": true,
+  "guestOwnsSim": false,
+  "guestInputMovedOnHost": true,
+  "guestClips": [
+    "dragon_tail",
+    "dragon_stomp",
+    "dragon_flame"
+  ],
+  "guestPhases": [
+    "lock",
+    "active",
+    "recovery",
+    "windup"
+  ],
+  "guestHP": {
+    "initial": 196,
+    "minimum": 177.99
+  },
+  "hostClear": true,
+  "guestClear": true,
+  "consoleErrors": 0,
+  "screenshots": 0
+}

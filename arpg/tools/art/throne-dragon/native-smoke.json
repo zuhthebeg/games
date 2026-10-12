@@ -1,0 +1,188 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "viewport": [
+        1280,
+        800
+      ],
+      "native": "keyboard Enter/WASD/Shift + AUTO",
+      "board": "TD1 · 왕좌의 수호룡 · 시험: 도전내 Lv.12 · 추천 Lv.4도전 가능",
+      "geometry": {
+        "arena": {
+          "w": 1680,
+          "h": 1000
+        },
+        "visual": {
+          "id": "throne-dragon",
+          "mode": "atlas",
+          "key": "throne_dragon",
+          "state": "run",
+          "direction": "W",
+          "frame": 0,
+          "tint": 15660516,
+          "scale": 1.4650580478478936,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        "overflow": false
+      },
+      "clips": [
+        "dragon_flame",
+        "dragon_tail",
+        "dragon_stomp"
+      ],
+      "phases": [
+        "windup",
+        "lock",
+        "active",
+        "recovery"
+      ],
+      "damage": [
+        "dragon_flame",
+        "dragon_tail",
+        "dragon_stomp"
+      ],
+      "beforeHp": 196,
+      "evade": {
+        "ability": "dragon_flame",
+        "beforeHp": 169.25833333333037,
+        "afterHp": 169.3666666666636,
+        "perfectPaid": true
+      },
+      "clear": {
+        "tick": 663,
+        "dragonHp": 0,
+        "receipt": {
+          "stageId": "TD1",
+          "threat": 1,
+          "terminal": "clear",
+          "firstClear": true,
+          "xpGained": 300,
+          "xpLost": 0,
+          "xpDiscarded": 0,
+          "depositedXp": 40,
+          "xpForfeited": 0,
+          "stageXp": 260,
+          "levelsGained": 0,
+          "statPointsGained": 0,
+          "goldGained": 24,
+          "lootKept": {
+            "gold": 24,
+            "items": [],
+            "stacks": {
+              "scrap": 3,
+              "fang": 2,
+              "enhance_stone_1": 2
+            }
+          },
+          "lootLost": {
+            "gold": 0,
+            "items": [],
+            "stacks": {}
+          },
+          "used": {
+            "potion": 0,
+            "mana_potion": 0,
+            "return_scroll": 0
+          },
+          "restored": {},
+          "pityGranted": false
+        }
+      }
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "native": "touch UI/joystick/dodge + AUTO",
+      "board": "TD1 · 왕좌의 수호룡 · 시험: 도전내 Lv.12 · 추천 Lv.4도전 가능",
+      "geometry": {
+        "arena": {
+          "w": 1680,
+          "h": 1000
+        },
+        "visual": {
+          "id": "throne-dragon",
+          "mode": "atlas",
+          "key": "throne_dragon",
+          "state": "run",
+          "direction": "W",
+          "frame": 1,
+          "tint": 15660516,
+          "scale": 1.4650580478478936,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        "overflow": false
+      },
+      "clips": [
+        "dragon_flame",
+        "dragon_tail",
+        "dragon_stomp"
+      ],
+      "phases": [
+        "windup",
+        "lock",
+        "active",
+        "recovery"
+      ],
+      "damage": [
+        "dragon_flame",
+        "dragon_tail",
+        "dragon_stomp"
+      ],
+      "beforeHp": 196,
+      "evade": {
+        "ability": "dragon_flame",
+        "beforeHp": 169.22499999999707,
+        "afterHp": 169.44999999999686,
+        "perfectPaid": true
+      },
+      "clear": {
+        "tick": 682,
+        "dragonHp": 0,
+        "receipt": {
+          "stageId": "TD1",
+          "threat": 1,
+          "terminal": "clear",
+          "firstClear": true,
+          "xpGained": 300,
+          "xpLost": 0,
+          "xpDiscarded": 0,
+          "depositedXp": 40,
+          "xpForfeited": 0,
+          "stageXp": 260,
+          "levelsGained": 0,
+          "statPointsGained": 0,
+          "goldGained": 17,
+          "lootKept": {
+            "gold": 17,
+            "items": [],
+            "stacks": {
+              "scrap": 3,
+              "fang": 2
+            }
+          },
+          "lootLost": {
+            "gold": 0,
+            "items": [],
+            "stacks": {}
+          },
+          "used": {
+            "potion": 0,
+            "mana_potion": 0,
+            "return_scroll": 0
+          },
+          "restored": {},
+          "pityGranted": false
+        }
+      }
+    }
+  ],
+  "consoleErrors": 0,
+  "screenshots": 0,
+  "hostWrites": 0,
+  "debugLaunch": false
+}

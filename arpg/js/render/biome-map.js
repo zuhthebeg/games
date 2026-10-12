@@ -47,6 +47,11 @@ function prop(g, p, color, dark) {
     case 'fence': case 'rails':
       for (const dx of [-22, 22]) box(dx - 2, -23, 4, 46);
       for (const dy of [-12, 12]) box(-28, dy - 2, 56, 4); break;
+    case 'broken_column':
+      box(-21, 20, 42, 7);
+      g.poly([x-14,y+20,x-14,y-12,x-5,y-20,x+1,y-8,x+9,y-16,x+14,y-4,x+14,y+20]).fill(color);
+      line([x-5,y-9,x+3,y+1,x-4,y+8],2);
+      g.poly([x+20,y+18,x+26,y+7,x+35,y+15,x+32,y+24]).fill(color); break;
     case 'column':
       box(-14, -28, 28, 50); box(-21, -29, 42, 7); box(-21, 20, 42, 7);
       line([x - 5, y - 20, x - 5, y + 15], 2); line([x + 5, y - 20, x + 5, y + 15], 2); break;
@@ -79,7 +84,7 @@ export function paintBiome(g, layout) {
   const { w, h, id, seed } = layout, b = BIOMES[id], random = randomFor(seed ^ 0x9e3779b9);
   g.rect(0, 0, w, h).fill(b.tiles[0]);
   // Jittered irregular earth plates or staggered stone courses: no alternating checker.
-  const stone = ['fortress', 'throne', 'mine'].includes(id);
+  const stone = ['fortress', 'throne', 'throne_forecourt', 'mine'].includes(id);
   for (let y = 0, row = 0; y < h; y += 44, row++) {
     for (let x = -80 + (row % 2) * 43; x < w; x += 86) {
       const color = b.tiles[Math.floor(random() * b.tiles.length)];

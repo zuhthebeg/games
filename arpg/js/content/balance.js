@@ -33,6 +33,7 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
+    TD1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:1, rewardRank:4, rec:[4,'fine',0] },
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
     S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
     S3: { hp:3, damage:1.8, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },
@@ -63,6 +64,7 @@ export function threatMultipliers(threat = 1) {
 // [제안] Absolute rendered enlargement is capped at 1.35, including the legacy chief scale.
 // Return a multiplier relative to each archetype's existing visual/physical base.
 export function monsterSizeProfile(stageId, elite, boss, roll) {
+  if (stageId === 'TD1') return { scale: 1, mean: 1, hp: 1 };
   const stage = Number(String(stageId).match(/^S(\d+)$/)?.[1] || 1);
   const mu = Math.min(BALANCE.size.max, 1 + Math.max(0, stage - 1) * BALANCE.size.step);
   const variant = elite ? BALANCE.size.elite : 1;

@@ -7,11 +7,11 @@ export const MONSTER_PALETTES = {
   wolf: [0x939da2], rune: [0x7e8f94], spirit: [0x9c91c9], spider: [0x657d50],
 };
 export const MONSTER_MODELS = [
-  'scarecrow', 'training_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
+  'scarecrow', 'training_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
   'wolf', 'rune_guardian', 'spirit', 'poison_spider',
 ];
 export const MONSTER_NAMES = {
-  training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
+  throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
   wolf: '적대 늑대', rune_guardian: '룬 수호자', spirit: '제단 정령', poison_spider: '독거미',
 };
@@ -20,6 +20,7 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
   speciesTags, lifeState, disposition: 'hostile',
 });
 export const MONSTER_VARIANTS = {
+  throne_dragon: variant('throne_dragon', 'dragon', ['dragon', 'boss'], 'living'),
   training_dragon: variant('training_dragon', 'dragon', ['dragon', 'trainingDummy'], 'living'),
   scarecrow: variant('scarecrow', 'straw', ['trainingDummy'], 'construct'),
   goblin_grunt: variant('goblin_grunt', 'goblin', ['goblin', 'humanoid'], 'living'),

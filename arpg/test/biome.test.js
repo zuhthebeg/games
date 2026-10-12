@@ -19,7 +19,7 @@ test('all twenty stages have distinct, dark, danger-compatible biome palettes', 
 });
 for (const stageId of Object.keys(STAGES)) {
   test(`${stageId} layout is stable, covers all prop kinds and has zero forbidden footprint overlaps`, () => {
-    const a = createBiomeLayout(stageId), b = createBiomeLayout(stageId);
+    const a = createBiomeLayout(stageId, STAGES[stageId].arena?.w, STAGES[stageId].arena?.h), b = createBiomeLayout(stageId, STAGES[stageId].arena?.w, STAGES[stageId].arena?.h);
     assert.deepEqual(a, b);
     assert.equal(a.seed, biomeSeed(stageId));
     assert.deepEqual([...new Set(a.props.map(p => p.kind))].sort(), [...BIOMES[a.id].props].sort());

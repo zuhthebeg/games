@@ -1,5 +1,6 @@
 import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { getTelegraphs } from '../sim/world.js';
+import { paintDragonVfx } from './dragon-presentation.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
@@ -423,7 +424,7 @@ export class ArenaRenderer {
       }
       graphic.visible = true;
       graphic.position.set(telegraph.ox, telegraph.oy);
-      graphic.rotation = telegraph.facing;
+      graphic.rotation = telegraph.facing + (telegraph.shape.facingOffsetDeg || 0) * Math.PI / 180;
       const locked = telegraph.phase !== 'windup', color = locked ? DANGER_COLORS.active : DANGER_COLORS.preparation;
       // Geometry changes at sim snapshots, not at 60Hz interpolated sprite frames.
       if (graphic.telegraph !== telegraph) {
@@ -433,6 +434,7 @@ export class ArenaRenderer {
         if (!locked && telegraph.progress > 0)
           shapePath(graphic, telegraph.shape, telegraph.progress).fill({ color, alpha: .24 });
         pattern(graphic, telegraph.shape, color, locked);
+        paintDragonVfx(graphic, telegraph, world.tick, this.reduced);
         graphic.telegraph = telegraph;
       }
       const x = telegraph.ox * this.scale + this.root.x, y = telegraph.oy * this.scale + this.root.y;

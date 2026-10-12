@@ -1,0 +1,3863 @@
+{
+  "stages": {
+    "S1": {
+      "name": "소환 시험",
+      "goal": "timer",
+      "timerMs": 30000,
+      "maxConcurrent": 2,
+      "spawns": [
+        {
+          "monster": "scarecrow",
+          "at": 0,
+          "fx": 0.62,
+          "fy": 0.5
+        },
+        {
+          "monster": "training_dragon",
+          "at": 0,
+          "fx": 0.82,
+          "fy": 0.5
+        }
+      ],
+      "hpMult": 1,
+      "dmgMult": 1,
+      "bossHpMult": 1,
+      "eliteChance": 0
+    },
+    "S2": {
+      "name": "끊긴 여관길",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "goblin_grunt",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 15000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 15000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 15000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 30000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 30000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 30000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 45000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 45000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 45000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 60000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 60000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 60000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 75000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 75000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 75000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 90000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 90000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 90000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 105000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 105000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 105000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 120000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 120000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 120000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 135000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 135000,
+          "fx": 0.9,
+          "fy": 0.3
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 135000,
+          "fx": 0.78,
+          "fy": 0.42
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 150000,
+          "fx": 0.82,
+          "fy": 0.62
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 150000,
+          "fx": 0.9,
+          "fy": 0.3
+        }
+      ],
+      "hpMult": 4,
+      "dmgMult": 1.6,
+      "bossHpMult": 1,
+      "eliteChance": 0.08
+    },
+    "S3": {
+      "name": "무너진 수레",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "iron_boar",
+          "at": 0,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 6000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 12000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 18000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 24000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 30000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 36000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 42000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 48000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 54000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 60000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 66000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 72000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 78000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 84000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 90000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 96000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 102000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 108000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 114000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 120000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 126000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 132000,
+          "fx": 0.8,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 138000,
+          "fx": 0.85,
+          "fy": 0.25
+        }
+      ],
+      "hpMult": 3,
+      "dmgMult": 1.8,
+      "bossHpMult": 1,
+      "eliteChance": 0.1
+    },
+    "S4": {
+      "name": "고블린 대장",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "goblin_chief",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 4000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 9000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 20000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 25000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 36000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 41000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 52000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 57000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 68000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 73000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 84000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 89000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 100000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 105000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 116000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 121000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 132000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 137000,
+          "fx": 0.9,
+          "fy": 0.75
+        }
+      ],
+      "hpMult": 2.5,
+      "dmgMult": 1.15,
+      "bossHpMult": 6,
+      "eliteChance": 0.1
+    },
+    "S5": {
+      "name": "외로운 사냥개",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "wolf",
+          "at": 0,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 0,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 12000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 12000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 24000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 24000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 36000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 36000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 48000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 48000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 60000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 60000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 72000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 72000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 84000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 84000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 96000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 96000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 108000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 108000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 120000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 120000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 132000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 132000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 144000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 144000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "wolf",
+          "at": 156000,
+          "fx": 0.72,
+          "fy": 0.38
+        },
+        {
+          "monster": "wolf",
+          "at": 156000,
+          "fx": 0.82,
+          "fy": 0.65
+        }
+      ],
+      "hpMult": 5,
+      "dmgMult": 4.2,
+      "bossHpMult": 1,
+      "eliteChance": 0.1
+    },
+    "S6": {
+      "name": "꺼진 길의 제단",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "rune_guardian",
+          "at": 0,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 3000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 13000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 16000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 26000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 29000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 39000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 42000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 52000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 55000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 65000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 68000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 78000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 81000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 91000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 94000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 104000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 107000,
+          "fx": 0.85,
+          "fy": 0.28
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 117000,
+          "fx": 0.72,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 120000,
+          "fx": 0.85,
+          "fy": 0.28
+        }
+      ],
+      "hpMult": 3,
+      "dmgMult": 1.35,
+      "bossHpMult": 1,
+      "eliteChance": 0.12
+    },
+    "S7": {
+      "name": "오염된 숲길",
+      "goal": "killAll",
+      "maxConcurrent": 2,
+      "spawns": [
+        {
+          "monster": "poison_spider",
+          "at": 0,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 0,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 13000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 13000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 26000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 26000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 39000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 39000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 52000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 52000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 65000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 65000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 78000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 78000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 91000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 91000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 104000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 104000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 117000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 117000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 130000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 130000,
+          "fx": 0.82,
+          "fy": 0.35
+        },
+        {
+          "monster": "poison_spider",
+          "at": 143000,
+          "fx": 0.74,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 143000,
+          "fx": 0.82,
+          "fy": 0.35
+        }
+      ],
+      "hpMult": 3,
+      "dmgMult": 1.4,
+      "bossHpMult": 1,
+      "eliteChance": 0.12
+    },
+    "S8": {
+      "name": "잿빛 고개",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "goblin_grunt",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 2000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 4000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 6000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 14000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 16000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 18000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 20000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 28000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 30000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 32000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 34000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 42000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 44000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 46000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 48000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 56000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 58000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 60000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 62000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 70000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 72000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 74000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 76000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 84000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 86000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 88000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 90000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 98000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 100000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 102000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 104000,
+          "fx": 0.86,
+          "fy": 0.2
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 112000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 114000,
+          "fx": 0.82,
+          "fy": 0.65
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 116000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "wolf",
+          "at": 118000,
+          "fx": 0.86,
+          "fy": 0.2
+        }
+      ],
+      "hpMult": 3.6,
+      "dmgMult": 2.2,
+      "bossHpMult": 1,
+      "eliteChance": 0.12
+    },
+    "S9": {
+      "name": "봉인문 경비",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "rune_guardian",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 2000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 4000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 14000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 16000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 18000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 28000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 30000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 32000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 42000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 44000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 46000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 56000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 58000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 60000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 70000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 72000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 74000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 84000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 86000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 88000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 98000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 100000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 102000,
+          "fx": 0.9,
+          "fy": 0.72
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 112000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 114000,
+          "fx": 0.86,
+          "fy": 0.28
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 116000,
+          "fx": 0.9,
+          "fy": 0.72
+        }
+      ],
+      "hpMult": 3.2,
+      "dmgMult": 1.18,
+      "bossHpMult": 1,
+      "eliteChance": 0.12
+    },
+    "S10": {
+      "name": "길을 막은 군주",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "goblin_chief",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 3000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 5000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 8000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 19000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 21000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 24000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 35000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 37000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 40000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 51000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 53000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 56000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 67000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 69000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 72000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 83000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 85000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 88000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 99000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 101000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 104000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 115000,
+          "fx": 0.85,
+          "fy": 0.25
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 117000,
+          "fx": 0.9,
+          "fy": 0.75
+        },
+        {
+          "monster": "iron_boar",
+          "at": 120000,
+          "fx": 0.88,
+          "fy": 0.5
+        }
+      ],
+      "hpMult": 2.8,
+      "dmgMult": 1.28,
+      "bossHpMult": 7,
+      "eliteChance": 0.12
+    },
+    "S11": {
+      "name": "늑대 무리의 언덕",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "wolf",
+          "at": 0,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 0,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 3000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 6000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 13000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 13000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 16000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 19000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 26000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 26000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 29000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 32000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 39000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 39000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 42000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 45000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 52000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 52000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 55000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 58000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 65000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 65000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 68000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 71000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 78000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 78000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 81000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 84000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 91000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 91000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 94000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 97000,
+          "fx": 0.9,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 104000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 104000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "wolf",
+          "at": 107000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 110000,
+          "fx": 0.9,
+          "fy": 0.2
+        }
+      ],
+      "hpMult": 3.8,
+      "dmgMult": 6,
+      "bossHpMult": 1,
+      "eliteChance": 0.14
+    },
+    "S12": {
+      "name": "녹슨 광산 입구",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "iron_boar",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 3000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 2000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 5000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 14000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 17000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 16000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 19000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 28000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 31000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 30000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 33000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 42000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 45000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 44000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 47000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 56000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 59000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 58000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 61000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 70000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 73000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 72000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 75000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 84000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 87000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 86000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 89000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 98000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 101000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 100000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 103000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 112000,
+          "fx": 0.78,
+          "fy": 0.35
+        },
+        {
+          "monster": "iron_boar",
+          "at": 115000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 114000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 117000,
+          "fx": 0.92,
+          "fy": 0.25
+        }
+      ],
+      "hpMult": 3.5,
+      "dmgMult": 2.4,
+      "bossHpMult": 1,
+      "eliteChance": 0.14
+    },
+    "S13": {
+      "name": "독안개 늪",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "poison_spider",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 3000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 5000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 13000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 16000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 18000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 26000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 29000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 31000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 39000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 42000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 44000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 52000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 55000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 57000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 65000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 68000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 70000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 78000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 81000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 83000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 91000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 94000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 96000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 104000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 107000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 109000,
+          "fx": 0.9,
+          "fy": 0.25
+        },
+        {
+          "monster": "poison_spider",
+          "at": 117000,
+          "fx": 0.76,
+          "fy": 0.4
+        },
+        {
+          "monster": "poison_spider",
+          "at": 120000,
+          "fx": 0.84,
+          "fy": 0.7
+        },
+        {
+          "monster": "spirit",
+          "at": 122000,
+          "fx": 0.9,
+          "fy": 0.25
+        }
+      ],
+      "hpMult": 4.2,
+      "dmgMult": 2.7,
+      "bossHpMult": 1,
+      "eliteChance": 0.14
+    },
+    "S14": {
+      "name": "무너진 성채",
+      "goal": "killAll",
+      "maxConcurrent": 3,
+      "spawns": [
+        {
+          "monster": "rune_guardian",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 4000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 2000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 6000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 15000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 19000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 17000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 21000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 30000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 34000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 32000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 36000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 45000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 49000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 47000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 51000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 60000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 64000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 62000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 66000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 75000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 79000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 77000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 81000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 90000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 94000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 92000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 96000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 105000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 109000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 107000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 111000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 120000,
+          "fx": 0.76,
+          "fy": 0.35
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 124000,
+          "fx": 0.82,
+          "fy": 0.7
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 122000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 126000,
+          "fx": 0.92,
+          "fy": 0.2
+        }
+      ],
+      "hpMult": 3.2,
+      "dmgMult": 1.2,
+      "bossHpMult": 1,
+      "eliteChance": 0.15
+    },
+    "S15": {
+      "name": "서리 제단의 군주",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "goblin_chief",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 2000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 4000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 7000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 18000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 20000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 23000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 34000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 36000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 39000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 50000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 52000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 55000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 66000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 68000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 71000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 82000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 84000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 87000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 98000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 100000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 103000,
+          "fx": 0.9,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 114000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 116000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 119000,
+          "fx": 0.9,
+          "fy": 0.5
+        }
+      ],
+      "hpMult": 4,
+      "dmgMult": 2.3,
+      "bossHpMult": 12,
+      "eliteChance": 0.15
+    },
+    "S16": {
+      "name": "사냥꾼의 숲",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "wolf",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 2000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 4000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 6000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 13000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 15000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 17000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 19000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 26000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 28000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 30000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 32000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 39000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 41000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 43000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 45000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 52000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 54000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 56000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 58000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 65000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 67000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 69000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 71000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 78000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 80000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 82000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 84000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 91000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 93000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 95000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 97000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "wolf",
+          "at": 104000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "wolf",
+          "at": 106000,
+          "fx": 0.8,
+          "fy": 0.72
+        },
+        {
+          "monster": "poison_spider",
+          "at": 108000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 110000,
+          "fx": 0.92,
+          "fy": 0.2
+        }
+      ],
+      "hpMult": 3.6,
+      "dmgMult": 2.2,
+      "bossHpMult": 1,
+      "eliteChance": 0.16
+    },
+    "S17": {
+      "name": "철갑 돌격대",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "iron_boar",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 2000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 4000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 6000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 14000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 16000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 18000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 20000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 28000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 30000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 32000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 34000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 42000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 44000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 46000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 48000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 56000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 58000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 60000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 62000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 70000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 72000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 74000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 76000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 84000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 86000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 88000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 90000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 98000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 100000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 102000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 104000,
+          "fx": 0.92,
+          "fy": 0.25
+        },
+        {
+          "monster": "iron_boar",
+          "at": 112000,
+          "fx": 0.76,
+          "fy": 0.3
+        },
+        {
+          "monster": "iron_boar",
+          "at": 114000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 116000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "goblin_grunt",
+          "at": 118000,
+          "fx": 0.92,
+          "fy": 0.25
+        }
+      ],
+      "hpMult": 4,
+      "dmgMult": 2.3,
+      "bossHpMult": 1,
+      "eliteChance": 0.16
+    },
+    "S18": {
+      "name": "거미 여왕의 둥지",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "poison_spider",
+          "at": 0,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 2000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 4000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 6000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 13000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 15000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 17000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 19000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 26000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 28000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 30000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 32000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 39000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 41000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 43000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 45000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 52000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 54000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 56000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 58000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 65000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 67000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 69000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 71000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 78000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 80000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 82000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 84000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 91000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 93000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 95000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 97000,
+          "fx": 0.92,
+          "fy": 0.2
+        },
+        {
+          "monster": "poison_spider",
+          "at": 104000,
+          "fx": 0.74,
+          "fy": 0.3
+        },
+        {
+          "monster": "poison_spider",
+          "at": 106000,
+          "fx": 0.8,
+          "fy": 0.7
+        },
+        {
+          "monster": "poison_spider",
+          "at": 108000,
+          "fx": 0.88,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 110000,
+          "fx": 0.92,
+          "fy": 0.2
+        }
+      ],
+      "hpMult": 5,
+      "dmgMult": 3.2,
+      "bossHpMult": 1,
+      "eliteChance": 0.17
+    },
+    "S19": {
+      "name": "봉인의 회랑",
+      "goal": "killAll",
+      "maxConcurrent": 4,
+      "spawns": [
+        {
+          "monster": "rune_guardian",
+          "at": 0,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 2000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 4000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 6000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 14000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 16000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 18000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 20000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 28000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 30000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 32000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 34000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 42000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 44000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 46000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 48000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 56000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 58000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 60000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 62000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 70000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 72000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 74000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 76000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 84000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 86000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 88000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 90000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 98000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 100000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 102000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 104000,
+          "fx": 0.92,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 112000,
+          "fx": 0.76,
+          "fy": 0.5
+        },
+        {
+          "monster": "spirit",
+          "at": 114000,
+          "fx": 0.84,
+          "fy": 0.25
+        },
+        {
+          "monster": "spirit",
+          "at": 116000,
+          "fx": 0.84,
+          "fy": 0.75
+        },
+        {
+          "monster": "goblin_slinger",
+          "at": 118000,
+          "fx": 0.92,
+          "fy": 0.5
+        }
+      ],
+      "hpMult": 5,
+      "dmgMult": 2.5,
+      "bossHpMult": 1,
+      "eliteChance": 0.18
+    },
+    "S20": {
+      "name": "왕좌의 문",
+      "goal": "killAll",
+      "maxConcurrent": 5,
+      "spawns": [
+        {
+          "monster": "goblin_chief",
+          "at": 0,
+          "fx": 0.78,
+          "fy": 0.5
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 3000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 5000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 7000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 9000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 19000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 21000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 23000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 25000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 35000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 37000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 39000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 41000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 51000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 53000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 55000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 57000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 67000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 69000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 71000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 73000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 83000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 85000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 87000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 89000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 99000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 101000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 103000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 105000,
+          "fx": 0.92,
+          "fy": 0.6
+        },
+        {
+          "monster": "rune_guardian",
+          "at": 115000,
+          "fx": 0.86,
+          "fy": 0.25
+        },
+        {
+          "monster": "wolf",
+          "at": 117000,
+          "fx": 0.86,
+          "fy": 0.75
+        },
+        {
+          "monster": "wolf",
+          "at": 119000,
+          "fx": 0.9,
+          "fy": 0.4
+        },
+        {
+          "monster": "spirit",
+          "at": 121000,
+          "fx": 0.92,
+          "fy": 0.6
+        }
+      ],
+      "hpMult": 4.4,
+      "dmgMult": 2.9,
+      "bossHpMult": 16,
+      "eliteChance": 0.18
+    }
+  },
+  "maps": {
+    "S1": {
+      "id": "S1",
+      "regionId": "outskirts",
+      "mainQuest": "S1",
+      "requires": []
+    },
+    "S2": {
+      "id": "S2",
+      "regionId": "outskirts",
+      "mainQuest": "S2",
+      "requires": [
+        "S1"
+      ]
+    },
+    "S3": {
+      "id": "S3",
+      "regionId": "outskirts",
+      "mainQuest": "S3",
+      "requires": [
+        "S2"
+      ]
+    },
+    "S4": {
+      "id": "S4",
+      "regionId": "outskirts",
+      "mainQuest": "S4",
+      "requires": [
+        "S3"
+      ]
+    },
+    "S5": {
+      "id": "S5",
+      "regionId": "forest",
+      "mainQuest": "S5",
+      "requires": [
+        "S4"
+      ]
+    },
+    "S6": {
+      "id": "S6",
+      "regionId": "forest",
+      "mainQuest": "S6",
+      "requires": [
+        "S5"
+      ]
+    },
+    "S7": {
+      "id": "S7",
+      "regionId": "forest",
+      "mainQuest": "S7",
+      "requires": [
+        "S6"
+      ]
+    },
+    "S8": {
+      "id": "S8",
+      "regionId": "pass",
+      "mainQuest": "S8",
+      "requires": [
+        "S7"
+      ]
+    },
+    "S9": {
+      "id": "S9",
+      "regionId": "pass",
+      "mainQuest": "S9",
+      "requires": [
+        "S8"
+      ]
+    },
+    "S10": {
+      "id": "S10",
+      "regionId": "pass",
+      "mainQuest": "S10",
+      "requires": [
+        "S9"
+      ]
+    },
+    "S12": {
+      "id": "S12",
+      "regionId": "mine",
+      "mainQuest": "S12",
+      "requires": [
+        "S10"
+      ]
+    },
+    "S17": {
+      "id": "S17",
+      "regionId": "mine",
+      "mainQuest": "S17",
+      "requires": [
+        "S12"
+      ]
+    },
+    "S11": {
+      "id": "S11",
+      "regionId": "swamp",
+      "mainQuest": "S11",
+      "requires": [
+        "S10"
+      ]
+    },
+    "S13": {
+      "id": "S13",
+      "regionId": "swamp",
+      "mainQuest": "S13",
+      "requires": [
+        "S11"
+      ]
+    },
+    "S16": {
+      "id": "S16",
+      "regionId": "swamp",
+      "mainQuest": "S16",
+      "requires": [
+        "S13"
+      ]
+    },
+    "S18": {
+      "id": "S18",
+      "regionId": "swamp",
+      "mainQuest": "S18",
+      "requires": [
+        "S16"
+      ]
+    },
+    "S14": {
+      "id": "S14",
+      "regionId": "castle",
+      "mainQuest": "S14",
+      "requires": [
+        "S17",
+        "S18"
+      ]
+    },
+    "S15": {
+      "id": "S15",
+      "regionId": "castle",
+      "mainQuest": "S15",
+      "requires": [
+        "S14"
+      ]
+    },
+    "S19": {
+      "id": "S19",
+      "regionId": "castle",
+      "mainQuest": "S19",
+      "requires": [
+        "S15"
+      ]
+    },
+    "S20": {
+      "id": "S20",
+      "regionId": "castle",
+      "mainQuest": "S20",
+      "requires": [
+        "S19"
+      ]
+    }
+  },
+  "traces": {
+    "S1": {
+      "1": "cde0bead40df0224f074b9813faacb49ee42cd23f1ff1f904c2c45060ab86586",
+      "11": "792dc0f8a6e3b6b851ab3dd35d0671758a341e6d478a3183f531e14c2e5541a3",
+      "79": "5bd99e84dece3a033ed52831618232078cb7955d6a927f55acb65b32a54c7fea"
+    },
+    "S2": {
+      "1": "1cf6d3452c1b24f8fedbb77cc7728aae1b0585918af879e339914c21bc15fad8",
+      "11": "fae9705f0b34e947ea9496d483bc4442f10a0745212bab587c232f0d873db334",
+      "79": "52af85c070758a815a5af7608a7aa07588a151bcbd5e5625308f3f1040c2cc62"
+    },
+    "S4": {
+      "1": "de6bd289d73335f6a4a987557d23327e0f59c84ae3351ed3b603f5f78641485f",
+      "11": "c07ba2959150131eadbea345ba4933c5ace01e0d4b9ee015846f5a18f2ae791d",
+      "79": "c35190caa867ac94d4d04ff4c9e794a22b9d75e01d70cbe16396c02b9f1ecca9"
+    },
+    "S7": {
+      "1": "b3bc6e1f35ec45dae2f9fc53220bda637f2a08890acd3afbb171fc507d5345d9",
+      "11": "77d8f0a0cdc55dde3ff367ffcb997ce4361055672a074bb5b8001aa846223af3",
+      "79": "477f9fdc729405292720560773a0f61f5a6f64d7c62dfeb8a8b00d2206ae506d"
+    },
+    "S20": {
+      "1": "67908d11cead4fabb8d4b462e6d0bb24ec33dca07f81c548561130da44fd4515",
+      "11": "331b126ff1cff47c42494fb1f4ef9f009530604bfa87ce03fdcdcc33a8880955",
+      "79": "64b69bb02830ac21ea7fdc5aa51f9838ee3bf7cd057239cb2a0b6ce474e7aa84"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { BIOMES, biomeForStage, biomeSeed } from '../content/biomes.js';
 import { STAGES } from '../content/combat.js';
-export const TALL_PROPS = new Set(['tree', 'column', 'beam', 'boulder', 'cocoon', 'brazier']);
+export const TALL_PROPS = new Set(['tree', 'column', 'broken_column', 'beam', 'boulder', 'cocoon', 'brazier']);
 export const PROP_RADIUS = 42; // Conservative enclosing circle for all painted geometry/shadows.
 export const EDGE_BAND = 116;
 export function randomFor(seed) {

@@ -750,10 +750,10 @@ export class HubUI {
     }).join('');
     const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
-      return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
+      return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}${STAGES[id].testChallenge ? ' · 시험: 도전' : ''}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}</section>`).join('');
-    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.values(this.save.cleared).filter(Boolean).length} / 20 완료` });
+    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id)).length} / 20 완료` });
   }
 
   showSortie(stage, devWeapon = null) {
@@ -778,7 +778,7 @@ export class HubUI {
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
-    'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: '출정 확인', back: 'board' });
+    'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: STAGES[stage].testChallenge ? '균형: 시험 도전' : '출정 확인', back: 'board' });
   }
 
   launch(stage, reduced = false, weapon = null) {

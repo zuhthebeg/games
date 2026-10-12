@@ -1,3 +1,4 @@
+import { DRAGON_CLIPS, dragonFrame } from './dragon-presentation.js';
 import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.
 export const ATLAS_IDS = Object.freeze({
@@ -11,11 +12,12 @@ export const ATLAS_IDS = Object.freeze({
   poison_spider: 'poison-spider',
   iron_boar: 'iron-boar',
   training_dragon: 'dragon',
+  throne_dragon: 'throne-dragon',
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
 
 export function atlasScale(entity) {
-  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : entity.type === 'training_dragon' ? 1.2 : 1) * (entity.sizeScale || 1);
+  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : entity.type === 'training_dragon' ? 1.2 : entity.type === 'throne_dragon' ? 1.4650580478478936 : 1) * (entity.sizeScale || 1);
 }
 
 export function visualKey(entity) {
@@ -31,11 +33,12 @@ export function atlasAnimation(entity, animation) {
   if (entity.dead) return 'death';
   if (entity.dodge?.dashLeft > 0) return 'dodge';
   if (animation.hurt > 0 || entity.staggerLeft > 0) return 'hit';
-  if (entity.act) return 'attack';
+  if (entity.act) return entity.type === 'throne_dragon' ? DRAGON_CLIPS[entity.act.id] || 'attack' : 'attack';
   return entity.moving ? 'run' : 'idle';
 }
 
 export function atlasFrame(state, count, age, fps, entity, duration) {
+  if (entity.type === 'throne_dragon' && entity.act && Object.values(DRAGON_CLIPS).includes(state)) return dragonFrame(entity.act, count);
   if (state === 'attack' && entity.act) {
     const def = entity.act.def;
     const ticks = ['windup', 'lock', 'active', 'recovery']

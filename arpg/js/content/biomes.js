@@ -15,6 +15,8 @@ export const BIOMES = {
     ['slab', 'crack', 'rune', 'stones', 'column', 'rubble', 'shield', 'brazier']),
   nest: biome([0x30273b, 0x332a3e, 0x2d2438, 0x362d41], 0x3d3447, 0x413849, 'roots',
     ['web', 'eggs', 'roots', 'stones', 'cocoon', 'bush', 'crack', 'mushroom']),
+  throne_forecourt: biome([0x302c31, 0x332f34, 0x2d292e, 0x363237], 0x40383b, 0x494248, 'wall',
+    ['slab', 'crack', 'rune', 'broken_column', 'brazier', 'shield', 'rubble', 'urn']),
   throne: biome([0x39262b, 0x3c292e, 0x362328, 0x3f2c31], 0x4b3039, 0x493840, 'wall',
     ['carpet', 'slab', 'rune', 'column', 'brazier', 'shield', 'rubble', 'urn'])
 };
@@ -24,7 +26,7 @@ export const STAGE_BIOMES = Object.fromEntries([
   ...[8, 9, 10].map(n => [`S${n}`, 'ash_pass']),
   ['S12', 'mine'], ['S13', 'marsh'],
   ...[14, 15, 17, 19].map(n => [`S${n}`, 'fortress']),
-  ['S18', 'nest'], ['S20', 'throne']
+  ['S18', 'nest'], ['S20', 'throne'], ['TD1', 'throne_forecourt']
 ]);
 export const biomeForStage = stageId => STAGE_BIOMES[stageId] || 'village_outskirts';
 // Derived solely from stageId; guest snapshots do not carry simulation RNG/seed.
