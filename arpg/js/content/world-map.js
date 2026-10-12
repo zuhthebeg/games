@@ -1,5 +1,6 @@
 // W2: one existing arena per sortie. Read historical clears directly; no save migration/schema.
 import { STAGES } from './combat.js';
+import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 export const REGIONS = [
   { id:'outskirts', name:'마을 외곽', maps:['S1','S2','S3','S4'], pos:[50,8] },
   { id:'forest', name:'속삭이는 숲', maps:['S5','S6','S7'], pos:[50,24] },
@@ -15,6 +16,7 @@ export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map
   // Castle accepts EITHER completed branch, never both.
   requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20']}[region.id],
 }])));
+for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
 export function mapUnlocked(save, id) {
   const map = MAPS[id];
   // Historical trial clears stay saved, but never bypass the official late-game gate.

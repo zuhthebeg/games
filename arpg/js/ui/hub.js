@@ -1,5 +1,5 @@
 import { REGIONS, REGION_EDGES, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
-import { SIDE_QUESTS } from '../content/quest-expansion.js';
+import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
 import { acceptQuest, questOffered, questState } from '../meta/quest-progress.js';
 import { BALANCE, attackRate } from '../content/balance.js';
 import { unlockedThreat, clearedThreat, selectThreat } from '../meta/run.js';
@@ -750,9 +750,10 @@ export class HubUI {
       return button(`${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${r.name}</span><small>${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
         `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" style="left:${r.pos[0]}%;top:${r.pos[1]}%" aria-pressed="${this.mapRegion === r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
     }).join('');
-    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.map(id => {
+    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id).map(q => q.mapId)].map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
-      return button(`${icon(state)}<span><strong>${id} · ${escape(STAGES[id].name)}</strong><small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
+      const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
+      return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
     this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id)).length} / 20 완료` });
@@ -788,7 +789,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}${STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>

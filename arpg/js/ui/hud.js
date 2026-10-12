@@ -99,7 +99,8 @@ export class HUD {
     this.text(nodes['hp-text'], `${Math.ceil(player.hp)}/${Math.ceil(player.maxHp)}`);
     this.text(nodes['mp-text'], `${Math.floor(player.mp)}/${Math.ceil(player.maxMp)}`);
     const alive = world.entities.filter((entity) => entity.kind === 'monster' && !entity.dead).length;
-    this.text(nodes.objective, world.round.goal === 'timer'
+    const objective = world.round.objective;
+    this.text(nodes.objective, objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
       : `◇ ${alive + world.round.pending.length}`);
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';

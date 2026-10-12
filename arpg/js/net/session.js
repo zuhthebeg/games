@@ -1,6 +1,7 @@
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
+import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
@@ -79,14 +80,17 @@ export class CoopSession {
     } else if (data.t === 'snapshot' && !this.isHost && from === this.host) {
       this.lastHostAt = now;
       if (this.phase === 'prepare' && data.start) this.begin(data.start);
-      if (this.phase === 'prepare' || !this.buffer.push(data, now)) return;
-      this.prediction.reconcile(this.buffer.frames.at(-1).world);
+      if (this.phase === 'prepare') return;
+      const fresh = this.buffer.push(data, now);
+      // A retransmitted final objective packet can repair a journal gap at the same tick.
+      if (!fresh && !(data.objective && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
+      if (fresh) this.prediction.reconcile(this.buffer.frames.at(-1).world);
       const events = [];
       for (const row of data.events || []) if (row.seq > this.eventAck) {
         // Host repeats unacknowledged events. Consume in order, exactly once.
         if (row.seq !== this.eventAck + 1) break;
         this.eventAck = row.seq;
-        if (row.event.type !== 'kill' || row.participants.includes(this.uid)) events.push(row.event);
+        if (!['kill','objectiveComplete'].includes(row.event.type) || row.participants.includes(this.uid)) events.push(row.event);
       }
       // Do not settle a final snapshot before its event journal has arrived.
       if (this.eventAck < data.eventSeq) return;
@@ -103,7 +107,11 @@ export class CoopSession {
     }
     for (const pid of this.players) if (!next.has(pid)) {
       this.players.delete(pid); delete this.latches[pid]; delete this.acks[pid];
-      if (this.world) this.world.entities = this.world.entities.filter(e => e.kind !== 'player' || e.pid !== pid);
+      if (this.world) {
+        const player = this.world.entities.find(e => e.kind === 'player' && e.pid === pid);
+        if (player) releaseCarrier(this.world, player);
+        this.world.entities = this.world.entities.filter(e => e.kind !== 'player' || e.pid !== pid);
+      }
     }
     // Mid-round joins/rejoins do not recreate a character or replenish supplies.
     if (this.phase === 'prepare') this.players = next;
@@ -149,6 +157,12 @@ export class CoopSession {
       }
       return;
     }
+    if (this.phase === 'ended' && this.world.round.objective && this.journal.length) {
+      // Objective rounds freeze their tick at success. Repeat final snapshot until guests ack.
+      this.helloLeft -= dt;
+      if (this.helloLeft <= 0) { this.helloLeft = 250; this.broadcast(); }
+      return;
+    }
     this.tickLeft = Math.min(this.tickLeft + dt, 5 * 1000 / 30);
     while (this.phase === 'running' && this.tickLeft >= 1000 / 30) {
       const inputs = Object.fromEntries([...this.players].map(pid => [pid, this.latches[pid]?.consume(this.now)]));
@@ -158,10 +172,10 @@ export class CoopSession {
       // Acknowledgements describe consumed sim inputs, never merely received packets.
       for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);
-      for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : [] });
+      for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : event.participants || [] });
       // Even 15Hz on the tick clock (was ~12Hz alternating 66/100ms from the timer).
       if (this.world.round.state === 'running' && this.world.tick % 2 === 0) this.broadcast();
-      this.onFrame(localView(this.world, this.uid), events.filter(e => e.type !== 'kill' || participants.includes(this.uid)));
+      this.onFrame(localView(this.world, this.uid), events.filter(e => e.type === 'objectiveComplete' ? e.participants.includes(this.uid) : e.type !== 'kill' || participants.includes(this.uid)));
       this.tickLeft -= 1000 / 30;
       if (this.world.round.state !== 'running') {
         this.phase = 'ended'; this.broadcast();

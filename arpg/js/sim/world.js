@@ -14,6 +14,8 @@ import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, mon
 import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
+import { createObjective, stepObjective } from './quest-objectives.js';
+
 const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
@@ -114,6 +116,12 @@ export function startStage(world, stageId) {
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
     pending: st.spawns.map((s) => ({ ...s, atTicks: ticks(s.at) })),
   };
+  if (st.objective) {
+    world.round.objective = createObjective(st.objective, world.arena);
+    for (const p of world.entities.filter(e => e.kind === 'player')) {
+      p.x = world.round.objective.entry.x; p.y = world.round.objective.entry.y;
+    }
+  }
 }
 
 // Carry weight (design §8.3). The meta layer owns the weight math; the sim only applies the tier effects.
@@ -127,6 +135,8 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
 export function step(world, inputs = {}) {
   world.events = [];
+  // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
+  if (world.round?.objective && world.round.state !== 'running') return world.events;
   for (const ent of world.entities) {
     if (ent.kind === 'player') stepPlayer(world, ent, inputs[ent.pid] || emptyInput());
     else stepMonster(world, ent);
@@ -134,7 +144,7 @@ export function step(world, inputs = {}) {
   stepProjectiles(world);
   separate(world);
   for (const ent of world.entities) clampToArena(world, ent);
-  stepRound(world);
+  stepRound(world, inputs);
   world.tick++;
   return world.events;
 }
@@ -751,10 +761,13 @@ function clampToArena(world, e) {
 
 // ---------------------------------------------------------------- round
 
-function stepRound(world) {
+function stepRound(world, inputs) {
   const rd = world.round;
   if (!rd || rd.state !== 'running') return;
   rd.t++;
+  // Combat/death already ran: a same-tick death cannot be resurrected by success.
+  const objectiveCleared = rd.objective ? stepObjective(world, inputs) : false;
+  if (objectiveCleared) rd.pending = [];
   const monsters = world.entities.filter((e) => e.kind === 'monster' && !e.dead);
   let aliveCount = monsters.length;
   rd.pending = rd.pending.filter((s) => {
@@ -773,9 +786,10 @@ function stepRound(world) {
     return false;
   });
   const players = world.entities.filter((e) => e.kind === 'player');
-  const cleared = rd.goal === 'timer' ? rd.t >= rd.timerTicks : !rd.pending.length && aliveCount === 0;
+  const cleared = rd.goal === 'objective' ? objectiveCleared
+    : rd.goal === 'timer' ? rd.t >= rd.timerTicks : !rd.pending.length && aliveCount === 0;
   if (cleared) {
-    for (const p of players) if (!p.terminal) { p.terminal = 'clear'; p.pendingCounter = null; }
+    for (const p of players) if (!p.terminal && (!rd.objective || alive(p) && p.hp > 0)) { p.terminal = 'clear'; p.pendingCounter = null; }
   }
   if (players.length && players.every((p) => p.terminal)) {
     rd.state = players.some((p) => p.terminal === 'clear') ? 'clear'

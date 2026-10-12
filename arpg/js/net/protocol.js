@@ -115,7 +115,8 @@ const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'sc
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null) {
   return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
-    round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat']), pending: world.round.pending.length,
+    round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat']),
+    ...(world.round.objective ? { objective: structuredClone(world.round.objective) } : {}), pending: world.round.pending.length,
     entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION),
         pendingCounter: !!e.pendingCounter,
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
@@ -131,6 +132,7 @@ export function decodeSnapshot(packet, uid) {
   for (const e of copy.entities) if (e.act) e.act.def = ABILITIES[e.act.id];
   const index = copy.entities.findIndex(e => e.pid === uid && e.kind === 'player');
   if (index > 0) copy.entities.unshift(...copy.entities.splice(index, 1));
+  if (copy.objective) copy.round.objective = copy.objective;
   copy.round.pending = Array(copy.pending).fill(null);
   return copy;
 }

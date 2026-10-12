@@ -45,6 +45,13 @@ export class ArenaRenderer {
     this.areaImpact = new AreaImpact();
     // Friendly skill graphics stay below authoritative danger outlines/fills.
     this.skillVfx = new SkillVfx(Graphics, this.layers.skillFx);
+    // Snapshot-owned ground marks; text distinguishes pickup and return without color.
+    this.questRing = new Graphics();
+    this.layers.skillFx.addChild(this.questRing);
+    this.questLabels = ['반납: 입구', '회수: 장부'].map(text => {
+      const label = new Text({text, style:{fontFamily:'sans-serif',fontSize:18,fill:0xffffff,stroke:{color:0x151814,width:3}}});
+      label.anchor.set(.5); this.layers.skillFx.addChild(label); return label;
+    });
     this.ground = new Graphics();
     this.layers.ground.addChild(this.ground);
     for (let i = 0; i < FEEL.numbers.cap; i++) {
@@ -369,6 +376,16 @@ export class ArenaRenderer {
       screenWidth / 2 - this.camera.x * this.scale + Math.sin(this.time * FEEL.shake.frequencyX) * shake * FEEL.shake.maxX,
       screenHeight / 2 - this.camera.y * this.scale + Math.sin(this.time * FEEL.shake.frequencyY) * shake * FEEL.shake.maxY,
     );
+    const objective = world.round?.objective;
+    this.questRing.clear();
+    this.questLabels.forEach(label => { label.visible = !!objective && objective.state !== 'complete'; });
+    if (objective && objective.state !== 'complete') {
+      for (const [i, pos] of [objective.entry, objective.token].entries()) {
+        this.questRing.circle(pos.x, pos.y, objective.radius).stroke({color:0xf5df9b,width:3});
+        this.questLabels[i].position.set(pos.x, pos.y-objective.radius-16);
+      }
+      this.questLabels[1].text = objective.carrier !== null ? '운반: 장부' : '회수: 장부';
+    }
     for (const entity of world.entities) {
       const view = this.ensure(entity);
       const frozen = view.stopLeft > 0 && !this.reduced;

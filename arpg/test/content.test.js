@@ -23,7 +23,7 @@ test('§11.4 content CLI is a failing-build gate integrated into node tests', ()
   assert.deepEqual(validateContent(), []);
   const result = spawnSync(process.execPath, [new URL('../tools/validate-content.mjs', import.meta.url).pathname]);
   assert.equal(result.status, 0, result.stderr.toString());
-  assert.match(result.stdout.toString(), /11 monsters, 21 stages/);
+  assert.match(result.stdout.toString(), /11 monsters, 22 stages/);
 });
 
 test('validator rejects missing ability/archetype/model/palette/name/spawn/drop/recipe references', () => {

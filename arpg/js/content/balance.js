@@ -35,6 +35,7 @@ export const BALANCE = {
   stages: {
     // S20 aftermath: one fixed boss, HP below S20 chief (13860 vs 15770), stronger hits, no waves.
     TD1: { hp:18, damage:3, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:3, rewardRank:20, rec:[22,'epic',4] },
+    M_MINE_CART: { hp:3.5, damage:2.4, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:12, sizeRank:12, rec:[11,'fine',3] },
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
     S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
     S3: { hp:3, damage:1.8, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },
@@ -66,7 +67,7 @@ export function threatMultipliers(threat = 1) {
 // Return a multiplier relative to each archetype's existing visual/physical base.
 export function monsterSizeProfile(stageId, elite, boss, roll) {
   if (stageId === 'TD1') return { scale: 1, mean: 1, hp: 1 };
-  const stage = Number(String(stageId).match(/^S(\d+)$/)?.[1] || 1);
+  const stage = BALANCE.stages[stageId]?.sizeRank ?? Number(String(stageId).match(/^S(\d+)$/)?.[1] || 1);
   const mu = Math.min(BALANCE.size.max, 1 + Math.max(0, stage - 1) * BALANCE.size.step);
   const variant = elite ? BALANCE.size.elite : 1;
   const limit = BALANCE.size.max / (boss ? BALANCE.size.bossBase : 1);

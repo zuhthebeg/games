@@ -1,4 +1,5 @@
 import { BALANCE } from './balance.js';
+import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 
 // Combat content. Every number here is a design proposal ([제안]) to be tuned by playtest.
 // Ability phases: windup -> lock -> active -> recovery (design §7.2).
@@ -339,6 +340,12 @@ for (const [id, stage] of Object.entries(STAGES)) {
   stage.spawns = Array.from({ length: tuning.waves }, (_, wave) => original
     .filter(spawn => wave === 0 || spawn.monster !== 'goblin_chief')
     .map(spawn => ({ ...spawn, at: spawn.at + wave * tuning.waveMs }))).flat();
+}
+
+for (const q of Object.values(OBJECTIVE_QUESTS)) {
+  const tune = BALANCE.stages[q.mapId];
+  STAGES[q.mapId] = { name:q.name, goal:'objective', objective:q.objective, maxConcurrent:3,
+    spawns:q.spawns.map(s => ({...s})), hpMult:tune.hp, dmgMult:tune.damage, eliteChance:0 };
 }
 
 export const PLAYER_BASE = {
