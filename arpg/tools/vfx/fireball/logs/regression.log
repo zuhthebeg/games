@@ -1,0 +1,12 @@
+{"base":"2f94a9e","hostTraceSha256":"5d0898f8535413ebd442b86e0b7a3805ed84dbdd6ba0e652fab6c7a514db6b10","drawingCheckpoints":20,"flagOffEquivalent":true}
+✔ FX1 exact opt-in; off creates no loading task or extra sprites (11.734763ms)
+✔ FX1 flag off: base host trace and vector drawing commands unchanged (69.902715ms)
+✔ FX1 failed metadata load retains vector fallback without rejection (3.217519ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 461.78037

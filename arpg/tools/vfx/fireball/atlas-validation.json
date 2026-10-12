@@ -1,0 +1,555 @@
+{
+  "frames": 40,
+  "atlasSize": [
+    2048,
+    800
+  ],
+  "frameSize": [
+    256,
+    160
+  ],
+  "alphaLossless": true,
+  "clippedFrames": 0,
+  "atlasBytes": 108578,
+  "jsonBytes": 4009,
+  "totalBytes": 112587,
+  "budgetBytes": 400000,
+  "sha256": "fbad7cf36f752b16bba75ab6c3ed3affb4240715fbac5f3c52513206263a2aa9",
+  "framesProof": [
+    {
+      "id": "projectile-000",
+      "sourceSha256": "9628909eec808947f34299ece3a28e6af38d7447a8bc66da5bdd2c12afa16b4f",
+      "bbox": [
+        120,
+        83,
+        136,
+        94
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-003",
+      "sourceSha256": "e85059b2ebab731101166c34f70ae04c1bfcad44cfae426232f52f0b97689aeb",
+      "bbox": [
+        104,
+        78,
+        138,
+        97
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-006",
+      "sourceSha256": "583907c8ccecbfcbb4e830f367b0fdcc50b2239a56033d7c7c6654d37c71fe67",
+      "bbox": [
+        104,
+        76,
+        138,
+        99
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-009",
+      "sourceSha256": "267d42b2d3d7dd12ccdffc70cf963ef49d6eeb0fec025cd8d966563ab2533c3d",
+      "bbox": [
+        97,
+        75,
+        137,
+        99
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-012",
+      "sourceSha256": "db38b3498ae30ca331bbd0a1b24380ba6e4e602f2f97c575b255a128fa6c5140",
+      "bbox": [
+        91,
+        75,
+        139,
+        99
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-015",
+      "sourceSha256": "163761bd0e5c34b090734336a531aff87eb4ac392bd12916dcba716bea7817c9",
+      "bbox": [
+        85,
+        74,
+        138,
+        99
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-018",
+      "sourceSha256": "b3d1d03424d4161d7762be552e448c144c31435563d56287e99532524b686335",
+      "bbox": [
+        85,
+        73,
+        140,
+        101
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-021",
+      "sourceSha256": "10b4b8243bb49112a38f9cd3f3486bada805f6db7b62098854fb5da6a344cc12",
+      "bbox": [
+        85,
+        73,
+        138,
+        102
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-024",
+      "sourceSha256": "3be5e5de56b56807fb5effe3dd3289a0b1e5930034ae16f1195955bcb6c47742",
+      "bbox": [
+        78,
+        71,
+        137,
+        103
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-027",
+      "sourceSha256": "5e3f057e732732fb8382c3995c9920e222d9a5d369704357db44104a37839a3f",
+      "bbox": [
+        70,
+        69,
+        138,
+        104
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-030",
+      "sourceSha256": "e46f6c300d8dfc630ed9d6f370eb94d0a0c26186a510569b90ae46ee0124c9c4",
+      "bbox": [
+        62,
+        67,
+        139,
+        104
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "projectile-033",
+      "sourceSha256": "c486de0b6e48e34586548818939cca8da1ee11d05090a1ec74b743c180ab43c6",
+      "bbox": [
+        56,
+        65,
+        137,
+        103
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-000",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "bbox": null,
+      "alphaRange": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "impact-003",
+      "sourceSha256": "269081a2cbee8f242d0b05bca871b6064e9851df50292a294d890a295f1a06be",
+      "bbox": [
+        124,
+        74,
+        132,
+        92
+      ],
+      "alphaRange": [
+        0,
+        135
+      ]
+    },
+    {
+      "id": "impact-006",
+      "sourceSha256": "9eae6a4a0d0c55c47a5998ff801487d0f583bec5b9edc1aca64070b46a4e2fe2",
+      "bbox": [
+        117,
+        79,
+        137,
+        98
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-009",
+      "sourceSha256": "11f7ebfd70c5942e25682f97445bf6cd531e20c1e12b36659f6d6ac75ce23796",
+      "bbox": [
+        85,
+        21,
+        182,
+        138
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-012",
+      "sourceSha256": "9485f1bdced22c41021695657ed75a4ffac2b2cde14658ab0550ee2226c50313",
+      "bbox": [
+        78,
+        10,
+        192,
+        133
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-015",
+      "sourceSha256": "588440273fefeb4dfb28f304d9be3321455fb0d75043c24730817eacc6bdc556",
+      "bbox": [
+        77,
+        38,
+        203,
+        139
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-018",
+      "sourceSha256": "aa5b43b44ea57ad153962c3abb0c8832178831e6122d7ee1ee4e43bd2e270aa2",
+      "bbox": [
+        74,
+        34,
+        209,
+        143
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-021",
+      "sourceSha256": "3f75ac78b7d6fde24f3c9dab46d991b0f40d2c01db499b7c71d39b0c08e72fbc",
+      "bbox": [
+        74,
+        34,
+        209,
+        142
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-024",
+      "sourceSha256": "ce195898aed7ce119358e65e133785e7135140d695361ef67c26bd6e645fda72",
+      "bbox": [
+        70,
+        45,
+        186,
+        132
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-027",
+      "sourceSha256": "6b92193483e472e86cc7ef2edc6e77742661e7e16c0d8fd9ed3dfd76454a8f57",
+      "bbox": [
+        83,
+        46,
+        174,
+        130
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-030",
+      "sourceSha256": "9691a08f9ad71ef7d90260f5d93bb59a9e1e03fd68afb7fa0c08907851de0e17",
+      "bbox": [
+        70,
+        46,
+        177,
+        128
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-033",
+      "sourceSha256": "6f0a5921a72030c84e9b712aacdc4d5a0257d20cfe5b5b7e6328f88d2270bbde",
+      "bbox": [
+        69,
+        43,
+        179,
+        128
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-036",
+      "sourceSha256": "9e31a8ef59a99ba9a9ee718761c70e94294f57def91758a27fb32bf1d7efbcb9",
+      "bbox": [
+        69,
+        41,
+        180,
+        129
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-039",
+      "sourceSha256": "970d1530171841bf2e700723bc6dc6c7a7e11fba798afe7305e2379da27ce357",
+      "bbox": [
+        82,
+        47,
+        181,
+        129
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-042",
+      "sourceSha256": "efbad8f37a889f6fb27fbadc74c7cd5a17915f5d9b1b972c8f1d82cad33d34e4",
+      "bbox": [
+        80,
+        38,
+        181,
+        130
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-045",
+      "sourceSha256": "148dbb65a45ee285d68e1ded50aea1d7aae60dc5c3c001cc7699a59d2fca7f94",
+      "bbox": [
+        78,
+        46,
+        182,
+        131
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-048",
+      "sourceSha256": "1ce511fedb445ef022f1c53e157e9badbedbc8a740d9c1deb7890faa815652d7",
+      "bbox": [
+        76,
+        46,
+        184,
+        131
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "id": "impact-051",
+      "sourceSha256": "cda80e9abb2577f4d567492437e78b63a535bf59c89534aa0c549800eb257a63",
+      "bbox": [
+        75,
+        45,
+        186,
+        132
+      ],
+      "alphaRange": [
+        0,
+        224
+      ]
+    },
+    {
+      "id": "impact-054",
+      "sourceSha256": "ca3e3baa5c90a44210da0a3377d5c3b0af46fe0e8f8bb73c80c46cc510a000a6",
+      "bbox": [
+        75,
+        44,
+        187,
+        132
+      ],
+      "alphaRange": [
+        0,
+        190
+      ]
+    },
+    {
+      "id": "impact-057",
+      "sourceSha256": "23a28e7c042466c1ceea2904f1bca531805c4f3c7d0c30c9eb52ae9abfa63f3c",
+      "bbox": [
+        74,
+        45,
+        186,
+        120
+      ],
+      "alphaRange": [
+        0,
+        148
+      ]
+    },
+    {
+      "id": "impact-060",
+      "sourceSha256": "58e586399e99321036cef3caef513f3e1fee94bfdb019007665f9612387189ee",
+      "bbox": [
+        72,
+        44,
+        188,
+        120
+      ],
+      "alphaRange": [
+        0,
+        114
+      ]
+    },
+    {
+      "id": "impact-063",
+      "sourceSha256": "58badb4f2e6350d7524375963b2081dab4f134562c6f317e5ba461e0e1c2d3e1",
+      "bbox": [
+        71,
+        44,
+        189,
+        119
+      ],
+      "alphaRange": [
+        0,
+        74
+      ]
+    },
+    {
+      "id": "impact-066",
+      "sourceSha256": "c92bbcb4edc61a94b3f498160ceab802e19225c5402e760684240aada9c73f11",
+      "bbox": [
+        81,
+        43,
+        161,
+        93
+      ],
+      "alphaRange": [
+        0,
+        26
+      ]
+    },
+    {
+      "id": "impact-069",
+      "sourceSha256": "d51d7ad99e00d9178056fcb4e3d018e09e4352afd596322da556717c43d6d033",
+      "bbox": [
+        81,
+        44,
+        161,
+        90
+      ],
+      "alphaRange": [
+        0,
+        5
+      ]
+    },
+    {
+      "id": "impact-072",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "bbox": null,
+      "alphaRange": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "impact-075",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "bbox": null,
+      "alphaRange": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "impact-078",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "bbox": null,
+      "alphaRange": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "impact-081",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "bbox": null,
+      "alphaRange": [
+        0,
+        0
+      ]
+    }
+  ]
+}

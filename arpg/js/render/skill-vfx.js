@@ -1,5 +1,10 @@
 import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
+import { Assets, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
+
+// Off: no fetch, textures or extra sprite pool. Opt-in presentation-only spike.
+export const effekseerEnabled = (search = globalThis.location?.search || '') =>
+  new URLSearchParams(search).get('fx') === 'effekseer';
 
 // Presentation only: dimensions come from combat content, never duplicate tuning.
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
@@ -50,7 +55,7 @@ export function windupProgress(act) {
 }
 
 export class SkillVfx {
-  constructor(Graphics, layer) {
+  constructor(Graphics, layer, options = {}) {
     this.layer = layer;
     // Additive light on the dark arena for shapes; particles stay one normal batch.
     const graphic = (add = true) => { const node = new Graphics(); node.visible = false; if (add) node.blendMode = 'add'; layer.addChild(node); return node; };
@@ -61,13 +66,48 @@ export class SkillVfx {
     });
     this.actors = Array.from({ length: VFX_CAPS.actors }, () => ({ id: null, node: graphic(),
       motes: Array.from({ length: 8 }, () => { const node = graphic(); node.circle(0, 0, 1.8).fill(0xffffff); return node; }) }));
+    this.fxReady = false;
+    this.fxError = null;
+    this.fxImpacts = [];
     this.projectiles = Array.from({ length: VFX_CAPS.projectiles }, () => ({ id: null, node: graphic(),
       history: new Float64Array(VFX_CAPS.trail * 2), count: 0, clock: 0,
       tail: Array.from({ length: VFX_CAPS.trail }, (_, i) => {
         const node = graphic(); node.moveTo(0, 0).lineTo(1, 0).stroke({ color: 0xffffff, width: 11 - i * 1.5 }); return node;
       }) }));
+    this.fxRequested = options.effekseer ?? effekseerEnabled();
+    this.fxLoad = this.fxRequested ? this.loadEffekseer() : null;
+  }
+  async loadEffekseer() {
+    try {
+      const url = new URL('../../assets/vfx/fireball/atlas.json', import.meta.url);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`FX1 metadata: ${response.status}`);
+      const meta = await response.json();
+      const sheet = await Assets.load(new URL(meta.image, url).href);
+      const frames = {};
+      for (const [id, item] of Object.entries(meta.frames)) {
+        const { x, y, w, h } = item.frame;
+        frames[id] = new Texture({ source: sheet.source, frame: new Rectangle(x, y, w, h) });
+      }
+      this.fxClips = Object.fromEntries(Object.entries(meta.clips).map(([id, clip]) =>
+        [id, { ...clip, textures: clip.frames.map(key => frames[key]) }]));
+      const sprite = clip => {
+        const node = new Sprite(this.fxClips[clip].textures[0]);
+        node.anchor.set(...this.fxClips[clip].anchor); node.visible = false;
+        this.layer.addChild(node); return node;
+      };
+      for (const slot of this.projectiles) { slot.baked = sprite('projectile'); slot.bakedAge = 0; }
+      this.fxImpacts = Array.from({ length: 12 }, () => ({ node: sprite('impact'), left: 0, total: 0 }));
+      this.fxReady = true;
+      return true;
+    } catch (error) {
+      // Missing atlas/decoder/network: keep the existing vector presentation.
+      this.fxError = String(error); return false;
+    }
   }
   reset() {
+    for (const slot of this.fxImpacts) { slot.left = 0; slot.node.visible = false; }
+    for (const slot of this.projectiles) { if (slot.baked) slot.baked.visible = false; slot.bakedAge = 0; }
     for (const item of [...this.effects, ...this.particles]) { item.left = 0; item.node.visible = false; if (item.wave) item.wave.visible = false; }
     for (const slot of this.actors) { slot.id = null; slot.node.visible = false; for (const node of slot.motes) node.visible = false; }
     for (const slot of this.projectiles) { slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false; }
@@ -229,6 +269,17 @@ export class SkillVfx {
       return false; // Existing numbers, impact, hit-stop and camera remain untouched.
     }
     if (event.type === 'explode' && profile.style === 'ember') {
+      if (this.fxReady && event.ability === 'ember_bolt' && !reduced) {
+        const slot = this.fxImpacts.find(item => item.left <= 0);
+        if (slot) {
+          slot.left = slot.total = profile.activeLife;
+          slot.node.texture = this.fxClips.impact.textures[0];
+          slot.node.position.set(event.x, event.y);
+          slot.node.scale.set(event.radius / 64); slot.node.visible = true;
+          return true;
+        }
+        // Pool full: bounded legacy fallback, never allocate per event.
+      }
       this.effect(profile, 'active', event.x, event.y, 0, event.radius, null, reduced);
       this.emit(profile, 'smoke', event.x, event.y, 0, event.radius, reduced);
       return true;
@@ -356,7 +407,7 @@ export class SkillVfx {
     if (!slot) slot = this.projectiles.find(item => item.id === null);
     if (!slot) return;
     if (slot.id !== particle.id) {
-      Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0 });
+      Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0, bakedAge: 0 });
       const g = slot.node; g.clear();
       if (profile.drawProjectile) profile.drawProjectile(g, particle, reduced);
       else if (profile.projectile && profile.style !== 'ember') {
@@ -393,6 +444,18 @@ export class SkillVfx {
       node.alpha = (reduced ? .1 : .7) * (1 - i / VFX_CAPS.trail);
       lastX = hx; lastY = hy;
     }
+    if (slot.baked) {
+      slot.baked.visible = this.fxReady && particle.abilityId === 'ember_bolt' && !reduced;
+      if (slot.baked.visible) {
+        const clip = this.fxClips.projectile;
+        slot.bakedAge += dt;
+        slot.baked.texture = clip.textures[Math.floor(slot.bakedAge * clip.fps) % clip.textures.length];
+        slot.baked.position.set(x, y); slot.baked.rotation = slot.node.rotation;
+        slot.baked.scale.set(particle.r / 8);
+        slot.node.visible = false;
+        for (const node of slot.tail) node.visible = false;
+      }
+    }
   }
   snapshot(world) {
     for (const slot of this.projectiles) {
@@ -410,6 +473,15 @@ export class SkillVfx {
     for (const particle of world.projectiles) if (SKILL_VFX[particle.abilityId]?.projectileRadius) this.projectile(particle, alpha, reduced, dt);
     for (const slot of this.projectiles) if (!slot.seen) {
       slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false;
+      if (slot.baked) slot.baked.visible = false;
+    }
+    for (const slot of this.fxImpacts) {
+      if (slot.left <= 0) continue;
+      slot.left = Math.max(0, slot.left - dt);
+      slot.node.visible = slot.left > 0 && !reduced;
+      const clip = this.fxClips.impact;
+      const index = Math.min(clip.textures.length - 1, Math.floor((1 - slot.left / slot.total) * clip.textures.length));
+      slot.node.texture = clip.textures[index];
     }
     for (const slot of this.effects) {
       if (slot.left <= 0) continue;

@@ -1,0 +1,14 @@
+== Python packages -> C:\Users\user\.cache\effekseer-vfx\venv
+No suitable Python runtime found
+Pass --list (-0) to see all detected environments on your machine
+or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget
+or open the Microsoft Store to the requested version.
+System.Management.Automation.RemoteException
+[notice] A new release of pip is available: 25.0.1 -> 26.2.1
+[notice] To update, run: C:\Users\user\.cache\effekseer-vfx\venv\Scripts\python.exe -m pip install --upgrade pip
+== Effekseer 1.80.7 (official release; only its managed Core assemblies are used)
+== .NET 9.0.20 runtime (official Microsoft archive, win-x64)
+'\\wsl.localhost\Debian\home\cocy\.openclaw\workspace\tmp\worktrees\arpg-fx1'
+위의 경로를 현재 디렉터리로 하여 CMD.EXE가 실행되었습니다. UNC 경로는
+지원되지 않습니다. Windows 디렉터리를 기본으로 합니다.
+{"ok": true, "platform": {"system": "Windows", "machine": "AMD64", "python": "3.12.10", "full_mode_supported": true}, "modes": {"authoring": true, "build": true, "render": false}, "toolchain": {"home": "C:\\Users\\user\\.cache\\effekseer-vfx", "python_packages": {"numpy": true, "PIL": true, "jsonschema": true, "clr_loader": true}, "setup_python": "installed", "effekseer_core": true, "dotnet": true, "godot": null, "ffmpeg": false}, "project": "C:\\Windows", "workspace": {"path": "C:\\Windows\\vfx", "initialized": false, "effects": 0, "built": 0, "unmanaged": 0}, "note": "authoring = write recipes, lint, textures and briefs; build = compile through EffekseerCore; render = Godot review strips. Build and render are verified on macOS ARM64 and Windows x64 (Windows ARM64 is set up but unverified). render: true means Godot was found; review still needs a window on the logged-in desktop, so a sandboxed agent must run review/preview/showcase outside its sandbox.", "next": ["install Godot 4.x (Forward+) and put it on PATH or set GODOT", "vfx init --no-plugin"]}

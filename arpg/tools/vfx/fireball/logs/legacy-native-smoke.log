@@ -1,0 +1,352 @@
+{
+  "ok": true,
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "mobile": true
+  },
+  "checks": [
+    {
+      "ability": "lunge",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "volley",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "pierce_shot",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "frost_lance",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "whirl",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "flame_ring",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "blast_arrow",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "heavy_cleave",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "ember_bolt",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "healing_light",
+      "reduced": false,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "lunge",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "volley",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "pierce_shot",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "frost_lance",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "whirl",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "flame_ring",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "blast_arrow",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "heavy_cleave",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "ember_bolt",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    },
+    {
+      "ability": "healing_light",
+      "reduced": true,
+      "windup": true,
+      "active": true,
+      "impact": true,
+      "lifetime": true,
+      "guestReplay": false
+    }
+  ],
+  "nativeCasts": [
+    {
+      "ability": "lunge",
+      "reduced": false,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 0
+    },
+    {
+      "ability": "lunge",
+      "reduced": true,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 0
+    },
+    {
+      "ability": "volley",
+      "reduced": false,
+      "hits": 5,
+      "distinctTargets": 5,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 5
+    },
+    {
+      "ability": "volley",
+      "reduced": true,
+      "hits": 5,
+      "distinctTargets": 5,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 5
+    },
+    {
+      "ability": "pierce_shot",
+      "reduced": false,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 1
+    },
+    {
+      "ability": "pierce_shot",
+      "reduced": true,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 1
+    },
+    {
+      "ability": "frost_lance",
+      "reduced": false,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 1
+    },
+    {
+      "ability": "frost_lance",
+      "reduced": true,
+      "hits": 2,
+      "distinctTargets": 2,
+      "charged": true,
+      "active": true,
+      "projectilePeak": 1
+    }
+  ],
+  "areaChecks": [
+    {
+      "ability": "whirl",
+      "reduced": false,
+      "stopBonus": 0.016666666666666666,
+      "shakeZero": false
+    },
+    {
+      "ability": "whirl",
+      "reduced": true,
+      "stopBonus": 0,
+      "shakeZero": true
+    },
+    {
+      "ability": "heavy_cleave",
+      "reduced": false,
+      "stopBonus": 0.016666666666666666,
+      "shakeZero": false
+    },
+    {
+      "ability": "heavy_cleave",
+      "reduced": true,
+      "stopBonus": 0,
+      "shakeZero": true
+    },
+    {
+      "ability": "blast_arrow",
+      "reduced": false,
+      "stopBonus": 0.016666666666666666,
+      "shakeZero": false
+    },
+    {
+      "ability": "blast_arrow",
+      "reduced": true,
+      "stopBonus": 0,
+      "shakeZero": true
+    },
+    {
+      "ability": "flame_ring",
+      "reduced": false,
+      "stopBonus": 0.016666666666666666,
+      "shakeZero": false
+    },
+    {
+      "ability": "flame_ring",
+      "reduced": true,
+      "stopBonus": 0,
+      "shakeZero": true
+    }
+  ],
+  "fourPlayers": true,
+  "saturatedPools": {
+    "effects": 48,
+    "particles": 96,
+    "actors": 8,
+    "projectiles": 24,
+    "trail": 6
+  },
+  "softwareWebGL": {
+    "frames": 1200,
+    "meanMs": 3.3756666668256123,
+    "p95Ms": 7.799999713897705,
+    "over16ms": 13
+  },
+  "renderCpu": {
+    "frames": 1200,
+    "meanMs": 0.07916666865348816,
+    "p95Ms": 0.19999980926513672,
+    "over16ms": 0
+  },
+  "continuousFourPlayerStress": {
+    "frames": 600,
+    "meanMs": 8.752833331425984,
+    "p95Ms": 13.699999809265137,
+    "over16ms": 21,
+    "renderCpu": {
+      "frames": 600,
+      "meanMs": 0.25983333110809326,
+      "p95Ms": 0.5,
+      "over16ms": 0
+    },
+    "peakEffects": 40,
+    "peakParticles": 96,
+    "peakProjectiles": 20,
+    "fixedGraphics": 432,
+    "casts": "4 players, rotating all 10 profiles; impact every 200ms; 20 volley arrows/4 other projectiles"
+  },
+  "consoleErrors": 0
+}

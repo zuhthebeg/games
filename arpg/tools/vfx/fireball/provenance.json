@@ -1,0 +1,116 @@
+{
+  "skillRepository": "https://github.com/kanaworksai-hue/effekseer-vfx-skill",
+  "commit": "c28919890f0483c0f968a884ea03979803d3b528",
+  "skillLicense": "MIT",
+  "exampleTexturesLicense": "MIT (repository THIRD_PARTY_NOTICES explicitly includes examples/textures)",
+  "effekseerVersion": "1.80.7",
+  "effekseerLicense": "MIT (LICENSE_TOOL preserved)",
+  "pluginVersion": "1.80.5.1",
+  "godotVersion": "4.7.2",
+  "textures": [
+    {
+      "name": "T_Crack01.png",
+      "bytes": 32790,
+      "sha256": "9b4fecac09592352c6ace1e1677947f0144b4b79b779f52d393d17b9274b6fb1",
+      "source": "MIT AI-generated example texture",
+      "sourceAtCommit": "skills/effekseer-vfx/assets/examples/textures/T_Crack01.png",
+      "matchesOriginal": true
+    },
+    {
+      "name": "T_DistortHaze01.png",
+      "bytes": 117358,
+      "sha256": "dd8896f068d8ddeaa59cc65070253f552031aea528672355bb53e49e43ec6b76",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_DistortRing01.png",
+      "bytes": 36181,
+      "sha256": "485cbb3e5e4a19f22e00a428465418ffe9af0aff12148c7f400cf59638fdaa67",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_ExplosionSheet01.png",
+      "bytes": 431094,
+      "sha256": "25deea6ded30d862f81cfc6109d75f3c8560e89a383689a1363751fc949fb979",
+      "source": "MIT AI-generated example texture",
+      "sourceAtCommit": "skills/effekseer-vfx/assets/examples/textures/T_ExplosionSheet01.png",
+      "matchesOriginal": true
+    },
+    {
+      "name": "T_Flare01.png",
+      "bytes": 4276,
+      "sha256": "b752dc643b0efa8e5a265e0d89c0b76b49f7d091b2b1effd62000937b4a2f5f2",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_Glow01.png",
+      "bytes": 7819,
+      "sha256": "4fcc24005087b2fa0d61c36be60c4535d9ce524b3bca269647816dec0748b994",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_NoiseStreak01.png",
+      "bytes": 43360,
+      "sha256": "79062d98ab0e58cd215d39ab55282a363bf7b40b95ddaa2cfece03c629f04e0f",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_NoiseTile01.png",
+      "bytes": 50216,
+      "sha256": "383235e8a04fc031b9db25607fc1a99d2aab39ba0c38cb7fac5177e621f37b98",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_Shard01.png",
+      "bytes": 2829,
+      "sha256": "787386b980e7f1be5709b89cc1fe09ebb4e2eae1e3df0bb021c3104ec4b12e99",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_SmokeSheet01.png",
+      "bytes": 361967,
+      "sha256": "5fc1e1b8f9ebda0021f20cf5673e8d20f4843a443d89b86bde8b30330540d693",
+      "source": "MIT AI-generated example texture",
+      "sourceAtCommit": "skills/effekseer-vfx/assets/examples/textures/T_SmokeSheet01.png",
+      "matchesOriginal": true
+    },
+    {
+      "name": "T_SoftCircle.png",
+      "bytes": 10991,
+      "sha256": "58a8d52880583fa803aba192ba5988f938451c4308488f89692ffdc007dc036a",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_Spark01.png",
+      "bytes": 3740,
+      "sha256": "ec7374345f9b5b08485184fa38971c4d791502f70196a81b84656b3a25783c4f",
+      "source": "MIT vfxkit procedural math texture",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_WispTrail01.png",
+      "bytes": 54573,
+      "sha256": "96d4d555addd7f57eb03666a15ff442f4a62233827f72998e7b4f4aeebec54a0",
+      "source": "MIT AI-generated example texture",
+      "sourceAtCommit": "skills/effekseer-vfx/assets/examples/textures/T_WispTrail01.png",
+      "matchesOriginal": true
+    }
+  ]
+}
