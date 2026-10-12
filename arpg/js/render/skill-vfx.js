@@ -5,6 +5,18 @@ import { shapePath } from './shapes.js';
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
 // drawProjectile hooks. Hooks receive this fixed-pool presenter, never a sim writer.
 export const SKILL_VFX = Object.freeze({
+  lunge: Object.freeze({ style: 'dash', dash: ABILITIES.lunge.dash,
+    color: 0xa8dce4, accent: 0xe3f5ef, windup: 'blade', impact: 'spark',
+    activeLife: .17, residueLife: .18, particles: 8, reducedParticles: 2 }),
+  volley: Object.freeze({ style: 'arrow', projectile: ABILITIES.volley.projectile,
+    projectileRadius: ABILITIES.volley.projectile.radius, color: 0xd2c497, accent: 0xf1ebd2,
+    windup: 'bow', impact: 'spark', activeLife: .14, residueLife: .22, particles: 8, reducedParticles: 2 }),
+  pierce_shot: Object.freeze({ style: 'pierce', projectile: ABILITIES.pierce_shot.projectile,
+    projectileRadius: ABILITIES.pierce_shot.projectile.radius, color: 0x91d8ee, accent: 0xf0fcff,
+    windup: 'bow', impact: 'spark', activeLife: .18, residueLife: .24, particles: 8, reducedParticles: 2 }),
+  frost_lance: Object.freeze({ style: 'frost', projectile: ABILITIES.frost_lance.projectile,
+    projectileRadius: ABILITIES.frost_lance.projectile.radius, color: 0x9fd8ff, accent: 0xe9faff,
+    windup: 'crystal', impact: 'shard', activeLife: .2, residueLife: .35, particles: 10, reducedParticles: 2 }),
   whirl: Object.freeze({ style: 'ring', radius: ABILITIES.whirl.shape.radius,
     shape: ABILITIES.whirl.shape, color: 0xa8dce4, accent: 0xe3f5ef,
     windup: 'runes', impact: 'spark', activeLife: .28, residueLife: .4, particles: 10, reducedParticles: 2 }),
@@ -71,7 +83,20 @@ export class SkillVfx {
       profile.drawEffect(this, slot, { kind, x, y, facing, radius, shape, reduced });
       return true;
     }
-    if (profile.style === 'cleave') {
+    if (profile.style === 'dash') {
+      // Only the observed, short travelled segment, never the untraversed dash range.
+      g.moveTo(-radius, 0).lineTo(0, 0).stroke({ color: profile.color, width: reduced ? 1 : 3, alpha: .45 });
+    } else if (profile.projectile && profile.style !== 'ember') {
+      if (profile.style === 'frost') {
+        g.poly([-radius, 0, 0, -radius * .4, radius, 0, 0, radius * .4])
+          .stroke({ color: profile.color, width: 1, alignment: 1, alpha: .7 });
+      } else {
+        g.moveTo(-radius, 0).lineTo(radius - 1, 0)
+          .stroke({ color: profile.accent, width: reduced ? 1 : 2, alpha: .8 });
+        g.moveTo(0, -radius * .4).lineTo(radius - 1, 0).lineTo(0, radius * .4)
+          .stroke({ color: profile.color, width: 1, alpha: .7 });
+      }
+    } else if (profile.style === 'cleave') {
       slot.kind = kind === 'residue' ? 'residue' : 'wave';
       if (kind === 'residue') {
         // Four cracked ground lines remain entirely inside the authoritative cone.
@@ -122,7 +147,8 @@ export class SkillVfx {
       slot.left = slot.total;
       slot.node.position.set(slot.x, slot.y); slot.node.rotation = rise ? 0 : angle;
       slot.node.tint = smoke ? (kind === 'dust' ? 0x8a9b88 : 0x6e7370) : profile.color;
-      slot.node.scale.set(slot.size, smoke ? slot.size : slot.size * (rise ? 2 : .5));
+      slot.node.scale.set(kind === 'shard' ? slot.size * 1.6 : slot.size,
+        smoke ? slot.size : slot.size * (rise ? 2 : kind === 'shard' ? .3 : .5));
       slot.node.alpha = smoke ? .25 : reduced ? .35 : .75; slot.node.visible = true;
       spawned++;
     }
@@ -133,7 +159,12 @@ export class SkillVfx {
     if (!profile) return false;
     if (profile.onEvent) return profile.onEvent(this, event, world, reduced);
     if (event.type === 'hit') {
-      if (profile.style === 'cleave' || profile.style === 'ember' || profile.style === 'ring') this.emit(profile, 'spark', event.x, event.y, 0, 20, reduced);
+      if (profile.style !== 'heal') this.emit(profile, profile.impact === 'shard' ? 'shard' : 'spark', event.x, event.y, 0, 20, reduced);
+      if (profile.projectile && profile.style !== 'ember') {
+        const source = world.entities?.find(e => e.id === event.src);
+        const facing = source?.act?.facing ?? source?.facing ?? 0;
+        this.effect(profile, 'residue', event.x, event.y, facing, profile.projectileRadius, null, reduced);
+      }
       return false; // Existing numbers, impact, hit-stop and camera remain untouched.
     }
     if (event.type === 'explode' && profile.style === 'ember') {
@@ -158,9 +189,19 @@ export class SkillVfx {
     if (!slot) return true;
     const key = `${act.id}:${worldTick - act.elapsed}`;
     if (slot.id !== entity.id || slot.key !== key) {
-      Object.assign(slot, { id: entity.id, key, fired: false });
+      Object.assign(slot, { id: entity.id, key, fired: false, trailX: entity.x, trailY: entity.y });
       const g = slot.node; g.clear(); g.rotation = 0; g.scale.set(1);
-      if (profile.windup === 'vertical') {
+      if (profile.windup === 'blade') {
+        g.moveTo(-10, 0).lineTo(14, 0).stroke({ color: profile.accent, width: 2, alpha: .8 });
+      } else if (profile.windup === 'bow') {
+        g.arc(0, 0, 12, -Math.PI / 2, Math.PI / 2)
+          .stroke({ color: profile.color, width: 2, alpha: .7 })
+          .moveTo(0, -12).lineTo(-8, 0).lineTo(0, 12)
+          .stroke({ color: profile.accent, width: 1, alpha: .7 });
+      } else if (profile.windup === 'crystal') {
+        g.poly([-12, 0, 0, -6, 12, 0, 0, 6]).fill({ color: profile.color, alpha: .35 })
+          .stroke({ color: profile.accent, width: 1, alignment: 1, alpha: .8 });
+      } else if (profile.windup === 'vertical') {
         g.moveTo(0, 8).lineTo(0, -48).stroke({ color: profile.color, width: 8, alpha: .16 })
           .moveTo(0, 8).lineTo(0, -48).stroke({ color: profile.accent, width: 2, alpha: .8 });
       } else if (profile.windup === 'converge') {
@@ -181,6 +222,7 @@ export class SkillVfx {
     const x = entity.x + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
     const y = entity.y + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
     slot.node.visible = charging; slot.node.position.set(x, y);
+    if (profile.windup === 'blade' || profile.windup === 'bow' || profile.windup === 'crystal') slot.node.rotation = act.facing;
     slot.node.alpha = (reduced ? .35 : .8) * (.2 + p * .8);
     if (profile.style === 'heal') slot.node.rotation = reduced ? 0 : p * .55;
     for (let i = 0; i < slot.motes.length; i++) {
@@ -204,6 +246,33 @@ export class SkillVfx {
         this.effect(profile, 'residue', entity.x, entity.y, act.facing, 0, shape, reduced);
         this.emit(profile, 'dust', entity.x + Math.cos(act.facing) * shape.range * .6,
           entity.y + Math.sin(act.facing) * shape.range * .6, act.facing, 18, reduced);
+      } else if (profile.projectile && profile.style !== 'ember') {
+        const pr = profile.projectile;
+        for (let i = 0; i < pr.count; i++) {
+          const spread = pr.count > 1 ? (i / (pr.count - 1) - .5) * pr.spreadDeg * Math.PI / 180 : 0;
+          const facing = act.facing + spread;
+          this.effect(profile, 'active', entity.x + Math.cos(facing) * (entity.r + 4),
+            entity.y + Math.sin(facing) * (entity.r + 4), facing, pr.radius, null, reduced);
+        }
+      } else if (profile.style === 'dash') {
+        const radius = entity.r + profile.dash.bodyPad;
+        slot.node.clear().arc(0, 0, radius, -Math.PI / 3, Math.PI / 3)
+          .stroke({ color: profile.accent, width: reduced ? 2 : 4, alignment: 1, alpha: .85 })
+          .moveTo(0, 0).lineTo(radius - 2, 0).stroke({ color: profile.color, width: 2, alpha: .65 });
+      }
+    }
+    if (profile.style === 'dash') {
+      if (charging) { slot.trailX = entity.x; slot.trailY = entity.y; }
+      else {
+        slot.node.visible = act.phase === 'active'; slot.node.position.set(entity.x, entity.y);
+        slot.node.alpha = reduced ? .35 : .8;
+        const dx = entity.x - slot.trailX, dy = entity.y - slot.trailY, distance = Math.hypot(dx, dy);
+        const radius = entity.r + profile.dash.bodyPad;
+        if (act.phase === 'active' && distance >= radius * .5) {
+          if (!reduced) this.effect(profile, 'residue', entity.x, entity.y, Math.atan2(dy, dx),
+            Math.min(distance, radius, profile.dash.distance), null, reduced);
+          slot.trailX = entity.x; slot.trailY = entity.y;
+        }
       }
     }
     return true;
@@ -217,12 +286,20 @@ export class SkillVfx {
       Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0 });
       const g = slot.node; g.clear();
       if (profile.drawProjectile) profile.drawProjectile(g, particle, reduced);
-      else g.circle(0, 0, particle.r).fill({ color: profile.color, alpha: .85 })
+      else if (profile.projectile && profile.style !== 'ember') {
+        const r = particle.r;
+        if (profile.style === 'frost') g.poly([-r, 0, -r * .2, -r * .45, r, 0, -r * .2, r * .45])
+          .fill({ color: profile.color, alpha: .8 });
+        else g.poly([r, 0, 0, -r * .45, 0, r * .45]).fill({ color: profile.color, alpha: .85 });
+        g.moveTo(-r + 1, 0).lineTo(r - 1, 0)
+          .stroke({ color: profile.accent, width: profile.style === 'pierce' ? 3 : 2, alpha: .95 });
+      } else g.circle(0, 0, particle.r).fill({ color: profile.color, alpha: .85 })
         .circle(0, 0, particle.r * .5).fill({ color: profile.accent, alpha: .85 });
     }
     slot.seen = true;
     const x = slot.prevX + (particle.x - slot.prevX) * alpha, y = slot.prevY + (particle.y - slot.prevY) * alpha;
     slot.node.visible = true; slot.node.position.set(x, y);
+    slot.node.rotation = Math.atan2(particle.vy, particle.vx);
     slot.clock += dt;
     if (slot.clock >= .025 || !slot.count) {
       slot.history.copyWithin(2, 0, (VFX_CAPS.trail - 1) * 2);
