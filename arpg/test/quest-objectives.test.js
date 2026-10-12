@@ -54,10 +54,10 @@ test('real sim spawns total 3 once, clear with living enemies, then freezes dama
 test('same final tick death wins over objective success; other terminal pawns stay terminal',()=>{
  const w=setup(3);carry(w,1);const p=pawn(w,1);at(p,w.round.objective.entry);dwell(w,14);p.hp=0;p.dead=true;p.terminal='death';pawn(w).terminal='return_scroll';step(w);assert.notEqual(w.round.state,'clear');assert.equal(p.terminal,'death');assert.equal(pawn(w).terminal,'return_scroll');
 });
-test('old saves accept absent optional clear; first XP910, repeat228, anchor death penalty; no token inventory',()=>{
+test('old saves accept absent optional clear; first XP910, repeat0 (no objective farm), anchor death penalty; no token inventory',()=>{
  const s=createSave({name:'QM1',answers:[0,0,0,0,0],weapon:'blade',createdAt:1});delete s.cleared[id];assert.equal(validateSave(s),true);
  assert.equal(stageXp(s,id),910);assert.equal(deathLoss({...s,xp:100},id),deathLoss({...s,xp:100},'S12'));
- const r=settleRound(s,{stageId:id,terminal:'clear'});assert.equal(r.receipt.stageXp,910);assert.equal(stageXp(r.save,id),228);assert.equal(validateSave(r.save),true);assert.equal(r.receipt.lootKept.items.length,0);assert.deepEqual(r.receipt.lootKept.stacks,{});
+ const r=settleRound(s,{stageId:id,terminal:'clear'});assert.equal(r.receipt.stageXp,910);assert.equal(stageXp(r.save,id),0);assert.equal(stageXp({cleared:{S12:1}},'S12'),228);assert.equal(validateSave(r.save),true);assert.equal(r.receipt.lootKept.items.length,0);assert.deepEqual(r.receipt.lootKept.stacks,{});
 });
 test('fatal periodic damage on final return tick drops token instead of resurrecting carrier',()=>{
  const w=setup(2),p=pawn(w);carry(w);at(p,w.round.objective.entry);dwell(w,14);
