@@ -27,7 +27,7 @@
       "life": 36,
       "scale_start": [
         3.0,
-        0.6,
+        6.0,
         1
       ],
       "fade_in": 0,
@@ -88,6 +88,26 @@
       "fade_in": 0,
       "fade_out": 25.2,
       "emissive": 2.4,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Projectile core",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        240,
+        252,
+        255,
+        255
+      ],
+      "life": 36,
+      "scale_start": [
+        2.5,
+        0.7,
+        1
+      ],
+      "fade_in": 0,
+      "fade_out": 4,
+      "emissive": 2.0,
       "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     }
   ],

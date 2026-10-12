@@ -4,14 +4,14 @@
     1024,
     320
   ],
-  "atlasBytes": 3930,
+  "atlasBytes": 4732,
   "jsonBytes": 2323,
-  "totalBytes": 6253,
+  "totalBytes": 7055,
   "decodedBytes": 1310720,
   "alphaLossless": true,
   "rawClippedFrames": 0,
   "supportMasked": true,
-  "sha256": "2b985284285765bc6ed53e6dc3607ee445368caea2bc4528d009c2a77c3012e7",
+  "sha256": "2f8396b15609919ab80e0e1aae11a68217e5daf318f5a0c7b629a61ef5f9812a",
   "framesProof": [
     {
       "id": "windup-000",
@@ -117,15 +117,15 @@
     },
     {
       "id": "projectile-000",
-      "sourceSha256": "8d4c49af695f7d77f54f8140fecd304744b583f2fb31f06755133545883fe4f2",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -134,15 +134,15 @@
     },
     {
       "id": "projectile-003",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -151,15 +151,15 @@
     },
     {
       "id": "projectile-006",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -168,15 +168,15 @@
     },
     {
       "id": "projectile-009",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -185,15 +185,15 @@
     },
     {
       "id": "projectile-012",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -202,15 +202,15 @@
     },
     {
       "id": "projectile-015",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -219,15 +219,15 @@
     },
     {
       "id": "projectile-018",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -236,15 +236,15 @@
     },
     {
       "id": "projectile-021",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -253,15 +253,15 @@
     },
     {
       "id": "projectile-024",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -270,15 +270,15 @@
     },
     {
       "id": "projectile-027",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -287,15 +287,15 @@
     },
     {
       "id": "projectile-030",
-      "sourceSha256": "fdc324704be1afd072e538176f11820dad0770a8b4ac698facdb04289a4b12be",
+      "sourceSha256": "952e63805310c5ca9136cf7c734dbac740a98dac4252b0d1cc6dbf526d27157c",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        106,
+        76,
+        150,
+        84
       ],
       "bbox": [
-        70,
+        53,
         36,
         76,
         44
@@ -304,15 +304,15 @@
     },
     {
       "id": "projectile-033",
-      "sourceSha256": "c5dcd32520b06f636838f0a28d386c63259d26140cc74339d79e0e631c7bcb72",
+      "sourceSha256": "6585b79a016f075bdea6e6b816a0e3d98a98a3a85bf91cdd1245d518137cefcf",
       "rawBbox": [
-        144,
-        78,
-        147,
-        83
+        107,
+        76,
+        149,
+        84
       ],
       "bbox": [
-        70,
+        54,
         36,
         76,
         44
