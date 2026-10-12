@@ -112,3 +112,7 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 ### FX2 ember_bolt contact upgrade
 - Native Effekseer1.80.7 → Godot4.7.2 Forward+ transparent recapture; upstream pinned MIT source/texture licenses and receipt remain `tools/vfx/fireball/provenance.json` / `licenses/` (not CC0).
 - Modified contact recipe: immediate white core, no empty contact delay; 18 impact frames. Native captures are resized/masked only to presentation support, never substitute generated frames. Runtime does not change hit/phase/host state. New capture/import logs and quantified core before/after: `tools/vfx/fireball/fx2-*`.
+
+### FX2 lunge
+- Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/lunge/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
+- Distribution: `assets/vfx/lunge/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/lunge/atlas-validation.json`. No independent artist or physical-device certification claimed.

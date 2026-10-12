@@ -1,0 +1,41 @@
+{
+  "skillRepository": "https://github.com/kanaworksai-hue/effekseer-vfx-skill",
+  "commit": "c28919890f0483c0f968a884ea03979803d3b528",
+  "skillLicense": "MIT",
+  "exampleTexturesLicense": "MIT (repository THIRD_PARTY_NOTICES explicitly includes examples/textures)",
+  "effekseerVersion": "1.80.7",
+  "effekseerLicense": "MIT (LICENSE_TOOL preserved)",
+  "pluginVersion": "1.80.5.1",
+  "godotVersion": "4.7.2",
+  "skill": "lunge",
+  "recipeAuthor": "FX2 local authored recipe; upstream MIT primitives",
+  "textures": [
+    {
+      "name": "T_Glow01.png",
+      "sha256": "4fcc24005087b2fa0d61c36be60c4535d9ce524b3bca269647816dec0748b994",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+    },
+    {
+      "name": "T_Streak01.png",
+      "sha256": "6be4c7784b11b2363d982f795d6f49ee632feaf8468012773eb3a98c7dc8673f",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+    },
+    {
+      "name": "T_Flare01.png",
+      "sha256": "b752dc643b0efa8e5a265e0d89c0b76b49f7d091b2b1effd62000937b4a2f5f2",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+    },
+    {
+      "name": "T_Spark01.png",
+      "sha256": "ec7374345f9b5b08485184fa38971c4d791502f70196a81b84656b3a25783c4f",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "generatorAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py"
+    }
+  ],
+  "licenseEvidence": "../fireball/licenses/",
+  "capture": "Native Forward+ RGBA, transparent viewport; fixed-fps60; sample stride3",
+  "processing": "128x80 resample + gameplay-support alpha mask; not vector/procedural replacement captures"
+}
