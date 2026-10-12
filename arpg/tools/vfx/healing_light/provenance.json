@@ -1,0 +1,31 @@
+{
+  "skillRepository": "https://github.com/kanaworksai-hue/effekseer-vfx-skill",
+  "commit": "c28919890f0483c0f968a884ea03979803d3b528",
+  "skillLicense": "MIT",
+  "exampleTexturesLicense": "MIT (repository THIRD_PARTY_NOTICES explicitly includes examples/textures)",
+  "effekseerVersion": "1.80.7",
+  "effekseerLicense": "MIT (LICENSE_TOOL preserved)",
+  "pluginVersion": "1.80.5.1",
+  "godotVersion": "4.7.2",
+  "skill": "healing_light",
+  "recipeAuthor": "FX2 local authored recipe; upstream MIT primitives",
+  "textures": [
+    {
+      "name": "T_Glow01.png",
+      "sha256": "4fcc24005087b2fa0d61c36be60c4535d9ce524b3bca269647816dec0748b994",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    },
+    {
+      "name": "T_Cross01.png",
+      "sha256": "2349a10330629f5c67bbfa33f2c2a819ec3df62727776c2f1c203a06a22813e0",
+      "source": "MIT vfxkit procedural math texture (pinned generator)",
+      "sourceAtCommit": "skills/effekseer-vfx/scripts/vfxkit/textures.py",
+      "matchesOriginal": null
+    }
+  ],
+  "licenseEvidence": "../fireball/licenses/",
+  "capture": "Native Forward+ RGBA, transparent viewport; fixed-fps60; sample stride3",
+  "processing": "128x80 resample + gameplay-support alpha mask; not vector/procedural replacement captures"
+}

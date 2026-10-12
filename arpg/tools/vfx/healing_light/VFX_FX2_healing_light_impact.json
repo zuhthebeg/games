@@ -1,0 +1,172 @@
+{
+  "id": "VFX_FX2_healing_light_impact",
+  "name": "healing_light impact",
+  "category": "element",
+  "element": "none",
+  "duration": 0.6,
+  "loop": false,
+  "attach": "impact",
+  "peak": 0.05,
+  "impact": 0,
+  "light": [
+    1,
+    0.85,
+    0.6
+  ],
+  "seed": 1729,
+  "layers": [
+    {
+      "name": "Healing halo",
+      "renderer": "Ring",
+      "color": [
+        121,
+        220,
+        160,
+        255
+      ],
+      "life": 32,
+      "delay": 0,
+      "billboard": "Billboard",
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "ring": {
+        "outer": [
+          1,
+          0
+        ],
+        "inner": {
+          "start": [
+            0.88,
+            0
+          ],
+          "end": [
+            0.97,
+            0
+          ]
+        },
+        "center_ratio": 0.8,
+        "outer_color": [
+          121,
+          220,
+          160,
+          127
+        ],
+        "center_color": [
+          121,
+          220,
+          160,
+          255
+        ],
+        "inner_color": [
+          121,
+          220,
+          160,
+          0
+        ]
+      },
+      "size": 3.2,
+      "size_curve": [
+        [
+          0,
+          0.12
+        ],
+        [
+          35,
+          0.72
+        ],
+        [
+          100,
+          1
+        ]
+      ],
+      "fade_in": 0,
+      "fade_out": 22.4,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Healing cross",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Cross01.png",
+      "color": [
+        197,
+        215,
+        153,
+        255
+      ],
+      "size": 1.4,
+      "life": 30,
+      "fade_in": 0,
+      "fade_out": 20,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Restoration glints",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        121,
+        220,
+        160,
+        255
+      ],
+      "color_end": [
+        121,
+        220,
+        160,
+        255
+      ],
+      "count": 16,
+      "life": [
+        20,
+        34
+      ],
+      "delay": 0,
+      "interval": 0,
+      "billboard": "Billboard",
+      "spawn": {
+        "shape": "Sphere",
+        "radius": [
+          0.6,
+          2.6
+        ],
+        "rot_x": [
+          -90,
+          90
+        ]
+      },
+      "travel": {
+        "end": [
+          0,
+          [
+            0.1,
+            0.6
+          ],
+          0
+        ],
+        "easing": "EaseOutCubic"
+      },
+      "size": [
+        0.05,
+        0.12
+      ],
+      "size_end": 0,
+      "easing": "EaseInCubic",
+      "forces": [
+        {
+          "type": "Turbulence",
+          "power": 0,
+          "scale": 5
+        }
+      ],
+      "fade_in": 1,
+      "fade_out": 6,
+      "emissive": 1.5,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    }
+  ],
+  "design": "FX2 healing_light impact: heal palette and circle gameplay-support. Native transparent bake; gameplay boundary remains authoritative.",
+  "delivery": {
+    "kind": "self"
+  }
+}

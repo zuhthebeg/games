@@ -144,3 +144,7 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 ### FX2 heavy_cleave
 - Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/heavy_cleave/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
 - Distribution: `assets/vfx/heavy_cleave/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/heavy_cleave/atlas-validation.json`. No independent artist or physical-device certification claimed.
+
+### FX2 healing_light
+- Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/healing_light/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
+- Distribution: `assets/vfx/healing_light/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/healing_light/atlas-validation.json`. No independent artist or physical-device certification claimed.

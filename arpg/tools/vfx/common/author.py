@@ -11,7 +11,7 @@ for skill,(style,c,a) in PALETTES.items():
  projectile=style in ('arrow','pierce','frost','blast')
  for label in ['windup', 'projectile' if projectile else 'active', 'impact']:
   id=f'VFX_FX2_{skill}_{label}'
-  ticks=18 if label=='windup' else 36 if label in ('active','projectile') else 24
+  ticks=18 if label=='windup' else 36 if label in ('active','projectile') or style=='heal' else 24
   shape='circle'
   if label=='active' and style=='cleave':shape='cone'
   if label=='active' and style=='blade':shape='dash'
