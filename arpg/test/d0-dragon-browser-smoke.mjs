@@ -111,7 +111,7 @@ try {
     const positions=await evaluate(`(()=>{const p=__arpg.world.entities.find(e=>e.kind==='player'),s=__arpg.world.entities.find(e=>e.type==='scarecrow'),d=__arpg.world.entities.find(e=>e.type==='training_dragon');return {player:{x:p.x,y:p.y},scarecrow:{x:s.x,y:s.y},dragon:{x:d.x,y:d.y,r:d.r,sizeScale:d.sizeScale,hp:d.hp},dragonDistance:Math.hypot(d.x-p.x,d.y-p.y),scarecrowDistance:Math.hypot(s.x-p.x,s.y-p.y)};})()`);
     assert.ok(positions.dragonDistance>positions.scarecrowDistance);
     assert.ok(positions.dragon.x>positions.scarecrow.x);assert.equal(positions.dragon.y,positions.scarecrow.y);
-    assert.equal(live.length,1);assert.equal(live[0].id,'dragon');assert.ok(live[0].scale>2);assert.equal(live[0].state,'idle');
+    assert.equal(live.length,1);assert.equal(live[0].id,'dragon');assert.ok(live[0].scale>1);assert.equal(live[0].state,'idle');
     // Test actual Pixi factory with frozen copies; never edit the authoritative host.
     const proof=await evaluate(`(async()=>{
       const {VisualProvider}=await import('./js/render/visual-provider.js');

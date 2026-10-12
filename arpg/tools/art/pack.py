@@ -28,6 +28,9 @@ def main():
     config_path = Path(args.config)
     config = json.loads(config_path.read_text())
     size = config['frame_size']
+    # Sheets stay <=2048px (mobile GPU texture limit): 16 columns at 128px, 8 at 256px.
+    columns_max = 2048 // size
+    per_page = columns_max * columns_max
     root = local(config['output'])
     destination = Path(args.repo) / 'arpg/assets/sprites'
     archive = root.parent / 'atlases'
@@ -47,8 +50,8 @@ def main():
                 # exceeds 256 frames across all directions, so split between
                 # directions rather than truncating a clip or oversizing sheets.
                 records = groups[animation + '_' + direction]
-                assert len(records) <= 256, 'One directional clip exceeds a page'
-                if len(page) + len(records) > 256:
+                assert len(records) <= per_page, 'One directional clip exceeds a page'
+                if len(page) + len(records) > per_page:
                     pages.append(page)
                     page = []
                 page.extend(records)
@@ -66,7 +69,7 @@ def main():
         sheets, atlases, metadata = [], [], []
         alpha_hashes = {}
         for number, page in enumerate(pages):
-            columns = min(16, len(page))
+            columns = min(columns_max, len(page))
             atlas = Image.new('RGBA', (columns * size, math.ceil(len(page) / columns) * size))
             frames, animations = {}, collections.defaultdict(list)
             for index, record in enumerate(page):

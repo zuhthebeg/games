@@ -2,7 +2,7 @@
 // [제안] Minimal orthogonal identity only; no implicit affinity, taming or material rules.
 export const DANGER_COLORS = { active: 0xf0655e, preparation: 0xe7ad47 };
 export const MONSTER_PALETTES = {
-  dragon: [0x83a571], straw: [0xae8e53], goblin: [0x73934c], slinger: [0x547c50],
+  dragon: [0xeef5e4], straw: [0xae8e53], goblin: [0x73934c], slinger: [0x547c50],
   boar: [0x79573f], chief: [0xe58b70],
   wolf: [0x939da2], rune: [0x7e8f94], spirit: [0x9c91c9], spider: [0x657d50],
 };

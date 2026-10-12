@@ -1,5 +1,5 @@
 {
-  "frame_size": 128,
+  "frame_size": 256,
   "fps": 10,
   "pitch": 40,
   "ortho_scale": 2.45,
@@ -53,5 +53,5 @@
     }
   ],
   "source": "C:/Users/user/ai-tools/arpg-art/d0-dragon/source",
-  "webp_quality": 52
+  "webp_quality": 74
 }

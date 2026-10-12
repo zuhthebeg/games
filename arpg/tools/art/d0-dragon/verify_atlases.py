@@ -72,8 +72,9 @@ def verify_character(base, frames_root, entry):
         for name, frame_info in data['frames'].items():
             assert name not in records, ('duplicate', name)
             rectangle = frame_info['frame']
-            assert rectangle['w'] == rectangle['h'] == 128
-            frame = image.crop((rectangle['x'], rectangle['y'], rectangle['x'] + 128, rectangle['y'] + 128))
+            size = rectangle['w']
+            assert size == rectangle['h'] and size in (128, 256)
+            frame = image.crop((rectangle['x'], rectangle['y'], rectangle['x'] + size, rectangle['y'] + size))
             alpha = frame.getchannel('A')
             mask = alpha.point(lambda value: 255 if value >= 128 else 0)
             bbox = mask.getbbox()
@@ -81,8 +82,8 @@ def verify_character(base, frames_root, entry):
             # Even low-alpha antialiasing/outline pixels must not touch an edge;
             # the >=128 coverage mask alone can miss a clipped translucent rim.
             full_bbox = alpha.getbbox()
-            assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < 128 and full_bbox[3] < 128, (name, 'any-alpha edge clipping', full_bbox)
-            coverage = sum(mask.histogram()[128:]) / 16384 * 100
+            assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < size and full_bbox[3] < size, (name, 'any-alpha edge clipping', full_bbox)
+            coverage = sum(mask.histogram()[128:]) / (size * size) * 100
             if profile in ('quadruped', 'boar'):
                 # A long low animal foreshortens end-on: use a 512px opaque
                 # floor + 16px extent, not the humanoid 5% area expectation.
@@ -96,7 +97,7 @@ def verify_character(base, frames_root, entry):
                 assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 32, (name, 'spider readability', bbox)
             else:
                 assert 5 <= coverage <= 60, (name, coverage)
-            assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 128 and bbox[3] < 128, (name, bbox)
+            assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < size and bbox[3] < size, (name, bbox)
             record = evidence[name]
             verify_pose(record, expected_skin, profile)
             raw = Image.open(frames_root / entry['id'] / (name + '.png')).convert('RGBA')

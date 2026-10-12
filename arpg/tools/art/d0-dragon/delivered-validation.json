@@ -1,39 +1,61 @@
-{
-  "name": "dragon",
-  "format": "webp",
-  "frames": 424,
-  "atlas_dimensions": [
-    [
-      2048,
-      2048
+[
+  {
+    "name": "dragon",
+    "format": "webp",
+    "frames": 424,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        1792
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
     ],
-    [
-      2048,
-      1408
-    ]
-  ],
-  "webp_bytes": 570434,
-  "json_bytes": 96816,
-  "total_bytes": 667250,
-  "alpha_coverage_percent": [
-    9.967,
-    14.349
-  ],
-  "max_idle_center_drift_px": 14.089,
-  "unique_direction_hashes": {
-    "idle": 8,
-    "run": 8,
-    "attack": 8,
-    "hit": 8,
-    "death": 8
-  },
-  "pose_profile": "dragon",
-  "pose_checked_frames": 424,
-  "t_pose_frames": null,
-  "bind_pose_frames": null,
-  "min_max_arm_degrees_from_bind": 0.2341,
-  "min_skin_rms_from_bind_height": 0.025226,
-  "lossless_alpha_matches_pose_evidence": 424,
-  "clipped_frames": 0,
-  "idle_weapon_projected_span_px": []
-}
+    "webp_bytes": 1395570,
+    "json_bytes": 97625,
+    "total_bytes": 1493195,
+    "alpha_coverage_percent": [
+      9.947,
+      14.293
+    ],
+    "max_idle_center_drift_px": 27.06,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "dragon",
+    "pose_checked_frames": 424,
+    "t_pose_frames": null,
+    "bind_pose_frames": null,
+    "min_max_arm_degrees_from_bind": 0.2341,
+    "min_skin_rms_from_bind_height": 0.025226,
+    "lossless_alpha_matches_pose_evidence": 424,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": []
+  }
+]

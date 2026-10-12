@@ -162,7 +162,8 @@ function spriteVisual(entity, { color }, asset) {
       stars.rotation = Math.sin(animation.age * 6) * .05;
       container.alpha = state.dead ? Math.max(0, 1 - animation.deadAge / .7)
         : state.terminal === 'return_scroll' ? .35 : 1;
-      bar.visible = health.visible = state.kind === 'monster' && !state.dead;
+      // Training samples (scarecrow, dragon) never lose HP, so no bar.
+      bar.visible = health.visible = state.kind === 'monster' && !state.dead && state.type !== 'training_dragon';
       health.scale.x = Math.max(0, state.hp / state.maxHp);
     },
     destroy() {

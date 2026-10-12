@@ -273,7 +273,12 @@
     ],
     "sheets": [
       "atlas-0.webp.json",
-      "atlas-1.webp.json"
+      "atlas-1.webp.json",
+      "atlas-2.webp.json",
+      "atlas-3.webp.json",
+      "atlas-4.webp.json",
+      "atlas-5.webp.json",
+      "atlas-6.webp.json"
     ],
     "animations": [
       "idle",
@@ -287,7 +292,7 @@
       "x": 0.5,
       "y": 0.6693471968173981
     },
-    "bytes": 667250,
+    "bytes": 1493195,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6

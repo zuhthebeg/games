@@ -71,8 +71,9 @@ test('every registered content key has eight-direction WebP clips and <=1.5MB ki
       assert.ok(data.meta.size.w <= 2048 && data.meta.size.h <= 2048);
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {
-        assert.equal(frame.frame.w, 128);
-        assert.equal(frame.frame.h, 128);
+        // 128px kits; the large display-scaled dragon ships 256px frames for sharpness.
+        assert.equal(frame.frame.w, id === 'dragon' ? 256 : 128);
+        assert.equal(frame.frame.h, frame.frame.w);
         assert.equal(frame.anchor.x, entry.anchor.x);
         assert.equal(frame.anchor.y, entry.anchor.y);
       }
