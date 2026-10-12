@@ -1,0 +1,75 @@
+{"lint_warnings": {"VFX_FX2_flame_ring_active": ["no white-hot additive colour (luma >= 0.85, min channel >= 180); brightness layering needs a hot core above the saturated body"], "VFX_FX2_flame_ring_impact": ["no layer changes shape (dissolve cutoff, ring sweep, UV distortion/scroll, flipbook or a painted shape re-struck on later frames); the body can only scale and fade", "no white-hot additive colour (luma >= 0.85, min channel >= 180); brightness layering needs a hot core above the saturated body"], "VFX_FX2_flame_ring_windup": ["no layer changes shape (dissolve cutoff, ring sweep, UV distortion/scroll, flipbook or a painted shape re-struck on later frames); the body can only scale and fade", "no white-hot additive colour (luma >= 0.85, min channel >= 180); brightness layering needs a hot core above the saturated body"]}}
+{"source": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\effects\\VFX_FX2_flame_ring_active.efkefc", "runtime": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\exports\\VFX_FX2_flame_ring_active.efk", "writes": 272}
+{"source": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\effects\\VFX_FX2_flame_ring_impact.efkefc", "runtime": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\exports\\VFX_FX2_flame_ring_impact.efk", "writes": 140}
+{"source": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\effects\\VFX_FX2_flame_ring_windup.efkefc", "runtime": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\exports\\VFX_FX2_flame_ring_windup.efk", "writes": 158}
+{"ok": true, "effects": 20, "built": ["VFX_FX2_flame_ring_active", "VFX_FX2_flame_ring_impact", "VFX_FX2_flame_ring_windup"]}
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started 프로젝트 초기화 (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | 파일 구조 스캔 중...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | 전역 클래스 이름을 불러오는 중...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | GDExtensions 검증 중...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | 오토로드 스크립트를 만드는 중...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | 플러그인을 초기화 중...[39m[0m
+WARNING: Loaded resource as image file, this will not work on export: 'res://addons/effekseer/icon16.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] _enter_tree (res://addons/effekseer/plugin.gd:21)
+[  83% ] [90m[1mfirst_scan_filesystem[22m | 파일 스캔 시작 중...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started 액션 스캔 중... (3 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | VFX_FX2_flame_ring_active.efkefc[39m[0m
+[  25% ] [90m[1m_update_scan_actions[22m | VFX_FX2_flame_ring_impact.efkefc[39m[0m
+[  50% ] [90m[1m_update_scan_actions[22m | VFX_FX2_flame_ring_windup.efkefc[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started 애셋 (다시) 가져오는 중 (3 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | 다시 가져올 파일을 준비 중...[39m[0m
+[  25% ] [90m[1mreimport[22m | 다시 가져올 파일을 준비 중...[39m[0m
+[  50% ] [90m[1mreimport[22m | 다시 가져올 파일을 준비 중...[39m[0m
+[   0% ] [90m[1mreimport[22m | 다시 가져오기 전 작업을 수행 중...[39m[0m
+[   0% ] [90m[1mreimport[22m | VFX_FX2_flame_ring_active.efkefc[39m[0m
+[  25% ] [90m[1mreimport[22m | VFX_FX2_flame_ring_impact.efkefc[39m[0m
+[  50% ] [90m[1mreimport[22m | VFX_FX2_flame_ring_windup.efkefc[39m[0m
+[  75% ] [90m[1mreimport[22m | 애셋 가져오기 마무리 중...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started 애셋 (다시) 가져오는 중 (3 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | 다시 가져오기 후 작업을 수행 중...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started 편집기를 불러오는 중 (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | 편집기 레이아웃을 불러오는 중...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | 독을 불러오는 중...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3080 Ti
+
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-000.png","error":0,"frame":0,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-003.png","error":0,"frame":3,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-006.png","error":0,"frame":6,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-009.png","error":0,"frame":9,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-012.png","error":0,"frame":12,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/windup-015.png","error":0,"frame":15,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-000.png","error":0,"frame":0,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-003.png","error":0,"frame":3,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-006.png","error":0,"frame":6,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-009.png","error":0,"frame":9,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-012.png","error":0,"frame":12,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-015.png","error":0,"frame":15,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-018.png","error":0,"frame":18,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-021.png","error":0,"frame":21,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-024.png","error":0,"frame":24,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-027.png","error":0,"frame":27,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-030.png","error":0,"frame":30,"size":[256,160]}
+{"alpha":1,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/active-033.png","error":0,"frame":33,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-000.png","error":0,"frame":0,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-003.png","error":0,"frame":3,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-006.png","error":0,"frame":6,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-009.png","error":0,"frame":9,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-012.png","error":0,"frame":12,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-015.png","error":0,"frame":15,"size":[256,160]}
+{"alpha":2,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-018.png","error":0,"frame":18,"size":[256,160]}
+{"alpha":1,"capture":"C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\flame_ring-frames/impact-021.png","error":0,"frame":21,"size":[256,160]}
