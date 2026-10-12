@@ -1,0 +1,384 @@
+{
+  "frames": 26,
+  "atlasSize": [
+    1024,
+    320
+  ],
+  "atlasBytes": 3752,
+  "jsonBytes": 2223,
+  "totalBytes": 5975,
+  "decodedBytes": 1310720,
+  "alphaLossless": true,
+  "rawClippedFrames": 0,
+  "supportMasked": true,
+  "sha256": "5487da18aa326e8fecfc333e01e1317979c053ad1336c1d243f7714f6ef479d1",
+  "framesProof": [
+    {
+      "id": "windup-000",
+      "sourceSha256": "a9b79ecfe85083edbb3910581654bd01fe6bb484e24aefeae20e6df0edd22bd0",
+      "rawBbox": [
+        126,
+        78,
+        130,
+        82
+      ],
+      "bbox": [
+        62,
+        38,
+        66,
+        42
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-003",
+      "sourceSha256": "bf64b1472aead636d76b76d8d872b04d0d74d759ecef945c0f6c861a19b0987d",
+      "rawBbox": [
+        116,
+        69,
+        136,
+        87
+      ],
+      "bbox": [
+        58,
+        32,
+        70,
+        46
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-006",
+      "sourceSha256": "2fa97a7eb9201ab8b555b36c6f5010d277eebc356e9dc17680b4f14425cca88f",
+      "rawBbox": [
+        114,
+        66,
+        140,
+        92
+      ],
+      "bbox": [
+        56,
+        31,
+        72,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-009",
+      "sourceSha256": "760739b894e79cffd891a7beaa788ba1640ae82a5e31cdb8b71354481ff55d26",
+      "rawBbox": [
+        113,
+        64,
+        142,
+        94
+      ],
+      "bbox": [
+        54,
+        31,
+        73,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-012",
+      "sourceSha256": "cc5bc70e19f7db5511d306fa9646eeef5d5b3b70124d6067e0486e51bf9a7bcd",
+      "rawBbox": [
+        113,
+        65,
+        143,
+        95
+      ],
+      "bbox": [
+        56,
+        30,
+        72,
+        50
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-015",
+      "sourceSha256": "c07543696527ebfc59919e087358198ce0a4cdc07bb8bfa178dd8c285832b08f",
+      "rawBbox": [
+        112,
+        64,
+        144,
+        96
+      ],
+      "bbox": [
+        55,
+        31,
+        73,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-000",
+      "sourceSha256": "10fd58cae2917a40d2892dda5607190383e70e06961b57d0d8d288e1d6efcd90",
+      "rawBbox": [
+        79,
+        53,
+        160,
+        81
+      ],
+      "bbox": [
+        41,
+        37,
+        48,
+        43
+      ],
+      "shape": "cone"
+    },
+    {
+      "id": "active-003",
+      "sourceSha256": "47a08e429b04c2c5a50f0cf0cc792484c0593e58f5339bd158e08fba218638a8",
+      "rawBbox": [
+        69,
+        62,
+        163,
+        83
+      ],
+      "bbox": [
+        39,
+        36,
+        49,
+        41
+      ],
+      "shape": "cone"
+    },
+    {
+      "id": "active-006",
+      "sourceSha256": "f03ea53000e6913aa23380974231044c198aefa95355794e14b269bd97d4ce0a",
+      "rawBbox": [
+        69,
+        64,
+        156,
+        98
+      ],
+      "bbox": [
+        33,
+        39,
+        46,
+        41
+      ],
+      "shape": "cone"
+    },
+    {
+      "id": "active-009",
+      "sourceSha256": "e08a9efc2c99c646762bf1eb5151e6475b1003bd1c34cad4c9ece5de2f3119af",
+      "rawBbox": [
+        70,
+        57,
+        135,
+        103
+      ],
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-012",
+      "sourceSha256": "2ba302b51419aba37119fee35acfd7e3d1996d393818ea6882f722c55c250e99",
+      "rawBbox": [
+        118,
+        58,
+        132,
+        68
+      ],
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-015",
+      "sourceSha256": "08cd1cf3faa7b232c1cc2efd603d782316c69a02febe62bb61c4939ba88ac61f",
+      "rawBbox": [
+        118,
+        54,
+        132,
+        68
+      ],
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-018",
+      "sourceSha256": "be1200f6498e6f09945df425ed307ff5a8ec8dfbc5fca9a099ee2d53a5aa114f",
+      "rawBbox": [
+        119,
+        54,
+        129,
+        66
+      ],
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-021",
+      "sourceSha256": "fffe94fdab1cbaeb736470f8cf480b4ad06b2a76379a3bc36be07f5110b653b9",
+      "rawBbox": [
+        119,
+        54,
+        129,
+        66
+      ],
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-024",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-027",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-030",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "active-033",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "cone"
+    },
+    {
+      "id": "impact-000",
+      "sourceSha256": "9944f366266c873a0e8b09cfc708f63c4c2aa819de5d041a0527c56435570208",
+      "rawBbox": [
+        127,
+        79,
+        129,
+        81
+      ],
+      "bbox": [
+        61,
+        37,
+        67,
+        43
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-003",
+      "sourceSha256": "a49e14ced2baade990afe8cd3a806edb7685d40cec701125314ec830a8bad054",
+      "rawBbox": [
+        122,
+        67,
+        133,
+        81
+      ],
+      "bbox": [
+        60,
+        33,
+        67,
+        41
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-006",
+      "sourceSha256": "c7a25d119a32b4794599ad6ba7b852a138b7ac829d05e6f77f5fd11359721d07",
+      "rawBbox": [
+        119,
+        59,
+        131,
+        69
+      ],
+      "bbox": [
+        59,
+        27,
+        68,
+        35
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-009",
+      "sourceSha256": "69c2d6a8d7df292bd817edb5de41232760ae20318732eef201a871b07745b7b4",
+      "rawBbox": [
+        119,
+        57,
+        131,
+        69
+      ],
+      "bbox": [
+        59,
+        28,
+        66,
+        35
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-012",
+      "sourceSha256": "8896e6497742e1be26967678d66a9b0d1c36eb524c65f12dc2f701453b3482c1",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        59
+      ],
+      "bbox": [
+        64,
+        26,
+        68,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-015",
+      "sourceSha256": "f74a0d75e16feff16e7326416b8600d5e8e7e6cc978e7f65539097d8faeabd22",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        58
+      ],
+      "bbox": [
+        64,
+        26,
+        66,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-018",
+      "sourceSha256": "783a5129b12430f8ce7043fa9ff2d35625875816c36c0656ce0386af27b2ca21",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        58
+      ],
+      "bbox": [
+        65,
+        28,
+        66,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-021",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "circle"
+    }
+  ]
+}
