@@ -84,7 +84,7 @@ def main():
                     'sourceSize': {'w': size, 'h': size}, 'anchor': anchor,
                 }
                 animations[record['animation']].append(record['name'])
-            stem = 'atlas-' + str(number)
+            stem = 'copper-v1-atlas-' + str(number)
             atlas.save(archived / (stem + '.png'), optimize=True)
             data = {'frames': frames, 'animations': dict(animations), 'meta': {
                 'app': 'ARPG original procedural Blender pipeline', 'version': '2.0', 'image': stem + '.webp',

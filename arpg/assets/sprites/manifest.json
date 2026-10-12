@@ -272,12 +272,12 @@
       "training_dragon"
     ],
     "sheets": [
-      "atlas-0.webp.json",
-      "atlas-1.webp.json",
-      "atlas-2.webp.json",
-      "atlas-3.webp.json",
-      "atlas-4.webp.json",
-      "atlas-5.webp.json"
+      "copper-v1-atlas-0.webp.json",
+      "copper-v1-atlas-1.webp.json",
+      "copper-v1-atlas-2.webp.json",
+      "copper-v1-atlas-3.webp.json",
+      "copper-v1-atlas-4.webp.json",
+      "copper-v1-atlas-5.webp.json"
     ],
     "animations": [
       "idle",
@@ -291,7 +291,7 @@
       "x": 0.5,
       "y": 0.5199252963066101
     },
-    "bytes": 1483416,
+    "bytes": 1483476,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
