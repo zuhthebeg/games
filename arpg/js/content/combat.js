@@ -89,7 +89,7 @@ export const ABILITIES = {
     damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['windup', 'recovery'],
   },
 
-  // Independent throne test challenge. Timings are never threat-scaled; one hit per active act.
+  // Official post-campaign throne boss. Timings are never threat-scaled; one hit per active act.
   dragon_flame: {
     name: '화염 숨결', windupMs: 1400, lockMs: 400, activeMs: 650, recoveryMs: 1900, cooldownMs: 6200,
     delivery: 'shape', shape: { type: 'cone', range: 390, arc: 64 }, trackTurnDeg: 45,
@@ -326,7 +326,7 @@ export const STAGES = {
   S18: stage('거미 여왕의 둥지', [['poison_spider', 0, .74, .3], ['poison_spider', 2000, .8, .7], ['poison_spider', 4000, .88, .5], ['spirit', 6000, .92, .2]]),
   S19: stage('봉인의 회랑', [['rune_guardian', 0, .76, .5], ['spirit', 2000, .84, .25], ['spirit', 4000, .84, .75], ['goblin_slinger', 6000, .92, .5]]),
   S20: stage('왕좌의 문', [['goblin_chief', 0, .78, .5], ['rune_guardian', 3000, .86, .25], ['wolf', 5000, .86, .75], ['wolf', 7000, .9, .4], ['spirit', 9000, .92, .6]]),
-  TD1: { name: '왕좌의 수호룡', goal: 'killAll', testChallenge: true, arena: { w: 1680, h: 1000 },
+  TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };
 

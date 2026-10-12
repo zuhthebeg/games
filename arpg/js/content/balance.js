@@ -33,7 +33,8 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
-    TD1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:1, rewardRank:4, rec:[4,'fine',0] },
+    // S20 aftermath: one fixed boss, HP below S20 chief (13860 vs 15770), stronger hits, no waves.
+    TD1: { hp:18, damage:3, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:3, rewardRank:20, rec:[22,'epic',4] },
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
     S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
     S3: { hp:3, damage:1.8, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },

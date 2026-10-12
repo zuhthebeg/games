@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=resolve(fileURLToPath(new URL('../../',import.meta.url)));
-const port=Number(process.env.ARPG_CDP_PORT||19458), httpPort=Number(process.env.ARPG_HTTP_PORT||8889);
+const port=Number(process.env.ARPG_CDP_PORT||19458), httpPort=Number(process.env.ARPG_HTTP_PORT||8890);
 const profile=await mkdtemp(join(tmpdir(),'arpg-multi-'));
 const server=spawn('python3',['-m','http.server',String(httpPort),'--bind','127.0.0.1'],{cwd:root,stdio:'ignore'});
 const chrome=spawn('/home/cocy/bin/chromium',['--headless=new','--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader',
@@ -46,11 +46,12 @@ class CDP {
 }
 try {
   let targets;for(let i=0;i<80;i++){try{targets=await(await fetch(`http://127.0.0.1:${port}/json`)).json();}catch{}if(targets?.some(t=>t.type==='page'))break;await sleep(100);}
+  assert.equal(server.exitCode,null,`static server could not bind (${httpPort})`);
   const origin=`http://127.0.0.1:${httpPort}`;
   const host=new CDP(targets.find(t=>t.type==='page').webSocketDebuggerUrl);clients.push(host);
   const room=undefined; // No room query: don't auto-launch the legacy S2 test path.
   const activate=async(c,selector)=>{await c.eval(`(()=>{const n=document.querySelector(${JSON.stringify(selector)});if(!n||n.disabled||!n.checkVisibility())throw Error('inaccessible '+${JSON.stringify(selector)});n.scrollIntoView({block:'center'});n.focus({preventScroll:true});})()`);await c.cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r',unmodifiedText:'\r'});await c.cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await sleep(150);};
-  const setup=async(c,uid)=>{await c.cmd('Emulation.setFocusEmulationEnabled',{enabled:true});await c.cmd('Runtime.enable');await c.cmd('Page.enable');await c.cmd('Log.enable');await c.navigate(`${origin}/arpg/?dev=1&coopTest=${uid}`);await c.wait('window.__arpg');await c.eval(`(async()=>{const {fixtureSave}=await import('./test/fixtures/multi-round.js');const {SaveStore}=await import('./js/meta/save.js');const s=fixtureSave('${uid}','${uid==='host'?'blade':'bow'}');localStorage.setItem('arpg.autoAttack','0');new SaveStore(localStorage).save(s);})()`);await c.cmd('Page.reload');await c.wait(`document.querySelector('#meta-screen').dataset.page==='inn'`);await activate(c,'[data-action="board"]');await activate(c,'[data-action="map-region"][data-region="throne"]');await activate(c,'[data-action="sortie"][data-stage="TD1"]');await activate(c,'[data-action="coop"]');};
+  const setup=async(c,uid)=>{await c.cmd('Emulation.setFocusEmulationEnabled',{enabled:true});await c.cmd('Runtime.enable');await c.cmd('Page.enable');await c.cmd('Log.enable');await c.navigate(`${origin}/arpg/?dev=1&coopTest=${uid}`);await c.wait('window.__arpg');await c.eval(`(async()=>{const {throneLateSave}=await import('./test/fixtures/throne-late.js');const {SaveStore}=await import('./js/meta/save.js');const s=throneLateSave('${uid}','${uid==='host'?'blade':'bow'}');localStorage.setItem('arpg.autoAttack','0');new SaveStore(localStorage).save(s);})()`);await c.cmd('Page.reload');await c.wait(`document.querySelector('#meta-screen').dataset.page==='inn'`);await activate(c,'[data-action="board"]');await activate(c,'[data-action="map-region"][data-region="throne"]');await activate(c,'[data-action="sortie"][data-stage="TD1"]');await activate(c,'[data-action="coop"]');};
   await setup(host,'host');
   const second=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent('about:blank')}`,{method:'PUT'})).json();const guest=new CDP(second.webSocketDebuggerUrl);clients.push(guest);await setup(guest,'guest');
   await host.wait('__arpg.world?.round.stageId==="TD1" && __arpg.multi.phase==="running"');await guest.wait('__arpg.world?.round.stageId==="TD1" && __arpg.multi.phase==="running"');
@@ -65,17 +66,23 @@ try {
   const gid=await guest.eval('__arpg.multi.uid');const x=await host.eval(`__arpg.world.entities.find(e=>e.pid==='${gid}').x`);await key(guest,'keyDown','KeyA');await host.wait(`__arpg.world.entities.find(e=>e.pid==='${gid}').x<${x-20}`);await key(guest,'keyUp','KeyA');
   await activate(guest,'[data-auto-toggle]');await activate(host,'[data-auto-toggle]');
   // Steer both axes through real input; a dead/cleared boss is already a success, not an approach timeout.
-  let held=[];const closeEnd=Date.now()+25000;
-  while(Date.now()<closeEnd){const s=await host.eval(`JSON.parse(JSON.stringify({state:__arpg.world.round.state,p:__arpg.world.entities[0],d:__arpg.world.entities.find(e=>e.type==='throne_dragon')}))`);
-    if(s.state==='clear'||s.d.dead)break;assert.ok(!s.p.terminal,'host must survive');
-    const dx=s.d.x-s.p.x,dy=s.d.y-s.p.y;if(Math.hypot(dx,dy)<120)break;
-    const want=[...(dx>18?['KeyD']:dx<-18?['KeyA']:[]),...(dy>18?['KeyS']:dy<-18?['KeyW']:[])];
-    for(const code of held)if(!want.includes(code))await host.cmd('Input.dispatchKeyEvent',{type:'keyUp',code,key:code.slice(3).toLowerCase()});
-    for(const code of want)if(!held.includes(code))await host.cmd('Input.dispatchKeyEvent',{type:'keyDown',code,key:code.slice(3).toLowerCase()});
-    held=want;await sleep(90);
+  const held=new Map([[host,[]],[guest,[]]]),closeEnd=Date.now()+300000;
+  while(Date.now()<closeEnd){
+    let cleared=0;
+    for(const c of [host,guest]){
+      const s=await c.eval(`JSON.parse(JSON.stringify({state:__arpg.world.round.state,p:__arpg.world.entities[0],d:__arpg.world.entities.find(e=>e.type==='throne_dragon')}))`);
+      if(s.state==='clear'||s.d.dead){cleared++;continue;}assert.ok(!s.p.terminal,'participant must survive');
+      const dx=s.d.x-s.p.x,dy=s.d.y-s.p.y,dist=Math.hypot(dx,dy);
+      const range=c===host?95:220;
+      const want=dist>range?[...(dx>18?['KeyD']:dx<-18?['KeyA']:[]),...(dy>18?['KeyS']:dy<-18?['KeyW']:[])]:[];
+      for(const code of held.get(c))if(!want.includes(code))await c.cmd('Input.dispatchKeyEvent',{type:'keyUp',code,key:code.slice(3).toLowerCase()});
+      for(const code of want)if(!held.get(c).includes(code))await c.cmd('Input.dispatchKeyEvent',{type:'keyDown',code,key:code.slice(3).toLowerCase()});
+      held.set(c,want);
+    }
+    if(cleared===2)break;await sleep(90);
   }
-  for(const code of held)await host.cmd('Input.dispatchKeyEvent',{type:'keyUp',code,key:code.slice(3).toLowerCase()});
-  await host.wait('__arpg.world.round.state==="clear"',60000);await guest.wait('__arpg.world.round.state==="clear"',20000);
+  for(const [c,keys] of held)for(const code of keys)await c.cmd('Input.dispatchKeyEvent',{type:'keyUp',code,key:code.slice(3).toLowerCase()});
+  await host.wait('__arpg.world.round.state==="clear"',1000);await guest.wait('__arpg.world.round.state==="clear"',20000);
   assert.equal(await host.eval('__arpg.save.lastReceipt.terminal'),'clear');assert.equal(await guest.eval('__arpg.save.lastReceipt.terminal'),'clear');assert.equal(await guest.eval('__arpg.multi.ownsSim'),false);
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));
   console.log(JSON.stringify({ok:true,transport:'two actual app documents / local BroadcastChannel (no relay credentials)',nativeQuestSelection:true,hostOwnsSim:true,guestOwnsSim:false,guestInputMovedOnHost:true,guestClips:[...cues],guestPhases:[...phaseNames],guestHP:{initial:hitHP,minimum:minHP},hostClear:true,guestClear:true,consoleErrors:0,screenshots:0},null,2));

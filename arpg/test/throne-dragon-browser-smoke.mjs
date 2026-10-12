@@ -101,13 +101,13 @@ try {
     await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/`});
     await waitFor('window.__arpg');
     // Persisted valid meta fixture only. No host entity writes / debug launch / fake attacks.
-    await evaluate(`(async()=>{const {fixtureSave}=await import('./test/fixtures/multi-round.js');const {SaveStore}=await import('./js/meta/save.js');const s=fixtureSave('host');localStorage.setItem('arpg.autoAttack','0');s.cleared.S1=false;s.stageThreat.S1=0;new SaveStore(localStorage).save(s);})()`);
+    await evaluate(`(async()=>{const {throneLateSave}=await import('./test/fixtures/throne-late.js');const {SaveStore}=await import('./js/meta/save.js');const s=throneLateSave('host');localStorage.setItem('arpg.autoAttack','0');s.cleared.S1=false;s.stageThreat.S1=0;new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
     await nativeActivate('[data-action="board"]',desktop);
     await nativeActivate('[data-action="map-region"][data-region="throne"]',desktop);
     const board=await evaluate(`document.querySelector('[data-stage="TD1"]').textContent`);
-    assert.match(board,/왕좌의 수호룡/);assert.match(board,/시험: 도전/);
-    assert.equal(await evaluate(`document.querySelector('[data-stage="S20"]').disabled`),true);
+    assert.match(board,/왕좌의 수호룡/);assert.doesNotMatch(board,/시험|균형|잠정/);assert.match(board,/추천 Lv.22/);
+    assert.equal(await evaluate(`document.querySelector('[data-stage="S20"]').disabled`),false);
     await nativeActivate('[data-action="sortie"][data-stage="TD1"]',desktop);
     await nativeActivate('[data-action="launch"]',desktop);
     await waitFor('__arpg.world?.round.stageId==="TD1" && __arpg.world.tick>0');
@@ -151,9 +151,9 @@ try {
       await sleep(35);
     }
     assert.ok(evade,'real native evade must produce host perfectDodge');
-    // Native AUTO toggle + movement + normal skill/potion buttons, no debug damage.
+    // Native AUTO toggle + movement + existing auto-consumables, no debug damage.
     await nativeActivate('[data-auto-toggle]',desktop);
-    const clearEnd=Date.now()+60000;
+    const clearEnd=Date.now()+300000;
     while(Date.now()<clearEnd){s=await sample();if(s.state==='clear'||s.p.terminal==='clear')break;
       assert.ok(!s.p.terminal,'battle failed before clear');const dx=s.d.x-s.p.x,dy=s.d.y-s.p.y,dist=Math.hypot(dx,dy);
       if(dist>95)await steer(dx/dist,dy/dist);else await steer(0,0);
@@ -162,7 +162,7 @@ try {
     await steer(0,0);s=await sample();assert.equal(s.state,'clear',JSON.stringify({viewport:[width,height],s,auto:await evaluate(`document.querySelector('[data-auto-toggle]').getAttribute('aria-pressed')`)}));assert.equal(s.d.dead,true);
     await waitFor(`document.querySelector('#meta-screen').dataset.page==='receipt'`,10000);
     const receipt=await evaluate(`JSON.parse(JSON.stringify(__arpg.save.lastReceipt))`);assert.equal(receipt.stageId,'TD1');assert.equal(receipt.terminal,'clear');
-    assert.equal(await evaluate(`__arpg.save.cleared.S20`),false);
+    assert.equal(await evaluate(`__arpg.save.cleared.S20`),true);
     console.error('NATIVE_VIEWPORT_PASS',width,height);
     results.push({viewport:[width,height],native:desktop?'keyboard Enter/WASD/Shift + AUTO':'touch UI/joystick/dodge + AUTO',board,geometry,clips:[...clips],phases:[...phases],damage:[...damage],beforeHp,evade,clear:{tick:s.tick,dragonHp:s.d.hp,receipt}});
   }

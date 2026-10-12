@@ -15,10 +15,10 @@ const base=JSON.parse(readFileSync(new URL('./fixtures/throne-baseline.json',imp
 const ids=['dragon_flame','dragon_stomp','dragon_tail'];
 const fresh=()=>createSave({name:'용 시험',answers:[0,0,0,0,0],createdAt:1});
 const digest=w=>createHash('sha256').update(JSON.stringify(w)).digest('hex');
-test('separate TD1 is immediately accessible, leaves original stages and map dependencies byte-identical',()=>{
+test('official TD1 is gated after S20, leaves original stages and map dependencies byte-identical',()=>{
  assert.equal(STAGES.TD1?.name,'왕좌의 수호룡');assert.equal(STAGES.TD1.goal,'killAll');
  assert.equal(STAGES.TD1.spawns.length,1);assert.equal(STAGES.TD1.spawns[0].monster,'throne_dragon');
- assert.equal(STAGES.TD1.testChallenge,true);assert.ok(mapUnlocked(fresh(),'TD1'));assert.ok(availableStages(fresh()).includes('TD1'));
+ assert.equal(STAGES.TD1.testChallenge,undefined);assert.equal(mapUnlocked(fresh(),'TD1'),false);assert.equal(availableStages(fresh()).includes('TD1'),false);const late=fresh();late.cleared.S20=true;assert.ok(mapUnlocked(late,'TD1'));
  for(const [id,stage] of Object.entries(base.stages))assert.deepEqual(STAGES[id],stage,id);
  for(const [id,map] of Object.entries(base.maps))assert.deepEqual(MAPS[id],map,id);
  assert.equal(biomeForStage('TD1'),'throne_forecourt');
@@ -78,10 +78,10 @@ test('real attacks cycle without overlap; normal kill/settlement uses bounded ex
  assert.deepEqual([...seen].sort(),ids.slice().sort());
  const save=fresh();assert.ok(validateSave(selectThreat(save,'TD1',1)));
  const reward=trackRound(save,createTracker(11),[{type:'kill',monster:'throne_dragon',xp:MONSTERS.throne_dragon.xp,stageId:'TD1',threat:1,x:840,y:500}]);
- assert.ok(reward.tracker.tempLoot.items.length<=2);assert.ok(reward.tracker.tempLoot.gold<=40);
+ assert.ok(reward.tracker.tempLoot.items.length<=2);assert.ok(reward.tracker.tempLoot.gold<=100);
  const out=settleRound(save,{stageId:'TD1',terminal:'clear',depositedXp:reward.tracker.depositedXp,tempLoot:reward.tracker.tempLoot});
  assert.ok(validateSave(out.save));assert.equal(out.save.cleared.TD1,true);assert.equal(mapUnlocked(out.save,'S20'),false);
- assert.ok(out.receipt.stageXp<=260); // Test challenge is not an immediately available high-tier farming shortcut.
+ assert.equal(out.receipt.stageXp,2020); // Single-enemy late XP anchor S19, never unlocks S20.
 });
 for(const id of Object.keys(base.traces))test(`${id} host trace unchanged from origin/main79d87a4 (3 seeds ×1800ticks)`,()=>{
  for(const [seed,expected] of Object.entries(base.traces[id])){const w=createWorld({seed:Number(seed)});addPlayer(w,{pid:'a',weapon:'bow',mods:{maxHp:10000}});addPlayer(w,{pid:'b',weapon:'focus',mods:{maxHp:10000}});startStage(w,id);const h=createHash('sha256');

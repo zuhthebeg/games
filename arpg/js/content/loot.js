@@ -1,6 +1,7 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
-  throne_dragon: { gold: [12, 18], stacks: [{ id: 'scrap', count: 3 }, { id: 'fang', count: 2 }], items: [] },
+  // Existing late guardian rewards; ordinary T3 gear rolls, no chief guarantee or new currency.
+  throne_dragon: { gold: [18, 26], stacks: [{ id: 'rune_shard', count: 2 }, { id: 'scrap', count: 4 }, { id: 'fang', count: 2 }], items: [] },
   wolf: {
     gold: [8, 12], stacks: [
       { id: 'hide', count: 2 }, { id: 'fang', count: 1, chance: 0.7 },
