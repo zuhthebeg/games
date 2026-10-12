@@ -38,7 +38,9 @@ test('nine damage values, six mana costs and R1 area sizes change; basics, monst
     assert.deepEqual(ABILITIES[id], expected, id);
   }
   assert.deepEqual(WEAPONS, before.WEAPONS);
-  assert.deepEqual(MONSTERS, before.MONSTERS);
+  // D0 adds only the stationary S1 sample; the historical nine remain exact.
+  const { training_dragon, ...previousMonsters } = MONSTERS;
+  assert.deepEqual(previousMonsters, before.MONSTERS);
   assert.deepEqual(PLAYER_BASE, before.PLAYER_BASE);
   assert.equal(ABILITIES.healing_light.damage, 0);
 });

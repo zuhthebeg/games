@@ -10,11 +10,12 @@ export const ATLAS_IDS = Object.freeze({
   wolf: 'wolf',
   poison_spider: 'poison-spider',
   iron_boar: 'iron-boar',
+  training_dragon: 'dragon',
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
 
 export function atlasScale(entity) {
-  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : 1) * (entity.sizeScale || 1);
+  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : entity.type === 'training_dragon' ? 2.4 : 1) * (entity.sizeScale || 1);
 }
 
 export function visualKey(entity) {

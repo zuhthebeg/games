@@ -33,7 +33,7 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
-    S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1 },
+    S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
     S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
     S3: { hp:3, damage:1.8, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },
     S4: { hp:2.5, bossHp:6, damage:1.15, eliteChance:.10, waves:9, waveMs:16000, concurrent:3 },

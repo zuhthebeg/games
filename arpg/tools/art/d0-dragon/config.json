@@ -1,0 +1,57 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/d0-dragon/frames",
+  "characters": [
+    {
+      "name": "dragon",
+      "model": "C:/Users/user/ai-tools/arpg-art/d0-dragon/source/LlwD0QNUPj.glb",
+      "keep": [
+        "Dragon"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Wing1.L",
+        "Wing1.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "pose_profile": "dragon",
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Headbutt",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "label": "드래곤",
+      "content_ids": [
+        "training_dragon"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/d0-dragon/source",
+  "webp_quality": 52
+}

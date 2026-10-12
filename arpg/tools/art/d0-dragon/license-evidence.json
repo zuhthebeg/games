@@ -1,0 +1,68 @@
+{
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "selected": "LlwD0QNUPj",
+  "observed_at": "2026-10-12",
+  "archive": "C:/Users/user/ai-tools/arpg-art/d0-dragon/source",
+  "page_snapshots": "HTML/DOM, not screenshots",
+  "candidates": [
+    {
+      "id": "VBvzjFIYws",
+      "name": "Dragon",
+      "model_page": "https://poly.pizza/m/VBvzjFIYws",
+      "individual_page_text": "Jul 11, 2022 \u2022 FBX/GLTF format \u2022 Public Domain (CC0)",
+      "download_url": "https://static.poly.pizza/9714f533-5d2d-4cfd-b8f1-c8dfff64a672.glb",
+      "files": [
+        {
+          "file": "VBvzjFIYws.html",
+          "bytes": 121322,
+          "sha256": "666d4bcc0997dfa721224d0a39a30a5df05803ed490f792de6b23957dd4144c6"
+        },
+        {
+          "file": "VBvzjFIYws.glb",
+          "bytes": 268896,
+          "sha256": "983f28d4864199f45e1ca67005466d35f2381f08ecf2e234735bf65ecd7be252"
+        }
+      ]
+    },
+    {
+      "id": "LlwD0QNUPj",
+      "name": "Dragon Evolved",
+      "model_page": "https://poly.pizza/m/LlwD0QNUPj",
+      "individual_page_text": "Oct 23, 2022 \u2022 FBX/GLTF format \u2022 Public Domain (CC0)",
+      "download_url": "https://static.poly.pizza/90ed3740-d8c4-4910-88ce-ac2ed426022d.glb",
+      "files": [
+        {
+          "file": "LlwD0QNUPj.html",
+          "bytes": 120372,
+          "sha256": "a06d50a0559f5dbbe876690000137582823cac90de85184e1df4e8c9364e8290"
+        },
+        {
+          "file": "LlwD0QNUPj.glb",
+          "bytes": 436000,
+          "sha256": "f660d8f48be4ea3f39639f6206a0181127e7fe7503cb4bad8d07d27d80528f3a"
+        }
+      ]
+    },
+    {
+      "id": "3rUm1cN3yp",
+      "name": "Dragon",
+      "model_page": "https://poly.pizza/m/3rUm1cN3yp",
+      "individual_page_text": "Oct 23, 2022 \u2022 FBX/GLTF format \u2022 Public Domain (CC0)",
+      "download_url": "https://static.poly.pizza/ae5b8510-1fa5-4d53-b943-a4f3b88fb629.glb",
+      "files": [
+        {
+          "file": "3rUm1cN3yp.html",
+          "bytes": 112078,
+          "sha256": "58b3b81c067bdcd6f0f7773af8953d567696d27e27fbf1e27ce44666125b7bac"
+        },
+        {
+          "file": "3rUm1cN3yp.glb",
+          "bytes": 251540,
+          "sha256": "d8a12f3f819e86518f5a44984db611ffaaa800895da33928d66519e629615705"
+        }
+      ]
+    }
+  ]
+}

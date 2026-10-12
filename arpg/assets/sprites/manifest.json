@@ -263,5 +263,34 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "dragon",
+    "label": "드래곤",
+    "monster": true,
+    "content_ids": [
+      "training_dragon"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6693471968173981
+    },
+    "bytes": 667250,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

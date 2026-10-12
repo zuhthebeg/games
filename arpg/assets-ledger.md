@@ -86,3 +86,10 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 - Source: `assets/items/wood-art.py`; authored timber polygons, bark facets and growth rings using the existing item-art Pillow 4× method/palette, 84px fit, 64-color RGBA quantization and lossless WebP. No AI generation, paid API, downloads, or screenshots.
 - Delivery: `assets/items/wood.webp`, **96×96**, transparent border, **2,140 bytes**. Exact source/output SHA-256 and method: `assets/items/manifest.json`; fuller method and rebuild order: `assets/items/PROVENANCE.md`.
 - Mapping: only wood material → wood.webp with timber SVG decode-failure fallback. All prior 35 icon bytes/manifest records preserved; item data, economics, drops and sim unchanged. Source/native/DOM inspection is not physical-device or new human visual approval.
+
+## D0 Training Dragon — exact individual CC0 source (2026-10-12)
+- Author: **Quaternius**. Individual model **Dragon Evolved, https://poly.pizza/m/LlwD0QNUPj**. Exact page text: “Oct 23, 2022 • FBX/GLTF format • Public Domain (CC0)”, linked to https://creativecommons.org/publicdomain/zero/1.0/ . Generic Quaternius license pages are not used to infer this.
+- GLB: **436,000 bytes**, SHA-256 `f660d8f48be4ea3f39639f6206a0181127e7fe7503cb4bad8d07d27d80528f3a` (download https://static.poly.pizza/90ed3740-d8c4-4910-88ce-ac2ed426022d.glb). Page snapshot 120,372 bytes, SHA-256 `a06d50a0559f5dbbe876690000137582823cac90de85184e1df4e8c9364e8290`.
+- Other two CC0 candidates (VBvzjFIYws Dragon, 3rUm1cN3yp Dragon) archived with hashes in `tools/art/d0-dragon/license-evidence.json`; not shipped.
+- Offline archive: `C:/Users/user/ai-tools/arpg-art/d0-dragon/source` (GLB, HTML, baked blends). Raw frames stay outside the checkout. No runtime hotlinks.
+- Delivery: `assets/sprites/dragon/atlas-{0,1}.webp` + JSON, **424 frames, 8 directions × idle/run/attack/hit/death, 667,250 bytes**. `training_dragon` (S1, invulnerable, no moves/attacks/rewards), visual scale 2.4×.

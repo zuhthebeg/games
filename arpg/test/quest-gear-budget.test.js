@@ -6,7 +6,7 @@ import { validateSave, SaveStore } from '../js/meta/save.js';
 import { questEvents, rewardSave } from './fixtures/quest-rewards.js';
 import { CoopSession } from '../js/net/session.js';
 import { createMemoryTransport } from '../js/net/loopback.js';
-import { emptyInput } from '../js/sim/world.js';
+import { emptyInput, createWorld, addPlayer, startStage, step } from '../js/sim/world.js';
 
 const settle = (save, tracker, stageId, terminal = 'clear') => settleRound(save, { stageId, terminal, ...tracker });
 
@@ -85,8 +85,12 @@ test('weight overflow spends slots once; training/empty abort grant no gear and 
   assert.ok(tracker.gearAwarded > 0);
   const retry = trackRound(save, tracker, events).tracker;
   assert.equal(retry.tempLoot.items.length, 0);
+  // Invulnerable S1 samples cannot emit the synthetic kill-per-spawn fixture.
+  const world = createWorld({ seed: 15 }); addPlayer(world, { pid: 'a' }); startStage(world, 'S1');
+  const trainingEvents = Array.from({ length: 901 }, () => step(world, { a: emptyInput() })).flat();
+  assert.equal(world.round.state, 'clear');
   for (const terminal of ['clear','return_scroll','death']) {
-    const training = trackRound(save, createTracker(15), questEvents('S1', 15)).tracker;
+    const training = trackRound(save, createTracker(15), trainingEvents).tracker;
     assert.equal(settle(save, training, 'S1', terminal).receipt.lootKept.items.length, 0);
   }
   for (const terminal of ['return_scroll','death']) {

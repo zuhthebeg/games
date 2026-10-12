@@ -196,6 +196,10 @@ export const MONSTERS = {
     hp: 1, r: 22, speed: 0, poise: 0, kbResist: 1, abilities: [], invulnerable: true,
     xp: 0, keepRange: [0, 0],
   },
+  training_dragon: {
+    hp: 1, r: 32, speed: 0, poise: 0, kbResist: 1, abilities: [], invulnerable: true,
+    xp: 0, keepRange: [0, 0],
+  },
   goblin_grunt: {
     hp: 62, r: 18, speed: 118, poise: 30, kbResist: 0, abilities: ['goblin_slash', 'goblin_hop'],
     xp: 8, keepRange: [40, 70],
@@ -237,8 +241,9 @@ const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
 // Stage encounters (design §4). Positions are fractions of the arena.
 export const STAGES = {
   S1: {
-    name: '소환 시험', goal: 'timer', timerMs: 30000, maxConcurrent: 1,
-    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 }],
+    name: '소환 시험', goal: 'timer', timerMs: 30000, maxConcurrent: 2,
+    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 },
+      { monster: 'training_dragon', at: 0, fx: 0.82, fy: 0.5 }],
   },
   S2: {
     name: '끊긴 여관길', goal: 'killAll', maxConcurrent: 3,

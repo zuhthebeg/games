@@ -1,0 +1,223 @@
+{
+  "ok": true,
+  "idle_body_stability": {
+    "E": {
+      "max_torso_drift_px": 0.9373168945390126,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "SE": {
+      "max_torso_drift_px": 0.9373245239335437,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "S": {
+      "max_torso_drift_px": 0.93731689453125,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "SW": {
+      "max_torso_drift_px": 0.93731689453125,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "W": {
+      "max_torso_drift_px": 0.93731689453125,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "NW": {
+      "max_torso_drift_px": 0.93731689453125,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "N": {
+      "max_torso_drift_px": 0.93731689453125,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    },
+    "NE": {
+      "max_torso_drift_px": 0.9373168945390126,
+      "fixed_ground_anchor": [
+        0.5,
+        0.6693471968173981
+      ],
+      "ground_drift": 0.0
+    }
+  },
+  "checked_mesh": "Dragon",
+  "model_sha256": "f660d8f48be4ea3f39639f6206a0181127e7fe7503cb4bad8d07d27d80528f3a",
+  "skinned_clip_motion": {
+    "idle": {
+      "samples": 15,
+      "max_skinned_rms_world": 0.5773458542731251,
+      "source": "CharacterArmature|Flying_Idle"
+    },
+    "run": {
+      "samples": 9,
+      "max_skinned_rms_world": 0.5732599202393667,
+      "source": "CharacterArmature|Fast_Flying"
+    },
+    "attack": {
+      "samples": 15,
+      "max_skinned_rms_world": 0.8719020269486989,
+      "source": "CharacterArmature|Headbutt"
+    },
+    "hit": {
+      "samples": 7,
+      "max_skinned_rms_world": 0.6069731293458923,
+      "source": "CharacterArmature|HitReact"
+    },
+    "death": {
+      "samples": 7,
+      "max_skinned_rms_world": 1.904586282220203,
+      "source": "CharacterArmature|Death"
+    }
+  },
+  "direction_vectors": {
+    "E": {
+      "head_minus_torso_xy": [
+        0.9998214244842529,
+        -0.018900202587246895
+      ],
+      "expected_xy": [
+        1.0,
+        0.0
+      ],
+      "dot": 0.9998214244842529
+    },
+    "SE": {
+      "head_minus_torso_xy": [
+        0.6936159729957581,
+        -0.7203449606895447
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9998213350772858
+    },
+    "S": {
+      "head_minus_torso_xy": [
+        -0.018900247290730476,
+        -0.9998214244842529
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        -1.0
+      ],
+      "dot": 0.9998214244842529
+    },
+    "SW": {
+      "head_minus_torso_xy": [
+        -0.7203449606895447,
+        -0.6936159729957581
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        -0.7071067690849304
+      ],
+      "dot": 0.9998213350772858
+    },
+    "W": {
+      "head_minus_torso_xy": [
+        -0.9998214244842529,
+        0.018900291994214058
+      ],
+      "expected_xy": [
+        -1.0,
+        -1.2246468525851679e-16
+      ],
+      "dot": 0.9998214244842529
+    },
+    "NW": {
+      "head_minus_torso_xy": [
+        -0.6936159729957581,
+        0.7203449606895447
+      ],
+      "expected_xy": [
+        -0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9998213350772858
+    },
+    "N": {
+      "head_minus_torso_xy": [
+        0.018900159746408463,
+        0.9998214244842529
+      ],
+      "expected_xy": [
+        6.123234262925839e-17,
+        1.0
+      ],
+      "dot": 0.9998214244842529
+    },
+    "NE": {
+      "head_minus_torso_xy": [
+        0.7203449606895447,
+        0.6936159729957581
+      ],
+      "expected_xy": [
+        0.7071067690849304,
+        0.7071067690849304
+      ],
+      "dot": 0.9998213350772858
+    }
+  },
+  "articulated_wings": [
+    "Wing1.L",
+    "Wing1.R",
+    "Wing2.L",
+    "Wing2.R"
+  ],
+  "run_wing_motion_radians": {
+    "Wing1.L": 0.5722064971923828,
+    "Wing1.R": 0.5722064971923828,
+    "Wing2.L": 1.0760899782180786,
+    "Wing2.R": 1.0760890245437622
+  },
+  "hit_source": "original HitReact, not an aliased locomotion clip",
+  "source_frame_ranges": {
+    "idle": [
+      0.0,
+      36.0
+    ],
+    "run": [
+      0.0,
+      20.0
+    ],
+    "attack": [
+      0.0,
+      36.0
+    ],
+    "hit": [
+      0.0,
+      16.0
+    ],
+    "death": [
+      0.0,
+      16.0
+    ]
+  }
+}
