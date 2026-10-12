@@ -19,7 +19,7 @@ import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
 import { icon, itemIcon } from './icons.js';
-import { ACADEMY, skillIcon, skillCardHtml } from './skill-view.js';
+import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
@@ -110,12 +110,12 @@ export class HubUI {
       }
     });
     this.root.addEventListener('keydown', event => {
-      const tab = event.target.closest('[data-action="academy-tab"]');
+      const tab = event.target.closest('[data-action="academy-tab"], [data-action="skill-family-tab"]');
       if (!tab || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
       event.preventDefault();
       const index = FAMILIES.indexOf(tab.dataset.family);
       const next = event.key === 'Home' ? 0 : event.key === 'End' ? FAMILIES.length-1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + FAMILIES.length) % FAMILIES.length;
-      this.action('academy-tab',{family:FAMILIES[next]});
+      this.action(tab.dataset.action,{family:FAMILIES[next]});
     });
     // Capture keeps rotation working when a finger leaves the portrait hitbox.
     let rotation;
@@ -179,7 +179,12 @@ export class HubUI {
     else this.showIntro();
   }
 
-  show(html, page, { shell = false } = {}) {
+  // keepScroll: an in-place re-render of the same page (a +/− or slot tap) keeps the reading position and the pressed control.
+  show(html, page, { shell = false, keepScroll = false } = {}) {
+    const keep = keepScroll && this.root.dataset.page === page;
+    const scroll = keep ? this.root.querySelector('.inn-shell>.content')?.scrollTop || 0 : 0;
+    const active = keep ? document.activeElement : null;
+    const focusKey = active && this.root.contains(active) && !active.closest('dialog') && active.dataset?.action ? { ...active.dataset } : null;
     this.enchantFx?.close();
     this.root.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
     this.onOverlay();
@@ -190,10 +195,17 @@ export class HubUI {
     this.root.innerHTML = html;
     this.root.scrollTop = 0;
     this.sheetOrigin = null;
+    const content = keep && this.root.querySelector('.inn-shell>.content');
+    if (content) content.scrollTop = scroll;
     const heading = this.root.querySelector('h1, h2');
     if (heading) {
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });
+    }
+    if (focusKey) {
+      const same = [...this.root.querySelectorAll('[data-action]')].find(node => Object.keys(focusKey).length === Object.keys(node.dataset).length
+        && Object.entries(focusKey).every(([key, value]) => node.dataset[key] === value));
+      if (same && !same.disabled) same.focus({ preventScroll: true });
     }
   }
 
@@ -284,9 +296,9 @@ export class HubUI {
       + `${footer ? `<footer class="action-footer">${footer}</footer>` : ''}</div>`;
   }
 
-  showInnPanel(title, content, panel, footer = '', { eyebrow = '', back = 'inn' } = {}) {
+  showInnPanel(title, content, panel, footer = '', { eyebrow = '', back = 'inn', keepScroll = false } = {}) {
     this.panel = panel;
-    this.show(this.shellHtml(this.panelHeader(title, eyebrow, back), content, footer), panel, { shell: true });
+    this.show(this.shellHtml(this.panelHeader(title, eyebrow, back), content, footer), panel, { shell: true, keepScroll });
   }
 
   weightHtml(weight = carriedWeight(this.save), limit = capacity(this.save)) {
@@ -656,14 +668,16 @@ export class HubUI {
     return `<div class="p2-two" role="group" aria-label="캐릭터 탭">${[['stats','능력치'],['skills','기술']].map(([id,label]) => button(label, 'character-tab', `data-tab="${id}" aria-pressed="${tab === id}"`)).join('')}</div>`;
   }
 
-  showCharacterSkills() {
+  showCharacterSkills({ keepScroll = false } = {}) {
     this.panel = 'character-skills';
-    const rows = characterSkills(this.save).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
-    const weapon = weaponFamily(this.save);
-    const slots = loadoutOf(this.save).map((id, i) => id
-      ? button(`<b>${i + 1}</b>${skillIcon(id)}<span>${escape(ABILITIES[id].name)}</span>${canUseSkill(id, weapon) ? '' : '<i class="slot-blocked" aria-label="이 무기로 사용 불가">✕</i>'}`, 'skill-detail', `id="loadout-slot-${i + 1}" data-id="${id}" class="loadout-slot${canUseSkill(id, weapon) ? '' : ' blocked'}"`)
-      : `<div class="loadout-slot empty" id="loadout-slot-${i + 1}"><b>${i + 1}</b><span>—</span></div>`).join('');
-    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<div class="loadout" aria-label="기술 슬롯">${slots}</div><div class="character-skills">${rows}</div>`, 'character-skills');
+    const known = characterSkills(this.save);
+    this.skillFamily ||= weaponFamily(this.save);
+    const family = this.skillFamily;
+    const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${FAMILY_LABELS[id]} ${known.filter(k => ABILITIES[k].family === id).length}</span>`, 'skill-family-tab',
+      `data-family="${id}" id="skill-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="skill-panel"`)).join('');
+    const rows = known.filter(id => ABILITIES[id].family === family).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
+    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}${loadoutHtml(this.save)}<div class="academy-tabs skill-tabs" role="tablist" aria-label="기술 계열">${tabs}</div>`
+      + `<section id="skill-panel" class="character-skills faculty-${family}" role="tabpanel" aria-labelledby="skill-tab-${family}">${rows || '<p class="muted">배운 기술 없음</p>'}</section>`, 'character-skills', '', { keepScroll });
   }
 
   openSkill(id) {
@@ -679,13 +693,13 @@ export class HubUI {
     this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>`, slotButtons));
   }
 
-  showTrainer() {
+  showTrainer({ keepScroll = false } = {}) {
     this.academyFamily ||= ITEMS[equippedItem(this.save,'weapon')?.id]?.family || 'blade';
     const family = this.academyFamily, school = ACADEMY[family];
     const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
     const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)].sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
     const ladder = [0,1,2].map(grade => `<section class="academy-stage" data-grade="${grade}"><h3><span>${grade+1}</span>${['입문','숙련','상급'][grade]}</h3><div class="academy-stage-cards">${ids.filter(id => SKILL_DISPLAY[id].grade === grade).map(id => skillCardHtml(id,this.save)).join('')}</div></section>`).join('');
-    this.showInnPanel('아카데미', `<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법'});
+    this.showInnPanel('아카데미', `${loadoutHtml(this.save, { interactive: false })}<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법', keepScroll});
   }
 
   showAllocation(required = false, initialize = true) {
@@ -716,7 +730,7 @@ export class HubUI {
     const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
     this.panel = required ? null : 'character';
     this.show(this.shellHtml(this.panelHeader(required ? '레벨이 올랐다' : '캐릭터', required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),
-      required ? 'level-up' : 'character', { shell: true });
+      required ? 'level-up' : 'character', { shell: true, keepScroll: !initialize });
   }
 
   // --- Contract board and departure check ---
@@ -886,14 +900,24 @@ export class HubUI {
         return this.launch('S1');
       case 'inn':
       case 'result-inn': return this.showInn();
-      case 'character-tab': return data.tab === 'skills' ? this.showCharacterSkills() : this.showAllocation(false);
+      case 'character-tab':
+        if (data.tab !== 'skills') return this.showAllocation(false);
+        this.skillFamily = null;
+        return this.showCharacterSkills();
+      case 'skill-family-tab':
+        if (!FAMILIES.includes(data.family)) return;
+        this.skillFamily = data.family;
+        this.showCharacterSkills({ keepScroll: true });
+        this.root?.querySelector(`[data-action="skill-family-tab"][data-family="${data.family}"]`)?.focus({preventScroll:true});
+        return;
       case 'skill-detail': return this.openSkill(data.id);
       case 'skill-slot': {
         const slot = Number(data.slot);
         // Tapping the slot a skill already occupies takes it out.
         this.commit(setSlot(this.save, weaponFamily(this.save), slot, slotOf(this.save, data.id) === slot ? null : data.id));
-        this.showCharacterSkills();
-        return this.openSkill(data.id);
+        if (data.context === 'academy') return this.showTrainer({ keepScroll: true });
+        this.showCharacterSkills({ keepScroll: true });
+        return data.context === 'character' ? undefined : this.openSkill(data.id);
       }
       case 'character': return this.showAllocation(false);
       case 'close-sheet': return this.closeSheet();
@@ -1053,10 +1077,10 @@ export class HubUI {
       case 'learn-skill':
         this.commit(learnSkill(this.save, data.id));
         if (loadoutOf(this.save).includes(null)) this.commit(equipSkill(this.save, data.family || ABILITIES[data.id].family, data.id));
-        return this.showTrainer();
+        return this.showTrainer({ keepScroll: true });
       case 'equip-skill':
         this.commit(equipSkill(this.save, data.family, data.id));
-        return this.showTrainer();
+        return this.showTrainer({ keepScroll: true });
       case 'stat-plus':
       case 'stat-minus':
         if (action === 'stat-minus') this.draft[data.key] -= 1;

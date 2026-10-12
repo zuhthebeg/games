@@ -122,7 +122,9 @@ try {
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await waitFor(`!document.querySelector('dialog[open]')`);
     await nativeActivate('[data-action="character"]',desktop);
     await nativeActivate('[data-action="character-tab"][data-tab="skills"]',desktop);await audit();
-    assert.deepEqual(await evaluate(`[...document.querySelectorAll('.character-skills [data-action="skill-detail"]')].map(n=>n.dataset.id)`),['heavy_cleave','flame_ring','whirl','frost_lance','lunge','volley','ember_bolt']);
+    assert.deepEqual(await evaluate(`[...document.querySelectorAll('.character-skills [data-action="skill-detail"]')].map(n=>n.dataset.id)`),['heavy_cleave','whirl','lunge']);
+    await nativeActivate('[data-action="skill-family-tab"][data-family="focus"]',desktop);
+    assert.deepEqual(await evaluate(`[...document.querySelectorAll('.character-skills [data-action="skill-detail"]')].map(n=>n.dataset.id)`),['flame_ring','frost_lance','ember_bolt']);
     await nativeActivate('.character-skills [data-action="skill-detail"][data-id="frost_lance"]',desktop);await audit();
     assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('620 px')&&document.querySelector('dialog[open]').textContent.includes('12 MP')`));
     await nativeActivate('#skill-slot-1',desktop);assert.equal(await evaluate('__arpg.save.loadout[0]'),'frost_lance');await nativeActivate('[data-action="close-sheet"]',desktop);

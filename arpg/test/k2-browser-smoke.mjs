@@ -121,13 +121,18 @@ try {
     const slots=()=>evaluate(`[...document.querySelectorAll('.loadout-slot')].map(n=>({id:n.dataset.id||null,blocked:n.classList.contains('blocked'),x:!!n.querySelector('.slot-blocked')}))`);
     assert.deepEqual((await slots()).map(s=>s.id),['whirl','heavy_cleave','lunge']);
     // Put a magic skill into slot 3 from its detail sheet (blade can cast magic at 60%).
-    await nativeActivate('.character-skill[data-id="frost_lance"]');await audit();
+    // Learned skills are grouped by family; the tab opens on the equipped weapon's family.
+    assert.equal(await evaluate(`document.querySelector('[data-action="skill-family-tab"][aria-selected="true"]').dataset.family`),'blade');
+    assert.deepEqual(await evaluate(`[...document.querySelectorAll('.character-skill')].map(n=>n.dataset.id)`),['heavy_cleave','whirl','lunge']);
+    await nativeActivate('[data-action="skill-family-tab"][data-family="focus"]');
+    await nativeActivate('.character-skill[data-id="frost_lance"] [data-action="skill-detail"]');await audit();
     await nativeActivate('#skill-slot-3');
     assert.deepEqual(await evaluate('[...__arpg.save.loadout]'),['whirl','heavy_cleave','frost_lance']);
     assert.equal(await evaluate(`document.querySelector('#skill-slot-3').getAttribute('aria-pressed')`),'true');
     await nativeActivate('[data-action="close-sheet"]');
     // A bow skill in slot 2 is blocked for the blade: ✕ in the loadout.
-    await nativeActivate('.character-skill[data-id="volley"]');await nativeActivate('#skill-slot-2');await nativeActivate('[data-action="close-sheet"]');
+    await nativeActivate('[data-action="skill-family-tab"][data-family="bow"]');
+    await nativeActivate('.character-skill[data-id="volley"] [data-action="skill-detail"]');await nativeActivate('#skill-slot-2');await nativeActivate('[data-action="close-sheet"]');
     const withBow=await slots();
     assert.deepEqual(withBow.map(s=>s.id),['whirl','volley','frost_lance']);assert.deepEqual(withBow.map(s=>s.x),[false,true,false]);await audit();
     await command('Page.reload');await waitFor(page('inn'));

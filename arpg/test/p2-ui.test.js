@@ -74,7 +74,7 @@ test('trainer shows all three families, exact ability numbers and learned/defaul
     for(const chip of [a.heal?`회복 최대 HP ${Math.round(a.heal.maxHpFrac*100)}%`:`피해 ${a.damage}`,`재사용 ${amount(a.cooldownMs/1000)}초`,`${a.manaCost||0} MP`]) assert.ok(h.html.includes(chip));
   }
   assert.ok(h.html.includes('data-id="ember_bolt"'));
-  assert.ok(h.html.includes('data-id="frost_lance" data-family="focus" aria-pressed="true"'));
+  assert.match(h.html,/data-action="skill-slot" data-id="frost_lance" data-slot="\d" data-context="academy" aria-pressed="true"/);
 });
 
 test('bag and stash show only their belongings; supply merchant sells both locations and materials', () => {

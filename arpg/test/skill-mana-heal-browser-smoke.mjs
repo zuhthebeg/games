@@ -63,8 +63,8 @@ try {
   await host.navigate(`${origin}/arpg/?dev=1&debug=1`);
   await host.wait('!!window.__arpg && document.querySelector("#meta-screen")?.dataset.page==="inn"');
   await host.eval(`document.querySelector('[data-action="trainer"]').click()`);
-  await host.wait(`!!document.querySelector('[data-action="equip-skill"][data-id="healing_light"]')`);
-  assert.equal(await host.eval(`document.querySelector('[data-action="equip-skill"][data-id="healing_light"]').disabled`),true);
+  await host.wait(`!!document.querySelector('[data-action="skill-slot"][data-id="healing_light"]')`);
+  assert.equal(await host.eval(`document.querySelector('[data-action="skill-slot"][data-id="healing_light"][data-slot="0"]').getAttribute('aria-pressed')`),'true');
   assert.match(await host.eval('document.querySelector("#meta-screen").textContent'),/회복의 빛/);
   await host.eval(`document.querySelector('[data-action="inn"]').click();document.querySelector('[data-action="board"]').click()`);
   await host.eval(`document.querySelector('[data-action="sortie"][data-stage="S1"]').click();document.querySelector('#sortie-confirm').click()`);

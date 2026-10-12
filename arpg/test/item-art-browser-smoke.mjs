@@ -170,7 +170,7 @@ try {
     assert.equal(await evaluate("document.querySelectorAll('.academy-tabs [role=tab]').length"),3);
     await click('[data-action="learn-skill"][data-id="whirl"]');await audit();
     // K2: a learned book drops into the first empty slot.
-    assert.equal(await evaluate("document.querySelector('[data-action=\"equip-skill\"][data-id=\"whirl\"]').getAttribute('aria-pressed')"),'true');
+    assert.equal(await evaluate("!!document.querySelector('[data-action=\"skill-slot\"][data-id=\"whirl\"][aria-pressed=\"true\"]')"),true);
     await click('[data-action="academy-tab"][data-family="focus"]');await click('[data-action="learn-skill"][data-id="frost_lance"]');
     await audit();
     assert.equal(await evaluate("__arpg.save.loadout.includes('whirl')&&__arpg.save.loadout.includes('frost_lance')"),true);

@@ -48,12 +48,12 @@ test('all ten silhouettes are distinct SVG fallbacks and only registered local a
 
 test('shared skill cards show type, honest heal/damage, MP/CD and learned/equipped/locked status', () => {
   const s=trained(fresh());
-  assert.match(skillCardHtml('lunge',s),/근접 · 돌진[\s\S]+장착 중/);
+  assert.match(skillCardHtml('lunge',s),/근접 · 돌진[\s\S]+data-action="skill-slot" data-id="lunge" data-slot="0" data-context="academy" aria-pressed="true"/);
   assert.match(skillCardHtml('healing_light',s),/회복 최대 HP 30%/);
   assert.doesNotMatch(skillCardHtml('healing_light',s),/피해 0/);
   assert.match(skillCardHtml('healing_light',s),/28 MP[\s\S]+재사용 10초[\s\S]+미습득 · 200 G/);
   assert.match(skillCardHtml('whirl',{...s,gold:0}),/data-action="learn-skill"[^>]+disabled[\s\S]+골드 부족/);
-  const learned=learnSkill(s,'whirl');assert.match(skillCardHtml('whirl',learned),/배움/);
+  const learned=learnSkill(s,'whirl');assert.match(skillCardHtml('whirl',learned),/data-action="skill-slot" data-id="whirl"/);assert.doesNotMatch(skillCardHtml('whirl',learned),/learn-skill/);
   const h=hub(learned);h.showCharacterSkills();assert.match(h.html,/data-skill-icon="whirl"/);h.openSkill('whirl');assert.match(h.sheet,/data-skill-icon="whirl"/);
 });
 
