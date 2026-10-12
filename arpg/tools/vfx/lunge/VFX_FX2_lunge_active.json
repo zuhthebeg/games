@@ -27,7 +27,7 @@
       "life": 24,
       "scale_start": [
         3.0,
-        1.4,
+        6.0,
         1
       ],
       "position": [
@@ -74,6 +74,30 @@
         0,
         0
       ],
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Blade glow",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        168,
+        220,
+        228,
+        255
+      ],
+      "life": 24,
+      "scale_start": [
+        2.8,
+        0.8,
+        1
+      ],
+      "position": [
+        -1.2,
+        0,
+        0
+      ],
+      "fade_in": 0,
+      "fade_out": 16,
       "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
     }
   ],

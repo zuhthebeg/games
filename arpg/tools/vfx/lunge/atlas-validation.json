@@ -4,14 +4,14 @@
     1024,
     320
   ],
-  "atlasBytes": 3586,
+  "atlasBytes": 3792,
   "jsonBytes": 2222,
-  "totalBytes": 5808,
+  "totalBytes": 6014,
   "decodedBytes": 1310720,
   "alphaLossless": true,
   "rawClippedFrames": 0,
   "supportMasked": true,
-  "sha256": "8f2363fc1472858a9bf7eb16af9419164f1b2c35772dd87ebd4a9f98f2185303",
+  "sha256": "210dc3bb0882aa5d34ece4b372e6b6e974484d7a8c1d78b39981582885fbdffd",
   "framesProof": [
     {
       "id": "windup-000",
@@ -117,136 +117,136 @@
     },
     {
       "id": "active-000",
-      "sourceSha256": "cd1f167683354cc475e0f6cba90ac1807cb2eaf87a4ffe34cf21652efface1c4",
+      "sourceSha256": "a718d7a0fc7713121250df0811bd6e941e8a468e3e8206345dc0baf109c24934",
       "rawBbox": [
-        87,
-        79,
-        126,
-        81
+        85,
+        76,
+        129,
+        84
       ],
       "bbox": [
-        43,
-        37,
-        63,
-        43
+        42,
+        36,
+        64,
+        44
       ],
       "shape": "dash"
     },
     {
       "id": "active-003",
-      "sourceSha256": "e04552415add48e947dd17ee2cf00ef5190958b59d11dc6e8627465ec5d1d755",
+      "sourceSha256": "9e2c8407eaf2cd9f289645418a2c3bb145ad188a4fae50ff79198c28cb787947",
       "rawBbox": [
-        87,
-        79,
-        126,
-        81
+        85,
+        76,
+        129,
+        84
       ],
       "bbox": [
-        43,
-        37,
-        63,
-        43
+        42,
+        36,
+        64,
+        44
       ],
       "shape": "dash"
     },
     {
       "id": "active-006",
-      "sourceSha256": "41731f75f87c4f0c421e43a06db4643189a7ecedba3c988281ef6b56178b2231",
+      "sourceSha256": "ec218552f48ceec2b0a53630bd265dd9df383b55be96bf60c620b1caa29d2fb9",
       "rawBbox": [
-        87,
-        79,
-        126,
-        81
+        85,
+        76,
+        129,
+        84
       ],
       "bbox": [
-        43,
-        37,
-        63,
-        43
+        42,
+        36,
+        64,
+        44
       ],
       "shape": "dash"
     },
     {
       "id": "active-009",
-      "sourceSha256": "90dbda75e8283b95751092ee303f500484980769eea2013f17b41317df68229b",
+      "sourceSha256": "8b6350f685817115782323e81a517748f6f66d1bb5def5bb0923cda097a8a05d",
       "rawBbox": [
-        88,
-        79,
-        125,
-        81
+        85,
+        76,
+        128,
+        84
       ],
       "bbox": [
-        44,
-        37,
-        62,
-        43
+        43,
+        36,
+        64,
+        44
       ],
       "shape": "dash"
     },
     {
       "id": "active-012",
-      "sourceSha256": "bfc3ff48542fb2cee40bb966cdcf69ccfcc5bebc265c1ada077ddf5f66f21871",
+      "sourceSha256": "b08a9c407e7181cea6281bf2fa3e510c7b8fd2bd42f45a37bb2d03af13db40d6",
       "rawBbox": [
-        89,
-        79,
-        124,
-        81
+        86,
+        76,
+        127,
+        84
       ],
       "bbox": [
-        45,
-        39,
-        62,
-        41
+        43,
+        36,
+        63,
+        44
       ],
       "shape": "dash"
     },
     {
       "id": "active-015",
-      "sourceSha256": "ca4183179239e21dc72e907b3388add00ee94438e165c85babb6dbe8624d03a1",
+      "sourceSha256": "8371269ff291d1747a1cf68e75660f12fb26ec272c37912fa5774da0789e7ac4",
       "rawBbox": [
-        91,
-        79,
-        123,
-        81
+        87,
+        76,
+        126,
+        84
       ],
       "bbox": [
-        45,
-        39,
-        62,
-        41
+        44,
+        38,
+        63,
+        42
       ],
       "shape": "dash"
     },
     {
       "id": "active-018",
-      "sourceSha256": "cb859e27007f0058dde45813034ab284ee5ff16cc959facde064a478457da7e3",
+      "sourceSha256": "bdfa62128ea54fda5db33742660bbe744ad13261363de8f6647d9566984371f8",
       "rawBbox": [
-        94,
-        79,
-        120,
-        81
+        89,
+        76,
+        125,
+        84
       ],
       "bbox": [
-        47,
-        39,
-        60,
-        41
+        45,
+        38,
+        63,
+        42
       ],
       "shape": "dash"
     },
     {
       "id": "active-021",
-      "sourceSha256": "5253cf23479c7e244336a528fa176234e6b8892e6c4d03bee40b15172e48db60",
+      "sourceSha256": "3ae876b953f605a432d611dcd3aacfdbe46b35c6d8eb34ee442763e663cfbeaa",
       "rawBbox": [
-        100,
-        79,
-        113,
-        81
+        93,
+        77,
+        120,
+        83
       ],
       "bbox": [
-        50,
+        46,
         39,
-        56,
+        60,
         41
       ],
       "shape": "dash"
