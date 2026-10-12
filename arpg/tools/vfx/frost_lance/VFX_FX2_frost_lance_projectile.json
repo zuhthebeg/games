@@ -1,0 +1,137 @@
+{
+  "id": "VFX_FX2_frost_lance_projectile",
+  "name": "frost_lance projectile",
+  "category": "element",
+  "element": "frost",
+  "duration": 0.6,
+  "loop": false,
+  "attach": "impact",
+  "peak": 0.05,
+  "impact": 0,
+  "light": [
+    1,
+    0.85,
+    0.6
+  ],
+  "seed": 1729,
+  "layers": [
+    {
+      "name": "Ice spear",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_IceShard01.png",
+      "color": [
+        159,
+        216,
+        255,
+        255
+      ],
+      "life": 36,
+      "scale_start": [
+        2.4,
+        0.5,
+        1
+      ],
+      "fade_in": 0,
+      "fade_out": 4,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Ice glint",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Streak01.png",
+      "color": [
+        233,
+        250,
+        255,
+        255
+      ],
+      "life": 36,
+      "delay": 0,
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale_start": [
+        0.7,
+        0.5,
+        1
+      ],
+      "scale_end": [
+        2.3,
+        0.075,
+        1
+      ],
+      "easing": "EaseOutQuartic",
+      "fade_in": 0,
+      "fade_out": 25.2,
+      "emissive": 2.4,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    },
+    {
+      "name": "Ice dust",
+      "texture": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\textures\\processed\\T_Glow01.png",
+      "color": [
+        159,
+        216,
+        255,
+        255
+      ],
+      "color_end": [
+        159,
+        216,
+        255,
+        255
+      ],
+      "count": 8,
+      "life": [
+        20,
+        36
+      ],
+      "delay": 0,
+      "interval": 0,
+      "billboard": "Billboard",
+      "spawn": {
+        "shape": "Sphere",
+        "radius": [
+          0,
+          0.3
+        ],
+        "rot_x": [
+          -90,
+          90
+        ]
+      },
+      "travel": {
+        "end": [
+          0,
+          [
+            0.2,
+            0.8
+          ],
+          0
+        ],
+        "easing": "EaseOutCubic"
+      },
+      "size": [
+        0.03,
+        0.09
+      ],
+      "size_end": 0,
+      "easing": "EaseInCubic",
+      "forces": [
+        {
+          "type": "Turbulence",
+          "power": 0,
+          "scale": 5
+        }
+      ],
+      "fade_in": 1,
+      "fade_out": 6,
+      "emissive": 1.5,
+      "material_profile": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\bake\\vfx\\materials\\M_Additive.vfxmat.json"
+    }
+  ],
+  "design": "FX2 frost_lance projectile: frost palette and circle gameplay-support. Native transparent bake; gameplay boundary remains authoritative.",
+  "delivery": {
+    "kind": "self"
+  }
+}
