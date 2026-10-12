@@ -15,7 +15,7 @@ const summary = vfx => [...vfx.effects, ...vfx.particles, ...vfx.actors, ...vfx.
   x: slot.node.x, y: slot.node.y, rotation: slot.node.rotation, sx: slot.node.scale.x, sy: slot.node.scale.y,
   geometry: slot.node.context.instructions.map(item => ({ action: item.action,
     path: item.data.path?.instructions, color: item.data.style?.color, alpha: item.data.style?.alpha,
-    width: item.data.style?.width })), 
+    width: item.data.style?.width })),
 }));
 
 test('FX1 exact opt-in; off creates no loading task or extra sprites', () => {
