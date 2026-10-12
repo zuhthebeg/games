@@ -1,0 +1,24 @@
+{
+  "skill": "whirl",
+  "output": "C:\\Users\\user\\AppData\\Local\\Temp\\arpg-fx2\\whirl-frames",
+  "clips": [
+    {
+      "id": "VFX_FX2_whirl_windup",
+      "label": "windup",
+      "ticks": 18,
+      "shape": "circle"
+    },
+    {
+      "id": "VFX_FX2_whirl_active",
+      "label": "active",
+      "ticks": 36,
+      "shape": "circle"
+    },
+    {
+      "id": "VFX_FX2_whirl_impact",
+      "label": "impact",
+      "ticks": 24,
+      "shape": "circle"
+    }
+  ]
+}

@@ -1,0 +1,429 @@
+{
+  "frames": 26,
+  "atlasSize": [
+    1024,
+    320
+  ],
+  "atlasBytes": 13444,
+  "jsonBytes": 2224,
+  "totalBytes": 15668,
+  "decodedBytes": 1310720,
+  "alphaLossless": true,
+  "rawClippedFrames": 0,
+  "supportMasked": true,
+  "sha256": "e6ecb7f9cf4f9b58e4b424ecd29fa715d550d87387d429ab802b53dc555b595e",
+  "framesProof": [
+    {
+      "id": "windup-000",
+      "sourceSha256": "a9b79ecfe85083edbb3910581654bd01fe6bb484e24aefeae20e6df0edd22bd0",
+      "rawBbox": [
+        126,
+        78,
+        130,
+        82
+      ],
+      "bbox": [
+        62,
+        38,
+        66,
+        42
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-003",
+      "sourceSha256": "bf64b1472aead636d76b76d8d872b04d0d74d759ecef945c0f6c861a19b0987d",
+      "rawBbox": [
+        116,
+        69,
+        136,
+        87
+      ],
+      "bbox": [
+        58,
+        32,
+        70,
+        46
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-006",
+      "sourceSha256": "2fa97a7eb9201ab8b555b36c6f5010d277eebc356e9dc17680b4f14425cca88f",
+      "rawBbox": [
+        114,
+        66,
+        140,
+        92
+      ],
+      "bbox": [
+        56,
+        31,
+        72,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-009",
+      "sourceSha256": "760739b894e79cffd891a7beaa788ba1640ae82a5e31cdb8b71354481ff55d26",
+      "rawBbox": [
+        113,
+        64,
+        142,
+        94
+      ],
+      "bbox": [
+        54,
+        31,
+        73,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-012",
+      "sourceSha256": "cc5bc70e19f7db5511d306fa9646eeef5d5b3b70124d6067e0486e51bf9a7bcd",
+      "rawBbox": [
+        113,
+        65,
+        143,
+        95
+      ],
+      "bbox": [
+        56,
+        30,
+        72,
+        50
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "windup-015",
+      "sourceSha256": "c07543696527ebfc59919e087358198ce0a4cdc07bb8bfa178dd8c285832b08f",
+      "rawBbox": [
+        112,
+        64,
+        144,
+        96
+      ],
+      "bbox": [
+        55,
+        31,
+        73,
+        49
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-000",
+      "sourceSha256": "7583764ae72654e41c66e8483818bb840b6e7ce5ae5fdb1a90f2afcaaf8a6761",
+      "rawBbox": [
+        121,
+        21,
+        143,
+        87
+      ],
+      "bbox": [
+        58,
+        10,
+        70,
+        46
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-003",
+      "sourceSha256": "6161c40cc1d47fc14ba32c8b8b32ccfad17bf5a72abaa5a4d23b58cc41b492c4",
+      "rawBbox": [
+        70,
+        26,
+        145,
+        124
+      ],
+      "bbox": [
+        35,
+        14,
+        75,
+        62
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-006",
+      "sourceSha256": "f6c63fc9a4183a867a7360207a2067018728501b8d902946ae4146f547106d49",
+      "rawBbox": [
+        69,
+        41,
+        171,
+        122
+      ],
+      "bbox": [
+        34,
+        21,
+        85,
+        61
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-009",
+      "sourceSha256": "512d0ae57573434046aa592a0ec117921532e567a87da0fd958d17ec8b20fc8c",
+      "rawBbox": [
+        69,
+        43,
+        172,
+        135
+      ],
+      "bbox": [
+        34,
+        19,
+        86,
+        67
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-012",
+      "sourceSha256": "7d2ae840eb93404fe3fb1204c88222b6ce8173d7231b611095a8716513dcb934",
+      "rawBbox": [
+        69,
+        37,
+        172,
+        138
+      ],
+      "bbox": [
+        34,
+        16,
+        88,
+        70
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-015",
+      "sourceSha256": "77fdaf56c59529e6015555215e485bc86ce404c757d61d248f54407894e9390a",
+      "rawBbox": [
+        82,
+        34,
+        174,
+        126
+      ],
+      "bbox": [
+        39,
+        15,
+        89,
+        65
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-018",
+      "sourceSha256": "646db49350caba861547a19791537697f355b22d9b78d218a7eb4e1264ec2fa7",
+      "rawBbox": [
+        79,
+        31,
+        177,
+        129
+      ],
+      "bbox": [
+        38,
+        14,
+        90,
+        66
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-021",
+      "sourceSha256": "985b51166ab26c93a09d99cf786f6c6fffc9c7b57a74eaae2144521a29608fbd",
+      "rawBbox": [
+        77,
+        29,
+        179,
+        131
+      ],
+      "bbox": [
+        36,
+        12,
+        92,
+        68
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-024",
+      "sourceSha256": "9bea6e37ccf1cec418f02cf975cc08beef66450cc57197c08ee607085f6937fd",
+      "rawBbox": [
+        74,
+        26,
+        182,
+        134
+      ],
+      "bbox": [
+        37,
+        13,
+        91,
+        67
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-027",
+      "sourceSha256": "55a8a27dfee39be3ae5ba8de1db0b86ce0d4501c8f015f4f8ed59cfec864b9c8",
+      "rawBbox": [
+        72,
+        24,
+        184,
+        136
+      ],
+      "bbox": [
+        35,
+        11,
+        93,
+        69
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "active-030",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "circle"
+    },
+    {
+      "id": "active-033",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "circle"
+    },
+    {
+      "id": "impact-000",
+      "sourceSha256": "9944f366266c873a0e8b09cfc708f63c4c2aa819de5d041a0527c56435570208",
+      "rawBbox": [
+        127,
+        79,
+        129,
+        81
+      ],
+      "bbox": [
+        61,
+        37,
+        67,
+        43
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-003",
+      "sourceSha256": "a49e14ced2baade990afe8cd3a806edb7685d40cec701125314ec830a8bad054",
+      "rawBbox": [
+        122,
+        67,
+        133,
+        81
+      ],
+      "bbox": [
+        60,
+        33,
+        67,
+        41
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-006",
+      "sourceSha256": "c7a25d119a32b4794599ad6ba7b852a138b7ac829d05e6f77f5fd11359721d07",
+      "rawBbox": [
+        119,
+        59,
+        131,
+        69
+      ],
+      "bbox": [
+        59,
+        27,
+        68,
+        35
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-009",
+      "sourceSha256": "69c2d6a8d7df292bd817edb5de41232760ae20318732eef201a871b07745b7b4",
+      "rawBbox": [
+        119,
+        57,
+        131,
+        69
+      ],
+      "bbox": [
+        59,
+        28,
+        66,
+        35
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-012",
+      "sourceSha256": "8896e6497742e1be26967678d66a9b0d1c36eb524c65f12dc2f701453b3482c1",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        59
+      ],
+      "bbox": [
+        64,
+        26,
+        68,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-015",
+      "sourceSha256": "f74a0d75e16feff16e7326416b8600d5e8e7e6cc978e7f65539097d8faeabd22",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        58
+      ],
+      "bbox": [
+        64,
+        26,
+        66,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-018",
+      "sourceSha256": "783a5129b12430f8ce7043fa9ff2d35625875816c36c0656ce0386af27b2ca21",
+      "rawBbox": [
+        130,
+        57,
+        131,
+        58
+      ],
+      "bbox": [
+        65,
+        28,
+        66,
+        30
+      ],
+      "shape": "circle"
+    },
+    {
+      "id": "impact-021",
+      "sourceSha256": "16e74e0f886f9a6dd256f3d07e694061a1337a1173ca446ae10f22e18893dc98",
+      "rawBbox": null,
+      "bbox": null,
+      "shape": "circle"
+    }
+  ]
+}

@@ -124,3 +124,7 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 ### FX2 frost_lance
 - Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/frost_lance/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
 - Distribution: `assets/vfx/frost_lance/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/frost_lance/atlas-validation.json`. No independent artist or physical-device certification claimed.
+
+### FX2 whirl
+- Locally authored Effekseer→Godot transparent bake; pinned upstream MIT primitives/texture generator (not CC0/CC-BY). Source URL: https://github.com/kanaworksai-hue/effekseer-vfx-skill/tree/c28919890f0483c0f968a884ea03979803d3b528. Individual texture hashes/origin + source recipes: `tools/vfx/whirl/provenance.json`; exact license texts: `tools/vfx/fireball/licenses/`.
+- Distribution: `assets/vfx/whirl/atlas.webp` + `atlas.json`; no runtime hotlink. Native captures resized and alpha-support-masked to gameplay geometry. Per-skill byte/frame/decode proof: `tools/vfx/whirl/atlas-validation.json`. No independent artist or physical-device certification claimed.
