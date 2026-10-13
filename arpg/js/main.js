@@ -11,6 +11,7 @@ import { InputLayer } from './input.js';
 import { applyAutoUse, autoUseSettings } from './meta/auto-use.js';
 import { loadoutOf } from './meta/skills.js';
 import { CombatAudio, bindAudioControls } from './audio.js';
+import { bindBattleSettings } from './ui/battle-settings.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
@@ -95,6 +96,7 @@ try {
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
+  bindBattleSettings(document);
   document.addEventListener('arpg:fx-mode', event => renderer.skillVfx.setEffekseer(event.detail?.mode !== 'classic'));
   const hub = new HubUI({
     save: saved,

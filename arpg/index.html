@@ -22,7 +22,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=8fe9cae3a2",
         "./js/debug/index.js": "./js/debug/index.js?v=58b25f9b3b",
         "./js/input.js": "./js/input.js?v=196f3c715d",
-        "./js/main.js": "./js/main.js?v=08f3f61ef7",
+        "./js/main.js": "./js/main.js?v=3b6ea2a177",
         "./js/meta/affixes.js": "./js/meta/affixes.js?v=b43d715aee",
         "./js/meta/auto-use.js": "./js/meta/auto-use.js?v=9a17dad2b0",
         "./js/meta/compare.js": "./js/meta/compare.js?v=3642e53b26",
@@ -57,13 +57,14 @@
         "./js/render/paperdoll-state.js": "./js/render/paperdoll-state.js?v=7fb0e4a886",
         "./js/render/renderer.js": "./js/render/renderer.js?v=f0afbca549",
         "./js/render/shapes.js": "./js/render/shapes.js?v=1f3d9c4a35",
-        "./js/render/skill-vfx.js": "./js/render/skill-vfx.js?v=7a524698a8",
+        "./js/render/skill-vfx.js": "./js/render/skill-vfx.js?v=e16a5d2380",
         "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=f864bcddb2",
         "./js/render/weapon-glow.js": "./js/render/weapon-glow.js?v=326e3fd844",
         "./js/sim/core.js": "./js/sim/core.js?v=458215ac27",
         "./js/sim/movement.js": "./js/sim/movement.js?v=3cc553a10b",
         "./js/sim/quest-objectives.js": "./js/sim/quest-objectives.js?v=ede227acd0",
         "./js/sim/world.js": "./js/sim/world.js?v=5cf0d10e0a",
+        "./js/ui/battle-settings.js": "./js/ui/battle-settings.js?v=73ba9223a4",
         "./js/ui/enchant-fx.js": "./js/ui/enchant-fx.js?v=10971f76a7",
         "./js/ui/gear-view.js": "./js/ui/gear-view.js?v=c6ab6769f8",
         "./js/ui/hub.js": "./js/ui/hub.js?v=a6bb736056",
@@ -76,7 +77,7 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=8d8ad2a15c">
+    <link rel="stylesheet" href="css/game.css?v=03f031d85f">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -88,7 +89,8 @@
         <div class="bar load"><i id="load-fill"></i><span id="load-text"></span></div>
       </div>
       <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
-      <button data-sound-toggle class="battle-sound" aria-label="음소거" aria-pressed="false">🔊</button>
+      <button data-battle-settings class="battle-settings" aria-label="설정" aria-expanded="false" aria-controls="battle-settings"></button>
+      <div id="battle-settings" class="battle-settings-panel" hidden role="group" aria-label="설정"></div>
       <button data-auto-toggle class="battle-auto" aria-label="자동 공격" aria-pressed="false" title="자동 공격 · T">AUTO</button>
       <div id="temp-loot"></div>
       <div id="notice" role="status" aria-live="polite"></div>
@@ -114,6 +116,6 @@
     </section>
     <script src="/lib/multiplayer.js?v=20260927rt"></script>
     <script src="/lib/mp-lobby.js?v=20260927"></script>
-    <script type="module" src="js/main.js?v=08f3f61ef7"></script>
+    <script type="module" src="js/main.js?v=3b6ea2a177"></script>
   </body>
 </html>

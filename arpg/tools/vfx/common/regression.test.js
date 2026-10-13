@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { Graphics, Container } from '../../../vendor/pixi-8.22.0.min.mjs';
-import { SkillVfx, SKILL_VFX, VFX_ATLASES, effekseerEnabled } from '../../../js/render/skill-vfx.js';
+import { SkillVfx, SKILL_VFX, VFX_ATLASES, VFX_BAKED, effekseerEnabled } from '../../../js/render/skill-vfx.js';
 import { ABILITIES } from '../../../js/content/combat.js';
 const base=execFileSync('git',['show','74a6237:arpg/js/render/skill-vfx.js'],{encoding:'utf8'});
 const fixed=base.replace(/from '([^']+)'/g,(_,path)=>`from '${new URL(path,new URL('../../../js/render/skill-vfx.js',import.meta.url)).href}'`);
 const {SkillVfx:Baseline}=await import('data:text/javascript;base64,'+Buffer.from(fixed).toString('base64'));
 const summarize=vfx=>[...vfx.effects,...vfx.particles,...vfx.actors,...vfx.projectiles].map(s=>({id:s.id,left:s.left,kind:s.kind,visible:s.node.visible,alpha:s.node.alpha,x:s.node.x,y:s.node.y,rotation:s.node.rotation,scale:[s.node.scale.x,s.node.scale.y],instructions:s.node.context.instructions.map(i=>({action:i.action,path:i.data.path?.instructions,color:i.data.style?.color,alpha:i.data.style?.alpha,width:i.data.style?.width}))}));
-for(const [ability,folder] of Object.entries(VFX_ATLASES)) {
+for(const [ability,folder] of Object.entries(VFX_BAKED)) {
   test(`FX2 ${ability}: atlas budget, no hotlink, clip/rect integrity`,()=>{
     const root=new URL(`../../../assets/vfx/${folder}/`,import.meta.url);
     const meta=JSON.parse(readFileSync(new URL('atlas.json',root)));
@@ -63,6 +63,8 @@ test('FX2 lazy load, reduced/classic zero fetch, one attempt per skill, isolated
 
 test('FX2 registry covers all mana-cost player skills, excluding basics/monsters',()=>{
   const ids=Object.entries(ABILITIES).filter(([,d])=>d.family&&d.manaCost>0).map(([id])=>id).sort();
-  assert.deepEqual(Object.keys(VFX_ATLASES).sort(),ids);
+  assert.deepEqual(Object.keys(VFX_BAKED).sort(),ids);
+  // Runtime quality gate: only bakes with real coverage are enabled (cocy 10-13).
+  assert.deepEqual(Object.keys(VFX_ATLASES),['ember_bolt']);
   assert.equal(effekseerEnabled(''),true);assert.equal(effekseerEnabled('?fx=classic'),false);
 });

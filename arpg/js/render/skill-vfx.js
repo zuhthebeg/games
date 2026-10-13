@@ -44,7 +44,11 @@ export const SKILL_VFX = Object.freeze({
     color: 0x79dca0, accent: 0xc5d799, windup: 'runes', impact: 'rise',
     motif: 'heal', activeLife: .5, residueLife: .8, particles: 22, reducedParticles: 2 })
 });
-export const VFX_ATLASES = Object.freeze({ lunge: 'lunge', volley: 'volley', frost_lance: 'frost_lance', whirl: 'whirl', pierce_shot: 'pierce_shot', flame_ring: 'flame_ring', blast_arrow: 'blast_arrow', heavy_cleave: 'heavy_cleave', healing_light: 'healing_light', ember_bolt: 'fireball' });
+export const VFX_BAKED = Object.freeze({ lunge: 'lunge', volley: 'volley', frost_lance: 'frost_lance', whirl: 'whirl', pierce_shot: 'pierce_shot', flame_ring: 'flame_ring', blast_arrow: 'blast_arrow', heavy_cleave: 'heavy_cleave', healing_light: 'healing_light', ember_bolt: 'fireball' });
+// Quality gate (cocy 10-13 "클래식보다 밋밋"): FX2 bakes for the other nine skills are nearly
+// empty (peak 0~295 opaque px per frame) and replaced richer vector art. Only atlases that
+// pass the coverage gate in tools/vfx are enabled; the rest stay classic until rebaked.
+export const VFX_ATLASES = Object.freeze({ ember_bolt: VFX_BAKED.ember_bolt });
 const VFX_REVISION = 'af4408539bbd'; // Cache key for the complete baked asset set.
 const PROFILE_IDS = new Map(Object.entries(SKILL_VFX).map(([id, profile]) => [profile, id]));
 export const VFX_CAPS = Object.freeze({ effects: 48, particles: 96, actors: 8, projectiles: 24, trail: 6 });
@@ -80,6 +84,7 @@ export class SkillVfx {
         const node = graphic(); node.moveTo(0, 0).lineTo(1, 0).stroke({ color: 0xffffff, width: 11 - i * 1.5 }); return node;
       }) }));
     this.fxRequested = options.effekseer ?? effekseerEnabled();
+    this.atlases = options.atlases || VFX_ATLASES; // tools/vfx probes pass VFX_BAKED
     this.fxAssets = new Map(); this.fxLoads = new Map(); this.fxErrors = new Map();
     this.fxLoad = null; // No eager network/decode, including in the default-on mode.
   }
@@ -90,13 +95,13 @@ export class SkillVfx {
     }
   }
   requestSkill(ability, reduced = false) {
-    if (!this.fxRequested || reduced || !VFX_ATLASES[ability]) return null;
+    if (!this.fxRequested || reduced || !this.atlases[ability]) return null;
     if (!this.fxLoads.has(ability)) this.fxLoads.set(ability, this.loadEffekseer(ability));
     return this.fxLoads.get(ability);
   }
   async loadEffekseer(ability = 'ember_bolt') {
     try {
-      const url = new URL(`../../assets/vfx/${VFX_ATLASES[ability]}/atlas.json`, import.meta.url);
+      const url = new URL(`../../assets/vfx/${this.atlases[ability]}/atlas.json`, import.meta.url);
       url.searchParams.set('v', VFX_REVISION);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`FX2 ${ability} metadata: ${response.status}`);

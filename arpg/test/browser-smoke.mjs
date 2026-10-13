@@ -215,7 +215,7 @@ try {
   // Auto attack toggle (cocy 10-11): visible, non-overlapping, persisted, reflected on the attack button.
   validateRects(await rectangles('#actions button, .battle-auto, .stage, .vitals'));
   // A real tap must land on the HUD toggles, not fall through #hud (pointer-events:none) to the canvas.
-  for (const sel of ['.battle-auto', '.battle-sound']) {
+  for (const sel of ['.battle-auto', '.battle-settings']) {
     assert.ok(await evaluate(`(()=>{const b=document.querySelector('${sel}'),r=b.getBoundingClientRect();
       const top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !!top&&(top===b||b.contains(top));})()`), `${sel} is not hit-testable`);
   }
@@ -333,10 +333,19 @@ try {
   assert.ok(feedback.maxFrozen >= 2 && feedback.maxParticles > 0 && feedback.maxVoices > 0, JSON.stringify(feedback));
   assert.deepEqual(feedback.pools, { particles: 56, numbers: 32, effects: 40 });
   assert.ok(feedback.maxVoices <= 6);
-  await click('#hud [data-sound-toggle]');
+  // cocy 10-13: in-battle settings replaces the sound button.
+  await click('#hud [data-battle-settings]');
+  assert.equal(await evaluate('document.querySelector("#battle-settings").hidden'), false);
+  await click('#battle-sound-off');
   assert.equal(await evaluate('__arpg.feedback.audio.muted'), true);
   assert.equal(await evaluate('localStorage.getItem("arpg.audio.muted")'), '1');
-  await click('#hud [data-sound-toggle]');
+  await click('#battle-fx-classic');
+  assert.equal(await evaluate('__arpg.feedback.fxRequested'), false);
+  await click('#battle-fx-new');
+  assert.equal(await evaluate('__arpg.feedback.fxRequested'), true);
+  await click('#battle-sound-on');
+  await click('#hud [data-battle-settings]');
+  assert.equal(await evaluate('document.querySelector("#battle-settings").hidden'), true);
   assert.ok(await evaluate(`(() => {
     try {__arpg.world.entities[0].hp=999;return false;}catch{return true;}
   })()`), 'debug world writable');

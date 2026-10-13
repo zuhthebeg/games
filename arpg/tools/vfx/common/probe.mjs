@@ -1,5 +1,5 @@
 import {Application, Graphics, Container, Assets} from '../../../vendor/pixi-8.22.0.min.mjs';
-import {SkillVfx, SKILL_VFX, VFX_ATLASES} from '../../../js/render/skill-vfx.js';
+import {SkillVfx, SKILL_VFX, VFX_BAKED as VFX_ATLASES} from '../../../js/render/skill-vfx.js';
 import {ABILITIES} from '../../../js/content/combat.js';
 const check=(ok,message)=>{if(!ok)throw new Error(message);};
 const actor=(id,skill,phase='windup',elapsed=4)=>({id,kind:'player',x:180,y:190,r:18,act:{id:skill,def:ABILITIES[skill],phase,elapsed,total:24,facing:.35}});
@@ -9,7 +9,7 @@ export async function setup() {
   await new Promise(requestAnimationFrame);
   const app=new Application();await app.init({width:innerWidth,height:400,preference:'webgl',autoStart:false});
   document.body.appendChild(app.canvas);
-  const layer=new Container();app.stage.addChild(layer);const vfx=new SkillVfx(Graphics,layer);
+  const layer=new Container();app.stage.addChild(layer);const vfx=new SkillVfx(Graphics,layer,{atlases:VFX_ATLASES});
   window.fx2={app,layer,vfx,clicks:0};
   check(vfx.fxLoads.size===0,'constructor is not lazy');
   const button=document.createElement('button');button.id='fx2-fire';button.textContent='FX2';
@@ -19,7 +19,7 @@ export async function setup() {
 }
 export async function runSmoke() {
   const {app,layer,vfx}=window.fx2,proof=[];
-  const reduced=new SkillVfx(Graphics,new Container());
+  const reduced=new SkillVfx(Graphics,new Container(),{atlases:VFX_ATLASES});
   for(const skill of Object.keys(SKILL_VFX))reduced.update({tick:1,entities:[actor(1,skill)],projectiles:[]},1,.016,true);
   check(reduced.fxLoads.size===0,'reduced-motion loaded textures');
   for(const skill of Object.keys(SKILL_VFX)) {
@@ -74,7 +74,7 @@ export async function runSmoke() {
   failed.event({type:'explode',ability:'ember_bolt',x:100,y:100,radius:78},{},false);
   check(failed.effects.some(s=>s.node.visible),'metadata fallback invisible');
   const load=Assets.load;Assets.load=async()=>{throw new Error('test decoder failure');};
-  const decoder=new SkillVfx(Graphics,new Container(),{effekseer:true});
+  const decoder=new SkillVfx(Graphics,new Container(),{effekseer:true,atlases:VFX_ATLASES});
   check(await decoder.requestSkill('healing_light')===false,'decoder fallback did not settle');Assets.load=load;
   decoder.event({type:'healCast',ability:'healing_light',x:100,y:100,radius:160},{},false);
   check(decoder.effects.some(s=>s.node.visible),'decoder fallback invisible');
