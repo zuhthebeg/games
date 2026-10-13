@@ -36,7 +36,9 @@ test('U5 preserves every original stage, tuning, map gate, palette, reward and i
  const oldMap=await baseline('content/world-map.js');
  for(const [id,map] of Object.entries(oldMap.MAPS))assert.deepEqual(MAPS[id],map,id);
  assert.deepEqual(oldMap.REGION_EDGES,REGION_EDGES.slice(0,oldMap.REGION_EDGES.length));
- assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/js/sim','arpg/js/net','arpg/assets','arpg/tools/art'],{encoding:'utf8'}),'','protected tracked bytes unchanged');
+ // N3 was independently reviewed and deployed after U5 branched; pin its exact sim/net bytes, not the pre-N3 source.
+ assert.equal(execFileSync('git',['diff','--exit-code','3104089','--','arpg/js/sim','arpg/js/net','arpg/js/render/telegraph-time.js'],{encoding:'utf8'}),'','reviewed N3 tracked bytes unchanged');
+ assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/assets','arpg/tools/art'],{encoding:'utf8'}),'','M2a art tracked bytes unchanged');
 });
 
 test('U5 gate is S20, then sequential clears, never TD1/QC1; forged historical U5 clears cannot bypass S20',()=>{
