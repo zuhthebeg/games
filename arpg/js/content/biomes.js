@@ -24,7 +24,7 @@ export const STAGE_BIOMES = Object.fromEntries([
   ...[1, 2, 3, 4].map(n => [`S${n}`, 'village_outskirts']),
   ...[5, 6, 7, 11, 16].map(n => [`S${n}`, 'forest']),
   ...[8, 9, 10].map(n => [`S${n}`, 'ash_pass']),
-  ['M_MARSH_MARKERS', 'marsh'], ['M_MINE_CART', 'mine'], ['S12', 'mine'], ['S13', 'marsh'],
+  ['M_THRONE_GARGOYLE', 'fortress'], ['M_MARSH_MARKERS', 'marsh'], ['M_MINE_CART', 'mine'], ['S12', 'mine'], ['S13', 'marsh'],
   ...[14, 15, 17, 19].map(n => [`S${n}`, 'fortress']),
   ['S18', 'nest'], ['S20', 'throne'], ['TD1', 'throne_forecourt']
 ]);

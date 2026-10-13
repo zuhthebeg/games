@@ -379,7 +379,14 @@ export class ArenaRenderer {
     const objective = world.round?.objective;
     this.questRing.clear();
     this.questLabels.forEach(label => { label.visible = false; });
-    if (objective?.kind === 'visit-markers') {
+    if (objective?.kind === 'kill-target') {
+      const target = world.entities.find(e => e.id === objective.targetId);
+      if (target && objective.state !== 'complete') {
+        this.questRing.circle(target.x,target.y,target.r+12).stroke({color:0xf5df9b,width:3});
+        this.questLabels[0].visible = true; this.questLabels[0].text = '대상: 가고일';
+        this.questLabels[0].position.set(target.x,target.y-target.r-28);
+      }
+    } else if (objective?.kind === 'visit-markers') {
       for (const [i,pos] of objective.markers.entries()) {
         const done = !!(objective.visited & (1 << i)), label = this.questLabels[i];
         this.questRing.circle(pos.x,pos.y,objective.radius).stroke({color:done ? 0xa1ddb3 : 0xf5df9b,width:3});

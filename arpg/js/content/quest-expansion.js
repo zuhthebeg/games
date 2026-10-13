@@ -14,6 +14,12 @@ export const SIDE_QUEST_STATES = Object.freeze(['active', 'done']);
 
 // Independent map adapter: distinct quest/map IDs, explicit S12 reward/size anchor.
 export const OBJECTIVE_QUESTS = Object.freeze({
+  QC1: Object.freeze({ id: 'QC1', mapId: 'M_THRONE_GARGOYLE', name: '석상 가고일', mapName: '석상 앞뜰',
+    regionId: 'throne', requires: ['S20'], anchor: 'S19', firstXp: 2020, rec: 20, huntTier: 3,
+    objective: Object.freeze({ kind: 'kill-target', questId: 'QC1', entry: [.18,.5], targetSlot: 'gargoyle-guard' }),
+    spawns: Object.freeze([{monster:'gargoyle',slot:'gargoyle-guard',at:0,fx:.74,fy:.50},
+      {monster:'goblin_slinger',at:0,fx:.82,fy:.25}, {monster:'spirit',at:0,fx:.82,fy:.75}]),
+  }),
   QM1: Object.freeze({ id: 'QM1', mapId: 'M_MINE_CART', name: '광산 장부 회수', mapName: '수레 적재장',
     regionId: 'mine', requires: ['S10'], anchor: 'S12', firstXp: 910, rec: 11, huntTier: 3,
     objective: Object.freeze({ kind: 'carry-return', questId: 'QM1', token: [.78,.30], entry: [.18,.5], radius: 64, dwellMs: 500 }),

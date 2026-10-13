@@ -157,6 +157,7 @@ try {
     if (!coopResult) return;
     coopFinished = true;
     running = false;
+    if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
     hub.finish(coopResult.save, coopResult.receipt, hud.deathExplanation(world));
     if (coopNote) {
       const note = document.createElement('p'); note.className = 'risk-note'; note.textContent = coopNote;
@@ -322,6 +323,7 @@ try {
     // Development kit overrides never grant progression or consume real supplies.
     const nextSave = developmentRound ? hub.save : result.save;
     store.save(nextSave);
+    if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
     hub.finish(nextSave, result.receipt, hud.deathExplanation(world));
     if (result.receipt.levelsGained > 0) audio.play('level-up');
   }

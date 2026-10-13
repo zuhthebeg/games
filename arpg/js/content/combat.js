@@ -243,6 +243,10 @@ export const MONSTERS = {
     hp: 110, r: 19, speed: 172, poise: 35, kbResist: 0.1,
     abilities: ['wolf_dash', 'wolf_bite'], xp: 22, keepRange: [45, 75],
   },
+  gargoyle: {
+    hp:420, r:36, speed:68, poise:108, kbResist:0.65,
+    abilities:['guardian_crush', 'goblin_hop'], xp:36, keepRange:[60,110],
+  },
   rune_guardian: {
     hp: 280, r: 30, speed: 68, poise: 90, kbResist: 0.65,
     abilities: ['guardian_crush', 'guardian_ring'], xp: 36, keepRange: [60, 110], elite: true // archetype rank only; random spawn variants use entity.eliteVariant,

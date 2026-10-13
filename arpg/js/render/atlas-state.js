@@ -11,6 +11,7 @@ export const ATLAS_IDS = Object.freeze({
   wolf: 'wolf',
   poison_spider: 'poison-spider',
   iron_boar: 'iron-boar',
+  gargoyle: 'gargoyle',
   training_dragon: 'dragon',
   throne_dragon: 'throne-dragon',
 });

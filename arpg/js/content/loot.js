@@ -8,6 +8,7 @@ export const NEW_MONSTER_DROPS = {
       { id: 'wood', count: 2 }, { id: 'potion', count: 1, chance: 0.2 },
     ], items: [{ id: 'pack_bow', chance: 0.08 }],
   },
+  gargoyle: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[{id:'rune_blade',chance:0.12}] },
   rune_guardian: {
     gold: [18, 26], stacks: [
       { id: 'rune_shard', count: 2 }, { id: 'scrap', count: 4 },

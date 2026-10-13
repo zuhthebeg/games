@@ -72,7 +72,7 @@ test('every registered content key has eight-direction WebP clips and bounded ki
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {
         // 128px kits; the large display-scaled dragon ships 256px frames for sharpness.
-        assert.equal(frame.frame.w, id === 'throne-dragon' ? 320 : id === 'dragon' ? 256 : 128);
+        assert.equal(frame.frame.w, id === 'throne-dragon' ? 320 : id === 'dragon' || id === 'gargoyle' ? 256 : 128);
         assert.equal(frame.frame.h, frame.frame.w);
         assert.equal(frame.anchor.x, entry.anchor.x);
         assert.equal(frame.anchor.y, entry.anchor.y);

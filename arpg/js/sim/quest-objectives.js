@@ -4,6 +4,8 @@ const eligible = p => p.kind === 'player' && !p.dead && p.hp > 0 && !p.terminal;
 const inside = (p, pos, radius) => (p.x-pos.x)**2 + (p.y-pos.y)**2 <= radius**2;
 const position = (world, p) => ({ x: Math.max(0, Math.min(world.arena.w, p.x)), y: Math.max(0, Math.min(world.arena.h, p.y)) });
 export function createObjective(def, arena) {
+  if (def.kind === 'kill-target') return { kind:def.kind, questId:def.questId, state:'waiting',
+    entry:{x:def.entry[0]*arena.w,y:def.entry[1]*arena.h}, targetSlot:def.targetSlot, targetId:null };
   if (def.kind === 'visit-markers') return { kind: def.kind, questId: def.questId, state: 'waiting',
     entry: { x: def.entry[0]*arena.w, y: def.entry[1]*arena.h },
     markers: def.markers.map(([x,y]) => ({x:x*arena.w,y:y*arena.h})), visited: 0,
@@ -24,6 +26,12 @@ export function stepObjective(world, inputs = {}) {
   const o = world.round.objective;
   if (!o || o.state === 'complete') return o?.state === 'complete';
   const players = world.entities.filter(p => p.kind === 'player');
+  if (o.kind === 'kill-target') {
+    if (o.targetId === null || !world.events.some(e => e.type === 'kill' && e.id === o.targetId)) return false;
+    o.state = 'complete';
+    world.events.push({type:'objectiveComplete',questId:o.questId,participants:players.filter(eligible).map(p=>p.pid)});
+    return true;
+  }
   if (o.kind === 'visit-markers') return stepMarkers(world, o, players, inputs);
   if (o.carrier !== null) {
     const carrier = players.find(p => p.pid === o.carrier);
