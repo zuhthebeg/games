@@ -62,7 +62,8 @@ test('FX2 lazy load, reduced/classic zero fetch, one attempt per skill, isolated
 });
 
 test('FX2 registry covers all mana-cost player skills, excluding basics/monsters',()=>{
-  const ids=Object.entries(ABILITIES).filter(([,d])=>d.family&&d.manaCost>0).map(([id])=>id).sort();
+  // Blunt-only skills (B1) are vector-only until their bake lands after FX3.
+  const ids=Object.entries(ABILITIES).filter(([,d])=>d.family&&d.manaCost>0&&!d.requiresForm).map(([id])=>id).sort();
   assert.deepEqual(Object.keys(VFX_BAKED).sort(),ids);
   // Runtime quality gate: only bakes with real coverage are enabled (cocy 10-13).
   assert.deepEqual(Object.keys(VFX_ATLASES),['ember_bolt']);
