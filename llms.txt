@@ -29,6 +29,7 @@
 - [사다리 게임](https://game.cocy.io/ladder/): 사다리 타기.
 
 ## RPG·강화 (RPG)
+- [Untitled · 잿빛 여관](https://game.cocy.io/arpg/): 1~4인 협동 액션 RPG. 텔레그래프 회피·반격 전투, 고블린부터 수호룡까지, 강화·제작·스킬 숙련. 설치 없이 브라우저에서.
 - [무기 강화 & 배틀](https://game.cocy.io/enhance/): 디아블로식 등급 시스템. 무기 강화·배틀로 골드 획득, 무기별 숙련도(최대 Lv.100).
 
 ## 정보·도구 (Info / Tools)

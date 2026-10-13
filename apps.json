@@ -1,4 +1,5 @@
 [
+  {"title":"Untitled · 잿빛 여관","icon":"https://game.cocy.io/arpg/icon.svg","url":"https://game.cocy.io/arpg/","desc":"1~4인 협동 액션 RPG. 텔레그래프를 읽고 구르고 반격하며 고블린부터 수호룡까지. 강화·제작·스킬 숙련.","badge":"NEW","platforms":["WEB"],"languages":["🇰🇷"],"category":"arcade"},
   {"title":"감자특공대 Spud Squad","icon":"https://game.cocy.io/spudsquad/icon.svg","url":"https://game.cocy.io/spudsquad/","desc":"1~4인 실시간 협동 웨이브 서바이벌. 20웨이브를 함께 돌파하세요.","badge":"NEW","platforms":["WEB"],"languages":["🇰🇷","🇺🇸","🇹🇼"],"category":"arcade"},
   {
     "title": "플레이DNA PlayDNA",
