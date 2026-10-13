@@ -475,7 +475,7 @@ export class HubUI {
     } else {
       const label = worn ? '착용 중' : comparison.locked ? `장착 불가 · ${comparison.lockReason}` : '장착';
       footer = `<div class="p2-two">${button(`판매 ${sellPrice(item)} G`, 'sell', args, worn)}`
-        + `${button(`분해 · ${ITEMS[dismantleMaterial(item)].name}: ${dismantleRefund(item)}`, 'dismantle', `${args} class="quiet-danger"`, worn)}</div>`
+        + `${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${args} class="quiet-danger"`, worn)}</div>`
         + button(label, 'equip', `${args} class="primary"`, worn || comparison.locked);
     }
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
@@ -866,7 +866,7 @@ export class HubUI {
       const rare = ['rare', 'epic'].includes(ITEMS[drop.id].rarity);
       const uid = `data-uid="${escape(drop.uid)}"`;
       const actions = item && !state
-        ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 · ${ITEMS[dismantleMaterial(item)].name}: ${dismantleRefund(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
+        ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
         : `<small class="p2-loot-status" role="status">${state || '보관함'}</small>`;
       return `<article class="p2-loot-card ${rare ? 'sheen' : ''}">${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
     }).join('');

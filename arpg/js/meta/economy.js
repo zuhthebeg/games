@@ -8,7 +8,8 @@ export const ENCHANT = {
   rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2, 10: 0.15, 11: 0.10 },
   stonesPerScroll: 5, greaterYield: [5, 10],
   // Dismantle refund by enhance level (+0..+12); the greater stone is the "cash out" at +7 and above.
-  dismantleStones: [0, 0, 1, 2, 3, 5, 7, 10, 14, 18, 24, 30, 38],
+  // cocy 10-14: every enhanced item returns stones on dismantle (+1 was 0).
+  dismantleStones: [0, 1, 2, 3, 4, 5, 7, 10, 14, 18, 24, 30, 38],
   dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5],
   // A destroyed item leaves this fraction of its dismantle stones, never the greater stone.
   failRefund: 0.5,

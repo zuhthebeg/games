@@ -209,3 +209,7 @@ test('forge renders risky odds, danger button and a one-shot result line for suc
   assert.doesNotMatch(hub.html, /산산조각/);
   assert.doesNotMatch(hub.html + hub.footer, /undefined|NaN/);
 });
+test('every enhanced level returns stones on dismantle and no enhance->dismantle loop is profitable (cocy 10-14)', () => {
+  for (let level = 1; level <= ENCHANT.max; level++) assert.ok(ENCHANT.dismantleStones[level] >= 1, `+${level}`);
+  for (let level = 1; level < ENCHANT.safe; level++) assert.ok(ENCHANT.dismantleStones[level] < level * ENCHANT.stonesPerScroll);
+});
