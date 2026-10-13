@@ -77,3 +77,52 @@ test('S12 loot anchor stays finite and identical at all threat levels; objective
   assert.deepEqual(loot,rollDrops(monster,seed,{...ctx,stageId:'S12'}));assert.ok(Number.isFinite(loot.gold));
  }
 });
+
+const qsId='M_MARSH_MARKERS';
+function qsSetup(count=1){const w=createWorld({seed:42});for(let i=0;i<count;i++)addPlayer(w,{pid:String(i),mods:{maxHp:10000}});startStage(w,qsId);return w;}
+function visit(w,i,pid=0){at(pawn(w,pid),w.round.objective.markers[i]);dwell(w);}
+test('QS1 registry: S11 gate, S13 anchors, fixed three at0 slots and exact off-puddle marker centers',async()=>{
+ const {ABILITIES}=await import('../js/content/combat.js');const q=OBJECTIVE_QUESTS.QS1,w=qsSetup(),o=w.round.objective;
+ assert.equal(MAPS[qsId].questId,'QS1');assert.equal(mapUnlocked({cleared:{S11:true}},qsId),true);assert.equal(mapUnlocked({cleared:{S10:true}},qsId),false);
+ assert.equal(mapUnlocked({cleared:{[qsId]:true}},'S16'),false);assert.equal(biomeForStage(qsId),'marsh');
+ assert.deepEqual(q.objective.markers,[[.40,.25],[.52,.75],[.78,.5]]);assert.deepEqual(STAGES[qsId].spawns,q.spawns);
+ assert.deepEqual(q.spawns.map(s=>[s.monster,s.at]),[['poison_spider',0],['spirit',0],['wolf',0]]);
+ assert.equal(BALANCE.stages[qsId].hp,BALANCE.stages.S13.hp);assert.equal(BALANCE.stages[qsId].damage,BALANCE.stages.S13.damage);
+ assert.equal(BALANCE.stages[qsId].huntTier,3);assert.equal(BALANCE.stages[qsId].rec[0],12);assert.deepEqual(monsterSizeProfile(qsId,false,false,.7),monsterSizeProfile('S13',false,false,.7));
+ // Static centers lie outside radius115 from spider spawn. Its moving, offset attack remains a live hazard, not terrain.
+ for(const m of o.markers){const d=Math.hypot(m.x-.62*w.arena.w,m.y-.70*w.arena.h);assert.ok(d>ABILITIES.spider_puddle.shape.radius);assert.ok(d+o.radius>ABILITIES.spider_puddle.shape.radius+ABILITIES.spider_puddle.shape.offset,'dwell circle has space outside even the spawn-origin offset puddle');}
+});
+test('QS1 each marker requires 15 continuous ticks; exact radius edge, damage maintains dwell',()=>{
+ for(let i=0;i<3;i++){const w=qsSetup(),p=pawn(w),o=w.round.objective;at(p,o.markers[i]);p.x+=64;dwell(w,14);assert.equal(o.visited,0);p.hp-=5;dwell(w,1);assert.equal(o.visited,1<<i);assert.deepEqual(o.progress,{});}
+});
+for(const interrupt of ['outside','movement','moving','dodge','dash','channel','death','terminal'])test(`QS1 ${interrupt} resets only continuous dwell`,()=>{
+ const w=qsSetup(),p=pawn(w),o=w.round.objective;visit(w,0);at(p,o.markers[1]);dwell(w,14);const inputs={};
+ if(interrupt==='outside')p.x+=65;if(interrupt==='movement')inputs['0']={mx:1};if(interrupt==='moving')p.moving=true;if(interrupt==='dodge')inputs['0']={dodgeEdge:true};if(interrupt==='dash')p.dodge.dashLeft=1;if(interrupt==='channel')p.channel=1;if(interrupt==='death')p.dead=true;if(interrupt==='terminal')p.terminal='return_scroll';
+ dwell(w,1,inputs);assert.equal(o.visited,1);assert.deepEqual(o.progress,{});
+ p.moving=false;p.dead=false;p.terminal=null;p.channel=0;p.dodge.dashLeft=0;at(p,o.markers[1]);dwell(w,14);assert.equal(o.visited,1);dwell(w,1);assert.equal(o.visited,3);
+});
+for(const order of [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]])test(`QS1 free order ${order}; duplicate visits ignored; third is sole success`,()=>{
+ const w=qsSetup(),o=w.round.objective;visit(w,order[0]);dwell(w,30);assert.equal(w.events.filter(e=>e.type==='markerVisited').length,1);visit(w,order[1]);assert.notEqual(o.state,'complete');visit(w,order[2]);assert.equal(o.visited,7);assert.equal(o.state,'complete');assert.equal(w.events.filter(e=>e.type==='objectiveComplete').length,1);dwell(w,20);assert.equal(w.events.filter(e=>e.type==='objectiveComplete').length,1);
+});
+test('QS1 companion dwell is not pooled, simultaneous contacts mark once, divided visits share bitset',()=>{
+ const w=qsSetup(2),o=w.round.objective;at(pawn(w),o.markers[0]);dwell(w,10);at(pawn(w),o.entry);at(pawn(w,1),o.markers[0]);dwell(w,5);assert.equal(o.visited,0);dwell(w,10);assert.equal(o.visited,1);
+ at(pawn(w),o.markers[1]);at(pawn(w,1),o.markers[1]);dwell(w);assert.equal(w.events.filter(e=>e.type==='markerVisited'&&e.marker===1).length,1);visit(w,2,1);assert.equal(o.visited,7);assert.deepEqual(w.events.at(-1).participants,['0','1']);
+});
+test('QS1 client visited flags cannot complete markers; swapping markers resets prior dwell',()=>{
+ const w=qsSetup(),p=pawn(w),o=w.round.objective;dwell(w,30,{'0':{visited:true,marker:2}});assert.equal(o.visited,0);
+ at(p,o.markers[0]);dwell(w,14);at(p,o.markers[1]);dwell(w,1);at(p,o.markers[0]);dwell(w,1);assert.equal(o.progress['0:0'],1);assert.equal(o.visited,0);
+});
+for(const terminal of ['death','return_scroll'])test(`QS1 real sim clear with three living enemies retains ${terminal} companion; freezes`,()=>{
+ const w=qsSetup(2),o=w.round.objective;step(w);assert.equal(w.entities.filter(e=>e.kind==='monster').length,3);visit(w,0);visit(w,1);pawn(w,1).terminal=terminal;pawn(w,1).dead=terminal==='death';at(pawn(w),o.markers[2]);dwell(w,14);const events=step(w);
+ assert.equal(w.round.state,'clear');assert.equal(pawn(w).terminal,'clear');assert.equal(pawn(w,1).terminal,terminal);assert.deepEqual(events.find(e=>e.type==='objectiveComplete').participants,['0']);assert.equal(w.entities.filter(e=>e.kind==='monster'&&!e.dead).length,3);
+ const frozen=JSON.stringify({...w,events:[]});for(let i=0;i<30;i++)assert.deepEqual(step(w),[]);assert.equal(JSON.stringify(w),frozen);
+});
+test('QS1 fatal poison on final dwell tick prevents dead pawn success; living companion can complete',()=>{
+ const w=qsSetup(2),p=pawn(w),o=w.round.objective;visit(w,0);visit(w,1);at(p,o.markers[2]);dwell(w,14);p.hp=1;p.poison={left:2,next:1,interval:30,hit:{def:{damage:2},mult:1,periodic:true,srcId:999,srcKind:'monster',abilityId:'spider_poison',fromX:p.x,fromY:p.y}};
+ step(w);assert.equal(p.terminal,'death');assert.equal(o.visited,3);assert.notEqual(w.round.state,'clear');at(pawn(w,1),o.markers[2]);dwell(w,14);const events=step(w);assert.equal(w.round.state,'clear');assert.deepEqual(events.find(e=>e.type==='objectiveComplete').participants,['1']);assert.equal(p.terminal,'death');
+});
+test('QS1 save/first XP510/repeat0 and S13 death/loot anchors; objective pays no gear or gold',async()=>{
+ const s=createSave({name:'QS1',answers:[0,0,0,0,0],weapon:'blade',createdAt:1});assert.ok(validateSave(s));assert.equal(stageXp(s,qsId),510);assert.equal(deathLoss({...s,xp:100},qsId),deathLoss({...s,xp:100},'S13'));
+ const r=settleRound(s,{stageId:qsId,terminal:'clear'});assert.equal(r.receipt.stageXp,510);assert.equal(stageXp(r.save,qsId),0);assert.ok(validateSave(r.save));assert.deepEqual(r.receipt.lootKept,{items:[],stacks:{},gold:0});
+ const {rollDrops}=await import('../js/meta/items.js');for(const threat of [1,2,3])for(const monster of ['poison_spider','spirit','wolf'])for(let seed=1;seed<25;seed++)assert.deepEqual(rollDrops(monster,seed,{huntTier:3,threat,elite:false,stageId:qsId}),rollDrops(monster,seed,{huntTier:3,threat,elite:false,stageId:'S13'}));
+});

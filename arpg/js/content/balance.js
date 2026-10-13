@@ -35,6 +35,7 @@ export const BALANCE = {
   stages: {
     // S20 aftermath: one fixed boss, HP below S20 chief (13860 vs 15770), stronger hits, no waves.
     TD1: { hp:18, damage:3, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:3, rewardRank:20, rec:[22,'epic',4] },
+    M_MARSH_MARKERS: { hp:4.2, damage:2.7, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:13, sizeRank:13, rec:[12,'rare',2] },
     M_MINE_CART: { hp:3.5, damage:2.4, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:12, sizeRank:12, rec:[11,'fine',3] },
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
     S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
