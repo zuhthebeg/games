@@ -80,6 +80,16 @@ export const RECIPES = {
   pack_bow: { wood: 16, hide: 4, web: 2, gold: 140 },
   altar_staff: { wood: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
   woven_armor: { web: 16, hide: 4, scrap: 4, gold: 140 },
+  // T4: 1.5x T3 warden_maul budget (240g / 36 materials) plus one guardian scale.
+  // The primary material follows each item's actual metal/wood/cloth/leather tag.
+  revenant_blade: { scrap: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  bone_bow: { wood: 36, hide: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  soulfire_wand: { wood: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  gravekeeper_staff: { wood: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  ossuary_maul: { scrap: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  shroud_robe: { web: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  shadow_leather: { hide: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
+  ossuary_plate: { scrap: 36, rune_shard: 12, frost_shard: 6, dragon_scale: 1, gold: 360 },
 };
 // Above the safe line each risky level adds a further +4% so +7~+12 are worth the gamble.
 export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2 + 0.04 * Math.max(0, level - ENCHANT.safe);
