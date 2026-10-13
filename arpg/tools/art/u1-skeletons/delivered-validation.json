@@ -1,0 +1,207 @@
+{
+  "ok": true,
+  "total_frames": 1504,
+  "results": [
+    {
+      "name": "skeleton-minion",
+      "format": "webp",
+      "frames": 392,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          1280
+        ]
+      ],
+      "webp_bytes": 389466,
+      "json_bytes": 89602,
+      "total_bytes": 479068,
+      "alpha_coverage_percent": [
+        5.438,
+        11.133
+      ],
+      "max_idle_center_drift_px": 0.5,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 392,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 31.3707,
+      "min_skin_rms_from_bind_height": 0.06288,
+      "lossless_alpha_matches_pose_evidence": 392,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": []
+    },
+    {
+      "name": "skeleton-warrior",
+      "format": "webp",
+      "frames": 360,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          896
+        ]
+      ],
+      "webp_bytes": 350972,
+      "json_bytes": 82253,
+      "total_bytes": 433225,
+      "alpha_coverage_percent": [
+        5.237,
+        9.43
+      ],
+      "max_idle_center_drift_px": 0.5,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 360,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 38.6048,
+      "min_skin_rms_from_bind_height": 0.069904,
+      "lossless_alpha_matches_pose_evidence": 360,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [
+        17.73,
+        17.67,
+        17.5,
+        17.68,
+        17.73,
+        17.68,
+        17.5,
+        17.68
+      ]
+    },
+    {
+      "name": "skeleton-rogue",
+      "format": "webp",
+      "frames": 400,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          1280
+        ]
+      ],
+      "webp_bytes": 362060,
+      "json_bytes": 91442,
+      "total_bytes": 453502,
+      "alpha_coverage_percent": [
+        6.128,
+        12.122
+      ],
+      "max_idle_center_drift_px": 1.0,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 400,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 38.6048,
+      "min_skin_rms_from_bind_height": 0.071479,
+      "lossless_alpha_matches_pose_evidence": 400,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [
+        20.44,
+        20.37,
+        20.16,
+        20.37,
+        20.44,
+        20.37,
+        20.16,
+        20.37
+      ]
+    },
+    {
+      "name": "skeleton-mage",
+      "format": "webp",
+      "frames": 352,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          896
+        ]
+      ],
+      "webp_bytes": 307888,
+      "json_bytes": 80417,
+      "total_bytes": 388305,
+      "alpha_coverage_percent": [
+        8.282,
+        11.09
+      ],
+      "max_idle_center_drift_px": 0.5,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 352,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 38.6048,
+      "min_skin_rms_from_bind_height": 0.075487,
+      "lossless_alpha_matches_pose_evidence": 352,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [
+        32.38,
+        32.21,
+        32.2,
+        32.34,
+        32.23,
+        32.33,
+        32.19,
+        32.21
+      ]
+    }
+  ],
+  "file_sha256": {
+    "skeleton-minion/atlas-0.webp": "6fba90f2efd10800cbb02f8bd003c5fb0954e686d2beda8a733f46990fd25159",
+    "skeleton-minion/atlas-0.webp.json": "517d5d714e3b03089ee6660d1f057f48c5510ce9fc5bef84efa153e0c841091a",
+    "skeleton-minion/atlas-1.webp": "90f737fb665872319764fe89fc6884b225aaa42e085ab59cd8898289b16b48aa",
+    "skeleton-minion/atlas-1.webp.json": "5d2a961bed2d56af0747ce8eae6b0ffa3c61889ff87358582d7b657206b340f1",
+    "skeleton-warrior/atlas-0.webp": "7db75a63241c4ba76619de0bcbebd6d59352dc84d94a92b5580300f743931c1a",
+    "skeleton-warrior/atlas-0.webp.json": "267ac7be1a49441f028c7dd6e4a5fc09bf2791a3853e91122620f7380c28e18d",
+    "skeleton-warrior/atlas-1.webp": "a65af614d4c7ada36a5e39db40381f6a92166902d58c4ee55eb2c113c935aa47",
+    "skeleton-warrior/atlas-1.webp.json": "90caa8ab30e47c24c8a89112c612ce63351e383b16896195a19a7d370ae2f4b5",
+    "skeleton-rogue/atlas-0.webp": "0da58a896506d042a1fe2c885ce54ddf80c5061fc2c9a4431eb86bddfaee2758",
+    "skeleton-rogue/atlas-0.webp.json": "1350ec7b104be37888479ca1dfd598fe083273dc4b2c0b46d42c32a635ae0ad5",
+    "skeleton-rogue/atlas-1.webp": "323a4327f2bbe7294ea8ae04887c4affb49bfc7fd043270c5b45e932162d8b41",
+    "skeleton-rogue/atlas-1.webp.json": "fd04dbf5abe01294db55bd8dacb554dbd35d06da7558a6893beb8a297078de47",
+    "skeleton-mage/atlas-0.webp": "a865f9f801219ebffda777445eb0a2ce6cc9bb23ede2f38a06b25ea9a3c62eea",
+    "skeleton-mage/atlas-0.webp.json": "b54db4f8af4c1a9a21842e81518cadda8fd0be35b52f1a7125813b12ac52613b",
+    "skeleton-mage/atlas-1.webp": "6b8ede28620f828bf6fe5276f66be28b54154238bc0559fd803915708783ecb5",
+    "skeleton-mage/atlas-1.webp.json": "8dc7918ea8fdcf3fd7e8f75cca3a0faaef0bafdceebc080450d75c43be1cc733"
+  }
+}

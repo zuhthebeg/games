@@ -7,6 +7,7 @@ import { createSave, validateSave, SaveStore, SAVE_VERSION } from '../js/meta/sa
 import { sellStack, sellItem } from '../js/meta/shop.js';
 import { questReward } from './fixtures/quest-rewards.js';
 import { HubUI } from '../js/ui/hub.js';
+import { MONSTERS } from '../js/content/combat.js';
 
 const fresh = () => createSave({ name: 'C1', answers: [0,0,0,0,0], createdAt: 123 });
 const rich = () => ({ ...fresh(), gold: 10000, stacks: { ...fresh().stacks,
@@ -131,19 +132,24 @@ test('C1 wood reaches the actual S2/S5 quest bag and settlement/save without ext
 // Load the committed baseline in a fresh node process: compare actual previous seeded drops,
 // not a rewritten oracle. Reassignment keeps count/chance/weight/sell, RNG order and other loot.
 test('C1 1,000 seeds per monster retain all baseline drop bytes except slinger/wolf scrap -> wood', () => {
+  // Preserve all original nine seeded-drop baselines; main's three and U1's four additions are explicit.
+  const baselineIds = ['scarecrow','goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','spirit','poison_spider'];
+  assert.deepEqual(Object.keys(MONSTERS).filter(id => !baselineIds.includes(id)),
+    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage']);
+  assert.ok(baselineIds.every(id => Object.hasOwn(MONSTERS, id)));
   const oldItems=execFileSync('git',['show','cb53781:arpg/js/meta/items.js'],{encoding:'utf8'});
   const oldLoot=execFileSync('git',['show','cb53781:arpg/js/content/loot.js'],{encoding:'utf8'});
   const oldEconomy=execFileSync('git',['show','cb53781:arpg/js/meta/economy.js'],{encoding:'utf8'});
-  const script=`const root=new URL('./arpg/js/meta/', 'file://'+process.cwd()+'/');
+  const script=`const root=new URL(${JSON.stringify(new URL('../js/meta/', import.meta.url).href)});
     let src=${JSON.stringify(oldItems)}.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,root).href));
     src=src.replace(new URL('../content/loot.js',root).href,'data:text/javascript;base64,'+Buffer.from(${JSON.stringify(oldLoot)}).toString('base64'));
     src=src.replaceAll(new URL('economy.js',root).href,'data:text/javascript;base64,'+Buffer.from(${JSON.stringify(oldEconomy)}.replace('../content/balance.js',new URL('../content/balance.js',root).href)).toString('base64'));
     const {rollDrops}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
-    const out=[];for(const m of ['goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','spirit','poison_spider']) for(let seed=0;seed<1000;seed++) out.push(rollDrops(m,seed,{materialBonus:7,threat:2}));
+    const out=[];for(const m of ${JSON.stringify(baselineIds)}) for(let seed=0;seed<1000;seed++) out.push(rollDrops(m,seed,{materialBonus:7,threat:2}));
     console.log(JSON.stringify(out));`;
   const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:16*1024*1024}));
   let index=0, wood=0;
-  for(const m of ['goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','spirit','poison_spider']) for(let seed=0;seed<1000;seed++) {
+  for(const m of baselineIds) for(let seed=0;seed<1000;seed++) {
     const expected=old[index++];
     if(['goblin_slinger','wolf'].includes(m) && expected.stacks.scrap) {expected.stacks.wood=expected.stacks.scrap;delete expected.stacks.scrap;wood+=expected.stacks.wood;}
     const actual=rollDrops(m,seed,{materialBonus:7,threat:2});assert.deepEqual(actual,expected,`${m}:${seed}`);

@@ -14,6 +14,10 @@ export const ATLAS_IDS = Object.freeze({
   gargoyle: 'gargoyle',
   training_dragon: 'dragon',
   throne_dragon: 'throne-dragon',
+  skeleton_minion: 'skeleton-minion',
+  skeleton_warrior: 'skeleton-warrior',
+  skeleton_rogue: 'skeleton-rogue',
+  skeleton_mage: 'skeleton-mage',
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
 

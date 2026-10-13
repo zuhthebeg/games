@@ -1,0 +1,50 @@
+[
+  {
+    "name": "skeleton-warrior",
+    "format": "webp",
+    "frames": 360,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        896
+      ]
+    ],
+    "webp_bytes": 350972,
+    "json_bytes": 82253,
+    "total_bytes": 433225,
+    "alpha_coverage_percent": [
+      5.237,
+      9.43
+    ],
+    "max_idle_center_drift_px": 0.5,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 360,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.069904,
+    "lossless_alpha_matches_pose_evidence": 360,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      17.73,
+      17.67,
+      17.5,
+      17.68,
+      17.73,
+      17.68,
+      17.5,
+      17.68
+    ]
+  }
+]

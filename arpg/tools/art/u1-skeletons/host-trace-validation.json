@@ -1,0 +1,46 @@
+{
+  "ok": true,
+  "baseline": "dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8",
+  "stage_ids": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16",
+    "S17",
+    "S18",
+    "S19",
+    "S20",
+    "TD1",
+    "M_THRONE_GARGOYLE",
+    "M_MINE_CART",
+    "M_MARSH_MARKERS"
+  ],
+  "stages": 24,
+  "seeds": [
+    1,
+    42,
+    999
+  ],
+  "weapons": [
+    "blade",
+    "bow",
+    "focus"
+  ],
+  "ticks": 900,
+  "traces": 216,
+  "before_sha256": "af2f73a70406519d9ecc67f7ebcc0bcc28be9434e44321e3cef5d324dafb23d9",
+  "after_sha256": "af2f73a70406519d9ecc67f7ebcc0bcc28be9434e44321e3cef5d324dafb23d9",
+  "cmp_equal": true
+}

@@ -374,5 +374,121 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "skeleton-minion",
+    "label": "해골 졸개",
+    "monster": true,
+    "content_ids": [
+      "skeleton_minion"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6440752148628235
+    },
+    "bytes": 479068,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "skeleton-warrior",
+    "label": "해골 전사",
+    "monster": true,
+    "content_ids": [
+      "skeleton_warrior"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6359060406684875
+    },
+    "bytes": 433225,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "skeleton-rogue",
+    "label": "해골 도적",
+    "monster": true,
+    "content_ids": [
+      "skeleton_rogue"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6319391131401062
+    },
+    "bytes": 453502,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "skeleton-mage",
+    "label": "해골 마법사",
+    "monster": true,
+    "content_ids": [
+      "skeleton_mage"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6169794201850891
+    },
+    "bytes": 388305,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]
