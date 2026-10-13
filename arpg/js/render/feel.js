@@ -30,7 +30,7 @@ export const FEEL = Object.freeze({
 export function impactTier(event) {
   if (event.type === 'kill' || event.type === 'death') return FEEL.impact.kill;
   if (event.counter) return FEEL.impact.counter;
-  if (event.critical) return FEEL.impact.critical;
+  if (event.crit || event.critical) return FEEL.impact.critical;
   if (event.exposed) return FEEL.impact.weak;
   return event.dmg >= FEEL.heavyDamage ? FEEL.impact.heavy : FEEL.impact.normal;
 }

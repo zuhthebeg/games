@@ -7,7 +7,7 @@ export function eventSound(event, localId) {
   if (event.type === 'act' && event.id === localId) return 'swing';
   if (event.type === 'dodge' && event.id === localId) return 'dodge';
   if (event.type === 'hit') return event.dst === localId ? 'hurt'
-    : event.exposed || event.critical ? 'critical' : 'hit';
+    : event.exposed || event.crit || event.critical ? 'critical' : 'hit';
   if (event.type === 'kill') return 'kill';
   if (event.type === 'death' && event.id === localId) return 'hurt';
   return null;

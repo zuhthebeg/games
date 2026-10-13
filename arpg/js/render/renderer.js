@@ -5,7 +5,7 @@ import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
-import { ABILITIES } from '../content/combat.js';
+import { ABILITIES, MONSTERS } from '../content/combat.js';
 import { healingFeedback } from './healing-feedback.js';
 import { SKILL_VFX } from './skill-vfx.js';
 import { MasterySkillVfx as SkillVfx } from './mastery-vfx.js';
@@ -288,13 +288,15 @@ export class ArenaRenderer {
   impact(target, source, tier) {
     if (!target) return;
     const view = this.ensure(target);
-    view.anim.hurt = FEEL.hurtLife;
+    // Heavy-poise bosses shrug hits off: no flinch clip, freeze or kick; the hit clip plays only on a real stagger.
+    const superArmor = target.kind === 'monster' && MONSTERS[target.type]?.heavyPoise && !target.dead;
+    if (!superArmor) view.anim.hurt = FEEL.hurtLife;
     if (this.reduced) return;
-    view.stopLeft = Math.max(view.stopLeft, tier.stop);
+    if (!superArmor) view.stopLeft = Math.max(view.stopLeft, tier.stop);
     view.flashLeft = tier === FEEL.impact.kill ? FEEL.flash.killLife : FEEL.flash.life;
     view.flashAlpha = tier === FEEL.impact.kill ? FEEL.flash.killAlpha : FEEL.flash.alpha;
     const angle = source ? Math.atan2(target.y - source.y, target.x - source.x) : target.facing;
-    view.kickAge = 0;
+    view.kickAge = superArmor ? FEEL.kick.life : 0;
     view.kickX = Math.cos(angle) * tier.kick;
     view.kickY = Math.sin(angle) * tier.kick;
     if (source) {
@@ -321,9 +323,9 @@ export class ArenaRenderer {
         const tier = areaTiers.get(event) || impactTier(event);
         const source = world.entities.find(candidate => candidate.id === event.src);
         const color = entity?.kind === 'player' ? FEEL.colors.hurt : ABILITIES[event.ability]?.requiresForm === 'blunt' ? 0xe88e50 : event.counter ? FEEL.colors.counter
-          : event.critical ? FEEL.colors.critical : event.exposed ? FEEL.colors.weak : FEEL.colors.normal;
+          : event.crit || event.critical ? FEEL.colors.critical : event.exposed ? FEEL.colors.weak : FEEL.colors.normal;
         this.impact(entity, source, tier);
-        const size = event.counter ? FEEL.counter.scale : event.critical ? FEEL.numbers.criticalScale : event.exposed ? FEEL.numbers.weakScale : 1;
+        const size = event.counter ? FEEL.counter.scale : event.crit || event.critical ? FEEL.numbers.criticalScale : event.exposed ? FEEL.numbers.weakScale : 1;
         this.number(`${event.dmg}${event.exposed || event.counter ? '!' : ''}`, event.x, event.y, color, size);
         this.burst(event.x, event.y, tier, color, source?.facing);
         if (event.counter) {
