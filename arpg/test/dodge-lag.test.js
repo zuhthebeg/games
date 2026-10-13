@@ -47,6 +47,16 @@ test('late guest dodge refunds direct damage, restores invulnerability and cance
   for (let i = 0; i < 50; i++) { const ev = step(f.w); counter += ev.filter(e => e.type === 'counter').length; paid += ev.filter(e => e.type === 'perfectDodge').length; }
   assert.equal(counter, 1); assert.equal(paid, 0);
 });
+test('rewind cancels only applied knock: arena-clipped knock cannot invent displacement; walking survives', () => {
+  const edge = fixture(); edge.p.x = edge.p.r; shot(edge); edge.w.projectiles[0].vx = -1;
+  step(edge.w); delay(edge);
+  step(edge.w, { guest: input({ dodgeEdge: true, viewTick: 0, mx: 1 }) });
+  assert.ok(Math.abs(edge.p.x - edge.p.r - 25) < .0001);
+  const walk = fixture(); shot(walk); step(walk.w);
+  for (let i = 0; i < 2; i++) step(walk.w, { guest: input({ mx: .5 }) });
+  step(walk.w, { guest: input({ dodgeEdge: true, viewTick: 0, mx: 1 }) });
+  assert.ok(Math.abs(walk.p.x - (425 + walk.p.speed / 30)) < .0001);
+});
 for (const age of [DODGE_LAG_CAP_TICKS, DODGE_LAG_CAP_TICKS + 1, 12]) {
   test(`rewind cap boundary age ${age} ticks`, () => {
     const f = fixture(); shot(f); step(f.w); const hp = f.p.hp; delay(f, age - 1);

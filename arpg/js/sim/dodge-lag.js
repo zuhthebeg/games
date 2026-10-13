@@ -20,7 +20,7 @@ export function recordGuestHit(world, p, hit, dmg, kx, ky) {
   if (!state || hit.periodic) return;
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const row = { tick: world.tick, hit, dmg, kx, ky, movedX: 0, movedY: 0,
-    hurtInvuln: p.hurtInvuln, poison: p.poison ? structuredClone(p.poison) : null };
+    arena: world.arena, hurtInvuln: p.hurtInvuln, poison: p.poison ? structuredClone(p.poison) : null };
   state.lastDirect = row;
   if (!hit.counter && (attacker ? attacker.team !== p.team : hit.srcKind !== 'player')) state.hits.push(row);
 }
@@ -28,8 +28,12 @@ export function trackGuestKnock(p) {
   const state = guests.get(p);
   if (!state) return;
   for (const row of state.hits) {
-    row.movedX += row.kx; row.movedY += row.ky;
-    row.kx *= .82; row.ky *= .82;
+    // Attribute only the displacement the arena permits, not clipped off-map knock.
+    const bounded = (v, max) => Math.max(p.r, Math.min(max - p.r, v));
+    if (p.kx) row.movedX += (bounded(p.x + p.kx, row.arena.w) - bounded(p.x, row.arena.w)) * row.kx / p.kx;
+    if (p.ky) row.movedY += (bounded(p.y + p.ky, row.arena.h) - bounded(p.y, row.arena.h)) * row.ky / p.ky;
+    row.kx = Math.abs(p.kx * .82) < .05 ? 0 : row.kx * .82;
+    row.ky = Math.abs(p.ky * .82) < .05 ? 0 : row.ky * .82;
   }
 }
 export function rewindGuestDodge(world, p, inp, awardPerfect) {
