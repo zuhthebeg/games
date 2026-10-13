@@ -20,6 +20,7 @@ const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
 const SPAWN_IN_MS = 700;
+const BASIC_ABILITIES = new Set(Object.values(WEAPONS).map((w) => w.basic));
 export const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 
 // Up to three skill slots (skills-v2 §2). Unknown or weapon-forbidden ids become empty;
@@ -644,7 +645,9 @@ function applyHit(world, t, hit) {
     world.events.push({ type: 'sunder', id: t.id, ability: hit.abilityId });
   }
 
-  if (mdef.poise > 0 && t.staggerLeft === 0) {
+  // Heavy-poise bosses/elites (cocy 10-13): plain basic attacks never wear poise; skills, crits and counters do.
+  const plainBasic = mdef.heavyPoise && BASIC_ABILITIES.has(hit.abilityId) && !crit && !hit.counter;
+  if (mdef.poise > 0 && t.staggerLeft === 0 && !plainBasic) {
     t.poise -= (def.poise || 0) * (hit.poiseMult ?? 1);
     if (t.poise <= 0) {
       t.poise = 0;

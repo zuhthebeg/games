@@ -110,7 +110,7 @@ test('deterministic: same seed + same inputs => identical world', () => {
 
 test('stagger interrupts a windup and frees the major-attack token', () => {
   const w = createWorld({ seed: 5 });
-  addPlayer(w, { pid: 'a', x: 300, y: 400 });
+  addPlayer(w, { pid: 'a', x: 300, y: 400, mods: { critChance: 1 } }); // chief is heavy-poise: only crits/skills stagger
   const c = spawnMonster(w, 'goblin_chief', 520, 400);
   c.spawnLeft = 0; c.thinkLeft = 0;
   c.cds.chief_cleave = 999; c.cds.chief_slam = 999;

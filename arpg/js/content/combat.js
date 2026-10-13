@@ -232,7 +232,7 @@ export const MONSTERS = {
     xp: 0, keepRange: [0, 0],
   },
   throne_dragon: {
-    hp: 1100, r: 48, speed: 48, poise: 280, kbResist: 1,
+    hp: 1100, r: 48, speed: 48, heavyPoise: true, poise: 280, kbResist: 1,
     abilities: ['dragon_flame', 'dragon_stomp', 'dragon_tail'], xp: 40, keepRange: [100, 190],
   },
   training_dragon: {
@@ -252,7 +252,7 @@ export const MONSTERS = {
     xp: 16, keepRange: [160, 300],
   },
   goblin_chief: {
-    hp: 320, r: 28, speed: 104, poise: 120, kbResist: 0.7, abilities: ['chief_cleave', 'chief_charge', 'chief_slam'],
+    hp: 320, r: 28, speed: 104, heavyPoise: true, poise: 120, kbResist: 0.7, abilities: ['chief_cleave', 'chief_charge', 'chief_slam'],
     xp: 40, keepRange: [60, 110], elite: true // archetype rank only; random spawn variants use entity.eliteVariant,
   },
   wolf: {
@@ -260,11 +260,11 @@ export const MONSTERS = {
     abilities: ['wolf_dash', 'wolf_bite'], xp: 22, keepRange: [45, 75],
   },
   gargoyle: {
-    hp:420, r:36, speed:68, poise:108, kbResist:0.65,
+    hp:420, r:36, speed:68, heavyPoise: true, poise:108, kbResist:0.65,
     abilities:['guardian_crush', 'goblin_hop'], xp:36, keepRange:[60,110],
   },
   rune_guardian: {
-    hp: 280, r: 30, speed: 68, poise: 90, kbResist: 0.65,
+    hp: 280, r: 30, speed: 68, heavyPoise: true, poise: 90, kbResist: 0.65,
     abilities: ['guardian_crush', 'guardian_ring'], xp: 36, keepRange: [60, 110], elite: true // archetype rank only; random spawn variants use entity.eliteVariant,
   },
   spirit: {
