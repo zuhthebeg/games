@@ -127,3 +127,15 @@ test('empty slot and own-item zero deltas remain explicit without fabricated DEF
   assert.match(html,/빈 슬롯/);assert.match(html,new RegExp(`data-line="ac" data-from="0" data-to="${ITEMS.leather_vest.ac}"`));assert.doesNotMatch(html,/DEF|HP 보호/);
   assert.match(splitComparisonHtml(equippedItem(s,'weapon'),s),/변화 없음/);
 });
+
+test('buy-then-equip button buys and wears the offer in one step; equip failure buys nothing', () => {
+  const h=hub(),offer=shopStock(h.save.createdAt,h.save.shopRefresh).find(o=>!ITEMS[o.id].requiredStr||ITEMS[o.id].requiredStr<=10);
+  h.openItem(offer.uid,'buy');assert.match(h.sheet,/data-action="buy-gear"/);assert.match(h.sheet,/구매 후 장착/);
+  const gold=h.save.gold;h.action('buy-equip',{uid:offer.uid});
+  const worn=h.save.items.find(i=>i.uid===h.save.equipped[ITEMS[offer.id].kind]);
+  assert.equal(worn.id,offer.id);assert.equal(h.save.gold,gold-offer.price);assert.ok(h.save.shopBought.includes(offer.uid));
+  // Atomic: a throwing equip leaves the save untouched (nothing bought).
+  const g=hub(),o2=shopStock(g.save.createdAt,g.save.shopRefresh)[0];g.save={...g.save,stacks:{...g.save.stacks,potion:9999}};
+  const snap=structuredClone(g.save);assert.throws(()=>g.action('buy-equip',{uid:o2.uid}));assert.deepEqual(g.save,snap);
+  const poor=hub({...fresh(),gold:0});poor.openItem(offer.uid,'buy');assert.doesNotMatch(poor.sheet,/data-action="buy-equip"/);
+});

@@ -465,7 +465,9 @@ export class HubUI {
     if (mode === 'buy') {
       const sold = this.save.shopBought.includes(uid);
       const short = this.save.gold < item.price;
-      footer = button(sold ? '품절' : short ? '골드 부족' : `구매 · ${item.price} G`, 'buy-gear', `${args} class="primary" aria-describedby="purchase-reason"`, sold || short);
+      footer = sold || short ? button(sold ? '품절' : '골드 부족', 'buy-gear', `${args} class="primary" aria-describedby="purchase-reason"`, true)
+        : `<div class="p2-two">${button(`구매 · ${item.price} G`, 'buy-gear', `${args} aria-describedby="purchase-reason"`)}`
+          + `${button(comparison.locked ? `장착 불가 · ${comparison.lockReason}` : '구매 후 장착', 'buy-equip', `${args} class="primary"`, comparison.locked)}</div>`;
     } else if (mode === 'sell') {
       footer = button(`판매 · ${sellPrice(item)} G`, 'sell-shop', `${args} class="primary"`, worn);
     } else {
@@ -1031,6 +1033,13 @@ export class HubUI {
       case 'buy-gear':
         this.commit(buyGear(this.save, data.uid));
         return this.showMerchant();
+      case 'buy-equip': {
+        // Atomic: equip failure (weight/requirement) throws before commit, so nothing is bought.
+        const bought = buyGear(this.save, data.uid);
+        const uid = bought.items[bought.items.length - 1].uid;
+        this.commit(withFamilyLoadout(bought, equip(bought, uid)));
+        return this.showMerchant();
+      }
       case 'sell-shop':
         this.commit(sellItem(this.save, data.uid));
         return this.showMerchant();
