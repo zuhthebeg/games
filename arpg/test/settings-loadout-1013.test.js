@@ -4,7 +4,7 @@ import { trained } from './fixtures/trained.js';
 import { createSave, validateSave } from '../js/meta/save.js';
 import { learnSkill, setSlot, loadoutOf, withFamilyLoadout } from '../js/meta/skills.js';
 import { instance, equip } from '../js/meta/items.js';
-import { fxPreference, setFxPreference } from '../js/prefs.js';
+import { fxPreference } from '../js/prefs.js';
 
 const fresh = () => ({ ...trained(createSave({ name: '교체', answers: [0, 0, 0, 0, 0], weapon: 'blade', createdAt: 1 })), gold: 100000 });
 const withBow = save => ({ ...save, items: [...save.items, instance('b', 'short_bow')] });
@@ -42,14 +42,10 @@ test('saved per-family loadouts are validated', () => {
   assert.ok(validateSave({ ...s, loadouts: { blade: [null, null, null] } }));
 });
 
-test('effect preference: stored per device, URL overrides', () => {
-  const mem = new Map();
-  const storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+test('effect mode ignores the old device choice; classic URL remains a debug override', () => {
+  const storage = { getItem: () => 'classic' };
   assert.equal(fxPreference('', storage), 'new');
-  setFxPreference('classic', storage);
-  assert.equal(fxPreference('', storage), 'classic');
   assert.equal(fxPreference('?fx=effekseer', storage), 'new');
-  setFxPreference('new', storage);
   assert.equal(fxPreference('?fx=classic', storage), 'classic');
   assert.equal(fxPreference('', null), 'new');
 });

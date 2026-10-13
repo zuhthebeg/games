@@ -2,7 +2,8 @@ import { debugActions, registerDebugAction, watchDebugActions, grantGear, grantS
 import { createCombatController, queueVisibleKills, requestClear } from './combat.js';
 import { SLOTS } from '../meta/economy.js';
 import { MAX_LEVEL } from '../meta/progression.js';
-import { MONSTERS } from '../content/combat.js';
+import { MONSTERS, ABILITIES } from '../content/combat.js';
+import { MASTERY_SKILLS, masteryLevels } from '../meta/skill-mastery.js';
 export { registerDebugAction } from './actions.js';
 
 export function mountDebug(context) {
@@ -33,6 +34,7 @@ export function mountDebug(context) {
     <label>레벨<input id="dbg-level" type="number" min="1" max="${MAX_LEVEL}" value="${MAX_LEVEL}"></label>${btn('level', '레벨·포인트 설정')}${btn('points', '포인트 회수 (스탯 초기화)')}
     ${btn('unlock', '모든 스테이지 해금')}${btn('progress-reset', '진행 초기화')}${btn('reroll', '무료 상점 리롤')}${btn('refresh-reset', '갱신 카운터 리셋')}${btn('pity', '천장 준비 (다음 보스)')}
     <h3>세이브</h3>${btn('reset', '세이브 즉시 리셋')}${btn('copy', 'JSON 복사')}<label>JSON 붙여넣기<textarea id="dbg-json" spellcheck="false" aria-label="세이브 JSON"></textarea></label>${btn('import', 'JSON 불러오기')}
+    <h3>스킬 숙련</h3>${MASTERY_SKILLS.map(id => `<label>${ABILITIES[id].name}<select data-debug-mastery="${id}" aria-label="${ABILITIES[id].name} 숙련">${[1,2,3,4,5].map(n => `<option value="${n}">Lv${n}</option>`).join('')}</select></label>`).join('')}
     <h3>전투</h3>${btn('god', '무적')}${btn('oneHit', '원킬 ×100')}${btn('mana', 'MP 무한')}${btn('kill', '화면 몬스터 전멸')}${btn('clear', '즉시 클리어')}
     <label>속도<select id="dbg-speed">${options([0.5, 1, 2, 4])}</select></label>${btn('info', '전투 정보 오버레이')}
     <h3>드랍 미리보기 (저장 변경 없음)</h3><label>몬스터<select id="dbg-monster">${options(Object.keys(MONSTERS))}</select></label><label>유형<select id="dbg-kind">${options(['normal', 'elite', 'boss'])}</select></label><label>횟수<select id="dbg-count">${options([100, 1000])}</select></label><label>위협도<input id="dbg-threat" type="number" min="1" max="100" value="1"></label>${btn('preview', '드랍 시뮬')}<pre id="dbg-preview"></pre><div id="dbg-extensions"></div>`;
@@ -41,7 +43,16 @@ export function mountDebug(context) {
   const status = text => { panel.querySelector('#arpg-debug-status').textContent = text; };
   const value = id => panel.querySelector(`#dbg-${id}`).value;
   panel.querySelector('#dbg-speed').value = '1';
-  const togglePanel = () => { panel.hidden = !panel.hidden; toggle.setAttribute('aria-expanded', String(!panel.hidden)); context.input.reset(); };
+  const refreshMastery = () => { const levels = masteryLevels(hub.save); for (const select of panel.querySelectorAll('[data-debug-mastery]')) select.value = String(levels[select.dataset.debugMastery]); };
+  refreshMastery();
+  panel.addEventListener('change', event => {
+    const id = event.target.dataset.debugMastery;
+    if (!id) return;
+    try { if (!hub.save) throw new Error('세이브: 없음'); context.setMastery(id, Number(event.target.value)); status(`숙련: ${ABILITIES[id].name} Lv${event.target.value}`); }
+    catch (error) { status(error.message); }
+    refreshMastery();
+  });
+  const togglePanel = () => { panel.hidden = !panel.hidden; toggle.setAttribute('aria-expanded', String(!panel.hidden)); context.input.reset(); refreshMastery(); };
   toggle.addEventListener('click', togglePanel);
   // Only events originating inside this UI stop; canvas input stays enabled while open.
   for (const node of [panel, toggle]) for (const name of ['pointerdown', 'pointermove', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'keydown', 'keyup', 'wheel']) node.addEventListener(name, event => {

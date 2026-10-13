@@ -3,6 +3,10 @@ import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnaps
 
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
+import { presentSkillEvents } from './skill-presentation.js';
+import { MASTERY_SKILLS } from '../meta/skill-mastery.js';
+const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
+  && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= 5);
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
 const TICK_MS = 1000 / 30;
@@ -27,10 +31,15 @@ export class CoopSession {
   }
   decorate(view) {
     if (!view) return null;
-    for (const p of view.entities) if (p.kind === 'player') {
-      p.equipmentVisual = this.profiles[p.pid]?.equipmentVisual; p.name = this.profiles[p.pid]?.name;
-    }
-    return view;
+    return { ...view, entities: view.entities.map(p => p.kind === 'player' ? { ...p,
+      equipmentVisual: this.profiles[p.pid]?.equipmentVisual, name: this.profiles[p.pid]?.name,
+      skillMasteryLevels: this.isHost ? this.profiles[p.pid]?.skillMasteryLevels : p.skillMasteryLevels ?? this.profiles[p.pid]?.skillMasteryLevels } : p) };
+  }
+  setMastery(levels) {
+    if (!validLevels(levels)) return;
+    this.profile = { ...this.profile, skillMasteryLevels: { ...levels } };
+    this.profiles[this.uid] = { ...this.profiles[this.uid], skillMasteryLevels: { ...levels } };
+    if (!this.isHost) this.sendRt({ t: 'mastery', levels: { ...levels } });
   }
   begin(data) {
     if (this.phase !== 'prepare' || !data?.profiles || !data.profiles[this.uid]) return;
@@ -48,10 +57,9 @@ export class CoopSession {
         this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
       }
       startStage(this.world, data.config.stageId);
-      this.decorate(this.world);
     }
     this.startData = data; this.phase = 'running'; this.lastHostAt = this.now;
-    this.onBegin(this.config, this.isHost ? localView(this.world, this.uid) : null);
+    this.onBegin(this.config, this.isHost ? this.decorate(localView(this.world, this.uid)) : null);
     if (this.isHost) this.broadcast();
   }
   tryStart() {
@@ -70,7 +78,9 @@ export class CoopSession {
   }
   rt(from, data, now = this.now) {
     if (!data || !this.players.has(from) || this.lost) return;
-    if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
+    if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
+      this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
+    } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
       this.profiles[from] = data.profile; this.tryStart();
     } else if (data.t === 'input' && this.isHost && this.world && from !== this.uid) {
       if (this.latches[from]?.receive(data, now)) {
@@ -120,7 +130,7 @@ export class CoopSession {
   broadcast() {
     // Only recent corpses are render-relevant; never grow packets with the whole kill history.
     const visible = this.world.entities.filter(e => e.kind === 'player' || !e.dead || this.world.tick - (this.deathTicks.get(e.id) ?? 0) < 30);
-    const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
+    const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs, this.profiles), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
       events: this.journal, eventSeq: this.eventSeq };
     this.bytes += new TextEncoder().encode(JSON.stringify(packet)).length; this.snapshots++;
     this.sendRt(packet);
@@ -167,15 +177,16 @@ export class CoopSession {
     while (this.phase === 'running' && this.tickLeft >= 1000 / 30) {
       const inputs = Object.fromEntries([...this.players].map(pid => [pid, this.latches[pid]?.consume(this.now)]));
       const participants = this.world.entities.filter(e => e.kind === 'player' && !e.terminal).map(p => p.pid);
-      this.onBeforeTick(localView(this.world, this.uid));
-      const events = step(this.world, inputs);
+      this.onBeforeTick(this.decorate(localView(this.world, this.uid)));
+      const owners = new Map(this.world.projectiles.map(p => [p.id, p.ownerId]));
+      const events = presentSkillEvents(step(this.world, inputs), this.world, owners);
       // Acknowledgements describe consumed sim inputs, never merely received packets.
       for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);
       for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : event.participants || [] });
       // Even 15Hz on the tick clock (was ~12Hz alternating 66/100ms from the timer).
       if (this.world.round.state === 'running' && this.world.tick % 2 === 0) this.broadcast();
-      this.onFrame(localView(this.world, this.uid), events.filter(e => e.type === 'objectiveComplete' ? e.participants.includes(this.uid) : e.type !== 'kill' || participants.includes(this.uid)));
+      this.onFrame(this.decorate(localView(this.world, this.uid)), events.filter(e => e.type === 'objectiveComplete' ? e.participants.includes(this.uid) : e.type !== 'kill' || participants.includes(this.uid)));
       this.tickLeft -= 1000 / 30;
       if (this.world.round.state !== 'running') {
         this.phase = 'ended'; this.broadcast();
@@ -184,6 +195,6 @@ export class CoopSession {
     }
   }
   view(now = this.now) {
-    return this.isHost ? localView(this.world, this.uid) : this.decorate(this.prediction.view(this.buffer.sample(now)));
+    return this.isHost ? this.decorate(localView(this.world, this.uid)) : this.decorate(this.prediction.view(this.buffer.sample(now)));
   }
 }

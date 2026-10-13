@@ -20,7 +20,6 @@ import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } f
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
-import { fxPreference, setFxPreference } from '../prefs.js';
 import { icon, itemIcon } from './icons.js';
 import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
@@ -816,6 +815,7 @@ export class HubUI {
       <div><small>경험치</small><strong class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</strong>
         ${receipt.xpLost ? `<small class="loss" aria-label="손실 경험치">−${amount(receipt.xpLost)}</small>` : ''}</div>
       <div><small>골드</small><strong class="reward" aria-label="획득 골드">${icon('gold')}+${loot.gold}</strong></div></div>
+      ${(receipt.masteryRises || []).map(({ id, level }) => `<p class="mastery-rise">숙련 상승: ${escape(ABILITIES[id].name)} Lv${level}</p>`).join('')}
       ${materials ? `<div class="reward-row">${materials}</div>` : ''}${includeGear && gear ? `<div class="receipt-gear">${gear}</div>` : ''}
       <details class="help"><summary>상세 정산</summary>${this.receiptDetails(receipt)}</details></div>`;
   }
@@ -898,11 +898,10 @@ export class HubUI {
   presentationHtml() {
     const probe = {};
     document.dispatchEvent(new CustomEvent('arpg:sound', { detail: probe }));
-    const fx = fxPreference();
     const group = (label, action, options) => `<div class="quantity-row"><span>${label}</span></div><div class="p2-two" role="group" aria-label="${label}">${
       options.map(([value, text, pressed]) => button(text, action, `id="${action}-${value}" data-value="${value}" aria-pressed="${pressed}"`)).join('')}</div>`;
     return `<section class="auto-use" aria-label="화면·소리">${group('사운드', 'set-sound', [['on', '켜짐', probe.muted === false], ['off', '꺼짐', probe.muted === true]])
-      }${group('스킬 이펙트', 'set-fx', [['new', '신규', fx === 'new'], ['classic', '클래식', fx === 'classic']])}</section>`;
+      }</section>`;
   }
 
   showSettings() {
@@ -1170,10 +1169,6 @@ export class HubUI {
       }
       case 'set-sound':
         document.dispatchEvent(new CustomEvent('arpg:sound', { detail: { set: data.value === 'off' } }));
-        return this.showSettings();
-      case 'set-fx':
-        setFxPreference(data.value);
-        document.dispatchEvent(new CustomEvent('arpg:fx-mode', { detail: { mode: data.value } }));
         return this.showSettings();
       case 'reset-first':
       case 'reset-second':

@@ -1,4 +1,5 @@
 import { ABILITIES, SKILL_USE, canUseSkill, skillDamageShare } from '../content/combat.js';
+import { masteryLabel } from '../meta/skill-mastery.js';
 import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf, bookRequirement, loadoutOf, weaponFamily, weaponForm } from '../meta/skills.js';
 import { STAT_NAMES } from '../meta/stats.js';
 import { WEAPON_NAMES } from '../meta/quiz.js';
@@ -69,7 +70,7 @@ export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id);
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
   const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['받는 피해 +15%', '파쇄 5초'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
-  const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
+  const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
   if (context === 'character') {
     const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form), mark = useClass(id, weapon, form);
     const warn = mark ? `<button type="button" class="skill-warn" data-action="skill-warn" data-id="${id}" aria-label="무기 경고 · ${use === undefined ? '사용 불가' : `위력 ${Math.round(use * 100)}%`}">${use === undefined ? '✕' : `${Math.round(use * 100)}%`}</button>` : '';

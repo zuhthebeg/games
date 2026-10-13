@@ -10,6 +10,7 @@ import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
 import { applyAutoUse, autoUseSettings } from './meta/auto-use.js';
 import { loadoutOf } from './meta/skills.js';
+import { masteryLevels, setMasteryLevel } from './meta/skill-mastery.js';
 import { CombatAudio, bindAudioControls } from './audio.js';
 import { bindBattleSettings } from './ui/battle-settings.js';
 import { ArenaRenderer } from './render/renderer.js';
@@ -92,7 +93,6 @@ try {
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
   bindBattleSettings(document, input);
-  document.addEventListener('arpg:fx-mode', event => renderer.skillVfx.setEffekseer(event.detail?.mode !== 'classic'));
   const hub = new HubUI({
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
@@ -144,7 +144,7 @@ try {
     if (!player.terminal) return;
     coopResult = settleRound(roundSave, {
       stageId: world.round.stageId, terminal: player.terminal,
-      depositedXp: tracker.depositedXp, tempLoot: tracker.tempLoot, used: usedConsumables(roundSave, player),
+      depositedXp: tracker.depositedXp, tempLoot: tracker.tempLoot, used: usedConsumables(roundSave, player), skillMastery: tracker.skillMastery,
     });
     store.save(coopResult.save);
     input.reset(); input.enabled = false;
@@ -178,7 +178,7 @@ try {
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
     const load = currentLoad(localSave, createTracker(0));
     const profile = { name: localSave.name, level: localSave.level, weapon,
-      mods: buildRoundMods(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
+      mods: buildRoundMods(localSave), skillMasteryLevels: masteryLevels(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
       threats: Object.fromEntries(Object.keys(STAGES).map(id => [id, unlockedThreat(localSave, id)])),
       stages: availableStages(localSave) };
     coopResult = null; coopNote = ''; coopRenderReady = false; coopFinished = false; developmentRound = false;
@@ -210,7 +210,7 @@ try {
           renderer.root.visible = renderer.warning.visible = true;
           hud.begin(view, loadoutOf(roundSave)); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
         }
-        const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]));
+        const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]), view, coopSession.uid);
         tracker = progress.tracker; coopLoad = progress.load.ratio;
         if (coopSession.isHost) setLoad(coopSession.world, coopSession.uid, coopLoad);
         renderer.events(view, [...events, ...progress.fx]);
@@ -271,6 +271,7 @@ try {
           particles: renderer.particles.filter(particle => particle.left > 0).length,
           pools: { particles: renderer.particles.length, numbers: renderer.numbers.length, effects: renderer.effects.length },
           fxRequested: renderer.skillVfx.fxRequested,
+          mastery: renderer.skillVfx.status(),
           audio: { muted: audio.muted, state: audio.context?.state || 'locked', loaded: [...audio.buffers.keys()], voices: audio.voices.size },
         });
       },
@@ -285,7 +286,7 @@ try {
   document.querySelector('#boot').hidden = true;
   hub.ready();
   if (saved && new URLSearchParams(location.search).has('room')) startCoop('S2', 1);
-  const debugQuery = new URLSearchParams(location.search).get('debug');
+  const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';
   try {
     if (debugQuery === '0' || debugQuery === '1') localStorage.setItem('arpg.debug', debugQuery);
@@ -294,6 +295,15 @@ try {
   if (debugEnabled) {
     const { mountDebug } = await import('./debug/index.js');
     debug = mountDebug({ hub, store, renderer, input,
+      setMastery: (id, level) => {
+        const next = setMasteryLevel(hub.save, id, level);
+        store.save(next); hub.save = next;
+        if (roundSave) roundSave = { ...roundSave, skillMastery: { ...next.skillMastery } };
+        const pid = coopSession?.uid || 'local';
+        renderer.skillVfx.setMastery(pid, masteryLevels(next));
+        if (coopSession) coopSession.setMastery(masteryLevels(next));
+        if (!running) hub.showInn();
+      },
       get world() { return world; }, get save() { return hub.save; },
       get running() { return running; }, get tracker() { return tracker; } });
   }
@@ -317,6 +327,7 @@ try {
       terminal: player.terminal,
       depositedXp: tracker.depositedXp,
       tempLoot: tracker.tempLoot,
+      skillMastery: tracker.skillMastery,
       used: usedConsumables(roundSave, player),
     });
     // Development kit overrides never grant progression or consume real supplies.
@@ -352,7 +363,7 @@ try {
         renderer.snapshot(world);
         inputs.local = combatInput(world.entities[0]);
         const events = step(world, inputs);
-        const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, world.entities[0]));
+        const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, world.entities[0]), world, 'local');
         tracker = progress.tracker;
         setLoad(world, 'local', progress.load.ratio);
         renderer.events(world, [...events, ...progress.fx]);

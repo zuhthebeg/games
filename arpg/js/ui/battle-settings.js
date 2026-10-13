@@ -1,5 +1,4 @@
 import { icon } from './icons.js';
-import { fxPreference, setFxPreference } from '../prefs.js';
 
 // In-battle settings (cocy 10-13): same device choices as the inn panel, no save writes.
 export function bindBattleSettings(document, input) {
@@ -10,12 +9,10 @@ export function bindBattleSettings(document, input) {
   const render = () => {
     const probe = {};
     document.dispatchEvent(new CustomEvent('arpg:sound', { detail: probe }));
-    const fx = fxPreference();
     const row = (label, name, options) => `<span>${label}</span><div class="row">${options.map(([value, text, pressed]) =>
       `<button type="button" id="battle-${name}-${value}" data-battle-${name}="${value}" aria-pressed="${pressed}">${text}</button>`).join('')}</div>`;
     panel.innerHTML = (input ? row('자동 공격', 'auto', [['on', '켜짐', input.autoAttack], ['off', '꺼짐', !input.autoAttack]]) : '')
-      + row('사운드', 'sound', [['on', '켜짐', probe.muted === false], ['off', '꺼짐', probe.muted === true]])
-      + row('스킬 이펙트', 'fx', [['new', '신규', fx === 'new'], ['classic', '클래식', fx === 'classic']]);
+      + row('사운드', 'sound', [['on', '켜짐', probe.muted === false], ['off', '꺼짐', probe.muted === true]]);
   };
   // Taps on the panel must not leak into combat input (canvas pointer handlers).
   for (const node of [toggle, panel]) node.addEventListener('pointerdown', event => event.stopPropagation());
@@ -23,12 +20,10 @@ export function bindBattleSettings(document, input) {
   toggle.addEventListener('click', () => setOpen(panel.hidden));
   panel.addEventListener('click', event => {
     const sound = event.target.closest('[data-battle-sound]')?.dataset.battleSound;
-    const fx = event.target.closest('[data-battle-fx]')?.dataset.battleFx;
     if (sound) document.dispatchEvent(new CustomEvent('arpg:sound', { detail: { set: sound === 'off' } }));
-    if (fx) { setFxPreference(fx); document.dispatchEvent(new CustomEvent('arpg:fx-mode', { detail: { mode: fx } })); }
     const auto = event.target.closest('[data-battle-auto]')?.dataset.battleAuto;
     if (auto) input?.setAutoAttack(auto === 'on');
-    if (sound || fx || auto) render();
+    if (sound || auto) render();
   });
   // T key toggles auto attack while the panel may be open.
   document.addEventListener('arpg:auto-attack', () => { if (!panel.hidden) render(); });
