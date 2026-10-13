@@ -76,8 +76,9 @@ try {
     }
     throw new Error(`Timed out waiting for ${expression}`);
   };
-  const page = (name) => `document.querySelector('#meta-screen').dataset.page===${JSON.stringify(name)}
-    && !document.querySelector('#meta-screen').hidden`;
+  // Reload may briefly expose a new document before #meta-screen exists; keep waiting.
+  const page = (name) => `document.querySelector('#meta-screen')?.dataset.page===${JSON.stringify(name)}
+    && document.querySelector('#meta-screen')?.hidden===false`;
   const touch = (type, points) => command('Input.dispatchTouchEvent', { type, touchPoints: points });
   await command('Runtime.enable'); await command('Page.enable'); await command('Log.enable');
   const nativeActivate = async (selector, keyboard = false) => {
@@ -107,13 +108,13 @@ try {
         return {map:rect(map),content:rect(content),scroll:{h:content.scrollHeight,client:content.clientHeight},overflow:document.documentElement.scrollWidth>innerWidth,
           nodes:[...map.querySelectorAll('.region-node')].map(n=>({id:n.dataset.region,rect:rect(n),label:rect(n.querySelector('span')),text:n.textContent,clipped:n.scrollWidth>n.clientWidth||n.scrollHeight>n.clientHeight})),
           edges:[...map.querySelectorAll('line')].map(n=>[+n.getAttribute('x1'),+n.getAttribute('y1'),+n.getAttribute('x2'),+n.getAttribute('y2')]),footer:!!document.querySelector('.action-footer')};})()`);
-      assert.equal(proof.overflow,false);assert.equal(proof.nodes.length,7);assert.equal(proof.edges.length,7);
+      assert.equal(proof.overflow,false);assert.equal(proof.nodes.length,8);assert.equal(proof.edges.length,8);
       for(const n of proof.nodes){assert.equal(n.clipped,false,n.id);assert.ok(n.rect.x>=proof.map.x+2&&n.rect.right<=proof.map.right-2,n.id);assert.ok(n.rect.y>=proof.map.y+2&&n.rect.bottom<=proof.map.bottom-2,n.id);assert.ok(n.label.x>=n.rect.x&&n.label.right<=n.rect.right&&n.label.y>=n.rect.y&&n.label.bottom<=n.rect.bottom,n.id);}
       for(let i=0;i<proof.nodes.length;i++)for(let j=i+1;j<proof.nodes.length;j++){
         const a=proof.nodes[i].rect,b=proof.nodes[j].rect;
         assert.ok(a.right+5<=b.x-5||b.right+5<=a.x-5||a.bottom+5<=b.y-5||b.bottom+5<=a.y-5,`${width}: ${proof.nodes[i].id}/${proof.nodes[j].id}`);
       }
-      assert.ok(proof.edges.some(e=>JSON.stringify(e)==='[50,74,50,92]'));
+      assert.ok(proof.edges.some(e=>JSON.stringify(e)==='[24,74,50,92]'));
       // Every connected line uses actual card centers; endpoints stay within parchment.
       for(const edge of proof.edges)for(let i=0;i<4;i+=2)assert.ok(proof.nodes.some(n=>Math.abs(n.rect.x+n.rect.w/2-(proof.map.x+2+edge[i]/100*(proof.map.w-4)))<1&&Math.abs(n.rect.y+n.rect.h/2-(proof.map.y+2+edge[i+1]/100*(proof.map.h-4)))<1));
       for(const n of proof.nodes){await nativeActivate(`[data-action="map-region"][data-region="${n.id}"]`,desktop);
