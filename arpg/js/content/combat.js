@@ -292,6 +292,19 @@ export const MONSTERS = {
     lifeState: 'undead', hp: 40, r: 16, speed: 104, poise: 20, kbResist: 0,
     abilities: ['sling_stone'], xp: 7, keepRange: [230, 330],
   },
+  // M2a [제안]: T4 graveyard, unplaced until U5. HP 1.5x the matching U1 role.
+  ghoul: {
+    lifeState: 'undead', hp: 225, r: 22, speed: 82, poise: 100, kbResist: 0.65,
+    abilities: ['goblin_slash'], xp: 12, keepRange: [40, 70],
+  },
+  ghost: {
+    lifeState: 'undead', hp: 60, r: 16, speed: 110, poise: 20, kbResist: 0,
+    abilities: ['sling_stone'], xp: 10, keepRange: [230, 330],
+  },
+  bat: {
+    lifeState: 'beast', hp: 75, r: 16, speed: 190, poise: 20, kbResist: 0,
+    abilities: ['goblin_hop', 'goblin_slash'], xp: 15, keepRange: [110, 180],
+  },
 };
 
 // Compact stage constructor for S8+: [monster, atMs, fx, fy]. goal killAll; concurrency comes from BALANCE.

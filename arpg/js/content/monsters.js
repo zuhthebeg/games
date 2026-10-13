@@ -5,14 +5,17 @@ export const MONSTER_PALETTES = {
   dragon: [0xeef5e4], straw: [0xae8e53], goblin: [0x73934c], slinger: [0x547c50],
   boar: [0x79573f], chief: [0xe58b70],
   wolf: [0x939da2], rune: [0x7e8f94], spirit: [0x9c91c9], spider: [0x657d50],
+  ghoul: [0xffffff], ghost: [0xffffff], bat: [0xffffff],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
 };
 export const MONSTER_MODELS = [
   'scarecrow', 'training_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
   'gargoyle', 'wolf', 'rune_guardian', 'spirit', 'poison_spider',
   'skeleton_minion', 'skeleton_warrior', 'skeleton_rogue', 'skeleton_mage',
+  'ghoul', 'ghost', 'bat',
 ];
 export const MONSTER_NAMES = {
+  ghoul: '구울', ghost: '유령', bat: '거대 박쥐',
   gargoyle: '석상 가고일',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
@@ -25,6 +28,9 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
   speciesTags, lifeState, disposition: 'hostile',
 });
 export const MONSTER_VARIANTS = {
+  ghoul: variant('ghoul', 'ghoul', ['ghoul', 'humanoid'], 'undead'),
+  ghost: variant('ghost', 'ghost', ['ghost'], 'undead'),
+  bat: variant('bat', 'bat', ['bat', 'beast'], 'beast'),
   gargoyle: variant('gargoyle', 'rune', ['guardian', 'crafted', 'gargoyle'], 'construct'),
   throne_dragon: variant('throne_dragon', 'dragon', ['dragon', 'boss'], 'living'),
   training_dragon: variant('training_dragon', 'dragon', ['dragon', 'trainingDummy'], 'living'),

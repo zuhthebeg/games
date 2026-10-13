@@ -1,0 +1,121 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/m2a/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/m2a/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "ghoul",
+      "label": "구울",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2a/source/ghoul-prepared.glb",
+      "keep": [
+        "Zombie_Cylinder"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "LeftArm",
+        "RightArm"
+      ],
+      "pose_profile": "humanoid",
+      "root_bones": [
+        "Hips"
+      ],
+      "animations": {
+        "idle": "Zombie|ZombieIdle",
+        "run": "Zombie|ZombieWalk",
+        "attack": "Zombie|ZombieBite",
+        "hit": "M2a_Ghoul_Recoil",
+        "death": "M2a_Ghoul_Death"
+      },
+      "content_ids": [
+        "ghoul"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "ghost",
+      "label": "유령",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2a/source/ghost-prepared.glb",
+      "keep": [
+        "Ghost"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "pose_profile": "floating",
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Punch",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "ghost"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "bat",
+      "label": "거대 박쥐",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2a/source/bat-prepared.glb",
+      "keep": [
+        "Bat",
+        "Eyes"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Wing1.L",
+        "Wing1.R"
+      ],
+      "pose_profile": "winged",
+      "root_bones": [
+        "Root",
+        "BodyRoot"
+      ],
+      "animations": {
+        "idle": "BatArmature|Bat_Flying",
+        "run": "M2a_Bat_FastFlight",
+        "attack": "BatArmature|Bat_Attack",
+        "hit": "BatArmature|Bat_Hit",
+        "death": "BatArmature|Bat_Death"
+      },
+      "content_ids": [
+        "bat"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ]
+}

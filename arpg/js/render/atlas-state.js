@@ -2,6 +2,7 @@ import { DRAGON_CLIPS, dragonFrame } from './dragon-presentation.js';
 import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.
 export const ATLAS_IDS = Object.freeze({
+  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',
   blade: 'hero-sword',
   bow: 'hero-bow',
   focus: 'hero-focus',

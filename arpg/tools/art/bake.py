@@ -167,7 +167,7 @@ for job in config['characters']:
     else:
         rig.animation_data.action = None
         for bone in rig.pose.bones:
-            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') in ('quadruped', 'arachnid', 'boar') else Matrix.Identity(4)
+            bone.matrix_basis = default_basis[bone.name].copy() if job.get('pose_profile') in ('quadruped', 'arachnid', 'boar', 'winged', 'floating') else Matrix.Identity(4)
     scene.frame_set(0)
     bpy.context.view_layer.update()
     arm_names = job.get('arm_bones', ['upperarm.l', 'upperarm.r'])
@@ -454,7 +454,7 @@ for job in config['characters']:
                     assert len(current) == len(rest)
                     square_distances.extend((inverse_facing @ point - original).length_squared for point, original in zip(current, rest))
                 rms = math.sqrt(sum(square_distances) / len(square_distances)) / bind_height
-                if job.get('pose_profile') not in ('quadruped', 'arachnid', 'boar'):
+                if job.get('pose_profile') not in ('quadruped', 'arachnid', 'boar', 'winged', 'floating'):
                     assert max(arm_degrees) > 10, (job['name'], name, 'T-pose arms', arm_degrees)
                     assert rms > .015, (job['name'], name, 'bind/frozen skin', rms)
                 # Quadruped rest can equal an authored idle frame: validate clip
