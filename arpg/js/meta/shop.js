@@ -14,7 +14,7 @@ export function shopStock(accountSeed, refreshIndex) {
   for (const kind of ['weapon', 'armor']) {
     const pool = Object.entries(ITEMS).filter(([, item]) =>
       (kind === 'weapon' ? item.slot === 'weapon' : item.slot && item.slot !== 'weapon')
-      && ['common', 'fine'].includes(item.rarity) && !item.craftOnly);
+      && ['common', 'fine'].includes(item.rarity) && !item.craftOnly && item.huntTier < 4);
     const count = 3 + (random() < 0.5 ? 1 : 0);
     for (let i = 0; i < count; i++) {
       const [id] = pool.splice(Math.floor(random() * pool.length), 1)[0];

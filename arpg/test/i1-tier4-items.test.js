@@ -4,10 +4,13 @@ import { execFileSync } from 'node:child_process';
 import { ITEMS, RECIPES, craft, equip, instance, rollDrops, dismantle, dismantleMaterial } from '../js/meta/items.js';
 import { TIER4_GEAR_DROPS, NEW_MONSTER_DROPS } from '../js/content/loot.js';
 import { createSave, validateSave, SaveStore, SAVE_VERSION } from '../js/meta/save.js';
+import { statBudget, BASE_STATS, STAT_KEYS } from '../js/meta/stats.js';
+import { itemArtKey, itemArtPath } from '../js/ui/item-art.js';
+import { shopStock } from '../js/meta/shop.js';
 import { HubUI } from '../js/ui/hub.js';
 const common = ['revenant_blade','bone_bow','soulfire_wand','gravekeeper_staff','ossuary_maul','shroud_robe','shadow_leather','ossuary_plate'];
 const rare = ['dragonfang_blade','dragon_scale_armor'];
-const fresh = () => {const s=createSave({name:'I1',answers:[0,0,0,0,0],createdAt:123});s.gold=100000;s.stats.str=100;for(const r of Object.values(RECIPES))for(const k of Object.keys(r))if(k!=='gold')s.stacks[k]=1000;return s;};
+const fresh = () => {const s=createSave({name:'I1',answers:[0,0,0,0,0],createdAt:123});s.gold=100000;s.level=30;s.stats={...BASE_STATS,str:100};s.statPoints=statBudget(s.level)-STAT_KEYS.reduce((n,k)=>n+s.stats[k]-BASE_STATS[k],0);for(const r of Object.values(RECIPES))for(const k of Object.keys(r))if(k!=='gold')s.stacks[k]=1000;return s;};
 function roundtrip(s) { const m=new Map(),store=new SaveStore({getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)});assert.ok(validateSave(s));store.save(s);assert.deepEqual(store.load(),s);assert.equal(s.version,SAVE_VERSION); }
 for(const id of [...common,...rare]) test(`I1 ${id}: exact T4 definition, craft/drop route, equip and save`,()=>{
  const d=ITEMS[id],s=fresh();assert.equal(d.huntTier,4);assert.equal(d.requiredLevel,1,'existing strength-only policy');
@@ -60,4 +63,12 @@ test('I1 UI labels and new material render from definitions with no schema/UI re
  const h=Object.assign(Object.create(HubUI.prototype),{save:fresh(),forgeTab:'salvage',showInnPanel:(_t,html)=>h.html=html});h.showForge();
  assert.match(h.html,/수호룡 비늘: 1/);for(const id of common)assert.ok(h.html.includes(`data-id="${id}"`));
  for(const id of rare)assert.ok(!h.html.includes(`data-id="${id}"`));assert.doesNotMatch(h.html,/undefined|NaN/);
+});
+
+test('I1 T4 art is nonempty and every silhouette is distinct from every delivered icon',()=>{
+ const r=JSON.parse(execFileSync('python3',['arpg/tools/item-art-tier4-check.py'],{encoding:'utf8'}));assert.equal(r.files,11);assert.equal(r.distinctMasks,11);assert.ok(r.minPairDifference>100);
+ const keys=[...common,...rare].map(id=>itemArtPath(itemArtKey(id,ITEMS[id])));assert.equal(new Set(keys).size,10);
+});
+test('I1 T4 acquisition stays out of merchant stock including rarity variants',()=>{
+ for(let seed=0;seed<1000;seed++)assert.ok(shopStock(seed,seed%5).every(i=>ITEMS[i.id].huntTier<4));
 });

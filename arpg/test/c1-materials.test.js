@@ -64,7 +64,7 @@ test('C1 recipe IDs/gold unchanged; exact consumption, deterministic affixes/UID
 test('C1 material sell + craft/refund and repeated craft/sell cannot mint resources or gold', () => {
   const worth = save => save.gold + Object.entries(save.stacks).reduce((sum,[id,n]) => sum + n*(ITEMS[id].sell || 0),0);
   for (const id of Object.keys(RECIPES)) {
-    const base=rich(); let save=base;
+    const base=rich(); for(const k of Object.keys(base.stacks))if(ITEMS[k].kind==='material')base.stacks[k]=200; let save=base;
     for(let n=0;n<4;n++) {
       const made=craft(save,id), item=made.items.at(-1), primary=dismantleMaterial(item);
       const salvage=dismantle(made,item.uid);

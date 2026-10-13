@@ -129,7 +129,7 @@ try {
       for(const src of paths){const im=new Image();im.src=src;await im.decode();if(im.naturalWidth!==96||im.naturalHeight!==96)throw Error(src);}
       return {ids:Object.keys(ITEMS).length,paths:paths.size,wood:{...wood,decoded:true}};
     })()`);
-    assert.equal(coverage.paths,36);
+    assert.equal(coverage.paths,47);
     assert.deepEqual(coverage.wood,{id:'wood',src:'assets/items/wood.webp',decoded:true});
     return coverage;
   };
