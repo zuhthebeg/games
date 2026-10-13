@@ -17,10 +17,12 @@ export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map
   requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20']}[region.id],
 }])));
 for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
+// Append after legacy gates were derived: QC1 never changes TD1's S20 requirement.
+REGIONS.find(r => r.id === 'throne').maps.push('M_THRONE_GARGOYLE');
 export function mapUnlocked(save, id) {
   const map = MAPS[id];
   // Historical trial clears stay saved, but never bypass the official late-game gate.
-  if (id === 'TD1') return !!save.cleared?.S20;
+  if (id === 'TD1' || id === 'M_THRONE_GARGOYLE') return !!save.cleared?.S20;
   return !!map && (!!save.cleared?.[id] || !map.requires.length || map.requires.some(prior => !!save.cleared?.[prior]));
 }
 export const availableStages = save => Object.keys(STAGES).filter(id => mapUnlocked(save, id));

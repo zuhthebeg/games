@@ -340,5 +340,39 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "gargoyle",
+    "label": "석상 가고일",
+    "monster": true,
+    "content_ids": [
+      "gargoyle"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json",
+      "atlas-2.webp.json",
+      "atlas-3.webp.json",
+      "atlas-4.webp.json",
+      "atlas-5.webp.json",
+      "atlas-6.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6693471968173981
+    },
+    "bytes": 1495739,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]
