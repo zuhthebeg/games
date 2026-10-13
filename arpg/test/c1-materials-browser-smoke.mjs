@@ -76,7 +76,7 @@ try {
     }
     throw new Error(`Timed out waiting for ${expression}`);
   };
-  const page = (name) => `document.querySelector('#meta-screen').dataset.page===${JSON.stringify(name)}
+  const page = (name) => `document.querySelector('#meta-screen')?.dataset.page===${JSON.stringify(name)}
     && !document.querySelector('#meta-screen').hidden`;
   const touch = (type, points) => command('Input.dispatchTouchEvent', { type, touchPoints: points });
   await command('Runtime.enable'); await command('Page.enable'); await command('Log.enable');
@@ -96,7 +96,7 @@ try {
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
     await command('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
     await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/?dev=1`}); await waitFor('window.__arpg');
-    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');const s=createSave({name:'C1',answers:[0,0,0,0,0],createdAt:123});s.gold=10000;Object.assign(s.stacks,{scrap:100,hide:100,wood:100,web:100,rune_shard:100,fang:100,frost_shard:100});for(const id of ['short_bow','leather_vest','cloth_tunic','rune_blade','iron_sword'])s.items.push(instance('smoke:'+id,id));s.items.find(i=>i.id==='leather_vest').enhance=7;new SaveStore(localStorage).save(s);})()`);
+    await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');const s=createSave({name:'C1',answers:[0,0,0,0,0],createdAt:123});s.gold=10000;Object.assign(s.stacks,{scrap:1000,hide:1000,wood:1000,web:1000,rune_shard:1000,fang:1000,frost_shard:1000,dragon_scale:1000});for(const id of ['short_bow','leather_vest','cloth_tunic','rune_blade','iron_sword'])s.items.push(instance('smoke:'+id,id));s.items.find(i=>i.id==='leather_vest').enhance=7;new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload'); await waitFor(page('inn'));
     await nativeActivate('[data-action="forge"]',true);await waitFor(page('forge'));
     await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');

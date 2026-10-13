@@ -227,7 +227,7 @@ try {
     assert.equal(await evaluate('__arpg.save.stacks.potion'),0);
     await click('[data-action="inn"]');await click('[data-action="inventory"]');
     await click('[data-action="stash-tab"][data-tab="gear"]');
-    await click('[data-action="inn"]');await click('[data-action="board"]');await audit();assert.equal(await evaluate("document.querySelectorAll('[data-action=\"sortie\"]').length"),20);
+    await click('[data-action="inn"]');await click('[data-action="board"]');await audit();assert.equal(await evaluate("document.querySelectorAll('[data-action=\"sortie\"][data-stage^=\"S\"]').length"),20);
     await click('[data-action="sortie"][data-stage="S20"]');await audit();states.push({width,height,ok:true,woodRow,nativeMaterialTab:true,coverage:await coverageAudit()});
   }
   const coverage=states.at(-1).coverage;

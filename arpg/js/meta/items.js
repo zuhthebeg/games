@@ -40,7 +40,7 @@ export const ITEMS = {
   warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13, 'metal'), huntTier: 3, requiredLevel: 10 },
   rune_maul: { ...weapon('룬철 철퇴', 'blade', 'fine', 1.35, 15, 'blunt'), material: 'rune', huntTier: 2, requiredLevel: 5, craftOnly: true },
   warden_maul: { ...weapon('파수꾼 전쟁망치', 'blade', 'fine', 1.6, 19, 'blunt'), huntTier: 3, requiredLevel: 10, craftOnly: true },
-  // T4 extends the authored Lv15 tier; runtime retains cocy's strength-only equipment rule.
+  // T4 carries the authored Lv15 band; meetsRequirement still uses strength only.
   revenant_blade: { ...weapon('망자의 장검', 'blade', 'fine', 1.85, 17), huntTier: 4, requiredLevel: 15 },
   bone_bow: { ...weapon('뼈 장궁', 'bow', 'fine', 1.85, 11), huntTier: 4, requiredLevel: 15 },
   soulfire_wand: { ...weapon('넋불 완드', 'focus', 'fine', 1.85, 7, 'wand'), huntTier: 4, requiredLevel: 15 },
@@ -103,7 +103,8 @@ export function strRequirement(def) {
 }
 for (const item of Object.values(ITEMS)) {
   if (!SLOTS.includes(item.kind)) continue;
-  item.requiredLevel = 1;
+  // T4's authored band is metadata, never a runtime gate (meetsRequirement below).
+  if (item.huntTier !== 4) item.requiredLevel = 1;
   item.requiredStr = strRequirement(item);
 }
 export const meetsRequirement = (save, def) => (save.stats?.str ?? BALANCE.stats.base) >= (def?.requiredStr || 0);

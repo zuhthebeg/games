@@ -19,7 +19,6 @@ for r in manifest:
     assert all(a.getpixel((x,y))==0 for y in range(96)for x in [0,95])
     small={str(size):sum(v>=128 for v in im.resize((size,size),Image.Resampling.LANCZOS).getchannel('A').get_flattened_data())for size in [48,64]}
     assert min(small.values())>100
-    other=[(name,sum(x!=y for x,y in zip(masks[r['file']],mask)))for name,mask in masks.items()if name!=r['file']]
     rows.append(dict(file=r['file'],opaquePixels255=opaque,maskPixels128=visible,bounds=a.getbbox(),small=small,bytes=r['bytes']))
 pairs=[dict(a=a['file'],b=b['file'],maskDifference=sum(x!=y for x,y in zip(masks[a['file']],masks[b['file']])))for a,b in combinations(new,2)]
 assert min(p['maskDifference']for p in pairs)>100

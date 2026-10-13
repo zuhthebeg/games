@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { ITEMS, RECIPES, craft, equip, instance, rollDrops, dismantle, dismantleMaterial } from '../js/meta/items.js';
 import { TIER4_GEAR_DROPS, NEW_MONSTER_DROPS } from '../js/content/loot.js';
@@ -13,7 +15,7 @@ const rare = ['dragonfang_blade','dragon_scale_armor'];
 const fresh = () => {const s=createSave({name:'I1',answers:[0,0,0,0,0],createdAt:123});s.gold=100000;s.level=30;s.stats={...BASE_STATS,str:100};s.statPoints=statBudget(s.level)-STAT_KEYS.reduce((n,k)=>n+s.stats[k]-BASE_STATS[k],0);for(const r of Object.values(RECIPES))for(const k of Object.keys(r))if(k!=='gold')s.stacks[k]=1000;return s;};
 function roundtrip(s) { const m=new Map(),store=new SaveStore({getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)});assert.ok(validateSave(s));store.save(s);assert.deepEqual(store.load(),s);assert.equal(s.version,SAVE_VERSION); }
 for(const id of [...common,...rare]) test(`I1 ${id}: exact T4 definition, craft/drop route, equip and save`,()=>{
- const d=ITEMS[id],s=fresh();assert.equal(d.huntTier,4);assert.equal(d.requiredLevel,1,'existing strength-only policy');
+ const d=ITEMS[id],s=fresh();assert.equal(d.huntTier,4);assert.equal(d.requiredLevel,15,'authored T4 band; not a runtime gate');
  assert.equal(d.rarity,rare.includes(id)?'rare':'fine');
  if(d.slot==='weapon')assert.equal(d.power,id==='dragonfang_blade'?1.95:1.85);
  else assert.equal(d.ac,Math.round((id==='dragon_scale_armor'?110:100)*2/3));
@@ -52,11 +54,15 @@ test('I1 1,000 seeds / existing monster: exact baseline JSON bytes, TD1 only add
  src=src.replaceAll(new URL('economy.js',root).href,'data:text/javascript;base64,'+Buffer.from(read('meta/economy.js').replace('../content/balance.js',new URL('../content/balance.js',root).href)).toString('base64'));
  const monsters=['scarecrow','goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','gargoyle','spirit','poison_spider','throne_dragon'];
  const contexts=[{}, {huntTier:3,boss:true,materialBonus:7,dropLuck:.5,threat:2}];
- const script=`const {rollDrops}=await import(${JSON.stringify('data:text/javascript;base64,'+Buffer.from(src).toString('base64'))});console.log(JSON.stringify(${JSON.stringify(monsters)}.flatMap(m=>${JSON.stringify(contexts)}.flatMap(c=>Array.from({length:1000},(_,s)=>JSON.stringify(rollDrops(m,s,c)))))));`;
+ const script=`const {rollDrops,ITEMS,RECIPES}=await import(${JSON.stringify('data:text/javascript;base64,'+Buffer.from(src).toString('base64'))});
+ const drops=[];for(const m of ${JSON.stringify(monsters)})for(const c of ${JSON.stringify(contexts)})for(let seed=0;seed<1000;seed++)drops.push(JSON.stringify(rollDrops(m,seed,c)));
+ console.log(JSON.stringify({items:ITEMS,recipes:RECIPES,drops}));`;
  const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:64*1024*1024}));let ix=0;
+ for(const [id,d]of Object.entries(old.items))assert.equal(JSON.stringify(ITEMS[id]),JSON.stringify(d),`unchanged definition: ${id}`);
+ for(const [id,r]of Object.entries(old.recipes))assert.deepEqual(RECIPES[id],r,`unchanged recipe: ${id}`);
  for(const m of monsters)for(const c of contexts)for(let seed=0;seed<1000;seed++){
   const a=rollDrops(m,seed,c);if(m==='throne_dragon'){assert.equal(a.stacks.dragon_scale,1);delete a.stacks.dragon_scale;a.items=a.items.filter(i=>!rare.includes(i.id));}
-  assert.equal(JSON.stringify(a),old[ix++],`${m}/${seed}/${JSON.stringify(c)}`);
+  assert.equal(JSON.stringify(a),old.drops[ix++],`${m}/${seed}/${JSON.stringify(c)}`);
  }
 });
 test('I1 UI labels and new material render from definitions with no schema/UI redesign',()=>{
@@ -67,8 +73,19 @@ test('I1 UI labels and new material render from definitions with no schema/UI re
 
 test('I1 T4 art is nonempty and every silhouette is distinct from every delivered icon',()=>{
  const r=JSON.parse(execFileSync('python3',['arpg/tools/item-art-tier4-check.py'],{encoding:'utf8'}));assert.equal(r.files,11);assert.equal(r.distinctMasks,11);assert.ok(r.minPairDifference>100);
+ const records=JSON.parse(readFileSync(new URL('../assets/items/manifest.json',import.meta.url))).filter(r=>r.source==='arpg/tools/item-art-tier4.py');
+ const sourceHash=createHash('sha256').update(readFileSync(new URL('../tools/item-art-tier4.py',import.meta.url))).digest('hex');
+ assert.equal(records.length,11);for(const r of records)assert.equal(r.sourceSha256,sourceHash);
  const keys=[...common,...rare].map(id=>itemArtPath(itemArtKey(id,ITEMS[id])));assert.equal(new Set(keys).size,10);
 });
 test('I1 T4 acquisition stays out of merchant stock including rarity variants',()=>{
  for(let seed=0;seed<1000;seed++)assert.ok(shopStock(seed,seed%5).every(i=>ITEMS[i.id].huntTier<4));
+});
+test('I1 authored Lv15 metadata does not restore level gates: real Lv1 T4 light weapon equip/save',()=>{
+ for(const id of ['bone_bow','soulfire_wand','gravekeeper_staff']){
+  const s=createSave({name:'I1 level',answers:[0,0,0,0,0],createdAt:123});s.gold=1000;
+  for(const [k,n]of Object.entries(RECIPES[id]))if(k!=='gold')s.stacks[k]=n;
+  const made=craft(s,id),it=made.items.at(-1);assert.equal(made.level,1);assert.equal(ITEMS[id].requiredLevel,15);
+  roundtrip(equip(made,it.uid));
+ }
 });
