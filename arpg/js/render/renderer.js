@@ -95,6 +95,8 @@ export class ArenaRenderer {
       view.visual.destroy();
       view.shadow.destroy();
       view.portal.destroy();
+      view.bluntCharge.destroy();
+      view.sunder.destroy();
     }
     this.views.clear();
     this.provider.beginRound?.(world.entities, equipmentSave);
@@ -174,7 +176,14 @@ export class ArenaRenderer {
     this.layers.entities.addChild(visual.container);
     this.layers.shadows.addChild(shadow);
     this.layers.fx.addChild(portal);
+    const bluntCharge = new Graphics(), sunder = new Graphics()
+      .moveTo(-7, -7).lineTo(0, -2).lineTo(-3, 3).lineTo(5, 8)
+      .moveTo(0, -2).lineTo(7, -6).stroke({ color: 0xe88e50, width: 3 });
+    this.layers.skillFx.addChild(bluntCharge);
+    this.layers.fx.addChild(sunder);
+    bluntCharge.visible = sunder.visible = false;
     view = {
+      bluntCharge, sunder,
       visual,
       shadow,
       portal,
@@ -301,7 +310,7 @@ export class ArenaRenderer {
       if (event.type === 'hit') {
         const tier = areaTiers.get(event) || impactTier(event);
         const source = world.entities.find(candidate => candidate.id === event.src);
-        const color = entity?.kind === 'player' ? FEEL.colors.hurt : event.counter ? FEEL.colors.counter
+        const color = entity?.kind === 'player' ? FEEL.colors.hurt : ABILITIES[event.ability]?.requiresForm === 'blunt' ? 0xe88e50 : event.counter ? FEEL.colors.counter
           : event.critical ? FEEL.colors.critical : event.exposed ? FEEL.colors.weak : FEEL.colors.normal;
         this.impact(entity, source, tier);
         const size = event.counter ? FEEL.counter.scale : event.critical ? FEEL.numbers.criticalScale : event.exposed ? FEEL.numbers.weakScale : 1;
@@ -431,9 +440,20 @@ export class ArenaRenderer {
         this.effect(view.x, view.y, entity.r, 0x9dd4cd, FEEL.trail.life, 'trail');
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
+      view.sunder.visible = !entity.dead && entity.sunder?.expiresTick > world.tick;
+      view.sunder.position.set(view.x, view.y - entity.r - 18);
+      const blunt = entity.kind === 'player' && entity.act?.def.requiresForm === 'blunt';
+      view.bluntCharge.visible = blunt && entity.act.phase === 'windup';
+      if (view.bluntCharge.visible) {
+        view.bluntCharge.clear();
+        shapePath(view.bluntCharge, entity.act.def.shape).fill({ color: 0xa77850, alpha: .08 })
+          .stroke({ color: 0xe88e50, width: 2, alpha: .65 });
+        view.bluntCharge.position.set(entity.x, entity.y);
+        view.bluntCharge.rotation = entity.act.facing;
+      }
       const active = entity.act?.phase === 'active';
       if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastAct !== entity.act) {
-        this.effect(entity.x, entity.y, 0, 0xc9ece3, FEEL.trail.life, 'slash', entity.act.def.shape, entity.act.facing);
+        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, blunt ? 'blunt' : 'slash', entity.act.def.shape, entity.act.facing);
         view.lastAct = entity.act;
       }
       if (!entity.act)
@@ -442,7 +462,7 @@ export class ArenaRenderer {
     // Roster departures remove views, not just the authoritative entity.
     const liveIds = new Set(world.entities.map(e => e.id));
     for (const [id, view] of this.views) if (!liveIds.has(id)) {
-      view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); this.views.delete(id);
+      view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); view.bluntCharge.destroy(); view.sunder.destroy(); this.views.delete(id);
     }
     // Telegraph origin remains authoritative (no camera/animation lunge baked into geometry).
     const telegraphViews = this.telegraphs;

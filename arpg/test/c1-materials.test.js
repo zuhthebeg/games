@@ -44,7 +44,7 @@ test('C1 every equipment rarity yields only its primary material plus unchanged 
 });
 
 test('C1 recipe IDs/gold unchanged; exact consumption, deterministic affixes/UID and 25% primary refund persist', () => {
-  const prices = {iron_sword:60,hunter_bow:60,ember_wand:60,boar_hide_armor:50,leather_vest:40,rune_blade:140,pack_bow:140,altar_staff:140,woven_armor:140};
+  const prices = {iron_sword:60,hunter_bow:60,ember_wand:60,boar_hide_armor:50,leather_vest:40,rune_blade:140,rune_maul:140,warden_maul:240,pack_bow:140,altar_staff:140,woven_armor:140};
   assert.deepEqual(Object.fromEntries(Object.entries(RECIPES).map(([id,r]) => [id,r.gold])), prices);
   for (const [id, recipe] of Object.entries(RECIPES)) {
     const base = freeze(rich()), made = craft(base, id), item = made.items.at(-1), primary = dismantleMaterial(item);

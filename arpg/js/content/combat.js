@@ -59,6 +59,17 @@ export const ABILITIES = {
     delivery: 'shape', shape: { type: 'cone', range: 168.75, arc: 70 },
     damage: 96, poise: 70, knockback: 300, family: 'blade', cancelInto: ['recovery'],
   },
+  ground_slam: {
+    name: '대지 강타', windupMs: 460, lockMs: 0, activeMs: 90, recoveryMs: 400, manaCost: 24, cooldownMs: 7000,
+    delivery: 'shape', shape: { type: 'circle', radius: 128, offset: 40 },
+    damage: 64, poise: 110, knockback: 120, family: 'blade', requiresForm: 'blunt', cancelInto: ['recovery'],
+  },
+  armor_break: {
+    name: '갑옷 부수기', windupMs: 300, lockMs: 0, activeMs: 70, recoveryMs: 300, manaCost: 20, cooldownMs: 8000,
+    delivery: 'shape', shape: { type: 'cone', range: 110, arc: 60 },
+    damage: 58, poise: 50, knockback: 160, family: 'blade', requiresForm: 'blunt', cancelInto: ['recovery'],
+    sunder: { durationMs: 5000, damageMult: 1.15 },
+  },
   pierce_shot: {
     name: '관통 화살', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 240, manaCost: 18, cooldownMs: 5000,
     delivery: 'projectile',
@@ -207,7 +218,12 @@ export const SKILL_USE = {
   focus: { focus: 1, blade: 0.6, bow: 0.6 },
 };
 export const SKILL_SLOTS = 3;
-export const canUseSkill = (abilityId, weapon) => SKILL_USE[ABILITIES[abilityId]?.family]?.[weapon] !== undefined;
+export function skillDamageShare(abilityId, weapon, form) {
+  const def = ABILITIES[abilityId];
+  if (def?.requiresForm && (weapon !== def.family || form !== def.requiresForm)) return undefined;
+  return SKILL_USE[def?.family]?.[weapon];
+}
+export const canUseSkill = (abilityId, weapon, form) => skillDamageShare(abilityId, weapon, form) !== undefined;
 
 // Monster archetypes. Palette/equipment variants layer on top later (design §11) and never change these rules silently.
 export const MONSTERS = {

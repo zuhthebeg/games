@@ -26,7 +26,7 @@ export const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 // an empty first slot falls back to the kit skill so a fresh character always has one.
 export function playerSkills(mods, weapon) {
   const ids = Array.isArray(mods.skills) ? mods.skills : [mods.skill];
-  const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon) ? ids[i] : null));
+  const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon, mods.weaponForm) ? ids[i] : null));
   if (!slots[0]) slots[0] = WEAPONS[weapon].skill;
   return slots;
 }
@@ -70,6 +70,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
+    ...(mods.weaponForm ? { weaponForm: mods.weaponForm } : {}),
     skills: playerSkills(mods, weapon),
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
@@ -138,6 +139,7 @@ export function step(world, inputs = {}) {
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
   if (world.round?.objective && world.round.state !== 'running') return world.events;
   for (const ent of world.entities) {
+    if (ent.sunder && world.tick >= ent.sunder.expiresTick) delete ent.sunder;
     if (ent.kind === 'player') stepPlayer(world, ent, inputs[ent.pid] || emptyInput());
     else stepMonster(world, ent);
   }
@@ -241,7 +243,7 @@ function stepPlayer(world, p, inp) {
   // First pressed slot wins this tick; an empty slot is a no-op.
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
-  if (skillId && canCancel(p.act)) {
+  if (skillId && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0)) {
       if (p.act) endAct(world, p, true);
@@ -527,7 +529,8 @@ function hitShape(world, ent, act, shape, ox, oy) {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
       def: act.def, counter: !!act.counter,
       mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
-      poiseMult: (ent.poiseMult ?? 1) * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
+      poiseMult: (ent.poiseMult ?? 1) * (act.id === 'slash' && ent.kind === 'player' && ent.weaponForm === 'blunt' ? 1.4 : 1)
+        * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
       cause: { shape, ox: act.ox, oy: act.oy, facing: act.facing },
     });
     if (!ent.act) return; // attacker got interrupted by its own hit side-effects (not expected, defensive)
@@ -577,6 +580,7 @@ function applyHit(world, t, hit) {
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
   let dmg = def.damage * hit.mult;
+  if (mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
   let exposed = false;
   if (mdef) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
@@ -633,6 +637,11 @@ function applyHit(world, t, hit) {
       world.events.push({ type: 'death', id: t.id, pid: t.pid, cause: t.deathCause });
     }
     return;
+  }
+
+  if (def.sunder && t.hp > 0) {
+    t.sunder = { expiresTick: world.tick + ticks(def.sunder.durationMs) };
+    world.events.push({ type: 'sunder', id: t.id, ability: hit.abilityId });
   }
 
   if (mdef.poise > 0 && t.staggerLeft === 0) {

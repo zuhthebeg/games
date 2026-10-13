@@ -6,7 +6,7 @@ import { ticks } from '../js/sim/core.js';
 const castInput = { ...emptyInput(), aimX: 1, skillEdge: true };
 const make = (id) => {
   const w = createWorld(); const p = addPlayer(w, { pid: 'a', weapon: ABILITIES[id].family,
-    x: 500, y: 400, mods: { skill: id, mpRegen: 0 } }); return { w, p };
+    x: 500, y: 400, mods: { skill: id, weaponForm: ABILITIES[id].requiresForm, mpRegen: 0 } }); return { w, p };
 };
 const skills = Object.entries(ABILITIES).filter(([, d]) => d.family && d.cooldownMs > 0);
 

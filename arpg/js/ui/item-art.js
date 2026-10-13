@@ -19,7 +19,7 @@ export function itemArtKey(id, definition = {}) {
   if (definition.slot === 'weapon') {
     const base = definition.baseId || id;
     if (base === 'goblin_cleaver') return 'cleaver';
-    if (base === 'chief_maul') return 'maul';
+    if (base === 'chief_maul' || definition.form === 'blunt') return 'maul';
     if (definition.family === 'blade' || definition.family === 'bow') {
       const family = definition.family === 'blade' ? 'sword' : 'bow';
       return definition.huntTier === 3 ? `${family}-t3` : definition.huntTier === 2 ? `${family}-t2` : family;

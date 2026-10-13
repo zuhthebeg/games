@@ -689,10 +689,10 @@ export class HubUI {
       : a.heal ? `회복 범위 반경 ${a.heal.radius} px · 자신과 범위 안 살아 있는 아군`
       : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
-    const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
+    const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.sunder ? ' · 받는 피해 +15% · 파쇄 5초' : ''}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const slot = slotOf(this.save,id);
     const slotButtons = `<div class="p2-three" role="group" aria-label="슬롯">${[0, 1, 2].map(i => button(`슬롯 ${i + 1}`, 'skill-slot', `id="skill-slot-${i + 1}" data-id="${id}" data-slot="${i}" aria-pressed="${slot === i}"`)).join('')}</div>`;
-    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save)) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save), ITEMS[equippedItem(this.save,'weapon')?.id]?.form) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
   }
 
   showTrainer({ keepScroll = false } = {}) {

@@ -5,7 +5,7 @@
 // Kept honest by test/net-player-prediction.test.js, which replays it against the
 // real host step() every tick.
 import { DT, ticks, dist2, shapeHitsCircle } from '../sim/core.js';
-import { ABILITIES, WEAPONS, PLAYER_BASE as PB } from '../content/combat.js';
+import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/combat.js';
 import { attackRate } from '../content/balance.js';
 import { movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from '../sim/movement.js';
 
@@ -121,7 +121,7 @@ export function predictPlayerTick(state, inp, { arena, others = [] } = {}) {
   const w = WEAPONS[p.weapon];
   const skillPressed = SKILL_EDGES.some(k => inp[k]);
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
-  if (skillId && canCancel(p.act)) {
+  if (skillId && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0)) {
       if (p.act) endAct(p);
