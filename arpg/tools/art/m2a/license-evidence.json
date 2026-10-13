@@ -6,10 +6,10 @@
     "author": "Quaternius",
     "title": "Animated Zombie",
     "license": "CC-BY-3.0",
-    "individual_page_text": "Aug 17, 2021 \u2022 FBX /GLTF format \u2022 Creative Commons Attribution 0 Comments \u200b Send Cancel Made with \ud83c\udf55 by dook Terms Privacy ",
+    "individual_page_text": "Aug 17, 2021 \u2022 FBX /GLTF format \u2022 Creative Commons Attribution",
     "license_url": "https://creativecommons.org/licenses/by/3.0/",
     "attribution_required": true,
-    "changes": "8-direction sprite bake, neutral materials; ghoul local recoil/death; bat time-scaled run",
+    "changes": "Neutral material bake; locally authored recoil/death on original rig; 8-direction WebP sprites",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2a/source",
     "files": [
       {
@@ -22,7 +22,8 @@
         "bytes": 694500,
         "sha256": "02d990c2e442855a7a524a75b51982dc07aec3ee44a48243d61988e125e75a60"
       }
-    ]
+    ],
+    "legal_text_sha256": "e6bc9e9c474700b708f568bac9e5a8a9bcb2b1dad53442f5ba449fcb848b8e76"
   },
   {
     "id": "ghost",
@@ -31,10 +32,10 @@
     "author": "Quaternius",
     "title": "Ghost",
     "license": "CC0-1.0",
-    "individual_page_text": "Oct 23, 2022 \u2022 FBX /GLTF format \u2022 Public Domain (CC0) 0 Comments \u200b Send Cancel Made with \ud83c\udf55 by dook Terms Privacy Security ",
+    "individual_page_text": "Oct 23, 2022 \u2022 FBX /GLTF format \u2022 Public Domain (CC0)",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
     "attribution_required": false,
-    "changes": "8-direction sprite bake, neutral materials; ghoul local recoil/death; bat time-scaled run",
+    "changes": "Pale source-neutral albedo; 8-direction WebP sprite bake, existing native clips",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2a/source",
     "files": [
       {
@@ -47,7 +48,8 @@
         "bytes": 203360,
         "sha256": "4ed7656e2155d47b7d5fe08f31a7e764d79255f477d90040e4472552d7d5ac68"
       }
-    ]
+    ],
+    "legal_text_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
   },
   {
     "id": "bat",
@@ -56,10 +58,10 @@
     "author": "Quaternius",
     "title": "Bat",
     "license": "CC0-1.0",
-    "individual_page_text": "Jul 11, 2022 \u2022 FBX /GLTF format \u2022 Public Domain (CC0) 0 Comments \u200b Send Cancel Made with \ud83c\udf55 by dook Terms Privacy Security ",
+    "individual_page_text": "Jul 11, 2022 \u2022 FBX /GLTF format \u2022 Public Domain (CC0)",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
     "attribution_required": false,
-    "changes": "8-direction sprite bake, neutral materials; ghoul local recoil/death; bat time-scaled run",
+    "changes": "Neutral fur albedo; time-scaled flight copy; fixed 3D hover lift; 8-direction WebP sprite bake",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2a/source",
     "files": [
       {
@@ -72,6 +74,7 @@
         "bytes": 231476,
         "sha256": "ff20d0c0d68be4ed4ba3a402b8ceaeaf54de5d0c9dc3968117749214aee63c9b"
       }
-    ]
+    ],
+    "legal_text_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
   }
 ]

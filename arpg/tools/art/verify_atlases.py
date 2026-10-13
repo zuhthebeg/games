@@ -17,7 +17,7 @@ def verify_pose(record, skinned_count, profile="humanoid"):
     pose = record['pose']
     degrees = pose['arm_degrees_from_bind']
     assert len(degrees) == 2 and all(math.isfinite(value) for value in degrees), record['name']
-    assert profile in ('humanoid', 'quadruped', 'arachnid', 'boar'), ('unknown pose profile', profile)
+    assert profile in ('humanoid', 'quadruped', 'arachnid', 'boar', 'winged', 'floating'), ('unknown pose profile', profile)
     if profile == 'humanoid':
         assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
         assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
@@ -49,6 +49,20 @@ def verify_character(base, frames_root, entry):
         assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
         assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
         assert all(r['dot'] > .9 for r in source_proof['direction_vectors'].values())
+    if profile in ('winged', 'floating'):
+        all_source = json.loads((frames_root.parent / 'source-validation.json').read_text())
+        assert all_source['ok']
+        source_proof = next(r for r in all_source['results'] if r['id'] == entry['id'])
+        assert source_proof['ok'] and source_proof['checked_meshes'] == info['pose_check']['skinned_objects']
+        assert source_proof['frames_checked'] == len(info['frames'])
+        assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
+        assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
+        assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
+        assert all(r['dot'] > .9 for r in source_proof['direction_vectors'].values())
+        assert source_proof['max_ground_error_px'] < .001
+        if profile == 'winged':
+            assert set(source_proof['wing_motion_radians']) == {'Wing1.L', 'Wing1.R', 'Wing2.L', 'Wing2.R'}
+            assert all(v > .001 for v in source_proof['wing_motion_radians'].values())
     records, groups, sizes = {}, {}, []
     webp_bytes, json_bytes = 0, 0
     pose_min, skin_min = 360, float('inf')
@@ -58,6 +72,7 @@ def verify_character(base, frames_root, entry):
         path = folder / filename
         data = json.loads(path.read_text())
         assert data['meta']['image'].endswith('.webp')
+        assert data['meta']['fps'] == info['fps'] == entry['fps'], 'runtime/source fps mismatch'
         image_path = folder / data['meta']['image']
         image = Image.open(image_path).convert('RGBA')
         assert image.width <= 2048 and image.height <= 2048
@@ -79,7 +94,7 @@ def verify_character(base, frames_root, entry):
             full_bbox = alpha.getbbox()
             assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < 128 and full_bbox[3] < 128, (name, 'any-alpha edge clipping', full_bbox)
             coverage = sum(mask.histogram()[128:]) / 16384 * 100
-            if profile in ('quadruped', 'boar'):
+            if profile in ('quadruped', 'boar', 'winged'):
                 # A long low animal foreshortens end-on: use a 512px opaque
                 # floor + 16px extent, not the humanoid 5% area expectation.
                 assert 100 * 512 / 16384 <= coverage <= 60, (name, coverage)

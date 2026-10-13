@@ -88,7 +88,7 @@ def main():
             atlas.save(archived / (stem + '.png'), optimize=True)
             data = {'frames': frames, 'animations': dict(animations), 'meta': {
                 'app': 'ARPG CC0 Blender pipeline', 'version': '2.0', 'image': stem + '.webp',
-                'format': 'RGBA8888', 'size': {'w': atlas.width, 'h': atlas.height}, 'scale': '1', 'fps': config['fps'],
+                'format': 'RGBA8888', 'size': {'w': atlas.width, 'h': atlas.height}, 'scale': '1', 'fps': info['fps'],
             }}
             filename = stem + '.webp.json'
             (folder / filename).write_text(json.dumps(data, separators=(',', ':')))
@@ -115,7 +115,7 @@ def main():
         stats.append(record)
         manifest.append({'id': job['name'], 'label': job['label'], 'monster': job.get('neutral', False),
                          'content_ids': job['content_ids'], 'sheets': sheets, 'animations': list(job['animations']),
-                         'fps': config['fps'], 'anchor': anchor, 'bytes': total,
+                         'fps': info['fps'], 'anchor': anchor, 'bytes': total,
                          **({'animation_durations': job['animation_durations']} if 'animation_durations' in job else {})})
     if args.merge_manifest:
         prior = json.loads((destination / 'manifest.json').read_text())

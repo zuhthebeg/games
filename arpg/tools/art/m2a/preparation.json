@@ -1,0 +1,25 @@
+[
+  {
+    "id": "ghoul",
+    "original_sha256": "02d990c2e442855a7a524a75b51982dc07aec3ee44a48243d61988e125e75a60",
+    "prepared_sha256": "d43f709162e09dec5ed463d08081870e2b6be3743660417e922c0f2e4a2bd2f7",
+    "derived_clips": [
+      "M2a_Ghoul_Recoil",
+      "M2a_Ghoul_Death"
+    ]
+  },
+  {
+    "id": "ghost",
+    "original_sha256": "4ed7656e2155d47b7d5fe08f31a7e764d79255f477d90040e4472552d7d5ac68",
+    "prepared_sha256": "f98e4bf3c8c883f0fa09e7ee84873d3f4e6ca1d95c7827825e0cfbf13261e355",
+    "derived_clips": []
+  },
+  {
+    "id": "bat",
+    "original_sha256": "ff20d0c0d68be4ed4ba3a402b8ceaeaf54de5d0c9dc3968117749214aee63c9b",
+    "prepared_sha256": "888b833442b2ce500a8c7f1645d1802de8aa38238a860e217a18d95a692875af",
+    "derived_clips": [
+      "M2a_Bat_FastFlight"
+    ]
+  }
+]

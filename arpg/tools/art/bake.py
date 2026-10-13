@@ -106,11 +106,14 @@ for job in config['characters']:
     if '--only' in args and job['name'] != args[args.index('--only') + 1]:
         continue
     start = time.perf_counter()
+    bake_fps = job.get('fps', config['fps'])
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 24
     bpy.ops.import_scene.gltf(filepath=job['model'])
     rig = next(obj for obj in scene.objects if obj.type == 'ARMATURE')
+    # Display-only floating rigs keep one fixed world-ground origin, never per-frame fit.
+    rig.location.z += job.get('ground_lift', 0)
     # glTF's static joint transforms are the baseline for channels a clip omits.
     # In Quaternius Idle only arm translation is keyed; identity rotation would
     # replace the authored relaxed stance with a T-pose.
@@ -265,6 +268,13 @@ for job in config['characters']:
             bone_attach_world(obj,'Head')
     for obj in skinned:
         assert any(mod.type == 'ARMATURE' and mod.object == rig for mod in obj.modifiers), f'Frozen skin: {obj.name}'
+    for obj in meshes:
+        for mat in obj.data.materials:
+            if mat.name in job.get('material_colors', {}):
+                rgba = (*job['material_colors'][mat.name], 1)
+                mat.diffuse_color = rgba
+                if mat.use_nodes:
+                    mat.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value = rgba
     if job.get('neutral'):
         for mat in {mat for obj in meshes for mat in obj.data.materials}:
             if not mat.use_nodes:
@@ -389,11 +399,11 @@ for job in config['characters']:
         clip = action(clip_name)
         begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
         assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = max(2, math.ceil((end - begin) / scene.render.fps * config['fps'] - 1e-5))
+        count = max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5))
         for angle in config['directions'].values():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
-                frame = begin + index / config['fps'] * scene.render.fps
+                frame = begin + index / bake_fps * scene.render.fps
                 sample(clip_name, angle, frame)
                 depsgraph = bpy.context.evaluated_depsgraph_get()
                 for obj in visible_meshes:
@@ -430,13 +440,13 @@ for job in config['characters']:
         clip = action(clip_name)
         begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
         assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = max(2, math.ceil((end - begin) / scene.render.fps * config['fps'] - 1e-5))
+        count = max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5))
         if preview:
             count = 1
         for direction, angle in config['directions'].items():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
-                frame = begin + index / config['fps'] * scene.render.fps
+                frame = begin + index / bake_fps * scene.render.fps
                 sample(clip_name, angle, frame)
                 name = f'{animation}_{direction}_{index:03d}'
                 folder = out / job['name']
@@ -485,7 +495,7 @@ for job in config['characters']:
         print('BAKED_ANIMATION', job['name'], animation, count, flush=True)
     elapsed = time.perf_counter() - start
     data = {'name': job['name'], 'frames': records, 'seconds': elapsed, 'engine': scene.render.engine,
-            'fps': config['fps'], 'source': job['model'], 'preview': preview, 'anchor': anchor,
+            'fps': bake_fps, 'source': job['model'], 'preview': preview, 'anchor': anchor,
             'framing': {'ortho_scale': camera_data.ortho_scale, 'target': list(target),
                         'margin_factor': framing_margin, 'includes_outline_hulls': True, 'root_motion_drivers': root_drivers},
             'pose_check': {'bind_reference': 'evaluated T-Pose/rest mesh + local arm quaternion',

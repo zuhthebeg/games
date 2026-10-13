@@ -1,3 +1,4 @@
 Model: https://poly.pizza/m/Iip30bDHmu
 Author: Quaternius
-Oct 23, 2022 • FBX /GLTF format • Public Domain (CC0) 0 Comments ​ Send Cancel Made with 🍕 by dook Terms Privacy Security 
+Oct 23, 2022 • FBX /GLTF format • Public Domain (CC0)
+License href: https://creativecommons.org/publicdomain/zero/1.0/

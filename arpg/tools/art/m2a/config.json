@@ -51,7 +51,8 @@
       "animation_durations": {
         "hit": 0.15,
         "death": 0.6
-      }
+      },
+      "fps": 6
     },
     {
       "name": "ghost",
@@ -82,6 +83,23 @@
       "animation_durations": {
         "hit": 0.15,
         "death": 0.6
+      },
+      "material_colors": {
+        "Ghost_Main": [
+          0.72,
+          0.72,
+          0.72
+        ],
+        "Eye_White": [
+          0.94,
+          0.94,
+          0.94
+        ],
+        "Eye_Black": [
+          0.009,
+          0.009,
+          0.009
+        ]
       }
     },
     {
@@ -98,10 +116,7 @@
         "Wing1.R"
       ],
       "pose_profile": "winged",
-      "root_bones": [
-        "Root",
-        "BodyRoot"
-      ],
+      "root_bones": [],
       "animations": {
         "idle": "BatArmature|Bat_Flying",
         "run": "M2a_Bat_FastFlight",
@@ -115,7 +130,25 @@
       "animation_durations": {
         "hit": 0.15,
         "death": 0.6
-      }
+      },
+      "material_colors": {
+        "Main": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "Belly": [
+          0.55,
+          0.55,
+          0.55
+        ],
+        "Nose": [
+          0.32,
+          0.32,
+          0.32
+        ]
+      },
+      "ground_lift": 3
     }
   ]
 }
