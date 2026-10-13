@@ -256,7 +256,7 @@ export class ArenaRenderer {
     effect.node.visible = true;
     effect.node.alpha = this.reduced ? FEEL.effects.reducedAlpha : 1;
     effect.node.scale.set(1);
-    effect.left = effect.total = life;
+    effect.left = effect.total = life + (mastery?.afterglow ? .1 : 0);
     effect.kind = kind;
     effect.mastery = mastery;
     this.skillVfx.decorate(effect.node, mastery, shape, r, color, 0xffdf9c);

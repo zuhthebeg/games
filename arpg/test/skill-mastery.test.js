@@ -4,6 +4,7 @@ import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.j
 import { createTracker, trackRound, settleRound, buildRoundMods } from '../js/meta/run.js';
 import { masteryLevel, masteryLabel, masteryLevels, setMasteryLevel, MASTERY_THRESHOLDS, trackMastery } from '../js/meta/skill-mastery.js';
 import { presentSkillEvents } from '../js/net/skill-presentation.js';
+import { createWorld, addPlayer, startStage, spawnMonster, step, emptyInput } from '../js/sim/world.js';
 const fresh = () => createSave({name:'숙련',weapon:'focus',answers:[0,0,0,0,0],createdAt:1});
 const world = {round:{stageId:'S2'},entities:[{id:1,kind:'player',pid:'a'},{id:2,kind:'player',pid:'b'},{id:3,kind:'monster'},{id:4,kind:'monster'}],projectiles:[]};
 const act = (ability='ember_bolt',id=1) => ({type:'act',ability,id});
@@ -38,6 +39,13 @@ for(const terminal of ['clear','death','return_scroll']) test(`${terminal}: sett
  const store=new SaveStore(storage); store.save(result.save); assert.equal(store.load().skillMastery.ember_bolt,100);
  const old=fresh(); delete old.skillMastery; mem.set(SAVE_KEY,JSON.stringify(old)); assert.ok(validateSave(old)); assert.deepEqual(store.load().skillMastery,{});
  assert.equal([...mem.keys()].length,1);
+});
+test('real host multi-hit whirl cast increments once, not per enemy',()=>{
+ const w=createWorld({seed:17});addPlayer(w,{pid:'a',weapon:'blade',mods:{skills:['whirl'],maxMp:1000,maxHp:10000}});startStage(w,'S2');
+ const player=w.entities[0];spawnMonster(w,'goblin_grunt',player.x+40,player.y,{hpMult:100}).spawnLeft=0;spawnMonster(w,'goblin_grunt',player.x+75,player.y+30,{hpMult:100}).spawnLeft=0;
+ let tracker=createTracker(1),hits=0;const s=fresh();
+ for(let i=0;i<25;i++){const events=step(w,{a:{...emptyInput(),skillEdge:i===0}});hits+=events.filter(e=>e.type==='hit'&&e.src===player.id&&e.ability==='whirl').length;tracker=trackRound(s,tracker,events,{},w,'a').tracker;}
+ assert.ok(hits>=2);assert.equal(tracker.skillMastery.whirl,1);
 });
 test('host presentation attributes delayed guest hits even after corpse is absent, without editing events/world',()=>{
  const events=[act(),hit()], before=JSON.stringify({events,world});

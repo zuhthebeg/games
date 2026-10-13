@@ -50,13 +50,14 @@ try {
    await ev(`(()=>{const n=document.querySelector('[data-debug-mastery="frost_lance"]');n.scrollIntoView({block:'center'});n.focus();})()`);
    await key('Home');for(let n=1;n<level;n++)await key('ArrowDown');await key('Enter');
    await wait(`(__arpg.save.skillMastery.frost_lance||0)===${[0,30,100,250,500][level-1]}`);await activate('#arpg-debug-toggle',mobile);
-   await sleep(2700);if(mobile)await activate('#skill',true);else await key('k','KeyK');
+   await sleep(2700);await activate('#skill',mobile);
    await wait(`__arpg.feedback.mastery.paths.frost_lance?.level===${level}`);
-   const path=await ev('__arpg.feedback.mastery.paths.frost_lance');assert.equal(path.path,level===1?'classic':'classic-enhanced');paths.push(path);
+   const path=await ev('JSON.parse(JSON.stringify(__arpg.feedback.mastery.paths.frost_lance))');assert.equal(path.path,level===1?'classic':'classic-enhanced');paths.push(path);
   }
-  const counted=await ev('__arpg.tracker.skillMastery?.frost_lance||0');
-  if(mobile)await activate('#scroll',true);else await key('r','KeyR');
+  await wait(`!document.querySelector('#scroll').disabled`);
+  await activate('#scroll',mobile);
   await wait(`__arpg.save.lastReceipt?.terminal==='return_scroll'`);
+  const counted=await ev('__arpg.tracker.skillMastery?.frost_lance||0');
   assert.equal(await ev('__arpg.save.skillMastery.frost_lance'),500+counted);
   await activate('[data-action="result-inn"]',mobile);
   await activate('[data-action="trainer"]',mobile);await activate('[data-action="academy-tab"][data-family="focus"]',mobile);
@@ -73,7 +74,7 @@ try {
   await wait(`document.querySelector('#meta-screen').dataset.page==='inn'`);
   await activate('[data-action="board"]',true);await activate('[data-action="sortie"][data-stage="S2"]',true);await activate('[data-action="launch"]',true);
   await wait('__arpg.world?.round.stageId==="S2"');await activate('#skill',true);await wait('__arpg.feedback.mastery.paths.frost_lance');
-  const path=await ev('__arpg.feedback.mastery.paths.frost_lance');assert.equal(path.path,'classic');assert.equal(path.level,5);assert.equal(path.extraParticles,0);fallbacks.push({mode,path});
+  const path=await ev('JSON.parse(JSON.stringify(__arpg.feedback.mastery.paths.frost_lance))');assert.equal(path.path,'classic');assert.equal(path.level,5);assert.equal(path.extraParticles,0);fallbacks.push({mode,path});
  }
  await writeFile(join(out,'smoke.json'),JSON.stringify({smoke,fallbacks,consoleErrors:errors.length,screenshots:0},null,2)+'\n');assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));console.log(JSON.stringify({pixels:36,smoke,consoleErrors:0,screenshots:0},null,2));
  }
