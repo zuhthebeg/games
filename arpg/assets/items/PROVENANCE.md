@@ -81,3 +81,31 @@ The actual index browser smoke now requires every real item (including wood)
 to have and decode a local image at each mobile/desktop viewport, explicitly
 checks a labelled wood material row via native touch/keyboard activation and
 checks wood in receipt/reveal builders. No coverage exclusion for wood remains.
+
+## I1 original T4 equipment and guardian scale
+
+`arpg/tools/item-art-tier4.py` appends eleven original local pictures: ten grave/
+guardian equipment forms plus the guardian-scale crafting material. Same dark
+outline/steel/brass/earth palette and Pillow 4x supersampling / 84px fit as ART-W,
+96x96 transparent lossless WebP, 64-color RGBA quantization. Near-solid alpha is
+restored to 255 after quantization. No GPU/model, AI, external assets or cost.
+Unique geometry includes straight/notched and curved fang blades, articulated
+bone bow, short flame-crowned wand, long fork-headed staff, bone-banded maul,
+wide-sleeved cloth robe, laced leather, ribbed plate, overlapping scale armor.
+
+47 delivered files: 38 original + 5 reused + 4 derivatives. Prior 36 records and
+WebP bytes preserved; eleven new icons add **16,964 bytes**, total **221,216**.
+The legacy 200 KiB budget is still checked independently; this content expansion
+has a separate 32 KiB budget (overall 232 KiB) instead of recompressing old art.
+Each file's original builder source/output SHA and exact bytes are in manifest.
+No third-party licensing claims: these authored contributions follow the local
+CC0 dedication recorded in assets-ledger.md. Source-only contact sheet reviewed;
+no screenshots/new human approval/physical-phone certification claimed.
+
+Rebuild: base builder → enchant variants → wood-art.py →
+`python3 arpg/tools/item-art-tier4.py`. T4-only rebuild preserves all earlier files.
+`python3 arpg/tools/item-art-tier4-check.py` checks full/threshold alpha support at
+96/64/48px, transparent borders and pairwise alpha-mask XOR counts. Exact T4 base
+IDs/rarity variants share each base's own new UI picture; the guardian-scale
+material has a scale-specific SVG fallback. Paperdoll retains its existing
+family kit/fallback: unique item icons are not new character-held 3D models.

@@ -6,8 +6,11 @@ import { compareItems } from '../js/meta/compare.js';
 const SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
 const gear = Object.entries(ITEMS).filter(([, def]) => SLOTS.includes(def.kind));
 
-test('no equipment keeps a level gate (cocy 10-11)', () => {
-  for (const [id, def] of gear) assert.equal(def.requiredLevel, 1, id);
+test('equipment has no level gate: legacy level 1 and T4 authored level 15 metadata only', () => {
+  for (const [id, def] of gear) {
+    assert.equal(def.requiredLevel, def.huntTier === 4 ? 15 : 1, id);
+    assert.equal(meetsRequirement({ level: 1, stats: { str: 100 } }, def), true, id);
+  }
 });
 
 test('strength gates only heavy weapons and heavy armor, within the stat cap', () => {

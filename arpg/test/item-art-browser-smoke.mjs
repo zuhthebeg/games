@@ -129,7 +129,7 @@ try {
       for(const src of paths){const im=new Image();im.src=src;await im.decode();if(im.naturalWidth!==96||im.naturalHeight!==96)throw Error(src);}
       return {ids:Object.keys(ITEMS).length,paths:paths.size,wood:{...wood,decoded:true}};
     })()`);
-    assert.equal(coverage.paths,36);
+    assert.equal(coverage.paths,47);
     assert.deepEqual(coverage.wood,{id:'wood',src:'assets/items/wood.webp',decoded:true});
     return coverage;
   };
@@ -227,7 +227,7 @@ try {
     assert.equal(await evaluate('__arpg.save.stacks.potion'),0);
     await click('[data-action="inn"]');await click('[data-action="inventory"]');
     await click('[data-action="stash-tab"][data-tab="gear"]');
-    await click('[data-action="inn"]');await click('[data-action="board"]');await audit();assert.equal(await evaluate("document.querySelectorAll('[data-action=\"sortie\"]').length"),20);
+    await click('[data-action="inn"]');await click('[data-action="board"]');await audit();assert.equal(await evaluate("document.querySelectorAll('[data-action=\"sortie\"][data-stage^=\"S\"]').length"),20);
     await click('[data-action="sortie"][data-stage="S20"]');await audit();states.push({width,height,ok:true,woodRow,nativeMaterialTab:true,coverage:await coverageAudit()});
   }
   const coverage=states.at(-1).coverage;

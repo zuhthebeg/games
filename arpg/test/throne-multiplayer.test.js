@@ -34,10 +34,10 @@ for(const count of [2,4])test(`TD1 ${count}-player real Session transport: only 
  // Guests cannot submit arbitrary HP or attack-event packets to gain host authority.
  const before=JSON.stringify(host.world);host.rt('guest',{t:'hit',dst:host.world.entities[0].id,dmg:999999});assert.equal(JSON.stringify(host.world),before);
 });
-test('TD1 reward stream is finite and bounded, existing tier-3 items only; 100 seeds ×3 threats',()=>{
+test('TD1 reward stream is finite and bounded, existing T3 plus guardian-only T4 items; 100 seeds ×3 threats',()=>{
  for(let seed=0;seed<100;seed++)for(let threat=1;threat<=3;threat++){
   const drop=rollDrops('throne_dragon',seed,{stageId:'TD1',huntTier:3,threat});assert.ok(Number.isSafeInteger(drop.gold)&&drop.gold>=0&&drop.gold<=250);
-  for(const item of drop.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,3);}
+  for(const item of drop.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
   for(const id of Object.keys(drop.stacks))assert.ok(ITEMS[id]);
  }
 });

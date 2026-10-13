@@ -32,6 +32,7 @@ const paths = {
 
 // Approved item silhouettes, embedded locally (no reference-folder dependency).
 const silhouettes = {
+  "dragon_scale": '<path fill="currentColor" d="m16 2 11 7 3 10-14 12L2 19 5 9z"/><path fill="none" stroke="#141916" stroke-width="2" d="M16 4v25M6 12l10 8 12-8"/>',
   "wood": '<path fill="currentColor" d="m4 15 13-12 9 3 4 9-14 14-9-3z"/><ellipse cx="10" cy="22" rx="7" ry="6" fill="currentColor" stroke="#141916" stroke-width="2"/><ellipse cx="10" cy="22" rx="3" ry="2" fill="none" stroke="#141916" stroke-width="1.5"/><path fill="none" stroke="#141916" stroke-width="2" d="m12 15 12-10m-8 15 12-11"/>',
   "sword": "<path fill=\"currentColor\" d=\"m22 2 6-1-1 7-13 14-4-4zM6 16l12 12 3-3L9 13zM3 26l6-6 3 3-6 6-4 1z\"/>",
   "blunt": '<path fill="currentColor" d="M7 3h20v11H7zm7 11h6v17h-6z"/><path stroke="#141916" stroke-width="2" d="M12 5v7m10-7v7"/>',

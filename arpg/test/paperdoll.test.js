@@ -63,8 +63,14 @@ test('a pinned combat output cannot prevent eviction of a newer unused portrait'
   const portrait=await cache.acquire({key:'portrait'});portrait.release();assert.deepEqual(disposed,['portrait']);
   const next=await cache.acquire({key:'next'});next.release();combat.release();assert.equal(cache.status().references,0);
 });
-test('every current base weapon changes geometry or baked palette, without extra sources',()=>{
-  const bases=Object.entries(ITEMS).filter(([id,d])=>d.slot==='weapon'&&d.baseId===id);
+test('every legacy base weapon changes geometry or baked palette, without extra sources',()=>{
+  const bases=Object.entries(ITEMS).filter(([id,d])=>d.slot==='weapon'&&d.baseId===id&&d.huntTier<4);
   const signatures=bases.map(([id])=>{const d=equipmentVisual(wear(save(),id));return JSON.stringify([d.kit,d.weapon,d.weaponColour]);});
   assert.equal(new Set(signatures).size,bases.length);
+});
+
+test('I1 T4 weapons retain existing family paperdoll fallback, independent of unique UI art',()=>{
+ for(const [id,d]of Object.entries(ITEMS).filter(([id,d])=>d.slot==='weapon'&&d.baseId===id&&d.huntTier===4)) {
+  const v=equipmentVisual(wear(save(),id));assert.equal(v.kit,d.family);assert.ok(['standard','alternate'].includes(v.weapon));
+ }
 });

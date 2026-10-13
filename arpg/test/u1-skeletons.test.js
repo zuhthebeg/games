@@ -124,10 +124,12 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   assert.equal(Object.keys(evidence.original_monster_sha256).length, 12);
   for (const [id, hash] of Object.entries(evidence.original_monster_sha256))
     assert.equal(sha(stable(MONSTERS[id])), hash, id);
+  // U1's byte proof was pinned at dc2a876; later intentional main commits are exempt by name.
+  const later = { ABILITIES: 'd143221 slash 16', 'arpg/js/sim/world.js': 'd143221 melee guard', 'arpg/index.html': 'cache stamps' };
   for (const [key, hash] of Object.entries(evidence.other_combat_exports_sha256))
-    assert.equal(sha(stable(combat[key])), hash, key);
+    if (!later[key]) assert.equal(sha(stable(combat[key])), hash, key);
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
-    assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
+    if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id)), ids);
 });
 

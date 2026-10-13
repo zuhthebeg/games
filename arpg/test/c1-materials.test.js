@@ -11,7 +11,7 @@ import { MONSTERS } from '../js/content/combat.js';
 
 const fresh = () => createSave({ name: 'C1', answers: [0,0,0,0,0], createdAt: 123 });
 const rich = () => ({ ...fresh(), gold: 10000, stacks: { ...fresh().stacks,
-  ...Object.fromEntries(Object.values(MATERIAL_STACK).concat(['fang','frost_shard']).map(id => [id,100])) } });
+  ...Object.fromEntries(Object.values(MATERIAL_STACK).concat(['fang','frost_shard','dragon_scale']).map(id => [id,100])) } });
 const roundtrip = save => {
   const data = new Map();
   const store = new SaveStore({getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k)});
@@ -46,7 +46,7 @@ test('C1 every equipment rarity yields only its primary material plus unchanged 
 
 test('C1 recipe IDs/gold unchanged; exact consumption, deterministic affixes/UID and 25% primary refund persist', () => {
   const prices = {iron_sword:60,hunter_bow:60,ember_wand:60,boar_hide_armor:50,leather_vest:40,rune_blade:140,rune_maul:140,warden_maul:240,pack_bow:140,altar_staff:140,woven_armor:140};
-  assert.deepEqual(Object.fromEntries(Object.entries(RECIPES).map(([id,r]) => [id,r.gold])), prices);
+  assert.deepEqual(Object.fromEntries(Object.entries(RECIPES).filter(([id]) => ITEMS[id].huntTier < 4).map(([id,r]) => [id,r.gold])), prices);
   for (const [id, recipe] of Object.entries(RECIPES)) {
     const base = freeze(rich()), made = craft(base, id), item = made.items.at(-1), primary = dismantleMaterial(item);
     assert.ok(recipe[primary] > 0); assert.deepEqual(made, craft(base,id));
@@ -65,7 +65,7 @@ test('C1 recipe IDs/gold unchanged; exact consumption, deterministic affixes/UID
 test('C1 material sell + craft/refund and repeated craft/sell cannot mint resources or gold', () => {
   const worth = save => save.gold + Object.entries(save.stacks).reduce((sum,[id,n]) => sum + n*(ITEMS[id].sell || 0),0);
   for (const id of Object.keys(RECIPES)) {
-    const base=rich(); let save=base;
+    const base=rich(); for(const k of Object.keys(base.stacks))if(ITEMS[k].kind==='material')base.stacks[k]=200; let save=base;
     for(let n=0;n<4;n++) {
       const made=craft(save,id), item=made.items.at(-1), primary=dismantleMaterial(item);
       const salvage=dismantle(made,item.uid);

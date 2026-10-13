@@ -137,7 +137,7 @@ test('B1 old drop outputs remain byte-identical over 19,800 monster/tier/threat/
   for(const id of u1){assert.ok(Object.hasOwn(MONSTERS,id));assert.throws(()=>rollDrops(id,0),/unknown drop table/);}
   for(const monster of Object.keys(MONSTERS).filter(m=>m!=='training_dragon'&&!u1.includes(m)))for(const tier of [1,2,3])for(const threat of [1,2,3])for(let seed=0;seed<200;seed++) {
     const ctx={huntTier:tier,threat,elite:seed%2===0,rarelessRounds:seed%7,stageId:'S'+tier*5};
-    const loot=rollDrops(monster,seed,ctx);assert.ok(loot.items.every(i=>!ITEMS[i.id].craftOnly));hash.update(JSON.stringify(loot)+'\n');count++;
+    const loot=rollDrops(monster,seed,ctx);if(monster==='throne_dragon'){delete loot.stacks.dragon_scale;loot.items=loot.items.filter(i=>!ITEMS[i.id].dropOnly);}assert.ok(loot.items.every(i=>!ITEMS[i.id].craftOnly));hash.update(JSON.stringify(loot)+'\n');count++;
   }
   assert.equal(count,19800);assert.equal(hash.digest('hex'),'595e5125719e728997b57f0625cf12ace806a740c8c2b40f850d56a039995626');
 });

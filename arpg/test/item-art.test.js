@@ -49,7 +49,7 @@ test('empty sockets and unknown/missing art retain SVG; forge gets real stone pi
   for (let n=1;n<=3;n++) assert.ok(icon(`enhance_stone_${n}`).includes('<picture>'));
 });
 
-test('delivered WebPs match source manifest and stay below 200 KiB total', () => {
+test('delivered WebPs match source manifest and stay below legacy 200 KiB + T4 32 KiB total', () => {
   let bytes = 0;
   for (const record of records) {
     const data = readFileSync(new URL(record.file, assets));
@@ -60,11 +60,15 @@ test('delivered WebPs match source manifest and stay below 200 KiB total', () =>
     assert.ok(/^[a-f0-9]{64}$/.test(record.sourceSha256));
     bytes += data.length;
   }
-  assert.equal(records.filter(r=>r.method.startsWith('original')).length, 27);
+  assert.equal(records.filter(r=>r.method.startsWith('original')).length, 38);
   assert.equal(records.filter(r=>r.method.startsWith('reviewed')).length, 5);
   assert.equal(records.filter(r=>r.method.startsWith('derived')).length, 4);
-  assert.equal(records.length, 36);
-  assert.ok(bytes < 200*1024, `${bytes} bytes`);
+  assert.equal(records.length, 47);
+  const t4 = records.filter(r => r.source === 'arpg/tools/item-art-tier4.py');
+  assert.equal(t4.length, 11);
+  assert.ok(t4.reduce((n,r)=>n+r.bytes,0) < 32*1024);
+  assert.ok(records.filter(r=>!t4.includes(r)).reduce((n,r)=>n+r.bytes,0) < 200*1024);
+  assert.ok(bytes < 232*1024, `${bytes} bytes`);
 });
 
 test('four enchant scrolls use distinct art and never share the return-scroll icon', () => {

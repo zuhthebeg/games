@@ -40,6 +40,18 @@ export const ITEMS = {
   warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13, 'metal'), huntTier: 3, requiredLevel: 10 },
   rune_maul: { ...weapon('룬철 철퇴', 'blade', 'fine', 1.35, 15, 'blunt'), material: 'rune', huntTier: 2, requiredLevel: 5, craftOnly: true },
   warden_maul: { ...weapon('파수꾼 전쟁망치', 'blade', 'fine', 1.6, 19, 'blunt'), huntTier: 3, requiredLevel: 10, craftOnly: true },
+  // T4 carries the authored Lv15 band; meetsRequirement still uses strength only.
+  revenant_blade: { ...weapon('망자의 장검', 'blade', 'fine', 1.85, 17), huntTier: 4, requiredLevel: 15 },
+  bone_bow: { ...weapon('뼈 장궁', 'bow', 'fine', 1.85, 11), huntTier: 4, requiredLevel: 15 },
+  soulfire_wand: { ...weapon('넋불 완드', 'focus', 'fine', 1.85, 7, 'wand'), huntTier: 4, requiredLevel: 15 },
+  gravekeeper_staff: { ...weapon('묘지기 지팡이', 'focus', 'fine', 1.85, 9, 'staff'), huntTier: 4, requiredLevel: 15 },
+  ossuary_maul: { ...weapon('납골당 철퇴', 'blade', 'fine', 1.85, 20, 'blunt'), huntTier: 4, requiredLevel: 15 },
+  shroud_robe: { ...armor('수의 로브', 'fine', 100, 6, 'cloth'), huntTier: 4, requiredLevel: 15 },
+  shadow_leather: { ...armor('그림자 가죽 갑옷', 'fine', 100, 12, 'leather'), huntTier: 4, requiredLevel: 15 },
+  ossuary_plate: { ...armor('납골 판금', 'fine', 100, 15, 'metal'), huntTier: 4, requiredLevel: 15 },
+  dragonfang_blade: { ...weapon('용송곳니 검', 'blade', 'rare', 1.95, 17), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
+  dragon_scale_armor: { ...armor('수호룡 비늘 갑옷', 'rare', 110, 15, 'metal'), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
+  dragon_scale: { name: '수호룡 비늘', kind: 'material', weight: 0.3, sell: 6 },
   scrap: { material: 'metal', name: '고철', kind: 'material', weight: 0.2, sell: 1 },
   hide: { material: 'leather', name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
   wood: { name: '목재', kind: 'material', material: 'wood', weight: 0.2, sell: 1 },
@@ -52,7 +64,7 @@ export const ITEMS = {
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 6 },
 };
-const TIER_LEVEL = { 2: 5, 3: 10 };
+const TIER_LEVEL = { 2: 5, 3: 10, 4: 15 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {
   for (const [armorClass, scale] of [['light', 1], ['medium', 1.5], ['heavy', 2]]) {
@@ -91,7 +103,8 @@ export function strRequirement(def) {
 }
 for (const item of Object.values(ITEMS)) {
   if (!SLOTS.includes(item.kind)) continue;
-  item.requiredLevel = 1;
+  // T4's authored band is metadata, never a runtime gate (meetsRequirement below).
+  if (item.huntTier !== 4) item.requiredLevel = 1;
   item.requiredStr = strRequirement(item);
 }
 export const meetsRequirement = (save, def) => (save.stats?.str ?? BALANCE.stats.base) >= (def?.requiredStr || 0);
@@ -256,7 +269,7 @@ function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
   if (table) {
     loot.gold = integer(...table.gold);
     for (const entry of table.stacks) stack(entry.id, entry.count, entry.chance ?? 1);
-    for (const entry of table.items) gear(entry.id, entry.chance);
+    for (const entry of table.items) if (!entry.exclusive) gear(entry.id, entry.chance);
     return loot;
   }
   switch (monsterType) {
@@ -315,7 +328,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
-        && item.huntTier === tier && !item.craftOnly);
+        && item.huntTier === tier && !item.craftOnly && !item.dropOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;
@@ -338,6 +351,13 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   if (blessedRandom() < ENCHANT.blessedChance[boss ? 'boss' : elite ? 'elite' : 'normal'] * threat.drop) {
     const id = blessedRandom() < 0.5 ? 'scroll_blessed_weapon' : 'scroll_blessed_armor';
     loot.stacks[id] = (loot.stacks[id] || 0) + 1;
+  }
+  // Guardian-only rewards use an isolated stream: adding them cannot shift old loot rolls.
+  const exclusiveRandom = rng(seed ^ 0x741d4a91);
+  for (const entry of NEW_MONSTER_DROPS[monsterType]?.items || []) {
+    if (entry.exclusive && exclusiveRandom() < Math.min(1, entry.chance * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
+      loot.items.push(instance(`drop:${seed >>> 0}:${entry.id}`, entry.id, seed));
+    }
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];
