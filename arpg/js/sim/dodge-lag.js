@@ -54,7 +54,9 @@ export function rewindGuestDodge(world, p, inp, awardPerfect) {
     if (row.hit.def.poison && p.poison?.hit.srcId === row.hit.srcId) {
       p.poison = row.poison;
       if (p.poison) {
-        p.poison.left -= world.tick - row.tick;
+        const elapsed = world.tick - row.tick;
+        p.poison.left -= elapsed;
+        p.poison.next = ((p.poison.next - 1 - elapsed) % p.poison.interval + p.poison.interval) % p.poison.interval + 1;
         if (p.poison.left <= 0) p.poison = null;
       }
     }

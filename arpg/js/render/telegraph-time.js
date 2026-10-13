@@ -18,6 +18,6 @@ export function currentTelegraphs(world, currentTick) {
     return { ...e, act: phase ? { ...act, phase } : null };
   });
   const view = { ...world, entities, viewTick: currentTick };
-  const unknown = (world.telegraphs ?? []).filter(t => !entities.some(e => e.kind === 'monster' && e.id === t.id));
+  const unknown = (world.telegraphs ?? []).filter(t => !t.ability || !entities.some(e => e.kind === 'monster' && e.id === t.id));
   return { ...view, telegraphs: [...getTelegraphs(view), ...unknown] };
 }

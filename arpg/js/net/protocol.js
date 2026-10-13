@@ -59,7 +59,7 @@ export class InputQueue {
         const count = Math.min(30, n - this.seen[k]);
         if (k === 'dodgeEdge') for (let i = n - count + 1; i <= n; i++) {
           const row = Array.isArray(cmd.dodgeViews) ? cmd.dodgeViews.find(r => Array.isArray(r) && r[0] === i) : null;
-          this.dodgeViews.push(row ? row[1] : undefined);
+          this.dodgeViews.push(row ? row[1] : n - this.seen[k] === 1 ? cmd.viewTick : undefined);
         }
         this.pending[k] += count; this.seen[k] = n;
       }
@@ -217,7 +217,7 @@ export class SnapshotBuffer {
       if (!from || !to || e.dead || e.terminal) return e;
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
-    // Only x/y are buffered. HP, action phases and warning geometry stay newest.
+    // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
     return currentTelegraphs({ ...latest.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
