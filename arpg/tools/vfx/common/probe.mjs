@@ -44,7 +44,7 @@ export async function runSmoke() {
     check(!vfx.fxRequested||baked.length>0,`${skill} no native sprite activated`);
     const projectile=vfx.projectiles.find(s=>s.id===77);
     if(pr&&vfx.fxRequested) {
-      check(projectile?.baked?.visible&&!projectile.node.visible,`${skill} projectile fallback unexpectedly`);
+      check(projectile?.baked?.visible&&projectile.node.visible,`${skill} baked flight must overlay the vector body`);
       check(Math.abs(projectile.baked.scale.x-pr.radius/(vfx.fxAssets.get(skill).clips.projectile.support))<1e-6,`${skill} radius mismatch`);
       check(Math.abs(projectile.baked.rotation-.35)<1e-6,`${skill} facing mismatch`);
     }

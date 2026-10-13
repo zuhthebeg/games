@@ -1,10 +1,12 @@
 import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
 import { Assets, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
+import { fxPreference } from '../prefs.js';
 
 // Presentation-only default. Classic opts out completely; reduced motion never loads atlases.
-export const effekseerEnabled = (search = globalThis.location?.search || '') =>
-  new URLSearchParams(search).get('fx') !== 'classic';
+// Settings stores the choice per device; ?fx= in the URL still overrides it.
+export const effekseerEnabled = (search = globalThis.location?.search || '', storage) =>
+  fxPreference(search, storage) !== 'classic';
 
 // Presentation only: dimensions come from combat content, never duplicate tuning.
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
@@ -80,6 +82,12 @@ export class SkillVfx {
     this.fxRequested = options.effekseer ?? effekseerEnabled();
     this.fxAssets = new Map(); this.fxLoads = new Map(); this.fxErrors = new Map();
     this.fxLoad = null; // No eager network/decode, including in the default-on mode.
+  }
+  setEffekseer(enabled) {
+    this.fxRequested = Boolean(enabled);
+    if (!this.fxRequested) for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) {
+      if (slot.baked) slot.baked.visible = false; slot.bakedActive = false;
+    }
   }
   requestSkill(ability, reduced = false) {
     if (!this.fxRequested || reduced || !VFX_ATLASES[ability]) return null;
@@ -496,11 +504,10 @@ export class SkillVfx {
     if (!reduced && this.fxRequested) {
       const clip = this.fxAssets.get(particle.abilityId)?.clips.projectile;
       slot.bakedAge += dt;
-      if (clip && this.baked(slot, particle.abilityId, 'projectile', x, y, slot.node.rotation,
-          particle.r, (slot.bakedAge * clip.fps % clip.textures.length) / clip.textures.length)) {
-        slot.node.visible = false;
-        for (const node of slot.tail) node.visible = false;
-      }
+      // The baked flight clip is a small core inside the hit radius; it overlays the vector
+      // body and trail instead of replacing them, or the shot reads as invisible in flight.
+      if (clip) this.baked(slot, particle.abilityId, 'projectile', x, y, slot.node.rotation,
+        particle.r, (slot.bakedAge * clip.fps % clip.textures.length) / clip.textures.length);
     }
   }
 

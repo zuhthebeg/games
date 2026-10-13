@@ -7,7 +7,7 @@ import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, stackSellPrice, sellStack } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
 import { STAGES, ABILITIES, canUseSkill } from '../content/combat.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily } from '../meta/skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, withFamilyLoadout } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
@@ -20,6 +20,7 @@ import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } f
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
+import { fxPreference, setFxPreference } from '../prefs.js';
 import { icon, itemIcon } from './icons.js';
 import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
@@ -284,7 +285,6 @@ export class HubUI {
       <div class="xp-line" role="meter" aria-label="경험치" aria-valuemin="0" aria-valuemax="100"
         aria-valuenow="${Math.round(ratio * 100)}"><i style="width:${ratio * 100}%"></i></div></div></div>
       ${this.money()}
-      <button type="button" data-sound-toggle class="icon-button" aria-label="음소거" aria-pressed="false">${icon('sound')}</button>
       ${button(icon('settings'), 'settings', 'class="icon-button" aria-label="설정"')}</header>`;
   }
 
@@ -895,8 +895,18 @@ export class HubUI {
       ? group('hp', 'HP 기준', levels) + group('mp', 'MP 기준', levels) : ''}${group('recall', '자동 귀환', onOff)}</section>`;
   }
 
+  presentationHtml() {
+    const probe = {};
+    document.dispatchEvent(new CustomEvent('arpg:sound', { detail: probe }));
+    const fx = fxPreference();
+    const group = (label, action, options) => `<div class="quantity-row"><span>${label}</span></div><div class="p2-two" role="group" aria-label="${label}">${
+      options.map(([value, text, pressed]) => button(text, action, `id="${action}-${value}" data-value="${value}" aria-pressed="${pressed}"`)).join('')}</div>`;
+    return `<section class="auto-use" aria-label="화면·소리">${group('사운드', 'set-sound', [['on', '켜짐', probe.muted === false], ['off', '꺼짐', probe.muted === true]])
+      }${group('스킬 이펙트', 'set-fx', [['new', '신규', fx === 'new'], ['classic', '클래식', fx === 'classic']])}</section>`;
+  }
+
   showSettings() {
-    this.showInnPanel('설정', `${this.autoUseHtml()}
+    this.showInnPanel('설정', `${this.presentationHtml()}${this.autoUseHtml()}
       <p class="minor">캐릭터는 이 브라우저에 저장된다. 전투 중 새로고침하면 마지막 여관으로 돌아온다.</p>
       <p class="p2-lock">${icon('lock')}초기화하면 캐릭터·보급·장비·진척을 모두 잃는다.</p>
       ${this.resetStep === 0 ? button('저장 초기화', 'reset-first') : this.resetStep === 1
@@ -1000,7 +1010,7 @@ export class HubUI {
       case 'socket': return this.showSocket(data.slot);
       case 'open-item': return this.openItem(data.uid, data.mode || 'equip');
       case 'equip':
-        this.commit(equip(this.save, data.uid));
+        this.commit(withFamilyLoadout(this.save, equip(this.save, data.uid)));
         return this.returnToPanel();
       case 'sell':
         this.commit(sellItem(this.save, data.uid));
@@ -1083,7 +1093,7 @@ export class HubUI {
         this.revealed = Math.min(this.revealed + 1, this.pendingReceipt.receipt.lootKept.items.length);
         return this.showReceipt();
       case 'loot-equip':
-        this.commit(equip(this.save, data.uid));
+        this.commit(withFamilyLoadout(this.save, equip(this.save, data.uid)));
         this.lootState[data.uid] = '장착함';
         return this.showReceipt();
       case 'loot-sell':
@@ -1158,6 +1168,13 @@ export class HubUI {
         this.commit({ ...this.save, autoUse });
         return this.showSettings();
       }
+      case 'set-sound':
+        document.dispatchEvent(new CustomEvent('arpg:sound', { detail: { set: data.value === 'off' } }));
+        return this.showSettings();
+      case 'set-fx':
+        setFxPreference(data.value);
+        document.dispatchEvent(new CustomEvent('arpg:fx-mode', { detail: { mode: data.value } }));
+        return this.showSettings();
       case 'reset-first':
       case 'reset-second':
         this.resetStep++;

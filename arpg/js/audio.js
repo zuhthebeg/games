@@ -110,6 +110,11 @@ export function bindAudioControls(audio, document) {
     audio.setMuted(!audio.muted);
     refresh();
   });
+  // Inn settings panel: detail.muted is set to read, or applied when a boolean.
+  document.addEventListener('arpg:sound', (event) => {
+    if (typeof event.detail?.set === 'boolean') { audio.setMuted(event.detail.set); refresh(); }
+    if (event.detail) event.detail.muted = audio.muted;
+  });
   const observer = new MutationObserver(refresh);
   observer.observe(document.querySelector('#meta-screen'), { childList: true });
   refresh();

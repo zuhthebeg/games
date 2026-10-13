@@ -55,6 +55,17 @@ export const weaponFamily = save => ITEMS[equippedItem(save, 'weapon')?.id]?.fam
 export const loadoutOf = (save, family = weaponFamily(save)) => (validLoadout(save, save.loadout) ? save.loadout : migrateLoadout(save, family));
 export const slotOf = (save, id) => loadoutOf(save).indexOf(id);
 
+// cocy 10-13: changing weapon family restores the loadout last set while holding that family.
+// A family never held before keeps the current loadout (the sim drops unusable ids).
+export function withFamilyLoadout(prev, next) {
+  const before = weaponFamily(prev), after = weaponFamily(next);
+  if (before === after) return next;
+  const out = cloneSave(next);
+  out.loadouts = { ...(prev.loadouts || {}), [before]: [...loadoutOf(prev, before)] };
+  if (validLoadout(out, out.loadouts[after])) out.loadout = [...out.loadouts[after]];
+  return out;
+}
+
 // Put a learned skill into a slot (moving it if already slotted). null clears the slot.
 export function setSlot(save, family, slot, id) {
   if (!Number.isInteger(slot) || slot < 0 || slot >= SKILL_SLOTS) throw new Error('없는 슬롯입니다.');

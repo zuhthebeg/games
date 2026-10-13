@@ -130,8 +130,20 @@ try {
     await nativeActivate('[data-action="settings"]');await waitFor(page('settings'));await audit();
     const pressed = () => evaluate(`[...document.querySelectorAll('[data-action="auto-use"][aria-pressed="true"]')].map(n=>n.id)`);
     assert.deepEqual(await pressed(),['auto-use-potion-true','auto-use-hp-50','auto-use-mp-50','auto-use-recall-true']);
-    const labels=await evaluate(`[...document.querySelectorAll('.auto-use .quantity-row span')].map(n=>n.textContent)`);
+    const labels=await evaluate(`[...document.querySelectorAll('.auto-use[aria-label="자동 사용"] .quantity-row span')].map(n=>n.textContent)`);
     assert.deepEqual(labels,['자동 물약','HP 기준','MP 기준','자동 귀환']);
+    // cocy 10-13: sound and effect choice live in settings (inn header button removed).
+    assert.equal(await evaluate(`document.querySelectorAll('.inn-header [data-sound-toggle], header [data-sound-toggle]').length`),0);
+    await nativeActivate('#set-sound-off');assert.equal(await evaluate('__arpg.feedback.audio.muted'),true);
+    assert.equal(await evaluate(`document.querySelector('#set-sound-off').getAttribute('aria-pressed')`),'true');
+    await nativeActivate('#set-sound-on');assert.equal(await evaluate('__arpg.feedback.audio.muted'),false);
+    await nativeActivate('#set-fx-classic');assert.equal(await evaluate('__arpg.feedback.fxRequested'),false);
+    assert.equal(await evaluate(`localStorage.getItem('arpg.fx')`),'classic');
+    await command('Page.reload');await waitFor(page('inn'));
+    assert.equal(await evaluate('__arpg.feedback.fxRequested'),false);
+    await nativeActivate('[data-action="settings"]');await waitFor(page('settings'));
+    assert.equal(await evaluate(`document.querySelector('#set-fx-classic').getAttribute('aria-pressed')`),'true');
+    await nativeActivate('#set-fx-new');assert.equal(await evaluate('__arpg.feedback.fxRequested'),true);
     await nativeActivate('#auto-use-hp-70');assert.equal(await evaluate('__arpg.save.autoUse.hp'),70);
     await nativeActivate('#auto-use-potion-false');await audit();
     assert.deepEqual(await pressed(),['auto-use-potion-false','auto-use-recall-true']);

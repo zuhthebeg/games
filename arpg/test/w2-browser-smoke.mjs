@@ -138,7 +138,7 @@ try {
     assert.ok(await evaluate(`!/가방 한도를 늘리며|가벼울수록|DEF 수치/.test(document.querySelector('dialog[open]').textContent)`));
     await nativeActivate('[data-action="close-sheet"]',desktop);
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="board"]',desktop);await audit();
-    assert.equal(await evaluate(`document.querySelectorAll('[data-action="sortie"]').length`),21);
+    assert.equal(await evaluate(`document.querySelectorAll('[data-action="sortie"]').length`),23); // legacy21 + QM1 + QS1 side contracts
     assert.ok(await evaluate(`document.querySelector('.panel-header').textContent.includes('내 레벨 1')`));
     await nativeActivate('[data-action="map-region"][data-region="swamp"]',desktop);await audit();
     assert.equal(await evaluate(`document.querySelector('[data-stage="S11"]').disabled`),false);

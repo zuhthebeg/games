@@ -95,6 +95,7 @@ try {
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
+  document.addEventListener('arpg:fx-mode', event => renderer.skillVfx.setEffekseer(event.detail?.mode !== 'classic'));
   const hub = new HubUI({
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
@@ -271,6 +272,7 @@ try {
           frozen: [...renderer.views].filter(([, view]) => view.anim.frozen).map(([id]) => id),
           particles: renderer.particles.filter(particle => particle.left > 0).length,
           pools: { particles: renderer.particles.length, numbers: renderer.numbers.length, effects: renderer.effects.length },
+          fxRequested: renderer.skillVfx.fxRequested,
           audio: { muted: audio.muted, state: audio.context?.state || 'locked', loaded: [...audio.buffers.keys()], voices: audio.voices.size },
         });
       },

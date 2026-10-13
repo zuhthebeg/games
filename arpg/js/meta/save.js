@@ -116,6 +116,8 @@ export function validateSave(save) {
       || !Object.entries(save.autoBuy).every(([id, target]) => CONSUMABLES.includes(id) && integer(target)))) return false;
     if (save.autoUse !== undefined && !validAutoUse(save.autoUse)) return false;
     if (save.loadout !== undefined && !validLoadout(save, save.loadout)) return false;
+    if (save.loadouts !== undefined && (!record(save.loadouts) || !Object.entries(save.loadouts)
+      .every(([family, loadout]) => Object.hasOwn(DEFAULT_SKILLS, family) && validLoadout(save, loadout)))) return false;
     if (!record(save.stacks)) return false;
     if (!record(save.stash) || !record(save.stash.stacks)
       || !Object.entries(save.stash.stacks).every(([id, count]) => Object.hasOwn(ITEMS, id)
