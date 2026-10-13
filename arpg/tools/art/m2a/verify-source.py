@@ -58,12 +58,23 @@ for job in config['characters']:
     assert all(not o.data.use_shadow for o in scene.objects if o.type=='LIGHT')
     visible=[o.name for o in scene.objects if o.type=='MESH' and not o.hide_render]
     assert all(not any(s in n.lower() for s in ['ground','shadow','plane']) for n in visible)
+    idle_core={}
+    if name=='bat':
+        for direction in config['directions']:
+            centers=[]
+            for record in [r for r in info['frames'] if r['animation']=='idle_'+direction]:
+                select('idle',direction,record['source_frame'])
+                center=rig.matrix_world@((rig.pose.bones['Body'].head+rig.pose.bones['Head'].head)/2)
+                projected=world_to_camera_view(scene,camera,center)
+                centers.append((projected.x*128,(1-projected.y)*128))
+            idle_core[direction]=max(math.dist(a,b) for a in centers for b in centers)
+            assert idle_core[direction]<6,(name,direction,'body-core drift',idle_core[direction])
     max_error=0
     for record in info['frames']:
         state,direction=record['animation'].rsplit('_',1);select(state,direction,record['source_frame'])
         p=world_to_camera_view(scene,camera,Vector((0,0,0)));error=max(abs(p.x-anchor['x']),abs(1-p.y-anchor['y']))*config['frame_size'];assert error<.001
         max_error=max(error,max_error)
-    report={'id':name,'ok':True,'model_sha256':hashlib.sha256(Path(job['model']).read_bytes()).hexdigest(),'original_sha256':hashlib.sha256((Path(config['source'])/(name+'.glb')).read_bytes()).hexdigest(),'checked_meshes':[o.name for o in skinned],'skinned_clip_motion':motion,'direction_vectors':vectors,'wing_motion_radians':wing_motion,'min_idle_vertex_z':min_idle_z,'frames_checked':len(info['frames']),'ground_anchor':anchor,'max_ground_error_px':max_error,'baked_ground_shadow':False,'light_shadows':False}
+    report={'id':name,'ok':True,'model_sha256':hashlib.sha256(Path(job['model']).read_bytes()).hexdigest(),'original_sha256':hashlib.sha256((Path(config['source'])/(name+'.glb')).read_bytes()).hexdigest(),'checked_meshes':[o.name for o in skinned],'skinned_clip_motion':motion,'direction_vectors':vectors,'wing_motion_radians':wing_motion,'min_idle_vertex_z':min_idle_z,'idle_body_core_drift_px':idle_core,'frames_checked':len(info['frames']),'ground_anchor':anchor,'max_ground_error_px':max_error,'baked_ground_shadow':False,'light_shadows':False}
     reports.append(report)
     print('SOURCE_RESULT',json.dumps(report),flush=True)
 Path(config['source']).parent.joinpath('source-validation.json').write_text(json.dumps({'ok':True,'results':reports},indent=2))

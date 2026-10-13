@@ -39,7 +39,7 @@
         "Hips"
       ],
       "animations": {
-        "idle": "Zombie|ZombieIdle",
+        "idle": "M2a_Ghoul_CalmIdle",
         "run": "Zombie|ZombieWalk",
         "attack": "Zombie|ZombieBite",
         "hit": "M2a_Ghoul_Recoil",
@@ -52,7 +52,8 @@
         "hit": 0.15,
         "death": 0.6
       },
-      "fps": 6
+      "fps": 6,
+      "framing_margin": 1.09
     },
     {
       "name": "ghost",

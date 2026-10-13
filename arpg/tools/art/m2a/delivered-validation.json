@@ -1,0 +1,205 @@
+{
+  "ok": true,
+  "total_frames": 1576,
+  "results": [
+    {
+      "name": "ghoul",
+      "format": "webp",
+      "frames": 768,
+      "atlas_dimensions": [
+        [
+          2048,
+          1920
+        ],
+        [
+          2048,
+          1920
+        ],
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          384
+        ]
+      ],
+      "webp_bytes": 1032594,
+      "json_bytes": 175119,
+      "total_bytes": 1207713,
+      "alpha_coverage_percent": [
+        5.219,
+        9.619
+      ],
+      "max_idle_center_drift_px": 3.536,
+      "idle_center_method": "opaque silhouette bbox center",
+      "max_idle_bbox_center_drift_px": 3.536,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 768,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 42.0646,
+      "min_skin_rms_from_bind_height": 0.231311,
+      "lossless_alpha_matches_pose_evidence": 768,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [],
+      "min_opaque_pixels_alpha128": 855,
+      "min_opaque_pixels_alpha250": 663
+    },
+    {
+      "name": "ghost",
+      "format": "webp",
+      "frames": 360,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          896
+        ]
+      ],
+      "webp_bytes": 421362,
+      "json_bytes": 82283,
+      "total_bytes": 503645,
+      "alpha_coverage_percent": [
+        7.477,
+        10.162
+      ],
+      "max_idle_center_drift_px": 1.118,
+      "idle_center_method": "opaque silhouette bbox center",
+      "max_idle_bbox_center_drift_px": 1.118,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "floating",
+      "pose_checked_frames": 360,
+      "t_pose_frames": null,
+      "bind_pose_frames": null,
+      "min_max_arm_degrees_from_bind": 0.056,
+      "min_skin_rms_from_bind_height": 0.05416,
+      "lossless_alpha_matches_pose_evidence": 360,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [],
+      "min_opaque_pixels_alpha128": 1225,
+      "min_opaque_pixels_alpha250": 1069
+    },
+    {
+      "name": "bat",
+      "format": "webp",
+      "frames": 448,
+      "atlas_dimensions": [
+        [
+          2048,
+          2048
+        ],
+        [
+          2048,
+          1664
+        ]
+      ],
+      "webp_bytes": 459842,
+      "json_bytes": 102073,
+      "total_bytes": 561915,
+      "alpha_coverage_percent": [
+        5.103,
+        12.274
+      ],
+      "max_idle_center_drift_px": 0.973723133231162,
+      "idle_center_method": "reopened-rig body/head core",
+      "max_idle_bbox_center_drift_px": 17.671,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "winged",
+      "pose_checked_frames": 448,
+      "t_pose_frames": null,
+      "bind_pose_frames": null,
+      "min_max_arm_degrees_from_bind": 0.0396,
+      "min_skin_rms_from_bind_height": 0.014139,
+      "lossless_alpha_matches_pose_evidence": 448,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [],
+      "min_opaque_pixels_alpha128": 836,
+      "min_opaque_pixels_alpha250": 668
+    }
+  ],
+  "file_sha256": {
+    "ghoul/atlas-0.webp.json": "40b4f6751e413e0e8edbf887ba8a0f7399a90e6480ef1db66a3fd4d09b0ac811",
+    "ghoul/atlas-0.webp": "bc1b7b4d58233c38f6d76245624eec18c8e12fcadeeecc21281c3b4a5f8e607f",
+    "ghoul/atlas-1.webp.json": "869a21afeb4de6d90f8ab60b9765be4d9453735fca1c4a32435d9792ee13d195",
+    "ghoul/atlas-1.webp": "ed014c53064abbeaa7f8b74d61b99ee33f2f16ad8461d027d118303b2c176a32",
+    "ghoul/atlas-2.webp.json": "d846f54c848ae64165477192221d5e4d1d3dcda4b4fc58e3285935876d1891b4",
+    "ghoul/atlas-2.webp": "e156b2ff2a3c06c394c902ae8fc8e155a402ee47fbf8eb6e0ac076a6e9008366",
+    "ghoul/atlas-3.webp.json": "7c3460af503c4a052aaef445f9c6e16edfb3254de17232ed18916d634fee2e59",
+    "ghoul/atlas-3.webp": "0f9e899bc3395df86acf93b9e6697eeec2b57e071e6a1282a815412c7a24bcb1",
+    "ghost/atlas-0.webp.json": "7cb5a718d3beb9ab9b1d2e3d4c4065f742cbeba9989eb1dbb0a9fb84189b7fe8",
+    "ghost/atlas-0.webp": "3e8f28fd382211e258b9ddc575cb427f55f1cd27d1297d65ad3df76ef7ebd183",
+    "ghost/atlas-1.webp.json": "cb5e71d52556bfcd1ce7b70d2310a8af86383b1acefcd524ed78cb017f8e213f",
+    "ghost/atlas-1.webp": "0558ab9b004b1c404cb7673231aa968dbbb3cff8ee8c9fefc132bb127e7b4386",
+    "bat/atlas-0.webp.json": "62d60ac50aeee762df1d6c7e018021274c4a14895e426066bf36e9930894d419",
+    "bat/atlas-0.webp": "61370b03f96f55c9ad4271552bfabf9e6d6f038fb9e87e269a9429d803cdbfad",
+    "bat/atlas-1.webp.json": "4a53a5e481cab734a3e9284ceaafd6104392610b84f891c4e6e9f1feba1d4a4e",
+    "bat/atlas-1.webp": "e739d303a9e2f83889ffdac022bc877cfe53d255dd84dc261f0cb87b3043cdb6"
+  },
+  "silhouette_method": "alpha >=128, centroid aligned without scaling on 256px canvas, 5 states x 8 octants x 3 phases per species pair",
+  "silhouette_pairs": [
+    {
+      "all_frame_min_xor_pixels": 682,
+      "unique_mask_pairs_checked": 252672,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "ghoul",
+        "ghost"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 1049,
+      "min_xor_over_union": 0.564889606892838,
+      "identical_silhouettes": 0
+    },
+    {
+      "all_frame_min_xor_pixels": 612,
+      "unique_mask_pairs_checked": 312832,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "ghoul",
+        "bat"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 984,
+      "min_xor_over_union": 0.5437936593229447,
+      "identical_silhouettes": 0
+    },
+    {
+      "all_frame_min_xor_pixels": 449,
+      "unique_mask_pairs_checked": 139776,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "ghost",
+        "bat"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 757,
+      "min_xor_over_union": 0.43133903133903134,
+      "identical_silhouettes": 0
+    }
+  ],
+  "empty_frames": 0,
+  "identical_silhouettes": 0
+}

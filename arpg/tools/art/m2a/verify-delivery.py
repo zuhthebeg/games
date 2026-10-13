@@ -18,7 +18,7 @@ for id in ['ghoul','ghost','bat']:
    min_opaque=min(min_opaque,sum(alpha.histogram()[128:]));min_full=min(min_full,sum(alpha.histogram()[250:]))
    box=mask.getbbox();centered=Image.new('L',(256,256));centered.paste(mask,(round(128-(box[0]+box[2])/2),round(128-(box[1]+box[3])/2)))
    frames[name]=centered
- result.update({'min_opaque_pixels_alpha128':min_opaque,'min_opaque_pixels_alpha250':min_full});results.append(result);kits[id]=(frames,groups)
+ result.update({'min_opaque_pixels_alpha128':min_opaque,'min_opaque_pixels_alpha250':min_full});results.append(result);kits[id]=(frames,groups,{int.from_bytes(m.convert('1').tobytes(),'big') for m in frames.values()})
 pairs=[]
 for a,b in itertools.combinations(kits,2):
  samples=[]
@@ -30,6 +30,9 @@ for a,b in itertools.combinations(kits,2):
     xor=sum(ImageChops.difference(ma,mb).histogram()[128:]);union=sum(ImageChops.lighter(ma,mb).histogram()[128:]);ratio=xor/union
     assert xor>0,(a,b,state,direction,t,'identical silhouette')
     samples.append({'state':state,'direction':direction,'phase':t,'xor_pixels':xor,'xor_over_union':ratio})
- pairs.append({'ids':[a,b],'samples':len(samples),'min_xor_pixels':min(r['xor_pixels'] for r in samples),'min_xor_over_union':min(r['xor_over_union'] for r in samples),'identical_silhouettes':0})
+ assert not kits[a][2].intersection(kits[b][2]),(a,b,'identical silhouette across any delivered frames')
+ all_min=min((ma^mb).bit_count() for ma in kits[a][2] for mb in kits[b][2])
+ assert all_min>0
+ pairs.append({'all_frame_min_xor_pixels':all_min,'unique_mask_pairs_checked':len(kits[a][2])*len(kits[b][2]),'all_frame_identical_masks':0,'ids':[a,b],'samples':len(samples),'min_xor_pixels':min(r['xor_pixels'] for r in samples),'min_xor_over_union':min(r['xor_over_union'] for r in samples),'identical_silhouettes':0})
 proof={'ok':True,'total_frames':sum(r['frames'] for r in results),'results':results,'file_sha256':hashes,'silhouette_method':'alpha >=128, centroid aligned without scaling on 256px canvas, 5 states x 8 octants x 3 phases per species pair','silhouette_pairs':pairs,'empty_frames':0,'identical_silhouettes':0}
 (art/'delivered-validation.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(proof,indent=2))

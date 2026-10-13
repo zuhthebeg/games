@@ -2,8 +2,9 @@
   {
     "id": "ghoul",
     "original_sha256": "02d990c2e442855a7a524a75b51982dc07aec3ee44a48243d61988e125e75a60",
-    "prepared_sha256": "d43f709162e09dec5ed463d08081870e2b6be3743660417e922c0f2e4a2bd2f7",
+    "prepared_sha256": "d0bd1af5d1ac0ee67daa7991c69f52be2395bf7280ed9a48c5a82c7ecbdf4138",
     "derived_clips": [
+      "M2a_Ghoul_CalmIdle",
       "M2a_Ghoul_Recoil",
       "M2a_Ghoul_Death"
     ]

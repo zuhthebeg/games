@@ -125,12 +125,12 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   for (const [id, hash] of Object.entries(evidence.original_monster_sha256))
     assert.equal(sha(stable(MONSTERS[id])), hash, id);
   // U1's byte proof was pinned at dc2a876; later intentional main commits are exempt by name.
-  const later = { ABILITIES: 'd143221 slash 16', 'arpg/js/sim/world.js': 'd143221 melee guard', 'arpg/index.html': 'cache stamps' };
+  const later = { ABILITIES: 'd143221 slash 16', 'arpg/js/sim/world.js': 'd143221 melee guard', 'arpg/index.html': 'cache stamps', 'arpg/tools/art/bake.py': 'M2a floating/winged rigs + fixed lift/material colors', 'arpg/tools/art/verify_atlases.py': 'M2a source-bound floating/winged gates' };
   for (const [key, hash] of Object.entries(evidence.other_combat_exports_sha256))
     if (!later[key]) assert.equal(sha(stable(combat[key])), hash, key);
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
     if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
-  assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id)), ids);
+  assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id) && !['ghoul','ghost','bat'].includes(id)), ids);
 });
 
 test('U1 preserves every main sprite byte and all thirteen main manifest descriptors', () => {
@@ -141,7 +141,7 @@ test('U1 preserves every main sprite byte and all thirteen main manifest descrip
   assert.equal(Object.keys(evidence.files_sha256).length, evidence.preserved_files);
   for (const [path, hash] of Object.entries(evidence.files_sha256))
     assert.equal(sha(read('../assets/sprites/' + path)), hash, path);
-  assert.deepEqual(manifest.slice(evidence.preserved_kits).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
+  assert.deepEqual(manifest.slice(evidence.preserved_kits).filter(entry => !['ghoul','ghost','bat'].includes(entry.id)).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
 });
 
 test('U1 main-versus-definition host traces cover every stage and remain byte-identical', () => {

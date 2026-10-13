@@ -1,0 +1,1753 @@
+{
+  "ok": true,
+  "cdpPort": 19951,
+  "httpPort": 8971,
+  "results": [
+    {
+      "gpu": {
+        "maxTextureSize": 8192,
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "contextLost": false
+      },
+      "viewport": [
+        1280,
+        800
+      ],
+      "native": "keyboard Enter/J",
+      "live": [
+        {
+          "id": "ghoul",
+          "mode": "atlas",
+          "key": "ghoul",
+          "state": "run",
+          "direction": "SW",
+          "frame": 1,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        {
+          "id": "ghost",
+          "mode": "atlas",
+          "key": "ghost",
+          "state": "attack",
+          "direction": "W",
+          "frame": 1,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        {
+          "id": "bat",
+          "mode": "atlas",
+          "key": "bat",
+          "state": "attack",
+          "direction": "NW",
+          "frame": 1,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        }
+      ],
+      "proof": [
+        {
+          "id": "ghoul",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "run": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "hit": {
+              "uniqueFrames": 2,
+              "lastFrame": 1
+            },
+            "death": {
+              "uniqueFrames": 5,
+              "lastFrame": 4
+            },
+            "attack": {
+              "frames": [
+                0,
+                8,
+                29
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        },
+        {
+          "id": "ghost",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 12,
+              "lastFrame": 11
+            },
+            "run": {
+              "uniqueFrames": 9,
+              "lastFrame": 2
+            },
+            "hit": {
+              "uniqueFrames": 5,
+              "lastFrame": 4
+            },
+            "death": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "attack": {
+              "frames": [
+                0,
+                3,
+                11
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        },
+        {
+          "id": "bat",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 4,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 5,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 7,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 10,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 2,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 12,
+              "lastFrame": 11
+            },
+            "run": {
+              "uniqueFrames": 8,
+              "lastFrame": 3
+            },
+            "hit": {
+              "uniqueFrames": 7,
+              "lastFrame": 12
+            },
+            "death": {
+              "uniqueFrames": 13,
+              "lastFrame": 12
+            },
+            "attack": {
+              "frames": [
+                0,
+                2,
+                8
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        }
+      ],
+      "consoleErrors": 0
+    },
+    {
+      "gpu": {
+        "maxTextureSize": 8192,
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "contextLost": false
+      },
+      "viewport": [
+        390,
+        844
+      ],
+      "native": "touch",
+      "live": [
+        {
+          "id": "ghoul",
+          "mode": "atlas",
+          "key": "ghoul",
+          "state": "run",
+          "direction": "SW",
+          "frame": 3,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        {
+          "id": "ghost",
+          "mode": "atlas",
+          "key": "ghost",
+          "state": "attack",
+          "direction": "W",
+          "frame": 2,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        },
+        {
+          "id": "bat",
+          "mode": "atlas",
+          "key": "bat",
+          "state": "attack",
+          "direction": "NW",
+          "frame": 1,
+          "tint": 16777215,
+          "scale": 1,
+          "equipment": null,
+          "textureLoaded": true
+        }
+      ],
+      "proof": [
+        {
+          "id": "ghoul",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 0,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "run": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "hit": {
+              "uniqueFrames": 2,
+              "lastFrame": 1
+            },
+            "death": {
+              "uniqueFrames": 5,
+              "lastFrame": 4
+            },
+            "attack": {
+              "frames": [
+                0,
+                8,
+                29
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        },
+        {
+          "id": "ghost",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 3,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 12,
+              "lastFrame": 11
+            },
+            "run": {
+              "uniqueFrames": 9,
+              "lastFrame": 2
+            },
+            "hit": {
+              "uniqueFrames": 5,
+              "lastFrame": 4
+            },
+            "death": {
+              "uniqueFrames": 7,
+              "lastFrame": 6
+            },
+            "attack": {
+              "frames": [
+                0,
+                3,
+                11
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        },
+        {
+          "id": "bat",
+          "samples": [
+            {
+              "state": "idle",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "idle",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "SW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "W",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NW",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "N",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "run",
+              "direction": "NE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "E",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SE",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "S",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "SW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "W",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NW",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "N",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "attack",
+              "direction": "NE",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SE",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "S",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "SW",
+              "frame": 4,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "W",
+              "frame": 5,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NW",
+              "frame": 7,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "N",
+              "frame": 8,
+              "tint": 16777215
+            },
+            {
+              "state": "hit",
+              "direction": "NE",
+              "frame": 10,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "E",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SE",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "S",
+              "frame": 0,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "SW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "W",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NW",
+              "frame": 1,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "N",
+              "frame": 2,
+              "tint": 16777215
+            },
+            {
+              "state": "death",
+              "direction": "NE",
+              "frame": 2,
+              "tint": 16777215
+            }
+          ],
+          "motion": {
+            "idle": {
+              "uniqueFrames": 12,
+              "lastFrame": 11
+            },
+            "run": {
+              "uniqueFrames": 8,
+              "lastFrame": 3
+            },
+            "hit": {
+              "uniqueFrames": 7,
+              "lastFrame": 12
+            },
+            "death": {
+              "uniqueFrames": 13,
+              "lastFrame": 12
+            },
+            "attack": {
+              "frames": [
+                0,
+                2,
+                8
+              ]
+            }
+          },
+          "procedural": true,
+          "heavyPoise": false,
+          "frozenEntityUnchanged": true
+        }
+      ],
+      "consoleErrors": 0
+    }
+  ],
+  "consoleErrors": 0,
+  "screenshots": 0
+}

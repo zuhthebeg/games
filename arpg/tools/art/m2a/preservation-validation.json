@@ -1,0 +1,760 @@
+{
+  "ok": true,
+  "baseline": "fef289f739ed2fa7d2bd86a93e15d3bd39165249",
+  "ids": [
+    "ghoul",
+    "ghost",
+    "bat"
+  ],
+  "original_monster_sha256": {
+    "scarecrow": "912ff9b5c8f9f412cc50fa06678e608656200c4f983de5984602619248b2f269",
+    "throne_dragon": "6e98105294df5125637051b2ede220017a7cd39f09354171f93af59d12270f13",
+    "training_dragon": "98b130c4ad41722e51650464996190b3cc2cc115eaddd057694b813f8475ce7d",
+    "goblin_grunt": "dd7cee9018c47836109096fb0658343ca87721a3271437130e86d40ce5c7c4dc",
+    "goblin_slinger": "a4f842419fc5d937d6ccca1ed6674861b8a082d496ebf9e2c53c46e0cf0609bb",
+    "iron_boar": "6a2e8c0d4653157e26163cf1f44cd5911c7689d866dcdced194dcedf68897beb",
+    "goblin_chief": "f08a4d35f76ecc81ffe4f68abfee897f8ecff9dcf0ac73dbaa498436cde82887",
+    "wolf": "7b91b579fb9343d7bcd9214a28891e82385a6a6bf271214afbfc2e3d42201525",
+    "gargoyle": "bbf939205c904854ef46a747594225b84999c2cf349eef2f00edccc66e22d395",
+    "rune_guardian": "6e128cbb2dd6c5d88cf83ed5628cb4b47033464b8f78e0546beceed379eeaa7f",
+    "spirit": "a6c64b8eca166bf8451556db312333dfd1523ae2f4b62ae5d1bc12ced31dad06",
+    "poison_spider": "381a202a70bd49960c33e24c597c9d7a73117269ab20387f7bb3d010156cf0a2",
+    "skeleton_minion": "c8d8251df26adff06e59f09bb485e2f7399aa1e4107464a7c29082a401df1664",
+    "skeleton_warrior": "c1365aa166acc45d5a4aac6b0a7668bbe61aaaec1a45b312fc9879ba27e91e94",
+    "skeleton_rogue": "4c70fcb7e2cb3f10a729f429f77f27ee85708f81b9e8672ae542f678425cc6c9",
+    "skeleton_mage": "a085995849a5b6a55da2277f5b69d7c0c2b4dd539c6c9ba0118fdc5d7ff12bab"
+  },
+  "other_combat_exports_sha256": {
+    "ABILITIES": "8f23c1d32d2206f09c8ed27195eb38a4e637c6fad875134ffaa7820144162496",
+    "PLAYER_BASE": "620eab45cb5818e0a40e3235eae46684ee8969d36ae59ffcc72a7f63ea2068e3",
+    "SKILL_SLOTS": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+    "SKILL_USE": "44f0b1c7458089d7d8b559a4706abea9e61af528e969828225938e763947b205",
+    "STAGES": "1a938b52285bd9fa072cb0145faf70f6133555a14421ddfdc35db4d76d9ea83c",
+    "WEAPONS": "2d6b4aa0b545f25c35d641fd0f356b598864a51255e17c85f7afa7f386398608",
+    "canUseSkill": "0f03afa2fe6cfd41557327b3b3f752de22877f8b2d8202f9a2c9df27f2d6ee5f",
+    "skillDamageShare": "c228df1e5c5b9664420915b2ec6f03945a5b5dd1237471918707f05120083328"
+  },
+  "identity_baseline": {
+    "DANGER_COLORS": {
+      "entries": {
+        "active": "aa60dc9c2e8d6786019c27caf82b337d7aef9908f746945be3d574b31925faa7",
+        "preparation": "56f5c26e17f0b13048d99e825b7cc23424b811a5f87e4a04324dbbda23a899c6"
+      }
+    },
+    "MONSTER_MODELS": {
+      "prefix_length": 16,
+      "sha256": "ac01f90f2bf772d2f155566398c5e2b84da8b0612f4aff92440976cc685f981c"
+    },
+    "MONSTER_NAMES": {
+      "entries": {
+        "gargoyle": "90dc33087f8e4d4cf1267090ea7bd4b4b412418534ff56b2debc99a8995ed87c",
+        "throne_dragon": "34ac7c2577c234467df5ea30ee41a5c3a191f4b7111212f1723323b6e3c0c809",
+        "training_dragon": "26ae5bfbb127191b6cdba8ceee77fa34ca45c56d7c574e2f7bf7fa119e0426ac",
+        "scarecrow": "1d2390918965dab3e217ca417c6e084d57a57c8dc4a501be9c39e083cb4f849c",
+        "goblin_grunt": "de5d4c09ae7cc2f840f9ce6663acb58f5db8a7798345f86d7d7eab7c66e8421e",
+        "goblin_slinger": "b1a025be3d684ecee2128974474340b39985f0560ee93c359d6956280557c687",
+        "iron_boar": "bd717abe3f59a4079b97e97c65dd9a9c48cc24d56a3ae94bdc35712c532e384f",
+        "goblin_chief": "aee4e56e5ec2cf9b167579d47a538e6d5f0a84c7eae71ef42a72f15c225ce464",
+        "wolf": "6a62e955373761efc5ca5787c462e1f18bc3233414b19a4cc7e81ebe94fb28b4",
+        "rune_guardian": "dfc9f176c9299878cf5c354d026a42adf8343d4b2e424f10096b86d2c4e1f6db",
+        "spirit": "7dd70e92374167a73be4b750e551086ac8fff7ccc6b255bacb39de482b7ef478",
+        "poison_spider": "6ef9ae58f62a9bbd9c78024575b8948ce3a1c853d3109390df7513844032d25d",
+        "skeleton_minion": "599f16cde1926cb493b062d21292956e1a03ec7321fb034d7decdfe529362ecf",
+        "skeleton_warrior": "2850135e36feab95a29afdd59274df60a96a0523e5ad8eadd741b3e56ef9a4a8",
+        "skeleton_rogue": "861e70272b1a2de9da36b282d635afedfba55a5269d3c2de740aee51f4341cf1",
+        "skeleton_mage": "4cee5891e3b721c700c4179d815a7f61c5fc5e0f7317253d2f2b581f90515e58"
+      }
+    },
+    "MONSTER_PALETTES": {
+      "entries": {
+        "dragon": "43d2baefa8c1ed849a0abcc1966ff214b39d32fedd9834a50e20a65e61de2874",
+        "straw": "e13a1440803e274a9e8544de81bb2f2a53c0fa2491cfa6aefaec5c7969b81035",
+        "goblin": "280803d4855f4489032aaacaf31118b1ebbe1dc46f12a77ef0d3d4beeae8be51",
+        "slinger": "72fe2145ef6ce7affafec1e80b7d9d60ba2bec2fe2017f9b5abc0ff1d4f3609f",
+        "boar": "37b9240526f5c6bea4dcde06652efe762f910e385308e6bc9de16b70eb8e939a",
+        "chief": "0eab01af8e0b7d8211aa813a8f65a1e5660cc324e1593ffba74bf818a80ccc1f",
+        "wolf": "542455a4961a814e6759305c84043b95c5113e4dd7629369bb28f469ce575f42",
+        "rune": "4564cc2f070fb608894cad1e5a8d5cee8b138e22966d10a4c18518bbe0ce1f4d",
+        "spirit": "13b035217b09bf20c23026dbc4686f69c51651a5846a558a7c8c178b3ff86c33",
+        "spider": "1786090f51b1a71a4f68366a4aecf0aca9d3c922c2e2a551500452d233304cdb",
+        "skeleton": "5d265e38d837a0b87eb2ef22ae4603ccd6da13cbe8f348f0303f1b7c84ac2d2d"
+      }
+    },
+    "MONSTER_VARIANTS": {
+      "entries": {
+        "gargoyle": "0984ef3c58c75ff23258e699583e09c8f1cfbdde4dc5f17a3bf45108c3a98a2b",
+        "throne_dragon": "f762da00d2357243c7dbfae364a45ad3ac50591e9eda4ee6fdbf70dbcdef7e9d",
+        "training_dragon": "216a7248a35ae081b244d8438744068d5b42c62c0b54747fe91f2643b12c59ed",
+        "scarecrow": "02d096e87179a9cb468f976e5fe1560b8796626b11c1b29f60518efcaacb3ac3",
+        "goblin_grunt": "4074c475d9163530514da880f36036eea7d542ba03284abe9a6efd79e03fc0e5",
+        "goblin_slinger": "83f278b241ec6874cf5b1ca57a7a9d8aa663a4e3ea8d9df021398b04a41e60c0",
+        "iron_boar": "7a3f935bd71b0182fa985ef18bfe73be229fdbba5e075a58c49ae03619fac12b",
+        "goblin_chief": "bea96f7fe9e1346c7ab28da5a71555557b056dbd0bc7be9d71a1ed92372be8f6",
+        "wolf": "e7a39a7350ad8c5e8130b8e3e819469353b2c8ebcc7a16b4a0a9d1886903711b",
+        "rune_guardian": "9bd1fda01293bf76d794a530d50b711d3f60425ea2ed6b696df2da4e1342001a",
+        "spirit": "050b11b31c6e380f3001d01c700e845d73cf3cbacc36bf5213f0fa633414700e",
+        "poison_spider": "5d4ebf6ea4c0ad45317f40afab41d3a0b5ecd9d05f0336b72f6e49e9900348b0",
+        "skeleton_minion": "ad9741a9af5675a7f354161aac7d0129b94b36aa3694d72ea603446099ab3e53",
+        "skeleton_warrior": "34a7f4faa971aa77e1f80d2b6c06bd2c34043392d8eecd2ae69673935d46ea3c",
+        "skeleton_rogue": "4befde11e89bec0fb7ac1067bf86dd08fc2af87abc6e5afb0953302c162e6966",
+        "skeleton_mage": "2845c5b126031dd2ddde7d7fbf4f24fc4b60372a0e07ee1986b4ea8b3bfe3b5b"
+      }
+    }
+  },
+  "unchanged_files_sha256": {
+    "arpg/js/net/lobby.js": "5ea93e84243a33836f4ed5d4006edc77bf986d4404fb6a6465d4d65a5a24acb8",
+    "arpg/js/net/loopback.js": "2d8418b44f064e158889d57cc35fe1e1e04df4dfb1adf2f3134433284c5facd7",
+    "arpg/js/net/player-prediction.js": "a3325ac8926e76a87e5874ee5adfa6c485bc8a47d48df1f05a9dae31b917c0a2",
+    "arpg/js/net/prediction.js": "699cd99c1141459e5c7f70bea27b19a778aff4ddbd9379fe3e81098c78b41896",
+    "arpg/js/net/protocol.js": "8f51baea460ec12a5cc9287926a554cd4c2a1fdeb8379d5ed06859279be1d449",
+    "arpg/js/net/session.js": "06486d2b2dd9a1b377f60400229ff3694212e6694015962198a3cbb6a88a15e0",
+    "arpg/js/net/skill-presentation.js": "0c2407f9a5e20ec8a175a96e14f0531c400214e91d096ebc3c12bd1da4497595",
+    "arpg/js/sim/core.js": "458215ac2761180349a20426f763fe5246f2779d5b6825af196ad96432d3a991",
+    "arpg/js/sim/movement.js": "3cc553a10b7ec2756cb9ad4049815fcd113867f4fb6a35f3b44fae2a537b9347",
+    "arpg/js/sim/quest-objectives.js": "7f663769124e11f4240a1894d9ef1aef1f37cfaa38cb9388f6389b79254eeb6a",
+    "arpg/js/sim/world.js": "d37d4d3b41b1839f321473c0b25a5697a1f1c79d2f0b4419d2659a97e7ba14fc",
+    "arpg/js/render/renderer.js": "5b3a418e8ed82ab9bdb4981f00ba1393b1e090f7abcd5487510c9a2ba7cc5400",
+    "arpg/js/render/atlas-visual.js": "1ac8f8b94dd04c57467330bb13a444c0f30eb74468180a21b782d1b94c4f4ff0",
+    "arpg/index.html": "62af177ca9218194259caca21b24eb1a066806d8b6b8b3ebdf752102b787b9e8",
+    "arpg/js/content/loot.js": "f80d51ee5c08271a9638e474e5bd35792f5bf81ed169d7fba00654a39f656c13"
+  },
+  "original_manifest": [
+    {
+      "id": "hero-sword",
+      "label": "기사 · 검",
+      "monster": false,
+      "content_ids": [
+        "blade"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6679827272891998
+      },
+      "bytes": 425064
+    },
+    {
+      "id": "hero-bow",
+      "label": "기사 · 활",
+      "monster": false,
+      "content_ids": [
+        "bow"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6927091181278229
+      },
+      "bytes": 471348
+    },
+    {
+      "id": "hero-focus",
+      "label": "기사 · 지팡이",
+      "monster": false,
+      "content_ids": [
+        "focus"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6927091181278229
+      },
+      "bytes": 429072
+    },
+    {
+      "id": "skeleton",
+      "label": "해골 미니언 (뷰어 샘플 · 게임 미연동)",
+      "monster": true,
+      "content_ids": [],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7110485732555389
+      },
+      "bytes": 479068
+    },
+    {
+      "id": "goblin-grunt",
+      "label": "고블린 근접",
+      "monster": true,
+      "content_ids": [
+        "goblin_grunt"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6926874220371246
+      },
+      "bytes": 427884
+    },
+    {
+      "id": "goblin-archer",
+      "label": "고블린 궁수",
+      "monster": true,
+      "content_ids": [
+        "goblin_slinger"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6926874220371246
+      },
+      "bytes": 468642
+    },
+    {
+      "id": "goblin-chief",
+      "label": "고블린 대장",
+      "monster": true,
+      "content_ids": [
+        "goblin_chief"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6659776270389557
+      },
+      "bytes": 437294
+    },
+    {
+      "id": "wolf",
+      "label": "늑대",
+      "monster": true,
+      "content_ids": [
+        "wolf"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6296268105506897
+      },
+      "bytes": 561040,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "poison-spider",
+      "label": "독거미",
+      "monster": true,
+      "content_ids": [
+        "poison_spider"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6975164711475372
+      },
+      "bytes": 918346,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "iron-boar",
+      "label": "철갑 멧돼지",
+      "monster": true,
+      "content_ids": [
+        "iron_boar"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6255070865154266
+      },
+      "bytes": 453624,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "dragon",
+      "label": "드래곤",
+      "monster": true,
+      "content_ids": [
+        "training_dragon"
+      ],
+      "sheets": [
+        "copper-v1-atlas-0.webp.json",
+        "copper-v1-atlas-1.webp.json",
+        "copper-v1-atlas-2.webp.json",
+        "copper-v1-atlas-3.webp.json",
+        "copper-v1-atlas-4.webp.json",
+        "copper-v1-atlas-5.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5199252963066101
+      },
+      "bytes": 1483476,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "throne-dragon",
+      "label": "왕좌의 수호룡",
+      "monster": true,
+      "content_ids": [
+        "throne_dragon"
+      ],
+      "sheets": [
+        "throne-v1-atlas-0.webp.json",
+        "throne-v1-atlas-1.webp.json",
+        "throne-v1-atlas-2.webp.json",
+        "throne-v1-atlas-3.webp.json",
+        "throne-v1-atlas-4.webp.json",
+        "throne-v1-atlas-5.webp.json",
+        "throne-v1-atlas-6.webp.json",
+        "throne-v1-atlas-7.webp.json",
+        "throne-v1-atlas-8.webp.json",
+        "throne-v1-atlas-9.webp.json",
+        "throne-v1-atlas-10.webp.json",
+        "throne-v1-atlas-11.webp.json",
+        "throne-v1-atlas-12.webp.json",
+        "throne-v1-atlas-13.webp.json",
+        "throne-v1-atlas-14.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "breath",
+        "stomp",
+        "tail",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5246005654335022
+      },
+      "bytes": 3561536,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "gargoyle",
+      "label": "석상 가고일",
+      "monster": true,
+      "content_ids": [
+        "gargoyle"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json",
+        "atlas-3.webp.json",
+        "atlas-4.webp.json",
+        "atlas-5.webp.json",
+        "atlas-6.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6693471968173981
+      },
+      "bytes": 1495739,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "skeleton-minion",
+      "label": "해골 졸개",
+      "monster": true,
+      "content_ids": [
+        "skeleton_minion"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6440752148628235
+      },
+      "bytes": 479068,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "skeleton-warrior",
+      "label": "해골 전사",
+      "monster": true,
+      "content_ids": [
+        "skeleton_warrior"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6359060406684875
+      },
+      "bytes": 433225,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "skeleton-rogue",
+      "label": "해골 도적",
+      "monster": true,
+      "content_ids": [
+        "skeleton_rogue"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6319391131401062
+      },
+      "bytes": 453502,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "skeleton-mage",
+      "label": "해골 마법사",
+      "monster": true,
+      "content_ids": [
+        "skeleton_mage"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6169794201850891
+      },
+      "bytes": 388305,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "preserved_sprite_sha256": {
+    "arpg/assets/sprites/dragon/copper-v1-atlas-0.webp": "499f10084826221c8e7762ffc4610cad2f888fcdac77af276ba7e8d923e79389",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-0.webp.json": "15f2f6c27287152ba5a9cbab4e0c7059d68951eec82aac01bedbf6971b271a1d",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-1.webp": "bbcf9a96b3a9f3f56fd5cf3125e68661584a673cc5a316fd402ae0fd684158f3",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-1.webp.json": "d82710e33102dab23a50c577bf41676d3b0d89ec650334d17139d4df843ea90e",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-2.webp": "b12f185039b80bddf28a7455cf4f1939e44258bc69bf00a50ec0badb1ce06999",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-2.webp.json": "8e57d2f57b62c925c3f0535b59853804353e8df52b914a47930fe2b61d238906",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-3.webp": "3ac60f79ebe0c9e00c86ea78b3caf6257f055fd40e8ccaa3d1a9cebdfb28f28c",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-3.webp.json": "a431d27e9111cd3dc19b9b60c6faa0578830acab0411569042d187da553b6cc9",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-4.webp": "1e7061717cb4501b3dbca1d26270be3695ab77745f175479e30bef1d15e2661f",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-4.webp.json": "f089d0f2029945895f77281d1dcdc421fd8b990a7b1a957335594d0812a1fcc5",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-5.webp": "42e06c0b964b6119966578423997ed880625de4dc516b0ebc954f65298a8b8aa",
+    "arpg/assets/sprites/dragon/copper-v1-atlas-5.webp.json": "f2ca2310701a4f12004918d4e6231cd99eea8f17c4d6c94823d7fe22c38724b8",
+    "arpg/assets/sprites/gargoyle/atlas-0.webp": "5e251b3e30abfc81d969ba4385a5e502b6fd73fcda287072639f4450d1d9d8e8",
+    "arpg/assets/sprites/gargoyle/atlas-0.webp.json": "d243b7a783f1469ba9c753b192895931ff8695c163717a4270cebb312c4c934e",
+    "arpg/assets/sprites/gargoyle/atlas-1.webp": "da01fd91d41214d64b1b541dcf4ef09dac73c8c57463f10787fe9aaca71c072d",
+    "arpg/assets/sprites/gargoyle/atlas-1.webp.json": "934c7aeb9b6ec77238b5dab99a53d44379cb2df1fb8cd762d6939a922f519593",
+    "arpg/assets/sprites/gargoyle/atlas-2.webp": "99f2ce7a210871f7a6ab70e93166e0e9ce0b7ae379098b877be4e2cea4f19a77",
+    "arpg/assets/sprites/gargoyle/atlas-2.webp.json": "fecef80cd55a035793f63a3a167d5ac1492990df661b2d9cf69003478497fb73",
+    "arpg/assets/sprites/gargoyle/atlas-3.webp": "bef6e614b02f1fe0580f039fe99cc9bd7ac5f8b958f14ff0789403b9c5501a69",
+    "arpg/assets/sprites/gargoyle/atlas-3.webp.json": "357e5174490ee2b296692dce90358391371f8658fed0e0ff274d720dd158902b",
+    "arpg/assets/sprites/gargoyle/atlas-4.webp": "de2b42a3bdf02713b8b2207224f174bb707919b3c7a7399ee250a274a9123ffd",
+    "arpg/assets/sprites/gargoyle/atlas-4.webp.json": "079cb8e76a74228f8299d115f071bc096fd4ef51dd554266ee08ae996403b34c",
+    "arpg/assets/sprites/gargoyle/atlas-5.webp": "3a0b2369f18d6a59f076c7940c05d7ad9b114b58f5a5d61d107aee5b35b55689",
+    "arpg/assets/sprites/gargoyle/atlas-5.webp.json": "cadd2d7e4f84ef3d2f50afa38cdbabf6ec29b2cb15fd20d3059a69a8e52183d1",
+    "arpg/assets/sprites/gargoyle/atlas-6.webp": "20db808ec34dc58f46f3ee1262273e04de707f2a54592de3523a6e67dcec2d8d",
+    "arpg/assets/sprites/gargoyle/atlas-6.webp.json": "8727bd81f775690f57fc57728a7465aab06cc906b66f95810a199f402b69f0b1",
+    "arpg/assets/sprites/goblin-archer/atlas-0.webp": "9da35869ae43624469d025bdf6c36d49fae576841cba9db90c261090ba23f898",
+    "arpg/assets/sprites/goblin-archer/atlas-0.webp.json": "0e215e8aef5d117230a7352983451575f2a89d40afa7deeec2ca837e2a0b5b8d",
+    "arpg/assets/sprites/goblin-archer/atlas-1.webp": "c27de9ae6b19d009bec97022488b4bdfa023fc90c37a43b6324c98034b4a6fb4",
+    "arpg/assets/sprites/goblin-archer/atlas-1.webp.json": "fc78176f1f82ffc12021742695d873d0fe45445bd7bb5a0495f807485ff07b7a",
+    "arpg/assets/sprites/goblin-chief/atlas-0.webp": "ca8d4e76790f047d2ed82cc67f8a1b8c0fd543d4868942276fa987f46ea52831",
+    "arpg/assets/sprites/goblin-chief/atlas-0.webp.json": "554f96a376afb7574830ccc49653bc0e7aeb64fa66b2ab19ea9a35c449f75b3b",
+    "arpg/assets/sprites/goblin-chief/atlas-1.webp": "2f8e2d54203f9beaa25f63020b267c14d9eb648c8a17e186275c4d9d3f65fb42",
+    "arpg/assets/sprites/goblin-chief/atlas-1.webp.json": "646fcf04569830c99605790628d4d09ac5b8a0a69fbd74e5a2c2ffeedbcd84da",
+    "arpg/assets/sprites/goblin-grunt/atlas-0.webp": "bece84017243e146f82e5419ad09a3d576cb924342289214fa503d98ee82a599",
+    "arpg/assets/sprites/goblin-grunt/atlas-0.webp.json": "0e215e8aef5d117230a7352983451575f2a89d40afa7deeec2ca837e2a0b5b8d",
+    "arpg/assets/sprites/goblin-grunt/atlas-1.webp": "b21930f4f74464fca4e50e8314656a650c5f376e1fa1d7a9ec2e1d4bfe3595f0",
+    "arpg/assets/sprites/goblin-grunt/atlas-1.webp.json": "fc78176f1f82ffc12021742695d873d0fe45445bd7bb5a0495f807485ff07b7a",
+    "arpg/assets/sprites/hero-bow/atlas-0.webp": "28312d804c3f9533f7637e52956343fb71c56a3aea38f437cb70440bb8278431",
+    "arpg/assets/sprites/hero-bow/atlas-0.webp.json": "87ff198239e81970fe8cdb12e7eea3de47683133e9838994d942d9592aa387bf",
+    "arpg/assets/sprites/hero-bow/atlas-1.webp": "e7987f2bbd0897c9beaf6de43197e3e974579ac9d9ff528623cc61fa797a6d13",
+    "arpg/assets/sprites/hero-bow/atlas-1.webp.json": "cae70e64c18d72cbbb2a1ab1e6e652b12e4ec5f4483775706f4ebc18d0c6244e",
+    "arpg/assets/sprites/hero-focus/atlas-0.webp": "683f3a7daf6d88ddc7dd73f51a73d4cc1d26030e3552fe619f5793bbe461b751",
+    "arpg/assets/sprites/hero-focus/atlas-0.webp.json": "71fa54a266b4ab3041fdafe19c5d2f6ab128fac5b25f0f205a46628d4687e5bd",
+    "arpg/assets/sprites/hero-focus/atlas-1.webp": "c92e49b50844bd715bcd723deb92c25e27e1a083e427d2412a1bde3f8585196f",
+    "arpg/assets/sprites/hero-focus/atlas-1.webp.json": "22433737ed1b214a1ee0348959e39a3011ba46b1bc051ec672c556a892f45967",
+    "arpg/assets/sprites/hero-sword/atlas-0.webp": "9e0c4e886be16c7cc59dfff7e9f216b558f714ba6881b6cd60de18ad4a9305ae",
+    "arpg/assets/sprites/hero-sword/atlas-0.webp.json": "2eeeabab60692febb6a336892a0f7a6f7332419cf8b175e5efe3c736b32570c2",
+    "arpg/assets/sprites/hero-sword/atlas-1.webp": "ff0d21c6c2458040e60b4e623a1438ea8b721b9a79a93dbf4a073f724bff8a2e",
+    "arpg/assets/sprites/hero-sword/atlas-1.webp.json": "caa151ca3712c83630671955c235609a98136f72d5d4b2e8129e6171ea07781b",
+    "arpg/assets/sprites/iron-boar/atlas-0.webp": "a4b2976a557143e042486c084e6ea8ec08bb30814c4a90c31149fb9b2d4fa810",
+    "arpg/assets/sprites/iron-boar/atlas-0.webp.json": "16ab5aca727fdc19954d6e1a99dd7fc867a324e7b8faa404fdb34b45115b984a",
+    "arpg/assets/sprites/iron-boar/atlas-1.webp": "d3c80e239eeea1f1546d5085a964cf57a289985d0b24f95a564b4aac2bbafdd6",
+    "arpg/assets/sprites/iron-boar/atlas-1.webp.json": "b0ac8b89f7a407e03249989385ea8a7ee30785a46d439da2e46dc66d149632fb",
+    "arpg/assets/sprites/paperdoll/blade/base.webp": "5a5038cc9af475b44b4a453a54a241efec8ca83ca765d9d3b3f8856d5d27f889",
+    "arpg/assets/sprites/paperdoll/blade/head-barbarian.webp": "8d5fce6548d0ebfd0ce9213f60dff78f6bc38d48b9d81c7bab895ae84e92cb37",
+    "arpg/assets/sprites/paperdoll/blade/head-knight.webp": "a3d0e430101cba27ac4cd4d5dd74a10be6d18bf64ac5cac0b475d581fb673f3c",
+    "arpg/assets/sprites/paperdoll/blade/head-mage.webp": "eafb464aa8340b5f228b5d7ce9fee692d906c89cbda934fbfebf0f5022d884de",
+    "arpg/assets/sprites/paperdoll/blade/mask.webp": "80fb7532fdacb2c169e1e0e184606f261c0cc98e1f2ba3445e2f77d8cbb6073a",
+    "arpg/assets/sprites/paperdoll/blade/validation.json": "23eb3c94d78509cb7da6636d65fde84de81da42425af94518732ae00577931fe",
+    "arpg/assets/sprites/paperdoll/blade/weapon-alternate.webp": "e8d79e972bf443b832c509156592ced26e5f58f4bb39fb3d22004e079e2ab1f9",
+    "arpg/assets/sprites/paperdoll/blade/weapon-standard.webp": "8081624790abdbc2a5e8d9dcfee231938c59de66d8f448f55661194d1d0cd480",
+    "arpg/assets/sprites/paperdoll/bow/base.webp": "6c1120313fc5b27c87803faf1cbb3e7dba3ef39633cf67cbb72c928f06d09533",
+    "arpg/assets/sprites/paperdoll/bow/head-barbarian.webp": "6f7b32c22d4b0639f8f8f66233a80461db0e547da350dd560162a01d4bba645e",
+    "arpg/assets/sprites/paperdoll/bow/head-knight.webp": "4faf3883cca45bda3fa0eedfc57e81bf4cd106ea9c68032384858a2c89d2d066",
+    "arpg/assets/sprites/paperdoll/bow/head-mage.webp": "501b6455b76d3bd64e8dacc9f1351ad58f278e82841bcfc255fa59aad96f6514",
+    "arpg/assets/sprites/paperdoll/bow/mask.webp": "9c701bc1cba37c798f97ca4792f124380dddbc092a129322774a3b697b22ae59",
+    "arpg/assets/sprites/paperdoll/bow/validation.json": "dcfd8060127a8efe611f434cc34df8c7e8fd9998aa1cdd9068dbc58c1ee42d4d",
+    "arpg/assets/sprites/paperdoll/bow/weapon-alternate.webp": "3676fdd1e1f20604ca9330e8587d2cef96a6887d5ed56b462ddb1f88aaad7713",
+    "arpg/assets/sprites/paperdoll/bow/weapon-standard.webp": "f424d21a2edef8880f6434890b3cb9e2659eb6b06afa16c554df67cd54ef53a3",
+    "arpg/assets/sprites/paperdoll/focus/base.webp": "ed2a040beac3198b0d8c627c26e3b3e8b68f9f24aff5679cf6b9e7f2193c40d8",
+    "arpg/assets/sprites/paperdoll/focus/head-barbarian.webp": "97a7628b925f8765be7f72e4abb9e67c8c76bd50226f0a8f7c9aaa5331564a33",
+    "arpg/assets/sprites/paperdoll/focus/head-knight.webp": "e975718997ed4a17f17a3ad2c2d64882d74c1d4303874e84d5525cc85dcd4cd4",
+    "arpg/assets/sprites/paperdoll/focus/head-mage.webp": "2e456643a63c9433f03309fbba43370c45ba221f78de4a3689dd0080c382391d",
+    "arpg/assets/sprites/paperdoll/focus/mask.webp": "4987661d4aba71db4b7dcba9c248b1e8418d59be12064d0f889c9a8feced040d",
+    "arpg/assets/sprites/paperdoll/focus/validation.json": "06590d243cac32a13c1d8c4ffec48de3700cb9b50ab5f4a26c52091833aaef38",
+    "arpg/assets/sprites/paperdoll/focus/weapon-alternate.webp": "0caeb91d4040f59522814012da90c1cf35d8d1c515eb6bb5fca9b37e56d4b2d5",
+    "arpg/assets/sprites/paperdoll/focus/weapon-standard.webp": "add4326f1773e5ebb62bb4eaeb9a739de4ff494a0193f09643fbc0dbe06f5bd6",
+    "arpg/assets/sprites/paperdoll/validation.json": "42ed717489486654fa31666a8e4863c9cdbfd7535c718baabf1935e230f85c0a",
+    "arpg/assets/sprites/poison-spider/atlas-0.webp": "cfa9c8bd74234efd6971ed003a2c1fa341f4629e7a5d87c68b055be482355324",
+    "arpg/assets/sprites/poison-spider/atlas-0.webp.json": "b2dc38cfcd3fea3773a4f928296645d6cd171fa8c856b43e7d18e1ae20377c81",
+    "arpg/assets/sprites/poison-spider/atlas-1.webp": "7dc6d9c202546e73761fe0303c1d1ce2810afc64aae02ca7f8363cb4885e4268",
+    "arpg/assets/sprites/poison-spider/atlas-1.webp.json": "3a71c9cf377c7d1e11cc69bd44e97407bf325b22b467c0e65ec4144a51eb245e",
+    "arpg/assets/sprites/poison-spider/atlas-2.webp": "525c54c325226646c7304768a608788cf1caf072f349477c460c029f906c55f4",
+    "arpg/assets/sprites/poison-spider/atlas-2.webp.json": "46bd03bd5e42fd890605c97478dc7c625190fda4d4d82c83cc3d7f4d4e0f5d61",
+    "arpg/assets/sprites/skeleton-mage/atlas-0.webp": "a865f9f801219ebffda777445eb0a2ce6cc9bb23ede2f38a06b25ea9a3c62eea",
+    "arpg/assets/sprites/skeleton-mage/atlas-0.webp.json": "b54db4f8af4c1a9a21842e81518cadda8fd0be35b52f1a7125813b12ac52613b",
+    "arpg/assets/sprites/skeleton-mage/atlas-1.webp": "6b8ede28620f828bf6fe5276f66be28b54154238bc0559fd803915708783ecb5",
+    "arpg/assets/sprites/skeleton-mage/atlas-1.webp.json": "8dc7918ea8fdcf3fd7e8f75cca3a0faaef0bafdceebc080450d75c43be1cc733",
+    "arpg/assets/sprites/skeleton-minion/atlas-0.webp": "6fba90f2efd10800cbb02f8bd003c5fb0954e686d2beda8a733f46990fd25159",
+    "arpg/assets/sprites/skeleton-minion/atlas-0.webp.json": "517d5d714e3b03089ee6660d1f057f48c5510ce9fc5bef84efa153e0c841091a",
+    "arpg/assets/sprites/skeleton-minion/atlas-1.webp": "90f737fb665872319764fe89fc6884b225aaa42e085ab59cd8898289b16b48aa",
+    "arpg/assets/sprites/skeleton-minion/atlas-1.webp.json": "5d2a961bed2d56af0747ce8eae6b0ffa3c61889ff87358582d7b657206b340f1",
+    "arpg/assets/sprites/skeleton-rogue/atlas-0.webp": "0da58a896506d042a1fe2c885ce54ddf80c5061fc2c9a4431eb86bddfaee2758",
+    "arpg/assets/sprites/skeleton-rogue/atlas-0.webp.json": "1350ec7b104be37888479ca1dfd598fe083273dc4b2c0b46d42c32a635ae0ad5",
+    "arpg/assets/sprites/skeleton-rogue/atlas-1.webp": "323a4327f2bbe7294ea8ae04887c4affb49bfc7fd043270c5b45e932162d8b41",
+    "arpg/assets/sprites/skeleton-rogue/atlas-1.webp.json": "fd04dbf5abe01294db55bd8dacb554dbd35d06da7558a6893beb8a297078de47",
+    "arpg/assets/sprites/skeleton-warrior/atlas-0.webp": "7db75a63241c4ba76619de0bcbebd6d59352dc84d94a92b5580300f743931c1a",
+    "arpg/assets/sprites/skeleton-warrior/atlas-0.webp.json": "267ac7be1a49441f028c7dd6e4a5fc09bf2791a3853e91122620f7380c28e18d",
+    "arpg/assets/sprites/skeleton-warrior/atlas-1.webp": "a65af614d4c7ada36a5e39db40381f6a92166902d58c4ee55eb2c113c935aa47",
+    "arpg/assets/sprites/skeleton-warrior/atlas-1.webp.json": "90caa8ab30e47c24c8a89112c612ce63351e383b16896195a19a7d370ae2f4b5",
+    "arpg/assets/sprites/skeleton/atlas-0.webp": "6fba90f2efd10800cbb02f8bd003c5fb0954e686d2beda8a733f46990fd25159",
+    "arpg/assets/sprites/skeleton/atlas-0.webp.json": "24100421137cb30137a6d4baafc0714ded46876c00f1a54775e3ed0d1882ae4c",
+    "arpg/assets/sprites/skeleton/atlas-1.webp": "90f737fb665872319764fe89fc6884b225aaa42e085ab59cd8898289b16b48aa",
+    "arpg/assets/sprites/skeleton/atlas-1.webp.json": "732cb2b83e9f0b89a7abe1091a6442c212fc3c4b498fd5f4b65ddd52eba912a1",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-0.webp": "b6502c69b0dee24f013c6e92b65d9628cb94b7aea22e86312544c5f0a4d78ab8",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-0.webp.json": "5714c301b3d859cfe74822fe8ed56d59f429bb031d4285a4430a58de1f7f7121",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-1.webp": "4da7eeea220e81d0c5bbef18bafe8be4f16402d954031b7e1eea5acb2b1d931b",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-1.webp.json": "250c90a8468ba96b86f882fbe48f32fb9b39cfda4d45f4b74af88889aa91ae53",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-10.webp": "bb4909b746a8beeb61fd3368d173b6e8566e0b33bfd230ebc05f49bc8387b2da",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-10.webp.json": "7d9acc096448516420188097271e3698b1af9e9c86789d141a4b2a87efc319b2",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-11.webp": "d69f32215f90ac057833570bc810b221662dcf48d1424db37b0221c1b7ddf2e3",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-11.webp.json": "4a741988975d049883582744f94fb0a30aa958e48118c0ff3d667701852699d2",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-12.webp": "afe8a64972e744a78a1dce8167c7dbaf13164c7abf6b8b59f0f2f4c4355a54bb",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-12.webp.json": "06533d5ad0b50e9f4633d58111d2c5311c8c3e0c2d5b880ba1a4d40017c421f4",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-13.webp": "4f4a6533bd03f814e4d5e348f6e7a0a267c0ef0fb16bf75ee003618c658f30a1",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-13.webp.json": "d601f71e6f079c849556ce37f7c5fe0c766fb4301f14fa9a25c3ca61a5d0fd30",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-14.webp": "c9a905b737df14476c86aecd260c4e50b0887ad8c369586366556b3c30223806",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-14.webp.json": "b2926158d025334ef7550da6e975a2d3a13437decdb591f3dca17b8b02f6c8e0",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-2.webp": "fc7a25e383d2b1997babe622fd267bb97afc98233fde381844983bb0c7165ab5",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-2.webp.json": "fbbbf618397cd44359c1977ce22a96a6ca9cf890253f8d13e2bb1a803f05294b",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-3.webp": "e3e2e796e36231cf0325c0f7bfc71734a97f0fcfb751cbecae963d330aadb02c",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-3.webp.json": "534d94564bf330da6fe659427e63ac155ad58fa7854e36024eb291e7c414b89b",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-4.webp": "74b5906713ec12710ebac876367383de7cea251e6d768584f5912514ed32aa7f",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-4.webp.json": "0c80283057ebe0f48255ec3cc5969b43a88689d411dda5dd8178024409a59af9",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-5.webp": "c2f9276e64b5928fee83d1b61f154e1575d91c03ad5c2d79c0c1244b4c32d4b0",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-5.webp.json": "c764acac013f44405a54eb06a3d681c8b38cc16821db3a0f1cdc3d43c8665e74",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-6.webp": "d72f8c40adcbed5a2886d61709bd98dc843651cd6a5ce4533d729550eff375e6",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-6.webp.json": "4f36fe0ca0190390543e6509482f2220f24b3bbad2d8e8db375dcf4bdd8dc98d",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-7.webp": "187ca509ca196a1b59a3089fe7781ca9b7f38bd81c9a77159cbfa00934c27a76",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-7.webp.json": "2883774490751aa84af7c238235d512dbfce37a4a690e30347b42c8332d4ab80",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-8.webp": "dd504d0c252c6ff585751c431ad4866d35b48c44570f0c4920ff6e2099e8f200",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-8.webp.json": "165dd951b8dd6f8fc715a51b5c5411b0dce6350786936ce4c67881ff6c4870a4",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-9.webp": "37fd6546c10269ec32ceb561f00c7c8658d90cac17b743cd4cac428a5dd29da7",
+    "arpg/assets/sprites/throne-dragon/throne-v1-atlas-9.webp.json": "e23ef47a1874dd0beb09fc3339ae39b51b045472ab4123bfafb4735ad318d83c",
+    "arpg/assets/sprites/wolf/atlas-0.webp": "f924c8d137c5b3580bc712f26b1d85aff09b278418704d4ff9cba3aab1df0e68",
+    "arpg/assets/sprites/wolf/atlas-0.webp.json": "ec95bf3df93f9b847f900d35d6c854cedfff5e82d448a6ff4d24c5c1f0127778",
+    "arpg/assets/sprites/wolf/atlas-1.webp": "e43a5104ab436aa3e380b341e8bb7cc67f4811202fb494f6444259a608fbe05e",
+    "arpg/assets/sprites/wolf/atlas-1.webp.json": "074583eb2bd6d2142b3c7052dc25344bbf6c54022f35716c7880c4b9a49c83c9",
+    "arpg/assets/sprites/wolf/atlas-2.webp": "e8f9a5e299640eebe8ec42c3b2c426fa09ecc664e1c9ab2a0327a54f3c815f73",
+    "arpg/assets/sprites/wolf/atlas-2.webp.json": "cec25a956562aba4caabe1ecc165726fb01efee04be24ae2860c32e8cc8b74ca"
+  },
+  "atlas_helpers_unchanged": true,
+  "normalized_index_sha256": "211835c3554c17d925044a9a42b58f215ce91e8b29631bc98abe23fe2fde7b76"
+}

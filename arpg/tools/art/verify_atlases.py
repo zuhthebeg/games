@@ -125,7 +125,13 @@ def verify_character(base, frames_root, entry):
     for direction in DIRECTIONS:
         centers = [records[name]['center'] for name in groups['idle_' + direction]]
         drift[direction] = round(max(math.dist(one, two) for one in centers for two in centers), 3)
-        assert drift[direction] < 6, (entry['id'], direction, drift[direction])
+        if profile == 'winged':
+            # Wing tips sweep above/below the core: a changing silhouette bbox
+            # is not anchor jitter. Require independent reopened-rig body/head
+            # core stability, while retaining/reporting the full bbox sweep.
+            assert source_proof['idle_body_core_drift_px'][direction] < 6, (entry['id'], direction, 'winged body-core drift')
+        else:
+            assert drift[direction] < 6, (entry['id'], direction, drift[direction])
     for animation in entry['animations']:
         hashes = [records[groups[animation + '_' + direction][0]]['hash'] for direction in DIRECTIONS]
         directions[animation] = len(set(hashes))
@@ -144,7 +150,9 @@ def verify_character(base, frames_root, entry):
             'webp_bytes': webp_bytes, 'json_bytes': json_bytes, 'total_bytes': webp_bytes + json_bytes,
             'alpha_coverage_percent': [round(min(record['coverage'] for record in records.values()), 3),
                                        round(max(record['coverage'] for record in records.values()), 3)],
-            'max_idle_center_drift_px': max(drift.values()), 'unique_direction_hashes': directions,
+            'max_idle_center_drift_px': max(source_proof['idle_body_core_drift_px'].values()) if profile == 'winged' else max(drift.values()),
+            'idle_center_method': 'reopened-rig body/head core' if profile == 'winged' else 'opaque silhouette bbox center',
+            'max_idle_bbox_center_drift_px': max(drift.values()), 'unique_direction_hashes': directions,
             'pose_profile': profile, 'pose_checked_frames': len(records), 't_pose_frames': 0 if profile == 'humanoid' else None,
             'bind_pose_frames': 0 if profile == 'humanoid' else None,
             'min_max_arm_degrees_from_bind': round(pose_min, 4), 'min_skin_rms_from_bind_height': skin_min,

@@ -1,0 +1,1514 @@
+[
+  {
+    "stage": "S1",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "480e1ef4f8dc5f944007eb1c4124a8580c1b5f346c038f42bd5d674edd742fd6"
+  },
+  {
+    "stage": "S1",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "b63c48f63ed864daef5ded3a437691765321bd165353a1cdb587b8569cad977c"
+  },
+  {
+    "stage": "S1",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "850fbc3807ae9f99fe604ff5e417c387ef4f46acc3cd461e4e3d5bd8a886d3d3"
+  },
+  {
+    "stage": "S1",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "6cca95b7713afb5a3aae21257656da6318bf6bc32b80831e18483d82c9a7bf2c"
+  },
+  {
+    "stage": "S1",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "660ec930989eb275d5a309e7e24f69c66bb854d1a65bfe0da8cd262035471051"
+  },
+  {
+    "stage": "S1",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "3d525f1018442b1e8b0141ffda01a5b3e3fa04c00d2e4af5de2741e6bce7406f"
+  },
+  {
+    "stage": "S1",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "9c85e9327d0f4024436febc28fdff5a47942b99ef4fdd2c0bdcd0de271a3fb4b"
+  },
+  {
+    "stage": "S1",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "47b647ccc824334024853f5c9e8151acad82556ede96e7f18600c5b500742cf7"
+  },
+  {
+    "stage": "S1",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "e9c2695f27aaade4e3a040b34cbf3f830e90c753ad9b1b4ff35f22971e336bfb"
+  },
+  {
+    "stage": "S2",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "a71ece689ea18e39d86ea1e7ba1f7fad89a6cf1b2d1e9fa6ea658657ad7df049"
+  },
+  {
+    "stage": "S2",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "5a08c619fc61b566d6230ca5081e5dcc16e8337778c81e9d76fdda0ef42f9e68"
+  },
+  {
+    "stage": "S2",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "1a1fdc46998f365a770ba468323aeceb64386a644d4dedbdeab449922e41c4c9"
+  },
+  {
+    "stage": "S2",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "b27ba5d1db7b665eac1b0cb869905302f949a587e58fa0a640ff90ea7b6f94f1"
+  },
+  {
+    "stage": "S2",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "0baff8d95eabb5c16649afc66b80872328872312274aae830c4547845c6bf99f"
+  },
+  {
+    "stage": "S2",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "2b07431533d452daf8412ea69f37e9ae023f468506292bae0675e63e78f774c9"
+  },
+  {
+    "stage": "S2",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "ae207944891fe7b9e4b2de54ccd05f74d40f3311ecfa570726a25ff4084cbe8e"
+  },
+  {
+    "stage": "S2",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "ec6fbe551f629c625515b36079e8b398d2da7a9c609bf7ffea638c066365c1b0"
+  },
+  {
+    "stage": "S2",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "573acdf206aab425bb5c6dbe055bf49c5af861bb46ae3b991848443b92c26c99"
+  },
+  {
+    "stage": "S3",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "560f39f823e89ee3c3db1f4eec546ed589337dbdf11c79ec144355310d8bdac9"
+  },
+  {
+    "stage": "S3",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "56bb8fb91d49bfcb2ff1d7e96a613657281a5afbd69e994179f0c1ccaa1b624d"
+  },
+  {
+    "stage": "S3",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "1eb78009b2a21542dc77d0ccb78cd387a56c810b712d450c50700e18235dc871"
+  },
+  {
+    "stage": "S3",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "d7855036ee7a126e4169a24e82386faa9dbcc17f78c110412427868c3836bfda"
+  },
+  {
+    "stage": "S3",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "599634dbd6341d160044e5e3e14ff53cdc71376796019c398b37dfbd6c2ae960"
+  },
+  {
+    "stage": "S3",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "5101675212e0ea12bcb3c89a9f622222121754f72b86fc4198af0b60b4fd102e"
+  },
+  {
+    "stage": "S3",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "b475a94468da1b4ca68966708d141b623e61cf9d243711a3e2de09c9412f520d"
+  },
+  {
+    "stage": "S3",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "0d398679a235f7be6af1de68ff0c8119a611733aea684e087118e2f7afb05275"
+  },
+  {
+    "stage": "S3",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "1203dca9dff40accd7021739762947ed46eb1501da1bd505ffe6dbee8bb2cf9d"
+  },
+  {
+    "stage": "S4",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "8d79062cb83c85daef121ea6a51d22ddbdac9403d980285a5c1734f59e599294"
+  },
+  {
+    "stage": "S4",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "b33d106f37bce7ed685b4e6beb833fa2cc65d1db1d9612c8a002828e05b0aa0c"
+  },
+  {
+    "stage": "S4",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "561960beeb992134bd69ffb91601e55f7213bf1ca75afbe6120a12649b5911fe"
+  },
+  {
+    "stage": "S4",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "1e4ce0cb6b70870b18f7165b01a3c87544fcce56b7da8321d0e4144603592493"
+  },
+  {
+    "stage": "S4",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "35e3683e925343289240dd82554d11fe440a2c83934c9479c231af37242e4d82"
+  },
+  {
+    "stage": "S4",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "c5dcfb439345318aaf88e661a608555f56d84245f812cc2c6a1a43915208dc92"
+  },
+  {
+    "stage": "S4",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "c380c7056875f873ca2bc260d22be22ca10de1cd114d4133e4183436033caf02"
+  },
+  {
+    "stage": "S4",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "0584f82458e827e7ac14e0e7d6f25c45f710fbfc8e90e1d1aa9ffa9ab9b31d4b"
+  },
+  {
+    "stage": "S4",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "4b38ce867f848fcd27ce7e3e6209c99cddd0ef2de9ae252951296da7719c7b3b"
+  },
+  {
+    "stage": "S5",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "9c04a30cd315403523dfa125fa074632be2ef30f6d71740e412773a2358e4082"
+  },
+  {
+    "stage": "S5",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "20e863700fe80da2377f036d60c45cfcf13d8caf71dcfae3b8e8bea6934e9739"
+  },
+  {
+    "stage": "S5",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "995953346874482c13cedea179db657b1e5339b14de906ef985abe1073939c32"
+  },
+  {
+    "stage": "S5",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "b0447ed6b0ec0002151d2c4b2ef0a997fc4dd3507558c8e530775279750222a9"
+  },
+  {
+    "stage": "S5",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "bfe94e71ccdb022f208c8b8a157cf7272f98d170e71fb4583dc1475697373aeb"
+  },
+  {
+    "stage": "S5",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "03e2ff82ff69969f759bd148600a2c6e0f34952e005e0c5eeff1de8e5a8ca1db"
+  },
+  {
+    "stage": "S5",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "f222d52626eb991a8cb192ba4cac0da43f4bdfd1e52e44fcbe841e32426684e4"
+  },
+  {
+    "stage": "S5",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "146d342e13a43203339b4573d9e19b81b7052c93bbe7c76d883da66f2d317f9e"
+  },
+  {
+    "stage": "S5",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "320aad04b80664a900145c48243a99656655af958ce14862ce093b6e5935c886"
+  },
+  {
+    "stage": "S6",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "c7fae0abe310fdfcd4431fe904d45ffacc9788ee84cffa67f4b5e19eda22299e"
+  },
+  {
+    "stage": "S6",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "de7315d285fde706fae5ccbed75bbf1eda39a0577ac058bcea6d32ec03e22486"
+  },
+  {
+    "stage": "S6",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "43795e5b0bf5a8282e60b1d2a25d6279d848e74c12f8a65c66ddbf263d7be838"
+  },
+  {
+    "stage": "S6",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "fa4943057b75f4c0bd64a39a0aecf00b4dbc45989d6b8a486f9b1d8bc2fcebf5"
+  },
+  {
+    "stage": "S6",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "e428bae19b0513e6ab9edaa506bd1045bb46b5deb747d0b7b7485baa372523a5"
+  },
+  {
+    "stage": "S6",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "beb921c3feff309fb7a66d80a0968bd7c1d10f776af533f79d7a44feaaef065b"
+  },
+  {
+    "stage": "S6",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "bdaaeded67875ada50a933cfa178349429728478200c334d8a76a34ce9eb3ef9"
+  },
+  {
+    "stage": "S6",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "8843c26867cb47831925aec373a1c7c296613e1332336c74a6b07d07efdcd3c3"
+  },
+  {
+    "stage": "S6",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "228e73f09f6dd535778c8c4c7661c9405e13476ea33d7ee64814b827210fc023"
+  },
+  {
+    "stage": "S7",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "142dff5b57f713766ce6c07ef6959bdeb025ce78e28d3bd183edfc747c797669"
+  },
+  {
+    "stage": "S7",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "f4a0e8bebf7e14ca557daca5c664adcd44494e17a95869fac909ba58cc5c9ee9"
+  },
+  {
+    "stage": "S7",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "18de9b3424cc52840498ec98f444f047dc95864c47f7ff32bbde778ad7fa7890"
+  },
+  {
+    "stage": "S7",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "b95008ee7c94b78f9cccc892755eee2b33614a6cbe3b71519afad839a17ef95e"
+  },
+  {
+    "stage": "S7",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "748c1c01b75a8d52a1ae7bb0d0d4c0167464f5a384f55507997effed331a3fe1"
+  },
+  {
+    "stage": "S7",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "eab707bee8cc44cc24941cb0d3bb6ce8e675e954c40d15cb2d64ae9c8c174890"
+  },
+  {
+    "stage": "S7",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "f8437aaf648ea59856d5a3a0d780bd6262a7bd3bfb6791181b1b919148d0c043"
+  },
+  {
+    "stage": "S7",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "af2ed29745a22a9e3bc806e048c4d4cb1394923d33da89e8f0859d05318c17b8"
+  },
+  {
+    "stage": "S7",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "a3252d4bb38c4e690f46afec39d4d3947df06f84770aa5e747de155e3ddeaea3"
+  },
+  {
+    "stage": "S8",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "b62fc536d361c91cdec42cea18d27610488e3c29e07b8bef11448299ec960026"
+  },
+  {
+    "stage": "S8",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "8d3a6c93237e403894fe84211cf6985b74df01b9bb5630a7207d79ab9f525725"
+  },
+  {
+    "stage": "S8",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "ef469389b7cc5e522bd44e17c2e8e5ff56828b9c0b979359dc79f6d73025e621"
+  },
+  {
+    "stage": "S8",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "f313ae337fa04ab5738a67073c240c40725ac49298b4de1a2df834fbc1c40f93"
+  },
+  {
+    "stage": "S8",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "b43bb080fa3340edcf9609035d9706b6d013d8e7e688a8460827741fed3317c1"
+  },
+  {
+    "stage": "S8",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "bc38a3d01ad6269b34f3123eb99288e2d792f66394bb9f462536f2615cd05104"
+  },
+  {
+    "stage": "S8",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "439b5c8e88d512a789492e86f4999ce795fd660ca8fa583358c7ed34c72c8d40"
+  },
+  {
+    "stage": "S8",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "1719ae03090bf388c02b0a5b0376fda815f3cbc6b2430f7167363dc1a05e7bdd"
+  },
+  {
+    "stage": "S8",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "1247586c9e1a2ee376f4084e9766fd431ac47d75333314cb683fd4a8a68df1e1"
+  },
+  {
+    "stage": "S9",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "20c35c707a1d6346be3c8e0f830c2a0942d2823f92a47db93746a34fbfad85c5"
+  },
+  {
+    "stage": "S9",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "fbfa198caa33d9f6926b2f155fb2456fdb12c8b1cc712eaae0bb2ca490646aff"
+  },
+  {
+    "stage": "S9",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "bc7b11bfe71e5094825d38f51a4ee48ad0def2a83cc05b829a1dbe05a1e20c6e"
+  },
+  {
+    "stage": "S9",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "876bc3484acd01734fa078c25769bfbeb19b229378525b24103678a7ce23de68"
+  },
+  {
+    "stage": "S9",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "90ec52bff4726afc4334dffac9f592cdb6cbf551fb4b820e4974d0060567399c"
+  },
+  {
+    "stage": "S9",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "ac20da726a9a656bd186dd6bd7753e0367e68644e8780ba28d6c6d58bc7a5cc8"
+  },
+  {
+    "stage": "S9",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "c32f5527efbdd14cb5fd176afb3bfeb8bd879a8a6001e95f74b3611d47f6b550"
+  },
+  {
+    "stage": "S9",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "2021753335da9e6b769230bd03dd03d686c05ecb6f0ed2adcf92f8c65c409d6b"
+  },
+  {
+    "stage": "S9",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "0cf674b9cfee80414f091a86a4177eea35cf240deadb634f032b1f9c1edbe6f7"
+  },
+  {
+    "stage": "S10",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "2087b892b722a5865dfd5d46dce155fc3fb6afd45a7b0e4686768b165a51480f"
+  },
+  {
+    "stage": "S10",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "db963b043d81e4476e3e5f59838c98f83ffedc41ab0d9f8e18f4d09158568610"
+  },
+  {
+    "stage": "S10",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "4e0931853bef6fa8ec29134df9910b0510ba569c26a6f24c5f43a78d12871292"
+  },
+  {
+    "stage": "S10",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "061a200e9787e6d4f9797031e0a81c195b4daf8b1124b2716e5f623241132d9a"
+  },
+  {
+    "stage": "S10",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "5387b03c28a7a1aa6d93d4b264444342935efe24eb2e570fcf77b44e648df8e9"
+  },
+  {
+    "stage": "S10",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "56c9140125253805569c595d0814e2a3eeab98d85456290091ed06384b4b1538"
+  },
+  {
+    "stage": "S10",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "6bc406542855842bb4066b7a8011c02c8d0afeeefc81808941245956e8c79fa6"
+  },
+  {
+    "stage": "S10",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "0db7bab545b055328707ad595ce3929f59d717b4fb395c9718da61da86cadbe9"
+  },
+  {
+    "stage": "S10",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "8f7ee25649fbe7296136024e09910fddfa10d522e428fca1346e80795495d502"
+  },
+  {
+    "stage": "S11",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "c01ab76484a6776514ef21d6e2c8ca007240c13a3fd51a29d65116719f43cdbc"
+  },
+  {
+    "stage": "S11",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "f510cd4bd9330a8ed896b48396f8d9f08279afffcee9bbb952411c39d89a11dd"
+  },
+  {
+    "stage": "S11",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "aa76dbd808d3d0f0c3800aca576b67426411c7c0d9df0172825dc08c3573d73f"
+  },
+  {
+    "stage": "S11",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "d0d76e397d7e2bc5701e5d3402a4fceecfedf73896290efcd69c912d202fb80f"
+  },
+  {
+    "stage": "S11",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "55b495818a4fd95dd8f71ecd7ce7321ea0c530ec72e9dfd4ec4d9d5405ec2250"
+  },
+  {
+    "stage": "S11",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "c64944512eb764967e0abf8b2d05ddc3ac549bb492b54aaa6184b5bfaaa371af"
+  },
+  {
+    "stage": "S11",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "f1c98cda270eb0ec42a247e617caa9cca5fe35fe6731839ebb8933b5567c21b9"
+  },
+  {
+    "stage": "S11",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "24899fd5551f736f13ba9ea32270a856f6edc8f71d304b3f4ba80f532c38001c"
+  },
+  {
+    "stage": "S11",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "820ea274d5e661f0b33a95ccbe1e3fe0b76d254ad2f14c09fd26b6cbb130812a"
+  },
+  {
+    "stage": "S12",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "594e8ffb7bcaa1e047c2d9c71ff9597fee4973a6a4f7ec9b10b25543c8c7a820"
+  },
+  {
+    "stage": "S12",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "3d5502b7e808a89f0f8a0bb5ceff4e6e3dfc8745f0007ff53e0943f86e325984"
+  },
+  {
+    "stage": "S12",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "477c2495ef3e193459a501bc8a804709b4b40af43a9066119489915c4e8fe921"
+  },
+  {
+    "stage": "S12",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "344f2fb7b021853ad13188616ea074c2a9dff30f5abcbf145674d06c5478ecca"
+  },
+  {
+    "stage": "S12",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "681a22016b91bcf96389c3e78a15b40b2a9764d76c9637037a37a41e5840a725"
+  },
+  {
+    "stage": "S12",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "2b02bdc7f86e9e4f549f37cc2397f0274c085873b7f03b21d7c626937e0a9b64"
+  },
+  {
+    "stage": "S12",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "7599a27cd361e716654507928df2dcce9be77a47d891f11a8861619a48c4e976"
+  },
+  {
+    "stage": "S12",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "fa36a7d627aac5c62d99db4680745d9f401580ddb960253d578f6e2e7733318d"
+  },
+  {
+    "stage": "S12",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "d0b6157e3c4ca5b82974798695b258e76360b47d0ae2a7bc64f162f82f970ca9"
+  },
+  {
+    "stage": "S13",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "c56454d3631fde20ea36566423f27469a036c54667b3525afdf3d0446010834e"
+  },
+  {
+    "stage": "S13",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "98ad7d22d3a16137fc7b876fcb4d5e17a285f7fb08b39c999c5f7d65f7f75ef1"
+  },
+  {
+    "stage": "S13",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "eefd9ff0293c46bca32a768a6e8a1b0ff81d106e9e234fccd6edf208e42f8072"
+  },
+  {
+    "stage": "S13",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "03eee3693f366013642950ade69248a51035feaa76aedf6f22018af195b950e0"
+  },
+  {
+    "stage": "S13",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "001565ab5df8eece257ead50376ec4150bbe31c3068a3f7f2828503b240de8e2"
+  },
+  {
+    "stage": "S13",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "35457a7be12b37f13f2157b7e4b2e6400d179f866e28d9f606d8b7cc94820d40"
+  },
+  {
+    "stage": "S13",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "adfece2ee298f86b94cf47573065ddf1ee357b01ee5ff4b0eb3967c9b4a3f89a"
+  },
+  {
+    "stage": "S13",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "8755208863f6b071d68bba71064a1217c26f084d55d568b2310c4d8f160bd3fb"
+  },
+  {
+    "stage": "S13",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "b970457fb4512249d7873ab7f0a2d461ec7f489e3fa2a57a94f3f6ab0f7a0a5f"
+  },
+  {
+    "stage": "S14",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "ec3938e938fe3ecd9ac6b8beb6e889814db05d5d5d80fee90993b45efbff3553"
+  },
+  {
+    "stage": "S14",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "7bd1b7a9dfe3345933265833d2a0ab53b89817f45828441bba4fd75422f1e7b1"
+  },
+  {
+    "stage": "S14",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "c10e0167f3500be0b855de93a17d4baaec39a3e9f0e7fced34c88967cc68c1b9"
+  },
+  {
+    "stage": "S14",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "cf012b58f9b138cef68112e8c6d7f9bc2a0634f579ebf4026349a2cd3ffd7752"
+  },
+  {
+    "stage": "S14",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "3085b03da9f361d419835d5707120d93741ac09ad1f85a5b9f8e2562b9510ca2"
+  },
+  {
+    "stage": "S14",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "52b3e005f987667da6522fba9592fcf55078b7175ae8c691bdbfac55a557525d"
+  },
+  {
+    "stage": "S14",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "56a5d4da6e01bbeb51f4e719a6da2c100f4cdf0a0a89c0bda3eb31facc70d893"
+  },
+  {
+    "stage": "S14",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "7d4bf3dfab311eacabf40535bb7cba2a6ce4216e3186326fe43b7282dd6a0b70"
+  },
+  {
+    "stage": "S14",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "49a56b8fa892d85e3286ff35e680c01bafac31388c34ca2d02a1c38c9b052c6b"
+  },
+  {
+    "stage": "S15",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "8056f99770a8c0dd74a907dd79080cf99af0c96723ec626e3c7ac794a2605cf9"
+  },
+  {
+    "stage": "S15",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "586af0336b4abdd176342feae7ff03554c8865449727398e51c1c27cebe1a241"
+  },
+  {
+    "stage": "S15",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "db4e01396f29b3ef47c729c0b70c3a632e67a709bc7822b4cdba42690f823ec1"
+  },
+  {
+    "stage": "S15",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "bebb4339cd2ddfb052d3811bab6fa3d696af0fb54c94bf72924d836765b596bf"
+  },
+  {
+    "stage": "S15",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "eacd1d6c3b02faef621194079851c2851c11bce29a600670ec6a0cb0694fbcc0"
+  },
+  {
+    "stage": "S15",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "1716ac946b5be8faaa966f7c9787aa9b19642ba7adf758b7007632b9cc30907a"
+  },
+  {
+    "stage": "S15",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "9d45c2654cedb81d572d1a8b7914b9c6c492d9a706de066bbd2a11a54d6b119d"
+  },
+  {
+    "stage": "S15",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "2adde5c7a9c478935b03c63a3d6b8d5b1ffe5c51fece40e56aed3e1ffdfd5a4b"
+  },
+  {
+    "stage": "S15",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "48e604393919c9dc09431a356be8b3f1f5e75e64101fda343ce5bfc6f128fc13"
+  },
+  {
+    "stage": "S16",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "a0bd4a8a8e2bb5dd5bd7586780073f60d3dc9313722a88622e4d6f391f928a8d"
+  },
+  {
+    "stage": "S16",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "d479f8c251b0489ac9c3b17101ae98c91622a698103aea47d2b5f1f5cc0340d4"
+  },
+  {
+    "stage": "S16",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "280958326e2357155f55eeaa6e4689e4335c53e29c95e2b55412c2d3c95b3f88"
+  },
+  {
+    "stage": "S16",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "1767c6c7f9048c3816d843e655b9f31c3c20b2cc87c0e05d9617b9ee881003e7"
+  },
+  {
+    "stage": "S16",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "fd54c6f2b21abc4f3ba4aadd41b7c8bc81bd4b00e59869308795170830f1896e"
+  },
+  {
+    "stage": "S16",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "d6a9ba8bc129bef0cb3f86c050740870f845512063fc51974609ba380697f90d"
+  },
+  {
+    "stage": "S16",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "34eedc5a45190a133d7adf09042742d259916bf33849249229f742e6ceba824a"
+  },
+  {
+    "stage": "S16",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "cbd2854c4a37a4e5b122cd6340318ca1947d659cf124ce349a8d0202996948be"
+  },
+  {
+    "stage": "S16",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "8cb31141edef1ee7c891d4b1c9921a906666fdfa19a24a97ddf5d47be04d7f26"
+  },
+  {
+    "stage": "S17",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "0048619f378ea6961b266e2f8d52b74ecc15d486b542d29bb5499fe8ca6e900f"
+  },
+  {
+    "stage": "S17",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "e2e02988ef0aaa18556b453edecd1fbc87ab1bdb9bd778add2e45d18519b34cf"
+  },
+  {
+    "stage": "S17",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "ad6c0535d71a7b250e45e764e28f413915e0c1cd6f39084b3fff69d369951f0b"
+  },
+  {
+    "stage": "S17",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "7231528208a5de23165c3e3d4896b437cb33c2ffbc3dd48df4f3c86d0036c462"
+  },
+  {
+    "stage": "S17",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "1ff8dd8b45104a52e4b4239b6a1df9167cb397728e597cdc6b6842ef10b0bcbb"
+  },
+  {
+    "stage": "S17",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "81f1b87f05ac166c928394fb1829cc20be515d78446801e97d6dc839ba67c988"
+  },
+  {
+    "stage": "S17",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "423325c27346fc7aeeabafead4cf4c0c06257e63f61a40dd10d829d4ee1e9f8a"
+  },
+  {
+    "stage": "S17",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "2f26af4ec94a589b44ebc814f2ed9f8f4b136dd2b7ad6f9a5b26d07fda5ba907"
+  },
+  {
+    "stage": "S17",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "6975e934f8ac38c48d33fe67ec9865fe103c8477a556c58cf8e506e524e386c4"
+  },
+  {
+    "stage": "S18",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "73651906bc3049377fb35f4d9bd0ac68bf10296fd1c4d1a0a22bb0c009f72fdb"
+  },
+  {
+    "stage": "S18",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "f47e0690ecce022a7452d41657b7cb81bf952704b53aa3b43c43ddcb7ef469b4"
+  },
+  {
+    "stage": "S18",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "f8406bf11fb2734648badd136570f969a82d3f97a45542f5137b35467f099478"
+  },
+  {
+    "stage": "S18",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "803d826f286576defce1e5aa6cf2e9f4417a16815ef7bf41929dc6cc78593c36"
+  },
+  {
+    "stage": "S18",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "f890905a2d4f23da4c962a860663c27d1b346e42516378160777d1e13fdf6438"
+  },
+  {
+    "stage": "S18",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "abc05b696b2447e5825ddad409486f49614cf6cb7acd9c739331f833a955152a"
+  },
+  {
+    "stage": "S18",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "b4f7f70912667952ab48de8d96df91e8c0b18d96bb2f2186636ea567e651e832"
+  },
+  {
+    "stage": "S18",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "0c3d238214dfa66f1f55ec5fe47bdcbb655febb963624991ea91bc7157501760"
+  },
+  {
+    "stage": "S18",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "1a1b4e67548a93fc72ded7b3a31de81dbf9f212c0709d96e241abb52e388db7f"
+  },
+  {
+    "stage": "S19",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "96777cc15c396c9f24d54253a351f3c6d5fbf86dcb6a255c244a97ffb7998454"
+  },
+  {
+    "stage": "S19",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "62f8119b39ad122f6ff08abb7f9ba345bc8e121dd5629f47188c0f0f98cecf11"
+  },
+  {
+    "stage": "S19",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "05d25e19a187ac36d150c378adcdddb270d696b6acb474c2aba452b8fbcd3788"
+  },
+  {
+    "stage": "S19",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "0df1c3947dd7e0386c611c28222e6d8e083717a24bf9e21e0cc198d4ece89185"
+  },
+  {
+    "stage": "S19",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "b9479b5e2bf5bfa38ab8426d375affeae3f46317096e7f692e1b2872ccb3fc2f"
+  },
+  {
+    "stage": "S19",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "e76664c898ea059343c657e9f2a806a70789b731d6229645d69ce865f4c2a064"
+  },
+  {
+    "stage": "S19",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "ade0c1f373a011ee8bc7a043e8648dbdb9939512c3a1d1651acdff471ef69753"
+  },
+  {
+    "stage": "S19",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "050d670c8211e78a4731ce34588451752c3c4d865490977395def16bff101e6e"
+  },
+  {
+    "stage": "S19",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "4240d8ea0ecf9a9fed509a962f7b8348dfc6c3b3d645970fdfe5cd107d87faae"
+  },
+  {
+    "stage": "S20",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "fe75bf4d9f9626bd8e342cc79ecd2b89db4ab76d4cb827ef43e911b92741aff9"
+  },
+  {
+    "stage": "S20",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "16e4b92ad1a72f30463dc6f36ad22ce11fe6b460bc6253565de6c4b6d1dab413"
+  },
+  {
+    "stage": "S20",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "9f6011e3383ddaecc0420cb5de14007c8d875f549e1ba0001389f27e73a141b4"
+  },
+  {
+    "stage": "S20",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "d05f3c1a96dd6b747c7a976a2e464e86e05819922ea72c9d2715f9afa8114457"
+  },
+  {
+    "stage": "S20",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "007d7e98b12c48db3dedd12ced3afc00e632f47d7b9dd5f6519a66441ebb295e"
+  },
+  {
+    "stage": "S20",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "0f1b2a0c8558399028d232b218db983eaef0ca3ad47289c2a5567a7f47abf9ec"
+  },
+  {
+    "stage": "S20",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "c2708576f8408856f542ada6488989fb873a89b76d95c2c067bdad2d6f9383a0"
+  },
+  {
+    "stage": "S20",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "ef71c33b7bae1f0c551458fa129b61ce64815527361d66f50d61c153d878c2fe"
+  },
+  {
+    "stage": "S20",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "f88941cda05a5a000321273b6013e7e4e82f01df9c3f62b8704d6e3799608def"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "ee1f38ac3ef7c177871310100da39165d4ad32e6cdae5aefdb44789edc457390"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "9b007b8ad2fd294aff99e6f1494e3fdeb41f5604d7dbe846f4613110bd8f9db2"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "2527b0c66a9c0a5dfa7d56dbf92fa4b0618b678cfb5306288d14b9789619c87f"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "0c0d92698f37f824c3899707725a57659d58472bfc87fae0bc12f7b1c4e411ca"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "e71154f9a8b05086f517829fa3f120a22bac7685cf9c9014fe7fc0b38386b51d"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "9b1cf62ee5b73cad7c6a1426a91d512d1635231dbb0c2960bdfe0598520a3e37"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "18e9ef733bd39652575acf1acb92b3cb0e73fa1cf078e86b3c9f68c7df80b0a2"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "a22e0e07c5770a4da07fab461abbb9f5105c876d904051df2a91c3e5cd75da92"
+  },
+  {
+    "stage": "TD1",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "c4e0f2496baccbe606c86872aa949714a1113e38f391509f783e9d106aa70c12"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "d74ea6c5c331bb7f4a0536f209b3d1d0bc855867a46a6358eedce7b5cb5b6ed4"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "da0f4ae1d77754eea3705377a8f8b9e21bc8ae5ec275c41ed11d50355259361e"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "d1ad5ceeeee5e05066eb6487a23e08083ec4f4b0bcbb8122f18d4eaa5f5e0ff8"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "ad81eea2e674657aae1c22399dca04912dfb320d869bb4a189cd1edad0bbe2c2"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "42a0cf3f253c2e3eadebf4a9bb185445c793370db78bc49558194ccd7f20efa3"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "4c71f1464833aa5088891d01ed4008039f5dceee496d6b8bf2d8dc739ffd7652"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "757636ec89d5c9e5d1a7612daaac5a90413f1f6ddd3a0d53413a2caded306ad9"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "dbeaf4638b7a94ae8f29c5021da55f2fedc8c23ad20ccd59530211398ddf8770"
+  },
+  {
+    "stage": "M_THRONE_GARGOYLE",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "16ce2384b805811eaa898294e92726c8f5b5f0c0842fa8b27c3e2238613908b2"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "417afa72e0c988e4d66949432f91246431fe906a9978b7916e47d4717e86fc43"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "2a3588f81d26828a7d470a1a35bd11138ee2efb9ec73216d77035b4b38ff1c13"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "5ec5d9fe8229f14f8799e8e79200e0e7b862f94a4b60911bf3673ba02786b2f1"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "6024cbb1fd3028e13f55b067701c8cf07def085562dec612d830ddc9175d4f17"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "a8a7d459d804a252b35aad4cb0d31b164ac20fcecb6071401e2034d1f7ef01d8"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "d7769ed19414cc8deaca508705d3764d32fd20e65b2aae7a99dd76dbce866a92"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "2833a9ecf99f9cd89abb8ff6d067b119068b6af899a2a5de53c5adb0bfa29539"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "30be722de7de0e9ecd7d812649cfa9a40a7fddc61263f6842ab8df48e254aa53"
+  },
+  {
+    "stage": "M_MINE_CART",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "54d80dca457b71ee9e25de1ac0a55b0d7af0757b3fa5023ba6f464689013edd8"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "blade",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "dad222ebc548e81b4ef41b5a7a5ef099c648a14a81e9741ea9f5edd19bd9b273"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "bow",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "886449b1b413c1127016eef6e07daf1c5e7edb0d7026c5efa4e4a55c924fca14"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "focus",
+    "seed": 1,
+    "ticks": 900,
+    "sha256": "b0b08aaed82618274e7c94711c2a4d324d8d2ee8800cd273db56299a8663dddc"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "blade",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "3a960ff4a63c24a6cf2898e2d127ac8cb4446c02e9dbef119488d1497d24e7cf"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "bow",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "78f725bba6a437672186ab3abdc1d484c5ef986dea49a70d24de50bba393ea6f"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "focus",
+    "seed": 42,
+    "ticks": 900,
+    "sha256": "43ebb4dc7438dc5c4277b9a7df0ef71085ecd6106e11589bfdfe5dba96274f77"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "blade",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "04a2728aebbca5332f55c386442442db620e725a79f3008e8c21d49a5552a229"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "bow",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "35b3a20e4d0ce24b7151061354d7faeaaa48476484937b8567e3c72428415e2b"
+  },
+  {
+    "stage": "M_MARSH_MARKERS",
+    "weapon": "focus",
+    "seed": 999,
+    "ticks": 900,
+    "sha256": "1fc4cbc79f1236a3bdaa7ccd6f4641b9b8d7bd28707fd96a40caecf18ad7c047"
+  }
+]
