@@ -57,7 +57,7 @@ test('B1 exact timings, MP/CD and ground-slam front-offset circle / armor-break 
   assert.equal(hits.some(e=>e.dst===outside.id),false);assert.equal(hits.filter(e=>e.dst===rear.id).length,1);
 });
 test('B1 blunt slash alone gains 1.4 poise; damage and reach unchanged, stacked with STR/counter separately',()=>{
-  const run=(form,counter=false)=>{const{w,p}=scene('lunge',form ?? null);p.poiseMult=1.2;const m=target(w,470,400,'goblin_chief');const events=[];
+  const run=(form,counter=false)=>{const{w,p}=scene('lunge',form ?? null);p.poiseMult=1.2;const m=target(w,470,400,'iron_boar');m.poise=m.maxPoise=1000;const events=[];
     if(counter)p.pendingCounter={attackerId:m.id,dodgeTick:0,expiresTick:1000};
     step(w,{a:{...emptyInput(),attack:!counter,aimX:1}});
     while(!events.some(e=>e.type==='hit'))events.push(...step(w));return {hit:events.find(e=>e.type==='hit'),poise:m.poise};};
