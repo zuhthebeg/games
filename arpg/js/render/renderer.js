@@ -7,7 +7,9 @@ import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES } from '../content/combat.js';
 import { healingFeedback } from './healing-feedback.js';
-import { SkillVfx, SKILL_VFX } from './skill-vfx.js';
+import { SKILL_VFX } from './skill-vfx.js';
+import { MasterySkillVfx as SkillVfx } from './mastery-vfx.js';
+import { masteryLevels } from '../meta/skill-mastery.js';
 import { bakeBiome } from './biome-map.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
@@ -90,6 +92,7 @@ export class ArenaRenderer {
 
   reset(world, reduced = false, equipmentSave) {
     this.skillVfx.reset();
+    if (equipmentSave) this.skillVfx.setMastery(world.entities[0].pid, masteryLevels(equipmentSave));
     this.areaImpact.reset();
     for (const view of this.views.values()) {
       view.visual.destroy();
@@ -230,7 +233,7 @@ export class ArenaRenderer {
     particle.node.visible = true;
   }
 
-  effect(x, y, r, color, life = .3, kind = 'ring', shape = null, facing = 0) {
+  effect(x, y, r, color, life = .3, kind = 'ring', shape = null, facing = 0, mastery = null) {
     const effect = this.effects.find(effect => effect.left <= 0);
     if (!effect)
       return;
@@ -255,6 +258,8 @@ export class ArenaRenderer {
     effect.node.scale.set(1);
     effect.left = effect.total = life;
     effect.kind = kind;
+    effect.mastery = mastery;
+    this.skillVfx.decorate(effect.node, mastery, shape, r, color, 0xffdf9c);
   }
 
   burst(x, y, tier, color, facing = 0) {
@@ -301,10 +306,15 @@ export class ArenaRenderer {
   }
 
   events(world, events) {
+    events = this.skillVfx.events(events, world);
     const areaTiers = this.areaImpact.tiers(events, world);
     this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const event of events) {
       const entity = world.entities.find(entity => entity.id === (event.dst ?? event.id));
+      const caster = world.entities.find(e => e.id === (event.src ?? event.presentationOwner));
+      const visual = this.skillVfx.visual(this.skillVfx.level(caster, event.ability), event.ability, this.reduced);
+      if (!this.reduced && visual.afterglow && caster?.pid === world.entities[0]?.pid && ['hit', 'explode'].includes(event.type))
+        this.trauma = Math.min(1, this.trauma + .035);
       if (this.skillVfx.event(event, world, this.reduced)) continue;
       if (healingFeedback(this, event)) continue;
       if (event.type === 'hit') {
@@ -450,10 +460,16 @@ export class ArenaRenderer {
           .stroke({ color: 0xe88e50, width: 2, alpha: .65 });
         view.bluntCharge.position.set(entity.x, entity.y);
         view.bluntCharge.rotation = entity.act.facing;
+        const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
+        view.bluntCharge.scale.set(1);
+        this.skillVfx.decorate(view.bluntCharge, visual, entity.act.def.shape, 0, 0xe88e50, 0xffdf9c);
+        view.bluntCharge.alpha = Math.min(1, .65 * visual.brightness);
       }
       const active = entity.act?.phase === 'active';
       if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastAct !== entity.act) {
-        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, blunt ? 'blunt' : 'slash', entity.act.def.shape, entity.act.facing);
+        const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
+        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, blunt ? 'blunt' : 'slash', entity.act.def.shape, entity.act.facing, visual);
+        if (visual.extraParticles) this.burst(entity.x, entity.y, { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, entity.act.facing);
         view.lastAct = entity.act;
       }
       if (!entity.act)
@@ -585,6 +601,7 @@ export class ArenaRenderer {
       effect.node.visible = effect.left > 0;
       effect.node.alpha = Math.max(0, effect.left / effect.total) * (this.reduced ? FEEL.effects.reducedAlpha : 1);
       effect.node.scale.set(effect.kind === 'ring' ? 1 + (1 - effect.left / effect.total) * FEEL.effects.ringGrow : 1);
+      this.skillVfx.enhance(effect.node, effect.mastery);
     }
     for (const particle of this.particles) {
       if (particle.left <= 0) continue;
