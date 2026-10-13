@@ -127,11 +127,8 @@ export class InputLayer {
   setAutoAttack(on) {
     this.autoAttack = !!on;
     globalThis.localStorage?.setItem('arpg.autoAttack', on ? '1' : '0');
-    for (const node of document.querySelectorAll('[data-auto-toggle]')) {
-      node.setAttribute('aria-pressed', String(this.autoAttack));
-      node.classList.toggle('on', this.autoAttack);
-    }
     document.querySelector('#attack')?.classList.toggle('auto', this.autoAttack);
+    document.dispatchEvent(new CustomEvent('arpg:auto-attack'));
   }
 
   latch(action) {

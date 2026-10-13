@@ -212,20 +212,26 @@ try {
   const roundMobile = await rectangles('#actions button');
   validateRects(roundMobile);
   assert.equal(roundMobile.rects.length, 6);
-  // Auto attack toggle (cocy 10-11): visible, non-overlapping, persisted, reflected on the attack button.
-  validateRects(await rectangles('#actions button, .battle-auto, .stage, .vitals'));
-  // A real tap must land on the HUD toggles, not fall through #hud (pointer-events:none) to the canvas.
-  for (const sel of ['.battle-auto', '.battle-settings']) {
-    assert.ok(await evaluate(`(()=>{const b=document.querySelector('${sel}'),r=b.getBoundingClientRect();
-      const top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !!top&&(top===b||b.contains(top));})()`), `${sel} is not hit-testable`);
-  }
-  const autoBefore = await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')");
-  await evaluate("document.querySelector('.battle-auto').click()");
-  assert.notEqual(await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')"), autoBefore);
-  assert.equal(await evaluate("localStorage.getItem('arpg.autoAttack')"), autoBefore === 'true' ? '0' : '1');
-  assert.equal(await evaluate("document.querySelector('#attack').classList.contains('auto')"), autoBefore !== 'true');
-  await evaluate("document.querySelector('.battle-auto').click()");
-  assert.equal(await evaluate("document.querySelector('.battle-auto').getAttribute('aria-pressed')"), autoBefore);
+  // Auto attack lives in the battle settings panel (cocy 10-13): persisted, reflected on the attack button.
+  assert.equal(await evaluate("document.querySelectorAll('[data-auto-toggle], .battle-auto').length"), 0);
+  validateRects(await rectangles('#actions button, .battle-settings, .stage, .vitals'));
+  // A real tap must land on the HUD toggle, not fall through #hud (pointer-events:none) to the canvas.
+  assert.ok(await evaluate(`(()=>{const b=document.querySelector('.battle-settings'),r=b.getBoundingClientRect();
+    const top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !!top&&(top===b||b.contains(top));})()`), '.battle-settings is not hit-testable');
+  const autoBefore = await evaluate("document.querySelector('#attack').classList.contains('auto')");
+  await evaluate("document.querySelector('.battle-settings').click()");
+  assert.equal(await evaluate("document.querySelector('#battle-settings').hidden"), false);
+  assert.equal(await evaluate(`document.querySelector('#battle-auto-${autoBefore ? 'on' : 'off'}').getAttribute('aria-pressed')`), 'true');
+  validateRects(await rectangles('#battle-settings button'));
+  await evaluate(`document.querySelector('#battle-auto-${autoBefore ? 'off' : 'on'}').click()`);
+  assert.equal(await evaluate("document.querySelector('#attack').classList.contains('auto')"), !autoBefore);
+  assert.equal(await evaluate("localStorage.getItem('arpg.autoAttack')"), autoBefore ? '0' : '1');
+  assert.equal(await evaluate("document.querySelector('#attack').classList.contains('auto')"), !autoBefore);
+  assert.equal(await evaluate(`document.querySelector('#battle-auto-${autoBefore ? 'off' : 'on'}').getAttribute('aria-pressed')`), 'true');
+  await evaluate(`document.querySelector('#battle-auto-${autoBefore ? 'on' : 'off'}').click()`);
+  assert.equal(await evaluate("document.querySelector('#attack').classList.contains('auto')"), autoBefore);
+  await evaluate("document.querySelector('.battle-settings').click()");
+  assert.equal(await evaluate("document.querySelector('#battle-settings').hidden"), true);
   await waitFor(page('level-up'), 38000);
   assert.equal(await evaluate('__arpg.world.round.t'), 900);
   assert.equal(await evaluate('__arpg.save.level'), 2);

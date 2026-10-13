@@ -78,11 +78,6 @@ try {
     document.querySelector('#actions'),
     (x, y, vector) => renderer.aim(x, y, vector),
   );
-  // Pointer-only toggle; tapping it must not leak into combat input.
-  for (const node of document.querySelectorAll('[data-auto-toggle]')) {
-    node.addEventListener('pointerdown', (event) => event.stopPropagation());
-    node.addEventListener('click', () => input.setAutoAttack(!input.autoAttack));
-  }
   input.setAutoAttack(input.autoAttack);
   // Auto potions/return become ordinary edges for the local pawn; manual input still wins.
   const combatInput = player => applyAutoUse(input.consume(), player, autoUseSettings(hub.save));
@@ -96,7 +91,7 @@ try {
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
-  bindBattleSettings(document);
+  bindBattleSettings(document, input);
   document.addEventListener('arpg:fx-mode', event => renderer.skillVfx.setEffekseer(event.detail?.mode !== 'classic'));
   const hub = new HubUI({
     save: saved,
