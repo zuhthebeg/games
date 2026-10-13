@@ -37,6 +37,10 @@ test('render-only frozen world and two casters: remote level does not inherit lo
  const w={tick:1,entities,projectiles};const freeze=o=>{Object.values(o).forEach(x=>{if(x&&typeof x==='object')freeze(x);});Object.freeze(o);};freeze(w);const before=JSON.stringify(w);
  for(let i=0;i<20;i++)v.update(w,1,.016,false);assert.equal(JSON.stringify(w),before);assert.equal(v.projectiles[0].mastery.level,1);assert.equal(v.projectiles[1].mastery.level,5);assert.equal(v.projectiles[1].node.scale.x,1);
 });
+test('active dash keeps classic crescent paths but clamps inherited charge scale/open-stroke glow to actual body; mask retired',()=>{
+ const v=fixture();const e={id:1,pid:'a',kind:'player',x:100,y:100,r:18,act:{id:'lunge',def:ABILITIES.lunge,phase:'active',elapsed:16,total:20,facing:0}};
+ for(const level of [1,3,5]) {v.reset();v.setMastery('a',{lunge:level});v.update({tick:50,entities:[e],projectiles:[]},1,.016,false);const slot=v.actors[0];assert.equal(slot.node.scale.x,1);assert.equal(slot.bodyMask.getLocalBounds().maxX,32);assert.ok(slot.node.mask);v.update(empty,1,.016,false);assert.equal(!!slot.node.mask,false);assert.equal(slot.bodyMask.visible,false);}
+});
 test('mastery camera kick is local Lv5 only and never applied in reduced motion',()=>{
  const kick=(pid,level,reduced)=>{
   const renderer={skillVfx:fixture(),areaImpact:{tiers:()=>new Map()},telegraphs:[],reduced,trauma:0,number(){},burst(){},impact(){},effect(){}};

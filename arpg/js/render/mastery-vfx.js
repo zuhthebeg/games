@@ -18,6 +18,11 @@ export class MasterySkillVfx extends SkillVfx {
     super(Graphics, layer, options);
     this.levels = {}; this.context = masteryVisual(); this.presentation = new Map();
     this.projectileOwners = new Map();
+    // Classic dash charge scale and open-arc stroke joins can spill past the body.
+    // A bounded actor mask keeps the same crescent paths inside the real body radius.
+    for (const slot of this.actors) {
+      slot.bodyMask = new Graphics(); slot.bodyMask.visible = false; layer.addChild(slot.bodyMask);
+    }
   }
   setMastery(pid, levels) { this.levels[pid] = { ...levels }; }
   level(entity, ability) { return this.levels[entity?.pid]?.[ability] ?? entity?.skillMasteryLevels?.[ability] ?? 1; }
@@ -36,7 +41,7 @@ export class MasterySkillVfx extends SkillVfx {
     const f = .68 * visual.scale, width = Math.min(10 * visual.scale, r * .12);
     if (shape?.type === 'cone') {
       const half = shape.arc * Math.PI / 360;
-      g.arc(0, 0, r * f, -half * .86, half * .86).stroke({color, width: width * 2, alpha:.22})
+      g.arc(0, 0, r * f, -half * .86, half * .86).stroke({color, width: width * 2, alpha:.22 * visual.brightness})
         .arc(0, 0, r * f, -half * .86, half * .86).stroke({color:accent,width:2,alpha:.75});
       for (let i=0;i<(visual.afterglow?7:4);i++) {
         const a = -half * .7 + i * half * 1.4 / ((visual.afterglow?7:4)-1);
@@ -49,7 +54,7 @@ export class MasterySkillVfx extends SkillVfx {
       g.poly([-r*.85,0,0,-r*.30*visual.scale,r*.85,0,0,r*.30*visual.scale]).fill({color,alpha:.5});
       g.moveTo(-r*.7,0).lineTo(r*.8,0).stroke({color:accent,width:Math.min(3*visual.scale,r*.35),alpha:.9});
     } else {
-      g.circle(offset,0,r*f).stroke({color,width:width*2,alpha:.2})
+      g.circle(offset,0,r*f).stroke({color,width:width*2,alpha:.2 * visual.brightness})
         .circle(offset,0,r*f).stroke({color:accent,width:2,alpha:.75});
       // Different existing motifs remain visible; never replace them with a white disc.
       const n = visual.afterglow ? 12 : 8;
@@ -101,7 +106,13 @@ export class MasterySkillVfx extends SkillVfx {
     const result = this.withLevel(level,entity.act?.id,reduced,()=>super.actor(entity,tick,reduced));
     const slot = this.actors.find(s=>s.id===entity.id);
     if (result && slot) {
+      slot.node.mask = null; slot.bodyMask.visible = false;
       slot.mastery = this.visual(level,entity.act?.id,reduced);
+      if (entity.act.phase==='active' && SKILL_VFX[entity.act.id]?.style==='dash') {
+        slot.node.scale.set(1);
+        slot.bodyMask.clear().circle(0,0,entity.r+SKILL_VFX[entity.act.id].dash.bodyPad).fill(0xffffff);
+        slot.bodyMask.position.set(entity.x,entity.y);slot.bodyMask.visible=true;slot.node.mask=slot.bodyMask;
+      }
       if (entity.act.phase==='active' && SKILL_VFX[entity.act.id]?.style==='dash' && slot.mastery.extraParticles && slot.masteryDashKey !== slot.key) {
         const profile=SKILL_VFX[entity.act.id];
         this.decorate(slot.node,slot.mastery,{type:'cone',range:entity.r+profile.dash.bodyPad,arc:120},0,profile.color,profile.accent);
@@ -136,7 +147,9 @@ export class MasterySkillVfx extends SkillVfx {
     if (events.some(e=>e.type==='explode' && Object.hasOwn(e,'presentationOwner'))) return events;
     return presentSkillEvents(events,world,this.projectileOwners);
   }
-  reset() { super.reset(); this.levels={};this.presentation?.clear();this.projectileOwners?.clear(); }
+  reset() { super.reset(); this.levels={};this.presentation?.clear();this.projectileOwners?.clear();
+    for(const slot of this.actors) {slot.node.mask=null;if(slot.bodyMask)slot.bodyMask.visible=false;}
+  }
   enhance(node, visual) { if (node?.visible && visual) node.alpha=Math.min(1,node.alpha*visual.brightness); }
   update(world, alpha, dt, reduced) {
     this.world=world; super.update(world,alpha,dt,reduced);
@@ -144,7 +157,9 @@ export class MasterySkillVfx extends SkillVfx {
       if(slot.bakedActive && slot.left>0 && !reduced) slot.node.visible=true;
       this.enhance(slot.node,slot.mastery);this.enhance(slot.wave,slot.mastery);this.enhance(slot.baked,slot.mastery);
     }
-    for(const slot of this.actors) {this.enhance(slot.node,slot.mastery);this.enhance(slot.baked,slot.mastery);}
+    for(const slot of this.actors) {this.enhance(slot.node,slot.mastery);this.enhance(slot.baked,slot.mastery);
+      if(!slot.seen) {slot.node.mask=null;slot.bodyMask.visible=false;}
+    }
     for(const slot of this.particles) this.enhance(slot.node,slot.mastery);
   }
   status() {
