@@ -14,6 +14,8 @@ import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, mon
 import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
+import { pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } from './dodge-lag.js';
+
 import { createObjective, stepObjective } from './quest-objectives.js';
 
 const PB = PLAYER_BASE;
@@ -162,6 +164,7 @@ function canCancel(act) {
 
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
+  pruneGuestHits(p, world.tick);
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -209,6 +212,7 @@ function stepPlayer(world, p, inp) {
     p.pendingCounter = null;
     p.bufferDodge = 0;
     world.events.push({ type: 'dodge', id: p.id });
+    rewindGuestDodge(world, p, inp, awardPerfectDodge);
   }
 
   if (d.dashLeft > 0) {
@@ -558,23 +562,26 @@ function stepPoison(world, p) {
   }
 }
 
+function awardPerfectDodge(world, t, hit, sinceDodge) {
+  const attacker = world.entities.find((e) => e.id === hit.srcId);
+  // Orphaned hostile shots count as perfect, but cannot schedule a counter.
+  const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
+  if (hit.counter || !hostile || t.dodge.perfectPaid || sinceDodge < 0
+    || sinceDodge > ticks(PB.dodge.perfectMs)) return false;
+  t.dodge.perfectPaid = true;
+  if (attacker) t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
+    expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
+      ticks(PB.dodge.iframeMs + t.iframeBonusMs)) + ticks(BALANCE.counter.graceMs) };
+  world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
+    srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId });
+  return true;
+}
+
 function applyHit(world, t, hit) {
   const def = hit.def;
   if (t.kind === 'player') {
     if (!hit.periodic && t.dodge.iframeLeft > 0) {
-      const sinceDodge = world.tick - t.dodge.startedTick;
-      const attacker = world.entities.find((e) => e.id === hit.srcId);
-      // Orphaned hostile shots (owner already dead) still count as a perfect dodge, just without a counter.
-      const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
-      if (!hit.counter && hostile && !t.dodge.perfectPaid
-        && sinceDodge >= 0 && sinceDodge <= ticks(PB.dodge.perfectMs)) {
-        t.dodge.perfectPaid = true;
-        if (attacker) t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
-          expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
-            ticks(PB.dodge.iframeMs + t.iframeBonusMs)) + ticks(BALANCE.counter.graceMs) };
-        world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
-          srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId });
-      } else {
+      if (!awardPerfectDodge(world, t, hit, world.tick - t.dodge.startedTick)) {
         world.events.push({ type: 'miss', id: t.id, ability: hit.abilityId });
       }
       return;
@@ -604,6 +611,7 @@ function applyHit(world, t, hit) {
   const kbResist = mdef ? mdef.kbResist : 0;
   const ang = Math.atan2(t.y - hit.fromY, t.x - hit.fromX);
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
+  if (t.kind === 'player') recordGuestHit(world, t, hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
   world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}) });
@@ -738,6 +746,7 @@ function explode(world, pr, def) {
 // ---------------------------------------------------------------- physics helpers
 
 function decayKnock(e) {
+  trackGuestKnock(e);
   Object.assign(e, knockPosition(e));
 }
 

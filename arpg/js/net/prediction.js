@@ -15,13 +15,13 @@ export class LocalPrediction {
     if (!p || !Number.isSafeInteger(p.lastInputSeq) || !Number.isFinite(p.speed) || !p.dodge) {
       this.enabled = false; this.state = null; this.pending = []; this.clearOffset(); return;
     }
-    this.enabled = true; this.arena = world.arena;
+    this.enabled = true; this.arena = world.arena; this.tick = world.tick;
     this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
     let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null };
     const blocked = predictionBlocked(p);
     if (blocked) this.pending = [];
-    else for (const row of this.pending) next = predictPlayerTick(next, row.input, this);
+    else for (const row of this.pending) { next = predictPlayerTick(next, row.input, this); this.tick++; }
     if (this.state) {
       const dx = this.state.x + this.offset.x - next.x, dy = this.state.y + this.offset.y - next.y;
       const distance = Math.hypot(dx, dy);
@@ -52,12 +52,12 @@ export class LocalPrediction {
     }
     // The exact command the host will apply for this tick (quantized axes, held buttons, edges).
     const command = { ...input, mx: packet.v[0], my: packet.v[1], aimX: packet.v[2], aimY: packet.v[3],
-      attack: !!packet.attack, autoAttack: !!packet.autoAttack };
+      attack: !!packet.attack, autoAttack: !!packet.autoAttack, viewTick: packet.viewTick };
     if (!predictionBlocked(this.state)) {
       this.pending.push({ seq: packet.seq, input: command, dt });
       // Bound memory through an outage. Stop predicting rather than invent lost history.
       if (this.pending.length > 256) { this.enabled = false; this.pending = []; this.clearOffset(); return; }
-      this.state = predictPlayerTick(this.state, command, this);
+      this.state = predictPlayerTick(this.state, command, this); this.tick++;
     }
   }
   // Display-only partial tick: the not-yet-committed fraction of the current tick,
