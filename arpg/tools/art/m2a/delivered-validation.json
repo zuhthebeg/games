@@ -51,7 +51,169 @@
       "clipped_frames": 0,
       "idle_weapon_projected_span_px": [],
       "min_opaque_pixels_alpha128": 855,
-      "min_opaque_pixels_alpha250": 663
+      "min_opaque_pixels_alpha250": 663,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_SE": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_S": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_SW": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_W": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_NW": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_N": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "idle_NE": {
+          "frames": 34,
+          "unique_aligned_masks": 34
+        },
+        "run_E": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_SE": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_S": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_SW": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_W": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_NW": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_N": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "run_NE": {
+          "frames": 24,
+          "unique_aligned_masks": 24
+        },
+        "attack_E": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_SE": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_S": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_SW": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_W": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_NW": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_N": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "attack_NE": {
+          "frames": 31,
+          "unique_aligned_masks": 31
+        },
+        "hit_E": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_SE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_S": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_SW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_W": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_NW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_N": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_NE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_E": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_SE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_S": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_SW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_W": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_NW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_N": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_NE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        }
+      }
     },
     {
       "name": "ghost",
@@ -94,7 +256,169 @@
       "clipped_frames": 0,
       "idle_weapon_projected_span_px": [],
       "min_opaque_pixels_alpha128": 1225,
-      "min_opaque_pixels_alpha250": 1069
+      "min_opaque_pixels_alpha250": 1069,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_SE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_S": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_SW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_W": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_NW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_N": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_NE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "run_E": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_SE": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_S": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_SW": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_W": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_NW": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_N": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "run_NE": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_E": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_SE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_S": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_SW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_W": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_NW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_N": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "attack_NE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "hit_E": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_SE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_S": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_SW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_W": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_NW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_N": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_NE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_E": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_SE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_S": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_SW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_W": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_NW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_N": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "death_NE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        }
+      }
     },
     {
       "name": "bat",
@@ -137,7 +461,169 @@
       "clipped_frames": 0,
       "idle_weapon_projected_span_px": [],
       "min_opaque_pixels_alpha128": 836,
-      "min_opaque_pixels_alpha250": 668
+      "min_opaque_pixels_alpha250": 668,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_SE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_S": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_SW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_W": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_NW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_N": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "idle_NE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "run_E": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_SE": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_S": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_SW": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_W": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_NW": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_N": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "run_NE": {
+          "frames": 8,
+          "unique_aligned_masks": 8
+        },
+        "attack_E": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_SE": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_S": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_SW": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_W": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_NW": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_N": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "attack_NE": {
+          "frames": 9,
+          "unique_aligned_masks": 9
+        },
+        "hit_E": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_SE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_S": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_SW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_W": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_NW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_N": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "hit_NE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_E": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_SE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_S": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_SW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_W": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_NW": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_N": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        },
+        "death_NE": {
+          "frames": 13,
+          "unique_aligned_masks": 13
+        }
+      }
     }
   ],
   "file_sha256": {

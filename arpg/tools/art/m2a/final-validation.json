@@ -1,0 +1,76 @@
+{
+  "ok": true,
+  "scope": "M2a unplaced ghoul/ghost/bat art and registration only; U5 graveyard region/stages belong to parent",
+  "preserved_wip": [
+    "f96fdaf",
+    "84be4f9",
+    "a931527"
+  ],
+  "recovery_checkpoint": "2e22396",
+  "full_tests": {
+    "total": 674,
+    "pass": 673,
+    "fail": 1,
+    "only_failure": "parent-owned index.html cache-busting stamp",
+    "log_sha256": "6f1d06c7a455e327d27f0b624b5440afad677ab5aff528ca075d2d2b52f3c720"
+  },
+  "all_tests_except_stamp_file": {
+    "total": 672,
+    "pass": 672,
+    "fail": 0,
+    "note": "stamp.test.js contains two tests; full suite above also runs its passing safety assertion",
+    "log_sha256": "0a511b93544266e30985833efe6d30a436a986735e936d9fe93da358e6332a64"
+  },
+  "frames": 1576,
+  "animated_state_octant_clips": 120,
+  "empty_frames": 0,
+  "identical_species_silhouettes": 0,
+  "species_min_unique_animated_masks": {
+    "ghoul": 2,
+    "ghost": 5,
+    "bat": 8
+  },
+  "source_blender_rerun": "5.2.2 LTS; reopened blend proofs identical",
+  "license_validation": {
+    "ok": true,
+    "results": [
+      {
+        "id": "ghoul",
+        "individual_page_and_original_hashes_match": true,
+        "legal_text_hash_matches": true,
+        "license": "CC-BY-3.0"
+      },
+      {
+        "id": "ghost",
+        "individual_page_and_original_hashes_match": true,
+        "legal_text_hash_matches": true,
+        "license": "CC0-1.0"
+      },
+      {
+        "id": "bat",
+        "individual_page_and_original_hashes_match": true,
+        "legal_text_hash_matches": true,
+        "license": "CC0-1.0"
+      }
+    ]
+  },
+  "host_traces": 216,
+  "host_trace_sha256": "92c2cca8615caa5bfd24fc8ebe0e4034e4b566abdc451745687a3ec2b989e629",
+  "native_smoke": {
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "errors": 0,
+    "screenshots": 0,
+    "state_octant_samples": 240
+  },
+  "forbidden_actions_performed": [],
+  "evidence_directory": "/home/cocy/.openclaw/workspace/tmp/arpg-m2a-resume-evidence"
+}

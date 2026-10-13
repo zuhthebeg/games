@@ -49,7 +49,7 @@ test('M2a individual model pages bind source hashes, attribution and full legal 
  assert.deepEqual(preparation.find(r=>r.id==='ghoul').derived_clips,['M2a_Ghoul_CalmIdle','M2a_Ghoul_Recoil','M2a_Ghoul_Death']);
  assert.equal(source.results.find(r=>r.id==='ghoul').skinned_clip_motion.idle.source,'M2a_Ghoul_CalmIdle');
  assert.deepEqual(license.map(r=>r.id),ids);
- for(const r of license){assert.match(r.model_page,/^https:\/\/poly.pizza\/m\//);assert.equal(r.author,'Quaternius');assert.equal(r.license,r.id==='ghoul'?'CC-BY-3.0':'CC0-1.0');assert.match(r.individual_page_text,r.id==='ghoul'?/Creative Commons Attribution/:/Public Domain \(CC0\)/);assert.equal(r.attribution_required,r.id==='ghoul');assert.equal(r.files.find(f=>f.file===r.id+'.glb').sha256,source.results.find(v=>v.id===r.id).original_sha256);assert.ok(r.files.every(f=>/^[a-f0-9]{64}$/.test(f.sha256)));assert.ok(read('../tools/art/m2a/'+r.id+'-page-license.txt').toString().includes(r.model_page));}
+ for(const r of license){assert.equal(sha(read('../tools/art/m2a/LICENSE-'+r.license+'.txt')),r.legal_text_sha256);assert.match(r.model_page,/^https:\/\/poly.pizza\/m\//);assert.equal(r.author,'Quaternius');assert.equal(r.license,r.id==='ghoul'?'CC-BY-3.0':'CC0-1.0');assert.match(r.individual_page_text,r.id==='ghoul'?/Creative Commons Attribution/:/Public Domain \(CC0\)/);assert.equal(r.attribution_required,r.id==='ghoul');assert.equal(r.files.find(f=>f.file===r.id+'.glb').sha256,source.results.find(v=>v.id===r.id).original_sha256);assert.ok(r.files.every(f=>/^[a-f0-9]{64}$/.test(f.sha256)));assert.ok(read('../tools/art/m2a/'+r.id+'-page-license.txt').toString().includes(r.model_page));}
  assert.match(read('../assets-ledger.md').toString(),/Animated Zombie by Quaternius.*CC BY 3.0; modified/);
  assert.match(read('../tools/art/m2a/LICENSE-CC-BY-3.0.txt').toString(),/Attribution 3.0 Unported/);
  assert.match(read('../tools/art/m2a/LICENSE-CC0-1.0.txt').toString(),/CC0 1.0 Universal/);
@@ -63,7 +63,8 @@ test('M2a delivered bytes bind every frame alpha to real articulated geometry an
   const entry=manifest.find(v=>v.id===r.name);const s=source.results.find(v=>v.id===r.name);
   assert.equal(r.frames,r.lossless_alpha_matches_pose_evidence);assert.equal(r.clipped_frames,0);assert.ok(r.min_opaque_pixels_alpha128>=512);assert.ok(r.min_opaque_pixels_alpha250>0);assert.ok(r.max_idle_center_drift_px<6);assert.ok(r.total_bytes<=1500000);assert.equal(entry.bytes,r.total_bytes);
   assert.deepEqual(entry.animations,['idle','run','attack','hit','death']);assert.deepEqual(entry.animation_durations,{hit:.15,death:.6});for(const axis of ['x','y'])assert.ok(Math.abs(entry.anchor[axis]-s.ground_anchor[axis])<1e-6,'independent anchor '+axis);
-  for(const state of entry.animations){assert.equal(r.unique_direction_hashes[state],8);assert.ok(s.skinned_clip_motion[state].max_skinned_rms_world>.001);}
+  assert.equal(Object.keys(r.animated_silhouettes).length,40);
+  for(const state of entry.animations){assert.equal(r.unique_direction_hashes[state],8);assert.ok(s.skinned_clip_motion[state].max_skinned_rms_world>.001);for(const direction of DIRECTIONS){const clip=r.animated_silhouettes[state+'_'+direction];assert.ok(clip.frames>1);assert.ok(clip.unique_aligned_masks>1,'animated alpha silhouette '+r.name+' '+state+' '+direction);}}
   for(const dir of DIRECTIONS)assert.ok(s.direction_vectors[dir].dot>.9);
   assert.equal(s.frames_checked,r.frames);assert.ok(s.max_ground_error_px<.001);assert.equal(s.baked_ground_shadow,false);assert.equal(s.light_shadows,false);
   for(const dims of r.atlas_dimensions)assert.ok(dims.every(v=>v<=2048));
@@ -96,5 +97,5 @@ test('M2a states and octants are readonly; humanoid and unknown-profile guards a
 
 test('M2a native CDP desktop/mobile debug spawn loads 3 kits, 240 state/octant samples and no errors',()=>{
  const e=json('../tools/art/m2a/browser-validation.json');assert.equal(e.ok,true);assert.equal(e.consoleErrors,0);assert.equal(e.cdpPort,19951);assert.equal(e.httpPort,8971);assert.equal(e.screenshots,0);assert.deepEqual(e.results.map(r=>r.viewport),[[1280,800],[390,844]]);
- for(const r of e.results){assert.equal(r.consoleErrors,0);assert.equal(r.gpu.contextLost,false);assert.deepEqual(r.live.map(v=>v.key),ids);assert.equal(r.proof.length,3);for(const kit of r.proof){assert.equal(kit.samples.length,40);assert.equal(kit.procedural,true);assert.equal(kit.frozenEntityUnchanged,true);for(const state of ['idle','run','attack','hit','death'])assert.deepEqual(kit.samples.filter(s=>s.state===state).map(s=>s.direction),DIRECTIONS);}}
+ for(const r of e.results){assert.equal(r.consoleErrors,0);assert.equal(r.gpu.contextLost,false);assert.deepEqual(r.live.map(v=>v.key),ids);assert.equal(r.proof.length,3);for(const kit of r.proof){assert.equal(kit.samples.length,40);assert.equal(kit.procedural,true);assert.equal(kit.frozenEntityUnchanged,true);for(const state of ['idle','run','attack','hit','death']){assert.deepEqual(kit.samples.filter(s=>s.state===state).map(s=>s.direction),DIRECTIONS);if(state==='attack')assert.ok(new Set(kit.motion.attack.frames).size>1);else assert.ok(kit.motion[state].uniqueFrames>1);}}}
 });

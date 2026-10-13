@@ -18,7 +18,12 @@ for id in ['ghoul','ghost','bat']:
    min_opaque=min(min_opaque,sum(alpha.histogram()[128:]));min_full=min(min_full,sum(alpha.histogram()[250:]))
    box=mask.getbbox();centered=Image.new('L',(256,256));centered.paste(mask,(round(128-(box[0]+box[2])/2),round(128-(box[1]+box[3])/2)))
    frames[name]=centered
- result.update({'min_opaque_pixels_alpha128':min_opaque,'min_opaque_pixels_alpha250':min_full});results.append(result);kits[id]=(frames,groups,{int.from_bytes(m.convert('1').tobytes(),'big') for m in frames.values()})
+ motion={}
+ for clip,names in groups.items():
+  unique=len({frames[name].tobytes() for name in names})
+  assert unique>1,(id,clip,'static animated silhouette')
+  motion[clip]={'frames':len(names),'unique_aligned_masks':unique}
+ result.update({'min_opaque_pixels_alpha128':min_opaque,'min_opaque_pixels_alpha250':min_full,'animated_silhouettes':motion});results.append(result);kits[id]=(frames,groups,{int.from_bytes(m.convert('1').tobytes(),'big') for m in frames.values()})
 pairs=[]
 for a,b in itertools.combinations(kits,2):
  samples=[]
