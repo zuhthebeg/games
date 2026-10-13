@@ -1,0 +1,63 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>N3 dodge lag fixture</title></head>
+<body style="margin:0;background:#101814"><div id="canvas"></div><div id="actions"></div><div id="joystick" hidden><i></i></div>
+<script type="module">
+import { Application } from '../vendor/pixi-8.22.0.min.mjs';
+import { ArenaRenderer } from '../js/render/renderer.js';
+import { InputLayer } from '../js/input.js';
+import { connectBroadcast } from '../js/net/loopback.js';
+import { CoopSession } from '../js/net/session.js';
+import { emptyInput, spawnMonster } from '../js/sim/world.js';
+import { ticks } from '../js/sim/core.js';
+import { ABILITIES } from '../js/content/combat.js';
+const q = new URLSearchParams(location.search), uid = q.get('uid');
+const app = new Application(); await app.init({ width: 390, height: 640, preference: 'webgl', antialias: false, autoStart: false });
+document.querySelector('#canvas').append(app.canvas);
+const renderer = new ArenaRenderer(app), input = new InputLayer(app.canvas, document.querySelector('#actions'), () => {});
+let session, pending = [], initialized = false, lastView, frames = 0, lastTime = performance.now();
+const events = [], packets = [];
+const start = roster => {
+  session = new CoopSession({ uid, host: 'host', players: roster.players.map(p => p.user),
+    profile: { level: 1, weapon: 'blade', mods: { maxHp: 2000 }, threats: { S2: 1 } }, config: { stageId: 'S2', threat: 1, seed: 11 },
+    sendRt: p => { if (p.t === 'input' && packets.length < 500) packets.push(p); transport.sendRt(p); }, sendAction: a => transport.sendAction(a),
+    onBegin: () => { if (session.isHost) {
+      const w = session.world; w.round.pending = []; w.round.goal = 'timer'; w.round.timerTicks = 1e6;
+      const h = w.entities.find(e => e.pid === 'host'), g = w.entities.find(e => e.pid === 'guest');
+      h.x = 1100; h.y = 700; g.x = 400; g.y = 400;
+    } },
+    onFrame: (view, ev) => {
+      events.push(...ev);
+      if (!initialized) { renderer.reset(view, true); renderer.root.visible = renderer.warning.visible = true; initialized = true; }
+    },
+  });
+  for (const a of pending.splice(0)) session.action(a);
+};
+const transport = connectBroadcast({ room: q.get('room'), uid, host: 'host', onReady: start, onRoster: r => session?.roster(r),
+  onRt: (from, data) => session?.rt(from, data), onAction: a => session ? session.action(a) : pending.push(a),
+  network: { latency: Number(q.get('latency')), jitter: Number(q.get('jitter')), loss: 0, seed: 13579 } });
+let tickTime = performance.now();
+setInterval(() => { const now = performance.now(), dt = now - tickTime; tickTime = now;
+  if (session?.isHost) session.update(dt, emptyInput());
+}, 1000 / 30);
+function frame(now) {
+  const dt = now - lastTime; lastTime = now; frames++;
+  if (session && !session.isHost) session.update(dt, input.consume());
+  lastView = session?.view();
+  if (lastView && initialized) { renderer.snapshot(lastView); renderer.render(lastView, 1, dt / 1000); app.render(); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.fixture = {
+  get ready() { return initialized && session.phase === 'running'; },
+  get dodgeNow() { const a = lastView?.entities.find(e => e.kind === 'monster')?.act; return a && a.phase !== 'recovery' && a.total - a.elapsed <= 2; },
+  arm() {
+    const w = session.world, m = spawnMonster(w, 'goblin_grunt', 460, 400), def = ABILITIES.goblin_slash;
+    m.spawnLeft = 0; m.hp = m.maxHp = 10000; m.thinkLeft = 9999;
+    const phaseTicks = Object.fromEntries(['windup','lock','active','recovery'].map(p => [p, ticks(def[`${p}Ms`])]));
+    m.act = { id: 'goblin_slash', def, phaseTicks, phase: 'windup', left: phaseTicks.windup,
+      elapsed: 0, total: phaseTicks.windup + phaseTicks.lock, facing: Math.PI, ox: m.x, oy: m.y, hit: [], fired: false };
+  },
+  report() { const self = lastView?.entities.find(e => e.pid === uid); return { events, ownsSim: !!session.world,
+    hp: self?.hp, maxHp: self?.maxHp, viewTick: lastView?.viewTick, rtt: session.rtt, frames,
+    dodgePackets: packets.filter(p => p.dodgeViews?.length).slice(0,2), warnings: renderer.telegraphs.length }; },
+};
+</script></body></html>

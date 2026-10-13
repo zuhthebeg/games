@@ -31,6 +31,7 @@ test('single + registered guest/host full-world traces exactly equal fef289f (3 
   const before = JSON.parse(readFileSync(new URL('./fixtures/n3/baseline.json', import.meta.url)));
   assert.equal(trace(), before.single);
   assert.equal(trace(true, enableGuestDodgeLag), before.hostParty);
+  assert.equal(trace(true, enableGuestDodgeLag, true), before.hostParty, 'zero-latency viewTick leaves the complete trace unchanged');
 });
 test('late guest dodge refunds direct damage, restores invulnerability and cancels spent/residual knock; ONE real counter', () => {
   const f = fixture(); shot(f); step(f.w); const lost = f.p.maxHp - f.p.hp;
@@ -96,7 +97,30 @@ test('a refunded contact does not refund separate periodic damage', () => {
   step(f.w, { guest: input({ dodgeEdge: true, viewTick: 0, mx: 1 }) });
   assert.equal(f.p.hp, f.p.maxHp - 2);
 });
+test('rewound poison contact cancels new status and restores an older status on its original timer', () => {
+  for (const older of [false, true]) {
+    const f = fixture();
+    if (older) f.p.poison = { left: 60, next: 12, interval: 30,
+      hit: { periodic: true, srcId: 999, srcKind: 'monster', abilityId: 'spider_puddle',
+        mult: 1, def: { damage: 1 }, fromX: 600, fromY: 400 } };
+    f.m.x = 450; f.m.staggerLeft = 0;
+    const def = ABILITIES.spider_bite;
+    f.m.act = { id: 'spider_bite', def, phase: 'active', left: 3, elapsed: 22, total: 22,
+      phaseTicks: { windup: 17, lock: 5, active: 3, recovery: 75 }, facing: Math.PI, ox: 450, oy: 400, hit: [] };
+    step(f.w); f.m.staggerLeft = 9999;
+    assert.equal(f.p.poison.hit.srcId, f.m.id);
+    delay(f, 2);
+    step(f.w, { guest: input({ dodgeEdge: true, viewTick: 0, mx: 1 }) });
+    if (older) {
+      assert.equal(f.p.poison.hit.srcId, 999);
+      assert.equal(f.p.poison.left, 56); assert.equal(f.p.poison.next, 8);
+    } else assert.equal(f.p.poison, null);
+  }
+});
 test('timestamp sticks to its dodge edge through packet loss, reorder, duplicate and backlog draining', () => {
+  const legacy = new InputQueue();
+  legacy.receive({ t: 'input', seq: 1, v: [0,0,0,0], edges: { dodgeEdge: 1 }, viewTick: 10 }, 0);
+  assert.equal(legacy.consume(40).viewTick, 10);
   const tx = new InputSender(), rx = new InputQueue();
   const one = tx.packet(input({ dodgeEdge: true, viewTick: 11 }));
   tx.packet(input({ viewTick: 12 }));
