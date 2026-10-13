@@ -155,7 +155,7 @@ def main():
             x, y = column * size, row * (size + 24)
             draw.text((x + 4, y + 4), f'{character} {animation} {direction}', fill=(212, 207, 183))
             contact.paste(image, (x, y + 24), image)
-    contact.save(config_path.parent.parent / 'contact-sheet.png')
+    contact.save(root.parent / 'contact-sheet.png')
     print(json.dumps({'total_bytes': sum(record['total_bytes'] for record in stats), 'characters': stats}, indent=2))
 
 

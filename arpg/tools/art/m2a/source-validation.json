@@ -1,0 +1,514 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "id": "ghoul",
+      "ok": true,
+      "model_sha256": "d43f709162e09dec5ed463d08081870e2b6be3743660417e922c0f2e4a2bd2f7",
+      "original_sha256": "02d990c2e442855a7a524a75b51982dc07aec3ee44a48243d61988e125e75a60",
+      "checked_meshes": [
+        "Zombie_Cylinder"
+      ],
+      "skinned_clip_motion": {
+        "idle": {
+          "source": "Zombie|ZombieIdle",
+          "samples": 34,
+          "max_skinned_rms_world": 0.4121426600359752
+        },
+        "run": {
+          "source": "Zombie|ZombieWalk",
+          "samples": 24,
+          "max_skinned_rms_world": 1.3731296466397096
+        },
+        "attack": {
+          "source": "Zombie|ZombieBite",
+          "samples": 31,
+          "max_skinned_rms_world": 1.2414031126402107
+        },
+        "hit": {
+          "source": "M2a_Ghoul_Recoil",
+          "samples": 2,
+          "max_skinned_rms_world": 0.29863548638585613
+        },
+        "death": {
+          "source": "M2a_Ghoul_Death",
+          "samples": 5,
+          "max_skinned_rms_world": 3.2989334353531885
+        }
+      },
+      "direction_vectors": {
+        "E": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.9744589328765869,
+            -0.2245657742023468
+          ],
+          "expected_xy": [
+            1.0,
+            0.0
+          ],
+          "dot": 0.9744589328765869
+        },
+        "SE": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.5302544236183167,
+            -0.8478385806083679
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9744589030742645
+        },
+        "S": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.22456583380699158,
+            -0.9744589328765869
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            -1.0
+          ],
+          "dot": 0.9744589328765869
+        },
+        "SW": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.8478385806083679,
+            -0.5302544236183167
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9744589030742645
+        },
+        "W": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.9744589328765869,
+            0.22456590831279755
+          ],
+          "expected_xy": [
+            -1.0,
+            -1.2246468525851679e-16
+          ],
+          "dot": 0.9744589328765869
+        },
+        "NW": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.5302544236183167,
+            0.8478385806083679
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9744589030742645
+        },
+        "N": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.2245657742023468,
+            0.9744589328765869
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            1.0
+          ],
+          "dot": 0.9744589328765869
+        },
+        "NE": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.8478385806083679,
+            0.5302544236183167
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9744589030742645
+        }
+      },
+      "wing_motion_radians": {},
+      "min_idle_vertex_z": -0.02010064385831356,
+      "frames_checked": 768,
+      "ground_anchor": {
+        "x": 0.5,
+        "y": 0.7425891124119062
+      },
+      "max_ground_error_px": 4.7162757255136967e-07,
+      "baked_ground_shadow": false,
+      "light_shadows": false
+    },
+    {
+      "id": "ghost",
+      "ok": true,
+      "model_sha256": "f98e4bf3c8c883f0fa09e7ee84873d3f4e6ca1d95c7827825e0cfbf13261e355",
+      "original_sha256": "4ed7656e2155d47b7d5fe08f31a7e764d79255f477d90040e4472552d7d5ac68",
+      "checked_meshes": [
+        "Ghost"
+      ],
+      "skinned_clip_motion": {
+        "idle": {
+          "source": "CharacterArmature|Flying_Idle",
+          "samples": 12,
+          "max_skinned_rms_world": 0.10950209633023211
+        },
+        "run": {
+          "source": "CharacterArmature|Fast_Flying",
+          "samples": 9,
+          "max_skinned_rms_world": 0.16007163589394907
+        },
+        "attack": {
+          "source": "CharacterArmature|Punch",
+          "samples": 12,
+          "max_skinned_rms_world": 0.7240436010383788
+        },
+        "hit": {
+          "source": "CharacterArmature|HitReact",
+          "samples": 5,
+          "max_skinned_rms_world": 0.43344553385736984
+        },
+        "death": {
+          "source": "CharacterArmature|Death",
+          "samples": 7,
+          "max_skinned_rms_world": 1.660377948701049
+        }
+      },
+      "direction_vectors": {
+        "E": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            1.0,
+            4.1575656695158614e-08
+          ],
+          "expected_xy": [
+            1.0,
+            0.0
+          ],
+          "dot": 1.0
+        },
+        "SE": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "S": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -2.0937380718066834e-09,
+            -1.0
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            -1.0
+          ],
+          "dot": 1.0
+        },
+        "SW": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "W": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -1.0,
+            4.576313017423672e-08
+          ],
+          "expected_xy": [
+            -1.0,
+            -1.2246468525851679e-16
+          ],
+          "dot": 1.0
+        },
+        "NW": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "N": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            -8.524504835349944e-08,
+            1.0
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            1.0
+          ],
+          "dot": 1.0
+        },
+        "NE": {
+          "bones": [
+            "Head",
+            "Neck"
+          ],
+          "anatomical_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        }
+      },
+      "wing_motion_radians": {},
+      "min_idle_vertex_z": 0.23122398555278778,
+      "frames_checked": 360,
+      "ground_anchor": {
+        "x": 0.5,
+        "y": 0.6449186396694544
+      },
+      "max_ground_error_px": 1.3720656966142997e-06,
+      "baked_ground_shadow": false,
+      "light_shadows": false
+    },
+    {
+      "id": "bat",
+      "ok": true,
+      "model_sha256": "888b833442b2ce500a8c7f1645d1802de8aa38238a860e217a18d95a692875af",
+      "original_sha256": "ff20d0c0d68be4ed4ba3a402b8ceaeaf54de5d0c9dc3968117749214aee63c9b",
+      "checked_meshes": [
+        "Bat"
+      ],
+      "skinned_clip_motion": {
+        "idle": {
+          "source": "BatArmature|Bat_Flying",
+          "samples": 13,
+          "max_skinned_rms_world": 1.3018345313270894
+        },
+        "run": {
+          "source": "M2a_Bat_FastFlight",
+          "samples": 8,
+          "max_skinned_rms_world": 1.255238319043543
+        },
+        "attack": {
+          "source": "BatArmature|Bat_Attack",
+          "samples": 9,
+          "max_skinned_rms_world": 2.3108452834200084
+        },
+        "hit": {
+          "source": "BatArmature|Bat_Hit",
+          "samples": 13,
+          "max_skinned_rms_world": 1.493249432297837
+        },
+        "death": {
+          "source": "BatArmature|Bat_Death",
+          "samples": 13,
+          "max_skinned_rms_world": 3.2773934917942498
+        }
+      },
+      "direction_vectors": {
+        "E": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            0.9999958276748657,
+            0.002905638422816992
+          ],
+          "expected_xy": [
+            1.0,
+            0.0
+          ],
+          "dot": 0.9999958276748657
+        },
+        "SE": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            0.7091583609580994,
+            -0.7050492167472839
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999957382678986
+        },
+        "S": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            0.002905594650655985,
+            -0.9999958276748657
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            -1.0
+          ],
+          "dot": 0.9999958276748657
+        },
+        "SW": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            -0.7050492167472839,
+            -0.7091583609580994
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999957382678986
+        },
+        "W": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            -0.9999958276748657,
+            -0.0029055511113256216
+          ],
+          "expected_xy": [
+            -1.0,
+            -1.2246468525851679e-16
+          ],
+          "dot": 0.9999958276748657
+        },
+        "NW": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            -0.7091583609580994,
+            0.7050492167472839
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999957382678986
+        },
+        "N": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            -0.0029056821949779987,
+            0.9999958276748657
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            1.0
+          ],
+          "dot": 0.9999958276748657
+        },
+        "NE": {
+          "bones": [
+            "Nose",
+            "Body"
+          ],
+          "anatomical_xy": [
+            0.7050492167472839,
+            0.7091583609580994
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999957382678986
+        }
+      },
+      "wing_motion_radians": {
+        "Wing1.L": 0.820482611656189,
+        "Wing1.R": 0.7489168643951416,
+        "Wing2.L": 1.240262746810913,
+        "Wing2.R": 1.1194877624511719
+      },
+      "min_idle_vertex_z": 0.36049991846084595,
+      "frames_checked": 448,
+      "ground_anchor": {
+        "x": 0.5,
+        "y": 0.6809802844296795
+      },
+      "max_ground_error_px": 1.3456865701755305e-06,
+      "baked_ground_shadow": false,
+      "light_shadows": false
+    }
+  ]
+}

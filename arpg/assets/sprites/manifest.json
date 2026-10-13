@@ -490,5 +490,94 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "ghoul",
+    "label": "구울",
+    "monster": true,
+    "content_ids": [
+      "ghoul"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json",
+      "atlas-2.webp.json",
+      "atlas-3.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7425891160964966
+    },
+    "bytes": 1183501,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "ghost",
+    "label": "유령",
+    "monster": true,
+    "content_ids": [
+      "ghost"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6449186503887177
+    },
+    "bytes": 503645,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "bat",
+    "label": "거대 박쥐",
+    "monster": true,
+    "content_ids": [
+      "bat"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6809802949428558
+    },
+    "bytes": 561915,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]
