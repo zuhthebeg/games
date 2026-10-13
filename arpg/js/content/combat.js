@@ -275,6 +275,23 @@ export const MONSTERS = {
     hp: 170, r: 23, speed: 115, poise: 50, kbResist: 0.25,
     abilities: ['spider_bite', 'spider_puddle'], xp: 28, keepRange: [45, 85],
   },
+  skeleton_minion: {
+    lifeState: 'undead', hp: 62, r: 18, speed: 118, poise: 30, kbResist: 0,
+    abilities: ['goblin_slash'], xp: 8, keepRange: [40, 70],
+  },
+  skeleton_warrior: {
+    // Direction-independent tank; only existing durability scalars differ from the minion.
+    lifeState: 'undead', hp: 150, r: 18, speed: 118, poise: 75, kbResist: 0.6,
+    abilities: ['goblin_slash'], xp: 8, keepRange: [40, 70],
+  },
+  skeleton_rogue: {
+    lifeState: 'undead', hp: 50, r: 16, speed: 150, poise: 20, kbResist: 0,
+    abilities: ['goblin_hop', 'goblin_slash'], xp: 10, keepRange: [110, 180],
+  },
+  skeleton_mage: {
+    lifeState: 'undead', hp: 40, r: 16, speed: 104, poise: 20, kbResist: 0,
+    abilities: ['sling_stone'], xp: 7, keepRange: [230, 330],
+  },
 };
 
 // Compact stage constructor for S8+: [monster, atMs, fx, fy]. goal killAll; concurrency comes from BALANCE.

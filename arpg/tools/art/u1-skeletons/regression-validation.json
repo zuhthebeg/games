@@ -1,0 +1,106 @@
+{
+  "ok": true,
+  "baseline": "dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8",
+  "original_monsters": 12,
+  "new_monsters": 4,
+  "original_monster_sha256": {
+    "scarecrow": "912ff9b5c8f9f412cc50fa06678e608656200c4f983de5984602619248b2f269",
+    "throne_dragon": "6e98105294df5125637051b2ede220017a7cd39f09354171f93af59d12270f13",
+    "training_dragon": "98b130c4ad41722e51650464996190b3cc2cc115eaddd057694b813f8475ce7d",
+    "goblin_grunt": "dd7cee9018c47836109096fb0658343ca87721a3271437130e86d40ce5c7c4dc",
+    "goblin_slinger": "a4f842419fc5d937d6ccca1ed6674861b8a082d496ebf9e2c53c46e0cf0609bb",
+    "iron_boar": "6a2e8c0d4653157e26163cf1f44cd5911c7689d866dcdced194dcedf68897beb",
+    "goblin_chief": "f08a4d35f76ecc81ffe4f68abfee897f8ecff9dcf0ac73dbaa498436cde82887",
+    "wolf": "7b91b579fb9343d7bcd9214a28891e82385a6a6bf271214afbfc2e3d42201525",
+    "gargoyle": "bbf939205c904854ef46a747594225b84999c2cf349eef2f00edccc66e22d395",
+    "rune_guardian": "6e128cbb2dd6c5d88cf83ed5628cb4b47033464b8f78e0546beceed379eeaa7f",
+    "spirit": "a6c64b8eca166bf8451556db312333dfd1523ae2f4b62ae5d1bc12ced31dad06",
+    "poison_spider": "381a202a70bd49960c33e24c597c9d7a73117269ab20387f7bb3d010156cf0a2"
+  },
+  "other_combat_exports_sha256": {
+    "ABILITIES": "7bf0bb0cdbe476b5e0463a0ebf741beb8ef9531c7afc0c0a0272526e7cea5d59",
+    "PLAYER_BASE": "620eab45cb5818e0a40e3235eae46684ee8969d36ae59ffcc72a7f63ea2068e3",
+    "SKILL_SLOTS": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+    "SKILL_USE": "44f0b1c7458089d7d8b559a4706abea9e61af528e969828225938e763947b205",
+    "STAGES": "1a938b52285bd9fa072cb0145faf70f6133555a14421ddfdc35db4d76d9ea83c",
+    "WEAPONS": "2d6b4aa0b545f25c35d641fd0f356b598864a51255e17c85f7afa7f386398608",
+    "canUseSkill": "0f03afa2fe6cfd41557327b3b3f752de22877f8b2d8202f9a2c9df27f2d6ee5f",
+    "skillDamageShare": "c228df1e5c5b9664420915b2ec6f03945a5b5dd1237471918707f05120083328"
+  },
+  "identity_baseline": {
+    "DANGER_COLORS": {
+      "entries": {
+        "active": "aa60dc9c2e8d6786019c27caf82b337d7aef9908f746945be3d574b31925faa7",
+        "preparation": "56f5c26e17f0b13048d99e825b7cc23424b811a5f87e4a04324dbbda23a899c6"
+      }
+    },
+    "MONSTER_MODELS": {
+      "prefix_length": 12,
+      "sha256": "07fd8c76113fa3e0734e4eaf7f3343f2af4be2ab207bcbd24070f9329737c899"
+    },
+    "MONSTER_NAMES": {
+      "entries": {
+        "gargoyle": "90dc33087f8e4d4cf1267090ea7bd4b4b412418534ff56b2debc99a8995ed87c",
+        "throne_dragon": "34ac7c2577c234467df5ea30ee41a5c3a191f4b7111212f1723323b6e3c0c809",
+        "training_dragon": "26ae5bfbb127191b6cdba8ceee77fa34ca45c56d7c574e2f7bf7fa119e0426ac",
+        "scarecrow": "1d2390918965dab3e217ca417c6e084d57a57c8dc4a501be9c39e083cb4f849c",
+        "goblin_grunt": "de5d4c09ae7cc2f840f9ce6663acb58f5db8a7798345f86d7d7eab7c66e8421e",
+        "goblin_slinger": "b1a025be3d684ecee2128974474340b39985f0560ee93c359d6956280557c687",
+        "iron_boar": "bd717abe3f59a4079b97e97c65dd9a9c48cc24d56a3ae94bdc35712c532e384f",
+        "goblin_chief": "aee4e56e5ec2cf9b167579d47a538e6d5f0a84c7eae71ef42a72f15c225ce464",
+        "wolf": "6a62e955373761efc5ca5787c462e1f18bc3233414b19a4cc7e81ebe94fb28b4",
+        "rune_guardian": "dfc9f176c9299878cf5c354d026a42adf8343d4b2e424f10096b86d2c4e1f6db",
+        "spirit": "7dd70e92374167a73be4b750e551086ac8fff7ccc6b255bacb39de482b7ef478",
+        "poison_spider": "6ef9ae58f62a9bbd9c78024575b8948ce3a1c853d3109390df7513844032d25d"
+      }
+    },
+    "MONSTER_PALETTES": {
+      "entries": {
+        "dragon": "43d2baefa8c1ed849a0abcc1966ff214b39d32fedd9834a50e20a65e61de2874",
+        "straw": "e13a1440803e274a9e8544de81bb2f2a53c0fa2491cfa6aefaec5c7969b81035",
+        "goblin": "280803d4855f4489032aaacaf31118b1ebbe1dc46f12a77ef0d3d4beeae8be51",
+        "slinger": "72fe2145ef6ce7affafec1e80b7d9d60ba2bec2fe2017f9b5abc0ff1d4f3609f",
+        "boar": "37b9240526f5c6bea4dcde06652efe762f910e385308e6bc9de16b70eb8e939a",
+        "chief": "0eab01af8e0b7d8211aa813a8f65a1e5660cc324e1593ffba74bf818a80ccc1f",
+        "wolf": "542455a4961a814e6759305c84043b95c5113e4dd7629369bb28f469ce575f42",
+        "rune": "4564cc2f070fb608894cad1e5a8d5cee8b138e22966d10a4c18518bbe0ce1f4d",
+        "spirit": "13b035217b09bf20c23026dbc4686f69c51651a5846a558a7c8c178b3ff86c33",
+        "spider": "1786090f51b1a71a4f68366a4aecf0aca9d3c922c2e2a551500452d233304cdb"
+      }
+    },
+    "MONSTER_VARIANTS": {
+      "entries": {
+        "gargoyle": "0984ef3c58c75ff23258e699583e09c8f1cfbdde4dc5f17a3bf45108c3a98a2b",
+        "throne_dragon": "f762da00d2357243c7dbfae364a45ad3ac50591e9eda4ee6fdbf70dbcdef7e9d",
+        "training_dragon": "216a7248a35ae081b244d8438744068d5b42c62c0b54747fe91f2643b12c59ed",
+        "scarecrow": "02d096e87179a9cb468f976e5fe1560b8796626b11c1b29f60518efcaacb3ac3",
+        "goblin_grunt": "4074c475d9163530514da880f36036eea7d542ba03284abe9a6efd79e03fc0e5",
+        "goblin_slinger": "83f278b241ec6874cf5b1ca57a7a9d8aa663a4e3ea8d9df021398b04a41e60c0",
+        "iron_boar": "7a3f935bd71b0182fa985ef18bfe73be229fdbba5e075a58c49ae03619fac12b",
+        "goblin_chief": "bea96f7fe9e1346c7ab28da5a71555557b056dbd0bc7be9d71a1ed92372be8f6",
+        "wolf": "e7a39a7350ad8c5e8130b8e3e819469353b2c8ebcc7a16b4a0a9d1886903711b",
+        "rune_guardian": "9bd1fda01293bf76d794a530d50b711d3f60425ea2ed6b696df2da4e1342001a",
+        "spirit": "050b11b31c6e380f3001d01c700e845d73cf3cbacc36bf5213f0fa633414700e",
+        "poison_spider": "5d4ebf6ea4c0ad45317f40afab41d3a0b5ecd9d05f0336b72f6e49e9900348b0"
+      }
+    }
+  },
+  "other_combat_data_exports_unchanged": true,
+  "old_identity_entries_unchanged": true,
+  "sim_unchanged": true,
+  "index_unchanged": true,
+  "boss_render_unchanged": true,
+  "bake_unchanged": true,
+  "humanoid_verifier_unchanged": true,
+  "unchanged_file_sha256": {
+    "arpg/index.html": "e99717f9f8ca7d4cc3e2a940d234dd3625b61bbd4b170dd8e049d5a823d10b15",
+    "arpg/tools/art/bake.py": "81d21e6f16cb4169cd16af5dd618908012389c2ba0a21b9d9f7127987cbd59fa",
+    "arpg/tools/art/verify_atlases.py": "553953d65568f2259e7e889f3c1ad21adab06dcceedf9b546a0e900e2b99fa51",
+    "arpg/js/render/atlas-visual.js": "1ac8f8b94dd04c57467330bb13a444c0f30eb74468180a21b782d1b94c4f4ff0",
+    "arpg/js/render/renderer.js": "5b3a418e8ed82ab9bdb4981f00ba1393b1e090f7abcd5487510c9a2ba7cc5400",
+    "arpg/js/sim/core.js": "458215ac2761180349a20426f763fe5246f2779d5b6825af196ad96432d3a991",
+    "arpg/js/sim/movement.js": "3cc553a10b7ec2756cb9ad4049815fcd113867f4fb6a35f3b44fae2a537b9347",
+    "arpg/js/sim/quest-objectives.js": "7f663769124e11f4240a1894d9ef1aef1f37cfaa38cb9388f6389b79254eeb6a",
+    "arpg/js/sim/world.js": "43a38de0e08e1d758ef9e87fe43b141409efc8b91ab1561a2676edeba665b704"
+  }
+}

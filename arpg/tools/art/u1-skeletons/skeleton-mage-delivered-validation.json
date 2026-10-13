@@ -1,0 +1,50 @@
+[
+  {
+    "name": "skeleton-mage",
+    "format": "webp",
+    "frames": 352,
+    "atlas_dimensions": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        896
+      ]
+    ],
+    "webp_bytes": 307888,
+    "json_bytes": 80417,
+    "total_bytes": 388305,
+    "alpha_coverage_percent": [
+      8.282,
+      11.09
+    ],
+    "max_idle_center_drift_px": 0.5,
+    "unique_direction_hashes": {
+      "idle": 8,
+      "run": 8,
+      "attack": 8,
+      "hit": 8,
+      "death": 8
+    },
+    "pose_profile": "humanoid",
+    "pose_checked_frames": 352,
+    "t_pose_frames": 0,
+    "bind_pose_frames": 0,
+    "min_max_arm_degrees_from_bind": 38.6048,
+    "min_skin_rms_from_bind_height": 0.075487,
+    "lossless_alpha_matches_pose_evidence": 352,
+    "clipped_frames": 0,
+    "idle_weapon_projected_span_px": [
+      32.38,
+      32.21,
+      32.2,
+      32.34,
+      32.23,
+      32.33,
+      32.19,
+      32.21
+    ]
+  }
+]

@@ -1,0 +1,520 @@
+{
+  "baseline": "dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8",
+  "manifest": [
+    {
+      "id": "hero-sword",
+      "label": "기사 · 검",
+      "monster": false,
+      "content_ids": [
+        "blade"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6679827272891998
+      },
+      "bytes": 425064
+    },
+    {
+      "id": "hero-bow",
+      "label": "기사 · 활",
+      "monster": false,
+      "content_ids": [
+        "bow"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6927091181278229
+      },
+      "bytes": 471348
+    },
+    {
+      "id": "hero-focus",
+      "label": "기사 · 지팡이",
+      "monster": false,
+      "content_ids": [
+        "focus"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "dodge",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6927091181278229
+      },
+      "bytes": 429072
+    },
+    {
+      "id": "skeleton",
+      "label": "해골 미니언 (뷰어 샘플 · 게임 미연동)",
+      "monster": true,
+      "content_ids": [],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7110485732555389
+      },
+      "bytes": 479068
+    },
+    {
+      "id": "goblin-grunt",
+      "label": "고블린 근접",
+      "monster": true,
+      "content_ids": [
+        "goblin_grunt"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6926874220371246
+      },
+      "bytes": 427884
+    },
+    {
+      "id": "goblin-archer",
+      "label": "고블린 궁수",
+      "monster": true,
+      "content_ids": [
+        "goblin_slinger"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6926874220371246
+      },
+      "bytes": 468642
+    },
+    {
+      "id": "goblin-chief",
+      "label": "고블린 대장",
+      "monster": true,
+      "content_ids": [
+        "goblin_chief"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6659776270389557
+      },
+      "bytes": 437294
+    },
+    {
+      "id": "wolf",
+      "label": "늑대",
+      "monster": true,
+      "content_ids": [
+        "wolf"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6296268105506897
+      },
+      "bytes": 561040,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "poison-spider",
+      "label": "독거미",
+      "monster": true,
+      "content_ids": [
+        "poison_spider"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6975164711475372
+      },
+      "bytes": 918346,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "iron-boar",
+      "label": "철갑 멧돼지",
+      "monster": true,
+      "content_ids": [
+        "iron_boar"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6255070865154266
+      },
+      "bytes": 453624,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "dragon",
+      "label": "드래곤",
+      "monster": true,
+      "content_ids": [
+        "training_dragon"
+      ],
+      "sheets": [
+        "copper-v1-atlas-0.webp.json",
+        "copper-v1-atlas-1.webp.json",
+        "copper-v1-atlas-2.webp.json",
+        "copper-v1-atlas-3.webp.json",
+        "copper-v1-atlas-4.webp.json",
+        "copper-v1-atlas-5.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5199252963066101
+      },
+      "bytes": 1483476,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "throne-dragon",
+      "label": "왕좌의 수호룡",
+      "monster": true,
+      "content_ids": [
+        "throne_dragon"
+      ],
+      "sheets": [
+        "throne-v1-atlas-0.webp.json",
+        "throne-v1-atlas-1.webp.json",
+        "throne-v1-atlas-2.webp.json",
+        "throne-v1-atlas-3.webp.json",
+        "throne-v1-atlas-4.webp.json",
+        "throne-v1-atlas-5.webp.json",
+        "throne-v1-atlas-6.webp.json",
+        "throne-v1-atlas-7.webp.json",
+        "throne-v1-atlas-8.webp.json",
+        "throne-v1-atlas-9.webp.json",
+        "throne-v1-atlas-10.webp.json",
+        "throne-v1-atlas-11.webp.json",
+        "throne-v1-atlas-12.webp.json",
+        "throne-v1-atlas-13.webp.json",
+        "throne-v1-atlas-14.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "breath",
+        "stomp",
+        "tail",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5246005654335022
+      },
+      "bytes": 3561536,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "id": "gargoyle",
+      "label": "석상 가고일",
+      "monster": true,
+      "content_ids": [
+        "gargoyle"
+      ],
+      "sheets": [
+        "atlas-0.webp.json",
+        "atlas-1.webp.json",
+        "atlas-2.webp.json",
+        "atlas-3.webp.json",
+        "atlas-4.webp.json",
+        "atlas-5.webp.json",
+        "atlas-6.webp.json"
+      ],
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "fps": 10,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6693471968173981
+      },
+      "bytes": 1495739,
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "files_sha256": {
+    "dragon/copper-v1-atlas-0.webp": "499f10084826221c8e7762ffc4610cad2f888fcdac77af276ba7e8d923e79389",
+    "dragon/copper-v1-atlas-0.webp.json": "15f2f6c27287152ba5a9cbab4e0c7059d68951eec82aac01bedbf6971b271a1d",
+    "dragon/copper-v1-atlas-1.webp": "bbcf9a96b3a9f3f56fd5cf3125e68661584a673cc5a316fd402ae0fd684158f3",
+    "dragon/copper-v1-atlas-1.webp.json": "d82710e33102dab23a50c577bf41676d3b0d89ec650334d17139d4df843ea90e",
+    "dragon/copper-v1-atlas-2.webp": "b12f185039b80bddf28a7455cf4f1939e44258bc69bf00a50ec0badb1ce06999",
+    "dragon/copper-v1-atlas-2.webp.json": "8e57d2f57b62c925c3f0535b59853804353e8df52b914a47930fe2b61d238906",
+    "dragon/copper-v1-atlas-3.webp": "3ac60f79ebe0c9e00c86ea78b3caf6257f055fd40e8ccaa3d1a9cebdfb28f28c",
+    "dragon/copper-v1-atlas-3.webp.json": "a431d27e9111cd3dc19b9b60c6faa0578830acab0411569042d187da553b6cc9",
+    "dragon/copper-v1-atlas-4.webp": "1e7061717cb4501b3dbca1d26270be3695ab77745f175479e30bef1d15e2661f",
+    "dragon/copper-v1-atlas-4.webp.json": "f089d0f2029945895f77281d1dcdc421fd8b990a7b1a957335594d0812a1fcc5",
+    "dragon/copper-v1-atlas-5.webp": "42e06c0b964b6119966578423997ed880625de4dc516b0ebc954f65298a8b8aa",
+    "dragon/copper-v1-atlas-5.webp.json": "f2ca2310701a4f12004918d4e6231cd99eea8f17c4d6c94823d7fe22c38724b8",
+    "gargoyle/atlas-0.webp": "5e251b3e30abfc81d969ba4385a5e502b6fd73fcda287072639f4450d1d9d8e8",
+    "gargoyle/atlas-0.webp.json": "d243b7a783f1469ba9c753b192895931ff8695c163717a4270cebb312c4c934e",
+    "gargoyle/atlas-1.webp": "da01fd91d41214d64b1b541dcf4ef09dac73c8c57463f10787fe9aaca71c072d",
+    "gargoyle/atlas-1.webp.json": "934c7aeb9b6ec77238b5dab99a53d44379cb2df1fb8cd762d6939a922f519593",
+    "gargoyle/atlas-2.webp": "99f2ce7a210871f7a6ab70e93166e0e9ce0b7ae379098b877be4e2cea4f19a77",
+    "gargoyle/atlas-2.webp.json": "fecef80cd55a035793f63a3a167d5ac1492990df661b2d9cf69003478497fb73",
+    "gargoyle/atlas-3.webp": "bef6e614b02f1fe0580f039fe99cc9bd7ac5f8b958f14ff0789403b9c5501a69",
+    "gargoyle/atlas-3.webp.json": "357e5174490ee2b296692dce90358391371f8658fed0e0ff274d720dd158902b",
+    "gargoyle/atlas-4.webp": "de2b42a3bdf02713b8b2207224f174bb707919b3c7a7399ee250a274a9123ffd",
+    "gargoyle/atlas-4.webp.json": "079cb8e76a74228f8299d115f071bc096fd4ef51dd554266ee08ae996403b34c",
+    "gargoyle/atlas-5.webp": "3a0b2369f18d6a59f076c7940c05d7ad9b114b58f5a5d61d107aee5b35b55689",
+    "gargoyle/atlas-5.webp.json": "cadd2d7e4f84ef3d2f50afa38cdbabf6ec29b2cb15fd20d3059a69a8e52183d1",
+    "gargoyle/atlas-6.webp": "20db808ec34dc58f46f3ee1262273e04de707f2a54592de3523a6e67dcec2d8d",
+    "gargoyle/atlas-6.webp.json": "8727bd81f775690f57fc57728a7465aab06cc906b66f95810a199f402b69f0b1",
+    "goblin-archer/atlas-0.webp": "9da35869ae43624469d025bdf6c36d49fae576841cba9db90c261090ba23f898",
+    "goblin-archer/atlas-0.webp.json": "0e215e8aef5d117230a7352983451575f2a89d40afa7deeec2ca837e2a0b5b8d",
+    "goblin-archer/atlas-1.webp": "c27de9ae6b19d009bec97022488b4bdfa023fc90c37a43b6324c98034b4a6fb4",
+    "goblin-archer/atlas-1.webp.json": "fc78176f1f82ffc12021742695d873d0fe45445bd7bb5a0495f807485ff07b7a",
+    "goblin-chief/atlas-0.webp": "ca8d4e76790f047d2ed82cc67f8a1b8c0fd543d4868942276fa987f46ea52831",
+    "goblin-chief/atlas-0.webp.json": "554f96a376afb7574830ccc49653bc0e7aeb64fa66b2ab19ea9a35c449f75b3b",
+    "goblin-chief/atlas-1.webp": "2f8e2d54203f9beaa25f63020b267c14d9eb648c8a17e186275c4d9d3f65fb42",
+    "goblin-chief/atlas-1.webp.json": "646fcf04569830c99605790628d4d09ac5b8a0a69fbd74e5a2c2ffeedbcd84da",
+    "goblin-grunt/atlas-0.webp": "bece84017243e146f82e5419ad09a3d576cb924342289214fa503d98ee82a599",
+    "goblin-grunt/atlas-0.webp.json": "0e215e8aef5d117230a7352983451575f2a89d40afa7deeec2ca837e2a0b5b8d",
+    "goblin-grunt/atlas-1.webp": "b21930f4f74464fca4e50e8314656a650c5f376e1fa1d7a9ec2e1d4bfe3595f0",
+    "goblin-grunt/atlas-1.webp.json": "fc78176f1f82ffc12021742695d873d0fe45445bd7bb5a0495f807485ff07b7a",
+    "hero-bow/atlas-0.webp": "28312d804c3f9533f7637e52956343fb71c56a3aea38f437cb70440bb8278431",
+    "hero-bow/atlas-0.webp.json": "87ff198239e81970fe8cdb12e7eea3de47683133e9838994d942d9592aa387bf",
+    "hero-bow/atlas-1.webp": "e7987f2bbd0897c9beaf6de43197e3e974579ac9d9ff528623cc61fa797a6d13",
+    "hero-bow/atlas-1.webp.json": "cae70e64c18d72cbbb2a1ab1e6e652b12e4ec5f4483775706f4ebc18d0c6244e",
+    "hero-focus/atlas-0.webp": "683f3a7daf6d88ddc7dd73f51a73d4cc1d26030e3552fe619f5793bbe461b751",
+    "hero-focus/atlas-0.webp.json": "71fa54a266b4ab3041fdafe19c5d2f6ab128fac5b25f0f205a46628d4687e5bd",
+    "hero-focus/atlas-1.webp": "c92e49b50844bd715bcd723deb92c25e27e1a083e427d2412a1bde3f8585196f",
+    "hero-focus/atlas-1.webp.json": "22433737ed1b214a1ee0348959e39a3011ba46b1bc051ec672c556a892f45967",
+    "hero-sword/atlas-0.webp": "9e0c4e886be16c7cc59dfff7e9f216b558f714ba6881b6cd60de18ad4a9305ae",
+    "hero-sword/atlas-0.webp.json": "2eeeabab60692febb6a336892a0f7a6f7332419cf8b175e5efe3c736b32570c2",
+    "hero-sword/atlas-1.webp": "ff0d21c6c2458040e60b4e623a1438ea8b721b9a79a93dbf4a073f724bff8a2e",
+    "hero-sword/atlas-1.webp.json": "caa151ca3712c83630671955c235609a98136f72d5d4b2e8129e6171ea07781b",
+    "iron-boar/atlas-0.webp": "a4b2976a557143e042486c084e6ea8ec08bb30814c4a90c31149fb9b2d4fa810",
+    "iron-boar/atlas-0.webp.json": "16ab5aca727fdc19954d6e1a99dd7fc867a324e7b8faa404fdb34b45115b984a",
+    "iron-boar/atlas-1.webp": "d3c80e239eeea1f1546d5085a964cf57a289985d0b24f95a564b4aac2bbafdd6",
+    "iron-boar/atlas-1.webp.json": "b0ac8b89f7a407e03249989385ea8a7ee30785a46d439da2e46dc66d149632fb",
+    "paperdoll/blade/base.webp": "5a5038cc9af475b44b4a453a54a241efec8ca83ca765d9d3b3f8856d5d27f889",
+    "paperdoll/blade/head-barbarian.webp": "8d5fce6548d0ebfd0ce9213f60dff78f6bc38d48b9d81c7bab895ae84e92cb37",
+    "paperdoll/blade/head-knight.webp": "a3d0e430101cba27ac4cd4d5dd74a10be6d18bf64ac5cac0b475d581fb673f3c",
+    "paperdoll/blade/head-mage.webp": "eafb464aa8340b5f228b5d7ce9fee692d906c89cbda934fbfebf0f5022d884de",
+    "paperdoll/blade/manifest.json": "c4891b417fa636dcdf342f097b283b95bbb7a0be51d3715347f6d93105cd3d50",
+    "paperdoll/blade/mask.webp": "80fb7532fdacb2c169e1e0e184606f261c0cc98e1f2ba3445e2f77d8cbb6073a",
+    "paperdoll/blade/validation.json": "23eb3c94d78509cb7da6636d65fde84de81da42425af94518732ae00577931fe",
+    "paperdoll/blade/weapon-alternate.webp": "e8d79e972bf443b832c509156592ced26e5f58f4bb39fb3d22004e079e2ab1f9",
+    "paperdoll/blade/weapon-standard.webp": "8081624790abdbc2a5e8d9dcfee231938c59de66d8f448f55661194d1d0cd480",
+    "paperdoll/bow/base.webp": "6c1120313fc5b27c87803faf1cbb3e7dba3ef39633cf67cbb72c928f06d09533",
+    "paperdoll/bow/head-barbarian.webp": "6f7b32c22d4b0639f8f8f66233a80461db0e547da350dd560162a01d4bba645e",
+    "paperdoll/bow/head-knight.webp": "4faf3883cca45bda3fa0eedfc57e81bf4cd106ea9c68032384858a2c89d2d066",
+    "paperdoll/bow/head-mage.webp": "501b6455b76d3bd64e8dacc9f1351ad58f278e82841bcfc255fa59aad96f6514",
+    "paperdoll/bow/manifest.json": "b505f37be76e0e54776637d1da2ac1eb4de08228cd5c212745850c536bd8b8f6",
+    "paperdoll/bow/mask.webp": "9c701bc1cba37c798f97ca4792f124380dddbc092a129322774a3b697b22ae59",
+    "paperdoll/bow/validation.json": "dcfd8060127a8efe611f434cc34df8c7e8fd9998aa1cdd9068dbc58c1ee42d4d",
+    "paperdoll/bow/weapon-alternate.webp": "3676fdd1e1f20604ca9330e8587d2cef96a6887d5ed56b462ddb1f88aaad7713",
+    "paperdoll/bow/weapon-standard.webp": "f424d21a2edef8880f6434890b3cb9e2659eb6b06afa16c554df67cd54ef53a3",
+    "paperdoll/focus/base.webp": "ed2a040beac3198b0d8c627c26e3b3e8b68f9f24aff5679cf6b9e7f2193c40d8",
+    "paperdoll/focus/head-barbarian.webp": "97a7628b925f8765be7f72e4abb9e67c8c76bd50226f0a8f7c9aaa5331564a33",
+    "paperdoll/focus/head-knight.webp": "e975718997ed4a17f17a3ad2c2d64882d74c1d4303874e84d5525cc85dcd4cd4",
+    "paperdoll/focus/head-mage.webp": "2e456643a63c9433f03309fbba43370c45ba221f78de4a3689dd0080c382391d",
+    "paperdoll/focus/manifest.json": "ac67bbd684dcfddb215d629cc7d4f6b3d0c44ec7b1947e08830238c688df2bd0",
+    "paperdoll/focus/mask.webp": "4987661d4aba71db4b7dcba9c248b1e8418d59be12064d0f889c9a8feced040d",
+    "paperdoll/focus/validation.json": "06590d243cac32a13c1d8c4ffec48de3700cb9b50ab5f4a26c52091833aaef38",
+    "paperdoll/focus/weapon-alternate.webp": "0caeb91d4040f59522814012da90c1cf35d8d1c515eb6bb5fca9b37e56d4b2d5",
+    "paperdoll/focus/weapon-standard.webp": "add4326f1773e5ebb62bb4eaeb9a739de4ff494a0193f09643fbc0dbe06f5bd6",
+    "paperdoll/validation.json": "42ed717489486654fa31666a8e4863c9cdbfd7535c718baabf1935e230f85c0a",
+    "poison-spider/atlas-0.webp": "cfa9c8bd74234efd6971ed003a2c1fa341f4629e7a5d87c68b055be482355324",
+    "poison-spider/atlas-0.webp.json": "b2dc38cfcd3fea3773a4f928296645d6cd171fa8c856b43e7d18e1ae20377c81",
+    "poison-spider/atlas-1.webp": "7dc6d9c202546e73761fe0303c1d1ce2810afc64aae02ca7f8363cb4885e4268",
+    "poison-spider/atlas-1.webp.json": "3a71c9cf377c7d1e11cc69bd44e97407bf325b22b467c0e65ec4144a51eb245e",
+    "poison-spider/atlas-2.webp": "525c54c325226646c7304768a608788cf1caf072f349477c460c029f906c55f4",
+    "poison-spider/atlas-2.webp.json": "46bd03bd5e42fd890605c97478dc7c625190fda4d4d82c83cc3d7f4d4e0f5d61",
+    "skeleton/atlas-0.webp": "6fba90f2efd10800cbb02f8bd003c5fb0954e686d2beda8a733f46990fd25159",
+    "skeleton/atlas-0.webp.json": "24100421137cb30137a6d4baafc0714ded46876c00f1a54775e3ed0d1882ae4c",
+    "skeleton/atlas-1.webp": "90f737fb665872319764fe89fc6884b225aaa42e085ab59cd8898289b16b48aa",
+    "skeleton/atlas-1.webp.json": "732cb2b83e9f0b89a7abe1091a6442c212fc3c4b498fd5f4b65ddd52eba912a1",
+    "throne-dragon/throne-v1-atlas-0.webp": "b6502c69b0dee24f013c6e92b65d9628cb94b7aea22e86312544c5f0a4d78ab8",
+    "throne-dragon/throne-v1-atlas-0.webp.json": "5714c301b3d859cfe74822fe8ed56d59f429bb031d4285a4430a58de1f7f7121",
+    "throne-dragon/throne-v1-atlas-1.webp": "4da7eeea220e81d0c5bbef18bafe8be4f16402d954031b7e1eea5acb2b1d931b",
+    "throne-dragon/throne-v1-atlas-1.webp.json": "250c90a8468ba96b86f882fbe48f32fb9b39cfda4d45f4b74af88889aa91ae53",
+    "throne-dragon/throne-v1-atlas-10.webp": "bb4909b746a8beeb61fd3368d173b6e8566e0b33bfd230ebc05f49bc8387b2da",
+    "throne-dragon/throne-v1-atlas-10.webp.json": "7d9acc096448516420188097271e3698b1af9e9c86789d141a4b2a87efc319b2",
+    "throne-dragon/throne-v1-atlas-11.webp": "d69f32215f90ac057833570bc810b221662dcf48d1424db37b0221c1b7ddf2e3",
+    "throne-dragon/throne-v1-atlas-11.webp.json": "4a741988975d049883582744f94fb0a30aa958e48118c0ff3d667701852699d2",
+    "throne-dragon/throne-v1-atlas-12.webp": "afe8a64972e744a78a1dce8167c7dbaf13164c7abf6b8b59f0f2f4c4355a54bb",
+    "throne-dragon/throne-v1-atlas-12.webp.json": "06533d5ad0b50e9f4633d58111d2c5311c8c3e0c2d5b880ba1a4d40017c421f4",
+    "throne-dragon/throne-v1-atlas-13.webp": "4f4a6533bd03f814e4d5e348f6e7a0a267c0ef0fb16bf75ee003618c658f30a1",
+    "throne-dragon/throne-v1-atlas-13.webp.json": "d601f71e6f079c849556ce37f7c5fe0c766fb4301f14fa9a25c3ca61a5d0fd30",
+    "throne-dragon/throne-v1-atlas-14.webp": "c9a905b737df14476c86aecd260c4e50b0887ad8c369586366556b3c30223806",
+    "throne-dragon/throne-v1-atlas-14.webp.json": "b2926158d025334ef7550da6e975a2d3a13437decdb591f3dca17b8b02f6c8e0",
+    "throne-dragon/throne-v1-atlas-2.webp": "fc7a25e383d2b1997babe622fd267bb97afc98233fde381844983bb0c7165ab5",
+    "throne-dragon/throne-v1-atlas-2.webp.json": "fbbbf618397cd44359c1977ce22a96a6ca9cf890253f8d13e2bb1a803f05294b",
+    "throne-dragon/throne-v1-atlas-3.webp": "e3e2e796e36231cf0325c0f7bfc71734a97f0fcfb751cbecae963d330aadb02c",
+    "throne-dragon/throne-v1-atlas-3.webp.json": "534d94564bf330da6fe659427e63ac155ad58fa7854e36024eb291e7c414b89b",
+    "throne-dragon/throne-v1-atlas-4.webp": "74b5906713ec12710ebac876367383de7cea251e6d768584f5912514ed32aa7f",
+    "throne-dragon/throne-v1-atlas-4.webp.json": "0c80283057ebe0f48255ec3cc5969b43a88689d411dda5dd8178024409a59af9",
+    "throne-dragon/throne-v1-atlas-5.webp": "c2f9276e64b5928fee83d1b61f154e1575d91c03ad5c2d79c0c1244b4c32d4b0",
+    "throne-dragon/throne-v1-atlas-5.webp.json": "c764acac013f44405a54eb06a3d681c8b38cc16821db3a0f1cdc3d43c8665e74",
+    "throne-dragon/throne-v1-atlas-6.webp": "d72f8c40adcbed5a2886d61709bd98dc843651cd6a5ce4533d729550eff375e6",
+    "throne-dragon/throne-v1-atlas-6.webp.json": "4f36fe0ca0190390543e6509482f2220f24b3bbad2d8e8db375dcf4bdd8dc98d",
+    "throne-dragon/throne-v1-atlas-7.webp": "187ca509ca196a1b59a3089fe7781ca9b7f38bd81c9a77159cbfa00934c27a76",
+    "throne-dragon/throne-v1-atlas-7.webp.json": "2883774490751aa84af7c238235d512dbfce37a4a690e30347b42c8332d4ab80",
+    "throne-dragon/throne-v1-atlas-8.webp": "dd504d0c252c6ff585751c431ad4866d35b48c44570f0c4920ff6e2099e8f200",
+    "throne-dragon/throne-v1-atlas-8.webp.json": "165dd951b8dd6f8fc715a51b5c5411b0dce6350786936ce4c67881ff6c4870a4",
+    "throne-dragon/throne-v1-atlas-9.webp": "37fd6546c10269ec32ceb561f00c7c8658d90cac17b743cd4cac428a5dd29da7",
+    "throne-dragon/throne-v1-atlas-9.webp.json": "e23ef47a1874dd0beb09fc3339ae39b51b045472ab4123bfafb4735ad318d83c",
+    "wolf/atlas-0.webp": "f924c8d137c5b3580bc712f26b1d85aff09b278418704d4ff9cba3aab1df0e68",
+    "wolf/atlas-0.webp.json": "ec95bf3df93f9b847f900d35d6c854cedfff5e82d448a6ff4d24c5c1f0127778",
+    "wolf/atlas-1.webp": "e43a5104ab436aa3e380b341e8bb7cc67f4811202fb494f6444259a608fbe05e",
+    "wolf/atlas-1.webp.json": "074583eb2bd6d2142b3c7052dc25344bbf6c54022f35716c7880c4b9a49c83c9",
+    "wolf/atlas-2.webp": "e8f9a5e299640eebe8ec42c3b2c426fa09ecc664e1c9ab2a0327a54f3c815f73",
+    "wolf/atlas-2.webp.json": "cec25a956562aba4caabe1ecc165726fb01efee04be24ae2860c32e8cc8b74ca"
+  },
+  "after_ok": true,
+  "preserved_kits": 13,
+  "preserved_files": 128,
+  "new_kits": [
+    "skeleton-minion",
+    "skeleton-warrior",
+    "skeleton-rogue",
+    "skeleton-mage"
+  ]
+}

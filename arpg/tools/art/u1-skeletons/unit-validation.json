@@ -1,0 +1,9 @@
+{
+  "command": "cd arpg && node --test --test-reporter=tap test/*.test.js",
+  "tests": 482,
+  "pass": 481,
+  "fail": 1,
+  "allowed_failure": "stamp.test.js:8 index.html cache-busting stamps match current js/css contents",
+  "skipped": 0,
+  "log": "/tmp/arpg-u1-unit.log"
+}
