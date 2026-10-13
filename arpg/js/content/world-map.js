@@ -8,13 +8,14 @@ export const REGIONS = [
   { id:'mine', name:'녹슨 광산', maps:['S12','S17'], pos:[24,56] },
   { id:'swamp', name:'늑대 언덕·늪', maps:['S11','S13','S16','S18'], pos:[76,56] },
   { id:'throne', name:'왕좌 앞뜰', maps:['TD1'], pos:[50,92] },
-  { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[50,74] },
+  { id:'graveyard', name:'버려진 묘지', maps:['S21','S22','S23'], pos:[76,74] },
+  { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[24,74] },
 ];
-export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne']];
+export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne'],['castle','graveyard']];
 export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map((id, index) => [id, {
   id, regionId:region.id, mainQuest:id,
   // Castle accepts EITHER completed branch, never both.
-  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20']}[region.id],
+  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20'],graveyard:['S20']}[region.id],
 }])));
 for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
 // Append after legacy gates were derived: QC1 never changes TD1's S20 requirement.
@@ -22,6 +23,7 @@ REGIONS.find(r => r.id === 'throne').maps.push('M_THRONE_GARGOYLE');
 export function mapUnlocked(save, id) {
   const map = MAPS[id];
   // Historical trial clears stay saved, but never bypass the official late-game gate.
+  if (MAPS[id]?.regionId === 'graveyard' && !save.cleared?.S20) return false;
   if (id === 'TD1' || id === 'M_THRONE_GARGOYLE') return !!save.cleared?.S20;
   return !!map && (!!save.cleared?.[id] || !map.requires.length || map.requires.some(prior => !!save.cleared?.[prior]));
 }

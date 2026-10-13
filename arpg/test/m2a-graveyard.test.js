@@ -7,6 +7,7 @@ import * as combat from '../js/content/combat.js';
 import * as identity from '../js/content/monsters.js';
 import {ATLAS_IDS,DIRECTIONS,atlasAnimation,atlasDirection} from '../js/render/atlas-state.js';
 import {createWorld,addPlayer,spawnMonster,step} from '../js/sim/world.js';
+import {NEW_MONSTER_DROPS,TIER4_GEAR_DROPS} from '../js/content/loot.js';
 import {rollDrops} from '../js/meta/items.js';
 import {validateContent} from '../tools/validate-content.mjs';
 const ids=['ghoul','ghost','bat'];
@@ -30,13 +31,13 @@ test('M2a adds three hostile graveyard identities, role-scaled T4 numbers and on
   assert.deepEqual(identity.MONSTER_PALETTES[variant.paletteId],[0xffffff]);
   assert.equal(combat.MONSTERS[id].hp/combat.MONSTERS[roles[id]].hp,1.5);
   assert.ok(combat.MONSTERS[id].abilities.every(a=>preservation.other_combat_exports_sha256.ABILITIES&&combat.ABILITIES[a]));
-  assert.throws(()=>rollDrops(id,0),/unknown drop table/);
+  assert.ok(rollDrops(id,0,{huntTier:4}).stacks); // U5 connects the approved drop tables.
  }
  assert.deepEqual(combat.MONSTERS.ghoul.abilities,['goblin_slash']);assert.deepEqual(combat.MONSTERS.ghost.abilities,['sling_stone']);assert.deepEqual(combat.MONSTERS.bat.abilities,['goblin_hop','goblin_slash']);
  assert.ok(combat.MONSTERS.ghoul.poise>combat.MONSTERS.skeleton_warrior.poise);
  assert.ok(combat.MONSTERS.ghoul.speed<combat.MONSTERS.skeleton_warrior.speed);assert.ok(combat.MONSTERS.bat.speed>combat.MONSTERS.skeleton_rogue.speed);
  assert.deepEqual(combat.MONSTERS.ghost.keepRange,[230,330]);
- for(const stage of Object.values(combat.STAGES))assert.ok(stage.spawns.every(e=>!ids.includes(e.monster)));
+ for(const stage of Object.entries(combat.STAGES).filter(([id])=>!/^S2[123]$/.test(id)).map(([,stage])=>stage))assert.ok(stage.spawns.every(e=>!ids.includes(e.monster)));
 });
 
 test('M2a real host spawns and runs all three archetypes without simulation changes',()=>{
@@ -78,15 +79,15 @@ test('M2a delivered bytes bind every frame alpha to real articulated geometry an
 test('M2a preserves all main combat/identity entries, sprites, sim/net/renderer/index/loot bytes',()=>{
  assert.equal(preservation.ok,true);assert.equal(preservation.baseline,'fef289f739ed2fa7d2bd86a93e15d3bd39165249');assert.equal(Object.keys(preservation.original_monster_sha256).length,16);
  for(const [id,hash] of Object.entries(preservation.original_monster_sha256))assert.equal(sha(stable(combat.MONSTERS[id])),hash,id);
- for(const [key,hash] of Object.entries(preservation.other_combat_exports_sha256))assert.equal(sha(stable(combat[key])),hash,key);
+ for(const [key,hash] of Object.entries(preservation.other_combat_exports_sha256))assert.equal(sha(stable(key==='STAGES'?Object.fromEntries(Object.entries(combat.STAGES).filter(([id])=>!/^S2[123]$/.test(id))):combat[key])),hash,key);
  for(const [key,baseline] of Object.entries(preservation.identity_baseline)){if(baseline.entries)for(const [id,hash] of Object.entries(baseline.entries))assert.equal(sha(stable(identity[key][id])),hash);else assert.equal(sha(stable(identity[key].slice(0,baseline.prefix_length))),baseline.sha256);}
- for(const [file,hash] of Object.entries({...preservation.unchanged_files_sha256,...preservation.preserved_sprite_sha256})){if(file==='arpg/index.html')assert.equal(sha(read('../index.html').toString().replace(/\?v=[a-f0-9]{10}/g,'?v=STAMP')),preservation.normalized_index_sha256,'parent stamp only');else assert.equal(sha(read('../'+file.replace(/^arpg\//,''))),hash,file);}
+ for(const [file,hash] of Object.entries({...preservation.unchanged_files_sha256,...preservation.preserved_sprite_sha256})){if(file==='arpg/index.html')assert.equal(sha(read('../index.html').toString().replace(/\?v=[a-f0-9]{10}/g,'?v=STAMP')),preservation.normalized_index_sha256,'parent stamp only');else if(file==='arpg/js/content/loot.js') { const original=execFileSync('git',['show',preservation.baseline+':'+file],{encoding:'utf8'}); const base=original.replace('export const NEW_MONSTER_DROPS =','const NEW_MONSTER_DROPS =').replace('export const TIER4_GEAR_DROPS =','const TIER4_GEAR_DROPS ='); const old=Function(base+';return {NEW_MONSTER_DROPS,TIER4_GEAR_DROPS}')(); for(const [id,table] of Object.entries(old.NEW_MONSTER_DROPS))assert.deepEqual(NEW_MONSTER_DROPS[id],table,id); assert.deepEqual(TIER4_GEAR_DROPS,old.TIER4_GEAR_DROPS); } else assert.equal(sha(read('../'+file.replace(/^arpg\//,''))),hash,file);}
  assert.deepEqual(manifest.slice(0,preservation.original_manifest.length),preservation.original_manifest);
  assert.deepEqual(Object.keys(combat.MONSTERS).filter(id=>!Object.hasOwn(preservation.original_monster_sha256,id)),ids);
 });
 
 test('M2a preserves every stage host digest across 216 seeded weapon runs',()=>{
- const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
+ const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES).filter(id=>!/^S2[123]$/.test(id)));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
 });
 
 test('M2a states and octants are readonly; humanoid and unknown-profile guards are not relaxed',()=>{

@@ -25,7 +25,7 @@ const hubFor = save => Object.assign(Object.create(HubUI.prototype), { save, per
 
 test('QF1 data stays on existing wolf maps and adds no stage', () => {
   for (const id of QF1.maps) assert.ok(STAGES[id].spawns.some(s => s.monster === 'wolf'), id);
-  assert.equal(Object.keys(STAGE_XP).filter(id => !id.startsWith('M_')).length, 21);
+  assert.equal(Object.keys(STAGE_XP).filter(id => !id.startsWith('M_') && !/^S2[123]$/.test(id)).length, 21);
   assert.ok(!Object.hasOwn(STAGES, 'QF1'));
 });
 
@@ -119,7 +119,7 @@ test('map shows offer → progress → done, sortie and receipt show the counter
   h.mapRegion = 'forest';
   h.showBoard();
   assert.match(h.html, /data-action="quest-accept" data-quest="QF1"/);
-  assert.equal((h.html.match(/data-stage="(?:S\d+|TD1)"/g) || []).length, 21, 'main contracts unchanged');
+  assert.equal((h.html.match(/data-stage="(?:S(?:[1-9]|1\d|20)|TD1)"/g) || []).length, 21, 'main contracts unchanged');
   h.action('quest-accept', { quest: 'QF1' });
   assert.equal(h.save.quests.QF1.state, 'active');
   assert.match(h.html, /side-contract active" data-quest="QF1"/);

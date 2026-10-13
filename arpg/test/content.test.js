@@ -23,7 +23,7 @@ test('§11.4 content CLI is a failing-build gate integrated into node tests', ()
   assert.deepEqual(validateContent(), []);
   const result = spawnSync(process.execPath, [new URL('../tools/validate-content.mjs', import.meta.url).pathname]);
   assert.equal(result.status, 0, result.stderr.toString());
-  assert.match(result.stdout.toString(), /19 monsters, 24 stages/);
+  assert.match(result.stdout.toString(), /19 monsters, 27 stages/);
 });
 
 test('validator rejects missing ability/archetype/model/palette/name/spawn/drop/recipe references', () => {
@@ -64,7 +64,7 @@ test('validator enforces simple ≥400ms / elite ≥800ms and rejects danger pal
 });
 
 test('new monsters keep explicit orthogonal identity; only verified wolf and spider have atlases', () => {
-  for (const id of Object.keys(NEW_MONSTER_DROPS)) {
+  for (const id of ['throne_dragon','wolf','gargoyle','rune_guardian','spirit','poison_spider']) {
     const variant = MONSTER_VARIANTS[id];
     assert.equal(variant.disposition, 'hostile');
     assert.ok(variant.speciesTags.length);

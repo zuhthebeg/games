@@ -35,6 +35,11 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
+    // U5: existing late-game scalars/budgets; no new combat or reward formula.
+    S21: { hp:5, damage:2.5, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[22,'epic',4] },
+    S22: { hp:5, damage:2.5, eliteChance:.18, waves:5, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[22,'epic',4] },
+    // Sequential elite guards, then the elite mage. Existing elite behavior, not a chief/dragon reward guarantee.
+    S23: { hp:5, damage:2.5, eliteChance:1, waves:1, waveMs:0, concurrent:1, huntTier:4, rewardRank:12, sizeRank:19, rec:[22,'epic',4] },
     // S20 aftermath: one fixed boss, HP below S20 chief (13860 vs 15770), stronger hits, no waves.
     TD1: { hp:18, damage:3, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:3, rewardRank:20, rec:[22,'epic',4] },
     M_THRONE_GARGOYLE: { hp:5, damage:2.5, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:19, sizeRank:19, rec:[20,'epic',3] },

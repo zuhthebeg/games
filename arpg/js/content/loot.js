@@ -1,5 +1,13 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
+  // U5: reuse existing materials and late guardian/spirit budgets; no legacy gear side-rolls.
+  skeleton_minion: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[] },
+  skeleton_warrior: { gold:[6,10], stacks:[{id:'scrap',count:2},{id:'rune_shard',count:1,chance:.5}], items:[] },
+  skeleton_rogue: { gold:[3,6], stacks:[{id:'fang',count:1},{id:'hide',count:1,chance:.3}], items:[] },
+  skeleton_mage: { gold:[10,16], stacks:[{id:'rune_shard',count:2},{id:'wood',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  ghoul: { gold:[12,18], stacks:[{id:'web',count:3},{id:'scrap',count:3},{id:'potion',count:1,chance:.2}], items:[] },
+  ghost: { gold:[10,16], stacks:[{id:'frost_shard',count:2},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  bat: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   // Existing late guardian rewards; ordinary T3 gear rolls, no chief guarantee or new currency.
   throne_dragon: { gold: [18, 26], stacks: [{ id: 'rune_shard', count: 2 }, { id: 'scrap', count: 4 }, { id: 'fang', count: 2 }, { id: 'dragon_scale', count: 1 }], items: [{ id: 'dragonfang_blade', chance: 0.04, exclusive: true }, { id: 'dragon_scale_armor', chance: 0.04, exclusive: true }] },
   wolf: {
@@ -28,7 +36,7 @@ export const NEW_MONSTER_DROPS = {
   },
 };
 
-// Definition only: no T4 stage or live generic T4 roll path is enabled yet.
+// Existing T4 weapon/body pool; U5 uses it through the ordinary quest gear budget.
 export const TIER4_GEAR_DROPS = [
   'revenant_blade', 'bone_bow', 'soulfire_wand', 'gravekeeper_staff',
   'ossuary_maul', 'shroud_robe', 'shadow_leather', 'ossuary_plate',

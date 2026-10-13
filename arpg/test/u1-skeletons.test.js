@@ -45,14 +45,14 @@ test('U1 warrior differs from minion only in increased HP, poise and kbResist', 
   assert.deepEqual(warrior, minion);
 });
 
-test('U1 reuses existing melee, dash and projectile abilities without stage placement', () => {
+test('U1 reuses existing melee, dash and projectile abilities without legacy stage placement', () => {
   assert.deepEqual(MONSTERS.skeleton_minion.abilities, ['goblin_slash']);
   assert.deepEqual(MONSTERS.skeleton_warrior.abilities, ['goblin_slash']);
   assert.deepEqual(MONSTERS.skeleton_rogue.abilities, ['goblin_hop', 'goblin_slash']);
   assert.deepEqual(MONSTERS.skeleton_mage.abilities, ['sling_stone']);
   assert.ok(ABILITIES.goblin_hop.dash);
   assert.ok(ABILITIES.sling_stone.projectile);
-  for (const stage of Object.values(STAGES))
+  for (const stage of Object.entries(STAGES).filter(([id])=>!/^S2[123]$/.test(id)).map(([,stage])=>stage))
     assert.ok(stage.spawns.every(spawn => !ids.includes(spawn.monster)));
   for (const id of ids) {
     const world = createWorld({ seed: 42 });
@@ -127,7 +127,7 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   // U1's byte proof was pinned at dc2a876; later intentional main commits are exempt by name.
   const later = { ABILITIES: 'd143221 slash 16', 'arpg/js/sim/world.js': 'd143221 melee guard', 'arpg/index.html': 'cache stamps', 'arpg/tools/art/bake.py': 'M2a floating/winged rigs + fixed lift/material colors', 'arpg/tools/art/verify_atlases.py': 'M2a source-bound floating/winged gates' };
   for (const [key, hash] of Object.entries(evidence.other_combat_exports_sha256))
-    if (!later[key]) assert.equal(sha(stable(combat[key])), hash, key);
+    if (!later[key]) assert.equal(sha(stable(key === 'STAGES' ? Object.fromEntries(Object.entries(STAGES).filter(([id])=>!/^S2[123]$/.test(id))) : combat[key])), hash, key);
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
     if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id) && !['ghoul','ghost','bat'].includes(id)), ids);
@@ -150,8 +150,8 @@ test('U1 main-versus-definition host traces cover every stage and remain byte-id
   const after = read('../tools/art/u1-skeletons/host-trace-after.json');
   assert.equal(evidence.baseline, 'dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8');
   assert.equal(evidence.ok, true); assert.equal(evidence.cmp_equal, true);
-  assert.deepEqual(evidence.stage_ids, Object.keys(STAGES));
-  assert.equal(evidence.traces, Object.keys(STAGES).length * 9);
+  assert.deepEqual(evidence.stage_ids, Object.keys(STAGES).filter(id=>!/^S2[123]$/.test(id)));
+  assert.equal(evidence.traces, Object.keys(STAGES).filter(id=>!/^S2[123]$/.test(id)).length * 9);
   assert.equal(JSON.parse(before).length, evidence.traces);
   assert.deepEqual(before, after);
   assert.equal(sha(before), evidence.before_sha256); assert.equal(sha(after), evidence.after_sha256);

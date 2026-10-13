@@ -377,6 +377,9 @@ export const STAGES = {
   S18: stage('거미 여왕의 둥지', [['poison_spider', 0, .74, .3], ['poison_spider', 2000, .8, .7], ['poison_spider', 4000, .88, .5], ['spirit', 6000, .92, .2]]),
   S19: stage('봉인의 회랑', [['rune_guardian', 0, .76, .5], ['spirit', 2000, .84, .25], ['spirit', 4000, .84, .75], ['goblin_slinger', 6000, .92, .5]]),
   S20: stage('왕좌의 문', [['goblin_chief', 0, .78, .5], ['rune_guardian', 3000, .86, .25], ['wolf', 5000, .86, .75], ['wolf', 7000, .9, .4], ['spirit', 9000, .92, .6]]),
+  S21: stage('버려진 묘지 입구', [['skeleton_minion',0,.76,.35],['bat',2000,.84,.7],['skeleton_warrior',4000,.88,.5],['skeleton_rogue',6000,.9,.25],['ghoul',8000,.8,.65],['skeleton_mage',10000,.9,.75]]),
+  S22: stage('잠들지 못한 납골당', [['ghoul',0,.76,.35],['ghost',2000,.86,.7],['skeleton_warrior',4000,.88,.5],['skeleton_rogue',6000,.9,.25],['bat',8000,.8,.65],['skeleton_mage',10000,.9,.75]]),
+  S23: stage('묘지의 해골 마법사', [['skeleton_minion',0,.76,.35],['skeleton_warrior',0,.84,.7],['bat',0,.88,.5],['skeleton_rogue',0,.9,.25],['ghoul',0,.8,.65],['ghost',0,.9,.75],['skeleton_warrior',0,.84,.7],['skeleton_mage',0,.88,.5]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

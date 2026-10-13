@@ -6,9 +6,9 @@ import { createWorld, addPlayer, startStage, step, emptyInput } from '../js/sim/
 import { createSave } from '../js/meta/save.js';
 import { buildRoundMods } from '../js/meta/run.js';
 
-export function masteryTraces(counts = {}) {
+export function masteryTraces(counts = {}, stageIds = Object.keys(STAGES)) {
   const traces = {};
-  for (const stageId of Object.keys(STAGES)) for (const seed of [11, 73, 991]) {
+  for (const stageId of stageIds) for (const seed of [11, 73, 991]) {
     const world = createWorld({ seed });
     for (const [pid, weapon] of [['a', 'bow'], ['b', 'focus']]) {
       const save = createSave({ name: pid, weapon, answers: [0, 0, 0, 0, 0], createdAt: 1 });
@@ -26,7 +26,7 @@ export function masteryTraces(counts = {}) {
     }
     traces[`${stageId}/${seed}`] = hash.digest('hex');
   }
-  return { stages: Object.keys(STAGES).length, seeds: [11, 73, 991], ticks: 1800, traces };
+  return { stages: stageIds.length, seeds: [11, 73, 991], ticks: 1800, traces };
 }
 if (process.argv[1]?.endsWith('skill-mastery-trace.mjs')) {
   const data = masteryTraces();

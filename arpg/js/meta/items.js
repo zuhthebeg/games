@@ -316,7 +316,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const loot = legacyDrops(monsterType, seed, materialBonus, threat.drop);
   if (monsterType === 'scarecrow') return loot;
   const random = rng(seed ^ 0xa521d937);
-  const tier = Math.max(1, Math.min(3, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
+  const tier = Math.max(1, Math.min(4, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
@@ -327,8 +327,10 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       let rarity = weighted(Object.entries((ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity)), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
+      // I1 authored no T4 head/hands/feet. Retain slot odds, falling back to existing T3 gear.
+      const slotTier = tier === 4 && !['weapon', 'body'].includes(slot) ? 3 : tier;
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
-        && item.huntTier === tier && !item.craftOnly && !item.dropOnly);
+        && item.huntTier === slotTier && !item.craftOnly && !item.dropOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;
@@ -341,7 +343,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     // A drop event is either a pile of plain stones (5 = one scroll) or a single greater stone.
     const [min, max] = ENCHANT.stoneCount[boss ? 'boss' : elite ? 'elite' : 'normal'];
     for (let i = 0; i < count; i++) {
-      const stone = weighted([[STONE, ECONOMY.stoneWeights[tier][0]], [GREATER_STONE, ECONOMY.stoneWeights[tier][1]]], random);
+      const stone = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], random);
       const amount = stone === STONE ? min + Math.floor(random() * (max - min + 1)) : 1;
       loot.stacks[stone] = (loot.stacks[stone] || 0) + amount;
     }
