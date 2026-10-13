@@ -81,8 +81,8 @@ try {
       r.reset(w);r.render(w,1,1/60);const n=r.questLabels[0],label={text:n.text,visible:n.visible,x:n.x,y:n.y};stage.destroy({children:true});return label;
     })()`);
     assert.equal(targetLabel.text,'대상: 가고일');assert.equal(targetLabel.visible,true);
-    // Normal AUTO toggle, native movement and dodge keys/touch only; world is read-only.
-    await activate(c,'[data-auto-toggle]',mobile);
+    // Normal AUTO toggle (battle settings panel), native movement and dodge keys/touch only; world is read-only.
+    await activate(c,'[data-battle-settings]',mobile);await activate(c,'#battle-auto-on',mobile);await activate(c,'[data-battle-settings]',mobile);
     let held=[],touching=false,dodged=false;const deadline=Date.now()+120000;
     while(Date.now()<deadline){
       const state=await c.eval(`(()=>{const w=__arpg.world;return JSON.parse(JSON.stringify({round:w.round,player:w.entities.find(e=>e.kind==='player' && (!__arpg.multi || e.pid===__arpg.multi.uid)),target:w.entities.find(e=>e.id===w.round.objective.targetId)}));})()`);
