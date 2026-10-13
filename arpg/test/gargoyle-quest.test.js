@@ -52,9 +52,9 @@ test('same combat tick fatal poison excludes dying companion from target clear',
  p.hp=1;p.poison={left:2,next:1,interval:30,hit:{def:{damage:2},mult:1,periodic:true,srcId:999,srcKind:'monster',abilityId:'spider_poison',fromX:p.x,fromY:p.y}};
  const events=step(w,{'0':{...emptyInput(),autoAttack:true}});assert.equal(t.dead,true);assert.equal(p.terminal,'death');assert.equal(w.entities[0].terminal,'clear');assert.deepEqual(events.find(e=>e.type==='objectiveComplete').participants,['0']);
 });
-test('first XP2020 repeat505, S19 death policy, persistent receipt and existing personal sortie cap',()=>{
+test('first XP2020 repeat0, S19 death policy, persistent receipt and existing personal sortie cap',()=>{
  const s=fresh();assert.equal(stageXp(s,id),2020);assert.equal(deathLoss({...s,xp:100},id),deathLoss({...s,xp:100},'S19'));
- const r=settleRound(s,{stageId:id,terminal:'clear'});assert.equal(r.receipt.stageXp,2020);assert.equal(stageXp(r.save,id),505);assert.equal(validateSave(r.save),true);assert.equal(stageXp({cleared:{M_MINE_CART:true}},'M_MINE_CART'),0);assert.equal(stageXp({cleared:{M_MARSH_MARKERS:true}},'M_MARSH_MARKERS'),0);
+ const r=settleRound(s,{stageId:id,terminal:'clear'});assert.equal(r.receipt.stageXp,2020);assert.equal(stageXp(r.save,id),0);assert.equal(validateSave(r.save),true);assert.equal(stageXp({cleared:{M_MINE_CART:true}},'M_MINE_CART'),0);assert.equal(stageXp({cleared:{M_MARSH_MARKERS:true}},'M_MARSH_MARKERS'),0);
  for(let seed=1;seed<=100;seed++){const events=Array.from({length:30},(_,i)=>({type:'kill',id:i+10,monster:'gargoyle',stageId:id,elite:false,threat:1,xp:36}));const tr=trackRound(s,createTracker(seed),events).tracker;assert.ok(tr.gearBudget>=1&&tr.gearBudget<=2);const result=settleRound(s,{stageId:id,terminal:'clear',...tr});assert.ok(result.receipt.lootKept.items.length<=tr.gearBudget);}
 });
 test('snapshot contains deep-copy target slot, bound ID and complete state',()=>{

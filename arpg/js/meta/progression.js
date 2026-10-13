@@ -5,8 +5,8 @@ export const STAGE_XP = { S1: 50, S2: 100, S3: 180, S4: 260, S5: 340, S6: 480, S
   S8: 580, S9: 650, S10: 1090, S11: 820, S12: 910, S13: 1020, S14: 1150, S15: 1930,
   S16: 1440, S17: 1610, S18: 1800, S19: 2020, S20: 3390, TD1: 2020, M_MINE_CART: 910, M_MARSH_MARKERS: 510, M_THRONE_GARGOYLE: 2020 };
 export const xpSpan = (level) => Math.round(50 * level ** 1.5);
-// Traversal contracts pay first-clear XP only; the combat bounty retains the existing 25% repeat rule.
-const repeatXpFactor = (stageId) => String(stageId).startsWith('M_') && stageId !== 'M_THRONE_GARGOYLE' ? 0 : 0.25;
+// Objective contracts (M_*) pay first-clear XP only: the gargoyle bounty ends on one kill, far cheaper than S19 (cocy 10-13 review).
+const repeatXpFactor = (stageId) => String(stageId).startsWith('M_') ? 0 : 0.25;
 export const stageXp = (save, stageId) => Math.round(STAGE_XP[stageId] * (save.cleared[stageId] ? repeatXpFactor(stageId) : 1));
 
 export function addXp(save, amount) {
