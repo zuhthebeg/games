@@ -1,0 +1,1626 @@
+{
+  "baseline": "abcd0944e16894364c134e42c8e800ec91cf1ed3",
+  "implementation": "e625eef0ffe4f99b7ad72afd9a4a0f96f9ff8d5e",
+  "independentOpusReview": "PENDING parent-only mandatory review",
+  "parentAssetStamp": "PENDING unchanged child index",
+  "fullSuite": {
+    "tests": 737,
+    "pass": 736,
+    "fail": 1,
+    "skipped": 0,
+    "exception": "index.html cache-busting stamps match current js/css contents"
+  },
+  "content": {
+    "monsters": 19,
+    "stages": 27
+  },
+  "dps": [
+    {
+      "weapon": "blade",
+      "form": "sword",
+      "mode": "repeat",
+      "baseline": {
+        "damage": 1312,
+        "dps": 43.733333333333334,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 1278,
+        "dps": 42.6,
+        "hits": 77,
+        "acts": 78,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": -2.591463414634143
+    },
+    {
+      "weapon": "blade",
+      "form": "sword",
+      "mode": "auto",
+      "baseline": {
+        "damage": 1312,
+        "dps": 43.733333333333334,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 1278,
+        "dps": 42.6,
+        "hits": 77,
+        "acts": 78,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": -2.591463414634143
+    },
+    {
+      "weapon": "blade",
+      "form": "blunt",
+      "mode": "repeat",
+      "baseline": {
+        "damage": 1312,
+        "dps": 43.733333333333334,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 1305,
+        "dps": 43.5,
+        "hits": 77,
+        "acts": 78,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": -0.5335365853658569
+    },
+    {
+      "weapon": "blade",
+      "form": "blunt",
+      "mode": "auto",
+      "baseline": {
+        "damage": 1312,
+        "dps": 43.733333333333334,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 1305,
+        "dps": 43.5,
+        "hits": 77,
+        "acts": 78,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": -0.5335365853658569
+    },
+    {
+      "weapon": "bow",
+      "form": "bow",
+      "mode": "repeat",
+      "baseline": {
+        "damage": 820,
+        "dps": 27.333333333333332,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 820,
+        "dps": 27.333333333333332,
+        "hits": 109,
+        "acts": 82,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 0
+    },
+    {
+      "weapon": "bow",
+      "form": "bow",
+      "mode": "auto",
+      "baseline": {
+        "damage": 820,
+        "dps": 27.333333333333332,
+        "hits": 82,
+        "acts": 82,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 820,
+        "dps": 27.333333333333332,
+        "hits": 109,
+        "acts": 82,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 0
+    },
+    {
+      "weapon": "focus",
+      "form": "wand",
+      "mode": "repeat",
+      "baseline": {
+        "damage": 600,
+        "dps": 20,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 625,
+        "dps": 20.833333333333332,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 4.166666666666674
+    },
+    {
+      "weapon": "focus",
+      "form": "wand",
+      "mode": "auto",
+      "baseline": {
+        "damage": 600,
+        "dps": 20,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 625,
+        "dps": 20.833333333333332,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 4.166666666666674
+    },
+    {
+      "weapon": "focus",
+      "form": "staff",
+      "mode": "repeat",
+      "baseline": {
+        "damage": 600,
+        "dps": 20,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 625,
+        "dps": 20.833333333333332,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 4.166666666666674
+    },
+    {
+      "weapon": "focus",
+      "form": "staff",
+      "mode": "auto",
+      "baseline": {
+        "damage": 600,
+        "dps": 20,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "combo": {
+        "damage": 625,
+        "dps": 20.833333333333332,
+        "hits": 75,
+        "acts": 75,
+        "steps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ]
+      },
+      "deltaPct": 4.166666666666674
+    }
+  ],
+  "exactDisabledByteComparison": {
+    "baseline": "abcd0944e16894364c134e42c8e800ec91cf1ed3",
+    "exactBufferCompare": true,
+    "stages": 27,
+    "seeds": 3,
+    "forms": 5,
+    "ticks": 900,
+    "records": 72900,
+    "bytes": 807527416,
+    "sha256": "f11ceadd9fcb9b92ecb3fd5cb5b98f1dbf1e1ca6355eb5f18ccc359e90456b5c"
+  },
+  "nativeCombos": {
+    "passed": true,
+    "cases": 40,
+    "consoleErrors": 0,
+    "screenshots": 0,
+    "cdpPort": 19931,
+    "httpPort": 8951,
+    "results": [
+      {
+        "mobile": false,
+        "form": "sword",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 372,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "sword",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 391,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "sword",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 393,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "sword",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 408,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "blunt",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 375,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "blunt",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 390,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "blunt",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 394,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "blunt",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 400,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "bow",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 364,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "bow",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 375,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "bow",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 388,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "bow",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 391,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "wand",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 383,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "wand",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 381,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "wand",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 404,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "wand",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 414,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "staff",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 385,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "staff",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 396,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "staff",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 411,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": false,
+        "form": "staff",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 411,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "sword",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 375,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "sword",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 395,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "sword",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 402,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "sword",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "slash",
+          "reverse",
+          "thrust"
+        ],
+        "maxShots": 0,
+        "frames": 410,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "blunt",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 379,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "blunt",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 394,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "blunt",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 406,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "blunt",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [
+          "down",
+          "up",
+          "spin"
+        ],
+        "maxShots": 0,
+        "frames": 412,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "bow",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 366,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "bow",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 379,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "bow",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 387,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "bow",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 2,
+        "frames": 399,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "wand",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 389,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "wand",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 404,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "wand",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 412,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "wand",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 421,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "staff",
+        "latency": 0,
+        "jitter": 0,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 391,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "staff",
+        "latency": 40,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 406,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "staff",
+        "latency": 80,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 412,
+        "ownsGuestSim": false
+      },
+      {
+        "mobile": true,
+        "form": "staff",
+        "latency": 120,
+        "jitter": 25,
+        "manualSteps": [
+          1,
+          2,
+          3,
+          1,
+          2,
+          3
+        ],
+        "autoCasts": 7,
+        "guestSteps": [
+          1,
+          2,
+          3
+        ],
+        "guestTrails": [],
+        "maxShots": 1,
+        "frames": 422,
+        "ownsGuestSim": false
+      }
+    ]
+  },
+  "n3Native": {
+    "passed": true,
+    "consoleErrors": 0,
+    "results": [
+      {
+        "condition": {
+          "latency": 0,
+          "jitter": 0
+        },
+        "hostPerfect": 1,
+        "guestPerfect": 1,
+        "hostCounters": 1,
+        "guestCounters": 1,
+        "refunds": 0,
+        "guestHp": 2000,
+        "guestRtt": 7.599999904632568,
+        "renderTick": 109,
+        "dodgeViewTick": 99,
+        "frames": 213
+      },
+      {
+        "condition": {
+          "latency": 40,
+          "jitter": 25
+        },
+        "hostPerfect": 1,
+        "guestPerfect": 1,
+        "hostCounters": 1,
+        "guestCounters": 1,
+        "refunds": 1,
+        "guestHp": 2000,
+        "guestRtt": 79.80000019073486,
+        "renderTick": 110,
+        "dodgeViewTick": 97,
+        "frames": 219
+      },
+      {
+        "condition": {
+          "latency": 80,
+          "jitter": 25
+        },
+        "hostPerfect": 1,
+        "guestPerfect": 1,
+        "hostCounters": 1,
+        "guestCounters": 1,
+        "refunds": 1,
+        "guestHp": 2000,
+        "guestRtt": 158.40000009536743,
+        "renderTick": 111,
+        "dodgeViewTick": 98,
+        "frames": 221
+      },
+      {
+        "condition": {
+          "latency": 120,
+          "jitter": 25
+        },
+        "hostPerfect": 1,
+        "guestPerfect": 1,
+        "hostCounters": 1,
+        "guestCounters": 1,
+        "refunds": 1,
+        "guestHp": 2000,
+        "guestRtt": 274.1000003814697,
+        "renderTick": 118,
+        "dodgeViewTick": 99,
+        "frames": 235
+      }
+    ]
+  },
+  "n3Tests": {
+    "tests": 27,
+    "pass": 27,
+    "fail": 0
+  },
+  "supplementalU5": {
+    "passed": false,
+    "reason": "300second exec cap SIGTERM after all three mobile clears; desktop combat completion unverified",
+    "mobileClears": [
+      {
+        "stage": "S21",
+        "kills": 24,
+        "gold": 273,
+        "gear": 1
+      },
+      {
+        "stage": "S22",
+        "kills": 30,
+        "gold": 387,
+        "gear": 2
+      },
+      {
+        "stage": "S23",
+        "kills": 8,
+        "gold": 176,
+        "gear": 1
+      }
+    ]
+  },
+  "physicalPhone": false,
+  "childPush": false,
+  "childDeploy": false
+}
