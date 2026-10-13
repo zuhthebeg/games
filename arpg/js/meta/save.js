@@ -12,6 +12,7 @@ import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
 import { validMastery, MASTERY_SKILLS } from './skill-mastery.js';
+import { validSeenMaterials } from './recipe-discovery.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
@@ -121,6 +122,7 @@ export function validateSave(save) {
     if (save.loadout !== undefined && !validLoadout(save, save.loadout)) return false;
     if (save.loadouts !== undefined && (!record(save.loadouts) || !Object.entries(save.loadouts)
       .every(([family, loadout]) => Object.hasOwn(DEFAULT_SKILLS, family) && validLoadout(save, loadout)))) return false;
+    if (save.seenMaterials !== undefined && !validSeenMaterials(save.seenMaterials)) return false;
     if (!record(save.stacks)) return false;
     if (!record(save.stash) || !record(save.stash.stacks)
       || !Object.entries(save.stash.stacks).every(([id, count]) => Object.hasOwn(ITEMS, id)

@@ -97,7 +97,7 @@ test('ritual has reusable bounded rune geometry and tier palette, not per-partic
 test('forge separates all legacy actions, defaults to ritual, and keeps selected gear on tab switches', () => {
   const hub=Object.create(HubUI.prototype);
   hub.save=createSave({name:'탭 시험',answers:[0,0,0,0,0],createdAt:1});
-  hub.save.stacks.scroll_enchant_weapon=10;
+  hub.save.stacks.scroll_enchant_weapon=10;hub.save.stacks.scrap=1; // recipes reveal once a material is seen (cocy 10-14)
   hub.showInnPanel=(_title,html,_page,footer)=>{hub.html=html;hub.footer=footer;};
   hub.action('forge',{});
   assert.equal(hub.forgeTab,'enhance');

@@ -17,6 +17,7 @@ import {
   buy, equip, craft, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } from '../meta/enchant.js';
+import { noteMaterials, seenMaterials, recipeRevealed } from '../meta/recipe-discovery.js';
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
@@ -217,6 +218,7 @@ export class HubUI {
   }
 
   commit(next) {
+    next = noteMaterials(next);
     this.persist(next);
     this.save = next;
   }
@@ -579,12 +581,15 @@ export class HubUI {
       note: isWorn(this.save, item.uid) ? '착용 중' : '',
       extra: `aria-pressed="${item.uid === this.selectedUid}"`,
     })).join('');
-    const recipes = Object.entries(RECIPES).map(([id, recipe]) => {
+    const seen = seenMaterials(this.save);
+    const shown = Object.entries(RECIPES).filter(([id]) => recipeRevealed(this.save, id, seen));
+    const hiddenCount = Object.keys(RECIPES).length - shown.length;
+    const recipes = shown.map(([id, recipe]) => {
       const available = Object.entries(recipe).every(([key, count]) => (key === 'gold' ? this.save.gold : this.save.stacks[key] || 0) >= count);
       const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
       return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}</b><small>${parts}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
-    }).join('');
+    }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount}</p>` : '');
     this.forgeTab ||= 'enhance';
     const { html, footer } = this.forgeDetail();
     const tabs = `<nav class="forge-tabs" aria-label="대장장이 작업">${[['enhance', '강화'], ['scrolls', '주문서 제작'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
