@@ -11,6 +11,7 @@ import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf } from './skil
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
+import { validMastery, MASTERY_SKILLS } from './skill-mastery.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
@@ -37,7 +38,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0, affixes: [], rolledAt: 0 },
     ],
     stacks: { potion: 3, mana_potion: 1, return_scroll: 1 },
-    stash: { stacks: {} }, learned: [], skills: {}, loadout: [DEFAULT_SKILLS[chosen], null, null], autoBuy: { ...DEFAULT_AUTO_BUY }, autoUse: { ...DEFAULT_AUTO_USE },
+    stash: { stacks: {} }, learned: [], skills: {}, skillMastery: {}, loadout: [DEFAULT_SKILLS[chosen], null, null], autoBuy: { ...DEFAULT_AUTO_BUY }, autoUse: { ...DEFAULT_AUTO_USE },
     cleared: Object.fromEntries(Object.keys(STAGE_XP).map((id) => [id, false])),
     flags: { chiefPity: false, starterRestoreUsed: false },
     quiz: { answers: [...answers], weapon: chosen, overridden: chosen !== result.weapon },
@@ -60,6 +61,8 @@ function validReceipt(receipt) {
     if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value * 2)) return false;
   }
   if (typeof receipt.firstClear !== 'boolean' || typeof receipt.pityGranted !== 'boolean') return false;
+  if (receipt.masteryRises !== undefined && (!Array.isArray(receipt.masteryRises)
+    || !receipt.masteryRises.every(r => record(r) && MASTERY_SKILLS.includes(r.id) && integer(r.level, 2, 5)))) return false;
   for (const counts of [receipt.used, receipt.restored]) {
     if (!record(counts) || !Object.entries(counts).every(([id, count]) =>
       ['potion', 'mana_potion', 'return_scroll'].includes(id) && integer(count))) return false;
@@ -149,6 +152,7 @@ export function validateSave(save) {
     if (save.lastReceipt !== undefined && !validReceipt(save.lastReceipt)) return false;
     // Optional side-contract ledger; absent on every older save means no contract taken.
     if (save.quests !== undefined && !validQuests(save.quests)) return false;
+    if (save.skillMastery !== undefined && !validMastery(save.skillMastery)) return false;
     return true;
   } catch {
     return false;
@@ -198,7 +202,7 @@ export class SaveStore {
     if (validateSave(data)) {
       const family = ITEMS[data.items.find(item => item.uid === data.equipped.weapon)?.id]?.family || 'blade';
       return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse },
-        loadout: loadoutOf(data, family) });
+        skillMastery: data.skillMastery ?? {}, loadout: loadoutOf(data, family) });
     }
     // Back up before removing. A quota/storage failure leaves the original untouched.
     this.storage.setItem(`${SAVE_KEY}.corrupt.${this.now()}`, raw);

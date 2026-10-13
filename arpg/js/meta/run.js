@@ -6,6 +6,7 @@ import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progre
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
 import { loadoutOf } from './skills.js';
 import { questGain, settleQuests } from './quest-progress.js';
+import { trackMastery, settleMastery } from './skill-mastery.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
@@ -50,8 +51,9 @@ export function currentLoad(save, tracker, used = {}) {
 }
 
 // A pure event reducer. Main applies its ratio via setLoad; renderer receives fx, never loot ownership.
-export function trackRound(save, tracker, events, used = {}) {
+export function trackRound(save, tracker, events, used = {}, world = null, pid = null) {
   const next = structuredClone(tracker);
+  trackMastery(next, events, world, pid);
   const fx = [];
   const load = () => currentLoad(save, next, used);
   const pickup = (id, count, instance) => {
@@ -119,7 +121,7 @@ export function trackRound(save, tracker, events, used = {}) {
   return { tracker: next, fx, load: load() };
 }
 
-export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot = emptyLoot(), used = {} }) {
+export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot = emptyLoot(), used = {}, skillMastery = {} }) {
   if (!Object.hasOwn(STAGE_XP, stageId)
     || !['clear', 'return_scroll', 'death'].includes(terminal)) throw new Error('Invalid settlement');
   if (!Number.isSafeInteger(depositedXp) || depositedXp < 0) throw new Error('Invalid XP deposit');
@@ -234,6 +236,9 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   else if (terminal === 'clear' && stageId !== 'S1') next.rarelessRounds = save.rarelessRounds + 1;
   receipt.levelsGained = next.level - save.level;
   receipt.statPointsGained = receipt.levelsGained * BALANCE.stats.pointsPerLevel;
+  const mastery = settleMastery(save, skillMastery);
+  next.skillMastery = mastery.skillMastery;
+  if (mastery.rises.length) receipt.masteryRises = mastery.rises;
   // Optional v1 metadata keeps the innkeeper's last-run summary across browser reloads.
   next.lastReceipt = structuredClone(receipt);
   return { save: next, receipt };
