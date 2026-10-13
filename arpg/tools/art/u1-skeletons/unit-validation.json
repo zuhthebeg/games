@@ -1,9 +1,15 @@
 {
+  "baseline": "dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8",
   "command": "cd arpg && node --test --test-reporter=tap test/*.test.js",
-  "tests": 482,
-  "pass": 481,
+  "tests": 646,
+  "pass": 645,
   "fail": 1,
-  "allowed_failure": "stamp.test.js:8 index.html cache-busting stamps match current js/css contents",
   "skipped": 0,
-  "log": "/tmp/arpg-u1-unit.log"
+  "cancelled": 0,
+  "allowed_failure": "stamp.test.js:8 index.html cache-busting stamps match current js/css contents",
+  "log": "/tmp/arpg-u1-resume3-unit.log",
+  "log_sha256": "957fa25adeb40dbe384f2ee7d222db9097729c60a6b2eb5b90858db024b1850f",
+  "u1_tests": 9,
+  "browser_smoke_command": "ARPG_CDP_PORT=19911 ARPG_HTTP_PORT=8931 node arpg/test/u1-skeletons-browser-smoke.mjs",
+  "consoleErrors": 0
 }
