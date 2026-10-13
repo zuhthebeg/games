@@ -1,3 +1,4 @@
+import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
@@ -14,6 +15,7 @@ const TICK_MS = 1000 / 30;
 const mergeInput = (held, input) => {
   const next = { ...input };
   if (held) for (const k of EDGES) next[k] = !!(held[k] || input[k]);
+  if (held?.dodgeEdge) next.viewTick = held.viewTick;
   return next;
 };
 
@@ -56,6 +58,7 @@ export class CoopSession {
         setLoad(this.world, pid, p.load ?? 0);
         // Host's own input has no latency: newest value. Guests: ordered per-tick commands.
         this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
+        if (pid !== this.uid) enableGuestDodgeLag(this.world, pid);
       }
       startStage(this.world, data.config.stageId);
     }
@@ -150,7 +153,7 @@ export class CoopSession {
     if (this.isHost) { this.latches[this.uid]?.receive(this.sender.packet(input, load, this.eventAck), this.now); setLoad(this.world, this.uid, load); }
     else {
       // One command per 30Hz sim tick, predicted with the host's exact tick step.
-      this.tickInput = mergeInput(this.tickInput, input);
+      this.tickInput = mergeInput(this.tickInput, { ...input, viewTick: this.renderTick ?? this.buffer.currentTick?.(this.now, this.rtt) });
       this.inputLeft = Math.min(this.inputLeft + dt, 8 * TICK_MS);
       while (this.inputLeft >= TICK_MS) {
         this.inputLeft -= TICK_MS;
@@ -196,6 +199,9 @@ export class CoopSession {
     }
   }
   view(now = this.now) {
-    return this.isHost ? this.decorate(localView(this.world, this.uid)) : this.decorate(this.prediction.view(this.buffer.sample(now)));
+    if (this.isHost) return this.decorate(localView(this.world, this.uid));
+    const sampled = this.buffer.sample(now, this.rtt);
+    if (sampled) this.renderTick = sampled.viewTick;
+    return this.decorate(this.prediction.view(sampled));
   }
 }

@@ -4,6 +4,7 @@
 // attacking/casting. It never deals damage, emits events or touches a sim world.
 // Kept honest by test/net-player-prediction.test.js, which replays it against the
 // real host step() every tick.
+import { dodgeViewTick } from '../sim/dodge-lag.js';
 import { DT, ticks, dist2, shapeHitsCircle } from '../sim/core.js';
 import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/combat.js';
 import { attackRate } from '../content/balance.js';
@@ -76,7 +77,7 @@ function basicReachTarget(p, def, others) {
 }
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
-export function predictPlayerTick(state, inp, { arena, others = [] } = {}) {
+export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } = {}) {
   if (predictionBlocked(state)) return state;
   const p = { ...state, dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null };
   const d = p.dodge;
@@ -97,8 +98,10 @@ export function predictPlayerTick(state, inp, { arena, others = [] } = {}) {
   const finish = () => { Object.assign(p, knockPosition(p)); Object.assign(p, arenaPosition(p, arena)); return p; };
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(p);
-    const movement = dodgeStart(p, p.bufferDodgeDir, 0);
-    Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0;
+    const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick) : tick;
+    const movement = dodgeStart(p, p.bufferDodgeDir, start);
+    movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
+    Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
   if (d.dashLeft > 0) {
     const movement = dashPosition(p);

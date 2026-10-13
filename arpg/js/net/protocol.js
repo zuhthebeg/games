@@ -1,3 +1,4 @@
+import { currentTelegraphs } from '../render/telegraph-time.js';
 import { emptyInput, getTelegraphs } from '../sim/world.js';
 import { ABILITIES } from '../content/combat.js';
 import { BALANCE } from '../content/balance.js';
@@ -9,13 +10,16 @@ const q = v => Math.round(finite(v) * 100) / 100;
 // Guests send one packet per 30Hz sim tick; `prev` repeats the two prior movement
 // commands so a dropped relay message does not lose a tick of movement.
 export class InputSender {
-  constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; }
+  constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; }
   packet(input = {}, load = 0, ack = 0) {
     for (const k of EDGES) if (input[k]) this.edges[k]++;
+    const viewTick = Number.isSafeInteger(input.viewTick) && input.viewTick >= 0 ? input.viewTick : undefined;
+    if (input.dodgeEdge) this.dodgeViews = [...this.dodgeViews, [this.edges.dodgeEdge, viewTick]].slice(-4);
     const v = ['mx', 'my', 'aimX', 'aimY'].map(k => q(input[k]));
     const packet = { t: 'input', seq: ++this.seq, v, prev: this.history.slice(),
-      attack: !!input.attack, autoAttack: !!input.autoAttack, edges: { ...this.edges }, load, ack };
-    this.history = [...this.history, [packet.seq, v]].slice(-2);
+      attack: !!input.attack, autoAttack: !!input.autoAttack, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
+      ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}) };
+    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, dodgeViews: packet.dodgeViews }]].slice(-2);
     return packet;
   }
 }
@@ -27,28 +31,38 @@ export class InputQueue {
   constructor() {
     this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0])); this.pending = { ...this.seen };
+    this.dodgeViews = [];
     this.stats = { consumed: 0, starved: 0, skipped: 0 };
   }
   receive(p, now = 0) {
     if (p?.t !== 'input' || !Number.isSafeInteger(p.seq) || p.seq <= this.last || !Array.isArray(p.v)) return false;
     const held = { attack: !!p.attack, autoAttack: !!p.autoAttack };
     for (const row of Array.isArray(p.prev) ? p.prev : []) {
-      const [seq, v] = Array.isArray(row) ? row : [];
+      const [seq, v, metadata] = Array.isArray(row) ? row : [];
       if (Number.isSafeInteger(seq) && seq > this.last && seq < p.seq && Array.isArray(v)) {
-        this.queue.push({ seq, v, ...held, edges: null, arrived: now }); this.last = seq;
+        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, dodgeViews: metadata?.dodgeViews, arrived: now }); this.last = seq;
       }
     }
-    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, arrived: now }); this.last = p.seq; this.at = now;
+    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, dodgeViews: p.dodgeViews, arrived: now }); this.last = p.seq; this.at = now;
     if (this.queue.length > 30) { this.stats.skipped += this.queue.length - 30; this.queue.splice(0, this.queue.length - 30); }
     return true;
   }
   apply(cmd) {
     this.seq = cmd.seq;
     ['mx', 'my', 'aimX', 'aimY'].forEach((k, i) => { this.value[k] = finite(cmd.v[i]); });
+    this.value.viewTick = cmd.viewTick;
     this.value.attack = cmd.attack; this.value.autoAttack = cmd.autoAttack;
     if (cmd.edges) for (const k of EDGES) {
       const n = cmd.edges[k];
-      if (Number.isSafeInteger(n) && n >= this.seen[k]) { this.pending[k] += n - this.seen[k]; this.seen[k] = n; }
+      if (Number.isSafeInteger(n) && n >= this.seen[k]) {
+        // Bound cumulative presses, including untrusted counter jumps.
+        const count = Math.min(30, n - this.seen[k]);
+        if (k === 'dodgeEdge') for (let i = n - count + 1; i <= n; i++) {
+          const row = Array.isArray(cmd.dodgeViews) ? cmd.dodgeViews.find(r => Array.isArray(r) && r[0] === i) : null;
+          this.dodgeViews.push(row ? row[1] : undefined);
+        }
+        this.pending[k] += count; this.seen[k] = n;
+      }
     }
   }
   consume(now = this.at) {
@@ -69,6 +83,7 @@ export class InputQueue {
     }
     const input = { ...this.value };
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
+    if (input.dodgeEdge) input.viewTick = this.dodgeViews.shift();
     return input;
   }
 }
@@ -166,7 +181,14 @@ export class SnapshotBuffer {
     }
     return true;
   }
-  sample(now) {
+  currentTick(now, rtt = 0) {
+    const latest = this.frames.at(-1)?.world.tick;
+    if (latest === undefined) return 0;
+    // Minimum arrival offset includes one-way transit; ping estimates that term.
+    return Math.max(latest, Math.min(latest + 7,
+      Math.floor((now - this.clock + Math.max(0, Number.isFinite(rtt) ? rtt / 2 : 0)) / TICK_MS)));
+  }
+  sample(now, rtt = 0) {
     const latest = this.frames.at(-1);
     if (!latest) return null;
     const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : now - this.lastNow;
@@ -196,7 +218,7 @@ export class SnapshotBuffer {
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
     // Only x/y are buffered. HP, action phases and warning geometry stay newest.
-    return { ...latest.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') };
+    return currentTelegraphs({ ...latest.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
 export function localView(world, uid) {
