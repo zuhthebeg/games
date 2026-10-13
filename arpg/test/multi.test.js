@@ -50,8 +50,8 @@ test('snapshot interpolation clamps, ignores stale packets, and keeps newest tel
   assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - (b.entities[1].x + 100)) < 1e-6);
   assert.deepEqual(buffer.sample(t0 + 150).telegraphs, b.telegraphs);
 });
-test('party size HP scale is 1.6/2.2/2.8 at stage level and uses highest level, single unchanged', () => {
-  assert.deepEqual([1, 2, 3, 4].map(n => partyHpScale(n, 2, 'S2')), [1, 1.6, 2.2, 2.8]);
+test('party size HP scale is 1.4/1.8/2.15 at stage level (cocy 10-14 softer), party mean level, single unchanged', () => {
+  assert.deepEqual([1, 2, 3, 4].map(n => partyHpScale(n, 2, 'S2')), [1, 1.4, 1.8, 2.15]);
   assert.ok(partyHpScale(2, 8, 'S2') > partyHpScale(2, 2, 'S2'));
   const single = makeWorld(1), party = makeWorld(1.6);
   const a = single.entities.find(e => e.kind === 'monster'), b = party.entities.find(e => e.kind === 'monster');
@@ -167,4 +167,17 @@ test('index.html loads the shared relay + lobby libs before the game module (mer
   assert.ok(at('/lib/multiplayer.js') > 0, 'multiplayer.js script tag missing');
   assert.ok(at('/lib/mp-lobby.js') > at('/lib/multiplayer.js'), 'mp-lobby.js must load after multiplayer.js');
   assert.ok(at('src="js/main.js') > at('/lib/mp-lobby.js'), 'lobby must load before the game module');
+});
+test('melee guard: blade pawns take ×0.8 direct hits, bow/focus unchanged (cocy 10-14)', async () => {
+  const { createWorld, addPlayer, spawnMonster, step, emptyInput } = await import('../js/sim/world.js');
+  const hit = weapon => {
+    const w = createWorld({ seed: 3 }); const p = addPlayer(w, { pid: 'a', weapon, x: 400, y: 400, mods: { maxHp: 10000 } });
+    const m = spawnMonster(w, 'goblin_grunt', 440, 400); m.spawnLeft = 0;
+    for (let i = 0; i < 300 && p.hp === p.maxHp; i++) step(w, { a: emptyInput() });
+    return p.maxHp - p.hp;
+  };
+  const blade = hit('blade'), bow = hit('bow');
+  assert.ok(bow > 0);
+  assert.equal(blade, Math.max(1, Math.round(bow * 0.8)));
+  assert.equal(addPlayer(createWorld(), { pid: 'x', weapon: 'bow' }).guard, undefined);
 });

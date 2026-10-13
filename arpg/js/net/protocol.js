@@ -101,8 +101,10 @@ export class InputLatch {
 }
 // [제안] Freeze at departure: 2/3/4 players ×1.6/2.2/2.8, highest party level
 // above stage recommendation adds 4% HP per level. Telegraph timings/damage unchanged.
-export function partyHpScale(count, highestLevel, stageId) {
-  const base = [1, 1, 1.6, 2.2, 2.8][Math.max(1, Math.min(4, count))];
+// cocy 10-14 "멀티일때 몬스터 너무 강함": sub-linear party HP (was 1.6/2.2/2.8); level gap uses the party mean.
+export function partyHpScale(count, partyLevel, stageId) {
+  const base = [1, 1, 1.4, 1.8, 2.15][Math.max(1, Math.min(4, count))];
+  const highestLevel = partyLevel;
   const recommended = BALANCE.stages[stageId]?.rec?.[0] ?? [1, 2, 3, 4, 4, 5, 6][Number(stageId.slice(1)) - 1] ?? 1;
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }

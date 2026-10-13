@@ -20,7 +20,7 @@ const move=(p,pos)=>{p.x=pos.x;p.y=pos.y;p.moving=false;};
 function ticks(p,n){for(let i=0;i<n;i++){p.guest.update(dt,emptyInput());p.host.update(dt,emptyInput());}}
 function pickup(p,pid='host'){move(player(p.host,pid),p.host.world.round.objective.token);ticks(p,15);assert.equal(p.host.world.round.objective.carrier,pid);}
 test('objective snapshot deep copy + guest decode, explicit recommendation',()=>{
- const w=createWorld();addPlayer(w,{pid:'h'});startStage(w,id);const packet=encodeSnapshot(w);w.round.objective.token.x=0;assert.notEqual(packet.objective.token.x,0);const guest=decodeSnapshot(packet,'h');assert.deepEqual(guest.round.objective,packet.objective);assert.equal(partyHpScale(2,11,id),1.6);
+ const w=createWorld();addPlayer(w,{pid:'h'});startStage(w,id);const packet=encodeSnapshot(w);w.round.objective.token.x=0;assert.notEqual(packet.objective.token.x,0);const guest=decodeSnapshot(packet,'h');assert.deepEqual(guest.round.objective,packet.objective);assert.equal(partyHpScale(2,11,id),1.4);
 });
 test('guest consumes complete only once; retransmission/rejoin cannot duplicate settlement',()=>{
  const p=pair();pickup(p);move(player(p.host,'host'),p.host.world.round.objective.entry);ticks(p,15);
@@ -64,7 +64,7 @@ const qsId='M_MARSH_MARKERS';
 function netVisit(p,pid,i){move(player(p.host,pid),p.host.world.round.objective.markers[i]);ticks(p,15);}
 test('QS1 snapshot deep-copies visited bitset, positions and per-player dwell; guest cannot mutate host',()=>{
  const w=createWorld();addPlayer(w,{pid:'h'});startStage(w,qsId);w.round.objective.visited=1;w.round.objective.progress['h:1']=8;
- const packet=encodeSnapshot(w),g=decodeSnapshot(packet,'h');assert.deepEqual(g.round.objective,w.round.objective);g.round.objective.markers[1].x=0;g.round.objective.progress['h:1']=0;assert.notEqual(w.round.objective.markers[1].x,0);assert.equal(w.round.objective.progress['h:1'],8);assert.equal(partyHpScale(2,12,qsId),1.6);
+ const packet=encodeSnapshot(w),g=decodeSnapshot(packet,'h');assert.deepEqual(g.round.objective,w.round.objective);g.round.objective.markers[1].x=0;g.round.objective.progress['h:1']=0;assert.notEqual(w.round.objective.markers[1].x,0);assert.equal(w.round.objective.progress['h:1'],8);assert.equal(partyHpScale(2,12,qsId),1.4);
 });
 test('QS1 guest receives divided party visits, final event once, repeat final ack and no sim ownership',()=>{
  const p=pair(qsId);assert.equal(p.guest.world,null);p.host.rt('guest',{t:'objective',visited:7});assert.equal(p.host.world.round.objective.visited,0);

@@ -11,7 +11,7 @@ const run = (world, count) => {
 };
 function puddle(phase = 'active') {
   const world = createWorld({ seed: 7 });
-  const player = addPlayer(world, { pid: 'a', x: 400, y: 400 });
+  const player = addPlayer(world, { pid: 'a', weapon: 'bow', x: 400, y: 400 });
   const spider = spawnMonster(world, 'poison_spider', 460, 400);
   spider.spawnLeft = 0;
   spider.thinkLeft = 0;

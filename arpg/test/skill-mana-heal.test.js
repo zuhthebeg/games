@@ -35,6 +35,8 @@ test('nine damage values, six mana costs and R1 area sizes change; basics, monst
     if (id === 'heavy_cleave') expected.shape.range = 168.75;
     if (id === 'blast_arrow') expected.projectile.explode.radius = 108;
     if (id === 'flame_ring') expected.shape.radius = 169;
+    // cocy 10-14 "근접무기 너무 약해": blade basic 14 -> 16 (the only basic change).
+    if (id === 'slash') expected.damage = 16;
     assert.deepEqual(ABILITIES[id], expected, id);
   }
   assert.deepEqual(WEAPONS, before.WEAPONS);

@@ -89,7 +89,8 @@ test('body comparisons use actual family/mass/E1 and existing UI shows arrows on
 // Captured from untouched bf5bb31 before W1 implementation; never regenerate to accept a regression.
 // Re-pinned 10-12 on main 32ffb48 without W1 (pre-W1 sim), verified byte-identical with W1 applied.
 const legacyDigest={
- blade:'53f9c5053f18be0ac50d61c2a6f4e1602dcf1871f400ee2be35404d8337f7686',
+ // Re-pinned 10-14 for melee guard ×0.8 + slash 16 (cocy); proven identical to the old digest with guard=1/slash=14.
+ blade:'2ba5682ad95c9724e6b4962256c99765b8eec62edbef4a405ea3b3d03becbb4f',
  bow:'521de05aeb8ddcae1acedb376ace615dd0b07b369248aa934bc822ad3563cd9f',
  focus:'3470a5aa2db0240bed2c145e27d979057aafa41d740e09ea6bae002f6bcd8633',
 };

@@ -72,6 +72,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
     ...(mods.weaponForm ? { weaponForm: mods.weaponForm } : {}),
+    // Melee guard only on blade pawns so bow/focus serialized traces stay byte-identical.
+    ...(weapon === 'blade' && BALANCE.melee.guard !== 1 ? { guard: BALANCE.melee.guard } : {}),
     skills: playerSkills(mods, weapon),
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
@@ -588,6 +590,7 @@ function applyHit(world, t, hit) {
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
   if (t.kind === 'player' && t.ac > 0 && !hit.periodic) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
+  if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
   let crit = false;
   if (mdef && !hit.periodic) {

@@ -14,7 +14,7 @@ export const ABILITIES = {
   slash: {
     windupMs: 110, lockMs: 0, activeMs: 70, recoveryMs: 190, cooldownMs: 0,
     delivery: 'shape', shape: { type: 'cone', range: 92, arc: 110 },
-    damage: 14, poise: 14, knockback: 140, family: 'blade', cancelInto: ['windup', 'recovery'],
+    damage: 16, poise: 14, knockback: 140, family: 'blade', cancelInto: ['windup', 'recovery'],
   },
   lunge: {
     name: '돌진 베기', windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, manaCost: 16, cooldownMs: 5000,
