@@ -1,3 +1,4 @@
+import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -83,9 +84,9 @@ test('real attacks cycle without overlap; normal kill/settlement uses bounded ex
  assert.ok(validateSave(out.save));assert.equal(out.save.cleared.TD1,true);assert.equal(mapUnlocked(out.save,'S20'),false);
  assert.equal(out.receipt.stageXp,2020); // Single-enemy late XP anchor S19, never unlocks S20.
 });
-for(const id of Object.keys(base.traces))test(`${id} host trace unchanged from origin/main79d87a4 (3 seeds ×1800ticks)`,()=>{
+for(const id of Object.keys(base.traces))test(`${id} combo-disabled host trace unchanged from origin/main79d87a4 (3 seeds ×1800ticks)`,()=>withoutCombos(()=>{
  for(const [seed,expected] of Object.entries(base.traces[id])){const w=createWorld({seed:Number(seed)});addPlayer(w,{pid:'a',weapon:'bow',mods:{maxHp:10000}});addPlayer(w,{pid:'b',weapon:'focus',mods:{maxHp:10000}});startStage(w,id);const h=createHash('sha256');
   for(let t=0;t<1800;t++){step(w,{a:{...emptyInput(),autoAttack:true,mx:t%120<60?.2:-.2},b:emptyInput()});h.update(digest(w));}
   assert.equal(h.digest('hex'),expected,`${id}/${seed}`);
  }
-});
+}));

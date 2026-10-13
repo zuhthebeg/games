@@ -1,3 +1,4 @@
+import { comboDef } from '../js/sim/basic-combo.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld, addPlayer, spawnMonster, step, emptyInput, setLoad, getTelegraphs } from '../js/sim/world.js';
@@ -353,7 +354,7 @@ test('normal damage/poise per hit unchanged by attack rate; counter poise boost 
       const evs = isCounter ? perfect(f) : [];
       if (!isCounter) f.p.x = 550;
       f.g.staggerLeft = 0; f.g.poise = f.g.maxPoise = 1000; f.g.thinkLeft = 9999;
-      const def = ABILITIES[WEAPONS[weapon].basic];
+      const def = isCounter ? ABILITIES[WEAPONS[weapon].basic] : comboDef(WEAPONS[weapon].basic, 1, f.p.weaponForm);
       for (let i = 0; i < 35; i++) {
         f.g.x = 610; f.g.y = 400;
         const before = f.g.poise;

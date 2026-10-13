@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>AV1 native combo fixture</title>
+<style>body{margin:0;background:#101814;color:white}button{width:90px;height:64px;touch-action:none}canvas{touch-action:none}#joystick{position:absolute}</style></head>
+<body><div id="canvas"></div><div id="actions"><button id="attack" data-input="attack">attack</button><button data-input="dodge">dodge</button></div><div id="joystick" hidden><i></i></div>
+<script type="module">
+import { Application } from '../vendor/pixi-8.22.0.min.mjs';
+import { ArenaRenderer } from '../js/render/renderer.js';
+import { InputLayer } from '../js/input.js';
+import { connectBroadcast } from '../js/net/loopback.js';
+import { CoopSession } from '../js/net/session.js';
+import { emptyInput, spawnMonster } from '../js/sim/world.js';
+const q=new URLSearchParams(location.search),uid=q.get('uid'),form=q.get('form'),weapon=form==='bow'?'bow':['wand','staff'].includes(form)?'focus':'blade';
+const app=new Application();await app.init({width:390,height:640,preference:'webgl',antialias:false,autoStart:false});document.querySelector('#canvas').append(app.canvas);
+const renderer=new ArenaRenderer(app),input=new InputLayer(app.canvas,document.querySelector('#actions'),()=>{});input.setAutoAttack(false);
+let session,pending=[],initialized=false,lastView,frames=0,lastTime=performance.now();const events=[],seenSteps=new Set(),seenTrails=new Set(),seenProjectileSteps=new Set();let maxShots=0;
+const start=roster=>{
+ session=new CoopSession({uid,host:'host',players:roster.players.map(p=>p.user),profile:{level:1,weapon,mods:{weaponForm:form,maxHp:2000},threats:{S2:1}},config:{stageId:'S2',threat:1,seed:11},
+ sendRt:p=>transport.sendRt(p),sendAction:a=>transport.sendAction(a),
+ onBegin:()=>{if(session.isHost){const w=session.world;w.round.pending=[];w.round.goal='timer';w.round.timerTicks=1e6;const h=w.entities.find(e=>e.pid==='host'),g=w.entities.find(e=>e.pid==='guest');h.x=1100;h.y=700;g.x=400;g.y=400;const m=spawnMonster(w,'scarecrow',weapon==='blade'?465:600,400);m.spawnLeft=0;}},
+ onFrame:(view,ev)=>{events.push(...ev);if(!initialized){renderer.reset(view,true);renderer.root.visible=renderer.warning.visible=true;initialized=true;}}
+ });for(const a of pending.splice(0))session.action(a);
+};
+const transport=connectBroadcast({room:q.get('room'),uid,host:'host',onReady:start,onRoster:r=>session?.roster(r),onRt:(from,data)=>session?.rt(from,data),onAction:a=>session?session.action(a):pending.push(a),network:{latency:Number(q.get('latency')),jitter:Number(q.get('jitter')),loss:0,seed:13579}});
+let tickTime=performance.now();setInterval(()=>{const now=performance.now(),dt=now-tickTime;tickTime=now;if(session?.isHost)session.update(dt,emptyInput());},1000/30);
+function frame(now){const dt=now-lastTime;lastTime=now;frames++;if(session&&!session.isHost)session.update(dt,input.consume());lastView=session?.view();if(lastView&&initialized){renderer.snapshot(lastView);renderer.render(lastView,1,dt/1000);app.render();const self=lastView.entities.find(e=>e.pid==='guest');if(self?.act?.step)seenSteps.add(self.act.step);for(const fx of renderer.effects)if(fx.left>0)seenTrails.add(fx.kind);for(const pr of lastView.projectiles)if(pr.step)seenProjectileSteps.add(pr.step);maxShots=Math.max(maxShots,lastView.projectiles.filter(p=>p.step===3).length);}requestAnimationFrame(frame);}requestAnimationFrame(frame);
+window.fixture={get ready(){return initialized&&session.phase==='running';},auto(on){input.setAutoAttack(on);},report(){const guest=session?.world?.entities.find(e=>e.pid==='guest');return{ownsSim:!!session.world,events,seenSteps:[...seenSteps],seenTrails:[...seenTrails],seenProjectileSteps:[...seenProjectileSteps],maxShots,frames,combo:guest?.combo,prediction:session.prediction?.diagnostics?.(),hp:lastView?.entities.find(e=>e.pid==='guest')?.hp};}};
+</script></body></html>

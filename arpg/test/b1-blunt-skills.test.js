@@ -56,12 +56,12 @@ test('B1 exact timings, MP/CD and ground-slam front-offset circle / armor-break 
   const hits=cast(w,p).filter(e=>e.type==='hit');assert.equal(hits.filter(e=>e.dst===inside.id).length,1);
   assert.equal(hits.some(e=>e.dst===outside.id),false);assert.equal(hits.filter(e=>e.dst===rear.id).length,1);
 });
-test('B1 blunt slash alone gains 1.4 poise; damage and reach unchanged, stacked with STR/counter separately',()=>{
+test('B1 blunt slash alone gains 1.4 poise; AV1 form-scaled damage and reach, stacked with STR/counter separately',()=>{
   const run=(form,counter=false)=>{const{w,p}=scene('lunge',form ?? null);p.poiseMult=1.2;const m=target(w,470,400,'iron_boar');m.poise=m.maxPoise=1000;const events=[];
     if(counter)p.pendingCounter={attackerId:m.id,dodgeTick:0,expiresTick:1000};
     step(w,{a:{...emptyInput(),attack:!counter,aimX:1}});
     while(!events.some(e=>e.type==='hit'))events.push(...step(w));return {hit:events.find(e=>e.type==='hit'),poise:m.poise};};
-  const sword=run(undefined),blunt=run('blunt');assert.equal(blunt.hit.dmg,sword.hit.dmg);
+  const sword=run(undefined),blunt=run('blunt');assert.equal(sword.hit.dmg,14);assert.equal(blunt.hit.dmg,15); // AV1 stage1 .9/.95, B1 poise remains unchanged.
   assert.ok(Math.abs(sword.poise-blunt.poise-14*1.2*.4)<1e-9);assert.equal(ABILITIES.slash.shape.range,92);
   const swordCounter=run(null,true),bluntCounter=run('blunt',true);assert.equal(bluntCounter.hit.dmg,swordCounter.hit.dmg);assert.equal(bluntCounter.hit.counter,true);
   assert.ok(Math.abs(swordCounter.poise-bluntCounter.poise-14*1.2*.4*3)<1e-9);

@@ -1,3 +1,4 @@
+import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -94,7 +95,7 @@ const legacyDigest={
  bow:'521de05aeb8ddcae1acedb376ace615dd0b07b369248aa934bc822ad3563cd9f',
  focus:'3470a5aa2db0240bed2c145e27d979057aafa41d740e09ea6bae002f6bcd8633',
 };
-for (const weapon of ['blade','bow','focus']) test(`${weapon}: missing/zero armor keeps pre-W1 whole-world/event trace digest byte-identical`, () => {
+for (const weapon of ['blade','bow','focus']) test(`${weapon}: missing/zero armor combo-disabled keeps pre-W1 whole-world/event trace digest byte-identical`, () => withoutCombos(() => {
   for (const extra of [{},{armorWeight:0}]) {
     const w=createWorld({seed:72});addPlayer(w,{pid:'p',weapon,x:400,y:400,mods:{maxHp:10000,...extra}});
     const e=spawnMonster(w,'goblin_grunt',610,400);e.spawnLeft=0;
@@ -106,7 +107,7 @@ for (const weapon of ['blade','bow','focus']) test(`${weapon}: missing/zero armo
     const digest=createHash('sha256').update(JSON.stringify({world:w,trace},(k,v)=>k==='def'?undefined:v)).digest('hex');
     assert.equal(digest,legacyDigest[weapon]);
   }
-});
+}));
 
 test('guest prediction applies the same armor slowdown as the host step', async () => {
   const { createWorld, addPlayer, startStage, step, emptyInput } = await import('../js/sim/world.js');

@@ -238,12 +238,23 @@ export class ArenaRenderer {
     if (!effect)
       return;
     effect.node.clear();
-    if (kind === 'slash' && shape?.type === 'cone') {
+    if (['slash', 'reverse'].includes(kind) && shape?.type === 'cone') {
       const half = shape.arc * Math.PI / 360;
       effect.node.arc(0, 0, shape.range * .78, -half, half)
         .stroke({ color, width: FEEL.trail.slashWidth, alpha: FEEL.trail.slashAlpha })
-        .arc(0, 0, shape.range * .66, -half, half * .8)
+        .arc(0, 0, shape.range * .66, kind === 'reverse' ? -half * .8 : -half, kind === 'reverse' ? half : half * .8)
         .stroke({ color, width: 2, alpha: .35 });
+    }
+    else if (kind === 'thrust')
+      effect.node.poly([0, -3, shape.range, 0, 0, 9]).fill({ color, alpha: .55 })
+        .moveTo(8, 0).lineTo(shape.range, 0).stroke({ color: 0xf4fff8, width: 5 });
+    else if (kind === 'spin')
+      effect.node.circle(0, 0, shape.radius).stroke({ color, width: 7, alpha: .8 })
+        .arc(0, 0, shape.radius * .72, -.6, 2.5).stroke({ color, width: 3 });
+    else if (kind === 'down' || kind === 'up') {
+      const direction = kind === 'up' ? -1 : 1;
+      effect.node.moveTo(shape.range * .2, -35 * direction).quadraticCurveTo(shape.range, -20 * direction, shape.range * .65, 35 * direction)
+        .stroke({ color, width: 8, alpha: .8 }).circle(shape.range * .65, 35 * direction, 5).fill(color);
     }
     else if (shape)
       shapePath(effect.node, shape).fill({ color, alpha: .13 }).stroke({ color, width: 2 });
@@ -454,7 +465,7 @@ export class ArenaRenderer {
       }
       view.sunder.visible = !entity.dead && entity.sunder?.expiresTick > world.tick;
       view.sunder.position.set(view.x, view.y - entity.r - 18);
-      const blunt = entity.kind === 'player' && entity.act?.def.requiresForm === 'blunt';
+      const blunt = entity.kind === 'player' && (entity.act?.def.requiresForm === 'blunt' || (entity.act?.step && entity.weaponForm === 'blunt'));
       view.bluntCharge.visible = blunt && entity.act.phase === 'windup';
       if (view.bluntCharge.visible) {
         view.bluntCharge.clear();
@@ -470,7 +481,7 @@ export class ArenaRenderer {
       const active = entity.act?.phase === 'active';
       if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastAct !== entity.act) {
         const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
-        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, blunt ? 'blunt' : 'slash', entity.act.def.shape, entity.act.facing, visual);
+        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, entity.act.def.comboTrail || (blunt ? 'blunt' : 'slash'), entity.act.def.shape, entity.act.facing, visual);
         if (visual.extraParticles) this.burst(entity.x, entity.y, { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, entity.act.facing);
         view.lastAct = entity.act;
       }
@@ -530,7 +541,8 @@ export class ArenaRenderer {
       if (SKILL_VFX[particle.abilityId]?.projectileRadius) continue; // Fixed core/history pool owns this profile.
       let graphic = this.projectiles.get(particle.id);
       if (!graphic) {
-        const pool = this.projectilePool.get(particle.abilityId);
+        const poolKey = `${particle.abilityId}/${particle.step || 0}/${particle.r}`;
+        const pool = this.projectilePool.get(poolKey);
         graphic = pool?.pop();
         if (!graphic) {
           graphic = new Graphics();
@@ -550,7 +562,7 @@ export class ArenaRenderer {
             const element = ABILITIES[abilityId]?.element;
             const color = element === 'fire' ? 0xff9856 : element === 'frost' ? 0x9fd8ff : 0xa5e8ef;
             graphic
-              .poly([-FEEL.trail.tailLength, 0, -3, -particle.r * .6, -3, particle.r * .6])
+              .poly([-(particle.step === 3 ? FEEL.trail.tailLength * 1.8 : FEEL.trail.tailLength), 0, -3, -particle.r * .6, -3, particle.r * .6])
               .fill({ color, alpha: FEEL.trail.tailAlpha })
               .circle(0, 0, particle.r * 1.8)
               .fill({ color, alpha: .15 })
@@ -561,6 +573,7 @@ export class ArenaRenderer {
             graphic.blendMode = 'add';
           }
           graphic.ability = particle.abilityId;
+          graphic.poolKey = poolKey;
           this.layers.projectiles.addChild(graphic);
         }
         graphic.prevX = particle.x;
@@ -577,10 +590,10 @@ export class ArenaRenderer {
     }
     for (const [id, graphic] of this.projectiles)
       if (!graphic.visible) {
-        let pool = this.projectilePool.get(graphic.ability);
+        let pool = this.projectilePool.get(graphic.poolKey);
         if (!pool) {
           pool = [];
-          this.projectilePool.set(graphic.ability, pool);
+          this.projectilePool.set(graphic.poolKey, pool);
         }
         pool.push(graphic);
         this.projectiles.delete(id);

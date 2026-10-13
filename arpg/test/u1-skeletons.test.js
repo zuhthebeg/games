@@ -12,6 +12,7 @@ import { validateContent } from '../tools/validate-content.mjs';
 const ids = ['skeleton_minion', 'skeleton_warrior', 'skeleton_rogue', 'skeleton_mage'];
 const read = path => readFileSync(new URL(path, import.meta.url));
 const json = path => JSON.parse(read(path));
+const av1 = json('./fixtures/av1-source-sha256.json');
 const manifest = json('../assets/sprites/manifest.json');
 const proof = json('../tools/art/u1-skeletons/delivered-validation.json');
 const ground = json('../tools/art/u1-skeletons/ground-anchor-validation.json');
@@ -129,7 +130,8 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   for (const [key, hash] of Object.entries(evidence.other_combat_exports_sha256))
     if (!later[key]) assert.equal(sha(stable(key === 'STAGES' ? Object.fromEntries(Object.entries(STAGES).filter(([id])=>!/^S2[123]$/.test(id))) : combat[key])), hash, key);
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
-    if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
+    if (av1.files[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), av1.files[path], 'intentional AV1: '+path);
+    else if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id) && !['ghoul','ghost','bat'].includes(id)), ids);
 });
 

@@ -1,3 +1,4 @@
+import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,9 +13,9 @@ const make = () => { const w = createWorld(); addPlayer(w, { pid: 'g' }); startS
 const frame = (tick, x, seq = 0) => { const w = make(); w.tick = tick; w.entities[0].x = x; return encodeSnapshot(w, { g: seq }); };
 const tx = (seq, mx = 1) => ({ seq, v: [mx, 0, 0, 0] });
 
-test('host byte-for-byte full world/events equal pre-extraction nine 900-tick traces', () => {
+test('combo-disabled host byte-for-byte full world/events equal pre-extraction nine 900-tick traces', () => withoutCombos(() => {
   assert.deepEqual(movementTraces(), JSON.parse(readFileSync(new URL('./fixtures/movement-before.json', import.meta.url))));
-});
+}));
 const T = 1000 / 30;
 test('buffer interpolates the surrounding pair by host tick; newest state/telegraphs win', () => {
   const b = new SnapshotBuffer('g', 100, { adaptive: false });

@@ -1,3 +1,4 @@
+import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import { trained } from './fixtures/trained.js';
 import assert from 'node:assert/strict';
@@ -26,7 +27,7 @@ const fixture = (id = 'healing_light') => {
 const boosted = (id, dmg) => id === 'blast_arrow' ? 54 : dmg * 2;
 const advance = (world, count, inputs = {}) => Array.from({ length: count }, () => step(world, inputs)).flat();
 
-test('nine damage values, six mana costs and R1 area sizes change; basics, monsters, kits and counter data untouched', () => {
+test('nine damage values, six mana costs and R1 area sizes change; combo-disabled basics, monsters, kits and counter data untouched', () => withoutCombos(() => {
   for (const [id, old] of Object.entries(before.ABILITIES)) {
     const expected = structuredClone(old);
     if (Object.hasOwn(costs, id)) { expected.damage = boosted(id, old.damage); expected.manaCost = costs[id]; }
@@ -50,7 +51,7 @@ test('nine damage values, six mana costs and R1 area sizes change; basics, monst
   assert.deepEqual(unflagged, before.MONSTERS);
   assert.deepEqual(PLAYER_BASE, before.PLAYER_BASE);
   assert.equal(ABILITIES.healing_light.damage, 0);
-});
+}));
 
 test('every skill charges once on accepted cast; insufficient MP leaves act, cooldown and MP unchanged', () => {
   for (const [id, cost] of Object.entries(costs)) {

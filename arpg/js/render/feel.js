@@ -32,7 +32,7 @@ export function impactTier(event) {
   if (event.counter) return FEEL.impact.counter;
   if (event.crit || event.critical) return FEEL.impact.critical;
   if (event.exposed) return FEEL.impact.weak;
-  return event.dmg >= FEEL.heavyDamage ? FEEL.impact.heavy : FEEL.impact.normal;
+  return event.step === 3 || event.dmg >= FEEL.heavyDamage ? FEEL.impact.heavy : FEEL.impact.normal;
 }
 
 export function numberScale(age) {

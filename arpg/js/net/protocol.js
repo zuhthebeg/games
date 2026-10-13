@@ -1,6 +1,7 @@
 import { currentTelegraphs } from '../render/telegraph-time.js';
 import { emptyInput, getTelegraphs } from '../sim/world.js';
 import { ABILITIES } from '../content/combat.js';
+import { comboDef } from '../sim/basic-combo.js';
 import { BALANCE } from '../content/balance.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
@@ -124,7 +125,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
-  'weapon', 'weaponForm', 'sunder', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+  'weapon', 'weaponForm', 'combo', 'sunder', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
   'mpRegen', 'hpRegen', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'armorWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
@@ -139,15 +140,15 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter',
+      act: e.act ? select(e.act, ['id', 'step', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep'] : [])]) : null })),
-    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
+    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }
 export function decodeSnapshot(packet, uid) {
   if (packet?.t !== 'snapshot' || !Number.isSafeInteger(packet.tick) || !Array.isArray(packet.entities)) return null;
   const copy = structuredClone(packet);
-  for (const e of copy.entities) if (e.act) e.act.def = ABILITIES[e.act.id];
+  for (const e of copy.entities) if (e.act) e.act.def = e.act.counter ? ABILITIES[e.act.id] : comboDef(e.act.id, e.act.step, e.weaponForm);
   const index = copy.entities.findIndex(e => e.pid === uid && e.kind === 'player');
   if (index > 0) copy.entities.unshift(...copy.entities.splice(index, 1));
   if (copy.objective) copy.round.objective = copy.objective;

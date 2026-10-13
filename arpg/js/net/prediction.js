@@ -1,3 +1,4 @@
+import { WEAPONS } from '../content/combat.js';
 import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
 
 const TICK_MS = 1000 / 30;
@@ -18,7 +19,7 @@ export class LocalPrediction {
     this.enabled = true; this.arena = world.arena; this.tick = world.tick;
     this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
-    let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null };
+    let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null, ...(p.combo ? { combo: { ...p.combo } } : {}) };
     const blocked = predictionBlocked(p);
     if (blocked) this.pending = [];
     else for (const row of this.pending) { next = predictPlayerTick(next, row.input, this); this.tick++; }
@@ -74,7 +75,8 @@ export class LocalPrediction {
       p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving };
     }
     return { ...world, entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? { ...e, x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
+      ? { ...e, ...(p.combo ? { combo: { ...p.combo },
+          ...((p.act?.id === WEAPONS[p.weapon].basic || e.act?.id === WEAPONS[p.weapon].basic) ? { act: p.act } : {}) } : {}), x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
   }
   diagnostics() {
     return { ...this.stats, averageDistance: this.stats.corrections ? this.stats.totalDistance / this.stats.corrections : 0,

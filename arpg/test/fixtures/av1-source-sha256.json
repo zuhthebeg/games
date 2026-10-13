@@ -1,0 +1,13 @@
+{
+  "baseline": "abcd094",
+  "reason": "Intentional AV1 implementation deltas, not an independent Opus approval. All other N3/art anchors stay intact.",
+  "files": {
+    "arpg/js/sim/world.js": "e971a4534eab5ad062bdcd2faa5442218e1f04e200941a094c6375cf0c791c52",
+    "arpg/js/sim/basic-combo.js": "3a13273d0450559dc2b0dab7abf3e6f85ef436232f44e2f121cb97b650bb0ac6",
+    "arpg/js/net/protocol.js": "f50e55b8b3b2d1d827a97b5f224f47030d9f6c428a5efacf6df3feec774e76b6",
+    "arpg/js/net/player-prediction.js": "f338199b0028cb20d2b07bdb3a7670eaa46fe9af1123a1a0e0c223062f1c4a9b",
+    "arpg/js/net/prediction.js": "e18be07d7f76dbb8797f366125628d987555c7de13a8bb58185e4e5fd68b1601",
+    "arpg/js/render/renderer.js": "a6b872ec64a0ee1703ce0cc5039e53565bfc30ae152358090c2571e68bb1570b",
+    "arpg/js/render/feel.js": "4e2922fa7b0e5245a51466745a9ed19bd87758721e94c5bd5e906762bd4519ff"
+  }
+}

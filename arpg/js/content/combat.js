@@ -15,6 +15,15 @@ export const ABILITIES = {
     windupMs: 110, lockMs: 0, activeMs: 70, recoveryMs: 190, cooldownMs: 0,
     delivery: 'shape', shape: { type: 'cone', range: 92, arc: 110 },
     damage: 16, poise: 14, knockback: 140, family: 'blade', cancelInto: ['windup', 'recovery'],
+    comboWindowMs: 600,
+    combo: [
+      { damageMult: .9, trail: 'slash', forms: { blunt: { damageMult: .95, trail: 'down' } } },
+      { damageMult: .9, trail: 'reverse', forms: { blunt: { damageMult: .95, trail: 'up' } } },
+      { damageMult: 1.35, windupMs: 150, shape: { type: 'cone', range: 112, arc: 50 },
+        poiseMult: 1.6, knockbackMult: 1.5, trail: 'thrust',
+        forms: { blunt: { damageMult: 1.3, windupMs: 170, shape: { type: 'circle', radius: 84, offset: 0 },
+          knockbackMult: 1, trail: 'spin' } } },
+    ],
   },
   lunge: {
     name: '돌진 베기', windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, manaCost: 16, cooldownMs: 5000,
@@ -27,6 +36,8 @@ export const ABILITIES = {
     delivery: 'projectile',
     projectile: { speed: 760, radius: 7, rangePx: 620, count: 1, spreadDeg: 0, pierce: 0 },
     damage: 10, poise: 6, knockback: 60, family: 'bow', cancelInto: ['windup', 'recovery'],
+    comboWindowMs: 600,
+    combo: [{}, {}, { damageMult: .54, projectile: { count: 2, spreadDeg: 6 }, trail: 'double' }],
   },
   volley: {
     name: '산개 사격', windupMs: 240, lockMs: 0, activeMs: 34, recoveryMs: 260, manaCost: 16, cooldownMs: 5000,
@@ -40,6 +51,9 @@ export const ABILITIES = {
     delivery: 'projectile',
     projectile: { speed: 560, radius: 9, rangePx: 520, count: 1, spreadDeg: 0, pierce: 0 },
     damage: 8, poise: 5, knockback: 40, family: 'focus', cancelInto: ['windup', 'recovery'],
+    comboWindowMs: 600,
+    combo: [{}, {}, { damageMult: 1.1, projectile: { pierce: 1, radius: 12 }, trail: 'pierce',
+      forms: { staff: { damageMult: 1.15, projectile: { explode: { radius: 46 } }, trail: 'blast' } } }],
   },
   ember_bolt: {
     name: '화염탄', windupMs: 380, lockMs: 0, activeMs: 34, recoveryMs: 240, cooldownMs: 2600, manaCost: 14,

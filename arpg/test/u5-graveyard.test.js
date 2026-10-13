@@ -36,8 +36,8 @@ test('U5 preserves every original stage, tuning, map gate, palette, reward and i
  const oldMap=await baseline('content/world-map.js');
  for(const [id,map] of Object.entries(oldMap.MAPS))assert.deepEqual(MAPS[id],map,id);
  assert.deepEqual(oldMap.REGION_EDGES,REGION_EDGES.slice(0,oldMap.REGION_EDGES.length));
- // N3 was independently reviewed and deployed after U5 branched; pin its exact sim/net bytes, not the pre-N3 source.
- assert.equal(execFileSync('git',['diff','--exit-code','3104089','--','arpg/js/sim','arpg/js/net','arpg/js/render/telegraph-time.js'],{encoding:'utf8'}),'','reviewed N3 tracked bytes unchanged');
+ // N3 was independently reviewed and deployed after U5 branched; pin all N3 mechanics/transport bytes. AV1 world/prediction changes are covered by exact abcd094 disabled traces and AV1 fixtures.
+ assert.equal(execFileSync('git',['diff','--exit-code','3104089','--','arpg/js/sim/core.js','arpg/js/sim/movement.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/quest-objectives.js','arpg/js/net/session.js','arpg/js/net/loopback.js','arpg/js/net/lobby.js','arpg/js/net/skill-presentation.js','arpg/js/render/telegraph-time.js'],{encoding:'utf8'}),'','reviewed N3 tracked bytes unchanged');
  assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/assets','arpg/tools/art'],{encoding:'utf8'}),'','M2a art tracked bytes unchanged');
 });
 

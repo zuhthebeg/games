@@ -1,3 +1,4 @@
+import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -27,11 +28,17 @@ function shot(f, friendly = false, counter = false) {
 }
 function delay(f, n = 2) { for (let i = 0; i < n; i++) step(f.w); }
 
-test('single + registered guest/host full-world traces exactly equal fef289f (3 seeds x 900 ticks each)', () => {
+test('combo-disabled single + guest/host preserve original N3 trace; enabled AV1 follows independently captured fixture', () => {
   const before = JSON.parse(readFileSync(new URL('./fixtures/n3/baseline.json', import.meta.url)));
+  withoutCombos(() => {
   assert.equal(trace(), before.single);
   assert.equal(trace(true, enableGuestDodgeLag), before.hostParty);
   assert.equal(trace(true, enableGuestDodgeLag, true), before.hostParty, 'zero-latency viewTick leaves the complete trace unchanged');
+  });
+  const combo = JSON.parse(readFileSync(new URL('./fixtures/av1-n3-enabled.json', import.meta.url)));
+  assert.equal(trace(), combo.single);
+  assert.equal(trace(true, enableGuestDodgeLag), combo.hostParty);
+  assert.equal(trace(true, enableGuestDodgeLag, true), combo.hostParty);
 });
 test('late guest dodge refunds direct damage, restores invulnerability and cancels spent/residual knock; ONE real counter', () => {
   const f = fixture(); shot(f); step(f.w); const lost = f.p.maxHp - f.p.hp;

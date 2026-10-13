@@ -10,6 +10,8 @@ import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/c
 import { attackRate } from '../content/balance.js';
 import { movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from '../sim/movement.js';
 
+import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep } from '../sim/basic-combo.js';
+
 const PHASES = ['windup', 'lock', 'active', 'recovery'];
 const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 const AUTO_AIM_RANGE = 560, AUTO_SHOT_REACH = 0.85;
@@ -25,6 +27,7 @@ function endAct(p) {
   const act = p.act;
   const cd = ticks((act.def.cooldownMs || 0) * (p.cdMult || 1));
   if (cd) p.cds = { ...p.cds, [act.id]: cd };
+  finishCombo(p, act);
   p.act = null;
 }
 function skipEmptyPhases(p) {
@@ -39,14 +42,15 @@ function skipEmptyPhases(p) {
   }
 }
 function startAct(p, abilityId, facing) {
-  const def = ABILITIES[abilityId];
+  const step = beginCombo(p, abilityId);
+  const def = comboDef(abilityId, step, p.weaponForm);
   const rate = abilityId === WEAPONS[p.weapon].basic || p.skills.includes(abilityId)
     ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map(phase => {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];
   }));
-  p.act = { id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, facing, dashStep: 0 };
+  p.act = { ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -79,7 +83,8 @@ function basicReachTarget(p, def, others) {
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } = {}) {
   if (predictionBlocked(state)) return state;
-  const p = { ...state, dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null };
+  const p = { ...state, dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
+  tickCombo(p);
   const d = p.dodge;
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
@@ -98,6 +103,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } =
   const finish = () => { Object.assign(p, knockPosition(p)); Object.assign(p, arenaPosition(p, arena)); return p; };
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(p);
+    resetCombo(p);
     const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick) : tick;
     const movement = dodgeStart(p, p.bufferDodgeDir, start);
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
@@ -133,7 +139,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } =
     }
   }
   const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
-    ? basicReachTarget(p, ABILITIES[w.basic], others) : null;
+    ? basicReachTarget(p, comboDef(w.basic, nextComboStep(p), p.weaponForm), others) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
     startAct(p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(p, inp, mlen, others));

@@ -1,3 +1,4 @@
+import { comboDef } from '../js/sim/basic-combo.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSave, validateSave, SaveStore, SAVE_KEY, migrateStatScale } from '../js/meta/save.js';
@@ -69,9 +70,10 @@ test('LUK: crit only above 0% (no RNG draw at 0), ~chance x 1.5 damage; more gea
   };
   const none = run(0), lucky = run(.25);
   assert.ok(none.hits.length > 50); assert.equal(none.hits.some((h) => h.crit), false);
-  const crits = lucky.hits.filter((h) => h.crit), normal = lucky.hits.find((h) => !h.crit);
+  const crits = lucky.hits.filter((h) => h.crit), normal = lucky.hits.find((h) => !h.crit && h.step === crits[0].step);
   near(crits.length / lucky.hits.length, .25, .08);
-  assert.equal(crits[0].dmg, Math.round(normal.dmg * 1.5));
+  assert.equal(crits[0].dmg, Math.round(comboDef('slash', crits[0].step).damage * 1.5));
+  assert.equal(normal.dmg, Math.round(comboDef('slash', normal.step).damage));
   const luck = (v) => deriveMods({ ...fresh(), stats: { ...fresh().stats, luk: v } });
   near(luck(100).critChance, .25); near(luck(100).dropLuck, .3); near(luck(100).enchantLuck, .08); assert.equal(luck(10).critChance, 0);
   // Only the random gear roll is luck-scaled (fixed material drops are not).

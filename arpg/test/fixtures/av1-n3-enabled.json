@@ -1,0 +1,6 @@
+{
+  "baseline": "abcd094",
+  "reason": "AV1 basic-only state, step events, resolved shapes/timing/damage; N3 perfect/rewind unchanged",
+  "single": "f18b2f52ccaa62a855f2d725b329be4282c704c2bc7a4ae96abbca1bb16ee9e3",
+  "hostParty": "73553b08d3200d1ec3befb67806e40c5c85be153fa006ecffabe66e09b12503b"
+}

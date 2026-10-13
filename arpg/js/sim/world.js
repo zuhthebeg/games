@@ -18,6 +18,8 @@ import { pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } fro
 
 import { createObjective, stepObjective } from './quest-objectives.js';
 
+import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep } from './basic-combo.js';
+
 const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
@@ -85,6 +87,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     scrolls: mods.scrolls ?? 1, scrollRetry: 0, channel: 0,
     dead: false, terminal: null, deathCause: null,
   };
+  tickCombo(ent);
   world.entities.push(ent);
   return ent;
 }
@@ -165,6 +168,7 @@ function canCancel(act) {
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
   pruneGuestHits(p, world.tick);
+  tickCombo(p);
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -206,6 +210,7 @@ function stepPlayer(world, p, inp) {
 
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(world, p, true);
+    resetCombo(p);
     const movement = dodgeStart(p, p.bufferDodgeDir, world.tick);
     Object.assign(d, movement.dodge);
     p.facing = movement.facing;
@@ -272,7 +277,7 @@ function stepPlayer(world, p, inp) {
         : dist2(p.x, p.y, target.x, target.y) <= def.projectile.rangePx ** 2);
     p.pendingCounter = null; // consume even when the original attacker is gone/out of reach
     if (inRange && !(p.cds[w.basic] > 0)) {
-      startAct(world, p, w.basic, facing);
+      startAct(world, p, w.basic, facing, true);
       p.act.counter = true;
       world.events.push({ type: 'counter', id: p.id, pid: p.pid, attackerId: target.id,
         dodgeTick: pending.dodgeTick, ability: w.basic });
@@ -282,7 +287,7 @@ function stepPlayer(world, p, inp) {
   // Auto attack (cocy 10-11 option): the basic attack is held for the player only while a
   // hostile is inside its real reach, aimed at that hostile. Dodge and skills stay manual.
   const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
-    ? basicReachTarget(world, p, ABILITIES[w.basic]) : null;
+    ? basicReachTarget(world, p, comboDef(w.basic, nextComboStep(p), p.weaponForm)) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
     startAct(world, p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(world, p, inp, mlen));
@@ -408,8 +413,10 @@ function moveMonster(world, m, def, target, dist) {
 
 const PHASES = ['windup', 'lock', 'active', 'recovery'];
 
-function startAct(world, ent, abilityId, facing) {
-  const def = ABILITIES[abilityId];
+function startAct(world, ent, abilityId, facing, counter = false) {
+  const comboStep = ent.kind === 'player' ? beginCombo(ent, abilityId, counter) : 0;
+  const step = counter && ABILITIES[abilityId].combo ? 1 : comboStep;
+  const def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
   const rate = ent.kind === 'player' && (abilityId === WEAPONS[ent.weapon].basic || ent.skills.includes(abilityId))
     ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
@@ -418,13 +425,14 @@ function startAct(world, ent, abilityId, facing) {
   }));
   ent.act = {
     rate, phaseTicks,
+    ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
     total: phaseTicks.windup + phaseTicks.lock,
     facing, ox: ent.x, oy: ent.y, hit: [], fired: false, dashStep: 0,
   };
   ent.facing = facing;
   if (def.major) world.majorBusyBy = ent.id;
-  world.events.push({ type: 'act', id: ent.id, ability: abilityId });
+  world.events.push({ type: 'act', id: ent.id, ability: abilityId, ...(step ? { step } : {}) });
   skipEmptyPhases(world, ent);
 }
 
@@ -455,8 +463,9 @@ function endAct(world, ent, interrupted) {
     ent.lastActs = [act.id, ...ent.lastActs].slice(0, 2);
     ent.thinkLeft = ticks(220 + rand(world) * 380);
   }
+  if (ent.kind === 'player') finishCombo(ent, act, interrupted);
   ent.act = null;
-  if (interrupted) world.events.push({ type: 'actCancel', id: ent.id, ability: act.id });
+  if (interrupted) world.events.push({ type: 'actCancel', id: ent.id, ability: act.id, ...(act.step ? { step: act.step } : {}) });
 }
 
 function advanceAct(world, ent, target) {
@@ -511,6 +520,7 @@ function doActive(world, ent, act) {
       world.projectiles.push({
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
+        ...(act.step ? { step: act.step, def } : {}),
         x: ent.x + Math.cos(a) * (ent.r + 4), y: ent.y + Math.sin(a) * (ent.r + 4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,
         travelled: 0, range: pr.rangePx, pierce: pr.pierce, hit: [],
@@ -518,7 +528,7 @@ function doActive(world, ent, act) {
         poiseMult: (ent.poiseMult ?? 1) * (act.counter ? BALANCE.counter.poise : 1), counter: !!act.counter,
       });
     }
-    world.events.push({ type: 'projectile', id: ent.id, ability: act.id });
+    world.events.push({ type: 'projectile', id: ent.id, ability: act.id, ...(act.step ? { step: act.step } : {}) });
   }
 }
 
@@ -534,7 +544,7 @@ function hitShape(world, ent, act, shape, ox, oy) {
     act.hit.push(t.id);
     applyHit(world, t, {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
-      def: act.def, counter: !!act.counter,
+      def: act.def, counter: !!act.counter, ...(act.step ? { step: act.step } : {}),
       mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
       poiseMult: (ent.poiseMult ?? 1) * (act.id === 'slash' && ent.kind === 'player' && ent.weaponForm === 'blunt' ? 1.4 : 1)
         * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
@@ -614,10 +624,10 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player') recordGuestHit(world, t, hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}) });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
 
   if (t.kind === 'player') {
-    if (!hit.periodic) t.hurtInvuln = ticks(PB.hurtInvulnMs);
+    if (!hit.periodic) { t.hurtInvuln = ticks(PB.hurtInvulnMs); resetCombo(t); }
     if (def.poison && t.hp > 0) {
       const status = def.poison;
       const left = ticks(status.durationMs);
@@ -680,7 +690,7 @@ function applyHit(world, t, hit) {
 function stepProjectiles(world) {
   const keep = [];
   for (const pr of world.projectiles) {
-    const def = ABILITIES[pr.abilityId];
+    const def = pr.def || ABILITIES[pr.abilityId];
     const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
     const distance = Math.hypot(dx, dy);
     // Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.
@@ -707,7 +717,7 @@ function stepProjectiles(world) {
         pr.hit.push(target.id);
         const facing = Math.atan2(pr.vy, pr.vx);
         applyHit(world, target, {
-          srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def,
+          srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def, ...(pr.step ? { step: pr.step } : {}),
           mult: pr.dmgMult * (friendly ? FRIENDLY_PROJECTILE_DAMAGE : 1), poiseMult: pr.poiseMult, counter: !!pr.counter,
           fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
           cause: { shape: { type: 'circle', radius: pr.r, offset: 0 }, ox: pr.x, oy: pr.y, facing },
@@ -730,14 +740,14 @@ function stepProjectiles(world) {
 
 function explode(world, pr, def) {
   const radius = def.projectile.explode.radius;
-  world.events.push({ type: 'explode', x: pr.x, y: pr.y, radius, ability: pr.abilityId });
+  world.events.push({ type: 'explode', x: pr.x, y: pr.y, radius, ability: pr.abilityId, ...(pr.step ? { step: pr.step } : {}) });
   for (const t of world.entities) {
     if (t.team === pr.team || !isTargetable(t) || pr.hit.includes(t.id)) continue;
     if (dist2(pr.x, pr.y, t.x, t.y) > (radius + t.r) ** 2) continue;
     pr.hit.push(t.id);
     applyHit(world, t, {
       srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId,
-      counter: !!pr.counter, def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
+      counter: !!pr.counter, ...(pr.step ? { step: pr.step } : {}), def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
       cause: { shape: { type: 'circle', radius, offset: 0 }, ox: pr.x, oy: pr.y, facing: 0 },
     });
   }
