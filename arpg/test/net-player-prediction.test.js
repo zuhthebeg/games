@@ -8,14 +8,15 @@ import { predictPlayerTick } from '../js/net/player-prediction.js';
 // tick for tick, for every weapon and skill, while walking, attacking, casting,
 // dodging (incl. buffered dodge during attacks) and drinking mana potions.
 const LOADOUTS = [
+  ['blade', ['ground_slam', 'armor_break', 'whirl'], 'blunt'],
   ['blade', ['lunge', 'whirl', 'heavy_cleave']], ['bow', ['volley', 'pierce_shot', 'blast_arrow']],
   ['focus', ['ember_bolt', 'frost_lance', 'flame_ring']], ['focus', ['healing_light', 'flame_ring', 'ember_bolt']],
 ];
 let seed = 99; const rnd = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
-for (const [weapon, skills] of LOADOUTS) {
+for (const [weapon, skills, weaponForm] of LOADOUTS) {
   test(`prediction == host step every tick: ${weapon} ${skills.join('/')}`, () => {
     const world = createWorld({ seed: 3 });
-    addPlayer(world, { pid: 'g', weapon, mods: { skills, attackSpeedBonus: .2, weaponWeight: 11, cdMult: .9, mpRegen: 6, manaPotions: 3, maxMp: 90 } });
+    addPlayer(world, { pid: 'g', weapon, mods: { skills, weaponForm, attackSpeedBonus: .2, weaponWeight: 11, cdMult: .9, mpRegen: 6, manaPotions: 3, maxMp: 90 } });
     startStage(world, 'S2'); world.entities = world.entities.filter(e => e.kind === 'player');
     world.round.pending = []; world.round.goal = 'timer'; world.round.timerTicks = 1e6;
     let input = emptyInput(), checked = 0;

@@ -24,7 +24,7 @@ export const ITEMS = {
   goblin_cleaver: weapon('고블린 식칼', 'blade', 'fine', 1.18, 14),
   hunter_bow: weapon('사냥꾼의 활', 'bow', 'fine', 1.15, 7),
   ember_wand: weapon('불씨 지팡이', 'focus', 'fine', 1.15, 5, 'wand'),
-  chief_maul: weapon('대장의 망치', 'blade', 'rare', 1.32, 18),
+  chief_maul: weapon('대장의 망치', 'blade', 'rare', 1.32, 18, 'blunt'),
   cloth_tunic: armor('천 튜닉', 'common', 0, 4, 'cloth'),
   leather_vest: armor('가죽 조끼', 'fine', 20, 8),
   boar_hide_armor: armor('멧돼지 가죽 갑옷', 'fine', 35, 12),
@@ -38,6 +38,8 @@ export const ITEMS = {
   frost_bow: { ...weapon('서리 장궁', 'bow', 'fine', 1.6, 9), huntTier: 3, requiredLevel: 10 },
   seal_staff: { ...weapon('봉인의 지팡이', 'focus', 'fine', 1.6, 7, 'staff'), huntTier: 3, requiredLevel: 10 },
   warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13, 'metal'), huntTier: 3, requiredLevel: 10 },
+  rune_maul: { ...weapon('룬철 철퇴', 'blade', 'fine', 1.35, 15, 'blunt'), material: 'rune', huntTier: 2, requiredLevel: 5, craftOnly: true },
+  warden_maul: { ...weapon('파수꾼 전쟁망치', 'blade', 'fine', 1.6, 19, 'blunt'), huntTier: 3, requiredLevel: 10, craftOnly: true },
   scrap: { material: 'metal', name: '고철', kind: 'material', weight: 0.2, sell: 1 },
   hide: { material: 'leather', name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
   wood: { name: '목재', kind: 'material', material: 'wood', weight: 0.2, sell: 1 },
@@ -313,7 +315,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
-        && item.huntTier === tier);
+        && item.huntTier === tier && !item.craftOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;

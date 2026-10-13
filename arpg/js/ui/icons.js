@@ -34,6 +34,7 @@ const paths = {
 const silhouettes = {
   "wood": '<path fill="currentColor" d="m4 15 13-12 9 3 4 9-14 14-9-3z"/><ellipse cx="10" cy="22" rx="7" ry="6" fill="currentColor" stroke="#141916" stroke-width="2"/><ellipse cx="10" cy="22" rx="3" ry="2" fill="none" stroke="#141916" stroke-width="1.5"/><path fill="none" stroke="#141916" stroke-width="2" d="m12 15 12-10m-8 15 12-11"/>',
   "sword": "<path fill=\"currentColor\" d=\"m22 2 6-1-1 7-13 14-4-4zM6 16l12 12 3-3L9 13zM3 26l6-6 3 3-6 6-4 1z\"/>",
+  "blunt": '<path fill="currentColor" d="M7 3h20v11H7zm7 11h6v17h-6z"/><path stroke="#141916" stroke-width="2" d="M12 5v7m10-7v7"/>',
   "bow": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M8 3q27 13 0 26M8 3v26M3 16h26m-5-5 5 5-5 5\"/>",
   "wand": "<path fill=\"currentColor\" d=\"m5 28 15-18 3 3L8 30zM23 1l2 5 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z\"/>",
   "staff": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M13 30 19 12q-9-2-5-8t11 0q3 5-2 8\"/><path fill=\"currentColor\" d=\"m19 2 5 5-5 4-4-4z\"/>",
@@ -65,7 +66,7 @@ export function icon(name) {
 }
 export function itemIcon(id, definition = {}) {
   const glyph = definition.slot === 'weapon'
-    ? (definition.family === 'focus' ? definition.form || 'wand' : definition.family)
+    ? (definition.form || (definition.family === 'focus' ? 'wand' : definition.family))
     : definition.slot || id;
   return pictureIcon(itemArtKey(id, definition), svgIcon(glyph));
 }

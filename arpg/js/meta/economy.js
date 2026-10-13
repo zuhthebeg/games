@@ -75,6 +75,8 @@ export const RECIPES = {
   leather_vest: { hide: 5, scrap: 3, gold: 40 },
   // Primary materials follow the result; craft salvage refunds only 25% of that ingredient.
   rune_blade: { rune_shard: 16, scrap: 2, fang: 2, gold: 140 },
+  rune_maul: { rune_shard: 16, scrap: 4, fang: 2, gold: 140 },
+  warden_maul: { scrap: 24, rune_shard: 8, frost_shard: 4, gold: 240 },
   pack_bow: { wood: 16, hide: 4, web: 2, gold: 140 },
   altar_staff: { wood: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
   woven_armor: { web: 16, hide: 4, scrap: 4, gold: 140 },

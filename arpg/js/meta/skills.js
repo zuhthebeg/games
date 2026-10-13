@@ -8,6 +8,8 @@ export const DEFAULT_SKILLS = Object.fromEntries(Object.entries(WEAPONS).map(([f
 export const BOOKS = {
   whirl: { family: 'blade', type: '기술교본', price: 150, req: { stat: 'str', value: 30 } },
   heavy_cleave: { family: 'blade', type: '기술교본', price: 250, req: { stat: 'str', value: 45 } },
+  ground_slam: { family: 'blade', type: '기술교본', price: 180, req: { stat: 'str', value: 30 } },
+  armor_break: { family: 'blade', type: '기술교본', price: 250, req: { stat: 'str', value: 45 } },
   pierce_shot: { family: 'bow', type: '기술교본', price: 150, req: { stat: 'agi', value: 30 } },
   blast_arrow: { family: 'bow', type: '기술교본', price: 250, req: { stat: 'agi', value: 45 } },
   healing_light: { family: 'focus', type: '마법교본', price: 200, req: { stat: 'int', value: 30 } },
@@ -52,6 +54,7 @@ export function migrateLoadout(save, family) {
 }
 
 export const weaponFamily = save => ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
+export const weaponForm = save => ITEMS[equippedItem(save, 'weapon')?.id]?.form;
 export const loadoutOf = (save, family = weaponFamily(save)) => (validLoadout(save, save.loadout) ? save.loadout : migrateLoadout(save, family));
 export const slotOf = (save, id) => loadoutOf(save).indexOf(id);
 
@@ -93,6 +96,7 @@ export function equipSkill(save, family, id) {
 export const SKILL_DISPLAY = {
   lunge:{ grade:0, label:'입문' }, volley:{ grade:0, label:'입문' }, ember_bolt:{ grade:0, label:'입문' },
   whirl:{ grade:1, label:'숙련' }, pierce_shot:{ grade:1, label:'숙련' }, frost_lance:{ grade:1, label:'숙련' }, healing_light:{ grade:1, label:'숙련' },
+  ground_slam:{ grade:1, label:'숙련' }, armor_break:{ grade:2, label:'상급' },
   heavy_cleave:{ grade:2, label:'상급' }, blast_arrow:{ grade:2, label:'상급' }, flame_ring:{ grade:2, label:'상급' },
 };
 export const characterSkills = save => Object.keys(SKILL_DISPLAY).filter(id => hasSkill(save, id))
