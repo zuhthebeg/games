@@ -11,7 +11,7 @@ import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf } from './skil
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
-import { validMastery, MASTERY_SKILLS } from './skill-mastery.js';
+import { validMastery, MASTERY_SKILLS, MASTERY_MAX } from './skill-mastery.js';
 import { validSeenMaterials } from './recipe-discovery.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
@@ -63,7 +63,7 @@ function validReceipt(receipt) {
   }
   if (typeof receipt.firstClear !== 'boolean' || typeof receipt.pityGranted !== 'boolean') return false;
   if (receipt.masteryRises !== undefined && (!Array.isArray(receipt.masteryRises)
-    || !receipt.masteryRises.every(r => record(r) && MASTERY_SKILLS.includes(r.id) && integer(r.level, 2, 5)))) return false;
+    || !receipt.masteryRises.every(r => record(r) && MASTERY_SKILLS.includes(r.id) && integer(r.level, 2, MASTERY_MAX)))) return false;
   for (const counts of [receipt.used, receipt.restored]) {
     if (!record(counts) || !Object.entries(counts).every(([id, count]) =>
       ['potion', 'mana_potion', 'return_scroll'].includes(id) && integer(count))) return false;

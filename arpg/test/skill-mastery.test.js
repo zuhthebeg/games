@@ -10,13 +10,14 @@ const world = {round:{stageId:'S2'},entities:[{id:1,kind:'player',pid:'a'},{id:2
 const act = (ability='ember_bolt',id=1) => ({type:'act',ability,id});
 const hit = (ability='ember_bolt',dst=3,src=1) => ({type:'hit',ability,dst,src});
 test('thresholds, labels and debug minimum counts are shared and validated',()=>{
- assert.deepEqual(MASTERY_THRESHOLDS,[0,30,100,250,500]);
- for(const [count,level] of [[0,1],[29,1],[30,2],[99,2],[100,3],[249,3],[250,4],[499,4],[500,5]]) assert.equal(masteryLevel(count),level);
- const s=setMasteryLevel(fresh(),'frost_lance',3); assert.equal(s.skillMastery.frost_lance,100); assert.equal(masteryLabel(s,'frost_lance'),'숙련: Lv3 (100/250)');
- assert.equal(masteryLabel(setMasteryLevel(s,'frost_lance',5),'frost_lance'),'숙련: Lv5 (최대)');
- assert.throws(()=>setMasteryLevel(s,'arrow',3)); assert.throws(()=>setMasteryLevel(s,'frost_lance',6));
+ // Old 0/30/100/250/500 counts now mean real Lv1/5/10/15/20, not stages.
+ assert.equal(MASTERY_THRESHOLDS.length,30);
+ for(const [count,level] of [[0,1],[29,4],[30,5],[99,9],[100,10],[249,14],[250,15],[499,19],[500,20]]) assert.equal(masteryLevel(count),level);
+ const s=setMasteryLevel(fresh(),'frost_lance',10); assert.equal(s.skillMastery.frost_lance,100); assert.equal(masteryLabel(s,'frost_lance'),'숙련: Lv10 (100/130)');
+ assert.equal(masteryLabel(setMasteryLevel(s,'frost_lance',30),'frost_lance'),'숙련: Lv30 (최대)');
+ assert.throws(()=>setMasteryLevel(s,'arrow',3)); assert.throws(()=>setMasteryLevel(s,'frost_lance',31));
  assert.ok(validateSave(s)); assert.equal(validateSave({...s,skillMastery:{frost_lance:-1}}),false);
- assert.deepEqual(buildRoundMods(s),buildRoundMods(fresh())); assert.equal(masteryLevels(s).frost_lance,3);
+ assert.deepEqual(buildRoundMods(s),buildRoundMods(fresh())); assert.equal(masteryLevels(s).frost_lance,10);
 });
 test('one successful cast counts once across multiple targets/ticks; basic, misses, allies, other caster, town excluded',()=>{
  let t=createTracker(1); const s=fresh();
@@ -34,7 +35,7 @@ test('projectile hit survives an intervening different skill/basic act',()=>{
 for(const terminal of ['clear','death','return_scroll']) test(`${terminal}: settlement persists count and rise; old save needs no version migration`,()=>{
  const s=setMasteryLevel(fresh(),'ember_bolt',2); s.skillMastery.ember_bolt=99;
  const result=settleRound(s,{stageId:'S2',terminal,skillMastery:{ember_bolt:1}});
- assert.equal(result.save.skillMastery.ember_bolt,100); assert.deepEqual(result.receipt.masteryRises,[{id:'ember_bolt',level:3}]); assert.ok(validateSave(result.save));
+ assert.equal(result.save.skillMastery.ember_bolt,100); assert.deepEqual(result.receipt.masteryRises,[{id:'ember_bolt',level:10}]); assert.ok(validateSave(result.save));
  const mem=new Map(), storage={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v),removeItem:k=>mem.delete(k)};
  const store=new SaveStore(storage); store.save(result.save); assert.equal(store.load().skillMastery.ember_bolt,100);
  const old=fresh(); delete old.skillMastery; mem.set(SAVE_KEY,JSON.stringify(old)); assert.ok(validateSave(old)); assert.deepEqual(store.load().skillMastery,{});
