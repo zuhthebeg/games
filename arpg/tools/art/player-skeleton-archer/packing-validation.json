@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "mode": "source checkpoint",
+  "errors": [],
+  "frames": 41,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6339516043663025
+  },
+  "source_coverage_range": [
+    8.67919921875,
+    12.41302490234375
+  ],
+  "physical_coverage_range": [
+    8.63037109375,
+    12.40234375
+  ],
+  "source_gate_percent": [
+    5,
+    60
+  ],
+  "source_original_canvas": [
+    256,
+    256
+  ],
+  "physical_canvas": [
+    128,
+    128
+  ],
+  "logical_to_physical": 0.5,
+  "inverse_expand": 2,
+  "pixi_actual_texture_source_resolution": 0.5,
+  "pixi_meta_scale": ".5",
+  "gpu_bytes_not_compressed_bytes": true
+}

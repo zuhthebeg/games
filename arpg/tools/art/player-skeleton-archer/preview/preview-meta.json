@@ -1,0 +1,236 @@
+{
+  "agent_review_required": true,
+  "user_approval": false,
+  "contact": "original source256 resized180",
+  "game": "physical128, fullcanvas; gameplay placement NOT integrated",
+  "attack_phase_records": [
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.40019357204437256,
+          0.09998001158237457,
+          1.040004849433899
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.40019363164901733,
+          0.09998001903295517,
+          1.0400049686431885
+        ],
+        "string_right_error": 1.3348812510944096e-07,
+        "arrow_nock": [
+          0.40019357204437256,
+          0.09998001158237457,
+          1.040004849433899
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_002",
+      "animation": "attack_E",
+      "frame": 2,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 4.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          75.6978
+        ],
+        "skin_rms_from_bind_height": 0.160153,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        153.61,
+        77.08,
+        202.25,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.2499893754720688,
+          0.09999202191829681,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.2013700229374393e-07,
+        "arrow_nock": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_006",
+      "animation": "attack_E",
+      "frame": 6,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 12.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        143.83,
+        77.08,
+        192.47,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.2499893754720688,
+          0.09999202191829681,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.2013700229374393e-07,
+        "arrow_nock": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_007",
+      "animation": "attack_E",
+      "frame": 7,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 14.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        143.83,
+        77.08,
+        192.47,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.22248700261116028,
+          0.06998810172080994,
+          1.0400038957595825
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.4499993920326233,
+          0.09999983012676239,
+          1.0399999618530273
+        ],
+        "string_right_error": 0.22948331489378035,
+        "arrow_nock": [
+          0.8499894142150879,
+          0.0999920517206192,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.628219346450294,
+        "released": true,
+        "arrow_visible": true
+      },
+      "name": "attack_E_008",
+      "animation": "attack_E",
+      "frame": 8,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 16.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          46.853
+        ],
+        "skin_rms_from_bind_height": 0.155653,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        155.8,
+        77.08,
+        231.54,
+        135.37
+      ]
+    }
+  ],
+  "dodge": {
+    "source": "Dodge_Backward",
+    "original_range": [
+      0,
+      9.600000381469727
+    ],
+    "source_seconds": 0.4,
+    "loop": false,
+    "root_translation": "suppressed horizontal root/hips only, actual skeletal lean/limb motion retained",
+    "integration": "unregistered proposal: map dodge state explicitly, never idle; simulation owns translation; no runtime edits",
+    "duration_binding": "future caller must map normalized dodge progress across .4s source; current combat duration not changed"
+  },
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6339516043663025
+  }
+}

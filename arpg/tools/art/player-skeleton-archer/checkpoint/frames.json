@@ -1,0 +1,2100 @@
+{
+  "name": "player-skeleton-archer",
+  "frames": [
+    {
+      "contact": null,
+      "name": "idle_E_000",
+      "animation": "idle_E",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        128.0,
+        81.98,
+        176.19,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_SE_000",
+      "animation": "idle_SE",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        127.4,
+        98.15,
+        185.58,
+        683.05
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_S_000",
+      "animation": "idle_S",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        131.02,
+        202.02,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_SW_000",
+      "animation": "idle_SW",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        93.93,
+        129.93,
+        177.13,
+        683.05
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_W_000",
+      "animation": "idle_W",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        79.81,
+        120.48,
+        128.0,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_NW_000",
+      "animation": "idle_NW",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        70.42,
+        108.77,
+        128.6,
+        661.9
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_N_000",
+      "animation": "idle_N",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        53.98,
+        100.91,
+        131.26,
+        661.7
+      ]
+    },
+    {
+      "contact": null,
+      "name": "idle_NE_000",
+      "animation": "idle_NE",
+      "frame": 0,
+      "source": "Idle",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        78.87,
+        92.52,
+        162.07,
+        661.9
+      ]
+    },
+    {
+      "contact": null,
+      "name": "run_S_000",
+      "animation": "run_S",
+      "frame": 0,
+      "source": "Running_A",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          48.7327,
+          66.7321
+        ],
+        "skin_rms_from_bind_height": 0.145921,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        121.56,
+        199.16,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "run_S_005",
+      "animation": "run_S",
+      "frame": 5,
+      "source": "Running_A",
+      "source_frame": 10.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          66.2259,
+          48.7954
+        ],
+        "skin_rms_from_bind_height": 0.144738,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        120.61,
+        199.94,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "run_S_009",
+      "animation": "run_S",
+      "frame": 9,
+      "source": "Running_A",
+      "source_frame": 18.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          49.2049,
+          64.5033
+        ],
+        "skin_rms_from_bind_height": 0.147521,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        122.37,
+        199.14,
+        692.12
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.5299795269966125,
+          0.0999915599822998,
+          1.0400018692016602
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.5299795269966125,
+          0.0999915599822998,
+          1.0400019884109497
+        ],
+        "string_right_error": 1.1920928955078125e-07,
+        "arrow_nock": [
+          0.5299795269966125,
+          0.0999915599822998,
+          1.0400018692016602
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_000",
+      "animation": "attack_E",
+      "frame": 0,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          96.0868
+        ],
+        "skin_rms_from_bind_height": 0.164721,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        155.8,
+        77.08,
+        210.7,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.40019357204437256,
+          0.09998001158237457,
+          1.040004849433899
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.40019363164901733,
+          0.09998001903295517,
+          1.0400049686431885
+        ],
+        "string_right_error": 1.3348812510944096e-07,
+        "arrow_nock": [
+          0.40019357204437256,
+          0.09998001158237457,
+          1.040004849433899
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_002",
+      "animation": "attack_E",
+      "frame": 2,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 4.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          75.6978
+        ],
+        "skin_rms_from_bind_height": 0.160153,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        153.61,
+        77.08,
+        202.25,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.31915536522865295,
+          0.09997723251581192,
+          1.040005087852478
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.31915533542633057,
+          0.09997723996639252,
+          1.0400052070617676
+        ],
+        "string_right_error": 1.2310379476739693e-07,
+        "arrow_nock": [
+          0.31915536522865295,
+          0.09997723251581192,
+          1.040005087852478
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_004",
+      "animation": "attack_E",
+      "frame": 4,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 8.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          65.1078
+        ],
+        "skin_rms_from_bind_height": 0.158294,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        148.33,
+        77.08,
+        196.97,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.2835310697555542,
+          0.09998717904090881,
+          1.0400030612945557
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.2835310697555542,
+          0.09998717159032822,
+          1.0400032997131348
+        ],
+        "string_right_error": 2.385349660155493e-07,
+        "arrow_nock": [
+          0.2835310697555542,
+          0.09998717904090881,
+          1.0400030612945557
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_005",
+      "animation": "attack_E",
+      "frame": 5,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 10.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          60.696
+        ],
+        "skin_rms_from_bind_height": 0.157685,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        146.01,
+        77.08,
+        194.65,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.2499893754720688,
+          0.09999202191829681,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.2013700229374393e-07,
+        "arrow_nock": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_006",
+      "animation": "attack_E",
+      "frame": 6,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 12.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        143.83,
+        77.08,
+        192.47,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.2499893754720688,
+          0.09999202191829681,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.2013700229374393e-07,
+        "arrow_nock": [
+          0.24998939037322998,
+          0.09999202191829681,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_E_007",
+      "animation": "attack_E",
+      "frame": 7,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 14.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        143.83,
+        77.08,
+        192.47,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.22248700261116028,
+          0.06998810172080994,
+          1.0400038957595825
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.4499993920326233,
+          0.09999983012676239,
+          1.0399999618530273
+        ],
+        "string_right_error": 0.22948331489378035,
+        "arrow_nock": [
+          0.8499894142150879,
+          0.0999920517206192,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.628219346450294,
+        "released": true,
+        "arrow_visible": true
+      },
+      "name": "attack_E_008",
+      "animation": "attack_E",
+      "frame": 8,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 16.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          46.853
+        ],
+        "skin_rms_from_bind_height": 0.155653,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        155.8,
+        77.08,
+        231.54,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.659999430179596,
+          0.1000000610947609,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.19499549269676208,
+          0.03999517485499382,
+          1.040001392364502
+        ],
+        "bow_grip": [
+          0.6599993705749512,
+          0.10000000149011612,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.4499993920326233,
+          0.09999983012676239,
+          1.0399999618530273
+        ],
+        "string_right_error": 0.26196860461335475,
+        "arrow_nock": [
+          1.4499894380569458,
+          0.09999208152294159,
+          1.0400022268295288
+        ],
+        "nock_right_error": 1.2564272093690825,
+        "released": true,
+        "arrow_visible": false
+      },
+      "name": "attack_E_009",
+      "animation": "attack_E",
+      "frame": 9,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 18.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          37.6427
+        ],
+        "skin_rms_from_bind_height": 0.154362,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        155.8,
+        77.08,
+        270.61,
+        135.37
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999153763055801,
+          -0.5299795269966125,
+          1.0400018692016602
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09999154508113861,
+          -0.5299795269966125,
+          1.0400019884109497
+        ],
+        "string_right_error": 1.1944189326376765e-07,
+        "arrow_nock": [
+          0.09999153763055801,
+          -0.5299795269966125,
+          1.0400018692016602
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_000",
+      "animation": "attack_S",
+      "frame": 0,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          96.0868
+        ],
+        "skin_rms_from_bind_height": 0.164721,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.57,
+        137.77,
+        163.57
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997999668121338,
+          -0.40019357204437256,
+          1.040004849433899
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09997999668121338,
+          -0.40019363164901733,
+          1.0400049686431885
+        ],
+        "string_right_error": 1.3328003749250113e-07,
+        "arrow_nock": [
+          0.09997999668121338,
+          -0.40019357204437256,
+          1.040004849433899
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_002",
+      "animation": "attack_S",
+      "frame": 2,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 4.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          75.6978
+        ],
+        "skin_rms_from_bind_height": 0.160153,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.25,
+        101.56,
+        137.77,
+        158.63
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997721761465073,
+          -0.31915536522865295,
+          1.040005087852478
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09997721761465073,
+          -0.31915536522865295,
+          1.0400052070617676
+        ],
+        "string_right_error": 1.1920928955078125e-07,
+        "arrow_nock": [
+          0.09997721761465073,
+          -0.31915536522865295,
+          1.040005087852478
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_004",
+      "animation": "attack_S",
+      "frame": 4,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 8.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          65.1078
+        ],
+        "skin_rms_from_bind_height": 0.158294,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.25,
+        101.56,
+        137.77,
+        158.63
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09998716413974762,
+          -0.2835310697555542,
+          1.0400030612945557
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09998717159032822,
+          -0.2835310697555542,
+          1.0400032997131348
+        ],
+        "string_right_error": 2.385349660155493e-07,
+        "arrow_nock": [
+          0.09998716413974762,
+          -0.2835310697555542,
+          1.0400030612945557
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_005",
+      "animation": "attack_S",
+      "frame": 5,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 10.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          60.696
+        ],
+        "skin_rms_from_bind_height": 0.157685,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.55,
+        137.77,
+        158.63
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09999202191829681,
+          -0.24998939037322998,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.1944189326376765e-07,
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_006",
+      "animation": "attack_S",
+      "frame": 6,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 12.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.55,
+        137.77,
+        158.63
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.09999202191829681,
+          -0.24998939037322998,
+          1.0400023460388184
+        ],
+        "string_right_error": 1.1944189326376765e-07,
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.0,
+        "released": false,
+        "arrow_visible": true
+      },
+      "name": "attack_S_007",
+      "animation": "attack_S",
+      "frame": 7,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 14.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          56.5978
+        ],
+        "skin_rms_from_bind_height": 0.157224,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.55,
+        137.77,
+        158.63
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.06998809427022934,
+          -0.22248700261116028,
+          1.0400038957595825
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.0999998077750206,
+          -0.4499993920326233,
+          1.0399999618530273
+        ],
+        "string_right_error": 0.2294833129914309,
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.8499894142150879,
+          1.0400022268295288
+        ],
+        "nock_right_error": 0.6282193450141416,
+        "released": true,
+        "arrow_visible": true
+      },
+      "name": "attack_S_008",
+      "animation": "attack_S",
+      "frame": 8,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 16.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          46.853
+        ],
+        "skin_rms_from_bind_height": 0.155653,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.57,
+        137.77,
+        176.97
+      ]
+    },
+    {
+      "contact": {
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03999516740441322,
+          -0.19499549269676208,
+          1.040001392364502
+        ],
+        "bow_grip": [
+          0.09999997168779373,
+          -0.6599993705749512,
+          1.0399998426437378
+        ],
+        "bow_grip_error": 1.4600096599955427e-07,
+        "string_mid": [
+          0.0999998077750206,
+          -0.4499993920326233,
+          1.0399999618530273
+        ],
+        "string_right_error": 0.26196860105826236,
+        "arrow_nock": [
+          0.09999201446771622,
+          -1.4499894380569458,
+          1.0400022268295288
+        ],
+        "nock_right_error": 1.2564272064967512,
+        "released": true,
+        "arrow_visible": false
+      },
+      "name": "attack_S_009",
+      "animation": "attack_S",
+      "frame": 9,
+      "source": "Archer_Draw_Contact_Release",
+      "source_frame": 18.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.9404,
+          37.6427
+        ],
+        "skin_rms_from_bind_height": 0.154362,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        131.26,
+        101.57,
+        137.77,
+        202.08
+      ]
+    },
+    {
+      "contact": null,
+      "name": "hit_S_000",
+      "animation": "hit_S",
+      "frame": 0,
+      "source": "Hit_A",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        131.02,
+        202.02,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "hit_S_004",
+      "animation": "hit_S",
+      "frame": 4,
+      "source": "Hit_A",
+      "source_frame": 8.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          47.1556,
+          47.6806
+        ],
+        "skin_rms_from_bind_height": 0.072581,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        121.55,
+        205.81,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "hit_S_007",
+      "animation": "hit_S",
+      "frame": 7,
+      "source": "Hit_A",
+      "source_frame": 14.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.2598,
+          50.6082
+        ],
+        "skin_rms_from_bind_height": 0.075599,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        131.15,
+        202.53,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "death_S_000",
+      "animation": "death_S",
+      "frame": 0,
+      "source": "Death_A",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        131.02,
+        202.02,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "death_S_005",
+      "animation": "death_S",
+      "frame": 5,
+      "source": "Death_A",
+      "source_frame": 10.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          50.5475,
+          47.5251
+        ],
+        "skin_rms_from_bind_height": 0.353493,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        87.89,
+        190.76,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "death_S_009",
+      "animation": "death_S",
+      "frame": 9,
+      "source": "Death_A",
+      "source_frame": 18.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          55.1486,
+          44.5405
+        ],
+        "skin_rms_from_bind_height": 0.471893,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        85.52,
+        192.81,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_E_000",
+      "animation": "dodge_E",
+      "frame": 0,
+      "source": "Dodge_Backward",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        128.0,
+        81.98,
+        176.19,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_E_001",
+      "animation": "dodge_E",
+      "frame": 1,
+      "source": "Dodge_Backward",
+      "source_frame": 2.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          32.0753,
+          26.2501
+        ],
+        "skin_rms_from_bind_height": 0.110504,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        128.0,
+        76.23,
+        176.19,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_E_002",
+      "animation": "dodge_E",
+      "frame": 2,
+      "source": "Dodge_Backward",
+      "source_frame": 4.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          45.505,
+          41.4009
+        ],
+        "skin_rms_from_bind_height": 0.124707,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        128.0,
+        71.28,
+        176.44,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_E_003",
+      "animation": "dodge_E",
+      "frame": 3,
+      "source": "Dodge_Backward",
+      "source_frame": 6.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.2083,
+          58.053
+        ],
+        "skin_rms_from_bind_height": 0.123122,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        128.0,
+        67.83,
+        176.19,
+        663.24
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_S_000",
+      "animation": "dodge_S",
+      "frame": 0,
+      "source": "Dodge_Backward",
+      "source_frame": 0.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          52.6622,
+          50.8182
+        ],
+        "skin_rms_from_bind_height": 0.076142,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        124.74,
+        131.02,
+        202.02,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_S_001",
+      "animation": "dodge_S",
+      "frame": 1,
+      "source": "Dodge_Backward",
+      "source_frame": 2.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          32.0753,
+          26.2501
+        ],
+        "skin_rms_from_bind_height": 0.110504,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        119.58,
+        118.35,
+        187.14,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_S_002",
+      "animation": "dodge_S",
+      "frame": 2,
+      "source": "Dodge_Backward",
+      "source_frame": 4.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          45.505,
+          41.4009
+        ],
+        "skin_rms_from_bind_height": 0.124707,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        119.03,
+        122.01,
+        187.69,
+        692.12
+      ]
+    },
+    {
+      "contact": null,
+      "name": "dodge_S_003",
+      "animation": "dodge_S",
+      "frame": 3,
+      "source": "Dodge_Backward",
+      "source_frame": 6.0,
+      "pose": {
+        "arm_degrees_from_bind": [
+          59.2083,
+          58.053
+        ],
+        "skin_rms_from_bind_height": 0.123122,
+        "armature_modifiers": 8
+      },
+      "weapon_bbox": [
+        120.88,
+        127.19,
+        193.17,
+        692.12
+      ]
+    }
+  ],
+  "seconds": 21.71261640000739,
+  "engine": "BLENDER_EEVEE",
+  "fps": 12,
+  "source": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Rogue.glb",
+  "preview": true,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6339516043663025
+  },
+  "framing": {
+    "ortho_scale": 3.931180953979492,
+    "target": [
+      0.0,
+      -0.1948171705007553,
+      0.8508830070495605
+    ],
+    "margin_factor": 1.13,
+    "includes_outline_hulls": true,
+    "root_motion_drivers": [
+      {
+        "bone": "root",
+        "channel": 0
+      },
+      {
+        "bone": "root",
+        "channel": 2
+      },
+      {
+        "bone": "hips",
+        "channel": 0
+      },
+      {
+        "bone": "hips",
+        "channel": 2
+      }
+    ]
+  },
+  "weapon_authored": {
+    "bow": "original 25-point faceted recurve, wrapped grip",
+    "arrow": "original shaft, triangular broadhead, paired fletching",
+    "attack": "Archer_Draw_Contact_Release",
+    "release_source_frame": 15,
+    "contact_last_frame": 14,
+    "samples": [
+      {
+        "frame": 0,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999153763055801,
+          -0.5299795269966125,
+          1.0400018692016602
+        ],
+        "string_center_bow_local": [
+          -8.329697266162839e-06,
+          0.13001984357833862,
+          2.015080099226907e-06
+        ],
+        "arrow_nock": [
+          0.09999153763055801,
+          -0.5299795269966125,
+          1.0400018692016602
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 1,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999486804008484,
+          -0.4808136820793152,
+          1.040001392364502
+        ],
+        "string_center_bow_local": [
+          -4.960641490470152e-06,
+          0.179185688495636,
+          1.5082018762768712e-06
+        ],
+        "arrow_nock": [
+          0.09999486804008484,
+          -0.4808136820793152,
+          1.040001392364502
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 2,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09998667240142822,
+          -0.4500899016857147,
+          1.0400029420852661
+        ],
+        "string_center_bow_local": [
+          -1.3132130334270187e-05,
+          0.20990946888923645,
+          3.0391599921131274e-06
+        ],
+        "arrow_nock": [
+          0.09998667240142822,
+          -0.4500899016857147,
+          1.0400029420852661
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 3,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997150301933289,
+          -0.4238399863243103,
+          1.0400080680847168
+        ],
+        "string_center_bow_local": [
+          -2.8280881451792084e-05,
+          0.23615938425064087,
+          8.149137102009263e-06
+        ],
+        "arrow_nock": [
+          0.09997150301933289,
+          -0.4238399863243103,
+          1.0400080680847168
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 4,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997999668121338,
+          -0.40019357204437256,
+          1.040004849433899
+        ],
+        "string_center_bow_local": [
+          -1.9768631318584085e-05,
+          0.2598057985305786,
+          4.91603077534819e-06
+        ],
+        "arrow_nock": [
+          0.09997999668121338,
+          -0.40019357204437256,
+          1.040004849433899
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 5,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09998907893896103,
+          -0.3782714605331421,
+          1.040002703666687
+        ],
+        "string_center_bow_local": [
+          -1.0669141374819446e-05,
+          0.2817279100418091,
+          2.7568617042561527e-06
+        ],
+        "arrow_nock": [
+          0.09998907893896103,
+          -0.3782714605331421,
+          1.040002703666687
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 6,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.0999661386013031,
+          -0.35757797956466675,
+          1.040009617805481
+        ],
+        "string_center_bow_local": [
+          -3.359321635798551e-05,
+          0.3024214208126068,
+          9.658379894972313e-06
+        ],
+        "arrow_nock": [
+          0.0999661386013031,
+          -0.35757797956466675,
+          1.040009617805481
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 7,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997155517339706,
+          -0.3379548192024231,
+          1.0400073528289795
+        ],
+        "string_center_bow_local": [
+          -2.8161217414890416e-05,
+          0.32204458117485046,
+          7.381409432127839e-06
+        ],
+        "arrow_nock": [
+          0.09997155517339706,
+          -0.3379548192024231,
+          1.0400073528289795
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 8,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09997721761465073,
+          -0.31915536522865295,
+          1.040005087852478
+        ],
+        "string_center_bow_local": [
+          -2.24839986913139e-05,
+          0.3408440351486206,
+          5.104941919853445e-06
+        ],
+        "arrow_nock": [
+          0.09997721761465073,
+          -0.31915536522865295,
+          1.040005087852478
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 9,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.0999823808670044,
+          -0.30104631185531616,
+          1.040003776550293
+        ],
+        "string_center_bow_local": [
+          -1.7306510926573537e-05,
+          0.3589530885219574,
+          3.782571184274275e-06
+        ],
+        "arrow_nock": [
+          0.0999823808670044,
+          -0.30104631185531616,
+          1.040003776550293
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 10,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09998716413974762,
+          -0.2835310697555542,
+          1.0400030612945557
+        ],
+        "string_center_bow_local": [
+          -1.2509471162047703e-05,
+          0.37646833062171936,
+          3.0566100122086937e-06
+        ],
+        "arrow_nock": [
+          0.09998716413974762,
+          -0.2835310697555542,
+          1.0400030612945557
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 11,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.0999913141131401,
+          -0.2665327191352844,
+          1.040002703666687
+        ],
+        "string_center_bow_local": [
+          -8.346136382897384e-06,
+          0.39346668124198914,
+          2.6885929855779978e-06
+        ],
+        "arrow_nock": [
+          0.0999913141131401,
+          -0.2665327191352844,
+          1.040002703666687
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 12,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "string_center_bow_local": [
+          -7.632777851540595e-06,
+          0.4100100100040436,
+          2.201647930633044e-06
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 13,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "string_center_bow_local": [
+          -7.632777851540595e-06,
+          0.4100100100040436,
+          2.201647930633044e-06
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 14,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "string_center_bow_local": [
+          -7.632777851540595e-06,
+          0.4100100100040436,
+          2.201647930633044e-06
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.24998939037322998,
+          1.0400022268295288
+        ],
+        "released": false,
+        "arrow_visible": true
+      },
+      {
+        "frame": 15,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.08497565239667892,
+          -0.23622211813926697,
+          1.040006399154663
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.5499894022941589,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": true
+      },
+      {
+        "frame": 16,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.06998809427022934,
+          -0.22248700261116028,
+          1.0400038957595825
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -0.8499894142150879,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": true
+      },
+      {
+        "frame": 17,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.05499190092086792,
+          -0.20874223113059998,
+          1.0400022268295288
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -1.149989366531372,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 18,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03999516740441322,
+          -0.19499549269676208,
+          1.040001392364502
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -1.4499894380569458,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 19,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.039993561804294586,
+          -0.25082534551620483,
+          1.0400018692016602
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -1.74998939037323,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 20,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03999072313308716,
+          -0.3066512644290924,
+          1.0400034189224243
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -2.0499892234802246,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 21,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03997401148080826,
+          -0.36244720220565796,
+          1.0400078296661377
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -2.349989414215088,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 22,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.0399828739464283,
+          -0.41829395294189453,
+          1.040004849433899
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -2.649989604949951,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 23,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03998555615544319,
+          -0.4741276204586029,
+          1.0400038957595825
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -2.9499893188476562,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      },
+      {
+        "frame": 24,
+        "left_slot": [
+          0.10000003129243851,
+          -0.659999430179596,
+          1.0399999618530273
+        ],
+        "right_slot": [
+          0.03999665379524231,
+          -0.529988706111908,
+          1.0400006771087646
+        ],
+        "string_center_bow_local": [
+          0.0,
+          0.20999999344348907,
+          0.0
+        ],
+        "arrow_nock": [
+          0.09999201446771622,
+          -3.2499895095825195,
+          1.0400022268295288
+        ],
+        "released": true,
+        "arrow_visible": false
+      }
+    ],
+    "accessory_actions": {
+      "Archer_arrow_shaft_original": "Archer_arrow_shaft_originalAction",
+      "Archer_original_broadhead": "Archer_original_broadheadAction",
+      "Archer_original_fletching": "Archer_original_fletchingAction"
+    },
+    "string_action": "Archer_deformable_stringAction",
+    "rig_joints": 41,
+    "source_body": "Skeleton_Rogue CC0, original skin preserved; only imported nonbody Icosphere removed"
+  },
+  "pose_check": {
+    "bind_reference": "evaluated T-Pose/rest mesh + local arm quaternion",
+    "skinned_objects": [
+      "Skeleton_Rogue_ArmLeft",
+      "Skeleton_Rogue_ArmRight",
+      "Skeleton_Rogue_Body",
+      "Skeleton_Rogue_Eyes",
+      "Skeleton_Rogue_Head",
+      "Skeleton_Rogue_Jaw",
+      "Skeleton_Rogue_LegLeft",
+      "Skeleton_Rogue_LegRight"
+    ],
+    "arm_bones": [
+      "upperarm.l",
+      "upperarm.r"
+    ],
+    "profile": "humanoid"
+  }
+}

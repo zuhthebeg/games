@@ -1,0 +1,1851 @@
+[
+  {
+    "name": "idle_E_000",
+    "source_png_sha256": "754d38516c07ca3afdb276b16f9c02dc68f8bc993abb34b028d658974d0abf00",
+    "source_rgba_sha256": "0e0cdf1c41cc080953b0ffc0117061250b7c5ab5c4ed63771ce66c10636d9a54",
+    "source_mask_sha256": "c823abb0dee9d20a2e44a0945d6e846a61a98e6cc43ad37e432bce9bdda9147c",
+    "source_opaque_pixels": 6011,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.17205810546875,
+    "source_bbox": [
+      96,
+      44,
+      159,
+      178
+    ],
+    "physical_rgba_sha256": "94bf5ba9d89f1d498bd775da05202d221bd11c5e1a7c27f939ec32d6705611a0",
+    "physical_mask_sha256": "b9852cb4ab64646fbd6e70ed2b6dd33b1bd1a28539d5541d6819d28ee911f3d0",
+    "physical_opaque_percent": 9.161376953125,
+    "physical_bbox": [
+      46,
+      20,
+      82,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_SE_000",
+    "source_png_sha256": "8adbfc68f7c30bc1cc1836d264b9f38179a63ad89b4993b0de6029f4b788f0df",
+    "source_rgba_sha256": "397354789632cb810717e83212691e2ec38dd6ceefc69a18677de5554f76573d",
+    "source_mask_sha256": "2d910b1da44f29665a04fa44f10fe98feea060946762c492a969861767ce5f35",
+    "source_opaque_pixels": 7087,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.81390380859375,
+    "source_bbox": [
+      88,
+      43,
+      187,
+      182
+    ],
+    "physical_rgba_sha256": "60d0989f10c0b20f071bcf9748a73161f21e6aeae76644bab0a9fc992d5ef0e5",
+    "physical_mask_sha256": "0fffbbfafc6bfb5083a1b42bdc36d574221672d39d995e8fa6e49ed4c2dce05d",
+    "physical_opaque_percent": 10.797119140625,
+    "physical_bbox": [
+      42,
+      19,
+      95,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_S_000",
+    "source_png_sha256": "a399477c0898d497753f554acff6c048c827ab9fd9f00631613bf7c9296c4d15",
+    "source_rgba_sha256": "910d7d3fa7a30c4835804bff6d06aef8736fbfd0c622cb496a6bb2251a64352b",
+    "source_mask_sha256": "126d8363ad12444d48adc3cef3120c7981235b8197b6eebdbe2a1afd6d62245d",
+    "source_opaque_pixels": 7259,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.07635498046875,
+    "source_bbox": [
+      84,
+      44,
+      203,
+      177
+    ],
+    "physical_rgba_sha256": "59796c783d2a8fe2621403b7afacbc602f412ab348ef1eb4f42d54a4f4bba760",
+    "physical_mask_sha256": "246f29395a3438499af2ed74e4fb37c4a5ac807857ac369be35088a92df9dc1b",
+    "physical_opaque_percent": 11.053466796875,
+    "physical_bbox": [
+      40,
+      20,
+      104,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_SW_000",
+    "source_png_sha256": "aad4e474a0a2bd3eb3ce01fc85ea2a6780617d534450852c6b6b9eb83d5e1d12",
+    "source_rgba_sha256": "0c73901daf7366af3eb45df95315ceadb799cc22bc0e88c763b50ece41f33622",
+    "source_mask_sha256": "9ce1c486c095cb53c27b70d6bb34fd00499d865f916db67b6fad3f17b83ea6c6",
+    "source_opaque_pixels": 7252,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.065673828125,
+    "source_bbox": [
+      88,
+      43,
+      179,
+      182
+    ],
+    "physical_rgba_sha256": "70402a293605d10129999100ad1c9572e65d9445010505a42261041cea1ce2a1",
+    "physical_mask_sha256": "9e9808c59f90b07f444fdce41aba1671bf065773c558238c1448f759baa645d6",
+    "physical_opaque_percent": 11.077880859375,
+    "physical_bbox": [
+      42,
+      19,
+      91,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_W_000",
+    "source_png_sha256": "9cfcf7267b4976413fa4a974cf959fd08d0a78c24ec7c44e94e17ca9831961cd",
+    "source_rgba_sha256": "69fd74e80a90fa1d60afe7454071b65beefa383d6e083e936df235bc97de9896",
+    "source_mask_sha256": "e5f805276eae4b795754500bf98c4f85b089a752ab4c51e6f8b3ce30d3d80128",
+    "source_opaque_pixels": 5965,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.10186767578125,
+    "source_bbox": [
+      97,
+      44,
+      160,
+      181
+    ],
+    "physical_rgba_sha256": "07b786816a76fbf71831a2129644c6d4f0fe573e041f7c6c4c99a2786943d19e",
+    "physical_mask_sha256": "02b2a86d453b450485fcc2db364d160f6f1731bebd69edb5fb3e45f19d093281",
+    "physical_opaque_percent": 9.112548828125,
+    "physical_bbox": [
+      46,
+      20,
+      82,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_NW_000",
+    "source_png_sha256": "b37161491aa996924e0baa9100c580cd0e8dba751c429d054e63ba7f1cce3a61",
+    "source_rgba_sha256": "fb1fc31ee1339ebec9a57814145feca3e941839ae9e6dc906902302432686b36",
+    "source_mask_sha256": "498e73fc376c1b9112fcedc51b42d973c5c051b482b92cb5de14d7cff4f9447d",
+    "source_opaque_pixels": 7519,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.47308349609375,
+    "source_bbox": [
+      69,
+      43,
+      167,
+      180
+    ],
+    "physical_rgba_sha256": "0affac650fccc972c486d48dc71a3bf28a569ef695cd090f33cc9bbac4cf2178",
+    "physical_mask_sha256": "cb41f9e9d4bbeda8ff288fb0b5721699d087bf0d0952bafe66b4046beab97a3a",
+    "physical_opaque_percent": 11.505126953125,
+    "physical_bbox": [
+      32,
+      19,
+      86,
+      92
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_N_000",
+    "source_png_sha256": "097b77e34051f58843e3734dda10183ddbcee00ab5040cf1db0844e61a9c4c85",
+    "source_rgba_sha256": "e5bfd0a062b5ec2a14b0e57441aa5ebd0550b1df70f91023c8d68c12de194960",
+    "source_mask_sha256": "78bb5539eb628f6e0591e66b60630ff3bd38264deef0fc143eceab187b29b900",
+    "source_opaque_pixels": 7688,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.73095703125,
+    "source_bbox": [
+      53,
+      45,
+      172,
+      175
+    ],
+    "physical_rgba_sha256": "ff6e1d6538cd518d9b54184121c373d575fc8533365d5e9f2a2f035377f74614",
+    "physical_mask_sha256": "d65be495bce4ccf2ee6702e8b34096baf51cb8c718cd13fb1c0958b80fbda878",
+    "physical_opaque_percent": 11.676025390625,
+    "physical_bbox": [
+      24,
+      20,
+      88,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "idle_NE_000",
+    "source_png_sha256": "cc7a7d8ec57b9e90700c0f6e3957856397502830b62b757a9ac2d6728bce195e",
+    "source_rgba_sha256": "437d398f98ca5fdb8c5a62db899ce903f240a3396a896cbcceab31f11ec34502",
+    "source_mask_sha256": "23b1691a10d600dc43362924864713d88fc1b70d8512d1268b33c71c712bb0fe",
+    "source_opaque_pixels": 7449,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.36627197265625,
+    "source_bbox": [
+      77,
+      43,
+      168,
+      180
+    ],
+    "physical_rgba_sha256": "35d93acacbf13e219df79cf9bb277087f6e3053127fc782d9aed5c6368985ec4",
+    "physical_mask_sha256": "2670692047c983c974f56da16990a9ab2568a70458a820d77797b272aa0fda5a",
+    "physical_opaque_percent": 11.34033203125,
+    "physical_bbox": [
+      37,
+      20,
+      86,
+      92
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "run_S_000",
+    "source_png_sha256": "3367afb3a49810c75edcf1d4de0dfb0aeaa5508ae9b13ec8b90b2c1c05d280ba",
+    "source_rgba_sha256": "c63281a88345cd8db3c5989a0557a4b089d4ab23b4814560397ce9955ac48451",
+    "source_mask_sha256": "d1e2a07433469db526b76f9af3b752e7cd62d7a13609103e9d77cf6528ebd07f",
+    "source_opaque_pixels": 5714,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 8.7188720703125,
+    "source_bbox": [
+      80,
+      61,
+      201,
+      174
+    ],
+    "physical_rgba_sha256": "1f10f7fd64fa1eed1bd05a0cddc5ef5b30a97e93e110fd9acd63d96e9c2e8e01",
+    "physical_mask_sha256": "82e491433ca61d78ac6d1abd2bf4e6fba212fb5790a3e7ce2398f055f8016f95",
+    "physical_opaque_percent": 8.673095703125,
+    "physical_bbox": [
+      38,
+      29,
+      102,
+      89
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        48.7327,
+        66.7321
+      ],
+      "skin_rms_from_bind_height": 0.145921,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "run_S_005",
+    "source_png_sha256": "bf75dc391cba6b4318e14eeb967ba8cd62bb88cdba25514d1aaa18f2e7ff55a9",
+    "source_rgba_sha256": "ca848ca39aaa2b3b6e609e79452df333d7f0428713c478f5148cb6cadbb05326",
+    "source_mask_sha256": "c15f802935fbca93cfa3f65ee3ef425d985f20843782f3179f35bb57843e5dbf",
+    "source_opaque_pixels": 5720,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 8.72802734375,
+    "source_bbox": [
+      81,
+      62,
+      201,
+      174
+    ],
+    "physical_rgba_sha256": "52042739c858127a3124b928f7ff519020cf4f29a4a86b9c2b03cdfa192cdfc3",
+    "physical_mask_sha256": "1e8f136cd90a4a224f975a15da840194de8595de933db044b34662de835b4d13",
+    "physical_opaque_percent": 8.660888671875,
+    "physical_bbox": [
+      38,
+      29,
+      103,
+      89
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        66.2259,
+        48.7954
+      ],
+      "skin_rms_from_bind_height": 0.144738,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "run_S_009",
+    "source_png_sha256": "1da9b59a4becb025900baedfd043e7a041c52227ead6d980b632dede84b91c6e",
+    "source_rgba_sha256": "d06e0ebf4e0721ef293fe9474f5fd607209f542f28673daa004907c7f2408d25",
+    "source_mask_sha256": "b4124a219ce5b45f48acc61bebba3774835babb525c3272c1e35c857f1fd1395",
+    "source_opaque_pixels": 5688,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 8.67919921875,
+    "source_bbox": [
+      80,
+      62,
+      201,
+      173
+    ],
+    "physical_rgba_sha256": "895b493b458d310dab42b3ef6bf5e03ba912628e908cf8b88ed505be964c28de",
+    "physical_mask_sha256": "babbd32a56ef2abf3d56999f7931eb1c6a26d287196bccf7fd17202ee9255390",
+    "physical_opaque_percent": 8.63037109375,
+    "physical_bbox": [
+      38,
+      29,
+      102,
+      89
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        49.2049,
+        64.5033
+      ],
+      "skin_rms_from_bind_height": 0.147521,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "attack_E_000",
+    "source_png_sha256": "12bbc76d3e562a2faa67c3e1cf3f580d52ca0531bef8ad2b5564c6c6d10e5e4b",
+    "source_rgba_sha256": "90d7618bbcd6198345f837804175c9af8dab600c167e5450a8bcfa68e344430e",
+    "source_mask_sha256": "f083d8b5586c7943c045e84ad2f67ecfcf2e8d1afd79ab1eba52f22eda0628af",
+    "source_opaque_pixels": 6830,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.4217529296875,
+    "source_bbox": [
+      91,
+      49,
+      212,
+      182
+    ],
+    "physical_rgba_sha256": "13b069632577a9fd6c43e2d84ee3f090f13f97afe08cdadcdff83359cad503a6",
+    "physical_mask_sha256": "51e47a98f50c517780d76a99e7dc1c778ccbf7e2123d3cc4084f73d57f5b99bf",
+    "physical_opaque_percent": 10.455322265625,
+    "physical_bbox": [
+      43,
+      22,
+      108,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        96.0868
+      ],
+      "skin_rms_from_bind_height": 0.164721,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.5299795269966125,
+        0.0999915599822998,
+        1.0400018692016602
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.5299795269966125,
+        0.0999915599822998,
+        1.0400019884109497
+      ],
+      "string_right_error": 1.1920928955078125e-07,
+      "arrow_nock": [
+        0.5299795269966125,
+        0.0999915599822998,
+        1.0400018692016602
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_002",
+    "source_png_sha256": "f0978fbb61d567717520b9edbf2ab6246a06bb2c41e26680a49248539f941139",
+    "source_rgba_sha256": "d738eaa747910379a459a4f919ed327d41042fdc9283e67fc24b6e1a77b7c392",
+    "source_mask_sha256": "09cf8c76adbe12a20f977b133175d276981fd7fdf68f8b87ed018442597d190f",
+    "source_opaque_pixels": 6765,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.32257080078125,
+    "source_bbox": [
+      91,
+      49,
+      204,
+      182
+    ],
+    "physical_rgba_sha256": "e1c09e57d049c9ee303bff8abdcbbffe3caf2aca7526a1fc2fc577b7a813b573",
+    "physical_mask_sha256": "a16d719ba0f65338562e0db0050a9a33f4ac4a24f71c9452b7a26507957f86e4",
+    "physical_opaque_percent": 10.333251953125,
+    "physical_bbox": [
+      43,
+      22,
+      104,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        75.6978
+      ],
+      "skin_rms_from_bind_height": 0.160153,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.40019357204437256,
+        0.09998001158237457,
+        1.040004849433899
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.40019363164901733,
+        0.09998001903295517,
+        1.0400049686431885
+      ],
+      "string_right_error": 1.3348812510944096e-07,
+      "arrow_nock": [
+        0.40019357204437256,
+        0.09998001158237457,
+        1.040004849433899
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_004",
+    "source_png_sha256": "e9b4d2e70f16d3c9c4e4b9361b8634d8566b2c4e204ef2731da72508d0a2e786",
+    "source_rgba_sha256": "b4e81d7bbe93590dc065af06c7f374046abb7de5ce832086e2efabab7874fe64",
+    "source_mask_sha256": "6049e7feeb103e6456e42290b6d25730687515b0abb63ea9d80736d65c35d061",
+    "source_opaque_pixels": 6732,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.272216796875,
+    "source_bbox": [
+      91,
+      49,
+      198,
+      182
+    ],
+    "physical_rgba_sha256": "15f5db015908afc0a1b2fae73c15173eefc9210395245500ed388782cadcd8d7",
+    "physical_mask_sha256": "cf34d0a4d2ecab69cf14914006593ae5343de827ddae544f21c69e2ab65ce6db",
+    "physical_opaque_percent": 10.284423828125,
+    "physical_bbox": [
+      43,
+      22,
+      101,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        65.1078
+      ],
+      "skin_rms_from_bind_height": 0.158294,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.31915536522865295,
+        0.09997723251581192,
+        1.040005087852478
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.31915533542633057,
+        0.09997723996639252,
+        1.0400052070617676
+      ],
+      "string_right_error": 1.2310379476739693e-07,
+      "arrow_nock": [
+        0.31915536522865295,
+        0.09997723251581192,
+        1.040005087852478
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_005",
+    "source_png_sha256": "acec2efa65439191ef3932e0d32bddfc5653fcf967a7b8b4850302635a630eeb",
+    "source_rgba_sha256": "cb6a2e8338d7274ae08314de89c6cf121e11e3810e0097004a1c7d79159f01b8",
+    "source_mask_sha256": "87c9f81dba6f46e64ccb183a7db4cb6b145c123017ed7222a08993d1638ddc6e",
+    "source_opaque_pixels": 6718,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.2508544921875,
+    "source_bbox": [
+      91,
+      49,
+      196,
+      182
+    ],
+    "physical_rgba_sha256": "03d5b85ce5a847d34ab5f050562ee2dcac58c9ebf0df7928036f4b7c84355cbb",
+    "physical_mask_sha256": "6649c14366baf9ca76ad95c2d5ef2c3dbb6f8714fc5eb5428c4fb34bb5031356",
+    "physical_opaque_percent": 10.260009765625,
+    "physical_bbox": [
+      43,
+      22,
+      100,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        60.696
+      ],
+      "skin_rms_from_bind_height": 0.157685,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.2835310697555542,
+        0.09998717904090881,
+        1.0400030612945557
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.2835310697555542,
+        0.09998717159032822,
+        1.0400032997131348
+      ],
+      "string_right_error": 2.385349660155493e-07,
+      "arrow_nock": [
+        0.2835310697555542,
+        0.09998717904090881,
+        1.0400030612945557
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_006",
+    "source_png_sha256": "b6c0001a42a08ed99c6062f29b3740706712b7fd51b5914ee6f13ff1191d9e7b",
+    "source_rgba_sha256": "d1a5a2f584a01b15f37c823161d2933ee88db9c469d7933c6336d7fcb3ea33b9",
+    "source_mask_sha256": "77003bd0055f7e85853bbc1ff5d92236571371ca68b8b49b5bc4169a375c5247",
+    "source_opaque_pixels": 6705,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.23101806640625,
+    "source_bbox": [
+      91,
+      49,
+      194,
+      182
+    ],
+    "physical_rgba_sha256": "a94a95b3a0a934f6837b4b2a6d5fd3eea96f5a0b234d84e20d53d0d6add4d954",
+    "physical_mask_sha256": "4b126066304a5197c87feb5ccdee34b3ace220361607feb8e7a44b22a2d3a9dc",
+    "physical_opaque_percent": 10.24169921875,
+    "physical_bbox": [
+      43,
+      22,
+      99,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        56.5978
+      ],
+      "skin_rms_from_bind_height": 0.157224,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.24998939037322998,
+        0.09999202191829681,
+        1.0400022268295288
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.2499893754720688,
+        0.09999202191829681,
+        1.0400023460388184
+      ],
+      "string_right_error": 1.2013700229374393e-07,
+      "arrow_nock": [
+        0.24998939037322998,
+        0.09999202191829681,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_007",
+    "source_png_sha256": "2356d2b5e0ef92e733c9b67b1618c830e42fdf6c5c800545083a9904987454ca",
+    "source_rgba_sha256": "d1a5a2f584a01b15f37c823161d2933ee88db9c469d7933c6336d7fcb3ea33b9",
+    "source_mask_sha256": "77003bd0055f7e85853bbc1ff5d92236571371ca68b8b49b5bc4169a375c5247",
+    "source_opaque_pixels": 6705,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.23101806640625,
+    "source_bbox": [
+      91,
+      49,
+      194,
+      182
+    ],
+    "physical_rgba_sha256": "a94a95b3a0a934f6837b4b2a6d5fd3eea96f5a0b234d84e20d53d0d6add4d954",
+    "physical_mask_sha256": "4b126066304a5197c87feb5ccdee34b3ace220361607feb8e7a44b22a2d3a9dc",
+    "physical_opaque_percent": 10.24169921875,
+    "physical_bbox": [
+      43,
+      22,
+      99,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        56.5978
+      ],
+      "skin_rms_from_bind_height": 0.157224,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.24998939037322998,
+        0.09999202191829681,
+        1.0400022268295288
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.2499893754720688,
+        0.09999202191829681,
+        1.0400023460388184
+      ],
+      "string_right_error": 1.2013700229374393e-07,
+      "arrow_nock": [
+        0.24998939037322998,
+        0.09999202191829681,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_008",
+    "source_png_sha256": "8469de1ce59e07f4e2a8683ea34f45d3e08d798ff9a8564da985ee09f4c35222",
+    "source_rgba_sha256": "284b9c50719ddf553ec41badb16e514da19f7cccbf8645aaf505878e723ffd87",
+    "source_mask_sha256": "39b121f12571add2c0e40b68cbb714a0c34fe8b713ef4751302678d3c29213c7",
+    "source_opaque_pixels": 6805,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.38360595703125,
+    "source_bbox": [
+      91,
+      49,
+      233,
+      182
+    ],
+    "physical_rgba_sha256": "81357fea366175fe5cb0b77858bc71966d72698cc50967284b4ce1059c95da9d",
+    "physical_mask_sha256": "6b32a8086619377f29bdc8485cca5c5c86926b21db411340ad8315192de0c9f8",
+    "physical_opaque_percent": 10.443115234375,
+    "physical_bbox": [
+      43,
+      22,
+      116,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        46.853
+      ],
+      "skin_rms_from_bind_height": 0.155653,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.22248700261116028,
+        0.06998810172080994,
+        1.0400038957595825
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.4499993920326233,
+        0.09999983012676239,
+        1.0399999618530273
+      ],
+      "string_right_error": 0.22948331489378035,
+      "arrow_nock": [
+        0.8499894142150879,
+        0.0999920517206192,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.628219346450294,
+      "released": true,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_E_009",
+    "source_png_sha256": "3f8aec7b0f270559274d285acd815ab7476efc7947ccb0ab4e04ee9e5bf34cfb",
+    "source_rgba_sha256": "31585c2e9784bc4e8830aa1883e87e767ca1263d7b0bb305bbca1b45c2edb262",
+    "source_mask_sha256": "f90ac360957610a07dafd21b6a087db66d14542763f1603ef46d37cd3cdf1898",
+    "source_opaque_pixels": 6663,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.16693115234375,
+    "source_bbox": [
+      91,
+      49,
+      185,
+      182
+    ],
+    "physical_rgba_sha256": "a6115fe1a82a9c2c78f8915c7b85fcd0017ab488b58b5d1972612275f5115dcd",
+    "physical_mask_sha256": "3cb4cdf1c802c2933198e383d41f68d816a7d4b0b98ef9c8c54d65b9481cf61b",
+    "physical_opaque_percent": 10.15625,
+    "physical_bbox": [
+      43,
+      22,
+      95,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        37.6427
+      ],
+      "skin_rms_from_bind_height": 0.154362,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.659999430179596,
+        0.1000000610947609,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.19499549269676208,
+        0.03999517485499382,
+        1.040001392364502
+      ],
+      "bow_grip": [
+        0.6599993705749512,
+        0.10000000149011612,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.4499993920326233,
+        0.09999983012676239,
+        1.0399999618530273
+      ],
+      "string_right_error": 0.26196860461335475,
+      "arrow_nock": [
+        1.4499894380569458,
+        0.09999208152294159,
+        1.0400022268295288
+      ],
+      "nock_right_error": 1.2564272093690825,
+      "released": true,
+      "arrow_visible": false
+    }
+  },
+  {
+    "name": "attack_S_000",
+    "source_png_sha256": "a5add4b16c42431b9cc6f96cf8a889ecbd41088d2a6832714bb0413603fa3eaf",
+    "source_rgba_sha256": "8c15d3db33c6ea65e6bd47844908cd7846e8bb7fa7368477d2c8931703bed401",
+    "source_mask_sha256": "ccfe09714a68e11c77f559b131298bbe47f28aead473a91ba0a3112e2b657aa4",
+    "source_opaque_pixels": 6227,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.50164794921875,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "1698bf110f2c0a5c9696dedcb9663de41010a9826d0c8954ee82863cc18b8c7d",
+    "physical_mask_sha256": "97fa3ef667c552a55851083d292b197913044b87a3ddeb5aeded3bcade405b7f",
+    "physical_opaque_percent": 9.539794921875,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        96.0868
+      ],
+      "skin_rms_from_bind_height": 0.164721,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09999154508113861,
+        -0.5299795269966125,
+        1.0400019884109497
+      ],
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_nock": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_002",
+    "source_png_sha256": "90d1a2c78648a7556abd127d51942a2df894b2aa55950ae0046a7c0b7628d5ad",
+    "source_rgba_sha256": "f15c5c6e0882d951e3c731db31ef1f83ac84e0530e4fb152cc5a75e0b50b0880",
+    "source_mask_sha256": "1f46c7f3fde881fb995e1c14ab210670312d970a6ada6840fe67908a297668d2",
+    "source_opaque_pixels": 6231,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.50775146484375,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "251daaf6efdf2e5964207cc223dcea5a4a72095db20db17fa4a32148b674736d",
+    "physical_mask_sha256": "9e5a22e01ceb708420120280e7ecfcc3ca0c0125acb8847c3996853f669dd31c",
+    "physical_opaque_percent": 9.552001953125,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        75.6978
+      ],
+      "skin_rms_from_bind_height": 0.160153,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09997999668121338,
+        -0.40019363164901733,
+        1.0400049686431885
+      ],
+      "string_right_error": 1.3328003749250113e-07,
+      "arrow_nock": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_004",
+    "source_png_sha256": "3c654c33f6e0675639a2f85946f66f9d8e3b180cea1b5498ece1446dd54996ed",
+    "source_rgba_sha256": "8fdd0d86eca58b9dbadb059aed999a6786200ad591d006b17b46587e62b1b045",
+    "source_mask_sha256": "7c60c5c6a0d29c0ee8570d45272f7cb03e56d10e0e8b1f58b03ef0f023110f47",
+    "source_opaque_pixels": 6233,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.51080322265625,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "8134765c33540c706b036369d611be0de114c6141c074215770b873e5c68ccf8",
+    "physical_mask_sha256": "d0df7898e76693bcbf061001a0931d1fd61ca5d846a2759957237744bd42f31b",
+    "physical_opaque_percent": 9.5458984375,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        65.1078
+      ],
+      "skin_rms_from_bind_height": 0.158294,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.0400052070617676
+      ],
+      "string_right_error": 1.1920928955078125e-07,
+      "arrow_nock": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_005",
+    "source_png_sha256": "6abfac42995f866b001e945325d467027a824655baa3a5518dae9f5353ea3718",
+    "source_rgba_sha256": "a374bd97351f75f19b5f262953c92cde416d7cde940c73a253d610f0936bd7de",
+    "source_mask_sha256": "28f9fa9bbc7710e6303edceebac8c50b098e2e798d5e3894ece757a4b47ac8d5",
+    "source_opaque_pixels": 6231,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.50775146484375,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "d32e75878ca50e2c639d542232d751d6011bb968098c2291965b76c91708c45e",
+    "physical_mask_sha256": "066c10846aed4db341588c698f80bb9127341f6a57dd4e8f88050d762d7f5f64",
+    "physical_opaque_percent": 9.5458984375,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        60.696
+      ],
+      "skin_rms_from_bind_height": 0.157685,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09998716413974762,
+        -0.2835310697555542,
+        1.0400030612945557
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09998717159032822,
+        -0.2835310697555542,
+        1.0400032997131348
+      ],
+      "string_right_error": 2.385349660155493e-07,
+      "arrow_nock": [
+        0.09998716413974762,
+        -0.2835310697555542,
+        1.0400030612945557
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_006",
+    "source_png_sha256": "4e28931570f4f58fe4134836c4ebb635543481c35143c7fc36c64dac40c4c5d2",
+    "source_rgba_sha256": "91ec462baed10b6b87c8098565f51586c22dfed208b5e953ca11c0149cddb5eb",
+    "source_mask_sha256": "9d493a3cbf49a42c977cd98fcecadb0918f398ef8b1d7c5ad4a8b59daa977985",
+    "source_opaque_pixels": 6230,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.5062255859375,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "4dc7d72aa22161e7ad5be143e4701a008a935ba812562d46aa3f70e6127f9bfa",
+    "physical_mask_sha256": "2b61862efe7a642174caa673ba1ed68e8199198aef9b3c38b1b0dc66051d475a",
+    "physical_opaque_percent": 9.5458984375,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        56.5978
+      ],
+      "skin_rms_from_bind_height": 0.157224,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_007",
+    "source_png_sha256": "54d533db03f6d72ba5bc8d8b2fa38c600b66619766e214cacae4325557f75288",
+    "source_rgba_sha256": "91ec462baed10b6b87c8098565f51586c22dfed208b5e953ca11c0149cddb5eb",
+    "source_mask_sha256": "9d493a3cbf49a42c977cd98fcecadb0918f398ef8b1d7c5ad4a8b59daa977985",
+    "source_opaque_pixels": 6230,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.5062255859375,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "4dc7d72aa22161e7ad5be143e4701a008a935ba812562d46aa3f70e6127f9bfa",
+    "physical_mask_sha256": "2b61862efe7a642174caa673ba1ed68e8199198aef9b3c38b1b0dc66051d475a",
+    "physical_opaque_percent": 9.5458984375,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        56.5978
+      ],
+      "skin_rms_from_bind_height": 0.157224,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.0,
+      "released": false,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_008",
+    "source_png_sha256": "907008a186bf3cc485f52481b300c1068e85c27a3eaa7cc8729df79d62e91479",
+    "source_rgba_sha256": "418037b3caab6439c10e4cb1dcc058a503fa035013adca16158b68c680f8d294",
+    "source_mask_sha256": "bb7511d0464ac9ce892ca251ffdec8873f002d39526945de3e347fdf5119032d",
+    "source_opaque_pixels": 6255,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.54437255859375,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "7f2c3542a17a36ce75110c003a55224311ea4d02e6227602a7296dc536358c4e",
+    "physical_mask_sha256": "85fa575f1ff0190b896a3fd300dd69f26f5b14855c54a120d1808998f3c30665",
+    "physical_opaque_percent": 9.55810546875,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        46.853
+      ],
+      "skin_rms_from_bind_height": 0.155653,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.06998809427022934,
+        -0.22248700261116028,
+        1.0400038957595825
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "string_right_error": 0.2294833129914309,
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.8499894142150879,
+        1.0400022268295288
+      ],
+      "nock_right_error": 0.6282193450141416,
+      "released": true,
+      "arrow_visible": true
+    }
+  },
+  {
+    "name": "attack_S_009",
+    "source_png_sha256": "b0301ccf9e32dc80d5ab53e0e736ff2b3b68aad3d4295b8a6956ad1fdd56cf2d",
+    "source_rgba_sha256": "a99d1bf1fdc2b8d4de69bfa619d82c91ba4954259b522c0300c63ee5b4c4a5f9",
+    "source_mask_sha256": "c112af708f45d28047c3229e2b9667760063ab73acdb2ca84fda28b85c51457a",
+    "source_opaque_pixels": 6220,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.490966796875,
+    "source_bbox": [
+      91,
+      49,
+      168,
+      181
+    ],
+    "physical_rgba_sha256": "380553a9bca472236c6e7f557146e8634f44ca700a9b73323afc061a0bea6054",
+    "physical_mask_sha256": "ba0e4e6db2482fd47d790d761839e6b5b9ce7e8824637d795ac2160d8b84085b",
+    "physical_opaque_percent": 9.527587890625,
+    "physical_bbox": [
+      43,
+      22,
+      86,
+      93
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.9404,
+        37.6427
+      ],
+      "skin_rms_from_bind_height": 0.154362,
+      "armature_modifiers": 8
+    },
+    "contact": {
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.03999516740441322,
+        -0.19499549269676208,
+        1.040001392364502
+      ],
+      "bow_grip": [
+        0.09999997168779373,
+        -0.6599993705749512,
+        1.0399998426437378
+      ],
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "string_right_error": 0.26196860105826236,
+      "arrow_nock": [
+        0.09999201446771622,
+        -1.4499894380569458,
+        1.0400022268295288
+      ],
+      "nock_right_error": 1.2564272064967512,
+      "released": true,
+      "arrow_visible": false
+    }
+  },
+  {
+    "name": "hit_S_000",
+    "source_png_sha256": "a8f0c97ba03004892995591c7f2a31c1ab71854227d2b9317b20bd2dfaf47dec",
+    "source_rgba_sha256": "910d7d3fa7a30c4835804bff6d06aef8736fbfd0c622cb496a6bb2251a64352b",
+    "source_mask_sha256": "126d8363ad12444d48adc3cef3120c7981235b8197b6eebdbe2a1afd6d62245d",
+    "source_opaque_pixels": 7259,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.07635498046875,
+    "source_bbox": [
+      84,
+      44,
+      203,
+      177
+    ],
+    "physical_rgba_sha256": "59796c783d2a8fe2621403b7afacbc602f412ab348ef1eb4f42d54a4f4bba760",
+    "physical_mask_sha256": "246f29395a3438499af2ed74e4fb37c4a5ac807857ac369be35088a92df9dc1b",
+    "physical_opaque_percent": 11.053466796875,
+    "physical_bbox": [
+      40,
+      20,
+      104,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "hit_S_004",
+    "source_png_sha256": "270b13630f661804bd1623c2f5173394a0bb9470437958719a1ea8a44d513a06",
+    "source_rgba_sha256": "2f1cb4f2cce2f628e772218139efdca3ff691cd914557ff6a7d385ee39a510a4",
+    "source_mask_sha256": "467efd5891c7c4b0da225e7bf91efd74f6393887b0ccbca2cfac3402084111e4",
+    "source_opaque_pixels": 7661,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.68975830078125,
+    "source_bbox": [
+      80,
+      42,
+      207,
+      179
+    ],
+    "physical_rgba_sha256": "4572183dc15f4a7e7397ceed84bea6b24d955cf24b10e106bb4fd6aceadcd39c",
+    "physical_mask_sha256": "08af06125229c76cbe85135a038d69112952977c7456b2419c928e922dbddee1",
+    "physical_opaque_percent": 11.6943359375,
+    "physical_bbox": [
+      38,
+      19,
+      106,
+      92
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        47.1556,
+        47.6806
+      ],
+      "skin_rms_from_bind_height": 0.072581,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "hit_S_007",
+    "source_png_sha256": "3cf44ecc2af783180ea9081f407a6c48f62e77208c0d3d52d8fee2fbcf0b166a",
+    "source_rgba_sha256": "b88e3c706008f561690546c29c1208c2bfcd6b1624ff5dbcea5307efd636c1f9",
+    "source_mask_sha256": "428965fa5eab49cb91c063c5d2524971d3b09210b5ac7e56d49f305263263f6d",
+    "source_opaque_pixels": 7327,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.18011474609375,
+    "source_bbox": [
+      84,
+      44,
+      204,
+      177
+    ],
+    "physical_rgba_sha256": "9efd39fe5af371b184310c94f42b395a137e409aa3afc3f387d7dd1edd31a8bf",
+    "physical_mask_sha256": "11a6aec7f314551149762416a3ebcd235b273b186ea485d144f7d0dabf9bd53d",
+    "physical_opaque_percent": 11.083984375,
+    "physical_bbox": [
+      40,
+      20,
+      104,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.2598,
+        50.6082
+      ],
+      "skin_rms_from_bind_height": 0.075599,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "death_S_000",
+    "source_png_sha256": "ecd8b12fce3f288ad6c8faa2b9a3990a2ac39602b8df1e9e7c32b1829e380118",
+    "source_rgba_sha256": "910d7d3fa7a30c4835804bff6d06aef8736fbfd0c622cb496a6bb2251a64352b",
+    "source_mask_sha256": "126d8363ad12444d48adc3cef3120c7981235b8197b6eebdbe2a1afd6d62245d",
+    "source_opaque_pixels": 7259,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.07635498046875,
+    "source_bbox": [
+      84,
+      44,
+      203,
+      177
+    ],
+    "physical_rgba_sha256": "59796c783d2a8fe2621403b7afacbc602f412ab348ef1eb4f42d54a4f4bba760",
+    "physical_mask_sha256": "246f29395a3438499af2ed74e4fb37c4a5ac807857ac369be35088a92df9dc1b",
+    "physical_opaque_percent": 11.053466796875,
+    "physical_bbox": [
+      40,
+      20,
+      104,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "death_S_005",
+    "source_png_sha256": "091f41e0f1e2c010b8985be14be139003604aa9fcacb21c977216e17aba6dd85",
+    "source_rgba_sha256": "2bbf8ddccaa55df1725f310228d4748785710f0751114674ce9ee01e9775f79b",
+    "source_mask_sha256": "7e683dd42251eb32bb0de6ca08e2a213ca6913e12c2afb9819ca703f831bb6e5",
+    "source_opaque_pixels": 8135,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 12.41302490234375,
+    "source_bbox": [
+      74,
+      37,
+      192,
+      177
+    ],
+    "physical_rgba_sha256": "5848d156f49ecb4e5e62e83b2b8bfb19355480acba7b275fc8b8b116dbc8260e",
+    "physical_mask_sha256": "f0c9465efb58e5972120129b8b96d38c1997d9b1c633ef0f7c54258ea9288b36",
+    "physical_opaque_percent": 12.40234375,
+    "physical_bbox": [
+      35,
+      16,
+      98,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        50.5475,
+        47.5251
+      ],
+      "skin_rms_from_bind_height": 0.353493,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "death_S_009",
+    "source_png_sha256": "d3af60e110d930237e4c33df6495db39bbd0b3f6a6cb65444b81e9616e4eab5b",
+    "source_rgba_sha256": "84d8bcebcda6f46ed7b9575af9936378580511229c079f9a513ad4a84dfb3b4a",
+    "source_mask_sha256": "4083479704d01ffe1540699bedb3fb5badffb009ebd3be0dd0e544b603a64bcd",
+    "source_opaque_pixels": 8036,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 12.261962890625,
+    "source_bbox": [
+      70,
+      56,
+      194,
+      188
+    ],
+    "physical_rgba_sha256": "22e44975af3934c3d86b1ee80bf2e40d5bc042136c781cd1c9750c7eb810c032",
+    "physical_mask_sha256": "0a2204410241cd63b314a854370fe31ddd2e0acbde140a336ed0be832e03cc86",
+    "physical_opaque_percent": 12.19482421875,
+    "physical_bbox": [
+      33,
+      26,
+      99,
+      96
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        55.1486,
+        44.5405
+      ],
+      "skin_rms_from_bind_height": 0.471893,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_E_000",
+    "source_png_sha256": "84281a9c2ff4262f2eb54e9905a3a1c96c059c5ca6d29e871220cd8f9913cc6a",
+    "source_rgba_sha256": "0e0cdf1c41cc080953b0ffc0117061250b7c5ab5c4ed63771ce66c10636d9a54",
+    "source_mask_sha256": "c823abb0dee9d20a2e44a0945d6e846a61a98e6cc43ad37e432bce9bdda9147c",
+    "source_opaque_pixels": 6011,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 9.17205810546875,
+    "source_bbox": [
+      96,
+      44,
+      159,
+      178
+    ],
+    "physical_rgba_sha256": "94bf5ba9d89f1d498bd775da05202d221bd11c5e1a7c27f939ec32d6705611a0",
+    "physical_mask_sha256": "b9852cb4ab64646fbd6e70ed2b6dd33b1bd1a28539d5541d6819d28ee911f3d0",
+    "physical_opaque_percent": 9.161376953125,
+    "physical_bbox": [
+      46,
+      20,
+      82,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_E_001",
+    "source_png_sha256": "c8919704e9531c8049bd891254310f930c8f1fbb7b880e30405cfe8282c2ba2b",
+    "source_rgba_sha256": "8b37412d5bd6c3f6d13e9a08e2db3cd349744cf595caea54ed1195f11729fc49",
+    "source_mask_sha256": "b80b834ac14a5ddeb4b7e068897f54fc70119693dfc7dac545b34968ff9b56a3",
+    "source_opaque_pixels": 6740,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.284423828125,
+    "source_bbox": [
+      88,
+      48,
+      176,
+      178
+    ],
+    "physical_rgba_sha256": "38d41758d12e16d9c9fe0e8dd375e24104c302257e0fa915ce44e438194fbc7b",
+    "physical_mask_sha256": "d03a9ac726c759b5b6245b6c3c324907392dfdd90a4bf9f62d972715df9c99ab",
+    "physical_opaque_percent": 10.29052734375,
+    "physical_bbox": [
+      42,
+      22,
+      90,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        32.0753,
+        26.2501
+      ],
+      "skin_rms_from_bind_height": 0.110504,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_E_002",
+    "source_png_sha256": "5b2dd010375fe31b83a3bce715e25bc3201d95ecbbead74b999fe48ccddbc401",
+    "source_rgba_sha256": "7fac98075f2a849346eaace3fb82e91bff8a23112329d566cb0e9e425d0631aa",
+    "source_mask_sha256": "593cea0f491f36064e60fd3b80a34041c1cd668f16ae5a4df9011e790f2fce09",
+    "source_opaque_pixels": 7035,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.73455810546875,
+    "source_bbox": [
+      87,
+      48,
+      178,
+      178
+    ],
+    "physical_rgba_sha256": "d4d4efc3eaeacad721b9001d6c2eedbfb765341811665369ca14db6b844a098f",
+    "physical_mask_sha256": "129c31c011e447659fb3ad7f3a8d45d5f26d1d2cbb1fc17c1c222e91caa6e462",
+    "physical_opaque_percent": 10.711669921875,
+    "physical_bbox": [
+      41,
+      22,
+      91,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        45.505,
+        41.4009
+      ],
+      "skin_rms_from_bind_height": 0.124707,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_E_003",
+    "source_png_sha256": "3861cd8752bf22e6493730798ab9a1f94acf185580df8ecb8810aacc4b78f1f0",
+    "source_rgba_sha256": "bc143507825588fe078ccd31e2365522316c2ca3183d44eb854128b3f31c7563",
+    "source_mask_sha256": "c33896f61f561adc5cec5490758e79b061ac7d1cc7c729edd1468bf7df1dc56a",
+    "source_opaque_pixels": 7025,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.71929931640625,
+    "source_bbox": [
+      87,
+      47,
+      174,
+      178
+    ],
+    "physical_rgba_sha256": "9974e10492d5edc8e7434867e7efb22045dd33698488ee7682259512a9440994",
+    "physical_mask_sha256": "414d6a3b6f124fb2ad4d0585837a096ab299eb218b8feee0b6d0ed84e55a3f90",
+    "physical_opaque_percent": 10.693359375,
+    "physical_bbox": [
+      41,
+      21,
+      89,
+      91
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.2083,
+        58.053
+      ],
+      "skin_rms_from_bind_height": 0.123122,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_S_000",
+    "source_png_sha256": "a1712a5e2d4f9e358346e89df5feb784cd9c5c2e1c78d1e13ca9fddd45912687",
+    "source_rgba_sha256": "910d7d3fa7a30c4835804bff6d06aef8736fbfd0c622cb496a6bb2251a64352b",
+    "source_mask_sha256": "126d8363ad12444d48adc3cef3120c7981235b8197b6eebdbe2a1afd6d62245d",
+    "source_opaque_pixels": 7259,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 11.07635498046875,
+    "source_bbox": [
+      84,
+      44,
+      203,
+      177
+    ],
+    "physical_rgba_sha256": "59796c783d2a8fe2621403b7afacbc602f412ab348ef1eb4f42d54a4f4bba760",
+    "physical_mask_sha256": "246f29395a3438499af2ed74e4fb37c4a5ac807857ac369be35088a92df9dc1b",
+    "physical_opaque_percent": 11.053466796875,
+    "physical_bbox": [
+      40,
+      20,
+      104,
+      90
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        52.6622,
+        50.8182
+      ],
+      "skin_rms_from_bind_height": 0.076142,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_S_001",
+    "source_png_sha256": "7dbd1f03b89ffc7308a25fe2c3b9b45e27a2acb6a69348b706eda82fb421722c",
+    "source_rgba_sha256": "6fdd201af7dda66fa9bc46497aef8f9cf7f43b08e49ecf6f2f6a70940ccdfa5b",
+    "source_mask_sha256": "0a93c7d87676a32d2e7f703b466a198f639432423d625acbec714e8143825038",
+    "source_opaque_pixels": 6801,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.37750244140625,
+    "source_bbox": [
+      88,
+      55,
+      189,
+      184
+    ],
+    "physical_rgba_sha256": "b63c90b556c9007daa986e88c2e9c24049a5ed2db2acc769444fc44aa5b273ed",
+    "physical_mask_sha256": "63ae476d6d60a5a479a9f4162f48c238c8d944fd702ed368ca1cdb6939f36f5e",
+    "physical_opaque_percent": 10.3515625,
+    "physical_bbox": [
+      42,
+      25,
+      96,
+      94
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        32.0753,
+        26.2501
+      ],
+      "skin_rms_from_bind_height": 0.110504,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_S_002",
+    "source_png_sha256": "47794287781022cf59cbc3dcfdf800636457892d789fc3cb3b8aab78e22fb2e1",
+    "source_rgba_sha256": "e2d84facbfdd01554b2854905a8190a32d50db2a9e58aaf21cd8448f033358a9",
+    "source_mask_sha256": "178e2c0e7d5cd41bf8de837e27062dbe833a38fffb60d55fb8dc8b93b534d9b5",
+    "source_opaque_pixels": 6830,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.4217529296875,
+    "source_bbox": [
+      88,
+      57,
+      189,
+      187
+    ],
+    "physical_rgba_sha256": "51fcbf842df9a3b3589fc932d8d3c0564716f94af31960054f98ef3dbf3f0eae",
+    "physical_mask_sha256": "6aa8f4b5982d03b112e1c039ceee8cda6a8790fe1c70472b4af042b30e5cf553",
+    "physical_opaque_percent": 10.41259765625,
+    "physical_bbox": [
+      42,
+      26,
+      97,
+      96
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        45.505,
+        41.4009
+      ],
+      "skin_rms_from_bind_height": 0.124707,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  },
+  {
+    "name": "dodge_S_003",
+    "source_png_sha256": "bbdd38cdc2de345c492d55dc6500b079fd3fe9be0e8e80ecc5663a67a07cf81d",
+    "source_rgba_sha256": "3c878f7bf3551c010934425b8ea275bdea288cbb058b97bec1d4268ca8ad1f76",
+    "source_mask_sha256": "cde9a34f5ad357a23cf16cdcf26918bac90e2949550186ea112e77dc485eb253",
+    "source_opaque_pixels": 6964,
+    "logical_source_area": 65536,
+    "source_opaque_percent": 10.626220703125,
+    "source_bbox": [
+      86,
+      55,
+      195,
+      188
+    ],
+    "physical_rgba_sha256": "7b59ffc72a32175d26252bf4da103415e1ec4ebc112290761f3c43f1ede9b47b",
+    "physical_mask_sha256": "078f860990a63fa12537565607e8aa0e3d9c56f154edd3dbab24cb9450f7a416",
+    "physical_opaque_percent": 10.5224609375,
+    "physical_bbox": [
+      41,
+      26,
+      99,
+      96
+    ],
+    "pose": {
+      "arm_degrees_from_bind": [
+        59.2083,
+        58.053
+      ],
+      "skin_rms_from_bind_height": 0.123122,
+      "armature_modifiers": 8
+    },
+    "contact": null
+  }
+]

@@ -1,0 +1,181 @@
+"""Verify delivered WebP pixels + per-frame pose evidence, not just raw renders.
+Default paths target this machine; --base/--frames/--report allow isolated fixtures.
+"""
+import argparse
+import collections
+import hashlib
+import json
+import math
+from pathlib import Path
+
+from PIL import Image
+
+DIRECTIONS = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']
+
+
+def verify_pose(record, skinned_count, profile="humanoid"):
+    pose = record['pose']
+    degrees = pose['arm_degrees_from_bind']
+    assert len(degrees) == 2 and all(math.isfinite(value) for value in degrees), record['name']
+    assert profile in ('humanoid', 'quadruped', 'arachnid', 'boar', 'winged', 'floating'), ('unknown pose profile', profile)
+    if profile == 'humanoid':
+        assert max(degrees) > 10, (record['name'], 'T-pose local arms', degrees)
+        assert pose['skin_rms_from_bind_height'] > .015, (record['name'], 'bind/frozen geometry')
+    else:
+        assert math.isfinite(pose['skin_rms_from_bind_height']) and pose['skin_rms_from_bind_height'] >= 0
+    assert pose['armature_modifiers'] == skinned_count > 0, (record['name'], 'lost skin modifier')
+
+
+def verify_character(base, frames_root, entry):
+    folder = base / entry['id']
+    info = json.loads((frames_root / entry['id'] / 'frames.json').read_text())
+    assert not info['preview'], entry['id']
+    evidence = {record['name']: record for record in info['frames']}
+    expected_skin = len(info['pose_check']['skinned_objects'])
+    profile = info['pose_check'].get('profile', 'humanoid')
+    if profile in ('quadruped', 'arachnid', 'boar'):
+        source_proof = json.loads((frames_root.parent / 'source-validation.json').read_text())
+        assert source_proof['ok'] and source_proof['checked_mesh'] == ({'quadruped': 'Wolf', 'arachnid': 'Cube', 'boar': 'Pig'}[profile])
+        if profile == 'arachnid':
+            assert len(source_proof['articulated_legs']) == 8
+            assert all(v > .001 for v in source_proof['walk_leg_motion_radians'].values())
+        if profile == 'boar':
+            assert len(source_proof['articulated_legs']) == 4
+            assert all(v > .001 for v in source_proof['run_leg_motion_radians'].values())
+            assert source_proof['local_recoil']['name'] == 'U3_Boar_Recoil'
+            assert len(source_proof['bone_attached_accessories']) == 5
+            assert all(r['max_world_motion'] > .001 for r in source_proof['bone_attached_accessories'].values())
+        assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
+        assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
+        assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
+        assert all(r['dot'] > .9 for r in source_proof['direction_vectors'].values())
+    if profile in ('winged', 'floating'):
+        all_source = json.loads((frames_root.parent / 'source-validation.json').read_text())
+        assert all_source['ok']
+        source_proof = next(r for r in all_source['results'] if r['id'] == entry['id'])
+        assert source_proof['ok'] and source_proof['checked_meshes'] == info['pose_check']['skinned_objects']
+        assert source_proof['frames_checked'] == len(info['frames'])
+        assert set(source_proof['skinned_clip_motion']) == set(entry['animations'])
+        assert all(r['max_skinned_rms_world'] > .001 for r in source_proof['skinned_clip_motion'].values())
+        assert set(source_proof['direction_vectors']) == set(DIRECTIONS)
+        assert all(r['dot'] > .9 for r in source_proof['direction_vectors'].values())
+        assert source_proof['max_ground_error_px'] < .001
+        if profile == 'winged':
+            assert set(source_proof['wing_motion_radians']) == {'Wing1.L', 'Wing1.R', 'Wing2.L', 'Wing2.R'}
+            assert all(v > .001 for v in source_proof['wing_motion_radians'].values())
+    records, groups, sizes = {}, {}, []
+    webp_bytes, json_bytes = 0, 0
+    pose_min, skin_min = 360, float('inf')
+    assert not list(folder.glob('*.png')), 'PNG must remain outside the game web root'
+    assert set(path.name for path in folder.glob('*.webp.json')) == set(entry['sheets']), 'stale/missing sheets'
+    for filename in entry['sheets']:
+        path = folder / filename
+        data = json.loads(path.read_text())
+        assert data['meta']['image'].endswith('.webp')
+        assert data['meta']['fps'] == info['fps'] == entry['fps'], 'runtime/source fps mismatch'
+        image_path = folder / data['meta']['image']
+        image = Image.open(image_path).convert('RGBA')
+        assert image.width <= 2048 and image.height <= 2048
+        assert list(image.size) == [data['meta']['size']['w'], data['meta']['size']['h']]
+        sizes.append(list(image.size))
+        webp_bytes += image_path.stat().st_size
+        json_bytes += path.stat().st_size
+        for name, frame_info in data['frames'].items():
+            assert name not in records, ('duplicate', name)
+            rectangle = frame_info['frame']
+            assert rectangle['w'] == rectangle['h'] == 128
+            frame = image.crop((rectangle['x'], rectangle['y'], rectangle['x'] + 128, rectangle['y'] + 128))
+            alpha = frame.getchannel('A')
+            mask = alpha.point(lambda value: 255 if value >= 128 else 0)
+            bbox = mask.getbbox()
+            assert bbox, name
+            # Even low-alpha antialiasing/outline pixels must not touch an edge;
+            # the >=128 coverage mask alone can miss a clipped translucent rim.
+            full_bbox = alpha.getbbox()
+            assert full_bbox[0] > 0 and full_bbox[1] > 0 and full_bbox[2] < 128 and full_bbox[3] < 128, (name, 'any-alpha edge clipping', full_bbox)
+            coverage = sum(mask.histogram()[128:]) / 16384 * 100
+            if profile in ('quadruped', 'boar', 'winged'):
+                # A long low animal foreshortens end-on: use a 512px opaque
+                # floor + 16px extent, not the humanoid 5% area expectation.
+                assert 100 * 512 / 16384 <= coverage <= 60, (name, coverage)
+                assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 16, (name, 'end-on readability', bbox)
+            elif profile == 'arachnid':
+                # Eight thin legs enclose transparent gaps. Require independent
+                # articulated-leg proof plus 640 opaque px and 32px extents;
+                # never lower the humanoid coverage/quaternion/bind gates.
+                assert 100 * 640 / 16384 <= coverage <= 60, (name, coverage)
+                assert min(bbox[2] - bbox[0], bbox[3] - bbox[1]) >= 32, (name, 'spider readability', bbox)
+            else:
+                assert 5 <= coverage <= 60, (name, coverage)
+            assert bbox[0] > 0 and bbox[1] > 0 and bbox[2] < 128 and bbox[3] < 128, (name, bbox)
+            record = evidence[name]
+            verify_pose(record, expected_skin, profile)
+            raw = Image.open(frames_root / entry['id'] / (name + '.png')).convert('RGBA')
+            # WebP lossless alpha binds the Blender pose checks to the delivered
+            # exact silhouette. Stale T-pose atlases cannot pass fresh bone logs.
+            assert alpha.tobytes() == raw.getchannel('A').tobytes(), (name, 'stale alpha / pose evidence mismatch')
+            pose_min = min(pose_min, max(record['pose']['arm_degrees_from_bind']))
+            skin_min = min(skin_min, record['pose']['skin_rms_from_bind_height'])
+            assert frame_info['anchor'] == entry['anchor'], name
+            records[name] = {'center': ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2),
+                             'coverage': coverage, 'hash': hashlib.sha256(frame.tobytes()).hexdigest(), 'bbox': bbox}
+        groups.update(data['animations'])
+    assert set(records) == set(evidence), 'pose/frame coverage incomplete'
+    drift, directions = {}, {}
+    for direction in DIRECTIONS:
+        centers = [records[name]['center'] for name in groups['idle_' + direction]]
+        drift[direction] = round(max(math.dist(one, two) for one in centers for two in centers), 3)
+        if profile == 'winged':
+            # Wing tips sweep above/below the core: a changing silhouette bbox
+            # is not anchor jitter. Require independent reopened-rig body/head
+            # core stability, while retaining/reporting the full bbox sweep.
+            assert source_proof['idle_body_core_drift_px'][direction] < 6, (entry['id'], direction, 'winged body-core drift')
+        else:
+            assert drift[direction] < 6, (entry['id'], direction, drift[direction])
+    for animation in entry['animations']:
+        hashes = [records[groups[animation + '_' + direction][0]]['hash'] for direction in DIRECTIONS]
+        directions[animation] = len(set(hashes))
+        assert directions[animation] == 8, (entry['id'], animation, 'directions duplicate')
+    for animation, names in groups.items():
+        assert len({records[name]['hash'] for name in names}) > 1, ('static animation', animation)
+    assert webp_bytes + json_bytes <= 1_500_000, (entry['id'], 'kit budget')
+    weapon_sizes = []
+    for record in evidence.values():
+        if record['name'].startswith('idle_') and record['frame'] == 0 and record['weapon_bbox']:
+            box = record['weapon_bbox']
+            weapon_sizes.append(round(max(box[2] - box[0], box[3] - box[1]), 2))
+    if entry['id'].startswith('hero-'):
+        assert len(weapon_sizes) == 8 and min(weapon_sizes) >= 16, (entry['id'], 'weapon too small', weapon_sizes)
+    return {'name': entry['id'], 'format': 'webp', 'frames': len(records), 'atlas_dimensions': sizes,
+            'webp_bytes': webp_bytes, 'json_bytes': json_bytes, 'total_bytes': webp_bytes + json_bytes,
+            'alpha_coverage_percent': [round(min(record['coverage'] for record in records.values()), 3),
+                                       round(max(record['coverage'] for record in records.values()), 3)],
+            'max_idle_center_drift_px': max(source_proof['idle_body_core_drift_px'].values()) if profile == 'winged' else max(drift.values()),
+            'idle_center_method': 'reopened-rig body/head core' if profile == 'winged' else 'opaque silhouette bbox center',
+            'max_idle_bbox_center_drift_px': max(drift.values()), 'unique_direction_hashes': directions,
+            'pose_profile': profile, 'pose_checked_frames': len(records), 't_pose_frames': 0 if profile == 'humanoid' else None,
+            'bind_pose_frames': 0 if profile == 'humanoid' else None,
+            'min_max_arm_degrees_from_bind': round(pose_min, 4), 'min_skin_rms_from_bind_height': skin_min,
+            'lossless_alpha_matches_pose_evidence': len(records), 'clipped_frames': 0,
+            'idle_weapon_projected_span_px': weapon_sizes}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--only', help='Verify one manifest kit against its own offline archive')
+    parser.add_argument('--base', type=Path, default=Path('/mnt/c/Users/user/games/arpg/assets/sprites'))
+    parser.add_argument('--frames', type=Path, default=Path('/mnt/c/Users/user/ai-tools/arpg-art/output/frames'))
+    parser.add_argument('--report', type=Path, default=Path('/mnt/c/Users/user/ai-tools/arpg-art/output/final-atlas-verification.json'))
+    args = parser.parse_args()
+    assert not list(args.base.rglob('*.png')), 'PNG delivery forbidden'
+    manifest = json.loads((args.base / 'manifest.json').read_text())
+    if args.only:
+        manifest = [entry for entry in manifest if entry['id'] == args.only]
+        assert len(manifest) == 1, 'Unknown/nonunique manifest kit'
+    reports = [verify_character(args.base, args.frames, entry) for entry in manifest]
+    args.report.write_text(json.dumps(reports, indent=2))
+    print(json.dumps(reports, indent=2))
+
+
+if __name__ == '__main__':
+    main()

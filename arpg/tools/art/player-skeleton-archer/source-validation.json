@@ -1,0 +1,479 @@
+{
+  "status": "PASS",
+  "mode": "actual reopened compressed .blend evaluated source, independent of generator execution",
+  "source_blend_sha256": "e1e704a3b189679a5cc1b94a9dfb1fa0678fa28ed9826b6635230baa3769b732",
+  "original_body_coordinates_preserved": {
+    "Skeleton_Rogue_ArmLeft": {
+      "vertices": 634,
+      "polygons": 692,
+      "coordinate_sha256": "bbf4a133b3625708d1c222ceeb895121129d2382588069c6e78eae45f56595f6",
+      "armature": true
+    },
+    "Skeleton_Rogue_ArmRight": {
+      "vertices": 634,
+      "polygons": 692,
+      "coordinate_sha256": "a76055a7afef5b27039daf29ff7ea0ca007d19dc20a3f92899baa8652436a0a6",
+      "armature": true
+    },
+    "Skeleton_Rogue_Body": {
+      "vertices": 1403,
+      "polygons": 1250,
+      "coordinate_sha256": "92a91be4ed949b7381ac7e3b06ca66858f9d47102a13eb68701f81cfada8ba51",
+      "armature": true
+    },
+    "Skeleton_Rogue_Eyes": {
+      "vertices": 80,
+      "polygons": 132,
+      "coordinate_sha256": "d4e2884b134365cd77c76aaa67843429adc03ab0b541b0ac80dd57bca7adfd78",
+      "armature": true
+    },
+    "Skeleton_Rogue_Head": {
+      "vertices": 515,
+      "polygons": 414,
+      "coordinate_sha256": "0a7ce56b23d77eda61a2b803597bd6df46761a7907c60cd4e27fff4803b88c78",
+      "armature": true
+    },
+    "Skeleton_Rogue_Jaw": {
+      "vertices": 195,
+      "polygons": 124,
+      "coordinate_sha256": "c4fb0292950b649e774656308fd924f2a0a8c931fd0cdc58fb3a7ac39dd4932e",
+      "armature": true
+    },
+    "Skeleton_Rogue_LegLeft": {
+      "vertices": 675,
+      "polygons": 700,
+      "coordinate_sha256": "5a473a7844715d6a990b9dfe07e81fe992d1048755d1796432bac1ab1ff73324",
+      "armature": true
+    },
+    "Skeleton_Rogue_LegRight": {
+      "vertices": 675,
+      "polygons": 700,
+      "coordinate_sha256": "87f1c6fa1254ecf46f2e2a4645878fc783405864b209c5f1903de4edf5484c45",
+      "armature": true
+    },
+    "Skeleton_Rogue_Cape": {
+      "vertices": 56,
+      "polygons": 84,
+      "coordinate_sha256": "25b80e732ffd6b9326948bf0caa7e9f2dbcde32ab54d557b38885f87379f2145",
+      "armature": false
+    }
+  },
+  "skin_modifiers": 8,
+  "joints": 41,
+  "handslots": [
+    "handslot.l",
+    "handslot.r"
+  ],
+  "no_dagger_or_hood": true,
+  "new_weapon_objects": [
+    "Archer_recurve_bow_original",
+    "Archer_wrapped_grip",
+    "Archer_deformable_string",
+    "Archer_arrow_shaft_original",
+    "Archer_original_broadhead",
+    "Archer_original_fletching"
+  ],
+  "motion": {
+    "idle": {
+      "source": "Idle",
+      "source_range": [
+        0.0,
+        25.60000228881836
+      ],
+      "sample_frames": [
+        0.0,
+        12.80000114440918,
+        25.590002288818358
+      ],
+      "max_skin_rms_world_from_first": 0.022641423487660167,
+      "skin_objects": 8
+    },
+    "run": {
+      "source": "Running_A",
+      "source_range": [
+        0.0,
+        19.200000762939453
+      ],
+      "sample_frames": [
+        0.0,
+        9.600000381469727,
+        19.19000076293945
+      ],
+      "max_skin_rms_world_from_first": 0.3487218513299679,
+      "skin_objects": 8
+    },
+    "attack": {
+      "source": "Archer_Draw_Contact_Release",
+      "source_range": [
+        0.0,
+        24.0
+      ],
+      "sample_frames": [
+        0.0,
+        12.0,
+        23.99
+      ],
+      "max_skin_rms_world_from_first": 0.05900749405210329,
+      "skin_objects": 8
+    },
+    "hit": {
+      "source": "Hit_A",
+      "source_range": [
+        0.0,
+        16.0
+      ],
+      "sample_frames": [
+        0.0,
+        8.0,
+        15.99
+      ],
+      "max_skin_rms_world_from_first": 0.04686264819363808,
+      "skin_objects": 8
+    },
+    "death": {
+      "source": "Death_A",
+      "source_range": [
+        0.0,
+        19.200000762939453
+      ],
+      "sample_frames": [
+        0.0,
+        9.600000381469727,
+        19.19000076293945
+      ],
+      "max_skin_rms_world_from_first": 0.974376024715828,
+      "skin_objects": 8
+    },
+    "dodge": {
+      "source": "Dodge_Backward",
+      "source_range": [
+        0.0,
+        9.600000381469727
+      ],
+      "sample_frames": [
+        0.0,
+        4.800000190734863,
+        9.590000381469727
+      ],
+      "max_skin_rms_world_from_first": 0.2336541897994007,
+      "skin_objects": 8
+    }
+  },
+  "contact": [
+    {
+      "source_frame": 0,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.034142459109139045,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "string_mid": [
+        0.09999154508113861,
+        -0.5299795269966125,
+        1.0400019884109497
+      ],
+      "arrow_nock": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 4,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.3328003749250113e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.023922760781421536,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "string_mid": [
+        0.09997999668121338,
+        -0.40019363164901733,
+        1.0400049686431885
+      ],
+      "arrow_nock": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 8,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1920928955078125e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.022361719173088438,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "string_mid": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.0400052070617676
+      ],
+      "arrow_nock": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 12,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.02313273342696621,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 14,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.02313273342696621,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 16,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 0.2294833129914309,
+      "arrow_right_error": 0.6282193450141416,
+      "right_slot_nearest_actual_hand_vertex_world": 0.022457225042641433,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.06998809427022934,
+        -0.22248700261116028,
+        1.0400038957595825
+      ],
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.8499894142150879,
+        1.0400022268295288
+      ],
+      "released": true,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 18,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 0.26196860105826236,
+      "arrow_right_error": 1.2564272064967512,
+      "right_slot_nearest_actual_hand_vertex_world": 0.025970915435675153,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.03999516740441322,
+        -0.19499549269676208,
+        1.040001392364502
+      ],
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -1.4499894380569458,
+        1.0400022268295288
+      ],
+      "released": true,
+      "arrow_visible": false
+    }
+  ],
+  "ground": [
+    {
+      "direction": "E",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -1.1286386956645715e-22,
+        -4.9334365667852695e-30,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "SE",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -7.980680479446445e-23,
+        7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "S",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        0.0,
+        1.1286386956645715e-22,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "SW",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        7.980680479446445e-23,
+        7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "W",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        1.1286386956645715e-22,
+        -4.9334365667852695e-30,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "NW",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        7.980680479446445e-23,
+        -7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "N",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        9.866873133570539e-30,
+        -1.1286386956645715e-22,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "NE",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -7.980680479446445e-23,
+        -7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    }
+  ],
+  "dodge_contract": {
+    "source": "Dodge_Backward",
+    "range": [
+      0,
+      9.6
+    ],
+    "seconds": 0.4,
+    "actual_skin_rms": 0.2336541897994007,
+    "original_source_root_travel_world": 0.6499999165534973,
+    "render_root_translation_removed": true,
+    "not_idle": true,
+    "no_runtime_mapping": true
+  },
+  "user_approval": false
+}

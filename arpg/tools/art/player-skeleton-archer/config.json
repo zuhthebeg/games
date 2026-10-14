@@ -1,0 +1,56 @@
+{
+  "frame_size": 256,
+  "fps": 12,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/player-skeleton-archer/frames",
+  "characters": [
+    {
+      "name": "player-skeleton-archer",
+      "model": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Rogue.glb",
+      "neutral": true,
+      "keep": [
+        "Skeleton_Rogue_Cape",
+        "Skeleton_Rogue_ArmLeft",
+        "Skeleton_Rogue_ArmRight",
+        "Skeleton_Rogue_Body",
+        "Skeleton_Rogue_Eyes",
+        "Skeleton_Rogue_Head",
+        "Skeleton_Rogue_Jaw",
+        "Skeleton_Rogue_LegLeft",
+        "Skeleton_Rogue_LegRight"
+      ],
+      "animations": {
+        "idle": "Idle",
+        "run": "Running_A",
+        "attack": "Archer_Draw_Contact_Release",
+        "hit": "Hit_A",
+        "death": "Death_A",
+        "dodge": "Dodge_Backward"
+      },
+      "label": "해골 궁수 (미등록 후보)",
+      "content_ids": [],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/player-skeleton-archer/source",
+  "webp_quality": 52
+}
