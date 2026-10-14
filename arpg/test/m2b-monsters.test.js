@@ -17,7 +17,19 @@ test('M2b exact three registry mappings are the only approved renderer delta',()
  const p='arpg/js/render/atlas-state.js';const old=execFileSync('git',['show','0c64a94:'+p],{encoding:'utf8'});
  assert.equal(read('../js/render/atlas-state.js').toString(),old.replace("  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',","  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',\n  demon: 'demon', goleling: 'goleling', slime: 'slime',"));
  const r=json('../tools/art/m2b/registration-validation.json');assert.equal(r.ok,true);assert.equal(r.status,'REGISTERED');assert.equal(r.manifest_fetch_calls,1);assert.equal(r.sheet_load_calls,3);assert.equal(r.atlas_registry_only_three_mappings,true);
- for(const [p,h] of Object.entries(r.unchanged_files_sha256))assert.equal(sha(read('../'+p.replace(/^arpg\//,''))),h,p);
+ for(const [p,h] of Object.entries(r.unchanged_files_sha256)){
+  if(p==='arpg/index.html'){
+   const baseline=execFileSync('git',['show','0c64a94:'+p],{encoding:'utf8'});
+   assert.equal(sha(baseline),h,p+' source proof');
+   let stamped=baseline;
+   for(const module of ['js/content/combat.js','js/content/monsters.js','js/render/atlas-state.js']){
+    const hash=sha(read('../'+module)).slice(0,10);
+    stamped=stamped.replace(new RegExp('(\\./'+module.replaceAll('.','\\.')+'\\?v=)[a-f0-9]{10}'),'$1'+hash);
+   }
+   const current=read('../index.html').toString();
+   assert.ok(current===baseline||current===stamped,p+' only exact parent-owned stamps allowed');
+  }else assert.equal(sha(read('../'+p.replace(/^arpg\//,''))),h,p);
+ }
 });
 test('M2b hostile identities use existing abilities and remain unplaced without drops',()=>{
  assert.deepEqual(validateContent(),[]);
