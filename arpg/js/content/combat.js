@@ -347,8 +347,7 @@ const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
 export const STAGES = {
   S1: {
     name: '소환 시험', goal: 'timer', timerMs: 30000, maxConcurrent: 2,
-    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 },
-      { monster: 'training_dragon', at: 0, fx: 0.82, fy: 0.5 }],
+    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 }],
   },
   S2: {
     name: '끊긴 여관길', goal: 'killAll', maxConcurrent: 3,

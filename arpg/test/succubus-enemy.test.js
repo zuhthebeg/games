@@ -26,7 +26,7 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:16*1024*1024});
 const sha=b=>createHash('sha256').update(b).digest('hex');
 async function oldCombat(){let s=git('show',base+':arpg/js/content/combat.js').toString();s=s.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,new URL('../js/content/combat.js',import.meta.url)).href));return import('data:text/javascript;base64,'+Buffer.from(s).toString('base64'));}
 
-test('SUC hostile S19 is exactly one first-wave slinger replacement; all M2b/quest/TD1/S1 content and old archetypes remain exact',async()=>{
+test('SUC hostile S19 replaces exactly one slinger; M2b/quests/TD1/archetypes stay exact and only approved S1 dragon spawn is removed',async()=>{
  const old=await oldCombat();assert.deepEqual(Object.keys(combat),Object.keys(old));
  assert.deepEqual(Object.fromEntries(Object.entries(combat.MONSTERS).filter(([id])=>id!=='succubus')),old.MONSTERS);
  assert.deepEqual(combat.MONSTERS.succubus,{...old.MONSTERS.goblin_slinger,lifeState:'living'});
@@ -34,12 +34,13 @@ test('SUC hostile S19 is exactly one first-wave slinger replacement; all M2b/que
  for(const [key,value] of Object.entries(old))if(!['MONSTERS','STAGES'].includes(key)){if(typeof value==='function')assert.equal(combat[key].toString(),value.toString());else assert.deepEqual(combat[key],value,key);}
  for(const [id,stage] of Object.entries(old.STAGES)){
   const expected=structuredClone(stage);if(id==='S19'){assert.equal(expected.spawns[3].monster,'goblin_slinger');expected.spawns[3].monster='succubus';}
+  if(id==='S1'){assert.equal(expected.spawns[1].monster,'training_dragon');expected.spawns.splice(1,1);}
   assert.deepEqual(combat.STAGES[id],expected,id);
  }
  assert.equal(combat.STAGES.S19.spawns.length,36);assert.equal(combat.STAGES.S19.maxConcurrent,4);
  assert.equal(combat.STAGES.S19.spawns.filter(s=>s.monster==='succubus').length,1);assert.equal(BALANCE.stages.S19.huntTier,3);
  assert.deepEqual(Object.entries(combat.STAGES).flatMap(([id,s])=>s.spawns.filter(e=>e.monster==='succubus').map(()=>id)),['S19']);
- assert.equal(combat.STAGES.S1.spawns[1].monster,'training_dragon');assert.equal(combat.STAGES.TD1.spawns[0].monster,'throne_dragon');
+ assert.deepEqual(combat.STAGES.S1.spawns,[{monster:'scarecrow',at:0,fx:.62,fy:.5}]);assert.equal(combat.STAGES.TD1.spawns[0].monster,'throne_dragon');
 });
 
 test('SUC identity is additive hostile/living only; ATLAS_IDS adds exactly one key with every renderer function byte-preserved',async()=>{
@@ -105,21 +106,22 @@ test('SUC source/pixels stay exact cfcd05f with 312 true-alpha trims, 40 keyed c
  for(const [name,f] of Object.entries(data.frames)){assert.equal(f.trimmed,true);assert.equal(f.rotated,false);assert.deepEqual(f.sourceSize,{w:128,h:128});assert.deepEqual(f.anchor,entry.anchor);assert.equal(f.sourceSize.w/Number(data.meta.scale),256);assert.equal(evidence[name].delivery128_original_alpha_sha256,evidence[name].atlas_reconstructed_alpha_sha256);}
 });
 
-test('SUC all original sim/net/render-functions/input/HUD/art/items/quest/map/tuning/index bytes frozen relative M2b checkpoint',()=>{
+test('SUC freezes original sim/net/render/input/HUD/art/quest bytes; exact parent66a difficulty/prices and parent-owned stamps are allowed',()=>{
  const rows=git('ls-tree','-r','-z',base,'arpg').toString().split('\0').filter(Boolean).map(row=>{const [,hash,path]=row.match(/^\d+ blob ([a-f0-9]+)\t(.+)$/);return {hash,path};});
  const allowed=new Set(['arpg/js/content/combat.js','arpg/js/content/loot.js','arpg/js/content/monsters.js','arpg/js/render/atlas-state.js','arpg/assets-ledger.md','arpg/assets/sprites/manifest.json','arpg/index.html']);
  for(const {path:file,hash} of rows)if(!allowed.has(file)&&!file.startsWith('arpg/test/')){
+  if(file==='arpg/js/content/balance.js'||file==='arpg/js/meta/items.js'){assert.deepEqual(readFileSync(new URL(file,root)),git('show','66a7b5b:'+file),'exact approved parent easing/prices: '+file);continue;}
   const current=readFileSync(new URL(file,root));assert.equal(createHash('sha1').update(Buffer.from('blob '+current.length+'\0')).update(current).digest('hex'),hash,file);
  }
  const original=git('show',base+':arpg/index.html').toString();let stamped=original;
  for(const p of ['js/content/combat.js','js/content/loot.js','js/content/monsters.js','js/render/atlas-state.js'])stamped=stamped.replace(new RegExp('(\\./'+p.replaceAll('.','\\.')+'\\?v=)[a-f0-9]{10}'),'$1'+sha(read('../'+p)).slice(0,10));
- const current=read('../index.html').toString();assert.ok(current===original||current===stamped);
+ const current=read('../index.html').toString(),approved=git('show','66a7b5b:arpg/index.html').toString();assert.ok(current===original||current===stamped||current===approved);
 });
 
-test('SUC fresh isolated 423a23b host graph: only 9 S19 traces differ and all 234 other traces including M2b maps match',async()=>{
+test('SUC plus approved S1 removal against isolated parent 66a7b5b: 18 named traces differ, other 225 including M2b maps match',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'arpg-suc-enemy-'));
- try{execFileSync('tar',['-x','-C',dir],{input:git('archive',base,'arpg/js','package.json')});const before=await placementTraces(pathToFileURL(dir+'/')),after=await placementTraces(root);assert.equal(before.length,243);let changed=0;
-  for(let i=0;i<before.length;i++){if(before[i].stage==='S19'){assert.notEqual(after[i].sha256,before[i].sha256);changed++;}else assert.deepEqual(after[i],before[i],before[i].stage);}
-  assert.equal(changed,9);
+ try{execFileSync('tar',['-x','-C',dir],{input:git('archive','66a7b5b','arpg/js','package.json')});const before=await placementTraces(pathToFileURL(dir+'/')),after=await placementTraces(root);assert.equal(before.length,243);let changed=0;
+  for(let i=0;i<before.length;i++){if(['S19','S1'].includes(before[i].stage)){assert.notEqual(after[i].sha256,before[i].sha256);changed++;}else assert.deepEqual(after[i],before[i],before[i].stage);}
+  assert.equal(changed,18);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
