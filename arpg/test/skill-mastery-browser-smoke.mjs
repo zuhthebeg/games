@@ -29,7 +29,7 @@ try {
  await writeFile(join(out,'pixels.json'),JSON.stringify(pixels,null,2)+'\n');
  for(const row of pixels){assert.equal(row.outside,0,JSON.stringify(row));assert.ok(row.edgePixels>0,JSON.stringify(row));}
  for(const id of new Set(pixels.map(r=>r.id))){const rows=pixels.filter(r=>r.id===id);for(const row of rows.slice(1))assert.ok(row.fullLit>rows[0].fullLit,JSON.stringify(rows));}
- for(const level of [1,3,5])assert.equal(new Set(pixels.filter(r=>r.level===level).map(r=>r.mask)).size,12,'skill masks must differ at Lv'+level);
+ for(const level of [1,10,20])assert.equal(new Set(pixels.filter(r=>r.level===level).map(r=>r.mask)).size,12,'skill masks must differ at Lv'+level);
  if(process.env.ARPG_PIXELS_ONLY==='1'){console.log(JSON.stringify({pixels:36,consoleErrors:errors.length,screenshots:0}));}
  else {
  const smoke=[];
@@ -40,16 +40,16 @@ try {
   await cmd('Page.reload');await wait(`document.querySelector('#meta-screen').dataset.page==='inn' && document.querySelector('#arpg-debug-toggle')`);
   await activate('[data-action="settings"]',mobile);assert.equal(await ev(`document.querySelector('#meta-screen').textContent.includes('스킬 이펙트')`),false);assert.equal(await ev(`document.querySelectorAll('[data-action="set-fx"]').length`),0);
   await activate('[data-action="inn"]',mobile);await activate('[data-action="trainer"]',mobile);await activate('[data-action="academy-tab"][data-family="focus"]',mobile);
-  assert.equal(await ev(`document.querySelector('[data-mastery="frost_lance"]').textContent`),'숙련: Lv1 (0/30)');
+  assert.equal(await ev(`document.querySelector('[data-mastery="frost_lance"]').textContent`),'숙련: Lv1 (0/8)');
   await activate('[data-action="inn"]',mobile);await activate('[data-action="board"]',mobile);await activate('[data-action="sortie"][data-stage="S2"]',mobile);await activate('[data-action="launch"]',mobile);await wait('__arpg.world?.round.stageId==="S2"');
   await activate('[data-battle-settings]',mobile);assert.equal(await ev(`document.querySelector('#battle-settings').textContent.includes('스킬 이펙트')`),false);await activate('[data-battle-settings]',mobile);
   const paths=[];
-  for(const level of [1,3,5]){
+  for(const level of [1,10,30]){
    await activate('#arpg-debug-toggle',mobile);
    // Native select keyboard events (also after touch navigation on the mobile viewport).
    await ev(`(()=>{const n=document.querySelector('[data-debug-mastery="frost_lance"]');n.scrollIntoView({block:'center'});n.focus();})()`);
    await key('Home');for(let n=1;n<level;n++)await key('ArrowDown');await key('Enter');
-   await wait(`(__arpg.save.skillMastery.frost_lance||0)===${[0,30,100,250,500][level-1]}`);await activate('#arpg-debug-toggle',mobile);
+   await wait(`(__arpg.save.skillMastery.frost_lance||0)===${level===1?0:level===10?100:1500}`);await activate('#arpg-debug-toggle',mobile);
    await sleep(2700);await activate('#skill',mobile);
    await wait(`__arpg.feedback.mastery.paths.frost_lance?.level===${level}`);
    const path=await ev('JSON.parse(JSON.stringify(__arpg.feedback.mastery.paths.frost_lance))');assert.equal(path.path,level===1?'classic':'classic-enhanced');paths.push(path);
@@ -58,14 +58,14 @@ try {
   await activate('#scroll',mobile);
   await wait(`__arpg.save.lastReceipt?.terminal==='return_scroll'`);
   const counted=await ev('__arpg.tracker.skillMastery?.frost_lance||0');
-  assert.equal(await ev('__arpg.save.skillMastery.frost_lance'),500+counted);
+  assert.equal(await ev('__arpg.save.skillMastery.frost_lance'),1500+counted);
   await activate('[data-action="result-inn"]',mobile);
   await activate('[data-action="trainer"]',mobile);await activate('[data-action="academy-tab"][data-family="focus"]',mobile);
-  assert.equal(await ev(`document.querySelector('[data-mastery="frost_lance"]').textContent`),'숙련: Lv5 (최대)');
+  assert.equal(await ev(`document.querySelector('[data-mastery="frost_lance"]').textContent`),'숙련: Lv30 (최대)');
   await activate('[data-action="inn"]',mobile);await activate('[data-action="character"]',mobile);await activate('[data-action="character-tab"][data-tab="skills"]',mobile);
   await activate('[data-action="skill-detail"][data-id="frost_lance"]',mobile);
-  assert.ok(await ev(`document.querySelector('dialog[open]').textContent.includes('숙련: Lv5 (최대)')`));
-  smoke.push({viewport:mobile?'390x844':'1280x800',navigation:mobile?'native touch':'native keyboard',masterySelect:'native keyboard',paths,settingsOptionAbsent:true,academyAndDetail:true,returnSavedCount:500+counted});
+  assert.ok(await ev(`document.querySelector('dialog[open]').textContent.includes('숙련: Lv30 (최대)')`));
+  smoke.push({viewport:mobile?'390x844':'1280x800',navigation:mobile?'native touch':'native keyboard',masterySelect:'native keyboard',paths,settingsOptionAbsent:true,academyAndDetail:true,returnSavedCount:1500+counted});
  }
  const fallbacks=[];
  for(const mode of ['classic','reduced']) {
@@ -74,7 +74,7 @@ try {
   await wait(`document.querySelector('#meta-screen').dataset.page==='inn'`);
   await activate('[data-action="board"]',true);await activate('[data-action="sortie"][data-stage="S2"]',true);await activate('[data-action="launch"]',true);
   await wait('__arpg.world?.round.stageId==="S2"');await activate('#skill',true);await wait('__arpg.feedback.mastery.paths.frost_lance');
-  const path=await ev('JSON.parse(JSON.stringify(__arpg.feedback.mastery.paths.frost_lance))');assert.equal(path.path,'classic');assert.equal(path.level,5);assert.equal(path.extraParticles,0);fallbacks.push({mode,path});
+  const path=await ev('JSON.parse(JSON.stringify(__arpg.feedback.mastery.paths.frost_lance))');assert.equal(path.path,'classic');assert.equal(path.level,30);assert.equal(path.extraParticles,0);fallbacks.push({mode,path});
  }
  await writeFile(join(out,'smoke.json'),JSON.stringify({smoke,fallbacks,consoleErrors:errors.length,screenshots:0},null,2)+'\n');assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));console.log(JSON.stringify({pixels:36,smoke,consoleErrors:0,screenshots:0},null,2));
  }

@@ -20,3 +20,9 @@ test('counts survive reinterpretation/settlement/storage and MAX is only 30',()=
  const mem=new Map(),storage={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v),removeItem:k=>mem.delete(k)};const store=new SaveStore(storage);store.save(result.save);assert.deepEqual(store.load().skillMastery,result.save.skillMastery);assert.equal(mem.size,1);
  assert.throws(()=>settleMastery({...s,skillMastery:{ember_bolt:Number.MAX_SAFE_INTEGER}},{ember_bolt:1}));
 });
+test('invalid counts rejected and historical receipt levels are preserved, never replayed as new rises',()=>{
+ const s=fresh();for(const count of [-1,1.5,'30',NaN,Infinity])assert.equal(validateSave({...s,skillMastery:{ember_bolt:count}}),false);
+ assert.equal(validateSave({...s,skillMastery:{unknown:0}}),false);
+ const result=settleRound({...s,skillMastery:{ember_bolt:99}},{stageId:'S2',terminal:'return_scroll',skillMastery:{ember_bolt:1}});
+ for(const level of [2,3,4,5]){const old={...result.save,lastReceipt:{...result.receipt,masteryRises:[{id:'ember_bolt',level}]}};assert.ok(validateSave(old));const counts=structuredClone(old.skillMastery);assert.deepEqual(settleMastery(old,{}),{skillMastery:counts,rises:[]});assert.equal(old.lastReceipt.masteryRises[0].level,level);}
+});

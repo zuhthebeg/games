@@ -21,7 +21,8 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
       assert.equal(profile.projectileRadius, ABILITIES[ability].projectile.radius);
     } else if (profile.style === 'cleave') {
       assert.equal(profile.shape, ABILITIES[ability].shape);
-      assert.equal(profile.shape.range, 168.75); assert.equal(profile.shape.arc, 70);
+      if (ability === 'heavy_cleave') { assert.equal(profile.shape.range, 168.75); assert.equal(profile.shape.arc, 70); }
+      else { assert.equal(ability, 'armor_break'); assert.equal(profile.shape.range, 110); assert.equal(profile.shape.arc, 60); }
     } else if (profile.style === 'ember') {
       assert.equal(profile.radius, ABILITIES[ability].projectile.explode.radius);
       assert.equal(profile.projectileRadius, ABILITIES[ability].projectile.radius);
@@ -104,7 +105,7 @@ test('explode/healCast use event radii, keep fixed boundary with reduced/no grow
   }
 });
 
-test('four players repeatedly cast all ten skills: fixed allocation, caps, reset and departure cleanup', () => {
+test('four players repeatedly cast all registered skills: fixed allocation, caps, reset and departure cleanup', () => {
   let allocations = 0;
   class CountGraphics extends Graphics { constructor() { super(); allocations++; } }
   const vfx = new SkillVfx(CountGraphics, new Container()), initial = allocations;

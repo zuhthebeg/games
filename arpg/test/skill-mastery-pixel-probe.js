@@ -11,10 +11,10 @@ export async function masteryPixels() {
  const target=RenderTexture.create({width:512,height:512}),rows=[];
  const read=()=>{app.renderer.render({container:app.stage,target,clear:true});return app.renderer.extract.pixels({target}).pixels;};
  const hash=async mask=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',mask))].map(x=>x.toString(16).padStart(2,'0')).join('');
- for(const id of MASTERY_SKILLS) for(const level of [1,3,5]) {
+ for(const id of MASTERY_SKILLS) for(const level of [1,10,20]) {
   const layer=new Container();app.stage.addChild(layer);const v=new MasterySkillVfx(Graphics,layer);
   const a=ABILITIES[id],p=SKILL_VFX[id];v.setMastery('a',{[id]:level});
-  if(id==='ember_bolt' && level>=3) {if(!await v.requestSkill(id))throw Error(v.fxError);}
+  if(id==='ember_bolt' && level>=10) {if(!await v.requestSkill(id))throw Error(v.fxError);}
   const e={id:1,pid:'a',kind:'player',r:18,x:256,y:256,facing:0,act:{id,def:a,phase:'active',elapsed:16,total:20,facing:0}};
   let world={tick:50,entities:[e],projectiles:[]},radius=a.shape?.range ?? a.shape?.radius ?? a.projectile?.radius ?? (18+a.dash.bodyPad);
   let type=a.shape?.type ?? (a.dash?'dash-body':'projectile'),cx=256+(a.shape?.offset||0);

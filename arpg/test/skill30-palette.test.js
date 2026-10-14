@@ -37,3 +37,16 @@ test('solo reset copies next-departure equipmentSave source, not remote or runni
  v.reset();assert.equal(v.enhancement({kind:'player',pid:'local'}),0);
  const code=readFileSync(new URL('../js/render/renderer.js',import.meta.url),'utf8');assert.match(code,/setEquipment\(world\.entities\[0\]\.pid, equipmentVisual\(equipmentSave\)\)/);
 });
+test('guides keep original cleave colours; palette copies allocate no graphics and owner attribution stays bounded',()=>{
+ let allocations=0;class CountGraphics extends Graphics{constructor(){super();allocations++;}}
+ const v=new MasterySkillVfx(CountGraphics,new Container());v.requestSkill=()=>null;const initial=allocations;
+ const profile=SKILL_VFX.heavy_cleave;
+ v.withLevel(30,'heavy_cleave',false,()=>v.effect(profile,'active',0,0,0,0,profile.shape,false),10);
+ const guide=v.effects[0].node.context.instructions.find(i=>i.data.style?.alignment===1);assert.equal(guide.data.style.color,profile.accent);
+ for(let i=0;i<200;i++){
+  const entities=[{id:1,pid:'a',kind:'player',equipmentVisual:{enhance:10},skillMasteryLevels:{frost_lance:30}}];
+  v.snapshot({tick:i,entities,projectiles:[{id:i+10,ownerId:1,abilityId:'frost_lance',x:100,y:100,r:10,vx:100,vy:0}]});
+  assert.ok(v.projectileOwners.size<=2);v.update({tick:i,entities,projectiles:[]},1,.03,false);
+ }
+ assert.equal(allocations,initial);v.reset();assert.equal(v.projectileOwners.size,0);assert.equal(v.projectileLive.size,0);
+});
