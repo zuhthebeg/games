@@ -87,6 +87,8 @@ export class HUD {
     bar.style.transform = `scaleX(${Math.min(1, load.ratio / 1.2)})`;
     bar.parentElement.className = `bar load ${tier.tier}`;
     bar.parentElement.title = tier.text;
+    bar.parentElement.setAttribute('role', 'img');
+    bar.parentElement.setAttribute('aria-label', `가방 무게 ${Math.round(load.weight)}/${Math.round(load.capacity)} · ${tier.text}`);
     this.text(this.nodes['load-text'], `${Math.round(load.weight)}/${Math.round(load.capacity)}`);
     if (save) {
       const maxed = save.level >= MAX_LEVEL, span = maxed ? 1 : xpSpan(save.level);

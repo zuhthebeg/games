@@ -1,0 +1,40 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><base href="/arpg/"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/game.css"><body>    <section id="hud" hidden aria-label="전투 상태">
+      <div class="xpbar" aria-hidden="true"><i id="xp-fill"></i><i id="xp-pending"></i></div>
+      <div class="vitals">
+        <div class="vrow">
+          <b id="lv-text" class="lv"></b>
+          <div class="combo"><div class="half hp"><i id="hp-fill"></i><span id="hp-text"></span></div><div class="half mp"><i id="mp-fill"></i><span id="mp-text"></span></div></div>
+        </div>
+        <div class="bar load"><i id="load-fill"></i><span id="load-text"></span></div>
+      </div>
+      <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
+      <button data-battle-settings class="battle-settings" aria-label="설정" aria-expanded="false" aria-controls="battle-settings"></button>
+      <div id="battle-settings" class="battle-settings-panel" hidden role="group" aria-label="설정"></div>
+      <div id="temp-loot"></div>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <div id="joystick" hidden><i></i></div>
+      <div id="actions" aria-label="전투 조작">
+        <button data-input="potionEdge" class="small" id="potion" aria-label="물약" title="물약 · Q"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/></svg><kbd>Q</kbd><small></small></button>
+        <button data-input="manaEdge" class="small" id="mana" aria-label="마나" title="마나 · E"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/></svg><kbd>E</kbd><small></small></button>
+        <button data-input="scrollEdge" class="small ring" id="scroll" aria-label="귀환" title="귀환 · R"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 12h6m-3-3-3 3 3 3"/></svg><kbd>R</kbd><small></small></button>
+        <button data-input="skill2Edge" class="ring skill-slot" id="skill2" aria-label="스킬 2" title="스킬 2 · L" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>L</kbd><small></small></button>
+        <button data-input="skill3Edge" class="ring skill-slot" id="skill3" aria-label="스킬 3" title="스킬 3 · ;" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>;</kbd><small></small></button>
+        <button data-input="skillEdge" class="ring skill-slot" id="skill" aria-label="스킬" title="스킬 · K"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>K</kbd><small></small></button>
+        <button data-input="dodgeEdge" id="dodge" aria-label="회피" title="회피 · ⇧"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 16 7-8 3 5 8-9m-5 0h5v5"/></svg><kbd>⇧</kbd><small></small></button>
+        <button data-input="attack" id="attack" aria-label="공격" title="공격 · J"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 18 11-11 3-4-4 1L5 15m-2-2 8 8M3 21l4-4"/></svg><kbd>J</kbd><small></small></button>
+        <div id="movepad" aria-label="이동 패드" role="group"><i></i></div>
+      </div>
+      <div class="move-hint">WASD</div>
+    </section>
+<section id="meta-screen" class="overlay"></section><section id="pause" hidden></section><script type="module">
+import {HubUI} from './js/ui/hub.js';
+import {HUD} from './js/ui/hud.js';
+import {createSave} from './js/meta/save.js';
+import {createWorld,addPlayer,startStage} from './js/sim/world.js';
+const hud=new HUD(),world=createWorld({seed:1});addPlayer(world,{pid:'local',weapon:'blade'});startStage(world,'S1');
+const coopStatus=document.createElement('div');coopStatus.id='coop-status';coopStatus.hidden=true;coopStatus.textContent='4인 · 방장 · 검사 / 둔기 / 궁수 / 마법사';document.querySelector('#hud').append(coopStatus);
+window.probe={coop:[],launch:0};
+const hub=new HubUI({save:createSave({name:'Layout',weapon:'blade',answers:[0,0,0,0,0],createdAt:1}),persist:()=>{},onOverlay:()=>{},startRound:()=>{probe.launch++;hud.begin(world);coopStatus.hidden=false;hud.meta({weight:110,capacity:100,ratio:1.1},{tempLoot:{items:[],stacks:{},gold:0},depositedXp:0});}});
+hub.startCoop=(stage,threat)=>probe.coop.push({stage,threat});
+window.fixture={hub,hud};hub.showSortie('S1');window.ready=true;
+</script></body></html>
