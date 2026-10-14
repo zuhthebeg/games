@@ -28,6 +28,8 @@ test('all species identities are exact current content IDs; skeleton pitch diffe
  assert.equal(eventCues(hit,1,[{id:2,type:'skeleton_warrior'}])[0].name,'hit');
  assert.equal(eventCues({type:'kill',monster:'unknown_succubus'},1)[0].name,'kill');
  assert.equal(eventCues({type:'kill',monster:'ghost'},1)[0].name,'ghost-death');
+ assert.equal(eventCues({type:'kill',monster:'succubus'},1)[0].name,'demon-death');
+ assert.equal(eventCues(hit,1,[{id:2,kind:'monster',type:'succubus'}])[0].pitch,1.14);
 });
 test('six actual skill families, blunt form, launch/impact separation, no windup repeat',()=>{
  const kinds={slash:'blade',ground_slam:'blunt',arrow:'bow',ember_bolt:'fire',frost_lance:'ice',healing_light:'heal'};

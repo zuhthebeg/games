@@ -17,6 +17,7 @@ export const SPECIES_AUDIO = Object.freeze({
   bat: species('dry-hit', 'beast-death', 1.3),
   poison_spider: species('dry-hit', 'dry-death', 1.2),
   demon: species('dry-hit', 'demon-death', .86),
+  succubus: species('dry-hit', 'demon-death', 1.14),
   goleling: species('bone-hit', 'goleling-death', 1.15),
   slime: species('dry-hit', 'slime-death', .97),
   throne_dragon: species('dry-hit', 'dragon-death', .82),
