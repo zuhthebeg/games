@@ -94,6 +94,7 @@ export class SkillVfx {
     this.fxAssets = new Map(); this.fxLoads = new Map(); this.fxErrors = new Map();
     this.fxLoad = null; // No eager network/decode, including in the default-on mode.
   }
+  profile(ability) { return SKILL_VFX[ability]; }
   setEffekseer(enabled) {
     this.fxRequested = Boolean(enabled);
     if (!this.fxRequested) for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) {
@@ -145,7 +146,7 @@ export class SkillVfx {
     return true;
   }
   bakeEffect(slot, profile, kind, x, y, facing, radius, shape, reduced) {
-    const ability = PROFILE_IDS.get(profile);
+    const ability = (PROFILE_IDS.get(profile) ?? profile.abilityId);
     this.requestSkill(ability, reduced);
     slot.bakedActive = false;
     if (slot.baked) slot.baked.visible = false;
@@ -179,7 +180,7 @@ export class SkillVfx {
     for (const slot of this.projectiles) { slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false; }
   }
   effect(profile, kind, x, y, facing, radius, shape, reduced) {
-    this.requestSkill(PROFILE_IDS.get(profile), reduced);
+    this.requestSkill((PROFILE_IDS.get(profile) ?? profile.abilityId), reduced);
     const slot = this.effects.find(item => item.left <= 0);
     if (!slot) return false;
     Object.assign(slot, { kind, radius, reduced, left: kind === 'residue' ? (reduced ? .2 : profile.residueLife) : profile.activeLife });
@@ -245,7 +246,7 @@ export class SkillVfx {
         shapePath(wave, shape).fill({ color: profile.color, alpha: reduced ? .05 : .26 });
         wave.visible = !reduced;
         // Inner-aligned stroke never grows beyond the hit boundary.
-        shapePath(g, shape).stroke({ color: profile.accent, width: reduced ? 2 : 5, alignment: 1, alpha: .95 });
+        shapePath(g, shape).stroke({ color: profile.coreAccent ?? profile.accent, width: reduced ? 2 : 5, alignment: 1, alpha: .95 });
         const half = shape.arc * Math.PI / 360;
         g.arc(0, 0, shape.range - 4, -half, half).stroke({ color: profile.color, width: 3, alpha: .65 });
         if (!reduced) {
@@ -329,7 +330,7 @@ export class SkillVfx {
     return spawned;
   }
   event(event, world, reduced = false) {
-    const profile = SKILL_VFX[event.ability];
+    const profile = this.profile(event.ability);
     if (!profile) return false;
     this.requestSkill(event.ability, reduced);
     if (profile.onEvent) return profile.onEvent(this, event, world, reduced);
@@ -356,7 +357,7 @@ export class SkillVfx {
     return false;
   }
   actor(entity, worldTick, reduced) {
-    const act = entity.act, profile = SKILL_VFX[act?.id];
+    const act = entity.act, profile = this.profile(act?.id);
     if (!profile || entity.dead || entity.kind !== 'player') return false;
     this.requestSkill(act.id, reduced);
     if (profile.onActor) return profile.onActor(this, entity, worldTick, reduced);
@@ -473,7 +474,7 @@ export class SkillVfx {
     return true;
   }
   projectile(particle, alpha, reduced, dt) {
-    const profile = SKILL_VFX[particle.abilityId];
+    const profile = this.profile(particle.abilityId);
     this.requestSkill(particle.abilityId, reduced);
     let slot = this.projectiles.find(item => item.id === particle.id);
     if (!slot) slot = this.projectiles.find(item => item.id === null);

@@ -14,12 +14,14 @@ export function masteryVisual(level = 1, atlas = false, reduced = false, classic
     crest: enabled ? Math.max(0, stage - 5) : 0 };
 }
 
+// Same palette as weapon-glow/game.css. No gameplay/attribute meaning.
+export const ENHANCE_ACCENTS = Object.freeze({6:0xcde8ee,7:0x53b9ff,8:0x9cdaff,9:0xbe84ff,10:0xffd36f});
 // Reuse classic fixed pools and geometry; no FX3 atlas/registry changes.
 export class MasterySkillVfx extends SkillVfx {
   constructor(Graphics, layer, options = {}) {
     super(Graphics, layer, options);
-    this.levels = {}; this.context = masteryVisual(); this.presentation = new Map();
-    this.projectileOwners = new Map();
+    this.levels = {}; this.equipment = {}; this.context = masteryVisual(); this.presentation = new Map();
+    this.projectileOwners = new Map(); this.projectileLive = new Set();
     // Classic dash charge scale and open-arc stroke joins can spill past the body.
     // A bounded actor mask keeps the same crescent paths inside the real body radius.
     for (const slot of this.actors) {
@@ -27,11 +29,24 @@ export class MasterySkillVfx extends SkillVfx {
     }
   }
   setMastery(pid, levels) { this.levels[pid] = { ...levels }; }
+  setEquipment(pid, descriptor) { this.equipment[pid] = { ...descriptor }; }
+  enhancement(entity) {
+    if(entity?.kind !== 'player') return 0;
+    const n = this.equipment[entity.pid]?.enhance ?? entity.equipmentVisual?.enhance;
+    return Number.isInteger(n) && n >= 0 && n <= 10 ? n : 0;
+  }
+  profile(ability) {
+    const p = SKILL_VFX[ability];
+    return p && this.context.accent ? {...p, coreAccent:p.accent, accent:this.context.accent, abilityId:ability} : p;
+  }
+  accentProfile(profile) {
+    return this.context.accent ? {...profile,coreAccent:profile.coreAccent ?? profile.accent,accent:this.context.accent} : profile;
+  }
   level(entity, ability) { return this.levels[entity?.pid]?.[ability] ?? entity?.skillMasteryLevels?.[ability] ?? 1; }
   visual(level, ability, reduced) { return masteryVisual(level, ability === 'ember_bolt', reduced, !this.fxRequested); }
-  withLevel(level, ability, reduced, run) {
+  withLevel(level, ability, reduced, run, enhance = 0) {
     const previous = this.context, requested = this.fxRequested;
-    this.context = this.visual(level, ability, reduced); this.presentation.set(ability, this.context);
+    this.context = {...this.visual(level, ability, reduced), enhance, accent:ENHANCE_ACCENTS[enhance]}; this.presentation.set(ability, this.context);
     this.fxRequested = requested && this.context.stage >= 3;
     try { return run(); } finally { this.context = previous; this.fxRequested = requested; }
   }
@@ -91,6 +106,7 @@ export class MasterySkillVfx extends SkillVfx {
     }
   }
   effect(...args) {
+    args[0] = this.accentProfile(args[0]);
     const free = this.effects.find(slot => slot.left <= 0), result = super.effect(...args);
     if (result && free) {
       const [profile,kind,x,y,facing,radius,shape,reduced] = args;
@@ -103,6 +119,7 @@ export class MasterySkillVfx extends SkillVfx {
     return result;
   }
   emit(profile, kind, x, y, facing, radius, reduced) {
+    profile = this.accentProfile(profile);
     const free = this.particles.filter(slot => slot.left <= 0), visual = this.context;
     const count = super.emit(visual.extraParticles ? {...profile,particles:profile.particles+visual.extraParticles} : profile,kind,x,y,facing,radius,reduced);
     for (const slot of free.slice(0,count)) {
@@ -116,27 +133,31 @@ export class MasterySkillVfx extends SkillVfx {
     let owner = world.entities.find(e => e.id === (event.src ?? event.id));
     if (event.type === 'explode') owner = world.entities.find(e => e.id === event.presentationOwner);
     return this.withLevel(this.level(owner,event.ability),event.ability,reduced,()=>{
-      const result = super.event(event,world,reduced), profile = SKILL_VFX[event.ability];
+      const result = super.event(event,world,reduced), profile = this.profile(event.ability);
       // Hit coordinates describe a contact glow, not a cast-origin cone. Cleave's
       // full-shape ground cracks are already emitted by actor() with the real shape.
       if (profile && event.type === 'hit' && this.context.extraParticles) this.effect(profile.style === 'cleave' ? {...profile,style:'impact'} : profile,'residue',event.x,event.y,0,profile.projectileRadius || 16,null,reduced);
       return result;
-    });
+    },this.enhancement(owner));
   }
   actor(entity, tick, reduced) {
     const level = this.level(entity,entity.act?.id);
-    const result = this.withLevel(level,entity.act?.id,reduced,()=>super.actor(entity,tick,reduced));
+    const key = `${entity.act?.id}:${tick - (entity.act?.elapsed || 0)}`;
+    const prior = this.actors.find(s=>s.id===entity.id && s.key===key);
+    const enhance = prior?.castEnhance ?? this.enhancement(entity);
+    const result = this.withLevel(level,entity.act?.id,reduced,()=>super.actor(entity,tick,reduced),enhance);
     const slot = this.actors.find(s=>s.id===entity.id);
     if (result && slot) {
       slot.node.mask = null; slot.bodyMask.visible = false;
-      slot.mastery = this.visual(level,entity.act?.id,reduced);
+      slot.castEnhance = enhance;
+      slot.mastery = {...this.visual(level,entity.act?.id,reduced),enhance,accent:ENHANCE_ACCENTS[enhance]};
       if (entity.act.phase==='active' && SKILL_VFX[entity.act.id]?.style==='dash') {
         slot.node.scale.set(1);
         slot.bodyMask.clear().circle(0,0,entity.r+SKILL_VFX[entity.act.id].dash.bodyPad).fill(0xffffff);
         slot.bodyMask.position.set(entity.x,entity.y);slot.bodyMask.visible=true;slot.node.mask=slot.bodyMask;
       }
       if (entity.act.phase==='active' && SKILL_VFX[entity.act.id]?.style==='dash' && slot.mastery.extraParticles && slot.masteryDashKey !== slot.key) {
-        const profile=SKILL_VFX[entity.act.id];
+        const profile={...SKILL_VFX[entity.act.id],accent:ENHANCE_ACCENTS[enhance] ?? SKILL_VFX[entity.act.id].accent};
         this.decorate(slot.node,slot.mastery,{type:'cone',range:entity.r+profile.dash.bodyPad,arc:120},0,profile.color,profile.accent);
         slot.masteryDashKey=slot.key;
       }
@@ -147,14 +168,18 @@ export class MasterySkillVfx extends SkillVfx {
   }
   projectile(particle, alpha, reduced, dt) {
     const owner = this.world.entities.find(e=>e.id===particle.ownerId), level = this.level(owner,particle.abilityId);
-    const result = this.withLevel(level,particle.abilityId,reduced,()=>super.projectile(particle,alpha,reduced,dt));
+    const prior = this.projectiles.find(s=>s.id===particle.id);
+    const enhance = prior?.castEnhance ?? this.enhancement(owner);
+    const result = this.withLevel(level,particle.abilityId,reduced,()=>super.projectile(particle,alpha,reduced,dt),enhance);
     const slot = this.projectiles.find(s=>s.id===particle.id);
     if (slot) {
-      slot.mastery=this.visual(level,particle.abilityId,reduced); slot.node.scale.set(1); slot.node.alpha=1;
+      slot.castEnhance=enhance;
+      slot.mastery={...this.visual(level,particle.abilityId,reduced),enhance,accent:ENHANCE_ACCENTS[enhance]}; slot.node.scale.set(1); slot.node.alpha=1;
       // Stretch historical positions about the head, not each segment independently.
       let lx=slot.node.x,ly=slot.node.y;
       for (let i=0;i<slot.tail.length;i++) {
         const node=slot.tail[i]; if (!node.visible) continue;
+        if(slot.mastery.accent) node.tint=slot.mastery.accent;
         const hx=slot.node.x+(slot.history[i*2]-slot.node.x)*slot.mastery.tail;
         const hy=slot.node.y+(slot.history[i*2+1]-slot.node.y)*slot.mastery.tail;
         node.position.set(lx,ly);node.rotation=Math.atan2(hy-ly,hx-lx);
@@ -167,14 +192,15 @@ export class MasterySkillVfx extends SkillVfx {
   snapshot(world) {
     super.snapshot(world);
     const live = new Set(world.projectiles.map(p=>p.id));
-    for(const id of this.projectileOwners.keys()) if(!live.has(id)) this.projectileOwners.delete(id);
+    for(const id of this.projectileOwners.keys()) if(!live.has(id) && !this.projectileLive.has(id)) this.projectileOwners.delete(id);
     for(const p of world.projectiles) this.projectileOwners.set(p.id,p.ownerId);
+    this.projectileLive = live;
   }
   events(events, world) {
     if (events.some(e=>e.type==='explode' && Object.hasOwn(e,'presentationOwner'))) return events;
     return presentSkillEvents(events,world,this.projectileOwners);
   }
-  reset() { super.reset(); this.levels={};this.presentation?.clear();this.projectileOwners?.clear();
+  reset() { super.reset(); this.levels={};this.equipment={};this.presentation?.clear();this.projectileOwners?.clear();this.projectileLive?.clear();
     for(const slot of this.actors) {slot.node.mask=null;if(slot.bodyMask)slot.bodyMask.visible=false;}
   }
   enhance(node, visual) { if (node?.visible && visual) node.alpha=Math.min(1,node.alpha*visual.brightness); }

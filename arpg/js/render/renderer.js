@@ -9,6 +9,7 @@ import { ABILITIES, MONSTERS } from '../content/combat.js';
 import { healingFeedback } from './healing-feedback.js';
 import { SKILL_VFX } from './skill-vfx.js';
 import { MasterySkillVfx as SkillVfx } from './mastery-vfx.js';
+import { equipmentVisual } from './paperdoll-state.js';
 import { masteryLevels } from '../meta/skill-mastery.js';
 import { bakeBiome } from './biome-map.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
@@ -92,7 +93,10 @@ export class ArenaRenderer {
 
   reset(world, reduced = false, equipmentSave) {
     this.skillVfx.reset();
-    if (equipmentSave) this.skillVfx.setMastery(world.entities[0].pid, masteryLevels(equipmentSave));
+    if (equipmentSave) {
+      this.skillVfx.setMastery(world.entities[0].pid, masteryLevels(equipmentSave));
+      this.skillVfx.setEquipment(world.entities[0].pid, equipmentVisual(equipmentSave));
+    }
     this.areaImpact.reset();
     for (const view of this.views.values()) {
       view.visual.destroy();
