@@ -1,6 +1,7 @@
 import { WEAPONS, ABILITIES, PLAYER_BASE } from '../content/combat.js';
 import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
+import { MAX_LEVEL, xpSpan } from '../meta/progression.js';
 import { MONSTER_NAMES } from '../content/monsters.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -28,6 +29,7 @@ export class HUD {
     for (const id of [
       'hp-fill', 'hp-text', 'mp-fill', 'mp-text', 'stage-name', 'objective', 'potion', 'mana',
       'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
+      'lv-text', 'xp-fill', 'xp-pending',
     ]) this.nodes[id] = $(`#${id}`);
   }
 
@@ -79,13 +81,21 @@ export class HUD {
     }
   }
 
-  meta(load, tracker) {
+  meta(load, tracker, save) {
     const tier = weightDescription(load.weight, load.capacity);
     const bar = this.nodes['load-fill'];
     bar.style.transform = `scaleX(${Math.min(1, load.ratio / 1.2)})`;
     bar.parentElement.className = `bar load ${tier.tier}`;
     bar.parentElement.title = tier.text;
-    this.text(this.nodes['load-text'], `${load.weight.toFixed(1)}/${load.capacity}`);
+    this.text(this.nodes['load-text'], `${Math.round(load.weight)}/${Math.round(load.capacity)}`);
+    if (save) {
+      const maxed = save.level >= MAX_LEVEL, span = maxed ? 1 : xpSpan(save.level);
+      const base = maxed ? 1 : save.xp / span, pending = maxed ? 0 : Math.min(1 - base, tracker.depositedXp / span);
+      this.text(this.nodes['lv-text'], `Lv ${save.level}`);
+      this.nodes['xp-fill'].style.transform = `scaleX(${base})`;
+      this.nodes['xp-pending'].style.transform = `translateX(${base * 100}%) scaleX(${pending})`;
+      this.nodes['xp-fill'].parentElement.title = maxed ? 'MAX' : `XP ${Math.floor(save.xp)}+${Math.floor(tracker.depositedXp)}/${span}`;
+    }
     const count = tracker.tempLoot.items.length
       + Object.values(tracker.tempLoot.stacks).reduce((sum, value) => sum + value, 0);
     this.text(this.nodes['temp-loot'], `◇ ${count} · ${tracker.tempLoot.gold} G · ${tracker.depositedXp} XP`);

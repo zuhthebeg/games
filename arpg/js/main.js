@@ -128,7 +128,7 @@ try {
       input.enabled = true;
       hud.begin(world, loadoutOf(roundSave));
       showArrival(roundSave, stageId);
-      hud.meta(load, tracker);
+      hud.meta(load, tracker, roundSave);
       running = true;
       accumulator = 0;
       lastTime = performance.now();
@@ -216,7 +216,7 @@ try {
         renderer.events(view, [...events, ...progress.fx]);
         audio.events(events, view.entities[0].id);
         hud.events([...events.filter(e => e.id === view.entities[0].id || e.type === 'drop'), ...progress.fx]);
-        hud.meta(progress.load, tracker);
+        hud.meta(progress.load, tracker, roundSave);
         settleCoopPlayer();
         if (view.round.state !== 'running') finishCoop();
       },
@@ -369,7 +369,7 @@ try {
         renderer.events(world, [...events, ...progress.fx]);
         audio.events(events, world.entities[0].id);
         hud.events([...events, ...progress.fx]);
-        hud.meta(progress.load, tracker);
+        hud.meta(progress.load, tracker, roundSave);
         accumulator -= TICK_MS;
         count++;
         if (world.round.state !== 'running') {

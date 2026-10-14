@@ -34,7 +34,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=8fe9cae3a2",
         "./js/debug/index.js": "./js/debug/index.js?v=1cef974f0b",
         "./js/input.js": "./js/input.js?v=eb4f269001",
-        "./js/main.js": "./js/main.js?v=deb7676e3e",
+        "./js/main.js": "./js/main.js?v=7c087a4595",
         "./js/meta/affixes.js": "./js/meta/affixes.js?v=b43d715aee",
         "./js/meta/auto-use.js": "./js/meta/auto-use.js?v=9a17dad2b0",
         "./js/meta/compare.js": "./js/meta/compare.js?v=3642e53b26",
@@ -87,7 +87,7 @@
         "./js/ui/enchant-fx.js": "./js/ui/enchant-fx.js?v=10971f76a7",
         "./js/ui/gear-view.js": "./js/ui/gear-view.js?v=c6ab6769f8",
         "./js/ui/hub.js": "./js/ui/hub.js?v=ce8f4e4fdc",
-        "./js/ui/hud.js": "./js/ui/hud.js?v=90edb63094",
+        "./js/ui/hud.js": "./js/ui/hud.js?v=8284930e40",
         "./js/ui/icons.js": "./js/ui/icons.js?v=38e9731b5d",
         "./js/ui/item-art.js": "./js/ui/item-art.js?v=be7ba57142",
         "./js/ui/shop-view.js": "./js/ui/shop-view.js?v=eff3fb1260",
@@ -96,15 +96,18 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=354701f499">
+    <link rel="stylesheet" href="css/game.css?v=81cec4d299">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
     <div id="vignette"></div>
     <section id="hud" hidden aria-label="전투 상태">
+      <div class="xpbar" aria-hidden="true"><i id="xp-fill"></i><i id="xp-pending"></i></div>
       <div class="vitals">
-        <div class="bar hp"><i id="hp-fill"></i><span id="hp-text"></span></div>
-        <div class="bar mp"><i id="mp-fill"></i><span id="mp-text"></span></div>
+        <div class="vrow">
+          <b id="lv-text" class="lv"></b>
+          <div class="combo"><div class="half hp"><i id="hp-fill"></i><span id="hp-text"></span></div><div class="half mp"><i id="mp-fill"></i><span id="mp-text"></span></div></div>
+        </div>
         <div class="bar load"><i id="load-fill"></i><span id="load-text"></span></div>
       </div>
       <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
@@ -135,6 +138,6 @@
     </section>
     <script src="/lib/multiplayer.js?v=20260927rt"></script>
     <script src="/lib/mp-lobby.js?v=20260927"></script>
-    <script type="module" src="js/main.js?v=deb7676e3e"></script>
+    <script type="module" src="js/main.js?v=7c087a4595"></script>
   </body>
 </html>
