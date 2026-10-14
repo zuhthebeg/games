@@ -7,7 +7,7 @@ import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, stackSellPrice, sellStack } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
 import { STAGES, ABILITIES, canUseSkill } from '../content/combat.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, withFamilyLoadout } from '../meta/skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
@@ -184,6 +184,7 @@ export class HubUI {
 
   // keepScroll: an in-place re-render of the same page (a +/− or slot tap) keeps the reading position and the pressed control.
   show(html, page, { shell = false, keepScroll = false } = {}) {
+    this.pendingEquipment = null;
     const keep = keepScroll && this.root.dataset.page === page;
     const scroll = keep ? this.root.querySelector('.inn-shell>.content')?.scrollTop || 0 : 0;
     const active = keep ? document.activeElement : null;
@@ -428,7 +429,89 @@ export class HubUI {
   }
 
   closeSheet() {
+    if (this.pendingEquipment) return this.cancelEquipment();
     this.root.querySelector('dialog[open]')?.close();
+  }
+
+  equipmentDraft(action, uid) {
+    const bought = action === 'buy-equip' ? buyGear(this.save, uid) : this.save;
+    const targetUid = action === 'buy-equip' ? bought.items.at(-1).uid : uid;
+    return equip(bought, targetUid);
+  }
+
+  beginEquipment(action, uid) {
+    if (this.pendingEquipment || (action !== 'buy-equip' && uid === this.save.equipped.weapon)) return;
+    const next = this.equipmentDraft(action, uid);
+    if (next.equipped.weapon === this.save.equipped.weapon) {
+      this.commit(next); // Non-weapon gear retains the existing immediate flow.
+      return this.finishEquipment(action, uid);
+    }
+    const candidate = weaponLoadoutCandidate(this.save, next);
+    const active = document.activeElement;
+    const pending = { action, uid, source: JSON.stringify(this.save),
+      token: this.equipmentToken = (this.equipmentToken || 0) + 1,
+      returnSheet: this.root.querySelector('dialog[open]')?.outerHTML.replace(' open=""', ''),
+      focus: active?.dataset ? { ...active.dataset } : null, origin: active };
+    const reasons = { remembered:'이전 세트 복원', current:'현재 스킬 유지', 'same-form':'같은 형태 · 현재 스킬 유지',
+      unseen:'첫 형태 · 현재 스킬 유지', unusable:'기억한 스킬 사용 불가 · 현재 스킬 유지' };
+    const name = id => id ? escape(ABILITIES[id].name) : '비어 있음';
+    const describe = (id, save) => {
+      if (!id) return '비어 있음';
+      const use = skillUse(id, weaponFamily(save), weaponForm(save));
+      return `${name(id)}${use === undefined ? ' · 사용 불가' : use < 1 ? ` · 위력 ${Math.round(use * 100)}%` : ''}`;
+    };
+    const rows = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, this.save)} → ${describe(candidate.after[i], next)}${candidate.reason === 'remembered' && candidate.remembered[i] && candidate.after[i] === null ? ' · 사용 불가 제외' : ''}</dd></div>`).join('');
+    const current = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, next)}</dd></div>`).join('');
+    const warnings = candidate.before.some(id => id && !canUseSkill(id, weaponFamily(next), weaponForm(next)))
+      ? '<p class="p2-hint">사용 불가: 해당 슬롯은 사냥 중 제외됩니다. 슬롯 1이 비면 무기 기본 기술을 사용합니다.</p>' : '';
+    const cost = this.save.gold - next.gold;
+    const body = `<dl class="p2-lines"><div><dt>무기</dt><dd>${escape(itemLabel(equippedItem(this.save, 'weapon')))} → ${escape(itemLabel(equippedItem(next, 'weapon')))}</dd></div><div><dt>선택</dt><dd>${reasons[candidate.reason]}</dd></div>${cost ? `<div><dt>구매</dt><dd>${cost} G · 확인 시 결제</dd></div>` : ''}</dl>`
+      + `<h3>무기·스킬 장착</h3><dl class="p2-lines">${rows}</dl><details><summary>현재 스킬로 장착</summary><dl class="p2-lines">${current}</dl></details>${warnings}`;
+    this.mountSheet(this.dialogHtml('무기 변경 · 스킬 확인', body,
+      button('무기·스킬 장착', 'weapon-confirm', `data-token="${pending.token}" class="primary"`)
+      + button('현재 스킬로 장착', 'weapon-confirm', `data-token="${pending.token}" data-current="true"`)
+      + button('취소', 'weapon-cancel')));
+    this.pendingEquipment = pending;
+    const dialog = this.root.querySelector('dialog[open]');
+    dialog?.addEventListener('cancel', event => { event.preventDefault(); this.cancelEquipment(); });
+    dialog?.addEventListener('close', () => { if (this.pendingEquipment === pending) this.cancelEquipment(); });
+  }
+
+  cancelEquipment(restore = true) {
+    const pending = this.pendingEquipment;
+    if (!pending) return;
+    this.pendingEquipment = null;
+    this.root.querySelector('dialog[open]')?.close();
+    if (!restore) return;
+    if (pending.returnSheet) {
+      this.mountSheet(pending.returnSheet);
+      const same = [...this.root.querySelectorAll('[data-action]')].find(node => node.closest('dialog[open]') && pending.focus
+        && Object.entries(pending.focus).every(([key, value]) => node.dataset[key] === value));
+      same?.focus({ preventScroll: true });
+    } else if (pending.origin?.isConnected) pending.origin.focus({ preventScroll: true });
+  }
+
+  confirmEquipment(data) {
+    const pending = this.pendingEquipment;
+    if (!pending || String(pending.token) !== data.token) return;
+    // Clear first: duplicate activation or a failed persistence must never replay a purchase.
+    this.pendingEquipment = null;
+    if (JSON.stringify(this.save) !== pending.source) {
+      this.root.querySelector('dialog[open]')?.close();
+      throw new Error('장비·스킬 정보가 변경되었습니다. 다시 선택하세요.');
+    }
+    const next = this.equipmentDraft(pending.action, pending.uid);
+    this.commit(weaponLoadoutCandidate(this.save, next, { keepCurrent: data.current === 'true' }).save);
+    return this.finishEquipment(pending.action, pending.uid);
+  }
+
+  finishEquipment(action, uid) {
+    if (action === 'buy-equip') return this.showMerchant();
+    if (action === 'loot-equip') {
+      this.lootState[uid] = '장착함';
+      return this.showReceipt();
+    }
+    return this.returnToPanel();
   }
 
   comparisonHtml(item) {
@@ -922,7 +1005,10 @@ export class HubUI {
 
   action(action, data) {
     if (this.enchantFx?.active) return;
+    if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {
+      case 'weapon-confirm': return this.confirmEquipment(data);
+      case 'weapon-cancel': return this.cancelEquipment();
       case 'name': return this.showName();
       case 'answer':
         this.answers.push(Number(data.choice));
@@ -1015,9 +1101,7 @@ export class HubUI {
         return this.showInventory();
       case 'socket': return this.showSocket(data.slot);
       case 'open-item': return this.openItem(data.uid, data.mode || 'equip');
-      case 'equip':
-        this.commit(withFamilyLoadout(this.save, equip(this.save, data.uid)));
-        return this.returnToPanel();
+      case 'equip': return this.beginEquipment(action, data.uid);
       case 'sell':
         this.commit(sellItem(this.save, data.uid));
         if (this.selectedUid === data.uid) this.selectedUid = null;
@@ -1038,13 +1122,7 @@ export class HubUI {
       case 'buy-gear':
         this.commit(buyGear(this.save, data.uid));
         return this.showMerchant();
-      case 'buy-equip': {
-        // Atomic: equip failure (weight/requirement) throws before commit, so nothing is bought.
-        const bought = buyGear(this.save, data.uid);
-        const uid = bought.items[bought.items.length - 1].uid;
-        this.commit(withFamilyLoadout(bought, equip(bought, uid)));
-        return this.showMerchant();
-      }
+      case 'buy-equip': return this.beginEquipment(action, data.uid);
       case 'sell-shop':
         this.commit(sellItem(this.save, data.uid));
         return this.showMerchant();
@@ -1105,10 +1183,7 @@ export class HubUI {
       case 'reveal':
         this.revealed = Math.min(this.revealed + 1, this.pendingReceipt.receipt.lootKept.items.length);
         return this.showReceipt();
-      case 'loot-equip':
-        this.commit(withFamilyLoadout(this.save, equip(this.save, data.uid)));
-        this.lootState[data.uid] = '장착함';
-        return this.showReceipt();
+      case 'loot-equip': return this.beginEquipment(action, data.uid);
       case 'loot-sell':
         this.commit(sellItem(this.save, data.uid));
         this.lootState[data.uid] = '판매함';

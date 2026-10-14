@@ -1,0 +1,23 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><base href="/arpg/"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/game.css"><body><section id="hud" hidden></section><section id="meta-screen" class="overlay"></section><script type="module">
+import {HubUI} from './js/ui/hub.js';
+import {SaveStore,SAVE_KEY,validateSave} from './js/meta/save.js';
+import {shopStock} from './js/meta/shop.js';
+import {ITEMS} from './js/meta/items.js';
+import {trained} from './test/weapon-loadout-fixture.js';
+const old=trained();
+// Long actual enhanced labels exercise narrow-dialog wrapping without modifying item rules.
+old.statPoints-=90-old.stats.str;old.stats.str=90;
+Object.assign(old.items.find(i=>i.uid===old.equipped.weapon),{id:'dragonfang_blade',enhance:10});
+Object.assign(old.items.find(i=>i.uid==='blunt'),{id:'warden_maul',enhance:10});
+old.loadouts={blade:['heavy_cleave',null,'whirl']};
+const loot={gold:0,stacks:{},items:[structuredClone(old.items.find(i=>i.uid==='sword'))]};
+old.lastReceipt={stageId:'S1',terminal:'clear',threat:1,depositedXp:0,xpForfeited:0,stageXp:0,levelsGained:0,statPointsGained:0,goldGained:0,xpGained:0,xpLost:0,firstClear:false,pityGranted:false,used:{},restored:{},lootKept:loot,lootLost:{gold:0,stacks:{},items:[]}};
+if(!validateSave(old))throw Error('bad trained old save');
+localStorage.clear();localStorage.setItem(SAVE_KEY,JSON.stringify(old));
+const store=new SaveStore(localStorage),loaded=store.load();
+window.probe={oldValid:validateSave(loaded),oldMissing:!Object.hasOwn(loaded,'weaponLoadouts'),commits:0};
+const hub=new HubUI({save:loaded,persist:s=>{store.save(s);probe.commits++},onOverlay:()=>{},startRound:()=>{},resetSave:()=>store.reset()});
+window.fixture={hub,store,old:JSON.stringify(loaded),stock:shopStock(loaded.createdAt,loaded.shopRefresh).find(i=>ITEMS[i.id].kind==='weapon').uid,
+ receipt:()=>{hub.pendingReceipt={receipt:hub.save.lastReceipt};hub.revealed=1;hub.lootState={};hub.showReceipt()}};
+hub.showInventory();window.ready=true;
+</script></body></html>
