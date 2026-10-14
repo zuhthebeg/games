@@ -1,16 +1,13 @@
 import { FEEL } from './render/feel.js';
+import { PROFILE_FILES, eventCues } from './audio-profile.js';
 
 export const SFX = Object.freeze(['swing', 'hit', 'critical', 'dodge', 'hurt', 'kill', 'level-up']);
+export const AUDIO_FILES = Object.freeze([...SFX, ...PROFILE_FILES]);
 const MUTED_KEY = 'arpg.audio.muted';
 
-export function eventSound(event, localId) {
-  if (event.type === 'act' && event.id === localId) return 'swing';
-  if (event.type === 'dodge' && event.id === localId) return 'dodge';
-  if (event.type === 'hit') return event.dst === localId ? 'hurt'
-    : event.exposed || event.crit || event.critical ? 'critical' : 'hit';
-  if (event.type === 'kill') return 'kill';
-  if (event.type === 'death' && event.id === localId) return 'hurt';
-  return null;
+// First/primary cue API; events() also plays the bounded impact accent.
+export function eventSound(event, localId, entities = []) {
+  return eventCues(event, localId, entities)[0]?.name ?? null;
 }
 
 export class CombatAudio {
@@ -26,7 +23,7 @@ export class CombatAudio {
     this.muted = false;
     try { this.muted = storage?.getItem(MUTED_KEY) === '1'; } catch { /* Private mode: session preference only. */ }
     // Download early; do not create/resume an AudioContext until a real user gesture.
-    this.download = Promise.all(SFX.map(async (name) => {
+    this.download = Promise.all(AUDIO_FILES.map(async (name) => {
       try {
         const response = await fetchAudio(new URL(`../assets/audio/${name}.ogg`, import.meta.url));
         return response.ok ? [name, await response.arrayBuffer()] : null;
@@ -41,7 +38,16 @@ export class CombatAudio {
         this.context = new this.Context();
         this.master = this.context.createGain();
         this.master.gain.value = this.muted ? 0 : FEEL.audio.gain;
-        this.master.connect(this.context.destination);
+        // Dense impacts retain the existing master gain/cap, with bus headroom.
+        if (this.context.createDynamicsCompressor) {
+          this.limiter = this.context.createDynamicsCompressor();
+          this.limiter.threshold.value = -6;
+          this.limiter.knee.value = 0;
+          this.limiter.ratio.value = 20;
+          this.limiter.attack.value = .001;
+          this.limiter.release.value = .09;
+          this.master.connect(this.limiter); this.limiter.connect(this.context.destination);
+        } else this.master.connect(this.context.destination);
         this.loading = this.download.then(async (files) => {
           for (const file of files) {
             if (!file) continue;
@@ -67,26 +73,32 @@ export class CombatAudio {
     this.lastPlayed.clear();
   }
 
-  play(name) {
-    const context = this.context, buffer = this.buffers.get(name);
-    if (this.muted || !buffer || context?.state !== 'running' || this.voices.size >= FEEL.audio.voices) return false;
+  play(name, { fallback = null, pitch = 1, gain = 1, key = name, cooldown = FEEL.audio.cooldown } = {}) {
+    const context = this.context, buffer = this.buffers.get(name) ?? this.buffers.get(fallback);
+    if (this.muted || !buffer || context?.state !== 'running') return false;
     const now = context.currentTime;
-    if (now - (this.lastPlayed.get(name) ?? -Infinity) < FEEL.audio.cooldown) return false;
+    if (now - (this.lastPlayed.get(key) ?? -Infinity) < Math.max(FEEL.audio.cooldown, cooldown)) return false;
+    if (this.voices.size >= FEEL.audio.voices) {
+      if (name !== 'counter-hit') return false;
+      const oldest = this.voices.values().next().value;
+      oldest.stop(); this.voices.delete(oldest);
+    }
     const voice = context.createBufferSource();
     voice.buffer = buffer;
-    voice.playbackRate.value = 1 + (this.random() * 2 - 1) * FEEL.audio.pitch;
-    voice.connect(this.master);
-    voice.onended = () => { this.voices.delete(voice); voice.disconnect(); };
+    voice.playbackRate.value = pitch * (1 + (this.random() * 2 - 1) * (pitch === 1 ? FEEL.audio.pitch : .015));
+    const level = context.createGain();
+    level.gain.value = Math.max(0, Math.min(1, gain));
+    voice.connect(level); level.connect(this.master);
+    voice.onended = () => { this.voices.delete(voice); voice.disconnect(); level.disconnect?.(); };
     this.voices.add(voice);
-    this.lastPlayed.set(name, now);
+    this.lastPlayed.set(key, now);
     voice.start();
     return true;
   }
 
-  events(events, localId) {
+  events(events, localId, entities = []) {
     for (const event of events) {
-      const sound = eventSound(event, localId);
-      if (sound) this.play(sound);
+      for (const cue of eventCues(event, localId, entities)) this.play(cue.name, cue);
     }
   }
 }

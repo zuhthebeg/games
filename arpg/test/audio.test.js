@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
-import { CombatAudio, eventSound, SFX, bindAudioControls } from '../js/audio.js';
+import { CombatAudio, eventSound, SFX, AUDIO_FILES, bindAudioControls } from '../js/audio.js';
 import { FEEL } from '../js/render/feel.js';
 
 class FakeContext {
@@ -29,7 +29,7 @@ test('audio awaits a gesture, loads once, bounds pitch/voice count, and releases
   assert.equal(audio.play('hit'), false);
   await audio.unlock();
   await audio.unlock();
-  assert.equal(audio.context.decoded, SFX.length);
+  assert.equal(audio.context.decoded, AUDIO_FILES.length);
   assert.equal(audio.context.state, 'running');
   for (let index = 0; index < 10; index++) {
     audio.context.currentTime += .04;
