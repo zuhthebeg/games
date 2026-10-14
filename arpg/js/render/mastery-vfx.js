@@ -97,7 +97,9 @@ export class MasterySkillVfx extends SkillVfx {
     if (event.type === 'explode') owner = world.entities.find(e => e.id === event.presentationOwner);
     return this.withLevel(this.level(owner,event.ability),event.ability,reduced,()=>{
       const result = super.event(event,world,reduced), profile = SKILL_VFX[event.ability];
-      if (profile && event.type === 'hit' && this.context.extraParticles) this.effect(profile,'residue',event.x,event.y,0,profile.projectileRadius || 16,null,reduced);
+      // Hit coordinates describe a contact glow, not a cast-origin cone. Cleave's
+      // full-shape ground cracks are already emitted by actor() with the real shape.
+      if (profile && event.type === 'hit' && this.context.extraParticles) this.effect(profile.style === 'cleave' ? {...profile,style:'impact'} : profile,'residue',event.x,event.y,0,profile.projectileRadius || 16,null,reduced);
       return result;
     });
   }
