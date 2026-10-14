@@ -131,7 +131,7 @@ test('AV1 content is only basic combo metadata; all27stages/all monsters/all non
   let s=execFileSync('git',['show','abcd094:arpg/js/content/combat.js'],{encoding:'utf8'});
   s=s.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,new URL('../js/content/combat.js',import.meta.url)).href));
   const old=await import('data:text/javascript;base64,'+Buffer.from(s).toString('base64'));
-  assert.deepEqual(MONSTERS,old.MONSTERS);assert.deepEqual(STAGES,old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
+  assert.deepEqual(Object.fromEntries(Object.entries(MONSTERS).filter(([id])=>!['demon','goleling','slime'].includes(id))),old.MONSTERS);assert.deepEqual(STAGES,old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
   const current=structuredClone(ABILITIES);for(const id of ['slash','arrow','focus_pulse']){delete current[id].combo;delete current[id].comboWindowMs;}
   assert.deepEqual(current,old.ABILITIES);
   for(const path of ['arpg/js/content/balance.js','arpg/js/content/loot.js','arpg/js/content/world-map.js','arpg/js/meta/items.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/movement.js','arpg/js/net/session.js']) {

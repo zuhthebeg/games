@@ -1,0 +1,85 @@
+{
+  "status": "IMPLEMENTATION_COMPLETE_PARENT_VISUAL_REVIEW_PENDING",
+  "baseline": "0c64a94f2a11420309c2ceaa03bfa0180d42cae8",
+  "original_checkpoint": "e0078e22cc8aa53cbd6e8359f08e61a6c729771b",
+  "ids": [
+    "demon",
+    "goleling",
+    "slime"
+  ],
+  "frames": 576,
+  "directional_clips": 120,
+  "gpu_rgba_bytes": {
+    "demon": 12582912,
+    "goleling": 13631488,
+    "slime": 11534336
+  },
+  "gpu_rgba_mib": {
+    "demon": 12.0,
+    "goleling": 13.0,
+    "slime": 11.0
+  },
+  "aggregate_new_kit_rgba_mib": 36,
+  "gpu_formula": "sum(decoded_sheet_width*decoded_sheet_height*4), includes blank cells; excludes mipmaps/driver/CPU/old active kits",
+  "suite": {
+    "command": "node --test --test-reporter=tap arpg/test/*.test.js",
+    "exit_code": 1,
+    "baseline_tests": 738,
+    "new_tests": 8,
+    "tests": 746,
+    "pass": 745,
+    "fail": 1,
+    "skipped": 0,
+    "failures": [
+      "index.html cache-busting stamps match current js/css contents"
+    ],
+    "log": "/home/cocy/.openclaw/workspace/tmp/arpg-m2b-tests-final.tap",
+    "log_sha256": "1f24984fed32b9944a5f95bd77f89f78d3c4d2c7a480a8bd26ec7a52c2f60e5a"
+  },
+  "native": {
+    "ok": true,
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "real_registered_host_spawns": true,
+    "loaded_texture_dimensions_checked": true,
+    "frozen_state_octant_samples": 240,
+    "console_errors": 0,
+    "screenshots": 0,
+    "hardware": "Linux headless Chromium SwiftShader; desktop/mobile emulation, not physical phone"
+  },
+  "host": {
+    "runs": 243,
+    "ticks_per_run": 900,
+    "equal": true,
+    "sha256": "1718dec380ed42b54e729fe3c6027a175b6acae2980966aa973d908e1e450cac"
+  },
+  "preserved_original_runtime_art_files": 310,
+  "original_sources_preserved": true,
+  "dirty_main_sha256_preserved": true,
+  "parent_visual_approved": false,
+  "parent_stamp_modified": false,
+  "stage_placement": false,
+  "drop_tables": false,
+  "economy_changed": false,
+  "push": false,
+  "deploy": false,
+  "physical_phone_vram_fps_measured": false,
+  "renderer_delta": "exactly 3 additional ATLAS_IDS key:value mappings; all existing mappings/functions unchanged",
+  "preview_directory": "/home/cocy/.openclaw/workspace/tmp/arpg-m2b-preview",
+  "bat_comparison": {
+    "samples": 120,
+    "min_xor_pixels": 691,
+    "min_xor_over_union": 0.5577078288942696,
+    "parent_visual_approved": false,
+    "anatomy": "Goleling floating round head/body, no dangling limb silhouette; bat retains tall ears, long body/legs and angular wings",
+    "method": "decoded alpha >=128, centroid alignment, no scale or tint comparison"
+  }
+}

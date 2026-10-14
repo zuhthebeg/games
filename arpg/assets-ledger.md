@@ -175,14 +175,18 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 - Provenance: `tools/art/m2a/license-evidence.json` records each individual page/license quotation, original GLB and HTML SHA-256; legal text and page extracts bundled. Raw HTML/GLBs, prepared GLBs, blends/PNGs stay at `C:/Users/user/ai-tools/arpg-art/m2a/`. Runtime uses local WebP + JSON, no hotlinks. Generic Quaternius QAL not used as license evidence. Rejected unrigged candidate: https://poly.pizza/m/pEwXEubhxz (no animations/skin).
 
 
-## M2b provisional source checkpoint — not runtime art
+## M2b — demon / goleling / slime (local kits, not deployed)
 
-Status: **BLOCKED before bake/registration**. Source research only; parent-owned renderer mappings are required. No new hunt/stage/drop/kit is delivered. Evidence: `tools/art/m2b/license-evidence.json`, individual license extracts, full `LICENSE-CC0-1.0.txt`, read-only `inventory.json`. Untouched originals and original individual HTML are retained at `C:/Users/user/ai-tools/arpg-art/m2b/source/`. No model modifications; import for inventory only.
+Parent explicitly authorized only three `ATLAS_IDS` mappings after original source-only checkpoint `e0078e2`; baseline `0c64a94` remains preserved. This is implementation delivery for parent visual review, **not artistic acceptance, hunt placement or production release**.
 
-| Candidate | Individual source | Author | Verified individual license | Distribution state |
-|---|---|---|---|---|
-| Demon | https://poly.pizza/m/LnfIziKv4o | Quaternius | Public Domain CC0 1.0 | Offline original only, not shipped |
-| Goleling | https://poly.pizza/m/71gomWolax | Quaternius | Public Domain CC0 1.0 | Offline original only; bat-like wing silhouette not yet approved |
-| Green Blob (slime) | https://poly.pizza/m/y4kJh8EeYS | Quaternius | Public Domain CC0 1.0 | Offline original only, not shipped |
+| Kit | Individual source | Author | Individual license |
+|---|---|---|---|
+| Demon | https://poly.pizza/m/LnfIziKv4o | Quaternius | Public Domain CC0 1.0 |
+| Goleling | https://poly.pizza/m/71gomWolax | Quaternius | Public Domain CC0 1.0 |
+| Green Blob (slime) | https://poly.pizza/m/y4kJh8EeYS | Quaternius | Public Domain CC0 1.0 |
 
-Legal: https://creativecommons.org/publicdomain/zero/1.0/ . General Quaternius licensing is not used as evidence. Actual pose/silhouette/anchor/grip/art quality and GPU-budget acceptance are pending, not inferred from source license or the presence of a rig.
+Legal: https://creativecommons.org/publicdomain/zero/1.0/ . Each original HTML/GLB SHA-256, individual-page quote, author and modification disclosure is in `tools/art/m2b/license-evidence.json`; full CC0 text and page extracts bundled. No generic pack-license inference, paid generation, hotlink or primitive character substitution. Unmodified HTML/GLBs, current derived `.blend` and full native PNG frames remain at `C:/Users/user/ai-tools/arpg-art/m2b/`.
+
+Native clips, all **8 directions × idle/run/attack/hit/death**, complete source timelines sampled at 6fps: Demon Idle/Run/Weapon/HitReact/Death; Goleling Flying_Idle/Fast_Flying/Headbutt/HitReact/Death; Slime Idle/Walk/Bite_Front/HitRecieve/Death. Demon’s imported Root keys cancel an offset rest skeleton: preserve first-idle horizontal values rather than zeroing them. The original Trident mesh is reoriented once to upright idle grip via its evaluated one-joint affine transform, retaining original Middle1.L skin; no new weapon mesh. Per-kit source color overrides, ink hull, fixed 40° orthographic camera, 0.10 demon / 0.012 slime constant ground lifts. Goleling has eight original wing joints; separate source proof checks four active proximal wing joints and floating core stability. Slime anatomical octants are measured using actual eye vertices against Head, not inferred from a spherical body.
+
+576 delivered frames: **192 / 208 / 176**. Full decoded RGBA sheet capacity `sum(width*height*4)` is **12 / 13 / 11 MiB**, maximum sheet 2048px, total new kits 36MiB (excluding mipmaps, driver overhead, old active kits, CPU decode copies). Compressed bytes are not a GPU-memory claim. Per-frame source/alpha, clipping, native skin, octant anatomy, silhouette motion and fixed-ground evidence in `source-validation.json` / `delivered-validation.json`; runtime loaded Texture-source dimensions in `browser-validation.json`. Parent reviews `tmp/arpg-m2b-preview/` contact/game-size/phase previews separately. Physical-phone memory/performance unmeasured. Existing sim/net/index/renderer functions, 27 stages, loot and economy unchanged; these IDs have no drops and are not placed.

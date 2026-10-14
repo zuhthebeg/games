@@ -43,9 +43,9 @@ test('nine damage values, six mana costs and R1 area sizes change; combo-disable
   assert.deepEqual(WEAPONS, before.WEAPONS);
   // Preserve main additions and U1 registrations while retaining the historical nine baseline.
   const { gargoyle, training_dragon, throne_dragon, skeleton_minion, skeleton_warrior,
-    skeleton_rogue, skeleton_mage, ghoul, ghost, bat, ...previousMonsters } = MONSTERS;
+    skeleton_rogue, skeleton_mage, ghoul, ghost, bat, demon, goleling, slime, ...previousMonsters } = MONSTERS;
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(before.MONSTERS, id)),
-    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat']);
+    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat','demon','goleling','slime']);
   // Heavy-poise flag (10-13) is the only addition to the historical archetypes.
   const unflagged = Object.fromEntries(Object.entries(previousMonsters).map(([id, { heavyPoise, ...rest }]) => [id, rest]));
   assert.deepEqual(unflagged, before.MONSTERS);

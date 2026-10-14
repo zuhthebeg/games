@@ -132,7 +132,7 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
     if (av1.files[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), av1.files[path], 'intentional AV1: '+path);
     else if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);
-  assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id) && !['ghoul','ghost','bat'].includes(id)), ids);
+  assert.deepEqual(Object.keys(MONSTERS).filter(id => !Object.hasOwn(evidence.original_monster_sha256, id) && !['ghoul','ghost','bat','demon','goleling','slime'].includes(id)), ids);
 });
 
 test('U1 preserves every main sprite byte and all thirteen main manifest descriptors', () => {
@@ -143,7 +143,7 @@ test('U1 preserves every main sprite byte and all thirteen main manifest descrip
   assert.equal(Object.keys(evidence.files_sha256).length, evidence.preserved_files);
   for (const [path, hash] of Object.entries(evidence.files_sha256))
     assert.equal(sha(read('../assets/sprites/' + path)), hash, path);
-  assert.deepEqual(manifest.slice(evidence.preserved_kits).filter(entry => !['ghoul','ghost','bat'].includes(entry.id)).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
+  assert.deepEqual(manifest.slice(evidence.preserved_kits).filter(entry => !['ghoul','ghost','bat','demon','goleling','slime'].includes(entry.id)).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
 });
 
 test('U1 main-versus-definition host traces cover every stage and remain byte-identical', () => {

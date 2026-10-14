@@ -579,5 +579,89 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "demon",
+    "label": "악마",
+    "monster": true,
+    "content_ids": [
+      "demon"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.618224024772644
+    },
+    "bytes": 271300,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "goleling",
+    "label": "고링",
+    "monster": true,
+    "content_ids": [
+      "goleling"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6980247497558594
+    },
+    "bytes": 265064,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "slime",
+    "label": "슬라임",
+    "monster": true,
+    "content_ids": [
+      "slime"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7945150583982468
+    },
+    "bytes": 318344,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

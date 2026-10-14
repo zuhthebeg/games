@@ -1,0 +1,684 @@
+{
+  "ok": true,
+  "total_frames": 576,
+  "results": [
+    {
+      "name": "demon",
+      "format": "webp",
+      "frames": 192,
+      "atlas_dimensions": [
+        [
+          2048,
+          1536
+        ]
+      ],
+      "webp_bytes": 227432,
+      "json_bytes": 43868,
+      "total_bytes": 271300,
+      "alpha_coverage_percent": [
+        5.139,
+        8.392
+      ],
+      "max_idle_center_drift_px": 1.118,
+      "idle_center_method": "opaque silhouette bbox center",
+      "max_idle_bbox_center_drift_px": 1.118,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "humanoid",
+      "pose_checked_frames": 192,
+      "t_pose_frames": 0,
+      "bind_pose_frames": 0,
+      "min_max_arm_degrees_from_bind": 34.4465,
+      "min_skin_rms_from_bind_height": 1.324482,
+      "lossless_alpha_matches_pose_evidence": 192,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [
+        34.63,
+        34.39,
+        32.57,
+        32.79,
+        34.62,
+        34.38,
+        32.56,
+        32.79
+      ],
+      "gpu_rgba_bytes": 12582912,
+      "gpu_rgba_mib": 12.0,
+      "min_opaque_pixels_alpha128": 842,
+      "min_opaque_pixels_alpha250": 628,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_SE": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_S": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_SW": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_W": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_NW": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_N": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "idle_NE": {
+          "frames": 6,
+          "unique_aligned_masks": 6
+        },
+        "run_E": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_SE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_S": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_SW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_W": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_NW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_N": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "run_NE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "attack_E": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_SE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_S": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_SW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_W": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_NW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_N": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_NE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "hit_E": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_SE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_S": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_SW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_W": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_NW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_N": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "hit_NE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_E": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_SE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_S": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_SW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_W": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_NW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_N": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "death_NE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        }
+      }
+    },
+    {
+      "name": "goleling",
+      "format": "webp",
+      "frames": 208,
+      "atlas_dimensions": [
+        [
+          2048,
+          1664
+        ]
+      ],
+      "webp_bytes": 217334,
+      "json_bytes": 47730,
+      "total_bytes": 265064,
+      "alpha_coverage_percent": [
+        4.865,
+        10.107
+      ],
+      "max_idle_center_drift_px": 1.12774658203125,
+      "idle_center_method": "reopened-rig body/head core",
+      "max_idle_bbox_center_drift_px": 29.732,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "winged",
+      "pose_checked_frames": 208,
+      "t_pose_frames": null,
+      "bind_pose_frames": null,
+      "min_max_arm_degrees_from_bind": 0.5974,
+      "min_skin_rms_from_bind_height": 0.050301,
+      "lossless_alpha_matches_pose_evidence": 208,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [],
+      "gpu_rgba_bytes": 13631488,
+      "gpu_rgba_mib": 13.0,
+      "min_opaque_pixels_alpha128": 797,
+      "min_opaque_pixels_alpha250": 595,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_SE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_S": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_SW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_W": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_NW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_N": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "idle_NE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "run_E": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_SE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_S": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_SW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_W": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_NW": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_N": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "run_NE": {
+          "frames": 5,
+          "unique_aligned_masks": 5
+        },
+        "attack_E": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_SE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_S": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_SW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_W": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_NW": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_N": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "attack_NE": {
+          "frames": 7,
+          "unique_aligned_masks": 7
+        },
+        "hit_E": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_SE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_S": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_SW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_W": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_NW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_N": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_NE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "death_E": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_SE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_S": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_SW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_W": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_NW": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_N": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        },
+        "death_NE": {
+          "frames": 4,
+          "unique_aligned_masks": 4
+        }
+      }
+    },
+    {
+      "name": "slime",
+      "format": "webp",
+      "frames": 176,
+      "atlas_dimensions": [
+        [
+          2048,
+          1408
+        ]
+      ],
+      "webp_bytes": 277970,
+      "json_bytes": 40374,
+      "total_bytes": 318344,
+      "alpha_coverage_percent": [
+        41.058,
+        43.365
+      ],
+      "max_idle_center_drift_px": 1.5,
+      "idle_center_method": "opaque silhouette bbox center",
+      "max_idle_bbox_center_drift_px": 1.5,
+      "unique_direction_hashes": {
+        "idle": 8,
+        "run": 8,
+        "attack": 8,
+        "hit": 8,
+        "death": 8
+      },
+      "pose_profile": "floating",
+      "pose_checked_frames": 176,
+      "t_pose_frames": null,
+      "bind_pose_frames": null,
+      "min_max_arm_degrees_from_bind": 0.0,
+      "min_skin_rms_from_bind_height": 0.004398,
+      "lossless_alpha_matches_pose_evidence": 176,
+      "clipped_frames": 0,
+      "idle_weapon_projected_span_px": [],
+      "gpu_rgba_bytes": 11534336,
+      "gpu_rgba_mib": 11.0,
+      "min_opaque_pixels_alpha128": 6727,
+      "min_opaque_pixels_alpha250": 6470,
+      "animated_silhouettes": {
+        "idle_E": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_SE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_S": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_SW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_W": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_NW": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_N": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "idle_NE": {
+          "frames": 12,
+          "unique_aligned_masks": 12
+        },
+        "run_E": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_SE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_S": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_SW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_W": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_NW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_N": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "run_NE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_E": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_SE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_S": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_SW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_W": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_NW": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_N": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "attack_NE": {
+          "frames": 3,
+          "unique_aligned_masks": 3
+        },
+        "hit_E": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_SE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_S": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_SW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_W": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_NW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_N": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "hit_NE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_E": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_SE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_S": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_SW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_W": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_NW": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_N": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        },
+        "death_NE": {
+          "frames": 2,
+          "unique_aligned_masks": 2
+        }
+      }
+    }
+  ],
+  "file_sha256": {
+    "demon/atlas-0.webp.json": "01d800e3e8fca6f76481826ea06d894733e751e10ede8c5035e2bda6f60de92b",
+    "demon/atlas-0.webp": "581d7b85e7009f59ff750e1bbede6af6fb5b9cf5fb5b3834fbf38e5eda5be0a7",
+    "goleling/atlas-0.webp.json": "5ed0527af11789d912d7f80a380e5211596bfdfeae67994b4e814541092de96b",
+    "goleling/atlas-0.webp": "e8fbd44b37bc8017087638abf2669b19d2c346dbe91bf8b442eae241fcb1f7f5",
+    "slime/atlas-0.webp.json": "a3b511515fb1d18030cd146613efb6ebc03e618410503ba1bb1f7b8f726a14f5",
+    "slime/atlas-0.webp": "29927068e690d54e2ab559c79da0feab32e1470909ad94d3e5079f1d0bd980cf"
+  },
+  "silhouette_method": "alpha >=128, centroid aligned without scaling on 256px canvas, 5 states x 8 octants x 3 phases per species pair",
+  "silhouette_pairs": [
+    {
+      "all_frame_min_xor_pixels": 404,
+      "unique_mask_pairs_checked": 38400,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "demon",
+        "goleling"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 462,
+      "min_xor_over_union": 0.39965397923875434,
+      "identical_silhouettes": 0
+    },
+    {
+      "all_frame_min_xor_pixels": 5352,
+      "unique_mask_pairs_checked": 30720,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "demon",
+        "slime"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 5401,
+      "min_xor_over_union": 0.802883900698677,
+      "identical_silhouettes": 0
+    },
+    {
+      "all_frame_min_xor_pixels": 5077,
+      "unique_mask_pairs_checked": 32000,
+      "all_frame_identical_masks": 0,
+      "ids": [
+        "goleling",
+        "slime"
+      ],
+      "samples": 120,
+      "min_xor_pixels": 5151,
+      "min_xor_over_union": 0.7598766338669408,
+      "identical_silhouettes": 0
+    }
+  ],
+  "empty_frames": 0,
+  "identical_silhouettes": 0,
+  "preserved_bat_comparison": {
+    "samples": 120,
+    "min_xor_pixels": 691,
+    "min_xor_over_union": 0.5577078288942696,
+    "parent_visual_approved": false,
+    "anatomy": "Goleling floating round head/body, no dangling limb silhouette; bat retains tall ears, long body/legs and angular wings",
+    "method": "decoded alpha >=128, centroid alignment, no scale or tint comparison"
+  }
+}

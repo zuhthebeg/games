@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
+const repositoryRoot = new URL('../../', import.meta.url);
 import {STAGES,MONSTERS} from '../js/content/combat.js';
 import {BALANCE} from '../js/content/balance.js';
 import {BIOMES,biomeForStage} from '../js/content/biomes.js';
@@ -37,8 +39,17 @@ test('U5 preserves every original stage, tuning, map gate, palette, reward and i
  for(const [id,map] of Object.entries(oldMap.MAPS))assert.deepEqual(MAPS[id],map,id);
  assert.deepEqual(oldMap.REGION_EDGES,REGION_EDGES.slice(0,oldMap.REGION_EDGES.length));
  // N3 was independently reviewed and deployed after U5 branched; pin all N3 mechanics/transport bytes. AV1 world/prediction changes are covered by exact abcd094 disabled traces and AV1 fixtures.
- assert.equal(execFileSync('git',['diff','--exit-code','3104089','--','arpg/js/sim/core.js','arpg/js/sim/movement.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/quest-objectives.js','arpg/js/net/session.js','arpg/js/net/loopback.js','arpg/js/net/lobby.js','arpg/js/net/skill-presentation.js','arpg/js/render/telegraph-time.js'],{encoding:'utf8'}),'','reviewed N3 tracked bytes unchanged');
- assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/assets','arpg/tools/art'],{encoding:'utf8'}),'','M2a art tracked bytes unchanged');
+ assert.equal(execFileSync('git',['diff','--exit-code','3104089','--','arpg/js/sim/core.js','arpg/js/sim/movement.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/quest-objectives.js','arpg/js/net/session.js','arpg/js/net/loopback.js','arpg/js/net/lobby.js','arpg/js/net/skill-presentation.js','arpg/js/render/telegraph-time.js'],{encoding:'utf8',cwd:repositoryRoot}),'','reviewed N3 tracked bytes unchanged');
+ // M2b is an explicit additive kit boundary, not an exception for old sprite bytes.
+ // Pin git pathspecs to repository root; arpg/ cwd used to make this check vacuous.
+ assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/assets','arpg/tools/art',
+  ':!arpg/tools/art/m2b', ':!arpg/assets/sprites/manifest.json',
+  ':!arpg/assets/sprites/demon', ':!arpg/assets/sprites/goleling', ':!arpg/assets/sprites/slime'],
+  {encoding:'utf8',cwd:repositoryRoot}),'','M2a and every pre-M2b art byte unchanged');
+ const oldManifest=JSON.parse(execFileSync('git',['show','6eca8b8:arpg/assets/sprites/manifest.json'],{encoding:'utf8'}));
+ const manifest=JSON.parse(readFileSync(new URL('../assets/sprites/manifest.json',import.meta.url)));
+ assert.deepEqual(manifest.slice(0,oldManifest.length),oldManifest);
+ assert.deepEqual(manifest.slice(oldManifest.length).map(entry=>entry.id),['demon','goleling','slime']);
 });
 
 test('U5 gate is S20, then sequential clears, never TD1/QC1; forged historical U5 clears cannot bypass S20',()=>{

@@ -3,6 +3,7 @@ import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.
 export const ATLAS_IDS = Object.freeze({
   ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',
+  demon: 'demon', goleling: 'goleling', slime: 'slime',
   blade: 'hero-sword',
   bow: 'hero-bow',
   focus: 'hero-focus',

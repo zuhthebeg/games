@@ -135,7 +135,7 @@ test('C1 1,000 seeds per monster retain all baseline drop bytes except slinger/w
   // Preserve all original nine seeded-drop baselines; main's three and U1's four additions are explicit.
   const baselineIds = ['scarecrow','goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','spirit','poison_spider'];
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !baselineIds.includes(id)),
-    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat']);
+    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat','demon','goleling','slime']);
   assert.ok(baselineIds.every(id => Object.hasOwn(MONSTERS, id)));
   const oldItems=execFileSync('git',['show','cb53781:arpg/js/meta/items.js'],{encoding:'utf8'});
   const oldLoot=execFileSync('git',['show','cb53781:arpg/js/content/loot.js'],{encoding:'utf8'});

@@ -9,7 +9,7 @@
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
     "individual_page_text": "Public Domain (CC0)",
     "attribution_required": false,
-    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "changes": "Original GLB/HTML preserved. Derived 8-direction 128px Blender bake of five native clips; local material colors, fixed imported horizontal Root reference, constant ground lift. Demon original Trident mesh reoriented to upright idle grip while retaining Middle1.L skin. No generated primitive character.",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
     "files": [
       {
@@ -35,7 +35,7 @@
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
     "individual_page_text": "Public Domain (CC0)",
     "attribution_required": false,
-    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "changes": "Original GLB/HTML preserved. Derived 8-direction 128px Blender bake of five native clips; local material colors and fixed ground anchor. Slime constant 0.012-world-unit ground lift; Goleling original wing anatomy retained. No generated primitive character.",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
     "files": [
       {
@@ -61,7 +61,7 @@
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
     "individual_page_text": "Public Domain (CC0)",
     "attribution_required": false,
-    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "changes": "Original GLB/HTML preserved. Derived 8-direction 128px Blender bake of five native clips; local material colors and fixed ground anchor. Slime constant 0.012-world-unit ground lift; Goleling original wing anatomy retained. No generated primitive character.",
     "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
     "files": [
       {

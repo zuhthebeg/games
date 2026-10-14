@@ -1,0 +1,188 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/m2b/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/m2b/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "demon",
+      "label": "악마",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2b/source/demon.glb",
+      "keep": [
+        "Demon",
+        "Trident"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "pose_profile": "humanoid",
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Weapon",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "demon"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "material_colors": {
+        "Demon_Main": [
+          0.64,
+          0.14,
+          0.11
+        ],
+        "Black": [
+          0.45,
+          0.32,
+          0.16
+        ],
+        "Eye_White": [
+          0.94,
+          0.94,
+          0.9
+        ],
+        "Eye_Black": [
+          0.01,
+          0.01,
+          0.01
+        ]
+      },
+      "preserve_source_colors": true,
+      "framing_margin": 1.09,
+      "ground_lift": 0.1
+    },
+    {
+      "name": "goleling",
+      "label": "고링",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2b/source/goleling.glb",
+      "keep": [
+        "Goleling"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Wing1.L",
+        "Wing1.R"
+      ],
+      "pose_profile": "winged",
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Headbutt",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "goleling"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "material_colors": {
+        "Goleling_Main": [
+          0.36,
+          0.4,
+          0.48
+        ],
+        "Goleling_Secondary": [
+          0.58,
+          0.63,
+          0.69
+        ],
+        "Eye_White": [
+          0.94,
+          0.94,
+          0.9
+        ],
+        "Eye_Black": [
+          0.01,
+          0.01,
+          0.01
+        ]
+      },
+      "preserve_source_colors": true
+    },
+    {
+      "name": "slime",
+      "label": "슬라임",
+      "model": "C:/Users/user/ai-tools/arpg-art/m2b/source/slime.glb",
+      "keep": [
+        "Green_Blob",
+        "Green_Blob.001"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "pose_profile": "floating",
+      "root_bones": [
+        "Body"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Walk",
+        "attack": "CharacterArmature|Bite_Front",
+        "hit": "CharacterArmature|HitRecieve",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "slime"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "material_colors": {
+        "Green_Main": [
+          0.22,
+          0.72,
+          0.28
+        ],
+        "Eye_White": [
+          0.94,
+          0.94,
+          0.9
+        ],
+        "Eye_Black": [
+          0.01,
+          0.01,
+          0.01
+        ]
+      },
+      "preserve_source_colors": true,
+      "ground_lift": 0.012
+    }
+  ]
+}
