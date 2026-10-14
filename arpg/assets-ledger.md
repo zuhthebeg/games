@@ -173,3 +173,16 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 - Ghost: **Ghost by Quaternius**, https://poly.pizza/m/Iip30bDHmu, **CC0 1.0** (individual page: Public Domain (CC0)). Original flying-idle/fast-flight/punch/hit/death clips; no new ability.
 - Giant bat: **Bat by Quaternius**, https://poly.pizza/m/hNO9XvjlKa, **CC0 1.0** (individual page: Public Domain (CC0)). Original flight/attack/hit/death; fast-flight is a local time-scaled copy, not a replacement for hit/death.
 - Provenance: `tools/art/m2a/license-evidence.json` records each individual page/license quotation, original GLB and HTML SHA-256; legal text and page extracts bundled. Raw HTML/GLBs, prepared GLBs, blends/PNGs stay at `C:/Users/user/ai-tools/arpg-art/m2a/`. Runtime uses local WebP + JSON, no hotlinks. Generic Quaternius QAL not used as license evidence. Rejected unrigged candidate: https://poly.pizza/m/pEwXEubhxz (no animations/skin).
+
+
+## M2b provisional source checkpoint — not runtime art
+
+Status: **BLOCKED before bake/registration**. Source research only; parent-owned renderer mappings are required. No new hunt/stage/drop/kit is delivered. Evidence: `tools/art/m2b/license-evidence.json`, individual license extracts, full `LICENSE-CC0-1.0.txt`, read-only `inventory.json`. Untouched originals and original individual HTML are retained at `C:/Users/user/ai-tools/arpg-art/m2b/source/`. No model modifications; import for inventory only.
+
+| Candidate | Individual source | Author | Verified individual license | Distribution state |
+|---|---|---|---|---|
+| Demon | https://poly.pizza/m/LnfIziKv4o | Quaternius | Public Domain CC0 1.0 | Offline original only, not shipped |
+| Goleling | https://poly.pizza/m/71gomWolax | Quaternius | Public Domain CC0 1.0 | Offline original only; bat-like wing silhouette not yet approved |
+| Green Blob (slime) | https://poly.pizza/m/y4kJh8EeYS | Quaternius | Public Domain CC0 1.0 | Offline original only, not shipped |
+
+Legal: https://creativecommons.org/publicdomain/zero/1.0/ . General Quaternius licensing is not used as evidence. Actual pose/silhouette/anchor/grip/art quality and GPU-budget acceptance are pending, not inferred from source license or the presence of a rig.

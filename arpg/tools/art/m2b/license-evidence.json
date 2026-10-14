@@ -1,0 +1,80 @@
+[
+  {
+    "id": "demon",
+    "title": "Demon",
+    "author": "Quaternius",
+    "model_page": "https://poly.pizza/m/LnfIziKv4o",
+    "download_url": "https://static.poly.pizza/46b52ba4-5d2a-4fc8-85cc-3e980f199141.glb.br",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "individual_page_text": "Public Domain (CC0)",
+    "attribution_required": false,
+    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
+    "files": [
+      {
+        "file": "demon-page.html",
+        "bytes": 111100,
+        "sha256": "0dbedf3f4903e124a55e655c1b86e356453bb9f56fbdd3437044a3b839773ef6"
+      },
+      {
+        "file": "demon.glb",
+        "bytes": 485516,
+        "sha256": "7da854e1d43428b89b1afca0feca3f323b869b1d8ed7df74d17354260b607262"
+      }
+    ],
+    "legal_text_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  },
+  {
+    "id": "goleling",
+    "title": "Goleling",
+    "author": "Quaternius",
+    "model_page": "https://poly.pizza/m/71gomWolax",
+    "download_url": "https://static.poly.pizza/51bf31d7-1aee-4a51-acb1-d667843af205.glb.br",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "individual_page_text": "Public Domain (CC0)",
+    "attribution_required": false,
+    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
+    "files": [
+      {
+        "file": "goleling-page.html",
+        "bytes": 111298,
+        "sha256": "00e84836ab518efd29953994553f7438f240f73fb62b4b68d9ffec0085bf4afa"
+      },
+      {
+        "file": "goleling.glb",
+        "bytes": 217332,
+        "sha256": "fe6b5a04aef77aa9b38afee216802823b543d2409674bc86bd8bd152cb8cebce"
+      }
+    ],
+    "legal_text_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  },
+  {
+    "id": "slime",
+    "title": "Green Blob",
+    "author": "Quaternius",
+    "model_page": "https://poly.pizza/m/y4kJh8EeYS",
+    "download_url": "https://static.poly.pizza/64ab590e-1f77-4678-b357-78c430fd73bf.glb.br",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "individual_page_text": "Public Domain (CC0)",
+    "attribution_required": false,
+    "changes": "None. Original source downloaded and imported read-only for rig inventory; no delivered derivative.",
+    "archive": "C:/Users/user/ai-tools/arpg-art/m2b/source",
+    "files": [
+      {
+        "file": "slime-page.html",
+        "bytes": 111113,
+        "sha256": "f48891d01f744730b3567cd050bc994cfc2359c0c2e8a88d3f8a14caf35f983a"
+      },
+      {
+        "file": "slime.glb",
+        "bytes": 74812,
+        "sha256": "31c46edd6306e4ab21bec4608b41003baa74f430f27d357b90c9b6401d88a584"
+      }
+    ],
+    "legal_text_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  }
+]
