@@ -124,15 +124,15 @@ test('AV1 finishers use heavy FEEL without overriding critical/counter tiers',()
 test('AV1 5 forms × repeat/auto 30-second real-hit DPS stays within ±5%',()=>{
   const table=dpsTable();assert.equal(table.length,10);for(const r of table)assert.ok(Math.abs(r.deltaPct)<=5,JSON.stringify(r));
 });
-test('AV1 combo-disabled full serialized worlds/events match captured abcd094 legacy roster (exact three M2b replacements reversed) for all27stages, 3seeds, 5forms',()=>{
+test('AV1 combo-disabled full serialized worlds/events match captured abcd094 legacy roster (exact four M2b/SUC placements reversed) for all27stages, 3seeds, 5forms',()=>{
   const before=JSON.parse(readFileSync(new URL('./fixtures/av1-abcd094-world-traces.json',import.meta.url)));
   assert.deepEqual(withoutPlacement(()=>withoutCombos(comboWorldTraces)),before);
 });
-test('AV1 legacy content preserves all27stages/original monsters/nonbasic power from abcd094 after exactly three approved M2b roster slots are reversed',async()=>{
+test('AV1 legacy content preserves all27stages/original monsters/nonbasic power from abcd094 after exactly four approved M2b/SUC roster slots are reversed',async()=>{
   let s=execFileSync('git',['show','abcd094:arpg/js/content/combat.js'],{encoding:'utf8'});
   s=s.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,new URL('../js/content/combat.js',import.meta.url)).href));
   const old=await import('data:text/javascript;base64,'+Buffer.from(s).toString('base64'));
-  assert.deepEqual(Object.fromEntries(Object.entries(MONSTERS).filter(([id])=>!['demon','goleling','slime'].includes(id))),old.MONSTERS);assert.deepEqual(legacyPlacementStages(STAGES),old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
+  assert.deepEqual(Object.fromEntries(Object.entries(MONSTERS).filter(([id])=>!['demon','goleling','slime','succubus'].includes(id))),old.MONSTERS);assert.deepEqual(legacyPlacementStages(STAGES),old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
   const current=structuredClone(ABILITIES);for(const id of ['slash','arrow','focus_pulse']){delete current[id].combo;delete current[id].comboWindowMs;}
   assert.deepEqual(current,old.ABILITIES);
   for(const path of ['arpg/js/content/balance.js','arpg/js/content/loot.js','arpg/js/content/world-map.js','arpg/js/meta/items.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/movement.js','arpg/js/net/session.js']) {

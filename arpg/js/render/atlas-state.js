@@ -4,6 +4,7 @@ import { BALANCE } from '../content/balance.js';
 export const ATLAS_IDS = Object.freeze({
   ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',
   demon: 'demon', goleling: 'goleling', slime: 'slime',
+  succubus: 'succubus',
   blade: 'hero-sword',
   bow: 'hero-bow',
   focus: 'hero-focus',

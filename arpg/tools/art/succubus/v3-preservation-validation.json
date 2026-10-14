@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "baseline": "a60fd5f",
+  "resume": "2bb9d6e",
+  "old_asset_and_source_files_byteidentical": 395,
+  "old_manifest_descriptors_exact": 20,
+  "v2_checkpoint_files_byteverified": 348,
+  "v2_anchor_exactly_preserved": {
+    "x": 0.5,
+    "y": 0.6178545951843262
+  },
+  "forbidden_runtime_diff_empty": [
+    "arpg/js",
+    "arpg/index.html",
+    "package.json",
+    "wrangler.jsonc",
+    ".gitignore"
+  ],
+  "decoded_RGBA_buffer_actual_bytes": 4100264,
+  "width": 1022,
+  "height": 1003,
+  "runtime_physical_phone_verified": false,
+  "parent_visual_approval": false
+}

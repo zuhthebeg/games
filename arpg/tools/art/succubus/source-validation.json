@@ -1,0 +1,93 @@
+{
+  "ok": true,
+  "bones": 19,
+  "mesh_objects": 38,
+  "keyed_channels": 117,
+  "markers": {
+    "idle": 1,
+    "run": 31,
+    "attack": 61,
+    "hit": 91,
+    "death": 121
+  },
+  "all_meshes_rigged": true,
+  "all_materials_opaque": true,
+  "imports": [],
+  "connected_garment_vertices": 3641,
+  "connected_garment_components": 1,
+  "blended_vertices": 3537,
+  "normalized_garment_weights": true,
+  "source_clips": {
+    "idle": {
+      "keyed_pose_hashes": [
+        "3ce71da6b023eb0ee5d25f2b835384f08e6c8465ca90884a2b1756ce36d3c8f2",
+        "de248112a185136b9eaee9523f0d18fcd66798d7e92f65a19408069db1effddd",
+        "70204f3ab9a3fd68d93c6df6209ed13bbcf3b4cb586e2a65e9a417f185415f01",
+        "de248112a185136b9eaee9523f0d18fcd66798d7e92f65a19408069db1effddd",
+        "6bc36d6573d955916cb757601405c51f68ee522fb890142e949d6895541bf791",
+        "2212c97e78185d026f8745904df9a978fd60d87a1b8111218a13a7b7cf4f34be",
+        "4cd3c198eb437f18d092ab8d32c6c31429ae9249b84bf059225fce2c6f7f17b2",
+        "2212c97e78185d026f8745904df9a978fd60d87a1b8111218a13a7b7cf4f34be"
+      ],
+      "unique_keyed_poses": 6,
+      "unique_deformed_garment_surfaces": 5
+    },
+    "run": {
+      "keyed_pose_hashes": [
+        "4a3713e957c3cf8451f4c7942955e591c35c60085e6ccc4b4919b6608301c262",
+        "9d9ecda50b9f01a5e3de346fea3de69bb5b68efd888e1049576a6fec9c6966dd",
+        "0ca9ccbb28b78135ff984e57361fd9f942f1f5624c4b49a7b7f8bf0e866ec7e1",
+        "0ca9ccbb28b78135ff984e57361fd9f942f1f5624c4b49a7b7f8bf0e866ec7e1",
+        "9d9ecda50b9f01a5e3de346fea3de69bb5b68efd888e1049576a6fec9c6966dd",
+        "a6e4bd20f21d1a946d9e9c4463809122292909d01b07a0f7b870bb61375b3c80",
+        "b32073b1a6c3202da080d0825252db1b85d8b0d0e42df87cd98a882fa7a88b4b",
+        "a3740fc3e1ef11ad5382d1a431f027136cea194084c1ad0253b12bfb65103492",
+        "a3740fc3e1ef11ad5382d1a431f027136cea194084c1ad0253b12bfb65103492",
+        "b32073b1a6c3202da080d0825252db1b85d8b0d0e42df87cd98a882fa7a88b4b"
+      ],
+      "unique_keyed_poses": 6,
+      "unique_deformed_garment_surfaces": 5
+    },
+    "attack": {
+      "keyed_pose_hashes": [
+        "0a0998c4d217eb705e4cb3dc265f0332913170a78e919315234e3e63781a856e",
+        "6abd40dca1a5c0fd40bc75effcb1e73cd53842796a07924fda90a9470c93a93e",
+        "b8ffdd297651cf3cf9df657e8577e9613b472dda4086ae55fc356df27bcd92e5",
+        "498250280058287e4395aee697a8e48472caebd281f4abdb2ec9ee3692e98910",
+        "3621b95cb021126e0dec44d27d2c895382c4b46a54cfa2f0a42e418856308218",
+        "90e4ba3394c937c5f31397290d1a3a4c389d49fb4c9ade7550c8db449b7337bd",
+        "d1babdee5f907c6d0665290a9edcca85dbb775b76b7bee581388812e7eaa00d8",
+        "35c643fd7c091d33ac3b0063c367ba777b764e5b67c773e3bdb9c3bd5dd54973"
+      ],
+      "unique_keyed_poses": 8,
+      "unique_deformed_garment_surfaces": 7
+    },
+    "hit": {
+      "keyed_pose_hashes": [
+        "733756b368a68f3def68fca285e85b6260efeffda645692478c15d5ce2aac545",
+        "1d647fad95766cd5e804de0b56a3f0c9efa4a50fb746977383d62bb66fe0ee54",
+        "73c5cdcc96483c28e11a6827db7bbcf19dc266adeedaa3d823ad77a8a841d1d8",
+        "d53444b2c08c9b75f2c93bb97870a567441af89ceeb9a5f9ee26175ac46577a9",
+        "2dcebbf1dfb239bfeaf62e49801083efb6fca778c12cad167c5fa5c7a1ee8246"
+      ],
+      "unique_keyed_poses": 5,
+      "unique_deformed_garment_surfaces": 3
+    },
+    "death": {
+      "keyed_pose_hashes": [
+        "63745e6fa98006f8e51831235d21e426474d4d206ec8373613c7705ad01677cb",
+        "374aa23162283dbc8f1b59d92a3c3aad15d0692b3f3abfd253a2bc0d1898d193",
+        "7bac3a52f4f0aceda006bdfbdbba7930686f7739cb128cbb34a3dc02bfa3ec22",
+        "f8abcd43cadd7d9965fc00b0de24983053cb457d2995fe0162be82a9b32b96b2",
+        "79d541d18d0ed2c35dc96211cf0b57c08eb8f90370cc358eb5c3d4632754b8b3",
+        "91d49905fbbac664e4e61f863951ed660d8ddf119decb5ba55fead5caf2c8bbc",
+        "cf5ae09c7732cf093738c14638c08905c479d91552a394dbc39d28211a9732ac",
+        "700034dee8148a7ecb05a8f73eb719ec00bbc15653b2022400e702aa6bfefefd"
+      ],
+      "unique_keyed_poses": 8,
+      "unique_deformed_garment_surfaces": 8
+    }
+  },
+  "exact_source_bone_samples": 39,
+  "source_blend_sha256": "f8269cbf5b646c155ad3102a6245cc011703933b043caf4ccc64abcc2cd64824"
+}

@@ -332,6 +332,11 @@ export const MONSTERS = {
     lifeState: 'living', hp: 62, r: 22, speed: 75, poise: 30, kbResist: 0,
     abilities: ['wolf_bite'], xp: 8, keepRange: [45, 75],
   },
+  // Hostile late-map ranged escort, exactly the existing slinger role; never a training dummy.
+  succubus: {
+    lifeState: 'living', hp: 40, r: 16, speed: 104, poise: 20, kbResist: 0,
+    abilities: ['sling_stone'], xp: 7, keepRange: [230, 330],
+  },
 };
 
 // Compact stage constructor for S8+: [monster, atMs, fx, fy]. goal killAll; concurrency comes from BALANCE.
@@ -342,8 +347,7 @@ const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
 export const STAGES = {
   S1: {
     name: '소환 시험', goal: 'timer', timerMs: 30000, maxConcurrent: 2,
-    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 },
-      { monster: 'training_dragon', at: 0, fx: 0.82, fy: 0.5 }],
+    spawns: [{ monster: 'scarecrow', at: 0, fx: 0.62, fy: 0.5 }],
   },
   S2: {
     name: '끊긴 여관길', goal: 'killAll', maxConcurrent: 3,
@@ -427,6 +431,8 @@ for (const [id, stage] of Object.entries(STAGES)) {
 STAGES.S8.spawns[0].monster = 'slime';
 STAGES.S12.spawns[2].monster = 'goleling';
 STAGES.S17.spawns[3].monster = 'demon';
+// One first-wave castle corridor caster; retain every original schedule and quest target.
+STAGES.S19.spawns[3].monster = 'succubus';
 
 for (const q of Object.values(OBJECTIVE_QUESTS)) {
   const tune = BALANCE.stages[q.mapId];

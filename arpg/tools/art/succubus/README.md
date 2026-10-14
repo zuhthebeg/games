@@ -1,0 +1,32 @@
+# Current enemy integration
+
+This selective copy uses approved v3 pixels/source unchanged. Runtime ID is `succubus`, one S19 ranged escort; S1 training replacement and historical S1 smoke/world oracles were NOT imported. Source-v3 config/verifier retained separately. Current verify.py is pixel-equivalent without source-side preview writes. New enemy tests/native evidence supersede training-only runtime evidence.
+
+# Original adult succubus v3 — parent visual approval pending
+
+## Source and revision checkpoints
+V2 remains untouched at `C:/Users/user/ai-tools/arpg-art/succubus/`. Before any changes, all 348 offline files were copied byte-for-byte to `C:/Users/user/ai-tools/arpg-art/succubus-checkpoint-v2/`; `checkpoint-sha256.json` records and verifies every original file. Repository pipeline scripts and runtime v2 atlas files are also copied there. The original rejected v2 generated previews remain available.
+
+V3 is authored exclusively from the original procedural source at `C:/Users/user/ai-tools/arpg-art/succubus-v3/`. No imported/borrowed character, textures, rig or clips. The phase-1 offline `succubus-checkpoint-v3-model/` preserves the blend, scripts, four-view PNGs and all 312 original 256px frames before delivery changes. All previous dragon/humanoid assets and sources are untouched.
+
+The new opaque fitted garment is one welded mesh connecting pelvis, waist, ribcage, shoulders and limbs, rather than stacked armor sections. It has 3,641 vertices and normalized two-bone weights; 3,537 vertices have at least 5% contribution from both bones. Smaller eyes/nose, narrower jaw and mature proportions replace the rejected face. Burgundy/plum palette, original horns, bat wings and tail remain. All body coverage is opaque; neutral poses, no explicit content or young-looking character. Face and silhouette quality still require actual parent image inspection.
+
+The independent source inspector reopens the saved .blend, checks one garment component, every material opaque, every mesh rigged, 19 bones, 117 keyed channels and all five markers. It matches 39 keyed bone samples to bake records and verifies changing deformed garment surfaces in each clip. Decorative pieces remain rigidly weighted; garment joints are blended.
+
+## Reproduce safely
+1. Preserve current offline/source/runtime assets before running another revision. Use a fresh revision directory and update config paths. Do not overwrite checkpoints or old kits.
+2. Copy `generate.py`, `config.json` and `verify-source.py` to the configured Windows revision root. Run installed Windows Blender 5.2.2 LTS `-b --factory-startup --python generate.py -- config.json --preview` there. Inspect the actual frontal/side/back/isometric PNGs. Compose a four-view contact sheet from those PNGs and save the checkpoint.
+3. Run the same Blender command without `--preview`. It retains 312 original 256px offline PNGs: eight directions × idle8/run10/attack8/hit5/death8. One fixed all-pose envelope and ground anchor is used. Run Blender with `verify-source.py -- config.json` after baking and copy its JSON evidence into this folder.
+4. Run `python3 arpg/tools/art/succubus/pack.py arpg/tools/art/succubus/config.json --repo "$PWD" --merge-manifest`. Only succubus is allowed. 256px originals are not changed. The delivery images are Lanczos-resized to128px, saved separately, trimmed using original alpha `getbbox()` with **no threshold**, then shelf-packed with two-pixel transparent gutters. Whole direction-clips stay on a page because AtlasLibrary merges animation names rather than appending frames. Previous runtime sheets move into a fresh offline archive; rerunning over that archive intentionally fails rather than overwriting it.
+5. Pixi's existing `meta.scale=0.5`, `sourceSize=128` and true `spriteSourceSize` trims preserve **256px logical size**, normalized ground anchors and trim offsets without renderer changes. Run `PYTHONDONTWRITEBYTECODE=1 python3 arpg/tools/art/succubus/test_pack.py` and `.../verify.py`. The verifier reconstructs each delivered canvas and compares all alpha bytes with the original alpha of its128px reference, and retains256px source-alpha hashes and bone hashes. RGB WebP is lossy quality85; alpha is lossless.
+6. Run `node arpg/test/succubus-browser-smoke.mjs`, copy successful output to `native-smoke.json`, then `node --test arpg/test/*.test.js`. Parent-only stamp is the sole expected failure. Do not stamp or deploy as the worker.
+
+## Budgets and threshold discipline
+V2: seven sheets, **84,410,368 raw RGBA bytes /80.500 MiB**. V3: one **1022×1003** sheet, **4,100,264 raw RGBA bytes /3.910 MiB**, below16MiB target and20MiB limit. WebP+JSON totals525,392 bytes. These are decoded base-level RGBA allocation estimates from actual dimensions, not device VRAM telemetry; mip/driver/canvas overhead is not included. Native Pixi independently reports those exact pixel dimensions and byte arithmetic.
+
+The original256px checks retain >1000 pixels at alpha>16 and two-pixel source-frame margins. No old asset or old test threshold is changed. At128px, the **explicit logical-area equivalent** is >250 actual pixels (×4=>1000 at256 logical pixels); the measured minimum is364. This is disclosed resolution normalization, not a claim that every128px frame has1000 raw pixels. All312 delivered alpha reconstructions match; zero empty/clipped frames; all40 clips retain changing pixels, alpha masks and source bone poses.
+
+## Integration and limitations
+Only the previously registered S1 sample identity remains `training_succubus`; training_dragon/scarecrow/TD1, hp1/invulnerability/stationary/xp0, timer30s, gates and rewards are unchanged from2bb9d6e. Historical trace/byte proofs remain pinned to a60fd5f. There are no renderer/sim/net changes.
+
+Generated review images show real source PNGs and real delivered WebP pixels (128px delivery enlarged nearest-neighbor), never screenshots or substitute high-resolution art. All-direction death framing makes idle occupy a modest part of the128px canvas, and small face/finger details are necessarily less readable. Low-poly garment panels remain angular; shoulder and hip deformation is not a production-quality anatomical sculpt. Run/attack/death clips are presentation-tested but never grant tutorial AI. Desktop/mobile headless Chromium native input smoke is **not real-phone/WAN/GPU verification**. Parent owns visual approval, stamp, integration and deployment; none is claimed here.

@@ -23,25 +23,26 @@ import {masteryTraces} from './skill-mastery-trace.mjs';
 import {MASTERY_SKILLS} from '../js/meta/skill-mastery.js';
 const root=new URL('../../',import.meta.url),base='ded59e3';
 const targets={S8:[0,'slime'],S12:[2,'goleling'],S17:[3,'demon']};
+const cumulative={...targets,S19:[3,'succubus']};
 async function oldCombat(){
  let source=execFileSync('git',['show',base+':arpg/js/content/combat.js'],{cwd:root,encoding:'utf8'});
  source=source.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,new URL('../js/content/combat.js',import.meta.url)).href));
  return import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 }
-test('M2b placement exact three first-wave escort replacements preserve all encounter and XP budgets',async()=>{
+test('M2b three escort slots plus exact authorized S19 caster slot preserve all encounter and XP budgets',async()=>{
  const old=await oldCombat();assert.deepEqual(Object.keys(combat),Object.keys(old));
  for(const [key,value] of Object.entries(old)) {
   if(typeof value==='function')assert.equal(combat[key].toString(),value.toString(),key);
   else if(!['MONSTERS','STAGES'].includes(key))assert.deepEqual(combat[key],value,key);
  }
  for(const [id,s] of Object.entries(old.STAGES)){
-  const expected=structuredClone(s),replacement=targets[id];
-  if(replacement){assert.equal(expected.spawns[replacement[0]].monster,'goblin_grunt');expected.spawns[replacement[0]].monster=replacement[1];}
+  const expected=structuredClone(s),replacement=cumulative[id];
+  if(replacement){assert.equal(expected.spawns[replacement[0]].monster,id==='S19'?'goblin_slinger':'goblin_grunt');expected.spawns[replacement[0]].monster=replacement[1];}
   assert.deepEqual(combat.STAGES[id],expected,id);
   const xp=rows=>rows.reduce((sum,e)=>sum+combat.MONSTERS[e.monster].xp,0);
   assert.equal(xp(s.spawns),xp(combat.STAGES[id].spawns),id+' kill XP');
  }
- for(const [id,m] of Object.entries(old.MONSTERS))if(!Object.values(targets).some(v=>v[1]===id))assert.deepEqual(combat.MONSTERS[id],m,id);
+ for(const [id,m] of Object.entries(old.MONSTERS))if(!Object.values(cumulative).some(v=>v[1]===id))assert.deepEqual(combat.MONSTERS[id],m,id);
  for(const [stage,[,id]] of Object.entries(targets)){
   const m=combat.MONSTERS[id],grunt=combat.MONSTERS.goblin_grunt;
   for(const k of ['hp','xp','poise','kbResist'])assert.equal(m[k],grunt[k],id+'/'+k);
@@ -54,30 +55,30 @@ test('M2b placement exact three first-wave escort replacements preserve all enco
  }
  assert.equal(MONSTER_NAMES.goleling,'고링');
 });
-test('M2b frozen source/art/atlas/HUD/sim/net and objective/tuning/economy bytes; only content and tests differ',()=>{
+test('M2b/SUC approved content/identity/one registry key/new-art boundaries; original HUD/sim/net/objective/tuning/economy stay frozen',()=>{
  const paths=execFileSync('git',['diff','--name-only',base,'--','arpg'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean);
- const allowed=new Set(['arpg/js/content/combat.js','arpg/js/content/loot.js','arpg/index.html']);
- for(const p of paths)assert.ok(allowed.has(p)||p.startsWith('arpg/test/'),p);
+ const allowed=new Set(['arpg/js/content/combat.js','arpg/js/content/loot.js','arpg/js/content/monsters.js','arpg/js/render/atlas-state.js','arpg/assets/sprites/manifest.json','arpg/assets-ledger.md','arpg/index.html']);
+ for(const p of paths)assert.ok(allowed.has(p)||p.startsWith('arpg/test/')||p.startsWith('arpg/assets/sprites/succubus/')||p.startsWith('arpg/tools/art/succubus/'),p);
  // If the parent stamps later, require the exact generated stamp result, never arbitrary index edits.
  const original=execFileSync('git',['show',base+':arpg/index.html'],{cwd:root,encoding:'utf8'});
  const current=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  let stamped=original;
- for(const p of ['js/content/combat.js','js/content/loot.js']){
+ for(const p of ['js/content/combat.js','js/content/loot.js','js/content/monsters.js','js/render/atlas-state.js']){
   const hash=createHash('sha256').update(readFileSync(new URL('../'+p,import.meta.url))).digest('hex').slice(0,10);
   stamped=stamped.replace(new RegExp('(\\./'+p.replaceAll('.','\\.')+'\\?v=)[a-f0-9]{10}'),'$1'+hash);
  }
  assert.ok(current===original||current===stamped);
 });
-test('M2b loot adds exactly three grunt-equivalent tables and preserves every original table',async()=>{
+test('M2b exact three grunt tables plus authorized succubus table preserve every original loot table',async()=>{
  const source=execFileSync('git',['show',base+':arpg/js/content/loot.js'],{cwd:root,encoding:'utf8'});
  const old=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
  const current=await import('../js/content/loot.js');
  assert.deepEqual(Object.keys(current),Object.keys(old));
  for(const [key,value] of Object.entries(old))if(key!=='NEW_MONSTER_DROPS')assert.deepEqual(current[key],value,key);
- const added=['demon','goleling','slime'];
+ const added=['demon','goleling','slime','succubus'];
  assert.deepEqual(Object.keys(NEW_MONSTER_DROPS).filter(k=>!added.includes(k)),Object.keys(old.NEW_MONSTER_DROPS));
  for(const [id,table] of Object.entries(old.NEW_MONSTER_DROPS))assert.deepEqual(NEW_MONSTER_DROPS[id],table,id);
- for(const id of added)assert.deepEqual(NEW_MONSTER_DROPS[id],{gold:[3,6],stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}],items:[{id:'goblin_cleaver',chance:.06}]});
+ for(const id of added.filter(id=>id!=='succubus'))assert.deepEqual(NEW_MONSTER_DROPS[id],{gold:[3,6],stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}],items:[{id:'goblin_cleaver',chance:.06}]});
 });
 test('M2b seeded raw drops equal grunt byte-for-byte: gold, stacks, legacy gear, ordinary gear, stones and scrolls',()=>{
  for(const [stage,[,id]] of Object.entries(targets))for(const threat of [1,2,3])for(const elite of [false,true])for(const bonus of [0,20])for(let seed=0;seed<256;seed++){
@@ -110,19 +111,19 @@ for(const [stage,[,id]] of Object.entries(targets))test(`M2b ${stage}: recommend
   const map=new Map(),store=new SaveStore({getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)});store.save(out.save);assert.deepEqual(store.load(),out.save);
  }
 });
-test('M2b 243 current host traces: all 216 non-target traces identical, exactly 27 target traces changed',async()=>{
+test('M2b 243 current host traces: all 207 non-target traces identical, exactly 36 cumulative target traces changed',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'arpg-m2b-traces-'));
  try{
   const archive=execFileSync('git',['archive',base,'arpg/js','package.json'],{cwd:root,maxBuffer:10*1024*1024});
   execFileSync('tar',['-x','-C',dir],{input:archive});
   const before=await placementTraces(pathToFileURL(dir+'/')),after=await placementTraces(root);
   assert.equal(before.length,243);assert.equal(after.length,243);let changed=0;
-  for(let i=0;i<before.length;i++)if(targets[before[i].stage]){assert.notEqual(after[i].sha256,before[i].sha256);changed++;}else assert.deepEqual(after[i],before[i],before[i].stage);
-  assert.equal(changed,27);
+  for(let i=0;i<before.length;i++)if(cumulative[before[i].stage]){assert.notEqual(after[i].sha256,before[i].sha256);changed++;}else assert.deepEqual(after[i],before[i],before[i].stage);
+  assert.equal(changed,36);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 
-test('M2b actual roster retains every non-target AV1 and mastery fixture, with differences confined to the three target maps',()=>{
+test('M2b actual roster retains every non-target AV1 and mastery fixture, with differences confined to the four cumulative target maps',()=>{
  const comboBaseline=JSON.parse(readFileSync(new URL('./fixtures/av1-enabled-world-traces.json',import.meta.url)));
  const masteryBaseline=JSON.parse(readFileSync(new URL('./fixtures/skill-mastery-traces.json',import.meta.url)));
  const actuals=[['combo',comboWorldTraces(),comboBaseline],
@@ -132,9 +133,9 @@ test('M2b actual roster retains every non-target AV1 and mastery fixture, with d
   assert.deepEqual(Object.keys(actual.traces),Object.keys(baseline.traces),name);
   let changed=0,identical=0;
   for(const [key,value] of Object.entries(baseline.traces)){
-   if(targets[key.split('/')[0]]){assert.notDeepEqual(actual.traces[key],value,name+'/'+key);changed++;}
+   if(cumulative[key.split('/')[0]]){assert.notDeepEqual(actual.traces[key],value,name+'/'+key);changed++;}
    else {assert.deepEqual(actual.traces[key],value,name+'/'+key);identical++;}
   }
-  assert.equal(changed,9,name);assert.equal(identical,72,name);
+  assert.equal(changed,12,name);assert.equal(identical,69,name);
  }
 });

@@ -71,9 +71,23 @@ test('every registered content key has eight-direction WebP clips and bounded ki
       assert.ok(data.meta.size.w <= 2048 && data.meta.size.h <= 2048);
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {
-        // 128px kits; the large display-scaled dragon ships 256px frames for sharpness.
-        assert.equal(frame.frame.w, id === 'throne-dragon' ? 320 : id === 'dragon' || id === 'gargoyle' ? 256 : 128);
-        assert.equal(frame.frame.h, frame.frame.w);
+        if (id === 'succubus') {
+          // Only the newly registered kit uses true128px trims at256px logical size.
+          // Historical kit assertions below retain their original sizes and budgets.
+          assert.equal(frame.trimmed, true);
+          assert.equal(Number(data.meta.scale), .5);
+          assert.deepEqual(frame.sourceSize, { w: 128, h: 128 });
+          assert.equal(frame.sourceSize.w / Number(data.meta.scale), 256);
+          assert.ok(frame.frame.w > 0 && frame.frame.h > 0 && frame.frame.w <= 128 && frame.frame.h <= 128);
+          assert.equal(frame.spriteSourceSize.w, frame.frame.w);
+          assert.equal(frame.spriteSourceSize.h, frame.frame.h);
+          assert.ok(frame.spriteSourceSize.x >= 0 && frame.spriteSourceSize.y >= 0);
+          assert.ok(frame.spriteSourceSize.x + frame.frame.w <= 128 && frame.spriteSourceSize.y + frame.frame.h <= 128);
+        } else {
+          // 128px kits; the large display-scaled dragon ships256px frames for sharpness.
+          assert.equal(frame.frame.w, id === 'throne-dragon' ? 320 : id === 'dragon' || id === 'gargoyle' ? 256 : 128);
+          assert.equal(frame.frame.h, frame.frame.w);
+        }
         assert.equal(frame.anchor.x, entry.anchor.x);
         assert.equal(frame.anchor.y, entry.anchor.y);
       }
