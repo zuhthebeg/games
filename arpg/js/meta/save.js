@@ -7,7 +7,7 @@ import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity } f
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf } from './skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf, validWeaponLoadouts } from './skills.js';
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
@@ -122,6 +122,7 @@ export function validateSave(save) {
     if (save.loadout !== undefined && !validLoadout(save, save.loadout)) return false;
     if (save.loadouts !== undefined && (!record(save.loadouts) || !Object.entries(save.loadouts)
       .every(([family, loadout]) => Object.hasOwn(DEFAULT_SKILLS, family) && validLoadout(save, loadout)))) return false;
+    if (save.weaponLoadouts !== undefined && !validWeaponLoadouts(save, save.weaponLoadouts)) return false;
     if (save.seenMaterials !== undefined && !validSeenMaterials(save.seenMaterials)) return false;
     if (!record(save.stacks)) return false;
     if (!record(save.stash) || !record(save.stash.stacks)

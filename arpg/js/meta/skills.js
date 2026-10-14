@@ -1,4 +1,4 @@
-import { ABILITIES, WEAPONS, SKILL_SLOTS } from '../content/combat.js';
+import { ABILITIES, WEAPONS, SKILL_SLOTS, canUseSkill } from '../content/combat.js';
 import { cloneSave, equippedItem, ITEMS } from './items.js';
 import { effectiveStats, STAT_NAMES } from './stats.js';
 
@@ -42,7 +42,7 @@ export function learnSkill(save, id) {
 // skills-v2 §2: three family-free slots that survive weapon swaps. The sim drops ids the
 // current weapon cannot use; an empty or dropped slot 1 falls back to the kit skill.
 export const validLoadout = (save, loadout) => Array.isArray(loadout) && loadout.length === SKILL_SLOTS
-  && loadout.every(id => id === null || (typeof id === 'string' && Object.hasOwn(ABILITIES, id) && hasSkill(save, id)))
+  && Array.from(loadout).every(id => id === null || (typeof id === 'string' && Object.hasOwn(ABILITIES, id) && hasSkill(save, id)))
   && new Set(loadout.filter(Boolean)).size === loadout.filter(Boolean).length;
 
 // Saves before K2 had one skill per weapon family: keep that pick in slot 1 and fill the
@@ -67,6 +67,36 @@ export function withFamilyLoadout(prev, next) {
   out.loadouts = { ...(prev.loadouts || {}), [before]: [...loadoutOf(prev, before)] };
   if (validLoadout(out, out.loadouts[after])) out.loadout = [...out.loadouts[after]];
   return out;
+}
+
+// Exact form histories are bounded and separate from the legacy family API above.
+export const WEAPON_LOADOUT_KEYS = Object.freeze(['blade:sword', 'blade:blunt', 'bow:bow', 'focus:wand', 'focus:staff']);
+export const weaponLoadoutKey = save => {
+  const family = weaponFamily(save), form = weaponForm(save) || (family === 'blade' ? 'sword' : family);
+  const key = `${family}:${form}`;
+  if (!WEAPON_LOADOUT_KEYS.includes(key)) throw new Error('알 수 없는 무기 형태입니다.');
+  return key;
+};
+export const validWeaponLoadouts = (save, map) => map !== null && typeof map === 'object' && !Array.isArray(map)
+  && Object.entries(map).every(([key, slots]) => WEAPON_LOADOUT_KEYS.includes(key) && validLoadout(save, slots));
+
+// next is an already validated equip/purchase clone. No writes or learning costs here.
+export function weaponLoadoutCandidate(prev, next, { keepCurrent = false } = {}) {
+  if (prev.equipped.weapon === next.equipped.weapon) return { save: prev, reason: 'same-uid' };
+  const before = [...loadoutOf(prev)];
+  if ((prev.loadout !== undefined && !validLoadout(prev, prev.loadout)) || !validLoadout(prev, before) || (prev.weaponLoadouts !== undefined && !validWeaponLoadouts(prev, prev.weaponLoadouts))) {
+    throw new Error('스킬 기억이 올바르지 않습니다.');
+  }
+  const from = weaponLoadoutKey(prev), to = weaponLoadoutKey(next);
+  const history = prev.weaponLoadouts || {}, remembered = history[to];
+  const filtered = remembered?.map(id => id !== null && canUseSkill(id, weaponFamily(next), weaponForm(next)) ? id : null);
+  const reason = keepCurrent ? 'current' : from === to ? 'same-form' : !remembered ? 'unseen'
+    : filtered.some(Boolean) ? 'remembered' : 'unusable';
+  const after = reason === 'remembered' ? filtered : before;
+  const out = cloneSave(next);
+  out.loadout = [...after];
+  out.weaponLoadouts = { ...structuredClone(history), [from]: [...before], [to]: [...after] };
+  return { save: out, before, after: [...after], from, to, reason, remembered: remembered ? [...remembered] : null };
 }
 
 // Put a learned skill into a slot (moving it if already slotted). null clears the slot.
