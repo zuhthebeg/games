@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { spawn, execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,11 @@ try {
  await cmd('Runtime.enable');await cmd('Page.enable');await cmd('Log.enable');await cmd('Emulation.setFocusEmulationEnabled',{enabled:true});
  const origin=`http://127.0.0.1:${httpPort}`;
 
+ const head=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),sourceBinding={};
+ for(const path of ['arpg/js/meta/skills.js','arpg/js/meta/save.js','arpg/js/ui/hub.js','arpg/js/meta/items.js','arpg/js/meta/shop.js','arpg/js/meta/skill-mastery.js','arpg/css/game.css','arpg/js/ui/hud.js','arpg/test/weapon-loadout-fixture.js','arpg/test/weapon-loadout-native.html']) {
+  const local=await readFile(join(root,path)),http=Buffer.from(await (await fetch(origin+'/'+path)).arrayBuffer());
+  assert.deepEqual(http,local,path+' served byte binding');sourceBinding[path]=createHash('sha256').update(local).digest('hex');
+ }
  const rows=[];
  const state=()=>ev(`JSON.stringify(fixture.hub.save)`);
  const slots=()=>ev('fixture.hub.save.loadout');
@@ -84,9 +90,9 @@ try {
   for(const l of layouts){assert.equal(l.overflow,false,JSON.stringify(l));assert.equal(l.dialogOverflow,false,JSON.stringify(l));assert.deepEqual(l.bad,[],JSON.stringify(l));}
   assert.deepEqual(await ev('fixture.store.load().skillMastery'),{lunge:1500,ground_slam:932,whirl:501});
   rows.push({width,mode:mobile?'native CDP touch':'native Enter/Escape',oldPersistedLoaded:true,threeEntrypoints:true,swordBluntHistories:remembered,layouts,commits:await ev('probe.commits')});
-  await writeFile(out,JSON.stringify({status:'running',rows,errors,screenshots:0},null,2)+'\n');
+  await writeFile(out,JSON.stringify({status:'running',head,sourceBinding,rows,errors,screenshots:0},null,2)+'\n');
  }
  assert.equal(errors.length,0,JSON.stringify(errors));
- await writeFile(out,JSON.stringify({status:'PASS',cases:2,rows,errors,screenshots:0,scope:'actual HubUI and SaveStore transaction boundary; no world, hunt, physical phone, multiplayer or production claim'},null,2)+'\n');
+ await writeFile(out,JSON.stringify({status:'PASS',head,sourceBinding,cases:2,rows,errors,screenshots:0,scope:'actual HubUI and SaveStore transaction boundary; no world, hunt, physical phone, multiplayer or production claim'},null,2)+'\n');
  console.log(JSON.stringify({cases:2,errors:errors.length,screenshots:0,evidence:out}));
 } finally {socket?.close();chrome.kill('SIGKILL');server.kill('SIGKILL');await sleep(250);await rm(profile,{recursive:true,force:true});}
