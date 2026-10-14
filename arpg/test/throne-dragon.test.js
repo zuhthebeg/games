@@ -1,3 +1,4 @@
+import {legacyPlacementStages} from './m2b-placement-trace.mjs';
 import { withoutCombos } from './av1-dps.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,7 +21,7 @@ test('official TD1 is gated after S20, leaves original stages and map dependenci
  assert.equal(STAGES.TD1?.name,'왕좌의 수호룡');assert.equal(STAGES.TD1.goal,'killAll');
  assert.equal(STAGES.TD1.spawns.length,1);assert.equal(STAGES.TD1.spawns[0].monster,'throne_dragon');
  assert.equal(STAGES.TD1.testChallenge,undefined);assert.equal(mapUnlocked(fresh(),'TD1'),false);assert.equal(availableStages(fresh()).includes('TD1'),false);const late=fresh();late.cleared.S20=true;assert.ok(mapUnlocked(late,'TD1'));
- for(const [id,stage] of Object.entries(base.stages))assert.deepEqual(STAGES[id],stage,id);
+ const legacy=legacyPlacementStages(STAGES);for(const [id,stage] of Object.entries(base.stages))assert.deepEqual(legacy[id],stage,id);
  for(const [id,map] of Object.entries(base.maps))assert.deepEqual(MAPS[id],map,id);
  assert.equal(biomeForStage('TD1'),'throne_forecourt');
  const w=createWorld();addPlayer(w,{pid:'a'});startStage(w,'TD1');assert.deepEqual(w.arena,{w:1680,h:1000});

@@ -1,5 +1,10 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
+  // M2b placement: exact legacy grunt draws, including its side-roll; explicit map hunt tiers stay unchanged.
+  demon: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[{id:'goblin_cleaver',chance:.06}] },
+  goleling: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[{id:'goblin_cleaver',chance:.06}] },
+  slime: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[{id:'goblin_cleaver',chance:.06}] },
+  // M2b placement end.
   // U5: reuse existing materials and late guardian/spirit budgets; no legacy gear side-rolls.
   skeleton_minion: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[] },
   skeleton_warrior: { gold:[6,10], stacks:[{id:'scrap',count:2},{id:'rune_shard',count:1,chance:.5}], items:[] },

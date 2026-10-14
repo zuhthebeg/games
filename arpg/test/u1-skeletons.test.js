@@ -1,3 +1,4 @@
+import {legacyPlacementStages} from './m2b-placement-trace.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -128,7 +129,7 @@ test('U1 preserves all twelve main monster definitions, other combat exports and
   // U1's byte proof was pinned at dc2a876; later intentional main commits are exempt by name.
   const later = { ABILITIES: 'd143221 slash 16', 'arpg/js/sim/world.js': 'd143221 melee guard', 'arpg/index.html': 'cache stamps', 'arpg/tools/art/bake.py': 'M2a floating/winged rigs + fixed lift/material colors', 'arpg/tools/art/verify_atlases.py': 'M2a source-bound floating/winged gates' };
   for (const [key, hash] of Object.entries(evidence.other_combat_exports_sha256))
-    if (!later[key]) assert.equal(sha(stable(key === 'STAGES' ? Object.fromEntries(Object.entries(STAGES).filter(([id])=>!/^S2[123]$/.test(id))) : combat[key])), hash, key);
+    if (!later[key]) assert.equal(sha(stable(key === 'STAGES' ? Object.fromEntries(Object.entries(legacyPlacementStages(STAGES)).filter(([id])=>!/^S2[123]$/.test(id))) : combat[key])), hash, key);
   for (const [path, hash] of Object.entries(evidence.unchanged_file_sha256))
     if (av1.files[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), av1.files[path], 'intentional AV1: '+path);
     else if (!later[path]) assert.equal(sha(read('../' + path.replace(/^arpg\//, ''))), hash, path);

@@ -1,3 +1,4 @@
+import {legacyPlacementStages,legacyPlacementLoot,withoutPlacement} from './m2b-placement-trace.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -123,26 +124,26 @@ test('AV1 finishers use heavy FEEL without overriding critical/counter tiers',()
 test('AV1 5 forms × repeat/auto 30-second real-hit DPS stays within ±5%',()=>{
   const table=dpsTable();assert.equal(table.length,10);for(const r of table)assert.ok(Math.abs(r.deltaPct)<=5,JSON.stringify(r));
 });
-test('AV1 combo-disabled full serialized worlds/events match captured abcd094 for all27stages, 3seeds, 5forms',()=>{
+test('AV1 combo-disabled full serialized worlds/events match captured abcd094 legacy roster (exact three M2b replacements reversed) for all27stages, 3seeds, 5forms',()=>{
   const before=JSON.parse(readFileSync(new URL('./fixtures/av1-abcd094-world-traces.json',import.meta.url)));
-  assert.deepEqual(withoutCombos(comboWorldTraces),before);
+  assert.deepEqual(withoutPlacement(()=>withoutCombos(comboWorldTraces)),before);
 });
-test('AV1 content is only basic combo metadata; all27stages/all monsters/all nonbasic power unchanged from abcd094',async()=>{
+test('AV1 legacy content preserves all27stages/original monsters/nonbasic power from abcd094 after exactly three approved M2b roster slots are reversed',async()=>{
   let s=execFileSync('git',['show','abcd094:arpg/js/content/combat.js'],{encoding:'utf8'});
   s=s.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,new URL('../js/content/combat.js',import.meta.url)).href));
   const old=await import('data:text/javascript;base64,'+Buffer.from(s).toString('base64'));
-  assert.deepEqual(Object.fromEntries(Object.entries(MONSTERS).filter(([id])=>!['demon','goleling','slime'].includes(id))),old.MONSTERS);assert.deepEqual(STAGES,old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
+  assert.deepEqual(Object.fromEntries(Object.entries(MONSTERS).filter(([id])=>!['demon','goleling','slime'].includes(id))),old.MONSTERS);assert.deepEqual(legacyPlacementStages(STAGES),old.STAGES);assert.deepEqual(WEAPONS,old.WEAPONS);
   const current=structuredClone(ABILITIES);for(const id of ['slash','arrow','focus_pulse']){delete current[id].combo;delete current[id].comboWindowMs;}
   assert.deepEqual(current,old.ABILITIES);
   for(const path of ['arpg/js/content/balance.js','arpg/js/content/loot.js','arpg/js/content/world-map.js','arpg/js/meta/items.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/movement.js','arpg/js/net/session.js']) {
-    assert.equal(readFileSync(new URL('../../'+path,import.meta.url),'utf8'),execFileSync('git',['show',`abcd094:${path}`],{encoding:'utf8'}),path);
+    assert.equal(path==='arpg/js/content/loot.js'?legacyPlacementLoot(readFileSync(new URL('../../'+path,import.meta.url),'utf8')):readFileSync(new URL('../../'+path,import.meta.url),'utf8'),execFileSync('git',['show',`abcd094:${path}`],{encoding:'utf8'}),path);
   }
 });
 
-test('AV1 enabled all27stage full-world fixture is deterministic and explicitly different from abcd094',()=>{
+test('AV1 enabled all27stage legacy-roster full-world fixture is deterministic and explicitly different from abcd094',()=>{
   const baseline=JSON.parse(readFileSync(new URL('./fixtures/av1-abcd094-world-traces.json',import.meta.url)));
   const enabled=JSON.parse(readFileSync(new URL('./fixtures/av1-enabled-world-traces.json',import.meta.url)));
-  const actual=comboWorldTraces();assert.deepEqual(actual,enabled);assert.deepEqual(comboWorldTraces(),actual);
+  const actual=withoutPlacement(comboWorldTraces);assert.deepEqual(actual,enabled);assert.deepEqual(withoutPlacement(comboWorldTraces),actual);
   assert.equal(Object.keys(actual.traces).length,81);
   assert.equal(Object.keys(actual.traces).filter(k=>actual.traces[k].sha256!==baseline.traces[k].sha256).length,81);
 });

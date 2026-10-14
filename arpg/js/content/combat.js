@@ -319,18 +319,18 @@ export const MONSTERS = {
     lifeState: 'beast', hp: 75, r: 16, speed: 190, poise: 20, kbResist: 0,
     abilities: ['goblin_hop', 'goblin_slash'], xp: 15, keepRange: [110, 180],
   },
-  // M2b [제안]: unplaced archetypes; existing abilities only, no loot integration.
+  // M2b placement: one first-wave grunt replacement per map; grunt HP/XP budget, existing abilities.
   demon: {
-    lifeState: 'living', hp: 225, r: 22, speed: 105, poise: 75, kbResist: 0.4,
-    abilities: ['goblin_slash'], xp: 12, keepRange: [40, 70],
+    lifeState: 'living', hp: 62, r: 22, speed: 118, poise: 30, kbResist: 0,
+    abilities: ['goblin_slash'], xp: 8, keepRange: [40, 70],
   },
   goleling: {
-    lifeState: 'construct', hp: 90, r: 18, speed: 155, poise: 35, kbResist: 0.2,
-    abilities: ['goblin_hop', 'goblin_slash'], xp: 12, keepRange: [110, 180],
+    lifeState: 'construct', hp: 62, r: 18, speed: 118, poise: 30, kbResist: 0,
+    abilities: ['goblin_hop', 'goblin_slash'], xp: 8, keepRange: [40, 70],
   },
   slime: {
-    lifeState: 'living', hp: 150, r: 22, speed: 75, poise: 55, kbResist: 0.3,
-    abilities: ['wolf_bite'], xp: 10, keepRange: [45, 75],
+    lifeState: 'living', hp: 62, r: 22, speed: 75, poise: 30, kbResist: 0,
+    abilities: ['wolf_bite'], xp: 8, keepRange: [45, 75],
   },
 };
 
@@ -421,6 +421,12 @@ for (const [id, stage] of Object.entries(STAGES)) {
     .filter(spawn => wave === 0 || spawn.monster !== 'goblin_chief')
     .map(spawn => ({ ...spawn, at: spawn.at + wave * tuning.waveMs }))).flat();
 }
+
+// Replace only a first-wave escort, AFTER wave expansion. No extra actors or repeated new kits.
+// S8 ash crevices / S12 mine sentry / S17 fortress escort; all use the existing grunt reward budget.
+STAGES.S8.spawns[0].monster = 'slime';
+STAGES.S12.spawns[2].monster = 'goleling';
+STAGES.S17.spawns[3].monster = 'demon';
 
 for (const q of Object.values(OBJECTIVE_QUESTS)) {
   const tune = BALANCE.stages[q.mapId];

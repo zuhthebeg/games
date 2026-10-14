@@ -22,19 +22,23 @@ test('M2b exact three registry mappings are the only approved renderer delta',()
    const baseline=execFileSync('git',['show','0c64a94:'+p],{encoding:'utf8'});
    assert.equal(sha(baseline),h,p+' source proof');
    let stamped=baseline;
-   for(const module of ['js/content/combat.js','js/content/monsters.js','js/render/atlas-state.js']){
+   for(const module of ['js/content/combat.js','js/content/loot.js','js/content/monsters.js','js/render/atlas-state.js']){
     const hash=sha(read('../'+module)).slice(0,10);
     stamped=stamped.replace(new RegExp('(\\./'+module.replaceAll('.','\\.')+'\\?v=)[a-f0-9]{10}'),'$1'+hash);
    }
    const current=read('../index.html').toString();
-   assert.ok(current===baseline||current===stamped,p+' only exact parent-owned stamps allowed');
+   const approved=execFileSync('git',['show','ded59e3:'+p],{encoding:'utf8'});
+   assert.ok(current===approved||current===stamped,p+' only approved ded59e3 index or exact parent-owned stamps allowed');
+  }else if(p==='arpg/js/content/loot.js'){
+   const current=read('../js/content/loot.js').toString();
+   assert.equal(sha(current.replace(/  \/\/ M2b placement:[\s\S]*?  \/\/ M2b placement end\.\n/,'')),h,p+' only exact new tables allowed');
   }else assert.equal(sha(read('../'+p.replace(/^arpg\//,''))),h,p);
  }
 });
-test('M2b hostile identities use existing abilities and remain unplaced without drops',()=>{
+test('M2b hostile identities use existing abilities, are minimally placed and have valid drops',()=>{
  assert.deepEqual(validateContent(),[]);
- for(const id of ids){assert.equal(ATLAS_IDS[id],id);assert.ok(identity.MONSTER_MODELS.includes(id));assert.ok(identity.MONSTER_NAMES[id]);const v=identity.MONSTER_VARIANTS[id];assert.equal(v.baseModelId,id);assert.equal(v.disposition,'hostile');assert.equal(v.lifeState,combat.MONSTERS[id].lifeState);assert.deepEqual(identity.MONSTER_PALETTES[v.paletteId],[0xffffff]);assert.ok(combat.MONSTERS[id].abilities.every(a=>combat.ABILITIES[a]));assert.ok(!combat.MONSTERS[id].heavyPoise);assert.throws(()=>rollDrops(id,0,{huntTier:4}));}
- for(const s of Object.values(combat.STAGES))assert.ok(s.spawns.every(e=>!ids.includes(e.monster)));
+ for(const id of ids){assert.equal(ATLAS_IDS[id],id);assert.ok(identity.MONSTER_MODELS.includes(id));assert.ok(identity.MONSTER_NAMES[id]);const v=identity.MONSTER_VARIANTS[id];assert.equal(v.baseModelId,id);assert.equal(v.disposition,'hostile');assert.equal(v.lifeState,combat.MONSTERS[id].lifeState);assert.deepEqual(identity.MONSTER_PALETTES[v.paletteId],[0xffffff]);assert.ok(combat.MONSTERS[id].abilities.every(a=>combat.ABILITIES[a]));assert.ok(!combat.MONSTERS[id].heavyPoise);assert.ok(Number.isSafeInteger(rollDrops(id,0,{huntTier:3}).gold));}
+ assert.deepEqual(Object.entries(combat.STAGES).flatMap(([stage,s])=>s.spawns.filter(e=>ids.includes(e.monster)).map(e=>[stage,e.monster])),[['S8','slime'],['S12','goleling'],['S17','demon']]);
  assert.deepEqual(combat.MONSTERS.demon.abilities,['goblin_slash']);assert.deepEqual(combat.MONSTERS.goleling.abilities,['goblin_hop','goblin_slash']);assert.deepEqual(combat.MONSTERS.slime.abilities,['wolf_bite']);
 });
 test('M2b actual host archetypes spawn and run without simulation edits',()=>{
@@ -53,7 +57,7 @@ test('M2b delivered alpha, native 40 clips and ground/grip/anatomy are byte boun
 test('M2b GPU RGBA budget uses full decoded sheet capacity, not compressed bytes',()=>{
  const manifest=json('../assets/sprites/manifest.json');for(const r of proof().results){let bytes=0;for(const sheet of manifest.find(e=>e.id===r.name).sheets){const m=json('../assets/sprites/'+r.name+'/'+sheet).meta;assert.ok(m.size.w<=2048&&m.size.h<=2048);bytes+=m.size.w*m.size.h*4;}assert.equal(r.gpu_rgba_bytes,bytes);assert.equal(r.gpu_rgba_mib,bytes/1048576);assert.ok(bytes<=16*1048576);assert.ok(bytes<=20*1048576);}
 });
-test('M2b all 243 seeded existing-stage host traces remain identical',()=>{
+test('M2b historical art-only registration retains its 243 identical host traces (placement tested separately)',()=>{
  const r=json('../tools/art/m2b/registration-validation.json');assert.equal(r.host_traces,243);assert.equal(r.host_trace_equal,true);const a=read('../tools/art/m2b/host-trace-before.json'),b=read('../tools/art/m2b/host-trace-after.json');assert.deepEqual(a,b);assert.equal(sha(a),r.host_trace_sha256);
 });
 test('M2b native desktop/mobile actual registered entity loading, motion and fallback error zero',()=>{

@@ -25,7 +25,13 @@ async function baseline(file){let source=execFileSync('git',['show','6eca8b8:arp
 test('U5 preserves every original stage, tuning, map gate, palette, reward and item definition exactly',async()=>{
  const oldCombat=await baseline('content/combat.js');
  // Combat constructors depend on current balance: compare legacy tuning independently too.
- for(const [id,s] of Object.entries(oldCombat.STAGES))assert.deepEqual(STAGES[id],s,id);
+ for(const [id,s] of Object.entries(oldCombat.STAGES)){
+  const expected=structuredClone(s);
+  // Approved M2b placement: exactly one existing escort in each of three ordinary maps.
+  const replacement={S8:[0,'slime'],S12:[2,'goleling'],S17:[3,'demon']}[id];
+  if(replacement)expected.spawns[replacement[0]].monster=replacement[1];
+  assert.deepEqual(STAGES[id],expected,id);
+ }
  for(const file of ['content/balance.js','content/biomes.js','meta/progression.js','content/loot.js','meta/items.js']){
   const old=await baseline(file);
   const current=await import(new URL('../js/'+file,import.meta.url));
