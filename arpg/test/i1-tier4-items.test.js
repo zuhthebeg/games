@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { ITEMS, RECIPES, craft, equip, instance, rollDrops, dismantle, dismantleMaterial } from '../js/meta/items.js';
 import { TIER4_GEAR_DROPS, NEW_MONSTER_DROPS } from '../js/content/loot.js';
 import { createSave, validateSave, SaveStore, SAVE_VERSION } from '../js/meta/save.js';
@@ -72,7 +73,7 @@ test('I1 UI labels and new material render from definitions with no schema/UI re
 });
 
 test('I1 T4 art is nonempty and every silhouette is distinct from every delivered icon',()=>{
- const r=JSON.parse(execFileSync('python3',['arpg/tools/item-art-tier4-check.py'],{encoding:'utf8'}));assert.equal(r.files,11);assert.equal(r.distinctMasks,11);assert.ok(r.minPairDifference>100);
+ const r=JSON.parse(execFileSync('python3',[fileURLToPath(new URL('../tools/item-art-tier4-check.py',import.meta.url))],{encoding:'utf8'}));assert.equal(r.files,11);assert.equal(r.distinctMasks,11);assert.ok(r.minPairDifference>100);
  const records=JSON.parse(readFileSync(new URL('../assets/items/manifest.json',import.meta.url))).filter(r=>r.source==='arpg/tools/item-art-tier4.py');
  const sourceHash=createHash('sha256').update(readFileSync(new URL('../tools/item-art-tier4.py',import.meta.url))).digest('hex');
  assert.equal(records.length,11);for(const r of records)assert.equal(r.sourceSha256,sourceHash);
