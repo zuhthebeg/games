@@ -1,0 +1,274 @@
+{
+  "ok": true,
+  "frames": 312,
+  "lossless_alpha_verified": 312,
+  "clipped_frames": 0,
+  "kit_bytes": 525392,
+  "max_frame_size": 128,
+  "offline_original_size": 256,
+  "logical_frame_size": 256,
+  "alpha_trim_method": "original alpha getbbox; no alpha threshold",
+  "raw_rgba_bytes": 4100264,
+  "raw_rgba_mib": 3.9103164672851562,
+  "pages": [
+    {
+      "sheet": "succubus-v3-atlas-0.webp.json",
+      "width": 1022,
+      "height": 1003,
+      "raw_rgba_bytes": 4100264
+    }
+  ],
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6178545951843262
+  },
+  "motion": {
+    "idle_E": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_SE": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_S": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_SW": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_W": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_NW": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_N": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "idle_NE": {
+      "unique_alpha": 5,
+      "unique_pixels": 8,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_E": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_SE": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_S": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_SW": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_W": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_NW": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_N": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "run_NE": {
+      "unique_alpha": 5,
+      "unique_pixels": 10,
+      "unique_bone_poses": 6,
+      "unique_source256_alpha": 5
+    },
+    "attack_E": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_SE": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_S": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_SW": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_W": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_NW": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_N": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "attack_NE": {
+      "unique_alpha": 7,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 7
+    },
+    "hit_E": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_SE": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_S": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_SW": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_W": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_NW": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_N": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "hit_NE": {
+      "unique_alpha": 4,
+      "unique_pixels": 5,
+      "unique_bone_poses": 5,
+      "unique_source256_alpha": 4
+    },
+    "death_E": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_SE": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_S": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_SW": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_W": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_NW": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_N": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    },
+    "death_NE": {
+      "unique_alpha": 8,
+      "unique_pixels": 8,
+      "unique_bone_poses": 8,
+      "unique_source256_alpha": 8
+    }
+  },
+  "source_seconds": 35.99281930923462,
+  "min_delivery_pixels_alpha_gt16": 364,
+  "original256_pixel_threshold_gt16": 1000,
+  "delivery128_logical_area_threshold_gt16": 1000,
+  "delivery128_raw_pixel_threshold_gt16": 250,
+  "generated_previews": [],
+  "read_only_original_source": true
+}

@@ -25,21 +25,21 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   writeFileSync(process.argv[2],JSON.stringify(await placementTraces(root),null,2)+'\n');
 }
 
-// Legacy mechanics gates retain their original fixtures: undo ONLY the three approved content slots.
-// Current-roster traces are independently checked for exactly 27 changed and 216 identical hashes.
+// Legacy mechanics gates retain their original fixtures: undo ONLY the four approved content slots.
+// Current-roster traces are independently checked for exactly 36 cumulative changed and 207 identical hashes.
 export function legacyPlacementStages(stages) {
   const result=structuredClone(stages);
-  for(const [id,index,monster] of [['S8',0,'slime'],['S12',2,'goleling'],['S17',3,'demon']]){
+  for(const [id,index,monster,previous] of [['S8',0,'slime','goblin_grunt'],['S12',2,'goleling','goblin_grunt'],['S17',3,'demon','goblin_grunt'],['S19',3,'succubus','goblin_slinger']]){
     assert.equal(result[id].spawns[index].monster,monster,id+' exact approved placement');
     assert.equal(result[id].spawns.filter(s=>s.monster===monster).length,1,id+' exactly one');
-    result[id].spawns[index].monster='goblin_grunt';
+    result[id].spawns[index].monster=previous;
   }
   return result;
 }
 export function withoutPlacement(fn) {
   legacyPlacementStages(STAGES); // Validate before mutating the test-only roster.
-  const slots=[['S8',0,'slime'],['S12',2,'goleling'],['S17',3,'demon']];
-  try{for(const [id,i] of slots)STAGES[id].spawns[i].monster='goblin_grunt';return fn();}
+  const slots=[['S8',0,'slime','goblin_grunt'],['S12',2,'goleling','goblin_grunt'],['S17',3,'demon','goblin_grunt'],['S19',3,'succubus','goblin_slinger']];
+  try{for(const [id,i,,previous] of slots)STAGES[id].spawns[i].monster=previous;return fn();}
   finally{for(const [id,i,m] of slots)STAGES[id].spawns[i].monster=m;}
 }
-export const legacyPlacementLoot=source=>source.replace(/  \/\/ M2b placement:[\s\S]*?  \/\/ M2b placement end\.\n/,'');
+export const legacyPlacementLoot=source=>source.replace(/  \/\/ M2b placement:[\s\S]*?  \/\/ M2b placement end\.\n/,'').replace(/  \/\/ Succubus placement:[\s\S]*?  \/\/ Succubus placement end\.\n/,'');

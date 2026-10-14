@@ -13,9 +13,9 @@ const ids=['demon','goleling','slime'];
 const read=p=>readFileSync(new URL(p,import.meta.url)),json=p=>JSON.parse(read(p));
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const proof=()=>json('../tools/art/m2b/delivered-validation.json');
-test('M2b exact three registry mappings are the only approved renderer delta',()=>{
+test('M2b exact three M2b plus one authorized succubus registry mappings are the only renderer delta',()=>{
  const p='arpg/js/render/atlas-state.js';const old=execFileSync('git',['show','0c64a94:'+p],{encoding:'utf8'});
- assert.equal(read('../js/render/atlas-state.js').toString(),old.replace("  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',","  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',\n  demon: 'demon', goleling: 'goleling', slime: 'slime',"));
+ assert.equal(read('../js/render/atlas-state.js').toString(),old.replace("  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',","  ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',\n  demon: 'demon', goleling: 'goleling', slime: 'slime',\n  succubus: 'succubus',"));
  const r=json('../tools/art/m2b/registration-validation.json');assert.equal(r.ok,true);assert.equal(r.status,'REGISTERED');assert.equal(r.manifest_fetch_calls,1);assert.equal(r.sheet_load_calls,3);assert.equal(r.atlas_registry_only_three_mappings,true);
  for(const [p,h] of Object.entries(r.unchanged_files_sha256)){
   if(p==='arpg/index.html'){
@@ -31,7 +31,7 @@ test('M2b exact three registry mappings are the only approved renderer delta',()
    assert.ok(current===approved||current===stamped,p+' only approved ded59e3 index or exact parent-owned stamps allowed');
   }else if(p==='arpg/js/content/loot.js'){
    const current=read('../js/content/loot.js').toString();
-   assert.equal(sha(current.replace(/  \/\/ M2b placement:[\s\S]*?  \/\/ M2b placement end\.\n/,'')),h,p+' only exact new tables allowed');
+   assert.equal(sha(current.replace(/  \/\/ M2b placement:[\s\S]*?  \/\/ M2b placement end\.\n/,'').replace(/  \/\/ Succubus placement:[\s\S]*?  \/\/ Succubus placement end\.\n/,'')),h,p+' only exact new tables allowed');
   }else assert.equal(sha(read('../'+p.replace(/^arpg\//,''))),h,p);
  }
 });

@@ -28,7 +28,7 @@ test('U5 preserves every original stage, tuning, map gate, palette, reward and i
  for(const [id,s] of Object.entries(oldCombat.STAGES)){
   const expected=structuredClone(s);
   // Approved M2b placement: exactly one existing escort in each of three ordinary maps.
-  const replacement={S8:[0,'slime'],S12:[2,'goleling'],S17:[3,'demon']}[id];
+  const replacement={S8:[0,'slime'],S12:[2,'goleling'],S17:[3,'demon'],S19:[3,'succubus']}[id];
   if(replacement)expected.spawns[replacement[0]].monster=replacement[1];
   assert.deepEqual(STAGES[id],expected,id);
  }
@@ -50,12 +50,12 @@ test('U5 preserves every original stage, tuning, map gate, palette, reward and i
  // Pin git pathspecs to repository root; arpg/ cwd used to make this check vacuous.
  assert.equal(execFileSync('git',['diff','--exit-code','6eca8b8','--','arpg/assets','arpg/tools/art',
   ':!arpg/tools/art/m2b', ':!arpg/assets/sprites/manifest.json',
-  ':!arpg/assets/sprites/demon', ':!arpg/assets/sprites/goleling', ':!arpg/assets/sprites/slime'],
+  ':!arpg/assets/sprites/demon', ':!arpg/assets/sprites/goleling', ':!arpg/assets/sprites/slime', ':!arpg/assets/sprites/succubus', ':!arpg/tools/art/succubus'],
   {encoding:'utf8',cwd:repositoryRoot}),'','M2a and every pre-M2b art byte unchanged');
  const oldManifest=JSON.parse(execFileSync('git',['show','6eca8b8:arpg/assets/sprites/manifest.json'],{encoding:'utf8'}));
  const manifest=JSON.parse(readFileSync(new URL('../assets/sprites/manifest.json',import.meta.url)));
  assert.deepEqual(manifest.slice(0,oldManifest.length),oldManifest);
- assert.deepEqual(manifest.slice(oldManifest.length).map(entry=>entry.id),['demon','goleling','slime']);
+ assert.deepEqual(manifest.slice(oldManifest.length).map(entry=>entry.id),['demon','goleling','slime','succubus']);
 });
 
 test('U5 gate is S20, then sequential clears, never TD1/QC1; forged historical U5 clears cannot bypass S20',()=>{

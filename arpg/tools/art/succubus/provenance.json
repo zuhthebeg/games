@@ -1,0 +1,85 @@
+{
+  "author": "Original authored by Sol for cocy / Untitled",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "external_assets": [],
+  "source_root": "C:/Users/user/ai-tools/arpg-art/succubus-v3/",
+  "source_files": {
+    "generate.py": {
+      "bytes": 18911,
+      "sha256": "80303780d6f3b86d7a646b99ece897a1cdf2851c5adb134a7bd3e085b89adcda"
+    },
+    "config.json": {
+      "bytes": 983,
+      "sha256": "cd806a7e60e3f374dff0a4d22feebc285db5819cb5dbf1e6569d252dfbaec391"
+    },
+    "source/original-adult-succubus.blend": {
+      "bytes": 402230,
+      "sha256": "f8269cbf5b646c155ad3102a6245cc011703933b043caf4ccc64abcc2cd64824"
+    },
+    "source/front.png": {
+      "bytes": 281050,
+      "sha256": "a1019c75860367b91b6101c48fe483b55c9b0ae12a834cbe7d4b508c8c4a62c6"
+    },
+    "source/side.png": {
+      "bytes": 207265,
+      "sha256": "78b8b0f81cf2d92849ca7717c79b8dd49a7d7af5d415d727e43daffae1ae02f5"
+    },
+    "source/back.png": {
+      "bytes": 284309,
+      "sha256": "2c4f05a2bf49b990d42c35b1711a47cbfc65913011cb917f3a8969dd3d8d2664"
+    },
+    "source/isometric.png": {
+      "bytes": 239421,
+      "sha256": "a01ee4714787c32defa0b9f984845b3079c29b19da24be9d66bc24191d0ed845"
+    },
+    "source/source-contact-sheet.png": {
+      "bytes": 392930,
+      "sha256": "931fd8e2a5a113b05258ff86f7098c7078dc08f1c1f4d0a3e6c7ca3231f9fdd7"
+    },
+    "pack.py": {
+      "bytes": 7447,
+      "sha256": "3120134bb96dcf11ee2f0d196e7ad3e357c183e083577174b81462474b442719"
+    },
+    "verify.py": {
+      "bytes": 7471,
+      "sha256": "052f5685eaa96fdbbb214711fd6d9ec3568f23184560110bb663eaaa86bf0ff9"
+    },
+    "verify-source.py": {
+      "bytes": 3932,
+      "sha256": "80f9e8c38f47414f1ba5e735b623872e31c5e3d0bc4e584aad1c012d29c7b92d"
+    },
+    "test_pack.py": {
+      "bytes": 2476,
+      "sha256": "6a84bca76520c3723fd2031131a2e4275feeec3bca36e7a5d405b952dad22e07"
+    },
+    "README.md": {
+      "bytes": 6043,
+      "sha256": "b54bb294e2dad74d8cc631505303456af62c1544719bf907a5c7ce93879d6eeb"
+    },
+    "sprite-8dir-states-v3.png": {
+      "bytes": 168727,
+      "sha256": "c6f960027a7243da54d19d8e9fa077b04ec5847a216c28bfd698086c6adb07a7"
+    },
+    "animation-phases-v3.png": {
+      "bytes": 96146,
+      "sha256": "f88e4525dabd390fcdbe497b223ea1d795e4ed7465b25347e7eda4c6dd3c239b"
+    }
+  },
+  "generated_previews_not_screenshots": true,
+  "blender": "5.2.2 LTS",
+  "prior_assets_overwritten": false,
+  "revision": "v3",
+  "parent_visual_approval": false,
+  "v2_checkpoint": "C:/Users/user/ai-tools/arpg-art/succubus-checkpoint-v2/",
+  "v2_checkpoint_file_count": 348,
+  "v3_model_checkpoint": "C:/Users/user/ai-tools/arpg-art/succubus-checkpoint-v3-model/",
+  "delivery": {
+    "source_px": 256,
+    "delivery_px": 128,
+    "logical_px": 256,
+    "trim": "original-alpha getbbox, no threshold",
+    "raw_rgba_bytes": 4100264,
+    "parent_approved": false
+  }
+}

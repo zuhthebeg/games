@@ -1,5 +1,8 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
+  // Succubus placement: exact slinger draws; unchanged explicit S19 hunt tier.
+  succubus: { gold:[2,5], stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}], items:[] },
+  // Succubus placement end.
   // M2b placement: exact legacy grunt draws, including its side-roll; explicit map hunt tiers stay unchanged.
   demon: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[{id:'goblin_cleaver',chance:.06}] },
   goleling: { gold:[3,6], stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}], items:[{id:'goblin_cleaver',chance:.06}] },

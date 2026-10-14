@@ -135,7 +135,7 @@ test('B1 old drop outputs remain byte-identical over 19,800 monster/tier/threat/
   // U5 places U1/M2a; keep every main baseline case and its pinned digest.
   const u1=['skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat'];
   for(const id of u1){assert.ok(Object.hasOwn(MONSTERS,id));assert.ok(rollDrops(id,0,{huntTier:4}).stacks);}
-  for(const monster of Object.keys(MONSTERS).filter(m=>m!=='training_dragon'&&!u1.includes(m)&&!['demon','goleling','slime'].includes(m)))for(const tier of [1,2,3])for(const threat of [1,2,3])for(let seed=0;seed<200;seed++) {
+  for(const monster of Object.keys(MONSTERS).filter(m=>m!=='training_dragon'&&!u1.includes(m)&&!['demon','goleling','slime','succubus'].includes(m)))for(const tier of [1,2,3])for(const threat of [1,2,3])for(let seed=0;seed<200;seed++) {
     const ctx={huntTier:tier,threat,elite:seed%2===0,rarelessRounds:seed%7,stageId:'S'+tier*5};
     const loot=rollDrops(monster,seed,ctx);if(monster==='throne_dragon'){delete loot.stacks.dragon_scale;loot.items=loot.items.filter(i=>!ITEMS[i.id].dropOnly);}assert.ok(loot.items.every(i=>!ITEMS[i.id].craftOnly));hash.update(JSON.stringify(loot)+'\n');count++;
   }

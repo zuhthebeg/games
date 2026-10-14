@@ -1,0 +1,47 @@
+{
+  "frame_size": 256,
+  "fps": 10,
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/succubus-v3/frames",
+  "characters": [
+    {
+      "name": "succubus",
+      "model": "C:/Users/user/ai-tools/arpg-art/succubus-v3/source/original-adult-succubus.blend",
+      "neutral": true,
+      "animations": {
+        "idle": "idle",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "label": "\uc218\ub828 \uc11c\ud050\ubc84\uc2a4",
+      "content_ids": [
+        "training_succubus"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/succubus-v3/source",
+  "webp_quality": 85,
+  "frame_counts": {
+    "idle": 8,
+    "run": 10,
+    "attack": 8,
+    "hit": 5,
+    "death": 8
+  },
+  "delivery_size": 128
+}
