@@ -27,7 +27,7 @@ export function setMasteryLevel(save, id, level) {
   return { ...structuredClone(save), skillMastery: { ...save.skillMastery, [id]: MASTERY_THRESHOLDS[level - 1] } };
 }
 
-// The host act journal starts a cast; subsequent successful enemy hits count it once.
+// The host act journal starts a cast; enemy hits or effective healing_light heals count it once.
 // Current player projectile flights expire before the next same-skill cooldown. Keep
 // each ability separately: a basic/other act must not erase a shot still in flight.
 // Guests consume the ordered, deduplicated host journal, never local prediction hits.
@@ -40,7 +40,8 @@ export function trackMastery(tracker, events, world, pid) {
     const caster = event.masteryPid ?? (source?.kind === 'player' ? source.pid : null);
     if (caster !== pid || !MASTERY_SKILLS.includes(event.ability)) continue;
     if (event.type === 'act') tracker.masteryCasts[event.ability] = { counted: false };
-    if (event.type !== 'hit' || !(event.masteryEnemy || world.entities.find(e => e.id === event.dst)?.kind === 'monster')) continue;
+    const positiveHeal = event.type === 'heal' && event.ability === 'healing_light' && Number.isFinite(event.heal) && event.heal > 0;
+    if (!positiveHeal && (event.type !== 'hit' || !(event.masteryEnemy || world.entities.find(e => e.id === event.dst)?.kind === 'monster'))) continue;
     const cast = tracker.masteryCasts[event.ability];
     if (!cast || cast.counted) continue;
     cast.counted = true;
