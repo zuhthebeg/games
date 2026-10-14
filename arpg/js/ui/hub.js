@@ -463,7 +463,7 @@ export class HubUI {
     const rows = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, this.save)} → ${describe(candidate.after[i], next)}${candidate.reason === 'remembered' && candidate.remembered[i] && candidate.after[i] === null ? ' · 사용 불가 제외' : ''}</dd></div>`).join('');
     const current = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, next)}</dd></div>`).join('');
     const warnings = candidate.before.some(id => id && !canUseSkill(id, weaponFamily(next), weaponForm(next)))
-      ? '<p class="p2-hint">사용 불가: 해당 슬롯은 사냥 중 제외됩니다. 슬롯 1이 비면 무기 기본 기술을 사용합니다.</p>' : '';
+      ? '<p class="p2-hint">사용 불가: 사냥 중 제외 · 빈 슬롯 1: 무기 기본 기술</p>' : '';
     const cost = this.save.gold - next.gold;
     const body = `<dl class="p2-lines"><div><dt>무기</dt><dd>${escape(itemLabel(equippedItem(this.save, 'weapon')))} → ${escape(itemLabel(equippedItem(next, 'weapon')))}</dd></div><div><dt>선택</dt><dd>${reasons[candidate.reason]}</dd></div>${cost ? `<div><dt>구매</dt><dd>${cost} G · 확인 시 결제</dd></div>` : ''}</dl>`
       + `<h3>무기·스킬 장착</h3><dl class="p2-lines">${rows}</dl><details><summary>현재 스킬로 장착</summary><dl class="p2-lines">${current}</dl></details>${warnings}`;
