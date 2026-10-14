@@ -60,9 +60,9 @@ export const ITEMS = {
   rune_shard: { material: 'rune', name: '룬 조각', kind: 'material', weight: 0.3, sell: 4 },
   frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3, sell: 4 },
   web: { material: 'cloth', name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
-  potion: { name: 'HP 물약', kind: 'consumable', weight: 0.1, price: 10 },
-  mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 12 },
-  return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 6 },
+  potion: { name: 'HP 물약', kind: 'consumable', weight: 0.1, price: 3 },
+  mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 5 },
+  return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 10 },
 };
 const TIER_LEVEL = { 2: 5, 3: 10, 4: 15 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
