@@ -17,6 +17,10 @@ export class InputLayer {
     this.autoAttack = globalThis.localStorage?.getItem('arpg.autoAttack') === '1';
     this.aimVector = aimVector;
     this.pad = document.querySelector('#joystick');
+    this.movePad = document.querySelector('#movepad');
+    this.padPointer = null;
+    this.px = 0;
+    this.py = 0;
     this.value = {
       mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false,
       skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false,
@@ -54,6 +58,14 @@ export class InputLayer {
         if (this.enabled && event.detail === 0) this.latch(action === 'attack' ? 'attackTap' : action);
       });
     }
+    // Fixed move pad: replaces the attack button in auto-attack mode so the right thumb can steer.
+    this.movePad?.addEventListener('pointerdown', (event) => {
+      if (!this.enabled || !this.autoAttack || this.padPointer) return;
+      event.preventDefault();
+      this.movePad.setPointerCapture(event.pointerId);
+      this.padPointer = { id: event.pointerId };
+      this.movePadVector(event);
+    });
     surface.addEventListener('pointerdown', (event) => {
       if (!this.enabled) return;
       event.preventDefault();
@@ -91,6 +103,7 @@ export class InputLayer {
         this.mouseX = event.clientX;
         this.mouseY = event.clientY;
       }
+      if (this.padPointer?.id === event.pointerId) this.movePadVector(event);
       if (this.joy?.id !== event.pointerId) return;
       const deltaX = event.clientX - this.joy.x;
       const deltaY = event.clientY - this.joy.y;
@@ -108,6 +121,7 @@ export class InputLayer {
         this.mouseAttack = false;
         this.mouseAim = false;
       }
+      if (this.padPointer?.id === event.pointerId) this.releaseMovePad();
       if (this.joy?.id === event.pointerId) {
         this.joy = null;
         this.jx = 0;
@@ -128,7 +142,28 @@ export class InputLayer {
     this.autoAttack = !!on;
     globalThis.localStorage?.setItem('arpg.autoAttack', on ? '1' : '0');
     document.querySelector('#attack')?.classList.toggle('auto', this.autoAttack);
+    document.querySelector('#actions')?.classList.toggle('auto', this.autoAttack);
+    if (!this.autoAttack) this.releaseMovePad();
     document.dispatchEvent(new CustomEvent('arpg:auto-attack'));
+  }
+
+  movePadVector(event) {
+    const rect = this.movePad.getBoundingClientRect();
+    const deltaX = event.clientX - (rect.left + rect.width / 2);
+    const deltaY = event.clientY - (rect.top + rect.height / 2);
+    const scale = Math.min(1, 36 / (Math.hypot(deltaX, deltaY) || 1));
+    this.px = deltaX * scale / 36;
+    this.py = deltaY * scale / 36;
+    if (this.movePad.firstElementChild) {
+      this.movePad.firstElementChild.style.transform = `translate(${deltaX * scale}px,${deltaY * scale}px)`;
+    }
+  }
+
+  releaseMovePad() {
+    this.padPointer = null;
+    this.px = 0;
+    this.py = 0;
+    if (this.movePad?.firstElementChild) this.movePad.firstElementChild.style.transform = '';
   }
 
   latch(action) {
@@ -142,6 +177,7 @@ export class InputLayer {
     this.joy = null;
     this.jx = 0;
     this.jy = 0;
+    this.releaseMovePad();
     this.mouseAim = false;
     this.mouseAttack = false;
     this.pad.hidden = true;
@@ -152,9 +188,9 @@ export class InputLayer {
     const value = this.value;
     const keys = this.keys;
     value.mx = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0)
-      - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + this.jx;
+      - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + this.jx + this.px;
     value.my = (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0)
-      - (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) + this.jy;
+      - (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) + this.jy + this.py;
     value.aimX = 0;
     value.aimY = 0;
     let held = this.mouseAttack;

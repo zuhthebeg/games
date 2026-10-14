@@ -224,6 +224,34 @@ button[aria-pressed="true"] {
   height: 72px !important;
 }
 
+#movepad {
+  display: none;
+  grid-row: 3;
+  grid-column: 3;
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border: 1px solid #d4c49a90;
+  border-radius: 50%;
+  background: #262e28a0;
+  touch-action: none;
+  user-select: none;
+}
+#movepad i {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  width: 36px;
+  height: 36px;
+  background: #d4c49aa0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+#movepad::after { content: 'AUTO'; position: absolute; top: -14px; right: 4px; font-size: 9px; color: #e3c46f; letter-spacing: .06em; pointer-events: none; }
+#actions.auto { grid-template-columns: 58px 58px 96px; }
+#actions.auto #attack { display: none; }
+#actions.auto #movepad { display: block; }
+
 small {
   display: block;
   font-size: 11px;
