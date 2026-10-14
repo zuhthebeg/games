@@ -5,9 +5,9 @@ import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnaps
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
 import { presentSkillEvents } from './skill-presentation.js';
-import { MASTERY_SKILLS } from '../meta/skill-mastery.js';
+import { MASTERY_SKILLS, MASTERY_MAX } from '../meta/skill-mastery.js';
 const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
-  && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= 5);
+  && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= MASTERY_MAX);
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
 const TICK_MS = 1000 / 30;
