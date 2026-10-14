@@ -113,9 +113,10 @@ test('SUC freezes original sim/net/render/input/HUD/art/quest bytes; exact paren
   if(file==='arpg/js/content/balance.js'||file==='arpg/js/meta/items.js'){assert.deepEqual(readFileSync(new URL(file,root)),git('show','66a7b5b:'+file),'exact approved parent easing/prices: '+file);continue;}
   const current=readFileSync(new URL(file,root));assert.equal(createHash('sha1').update(Buffer.from('blob '+current.length+'\0')).update(current).digest('hex'),hash,file);
  }
- const original=git('show',base+':arpg/index.html').toString();let stamped=original;
+ const original=git('show',base+':arpg/index.html').toString();
+ const approved=git('show','66a7b5b:arpg/index.html').toString();let stamped=approved;
  for(const p of ['js/content/combat.js','js/content/loot.js','js/content/monsters.js','js/render/atlas-state.js'])stamped=stamped.replace(new RegExp('(\\./'+p.replaceAll('.','\\.')+'\\?v=)[a-f0-9]{10}'),'$1'+sha(read('../'+p)).slice(0,10));
- const current=read('../index.html').toString(),approved=git('show','66a7b5b:arpg/index.html').toString();assert.ok(current===original||current===stamped||current===approved);
+ const current=read('../index.html').toString();assert.ok(current===original||current===stamped||current===approved);
 });
 
 test('SUC plus approved S1 removal against isolated parent 66a7b5b: 18 named traces differ, other 225 including M2b maps match',async()=>{
