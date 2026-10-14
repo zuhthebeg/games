@@ -33,6 +33,12 @@ export const SKILL_VFX = Object.freeze({
   blast_arrow: Object.freeze({ style: 'ember', radius: ABILITIES.blast_arrow.projectile.explode.radius,
     projectileRadius: ABILITIES.blast_arrow.projectile.radius, color: 0xf08c46, accent: 0xffe6ad,
     windup: 'converge', impact: 'smoke', motif: 'blast', activeLife: .38, residueLife: .6, particles: 26, reducedParticles: 2 }),
+  ground_slam: Object.freeze({ style: 'ring', radius: ABILITIES.ground_slam.shape.radius,
+    shape: ABILITIES.ground_slam.shape, color: 0xe88e50, accent: 0xffdf9c,
+    windup: 'runes', impact: 'spark', motif: 'quake', activeLife: .34, residueLife: .45, particles: 22, reducedParticles: 2 }),
+  armor_break: Object.freeze({ style: 'cleave', shape: ABILITIES.armor_break.shape,
+    color: 0xdca56b, accent: 0xffdf9c, windup: 'blade', impact: 'spark',
+    activeLife: .3, residueLife: .5, particles: 18, reducedParticles: 2 }),
   heavy_cleave: Object.freeze({ style: 'cleave', shape: ABILITIES.heavy_cleave.shape,
     color: 0xa8dce4, accent: 0xe3f5ef, windup: 'vertical', impact: 'spark',
     activeLife: .3, residueLife: .65, particles: 22, reducedParticles: 2 }),
@@ -264,7 +270,12 @@ export class SkillVfx {
   // Decoration inside an area's exact radius; never draws past it.
   motif(g, profile, radius) {
     const tau = Math.PI * 2;
-    if (profile.motif === 'whirl') {
+    if (profile.motif === 'quake') {
+      for(let i=0;i<8;i++) {const a=i*tau/8,c=Math.cos(a),s=Math.sin(a);
+        g.moveTo(c*radius*.25,s*radius*.25).lineTo(c*radius*.5-s*4,s*radius*.5+c*4).lineTo(c*radius*.85,s*radius*.85);
+      }
+      g.stroke({color:profile.accent,width:2,alpha:.7});
+    } else if (profile.motif === 'whirl') {
       for (let i = 0; i < 3; i++) {
         const a = i * tau / 3;
         g.arc(0, 0, radius * .78, a, a + 1.5).stroke({ color: profile.accent, width: 6, alpha: .85 })
@@ -414,7 +425,7 @@ export class SkillVfx {
     if (!charging && !slot.fired) {
       slot.fired = true;
       if (profile.style === 'ring') {
-        this.effect(profile, 'active', entity.x, entity.y, act.facing, act.def.shape.radius, act.def.shape, reduced);
+        this.effect(profile, 'active', entity.x + Math.cos(act.facing)*(act.def.shape.offset||0), entity.y + Math.sin(act.facing)*(act.def.shape.offset||0), act.facing, act.def.shape.radius, {...act.def.shape,offset:0}, reduced);
       } else if (profile.style === 'cleave') {
         const shape = act.def.shape;
         this.effect(profile, 'active', entity.x, entity.y, act.facing, 0, shape, reduced);

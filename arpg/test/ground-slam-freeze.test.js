@@ -8,7 +8,7 @@ import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 const freeze = o => { for (const v of Object.values(o)) if (v && typeof v === 'object') freeze(v); return Object.freeze(o); };
 assert.equal(ABILITIES.heavy_cleave.name, '내려찍기');
 assert.equal(ABILITIES.ground_slam.name, '대지 강타');
-for (const ability of ['heavy_cleave', 'ground_slam']) for (const level of [1,2,3,4,5]) for (const guest of [false,true]) {
+for (const ability of ['heavy_cleave', 'ground_slam']) for (const level of [1,5,10,15,20,25,30]) for (const guest of [false,true]) {
   test(`${ability} Lv${level} ${guest?'guest':'host'}: actual enemy-hit journal with frozen snapshots never stops presentation`, () => {
     const world = createWorld({seed:11});
     const caster = addPlayer(world, {pid:'h',weapon:'blade',x:400,y:400,mods:{skills:[ability,null,null],weaponForm:'blunt',maxMp:200}});
@@ -25,7 +25,7 @@ for (const ability of ['heavy_cleave', 'ground_slam']) for (const level of [1,2,
       for(const event of events) {
         if(event.type==='hit'&&event.ability===ability) hits++;
         assert.doesNotThrow(()=>vfx.event(freeze(structuredClone(event)),view),`${ability} Lv${level} ${event.type}: ${JSON.stringify(event)}`);
-        if(event.type==='hit'&&ability==='heavy_cleave'&&level>=3) {
+        if(event.type==='hit'&&ability==='heavy_cleave'&&level>=10) {
           const hit=vfx.effects.find(s=>s.left>0&&s.radius===16);
           assert.ok(hit,'bounded contact glow retained');
           assert.ok(hit.node.getLocalBounds().maxX<24,'contact glow is not a full-range cone at target');
@@ -40,7 +40,7 @@ for (const ability of ['heavy_cleave', 'ground_slam']) for (const level of [1,2,
       }
     }
     assert.equal(hits,1); assert.equal(caster.act,null);
-    if(ability==='heavy_cleave') {assert.ok(active);if(level>=3)assert.ok(contact);}
+    if(ability==='heavy_cleave') {assert.ok(active);if(level>=10)assert.ok(contact);}
     assert.ok(vfx.effects.every(s=>!s.node.visible&&!s.wave.visible));
   });
 }
@@ -49,8 +49,8 @@ for (const ability of ['heavy_cleave', 'ground_slam']) for (const level of [1,2,
 import { CoopSession } from '../js/net/session.js';
 import { createMemoryTransport } from '../js/net/loopback.js';
 import { trackMastery } from '../js/meta/skill-mastery.js';
-for (const ability of ['heavy_cleave','ground_slam']) test(`${ability}: loopback host/guest real casts preserve per-caster Lv1~5 and one-hit mastery`,()=>{
-  for(const level of [1,2,3,4,5]) {
+for (const ability of ['heavy_cleave','ground_slam']) test(`${ability}: loopback host/guest real casts preserve per-caster Lv1~30 and one-hit mastery`,()=>{
+  for(const level of [1,5,10,15,20,25,30]) {
     const sessions={},presenters={},trackers={h:{},g:{}},net=createMemoryTransport();
     for(const uid of ['h','g']) {
       presenters[uid]=new MasterySkillVfx(Graphics,new Container());

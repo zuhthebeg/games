@@ -1,15 +1,17 @@
 import { SkillVfx, SKILL_VFX } from './skill-vfx.js';
 import { presentSkillEvents } from '../net/skill-presentation.js';
 
-// Decoration grows inside the authoritative boundary, never the boundary itself.
-// Lv5's 1.15 size applies to inner light/particles, not the hit-range guide/core.
+// Real mastery levels and visual stages are separate; never grow hit geometry.
+export const masteryStage = (level = 1) => 1 + Math.floor(Math.max(1, Math.min(30, level)) / 5);
 export function masteryVisual(level = 1, atlas = false, reduced = false, classic = false) {
-  const enhanced = !classic && !reduced && level >= 3;
-  return { level, path: enhanced ? atlas ? 'atlas-overlay' : 'classic-enhanced' : 'classic',
-    scale: enhanced && level === 5 ? 1.15 : 1,
-    brightness: enhanced ? level === 5 ? 1.5 : 1.25 : 1,
-    extraParticles: enhanced ? level === 5 ? 8 : 4 : 0,
-    tail: enhanced ? 1.3 : 1, afterglow: enhanced && level === 5 };
+  const stage = masteryStage(level), enabled = !classic && !reduced, enhanced = enabled && stage >= 3;
+  return { level, stage, path: enhanced ? atlas ? 'atlas-overlay' : 'classic-enhanced' : 'classic',
+    scale: enhanced && stage >= 5 ? 1.15 : 1,
+    brightness: enhanced ? stage >= 5 ? 1.5 : 1.25 : 1,
+    extraParticles: enhanced ? stage >= 7 ? 12 : stage >= 6 ? 10 : stage >= 5 ? 8 : 4 : 0,
+    tail: enhanced ? 1.3 : 1, afterglow: enhanced && stage >= 5,
+    outline: enabled && stage >= 2, directional: enabled && stage >= 4,
+    crest: enabled ? Math.max(0, stage - 5) : 0 };
 }
 
 // Reuse classic fixed pools and geometry; no FX3 atlas/registry changes.
@@ -30,14 +32,32 @@ export class MasterySkillVfx extends SkillVfx {
   withLevel(level, ability, reduced, run) {
     const previous = this.context, requested = this.fxRequested;
     this.context = this.visual(level, ability, reduced); this.presentation.set(ability, this.context);
-    this.fxRequested = requested && level >= 3;
+    this.fxRequested = requested && this.context.stage >= 3;
     try { return run(); } finally { this.context = previous; this.fxRequested = requested; }
   }
   // Additive inner glow, shock arcs and accent motes keep cone/circle/ring silhouettes.
   decorate(g, visual, shape, radius, color = 0xa8dce4, accent = 0xe3f5ef, style = '') {
-    if (!visual?.extraParticles) return;
+    if (!visual?.outline && !visual?.extraParticles) return;
     const r = shape?.range ?? shape?.radius ?? radius, offset = shape?.offset || 0;
     if (!(r > 0)) return;
+    // New stage2 outline and stage4 directional insets keep historical cores.
+    if (visual.outline && !visual.extraParticles) {
+      if (shape?.type === 'cone') g.arc(0,0,r*.72,-shape.arc*Math.PI/420,shape.arc*Math.PI/420).stroke({color:accent,width:1.5,alpha:.6});
+      else if (['dash','frost','arrow','pierce'].includes(style)) g.moveTo(-r*.7,0).lineTo(r*.7,0).stroke({color:accent,width:1.5,alpha:.6});
+      else g.circle(offset,0,r*.72).stroke({color:accent,width:1.5,alpha:.6});
+      return;
+    }
+    if (visual.directional) {
+      const x=offset+r*.34;
+      g.moveTo(x,-r*.08).lineTo(x+r*.12,0).lineTo(x,r*.08).stroke({color:accent,width:1.5,alpha:.6});
+    }
+    // Two bounded inner motif echoes at most; no new masks, objects or timers.
+    for(let i=0;i<visual.crest;i++) {
+      const f=.38+i*.12;
+      if(shape?.type==='cone') g.arc(0,0,r*f,-shape.arc*Math.PI/480,shape.arc*Math.PI/480).stroke({color:accent,width:2,alpha:.55});
+      else if(['dash','frost','arrow','pierce'].includes(style)) g.poly([-r*f,0,0,-r*.12,r*f,0,0,r*.12]).stroke({color:accent,width:1.5,alpha:.55});
+      else for(let k=0;k<4;k++) {const a=k*Math.PI/2;g.arc(offset,0,r*f,a,a+.6).stroke({color:accent,width:2,alpha:.55});}
+    }
     const f = .68 * visual.scale, width = Math.min(10 * visual.scale, r * .12);
     if (shape?.type === 'cone') {
       const half = shape.arc * Math.PI / 360;
@@ -144,7 +164,12 @@ export class MasterySkillVfx extends SkillVfx {
     }
     return result;
   }
-  snapshot(world) { super.snapshot(world); for(const p of world.projectiles) this.projectileOwners.set(p.id,p.ownerId); }
+  snapshot(world) {
+    super.snapshot(world);
+    const live = new Set(world.projectiles.map(p=>p.id));
+    for(const id of this.projectileOwners.keys()) if(!live.has(id)) this.projectileOwners.delete(id);
+    for(const p of world.projectiles) this.projectileOwners.set(p.id,p.ownerId);
+  }
   events(events, world) {
     if (events.some(e=>e.type==='explode' && Object.hasOwn(e,'presentationOwner'))) return events;
     return presentSkillEvents(events,world,this.projectileOwners);
