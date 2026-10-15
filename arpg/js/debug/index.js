@@ -3,8 +3,15 @@ import { createCombatController, queueVisibleKills, requestClear } from './comba
 import { SLOTS } from '../meta/economy.js';
 import { MAX_LEVEL } from '../meta/progression.js';
 import { MONSTERS, ABILITIES } from '../content/combat.js';
+import { NEW_MONSTER_DROPS } from '../content/loot.js';
 import { MASTERY_SKILLS, masteryLevels } from '../meta/skill-mastery.js';
 export { registerDebugAction } from './actions.js';
+
+// Match actual loot tables plus the five legacyDrops switch cases. No invented lab rewards.
+// training_dragon was already unsupported; neither it nor encounter-only human IDs belong here.
+export const DROP_PREVIEW_MONSTERS = Object.keys(MONSTERS).filter(id =>
+  Object.hasOwn(NEW_MONSTER_DROPS, id)
+  || ['scarecrow', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief'].includes(id));
 
 export function mountDebug(context) {
   const { hub, store, renderer } = context;
@@ -37,7 +44,7 @@ export function mountDebug(context) {
     <h3>스킬 숙련</h3>${MASTERY_SKILLS.map(id => `<label>${ABILITIES[id].name}<select data-debug-mastery="${id}" aria-label="${ABILITIES[id].name} 숙련">${Array.from({length:30}, (_,i)=>i+1).map(n => `<option value="${n}">Lv${n}</option>`).join('')}</select></label>`).join('')}
     <h3>전투</h3>${btn('god', '무적')}${btn('oneHit', '원킬 ×100')}${btn('mana', 'MP 무한')}${btn('kill', '화면 몬스터 전멸')}${btn('clear', '즉시 클리어')}
     <label>속도<select id="dbg-speed">${options([0.5, 1, 2, 4])}</select></label>${btn('info', '전투 정보 오버레이')}
-    <h3>드랍 미리보기 (저장 변경 없음)</h3><label>몬스터<select id="dbg-monster">${options(Object.keys(MONSTERS))}</select></label><label>유형<select id="dbg-kind">${options(['normal', 'elite', 'boss'])}</select></label><label>횟수<select id="dbg-count">${options([100, 1000])}</select></label><label>위협도<input id="dbg-threat" type="number" min="1" max="100" value="1"></label>${btn('preview', '드랍 시뮬')}<pre id="dbg-preview"></pre><div id="dbg-extensions"></div>`;
+    <h3>드랍 미리보기 (저장 변경 없음)</h3><label>몬스터<select id="dbg-monster">${options(DROP_PREVIEW_MONSTERS)}</select></label><label>유형<select id="dbg-kind">${options(['normal', 'elite', 'boss'])}</select></label><label>횟수<select id="dbg-count">${options([100, 1000])}</select></label><label>위협도<input id="dbg-threat" type="number" min="1" max="100" value="1"></label>${btn('preview', '드랍 시뮬')}<pre id="dbg-preview"></pre><div id="dbg-extensions"></div>`;
   const info = document.createElement('pre'); info.id = 'arpg-debug-info'; info.hidden = true;
   document.body.append(toggle, panel, info);
   const status = text => { panel.querySelector('#arpg-debug-status').textContent = text; };
