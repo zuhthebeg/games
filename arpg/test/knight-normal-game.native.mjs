@@ -23,7 +23,7 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  const tap=async sel=>{await p.locator(sel).scrollIntoViewIfNeeded();return mobile?p.locator(sel).tap():p.locator(sel).click();};
  const state=()=>p.evaluate(()=>JSON.parse(JSON.stringify(__arpg.world)));
  const save=()=>p.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
- await p.goto('http://127.0.0.1:8897/arpg/');await tap('[data-action="choose-skeleton"]');await tap('[data-action="choose-knight"]');
+ await p.goto('http://127.0.0.1:8897/arpg/');await p.locator('[data-action="choose-skeleton"]').waitFor();writes.length=0;await tap('[data-action="choose-skeleton"]');await tap('[data-action="choose-knight"]');
  await p.locator('#hero-name').fill(mobile?'모바일기사':'정상기사');await tap('#name-next');for(const n of [1,2,3,0,2])await tap(`[data-action="answer"][data-choice="${n}"]`);await tap('#quiz-start');
  await p.locator('#inn-name').waitFor();const born=await save();assert.equal(born.items.length,1);assert.equal(born.equipped.body,null);assert.equal(await p.locator('[data-action="knight-play"]').count(),0);
  // Existing shop interaction persists only this slot, no alternate trial menu.
@@ -71,7 +71,7 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  await stop();w=await state();assert.equal(w.round.state,'clear',JSON.stringify({round:w.round,entities:w.entities,auto:await p.evaluate(()=>localStorage.getItem('arpg.autoAttack')),errors}));assert.equal(w.entities[0].terminal,'clear');
  const afterS2=await save();assert.equal(afterS2.cleared.S2,true);assert.equal(afterS2.lastReceipt.stageId,'S2');assert.ok(afterS2.lastReceipt.xpGained>0);assert.ok(afterS2.lastReceipt.goldGained>0);assert.ok(afterS2.completedRounds>=2);assert.ok(Object.values(afterS2.skillMastery).some(n=>n>0));
  await finish();const final=await save(),raw=await p.evaluate(k=>localStorage.getItem(k),key);await p.reload();await p.locator('#inn-name').waitFor();assert.equal(await p.evaluate(k=>localStorage.getItem(k),key),raw);assert.deepEqual(await p.evaluate(()=>JSON.parse(JSON.stringify(__arpg.save))),final);
- assert.equal(await p.evaluate(k=>localStorage.getItem(k),humanKey),humanRaw);assert.ok(writes.filter(k=>k.startsWith('arpg.save')).every(k=>k===key));
+ assert.equal(await p.evaluate(k=>localStorage.getItem(k),humanKey),humanRaw);assert.ok(writes.filter(k=>k.startsWith('arpg.save')).every(k=>k===key),JSON.stringify(writes));
  await tap('[data-action="character-choice"]');await tap('[data-action="choose-human"]');await launch('S1');await p.waitForFunction(()=>__arpg.art.visuals[0]?.id==='hero-sword'||__arpg.art.visuals[0]?.mode==='paperdoll');assert.equal((await state()).round.playerSide,undefined);assert.equal((await state()).entities[0].dodgeDisabled,undefined);
  if(mobile)await tap('#dodge');else await p.keyboard.press('Space');await p.waitForFunction(()=>__arpg.world.entities[0].dodge.cdLeft>0);assert.equal(await p.evaluate(k=>localStorage.getItem(k),key),raw);assert.deepEqual(errors,[]);
  rows.push({width:mobile?390:1280,created:born,s1Receipt:s1.lastReceipt,s2Receipt:afterS2.lastReceipt,final,skills,dodges,potions,kills,reloadExact:true,humanRawExactBeforeSelect:true,humanS1NormalAndDodge:true,errors,bound:[...new Set(await Promise.all(bound))]});writeFileSync('/home/cocy/.openclaw/workspace/tmp/arpg-knight-normal-game-native-partial.json',JSON.stringify(rows,null,2));await ctx.close();
