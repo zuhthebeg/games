@@ -78,7 +78,8 @@ export function weightDescription(weight, limit) {
 }
 
 export class HubUI {
-  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true }) {
+  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null }) {
+    this.initialCharacters = initialCharacters;
     this.canInteract = canInteract;
     this.save = save;
     this.persist = persist;
@@ -179,6 +180,7 @@ export class HubUI {
   }
 
   ready() {
+    if (this.initialCharacters) return this.showCharacterChoice();
     if (this.save) this.showInn();
     else this.showIntro();
   }
@@ -233,18 +235,45 @@ export class HubUI {
       <p id="meta-error" role="alert"></p></div>`;
   }
 
+  showCharacterChoice() {
+    this.creationLineage = null; this.answers = []; this.name = ''; this.chosenWeapon = undefined;
+    this.show(this.panelHtml('어떤 모습으로 깨어날까', `
+      <p>캐릭터는 이 브라우저의 독립 슬롯에 보관됩니다.</p>
+      ${button('인간 · 기존 모험 / 이어하기', 'choose-human')}
+      ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}`), 'character-choice');
+  }
+
+  showSkeletonRole() {
+    this.show(this.panelHtml('해골의 길', `
+      ${button('해골 기사 · 검 · 생성 / 이어하기', 'choose-knight')}
+      ${button('해골 마법사 · 준비 중', 'unavailable', '', true)}
+      ${button('해골 궁수 · 준비 중', 'unavailable', '', true)}
+      <p>기사는 시험 전투만 지원합니다. 성장/보상·캠페인·진화·협동 미연결. 회피 미지원.</p>
+      ${button('돌아가기', 'character-choice')}`), 'skeleton-role');
+  }
+
+  showSkeletonProfile() {
+    const save = this.skeletonProfile;
+    this.show(this.panelHtml('해골 기사 · 시험 전투 · 성장/보상 미연결', `
+      <p id="skeleton-name">${escape(save.name)} · Lv.${save.level}</p>
+      <p>무기: 검 · 독립 저장 완료. 문답 능력치와 보급을 시험 전투에 적용합니다.</p>
+      <p>시험 전투 소모품과 승패는 저장에 반영하지 않습니다. 다음 전투는 저장된 보급으로 시작합니다. 회피 미지원.</p>
+      ${button('시험 전투 시작 / 재개', 'knight-play')}
+      ${button('인간 / 캐릭터 선택', 'character-choice')}`), 'skeleton-profile');
+  }
+
   showIntro() {
     this.show(this.panelHtml('문 너머의 불빛', `
       <p class="story">이세계로 소환되었다.<br>낯선 하늘 아래, 꺼지지 않은 여관의 불빛이 보인다.<br>
       손등의 인장이 당신에게 이름을 묻는다.</p>
-      ${button('인장에 이름 새기기', 'name')}`, 'UNTITLED · M1'), 'intro');
+      ${button('인장에 이름 새기기', 'name')}${this.initialCharacters ? button('캐릭터 선택', 'character-choice') : ''}`, 'UNTITLED · M1'), 'intro');
   }
 
   showName() {
     this.show(this.panelHtml('어떤 이름으로 불릴까', `
       <form id="name-form"><label for="hero-name">이름 · 1~12자</label>
       <input id="hero-name" name="name" autocomplete="off" maxlength="24" required>
-      <button type="submit" id="name-next">기억을 따라가기</button></form>`), 'name');
+      <button type="submit" id="name-next">기억을 따라가기</button></form>${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'name');
     this.root.querySelector('input').focus();
   }
 
@@ -257,7 +286,7 @@ export class HubUI {
       button(escape(option.text), 'answer', `data-choice="${choice}" class="quiz-option"`)).join('');
     this.show(this.panelHtml(escape(question.text), `
       <div class="quiz-dots" aria-label="문답 ${index + 1} / 5">${dots}</div>
-      <div class="choice-list">${choices}</div>`, `소환 문답 · ${index + 1} / 5`), 'quiz');
+      <div class="choice-list">${choices}</div>${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`, `소환 문답 · ${index + 1} / 5`), 'quiz');
   }
 
   showQuizResult() {
@@ -266,13 +295,14 @@ export class HubUI {
     const bars = STAT_KEYS.map((key) => `
       <div class="stat-preview"><span>${STAT_NAMES[key]}</span><meter min="0" max="${3 * BALANCE.stats.pointScale}"
       value="${result.points[key]}"></meter><b>${BALANCE.stats.base} + ${result.points[key]}</b></div>`).join('');
+    const knight = this.creationLineage === 'skeleton_knight';
     const choices = FAMILIES.map((family) => button(WEAPON_NAMES[family], 'override',
       `data-family="${family}" aria-pressed="${family === this.chosenWeapon}"`)).join('');
     this.show(this.panelHtml('인장이 응답했다', `
-      <p>${escape(this.name)}, 당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>.</p>
-      ${bars}<p class="muted">초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
-      <div class="weapon-choices">${choices}</div>
-      ${button('소환 시험으로 · 30초', 'create', 'id="quiz-start"')}`), 'quiz-result');
+      <p>${escape(this.name)}, ${knight ? '해골 기사 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
+      ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기사 무기는 검으로 제한됩니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
+      <div class="weapon-choices">${choices}</div>`}
+      ${button(knight ? '해골 기사 생성 · 시험 전투로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
@@ -289,6 +319,7 @@ export class HubUI {
       <div class="xp-line" role="meter" aria-label="경험치" aria-valuemin="0" aria-valuemax="100"
         aria-valuenow="${Math.round(ratio * 100)}"><i style="width:${ratio * 100}%"></i></div></div></div>
       ${this.money()}
+      ${this.initialCharacters ? button('캐릭터 선택', 'character-choice') : ''}
       ${button(icon('settings'), 'settings', 'class="icon-button" aria-label="설정"')}</header>`;
   }
 
@@ -1011,6 +1042,21 @@ export class HubUI {
     if (this.enchantFx?.active) return;
     if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {
+      case 'character-choice': return this.showCharacterChoice();
+      case 'choose-human':
+        this.creationLineage = null; this.skeletonProfile = null;
+        this.save = this.initialCharacters.human();
+        this.receipt = this.save?.lastReceipt ?? null;
+        return this.save ? this.showInn() : this.showIntro();
+      case 'choose-skeleton': return this.showSkeletonRole();
+      case 'choose-knight': {
+        const save = this.initialCharacters.read();
+        if (save) { this.skeletonProfile = save; return this.showSkeletonProfile(); }
+        this.creationLineage = 'skeleton_knight'; this.answers = []; this.chosenWeapon = undefined;
+        return this.showName();
+      }
+      case 'knight-play':
+        return this.initialCharacters.play(this.skeletonProfile).catch(error => this.error(error.message));
       case 'weapon-confirm': return this.confirmEquipment(data);
       case 'weapon-cancel': return this.cancelEquipment();
       case 'name': return this.showName();
@@ -1018,9 +1064,17 @@ export class HubUI {
         this.answers.push(Number(data.choice));
         return this.answers.length === 5 ? this.showQuizResult() : this.showQuiz();
       case 'override':
+        if (this.creationLineage === 'skeleton_knight') return;
         this.chosenWeapon = data.family;
         return this.showQuizResult();
       case 'create':
+        if (this.creationLineage === 'skeleton_knight') {
+          this.skeletonProfile = this.initialCharacters.create({lineage: 'skeleton_knight', name: this.name, answers: this.answers, createdAt: Date.now()});
+          this.showSkeletonProfile();
+          // Show the durable profile first so a failed/cancelled launch can safely return.
+          if (this.initialCharacters.play) return this.initialCharacters.play(this.skeletonProfile).catch(error => this.error(error.message));
+          return;
+        }
         this.commit(createSave({
           name: this.name, answers: this.answers, weapon: this.chosenWeapon, createdAt: Date.now(),
         }));

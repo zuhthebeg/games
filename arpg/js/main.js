@@ -17,6 +17,7 @@ import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { SaveStore } from './meta/save.js';
+import { readKnight, createKnight } from './meta/initial-characters.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from './meta/run.js';
 
@@ -34,6 +35,7 @@ let undeadEncounter = null;
 let undeadStarting = false;
 let undeadHuman = null;
 let undeadRendererChanged = false;
+let knightReturn = null;
 let coop = null;
 let coopSession = null;
 let coopResult = null;
@@ -66,7 +68,11 @@ function readonly(value) {
 
 try {
   const store = new SaveStore(localStorage);
-  const saved = store.load();
+  const bootQuery = new URLSearchParams(location.search);
+  const soloSelected = bootQuery.get('character') === 'skeleton_knight';
+  const legacyEntry = !soloSelected && (bootQuery.get('debug') === '1' || bootQuery.get('dev') === '1' || bootQuery.has('room'));
+  // Human loading may quarantine old/corrupt bytes: defer until human is selected.
+  const saved = legacyEntry ? store.load() : null;
   const app = new Application();
   await app.init({
     resizeTo: window,
@@ -104,6 +110,7 @@ try {
     canInteract: () => !undead && !undeadStarting,
     persist: (save) => {
       if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
+      if (save.lineage && save.lineage !== 'human') throw new Error('인간 저장소에 해골을 저장할 수 없습니다.');
       store.save(save);
     },
     resetSave: () => {
@@ -187,7 +194,7 @@ try {
       }
     };
   }
-  async function startUndead() {
+  async function startUndead(profile = null) {
     if (undeadStarting) return false;
     if (!undead && (running || coop)) throw new Error('인간 전투/멀티플레이를 끝내고 여관에서 시작하세요.');
     const attempt = {}; // Identity owns both continuation and finally; cancellation never reuses it.
@@ -195,13 +202,29 @@ try {
     if (!undeadHuman) undeadHuman = rememberHuman();
     hud.clearUndeadResult();
     hub.root.hidden = true; hub.root.inert = true;
-    input.reset(); input.enabled = false; debug.reset();
+    input.reset(); input.enabled = false; debug?.reset();
     let session = undead;
     try {
+      if ((profile || session?.persistent) && !knightReturn) {
+        knightReturn = document.createElement('button');
+        knightReturn.id = 'knight-return'; knightReturn.type = 'button';
+        knightReturn.textContent = '전투 취소 · 캐릭터로';
+        Object.assign(knightReturn.style, {position: 'fixed', top: '168px', right: '12px', zIndex: '80'});
+        knightReturn.addEventListener('click', leaveUndead);
+        document.body.append(knightReturn);
+      }
       if (!session) {
-        const { createUndeadSession } = await import('./debug/undead-start.js');
-        if (undeadStarting !== attempt) return false;
-        session = createUndeadSession(renderer.provider);
+        if (profile) {
+          const savedKnight = readKnight(localStorage);
+          if (!savedKnight || JSON.stringify(savedKnight) !== JSON.stringify(profile)) throw new Error('저장 슬롯이 변경되었습니다. 캐릭터를 다시 선택하세요.');
+          const { createKnightSession } = await import('./solo/undead-session.js');
+          if (undeadStarting !== attempt) return false;
+          session = createKnightSession(renderer.provider, savedKnight);
+        } else {
+          const { createUndeadSession } = await import('./debug/undead-start.js');
+          if (undeadStarting !== attempt) return false;
+          session = createUndeadSession(renderer.provider);
+        }
       }
       const encounter = session.restart();
       undeadRendererChanged = true;
@@ -209,8 +232,8 @@ try {
       renderer.root.visible = renderer.warning.visible = false;
       hud.begin(encounter.world, loadoutOf(session.save));
       hud.meta(currentLoad(session.save, createTracker(0)), createTracker(0), session.save);
-      hud.nodes['stage-name'].textContent = '언데드 · 해골 기사 · 저장 안 됨';
-      hud.nodes.notice.textContent = '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
+      hud.nodes['stage-name'].textContent = session.persistent ? `${session.save.name} · Lv.${session.save.level} · 해골 기사 · 시험 전투 · 성장/보상 미연결` : '언데드 · 해골 기사 · 저장 안 됨';
+      hud.nodes.notice.textContent = session.persistent ? '문답 능력치 · 저장된 보급 적용 · 회피 미지원 · 시험 전투 결과/소모 저장 없음' : '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
       hud.noticeLeft = Infinity;
       // Exercise the first render inside the transaction, not in the next RAF.
       renderer.render(encounter.world, 0, 0);
@@ -224,6 +247,7 @@ try {
       if (undead) audio.stop(); // A failed active restart may still have encounter voices.
       hud.clearUndeadResult();
       session?.leave(); undead = null; undeadEncounter = null;
+      knightReturn?.remove(); knightReturn = null;
       const restore = undeadHuman; undeadHuman = null;
       try { restore?.(); } catch (restoreError) { error.cause = restoreError; }
       throw error;
@@ -234,11 +258,12 @@ try {
   function leaveUndead() {
     // Invalidate even when import is unresolved and no session exists yet.
     undeadStarting = false;
+    knightReturn?.remove(); knightReturn = null;
     if (!undeadHuman && !undead) return;
     const session = undead;
     hud.clearUndeadResult();
     undead = null; undeadEncounter = null;
-    input.reset(); input.enabled = false; debug.reset();
+    input.reset(); input.enabled = false; debug?.reset();
     if (session) { audio.stop(); session.leave(); }
     const restore = undeadHuman; undeadHuman = null;
     restore?.();
@@ -253,7 +278,7 @@ try {
       hud.nodes.notice.textContent = Object.keys(renderer.provider.atlases.status().failed).length
         ? '필수 아틀라스 실패 · 전투 중지 · 인간으로 돌아가세요' : '아틀라스 준비 중';
     } else {
-      hud.nodes.notice.textContent = state === 'running' ? '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음'
+      hud.nodes.notice.textContent = state === 'running' ? (undead.persistent ? '해골 기사 · 시험 전투 · 성장/보상 미연결 · 회피 미지원 · 전투 소모 저장 없음' : '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음')
         : state === 'victory' ? '해골 승리 · 아래에서 다음 전투 또는 인간 복귀'
         : '전투 종료 · 아래에서 다시 시작 또는 인간 복귀';
       accumulator += elapsed;
@@ -272,7 +297,7 @@ try {
     if (ready && result !== 'running') {
       input.reset(); input.enabled = false; accumulator = 0;
       const retry = () => startUndead().catch(error => hub.error(error.message));
-      hud.showUndeadResult(result, { next: retry, restart: retry, leave: leaveUndead });
+      hud.showUndeadResult(result, { next: retry, restart: retry, leave: leaveUndead, persistent: undead.persistent });
       const presentation = undead.presentation(world);
       renderer.snapshot(presentation);
       renderer.events(presentation, []);
@@ -320,6 +345,7 @@ try {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
+    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골 기사는 솔로 시험 전투만 지원합니다.');
     // The host chooses on the existing departure panel; guests retain their own build/save.
     const localSave = structuredClone(hub.save);
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
@@ -401,7 +427,8 @@ try {
   Object.defineProperty(window, '__arpg', {
     value: Object.freeze({
       get world() { return readonly(world); },
-      get mode() { return undead ? 'undead-debug' : 'human'; },
+      get mode() { return undead ? (undead.persistent ? 'skeleton-trial' : 'undead-debug') : 'human'; },
+      get character() { return readonly(undead?.save || hub.skeletonProfile || hub.save); },
       get multi() { return readonly(coopSession ? {
         uid: coopSession.uid, host: coopSession.host, isHost: coopSession.isHost,
         phase: coopSession.phase, ownsSim: !!coopSession.world, rtt: coopSession.rtt,
@@ -432,7 +459,23 @@ try {
     }),
   });
   document.querySelector('#boot').hidden = true;
-  hub.ready();
+  if (!legacyEntry) {
+    const chooseUrl = character => {
+      const url = new URL(location.href); url.searchParams.set('character', character);
+      history.replaceState(null, '', url);
+    };
+    hub.initialCharacters = {
+      human: () => { const save = store.load(); chooseUrl('human'); return save; },
+      read: () => { const save = readKnight(localStorage); chooseUrl('skeleton_knight'); return save; },
+      create: options => { const save = createKnight(localStorage, options); chooseUrl('skeleton_knight'); return save; },
+      play: profile => startUndead(profile),
+    };
+    hub.ready();
+    if (soloSelected && bootQuery.has('room')) hub.error('해골 기사는 솔로 시험 전투만 지원합니다. 협동 방에 들어갈 수 없습니다.');
+    else if (soloSelected) {
+      try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
+    } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
+  } else hub.ready();
   if (saved && new URLSearchParams(location.search).has('room')) startCoop('S2', 1);
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';

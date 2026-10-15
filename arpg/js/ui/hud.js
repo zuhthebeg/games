@@ -59,7 +59,7 @@ export class HUD {
     this.update(world, 0);
   }
 
-  showUndeadResult(state, { next, restart, leave }) {
+  showUndeadResult(state, { next, restart, leave, persistent = false }) {
     if (this.undeadResult) return;
     const panel = document.createElement('section');
     panel.id = 'undead-result';
@@ -69,11 +69,11 @@ export class HUD {
     title.textContent = state === 'victory' ? '해골 승리' : state === 'death' ? '전투 종료 · 쓰러졌습니다' : '전투 종료 · 귀환';
     title.setAttribute('role', 'status');
     const detail = document.createElement('p');
-    detail.textContent = '같은 해골 기사 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
+    detail.textContent = persistent ? '저장된 캐릭터로 같은 시험 전투를 반복합니다. 성장/보상 미연결. 전투 결과·소모는 저장하지 않습니다. 회피 미지원.' : '같은 해골 기사 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
     panel.append(title, detail);
     const actions = state === 'victory' ? [['next', '다음 전투', next], ['restart', '다시 시작', restart]]
       : [['restart', '다시 시작', restart]];
-    actions.push(['leave', '인간으로 돌아가기', leave]);
+    actions.push(['leave', persistent ? '캐릭터로 돌아가기' : '인간으로 돌아가기', leave]);
     for (const [id, label, run] of actions) {
       const button = document.createElement('button');
       button.type = 'button'; button.dataset.undeadAction = id; button.textContent = label;

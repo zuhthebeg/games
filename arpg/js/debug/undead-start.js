@@ -1,33 +1,9 @@
-import { createEncounter } from './undead-encounter.js';
-import { installEncounterArt } from './undead-art.js';
+import { createKnightSession } from '../solo/undead-session.js';
 import { createSkeletonSave } from '../meta/character-creation.js';
-import { buildRoundMods } from '../meta/run.js';
-
+export { terminalPresentation } from '../solo/undead-session.js';
 export const UNDEAD_LABEL = '언데드 · 해골 기사 · 저장 안 됨';
-// Explicit debug preset, not a quiz completion or a copy of any human progress.
 export function createUndeadSession(provider) {
-  const save = createSkeletonSave({ lineage: 'skeleton_knight', name: '디버그 기사', answers: [0, 0, 0, 0, 0], createdAt: 0 });
-  const restoreArt = installEncounterArt(provider);
-  let left = false;
-  return {
-    save,
-    restart() {
-      if (left) throw new Error('이미 종료한 디버그 전투');
-      return createEncounter({ pid: 'local', mods: buildRoundMods(save) });
-    },
-    presentation: terminalPresentation,
-    state({ player, human }) {
-      return player.dead ? 'death' : human.dead ? 'victory' : player.terminal ? 'returned' : 'running';
-    },
-    leave() { if (!left) { restoreArt(); left = true; } },
-  };
-}
-
-// Render-only terminal pose. Never tick a concluded encounter to finish presentation:
-// atlas death/hurt ages use render delta, but attack uses authoritative act.elapsed.
-export function terminalPresentation(world) {
-  return { ...world, telegraphs: [], projectiles: [], entities: world.entities.map(entity => ({
-    ...entity, act: null, moving: false, staggerLeft: 0,
-    dodge: entity.dodge && { ...entity.dodge, dashLeft: 0 },
-  })) };
+  const session = createKnightSession(provider, createSkeletonSave({ lineage: 'skeleton_knight', name: '디버그 기사', answers: [0, 0, 0, 0, 0], createdAt: 0 }));
+  session.persistent = false;
+  return session;
 }
