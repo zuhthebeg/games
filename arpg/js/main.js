@@ -32,6 +32,8 @@ let debug = null;
 let undead = null;
 let undeadEncounter = null;
 let undeadStarting = false;
+let undeadHuman = null;
+let undeadRendererChanged = false;
 let coop = null;
 let coopSession = null;
 let coopResult = null;
@@ -99,8 +101,13 @@ try {
   const hub = new HubUI({
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
-    persist: (save) => store.save(save),
+    canInteract: () => !undead && !undeadStarting,
+    persist: (save) => {
+      if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
+      store.save(save);
+    },
     resetSave: () => {
+      if (undead || undeadStarting) { leaveUndead(); return; }
       store.reset();
       world = null;
       renderer.root.visible = false;
@@ -138,40 +145,100 @@ try {
       lastTime = performance.now();
     },
   });
-  async function startUndead() {
-    if (undeadStarting) return;
-    if (!undead && (running || coop)) throw new Error('인간 전투/멀티플레이를 끝내고 여관에서 시작하세요.');
-    undeadStarting = true;
-    try {
-      if (!undead) {
-        const { createUndeadSession } = await import('./debug/undead-start.js');
-        undead = createUndeadSession(renderer.provider);
+  // Preserve the existing HUD nodes/listeners (including InputLayer button references).
+  // Replacing innerHTML here would silently disconnect the original human controls.
+  function rememberHud(node) {
+    if (!node) return () => {};
+    const children = [...node.childNodes];
+    const restoreChildren = children.map(rememberHud);
+    const attributes = node.attributes && [...node.attributes].map(a => [a.name, a.value]);
+    const text = node.nodeValue;
+    return () => {
+      if (attributes) {
+        for (const a of [...node.attributes]) node.removeAttribute(a.name);
+        for (const [name, value] of attributes) node.setAttribute(name, value);
+        node.replaceChildren(...children);
+      } else node.nodeValue = text;
+      for (const restore of restoreChildren) restore();
+    };
+  }
+  function rememberHuman() {
+    const previous = { world, running, tracker, roundSave, developmentRound, accumulator };
+    const rootHidden = hub.root.hidden, inert = hub.root.inert, enabled = input.enabled;
+    const visible = renderer.root.visible, warning = renderer.warning.visible, reduced = renderer.reduced;
+    const stage = hud.stage, noticeLeft = hud.noticeLeft;
+    const restoreHud = rememberHud(document.querySelector('#hud'));
+    const restorePause = rememberHud(document.querySelector('#pause'));
+    return () => {
+      ({ world, running, tracker, roundSave, developmentRound, accumulator } = previous);
+      lastTime = performance.now();
+      try {
+        if (undeadRendererChanged) {
+          const idle = world || createWorld();
+          if (!world) addPlayer(idle, { pid: 'local' });
+          renderer.reset(idle, reduced, roundSave);
+        }
+      } finally {
+        undeadRendererChanged = false;
+        renderer.root.visible = visible; renderer.warning.visible = warning;
+        restoreHud(); restorePause(); hud.stage = stage; hud.noticeLeft = noticeLeft;
+        hub.root.hidden = rootHidden; hub.root.inert = inert;
+        input.reset(); input.enabled = enabled;
       }
-      audio.stop(); input.reset(); input.enabled = false; debug.reset();
-      undeadEncounter = undead.restart(); world = undeadEncounter.world;
-      roundSave = undead.save; tracker = null; developmentRound = false;
-      accumulator = 0; lastTime = performance.now();
-      renderer.reset(world, matchMedia('(prefers-reduced-motion: reduce)').matches, roundSave);
+    };
+  }
+  async function startUndead() {
+    if (undeadStarting) return false;
+    if (!undead && (running || coop)) throw new Error('인간 전투/멀티플레이를 끝내고 여관에서 시작하세요.');
+    const attempt = {}; // Identity owns both continuation and finally; cancellation never reuses it.
+    undeadStarting = attempt;
+    if (!undeadHuman) undeadHuman = rememberHuman();
+    hub.root.hidden = true; hub.root.inert = true;
+    input.reset(); input.enabled = false; debug.reset();
+    let session = undead;
+    try {
+      if (!session) {
+        const { createUndeadSession } = await import('./debug/undead-start.js');
+        if (undeadStarting !== attempt) return false;
+        session = createUndeadSession(renderer.provider);
+      }
+      const encounter = session.restart();
+      undeadRendererChanged = true;
+      renderer.reset(encounter.world, matchMedia('(prefers-reduced-motion: reduce)').matches, session.save);
       renderer.root.visible = renderer.warning.visible = false;
-      hub.root.hidden = true;
-      hud.begin(world, loadoutOf(roundSave));
-      hud.meta(currentLoad(roundSave, createTracker(0)), createTracker(0), roundSave);
+      hud.begin(encounter.world, loadoutOf(session.save));
+      hud.meta(currentLoad(session.save, createTracker(0)), createTracker(0), session.save);
       hud.nodes['stage-name'].textContent = '언데드 · 해골 기사 · 저장 안 됨';
       hud.nodes.notice.textContent = '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
       hud.noticeLeft = Infinity;
-      running = true;
-    } finally { undeadStarting = false; }
+      // Exercise the first render inside the transaction, not in the next RAF.
+      renderer.render(encounter.world, 0, 0);
+      audio.stop();
+      undead = session; undeadEncounter = encounter; world = encounter.world;
+      roundSave = session.save; tracker = null; developmentRound = false;
+      accumulator = 0; lastTime = performance.now(); running = true;
+      return true;
+    } catch (error) {
+      if (undeadStarting !== attempt) return false;
+      if (undead) audio.stop(); // A failed active restart may still have encounter voices.
+      session?.leave(); undead = null; undeadEncounter = null;
+      const restore = undeadHuman; undeadHuman = null;
+      try { restore?.(); } catch (restoreError) { error.cause = restoreError; }
+      throw error;
+    } finally {
+      if (undeadStarting === attempt) undeadStarting = false;
+    }
   }
   function leaveUndead() {
-    if (!undead) return;
-    running = false; input.reset(); input.enabled = false; audio.stop(); debug.reset();
-    undead.leave(); undead = null; undeadEncounter = null;
-    // Dispose debug views/effects under the original provider, without starting a human round.
-    const idle = createWorld(); addPlayer(idle, { pid: 'local' }); renderer.reset(idle);
-    world = null; tracker = null; roundSave = null; accumulator = 0;
-    renderer.root.visible = renderer.warning.visible = false;
-    hud.nodes.dodge.disabled = false;
-    hub.ready();
+    // Invalidate even when import is unresolved and no session exists yet.
+    undeadStarting = false;
+    if (!undeadHuman && !undead) return;
+    const session = undead;
+    undead = null; undeadEncounter = null;
+    input.reset(); input.enabled = false; debug.reset();
+    if (session) { audio.stop(); session.leave(); }
+    const restore = undeadHuman; undeadHuman = null;
+    restore?.();
   }
   function frameUndead(elapsed) {
     const ready = renderer.views.size === 2 && [...renderer.views.values()].every(v => v.visual.debug.mode === 'atlas');
@@ -364,9 +431,10 @@ try {
   if (debugEnabled) {
     const { mountDebug } = await import('./debug/index.js');
     debug = mountDebug({ hub, store, renderer, input, startUndead, leaveUndead,
-      get undead() { return !!undead; },
+      get undead() { return !!undead || !!undeadStarting; },
+      get undeadStarting() { return !!undeadStarting; },
       setMastery: (id, level) => {
-        if (undead) throw new Error('언데드 디버그는 저장/숙련 수정 불가');
+        if (undead || undeadStarting) throw new Error('언데드 디버그는 저장/숙련 수정 불가');
         const next = setMasteryLevel(hub.save, id, level);
         store.save(next); hub.save = next;
         if (roundSave) roundSave = { ...roundSave, skillMastery: { ...next.skillMastery } };

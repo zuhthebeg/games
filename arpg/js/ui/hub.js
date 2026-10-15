@@ -78,7 +78,8 @@ export function weightDescription(weight, limit) {
 }
 
 export class HubUI {
-  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {} }) {
+  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true }) {
+    this.canInteract = canInteract;
     this.save = save;
     this.persist = persist;
     this.startRound = startRound;
@@ -219,6 +220,7 @@ export class HubUI {
   }
 
   commit(next) {
+    if (this.canInteract?.() === false) throw new Error('언데드 디버그 저장 금지');
     next = noteMaterials(next);
     this.persist(next);
     this.save = next;
@@ -888,6 +890,7 @@ export class HubUI {
   }
 
   launch(stage, reduced = false, weapon = null) {
+    if (this.canInteract?.() === false) return;
     if (!weapon && !mapUnlocked(this.save, stage)) throw new Error('아직 잠긴 맵입니다.');
     this.commit(selectThreat(this.save, stage, stage === 'S1' ? 1 : this.sortieThreat || 1));
     this.root.hidden = true;
@@ -1004,6 +1007,7 @@ export class HubUI {
   }
 
   action(action, data) {
+    if (this.canInteract?.() === false) return;
     if (this.enchantFx?.active) return;
     if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {

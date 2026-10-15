@@ -55,7 +55,7 @@ export function mountDebug(context) {
   panel.addEventListener('change', event => {
     const id = event.target.dataset.debugMastery;
     if (!id) return;
-    try { if (!hub.save) throw new Error('세이브: 없음'); context.setMastery(id, Number(event.target.value)); status(`숙련: ${ABILITIES[id].name} Lv${event.target.value}`); }
+    try { if (context.undead) throw new Error('언데드 디버그는 저장/숙련 수정 불가'); if (!hub.save) throw new Error('세이브: 없음'); context.setMastery(id, Number(event.target.value)); status(`숙련: ${ABILITIES[id].name} Lv${event.target.value}`); }
     catch (error) { status(error.message); }
     refreshMastery();
   });
@@ -79,8 +79,9 @@ export function mountDebug(context) {
   const requireSave = () => { requireInn(); if (!hub.save) throw new Error('먼저 캐릭터를 생성하세요.'); return hub.save; };
   const execute = async action => {
     if (action === 'close') { togglePanel(); return; }
-    if (action === 'undead-start') { await context.startUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); return; }
+    if (action === 'undead-start') { if (await context.startUndead() === false) return; panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); return; }
     if (action === 'undead-return') { context.leaveUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); status('인간 세션 복귀 · 세이브 변경 없음'); return; }
+    if (action === 'reset' && context.undeadStarting) { context.leaveUndead(); status('준비 취소 · 세이브 변경 없음'); return; }
     if (context.undead) throw new Error('언데드 디버그에서는 다시 시작/인간 복귀만 사용하세요. 저장·치트·즉시 정산 불가');
     if (['god', 'oneHit', 'mana'].includes(action)) {
       combat.state[action] = !combat.state[action];
