@@ -1,0 +1,80 @@
+{
+  "status": "PASS",
+  "mode": "actual shipped Pixi8.22.0 Spritesheet.parse CPU, not native canvas/GPU",
+  "groups": {
+    "death_S": 10,
+    "run_N": 10,
+    "death_SW": 10,
+    "run_NE": 10,
+    "run_NW": 10,
+    "death_SE": 10,
+    "dodge_NE": 5,
+    "dodge_NW": 5,
+    "dodge_N": 5,
+    "hit_N": 8,
+    "hit_SE": 8,
+    "hit_SW": 8,
+    "attack_NW": 12,
+    "attack_SW": 12,
+    "dodge_SE": 5,
+    "dodge_SW": 5,
+    "hit_NE": 8,
+    "idle_SE": 13,
+    "idle_SW": 13,
+    "attack_N": 12,
+    "attack_W": 12,
+    "death_NW": 10,
+    "death_W": 10,
+    "dodge_W": 5,
+    "hit_NW": 8,
+    "hit_S": 8,
+    "hit_W": 8,
+    "idle_NE": 13,
+    "idle_NW": 13,
+    "idle_W": 13,
+    "attack_NE": 12,
+    "death_NE": 10,
+    "attack_E": 12,
+    "attack_S": 12,
+    "death_E": 10,
+    "dodge_E": 5,
+    "dodge_S": 5,
+    "hit_E": 8,
+    "idle_E": 13,
+    "death_N": 10,
+    "idle_N": 13,
+    "idle_S": 13,
+    "run_E": 10,
+    "run_W": 10,
+    "attack_SE": 12,
+    "run_SE": 10,
+    "run_SW": 10,
+    "run_S": 10
+  },
+  "frames": 464,
+  "sheets": [
+    {
+      "physical": {
+        "w": 1024,
+        "h": 1936
+      },
+      "actualResolution": 0.5,
+      "logicalTexture": [
+        2048,
+        3872
+      ],
+      "textures": 464
+    }
+  ],
+  "logicalOriginal": [
+    256,
+    256
+  ],
+  "physicalOriginal": [
+    128,
+    128
+  ],
+  "metaScale": ".5",
+  "actualTextureSourceResolution": 0.5,
+  "inverseLogicalExpansion": 2
+}

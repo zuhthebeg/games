@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "mode": "installed native Linux Chromium, actual shipped Pixi 8.22.0 + WebGL SwiftShader; not physical phone/GPU performance",
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+  "textures": 464,
+  "groups": 48,
+  "sheets": [
+    {
+      "pixelWidth": 1024,
+      "pixelHeight": 1936,
+      "resolution": 0.5,
+      "logicalWidth": 2048,
+      "logicalHeight": 3872
+    }
+  ],
+  "fixture": "attack_E_006",
+  "canvas": [
+    128,
+    128
+  ],
+  "spriteBounds": {
+    "x": 0,
+    "y": 0,
+    "width": 128,
+    "height": 128
+  },
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6339516043663025
+  },
+  "nativeAlphaExact": true,
+  "alphaMismatchPixels": 0,
+  "maxAlphaError": 0,
+  "anyAlphaBounds": [
+    43,
+    22,
+    99,
+    93
+  ],
+  "opaquePixels": 2094,
+  "screenshots": 0,
+  "gameRuntimeLoaded": false,
+  "storageTouched": false,
+  "pageErrors": [],
+  "bindings": {
+    "tools/art/player-skeleton-archer/baseline-inventory.json": "7b06eee02bd15dfd4703e0d4a0d6954bd56412f0b9ff94971848a447e7b9db93",
+    "tools/art/player-skeleton-archer/config.json": "e85e483d5c65949fdc5ed246e609c52ff5d84ef4850417499e3bcec239512f6f",
+    "tools/art/player-skeleton-archer/inspection.json": "7c3f25ca4981cffd09a95da5fc1a5e1767008b28c34b6b0110cbbaec81aa3b2e",
+    "tools/art/player-skeleton-archer/packing-validation.json": "7b21df0131ea238742a64eebfa309a1d1a97016113b819797e58bf47735e653c",
+    "tools/art/player-skeleton-archer/pixi-parser-validation.json": "b96dc8483d7a23e91d7c061b02339f82ddb873d50668c5dd419c5a3ebda3d39b",
+    "tools/art/player-skeleton-archer/preview.html": "95e1bdeeec100e4f2a229fd497775ad7f008becb4901e2e177d484fdbfededf8",
+    "tools/art/player-skeleton-archer/preview.mjs": "f752dc9434ae8dae6769939be00e158ad29354f3c7448c61394305456e8a3914",
+    "tools/art/player-skeleton-archer/source-mask-stats.json": "8c061175694a7bc8db7e564c978a86b138bb47a2242a5993101b273a9493902c",
+    "tools/art/player-skeleton-archer/source-validation.json": "8b12cac2692926416dce0b87ae8c62b6dacbbcf07ca95ec89220c05caba59bfd",
+    "tools/art/player-skeleton-archer/verify-native.mjs": "36ab2ff34e7dba01475244faa7faf88183b0185a64348a6ed16e32a861c52428",
+    "tools/art/player-skeleton-archer/verify-pixi.mjs": "a12d79dcc87b416d0171dcaf374088286263bdc0f13223c0ad5c1a99b4945a2d",
+    "assets/sprites/player-skeleton-archer/atlas-0.webp": "608ff7bd21a7d12d8e8ef38ddc438010dcc407456e134cbe74e574a6cea2fe75",
+    "assets/sprites/player-skeleton-archer/atlas-0.webp.json": "17023de997587bfce868d867af3e000271d3ea7c71cac5a8eee03d5552ccc6c7",
+    "assets/sprites/player-skeleton-archer/kit-descriptor.json": "addc902847737c0da6e79a5a61333ad53cb1a4fc1b391f22d1bfd774115e50b4",
+    "vendor/pixi-8.22.0.min.mjs": "66257bc46776898bf8c54daaed402ed8f9ac109379c47b2dfa8aa048544d2953",
+    "tools/art/player-skeleton-archer/final/fixture-physical128.png": "81e26a7f02e0b80d686eca8797b0f91486e5aafe1da09fb0caf45f7662edc7c7"
+  }
+}

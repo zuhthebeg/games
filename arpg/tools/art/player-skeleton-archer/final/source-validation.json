@@ -1,0 +1,3142 @@
+{
+  "status": "PASS",
+  "mode": "actual reopened compressed .blend evaluated source, independent of generator execution",
+  "source_blend_sha256": "e7fdc12cab7691733b93f999817501bdb2443cd165fbfc76bb9c37be6ee5a125",
+  "original_body_coordinates_preserved": {
+    "Skeleton_Rogue_ArmLeft": {
+      "vertices": 634,
+      "polygons": 692,
+      "coordinate_sha256": "bbf4a133b3625708d1c222ceeb895121129d2382588069c6e78eae45f56595f6",
+      "armature": true
+    },
+    "Skeleton_Rogue_ArmRight": {
+      "vertices": 634,
+      "polygons": 692,
+      "coordinate_sha256": "a76055a7afef5b27039daf29ff7ea0ca007d19dc20a3f92899baa8652436a0a6",
+      "armature": true
+    },
+    "Skeleton_Rogue_Body": {
+      "vertices": 1403,
+      "polygons": 1250,
+      "coordinate_sha256": "92a91be4ed949b7381ac7e3b06ca66858f9d47102a13eb68701f81cfada8ba51",
+      "armature": true
+    },
+    "Skeleton_Rogue_Eyes": {
+      "vertices": 80,
+      "polygons": 132,
+      "coordinate_sha256": "d4e2884b134365cd77c76aaa67843429adc03ab0b541b0ac80dd57bca7adfd78",
+      "armature": true
+    },
+    "Skeleton_Rogue_Head": {
+      "vertices": 515,
+      "polygons": 414,
+      "coordinate_sha256": "0a7ce56b23d77eda61a2b803597bd6df46761a7907c60cd4e27fff4803b88c78",
+      "armature": true
+    },
+    "Skeleton_Rogue_Jaw": {
+      "vertices": 195,
+      "polygons": 124,
+      "coordinate_sha256": "c4fb0292950b649e774656308fd924f2a0a8c931fd0cdc58fb3a7ac39dd4932e",
+      "armature": true
+    },
+    "Skeleton_Rogue_LegLeft": {
+      "vertices": 675,
+      "polygons": 700,
+      "coordinate_sha256": "5a473a7844715d6a990b9dfe07e81fe992d1048755d1796432bac1ab1ff73324",
+      "armature": true
+    },
+    "Skeleton_Rogue_LegRight": {
+      "vertices": 675,
+      "polygons": 700,
+      "coordinate_sha256": "87f1c6fa1254ecf46f2e2a4645878fc783405864b209c5f1903de4edf5484c45",
+      "armature": true
+    },
+    "Skeleton_Rogue_Cape": {
+      "vertices": 56,
+      "polygons": 84,
+      "coordinate_sha256": "25b80e732ffd6b9326948bf0caa7e9f2dbcde32ab54d557b38885f87379f2145",
+      "armature": false
+    }
+  },
+  "skin_modifiers": 8,
+  "joints": 41,
+  "handslots": [
+    "handslot.l",
+    "handslot.r"
+  ],
+  "no_dagger_or_hood": true,
+  "new_weapon_objects": [
+    "Archer_recurve_bow_original",
+    "Archer_wrapped_grip",
+    "Archer_deformable_string",
+    "Archer_arrow_shaft_original",
+    "Archer_original_broadhead",
+    "Archer_original_fletching"
+  ],
+  "motion": {
+    "idle": {
+      "source": "Idle",
+      "source_range": [
+        0.0,
+        25.60000228881836
+      ],
+      "sample_frames": [
+        0.0,
+        12.80000114440918,
+        25.590002288818358
+      ],
+      "max_skin_rms_world_from_first": 0.022641423487660167,
+      "skin_objects": 8
+    },
+    "run": {
+      "source": "Running_A",
+      "source_range": [
+        0.0,
+        19.200000762939453
+      ],
+      "sample_frames": [
+        0.0,
+        9.600000381469727,
+        19.19000076293945
+      ],
+      "max_skin_rms_world_from_first": 0.3487218513299679,
+      "skin_objects": 8
+    },
+    "attack": {
+      "source": "Archer_Draw_Contact_Release",
+      "source_range": [
+        0.0,
+        24.0
+      ],
+      "sample_frames": [
+        0.0,
+        12.0,
+        23.99
+      ],
+      "max_skin_rms_world_from_first": 0.05900749405210329,
+      "skin_objects": 8
+    },
+    "hit": {
+      "source": "Hit_A",
+      "source_range": [
+        0.0,
+        16.0
+      ],
+      "sample_frames": [
+        0.0,
+        8.0,
+        15.99
+      ],
+      "max_skin_rms_world_from_first": 0.04686264819363808,
+      "skin_objects": 8
+    },
+    "death": {
+      "source": "Death_A",
+      "source_range": [
+        0.0,
+        19.200000762939453
+      ],
+      "sample_frames": [
+        0.0,
+        9.600000381469727,
+        19.19000076293945
+      ],
+      "max_skin_rms_world_from_first": 0.974376024715828,
+      "skin_objects": 8
+    },
+    "dodge": {
+      "source": "Dodge_Backward",
+      "source_range": [
+        0.0,
+        9.600000381469727
+      ],
+      "sample_frames": [
+        0.0,
+        4.800000190734863,
+        9.590000381469727
+      ],
+      "max_skin_rms_world_from_first": 0.2336541897994007,
+      "skin_objects": 8
+    }
+  },
+  "contact": [
+    {
+      "source_frame": 0,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.034142459109139045,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "string_mid": [
+        0.09999154508113861,
+        -0.5299795269966125,
+        1.0400019884109497
+      ],
+      "arrow_nock": [
+        0.09999153763055801,
+        -0.5299795269966125,
+        1.0400018692016602
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 4,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.3328003749250113e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.023922760781421536,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "string_mid": [
+        0.09997999668121338,
+        -0.40019363164901733,
+        1.0400049686431885
+      ],
+      "arrow_nock": [
+        0.09997999668121338,
+        -0.40019357204437256,
+        1.040004849433899
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 8,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1920928955078125e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.022361719173088438,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "string_mid": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.0400052070617676
+      ],
+      "arrow_nock": [
+        0.09997721761465073,
+        -0.31915536522865295,
+        1.040005087852478
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 12,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.02313273342696621,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 14,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 1.1944189326376765e-07,
+      "arrow_right_error": 0.0,
+      "right_slot_nearest_actual_hand_vertex_world": 0.02313273342696621,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "string_mid": [
+        0.09999202191829681,
+        -0.24998939037322998,
+        1.0400023460388184
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.24998939037322998,
+        1.0400022268295288
+      ],
+      "released": false,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 16,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 0.2294833129914309,
+      "arrow_right_error": 0.6282193450141416,
+      "right_slot_nearest_actual_hand_vertex_world": 0.022457225042641433,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.06998809427022934,
+        -0.22248700261116028,
+        1.0400038957595825
+      ],
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -0.8499894142150879,
+        1.0400022268295288
+      ],
+      "released": true,
+      "arrow_visible": true
+    },
+    {
+      "source_frame": 18,
+      "bow_grip_error": 1.4600096599955427e-07,
+      "string_right_error": 0.26196860105826236,
+      "arrow_right_error": 1.2564272064967512,
+      "right_slot_nearest_actual_hand_vertex_world": 0.025970915435675153,
+      "left_slot": [
+        0.10000003129243851,
+        -0.659999430179596,
+        1.0399999618530273
+      ],
+      "right_slot": [
+        0.03999516740441322,
+        -0.19499549269676208,
+        1.040001392364502
+      ],
+      "string_mid": [
+        0.0999998077750206,
+        -0.4499993920326233,
+        1.0399999618530273
+      ],
+      "arrow_nock": [
+        0.09999201446771622,
+        -1.4499894380569458,
+        1.0400022268295288
+      ],
+      "released": true,
+      "arrow_visible": false
+    }
+  ],
+  "ground": [
+    {
+      "direction": "E",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -1.1286386956645715e-22,
+        -4.9334365667852695e-30,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "SE",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -7.980680479446445e-23,
+        7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "S",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        0.0,
+        1.1286386956645715e-22,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "SW",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        7.980680479446445e-23,
+        7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "W",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        1.1286386956645715e-22,
+        -4.9334365667852695e-30,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "NW",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        7.980680479446445e-23,
+        -7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "N",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        9.866873133570539e-30,
+        -1.1286386956645715e-22,
+        3.2973624678400097e-15
+      ]
+    },
+    {
+      "direction": "NE",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6339516043663025
+      },
+      "root_world": [
+        -7.980680479446445e-23,
+        -7.980680479446445e-23,
+        3.2973624678400097e-15
+      ]
+    }
+  ],
+  "dodge_contract": {
+    "source": "Dodge_Backward",
+    "range": [
+      0,
+      9.6
+    ],
+    "seconds": 0.4,
+    "actual_skin_rms": 0.2336541897994007,
+    "original_source_root_travel_world": 0.6499999165534973,
+    "render_root_translation_removed": true,
+    "not_idle": true,
+    "no_runtime_mapping": true
+  },
+  "user_approval": false,
+  "render_binding": {
+    "frames_json_sha256": "7c8b0489727d49f2f992e922ee13607f8f44cced227a1e1a7567c55ae5f8ffc3",
+    "sampled_frames": 464,
+    "all_frames_bow_held": true,
+    "attack_contact_rows": 96,
+    "in_place_dodge_rows": 40,
+    "rows": [
+      {
+        "name": "idle_E_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_001",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_002",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_003",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_004",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_005",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_006",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_007",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_008",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_009",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_010",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_011",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_E_012",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_SE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_001",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_002",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_003",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_004",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_005",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_008",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_009",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_010",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_011",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SE_012",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_S_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_001",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_002",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_003",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_004",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_005",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_006",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_007",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_008",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_009",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_010",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_011",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_S_012",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_SW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_001",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_002",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_003",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_004",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_005",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_008",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_009",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_010",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_011",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_SW_012",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_W_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_001",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_002",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_003",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_004",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_005",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_006",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_007",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_008",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_009",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_010",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_011",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_W_012",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_NW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_001",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_002",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_003",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_004",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_005",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_008",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_009",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_010",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_011",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NW_012",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_N_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_001",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_002",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_003",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_004",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_005",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_006",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_007",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_008",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_009",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_010",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_011",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_N_012",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "idle_NE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_001",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_002",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_003",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_004",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_005",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_008",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_009",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_010",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_011",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "idle_NE_012",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "run_E_000",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_E_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_E_002",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_E_003",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_E_004",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_E_005",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_E_006",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_E_007",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_E_008",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_E_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_SE_000",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SE_001",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SE_002",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SE_003",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SE_004",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SE_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SE_006",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SE_007",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SE_008",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SE_009",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_S_000",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_S_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_S_002",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_S_003",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_S_004",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_S_005",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_S_006",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_S_007",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_S_008",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_S_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_SW_000",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SW_001",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SW_002",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SW_003",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SW_004",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SW_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SW_006",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_SW_007",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SW_008",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_SW_009",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_W_000",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_W_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_W_002",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_W_003",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_W_004",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_W_005",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_W_006",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_W_007",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_W_008",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_W_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_NW_000",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NW_001",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NW_002",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NW_003",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NW_004",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NW_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NW_006",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NW_007",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NW_008",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NW_009",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_N_000",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_N_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_N_002",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_N_003",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_N_004",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_N_005",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_N_006",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_N_007",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_N_008",
+        "grip_error": 1.228781230931777e-07
+      },
+      {
+        "name": "run_N_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "run_NE_000",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NE_001",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NE_002",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NE_003",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NE_004",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NE_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NE_006",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "run_NE_007",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NE_008",
+        "grip_error": 1.1372817696983924e-07
+      },
+      {
+        "name": "run_NE_009",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "attack_E_000",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_001",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_002",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_003",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_004",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_005",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_006",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_007",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_008",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_009",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_010",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_E_011",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_000",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_001",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_002",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_003",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_004",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_005",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_006",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_007",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_008",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_009",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_010",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SE_011",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_000",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_001",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_002",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_003",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_004",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_005",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_006",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_007",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_008",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_009",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_010",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_S_011",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_000",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_001",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_002",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_003",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_004",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_005",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_006",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_007",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_008",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_009",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_010",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_SW_011",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_000",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_001",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_002",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_003",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_004",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_005",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_006",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_007",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_008",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_009",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_010",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_W_011",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_000",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_001",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_002",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_003",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_004",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_005",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_006",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_007",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_008",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_009",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_010",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NW_011",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_000",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_001",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_002",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_003",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_004",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_005",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_006",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_007",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_008",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_009",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_010",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_N_011",
+        "grip_error": 1.4600096599955427e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_000",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_001",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_002",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_003",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_004",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_005",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_006",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_007",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_008",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_009",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_010",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "attack_NE_011",
+        "grip_error": 1.3657139822709083e-07,
+        "render_contact_coordinate_errors": {
+          "left_slot": 0.0,
+          "right_slot": 0.0,
+          "string_mid": 0.0,
+          "arrow_nock": 0.0
+        }
+      },
+      {
+        "name": "hit_E_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "hit_E_001",
+        "grip_error": 9.685754776000977e-08
+      },
+      {
+        "name": "hit_E_002",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_E_003",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_E_004",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_E_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "hit_E_006",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_E_007",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_SE_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_002",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_003",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_004",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_005",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SE_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_SE_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_S_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "hit_S_001",
+        "grip_error": 9.685754776000977e-08
+      },
+      {
+        "name": "hit_S_002",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_S_003",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_S_004",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_S_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "hit_S_006",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_S_007",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_SW_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_002",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_003",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_004",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_005",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_SW_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_SW_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_W_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "hit_W_001",
+        "grip_error": 9.685754776000977e-08
+      },
+      {
+        "name": "hit_W_002",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_W_003",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_W_004",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_W_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "hit_W_006",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_W_007",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_NW_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_002",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_003",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_004",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_005",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NW_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_NW_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_N_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "hit_N_001",
+        "grip_error": 9.685754776000977e-08
+      },
+      {
+        "name": "hit_N_002",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_N_003",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_N_004",
+        "grip_error": 8.940696716308594e-08
+      },
+      {
+        "name": "hit_N_005",
+        "grip_error": 1.2013700229374393e-07
+      },
+      {
+        "name": "hit_N_006",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_N_007",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_NE_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_002",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_003",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_004",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_005",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "hit_NE_006",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "hit_NE_007",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "death_E_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "death_E_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_E_002",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_E_003",
+        "grip_error": 1.2065570608304177e-07
+      },
+      {
+        "name": "death_E_004",
+        "grip_error": 1.341104507446289e-07
+      },
+      {
+        "name": "death_E_005",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_E_006",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_E_007",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_E_008",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_E_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_SE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "death_SE_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "death_SE_002",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_SE_003",
+        "grip_error": 1.2644054553268208e-07
+      },
+      {
+        "name": "death_SE_004",
+        "grip_error": 1.1920928955078125e-07
+      },
+      {
+        "name": "death_SE_005",
+        "grip_error": 9.541398640621973e-08
+      },
+      {
+        "name": "death_SE_006",
+        "grip_error": 8.971687092477304e-08
+      },
+      {
+        "name": "death_SE_007",
+        "grip_error": 9.43271623060905e-08
+      },
+      {
+        "name": "death_SE_008",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_SE_009",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_S_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "death_S_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_S_002",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_S_003",
+        "grip_error": 1.2065570608304177e-07
+      },
+      {
+        "name": "death_S_004",
+        "grip_error": 1.341104507446289e-07
+      },
+      {
+        "name": "death_S_005",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_S_006",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_S_007",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_S_008",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_S_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_SW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "death_SW_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "death_SW_002",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_SW_003",
+        "grip_error": 1.2644054553268208e-07
+      },
+      {
+        "name": "death_SW_004",
+        "grip_error": 1.1920928955078125e-07
+      },
+      {
+        "name": "death_SW_005",
+        "grip_error": 9.541398640621973e-08
+      },
+      {
+        "name": "death_SW_006",
+        "grip_error": 8.971687092477304e-08
+      },
+      {
+        "name": "death_SW_007",
+        "grip_error": 9.43271623060905e-08
+      },
+      {
+        "name": "death_SW_008",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_SW_009",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_W_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "death_W_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_W_002",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_W_003",
+        "grip_error": 1.2065570608304177e-07
+      },
+      {
+        "name": "death_W_004",
+        "grip_error": 1.341104507446289e-07
+      },
+      {
+        "name": "death_W_005",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_W_006",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_W_007",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_W_008",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_W_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_NW_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "death_NW_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "death_NW_002",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_NW_003",
+        "grip_error": 1.2644054553268208e-07
+      },
+      {
+        "name": "death_NW_004",
+        "grip_error": 1.1920928955078125e-07
+      },
+      {
+        "name": "death_NW_005",
+        "grip_error": 9.541398640621973e-08
+      },
+      {
+        "name": "death_NW_006",
+        "grip_error": 8.971687092477304e-08
+      },
+      {
+        "name": "death_NW_007",
+        "grip_error": 9.43271623060905e-08
+      },
+      {
+        "name": "death_NW_008",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_NW_009",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_N_000",
+        "grip_error": 1.0133885226201597e-07
+      },
+      {
+        "name": "death_N_001",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_N_002",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_N_003",
+        "grip_error": 1.2065570608304177e-07
+      },
+      {
+        "name": "death_N_004",
+        "grip_error": 1.341104507446289e-07
+      },
+      {
+        "name": "death_N_005",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_N_006",
+        "grip_error": 8.429369702178807e-08
+      },
+      {
+        "name": "death_N_007",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_N_008",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_N_009",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_NE_000",
+        "grip_error": 9.424321830774485e-08
+      },
+      {
+        "name": "death_NE_001",
+        "grip_error": 1.0745380149674383e-07
+      },
+      {
+        "name": "death_NE_002",
+        "grip_error": 1.0323827311807139e-07
+      },
+      {
+        "name": "death_NE_003",
+        "grip_error": 1.2644054553268208e-07
+      },
+      {
+        "name": "death_NE_004",
+        "grip_error": 1.1920928955078125e-07
+      },
+      {
+        "name": "death_NE_005",
+        "grip_error": 9.541398640621973e-08
+      },
+      {
+        "name": "death_NE_006",
+        "grip_error": 8.971687092477304e-08
+      },
+      {
+        "name": "death_NE_007",
+        "grip_error": 9.43271623060905e-08
+      },
+      {
+        "name": "death_NE_008",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "death_NE_009",
+        "grip_error": 9.468853302056236e-08
+      },
+      {
+        "name": "dodge_E_000",
+        "grip_error": 1.0133885226201597e-07,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_E_001",
+        "grip_error": 1.1151007970493857e-07,
+        "in_place_root_world": [
+          -2.9569763145500275e-23,
+          -1.2925354081076726e-30,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_E_002",
+        "grip_error": 1.0745380149674383e-07,
+        "in_place_root_world": [
+          -8.906557688662208e-23,
+          -3.893180113878192e-30,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_E_003",
+        "grip_error": 1.228781230931777e-07,
+        "in_place_root_world": [
+          -1.3929851014799187e-22,
+          -6.088931338841311e-30,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_E_004",
+        "grip_error": 1.0323827311807139e-07,
+        "in_place_root_world": [
+          -1.565653122116356e-22,
+          -6.843687485402593e-30,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_SE_000",
+        "grip_error": 9.424321830774485e-08,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_SE_001",
+        "grip_error": 1.1627740439037686e-07,
+        "in_place_root_world": [
+          -2.090897917393638e-23,
+          2.090897917393638e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_SE_002",
+        "grip_error": 1.1756817875846847e-07,
+        "in_place_root_world": [
+          -6.297887445138776e-23,
+          6.297887445138776e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_SE_003",
+        "grip_error": 1.201947465904182e-07,
+        "in_place_root_world": [
+          -9.84989207416615e-23,
+          9.84989207416615e-23,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_SE_004",
+        "grip_error": 1.250116814828427e-07,
+        "in_place_root_world": [
+          -1.1070838602903126e-22,
+          1.1070838602903126e-22,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_S_000",
+        "grip_error": 1.0133885226201597e-07,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_S_001",
+        "grip_error": 1.1151007970493857e-07,
+        "in_place_root_world": [
+          0.0,
+          2.9569763145500275e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_S_002",
+        "grip_error": 1.0745380149674383e-07,
+        "in_place_root_world": [
+          0.0,
+          8.906557688662208e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_S_003",
+        "grip_error": 1.228781230931777e-07,
+        "in_place_root_world": [
+          0.0,
+          1.3929851014799187e-22,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_S_004",
+        "grip_error": 1.0323827311807139e-07,
+        "in_place_root_world": [
+          0.0,
+          1.565653122116356e-22,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_SW_000",
+        "grip_error": 9.424321830774485e-08,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_SW_001",
+        "grip_error": 1.1627740439037686e-07,
+        "in_place_root_world": [
+          2.090897917393638e-23,
+          2.090897917393638e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_SW_002",
+        "grip_error": 1.1756817875846847e-07,
+        "in_place_root_world": [
+          6.297887445138776e-23,
+          6.297887445138776e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_SW_003",
+        "grip_error": 1.201947465904182e-07,
+        "in_place_root_world": [
+          9.84989207416615e-23,
+          9.84989207416615e-23,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_SW_004",
+        "grip_error": 1.250116814828427e-07,
+        "in_place_root_world": [
+          1.1070838602903126e-22,
+          1.1070838602903126e-22,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_W_000",
+        "grip_error": 1.0133885226201597e-07,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_W_001",
+        "grip_error": 1.1151007970493857e-07,
+        "in_place_root_world": [
+          2.9569763145500275e-23,
+          -1.2925354081076726e-30,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_W_002",
+        "grip_error": 1.0745380149674383e-07,
+        "in_place_root_world": [
+          8.906557688662208e-23,
+          -3.893180113878192e-30,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_W_003",
+        "grip_error": 1.228781230931777e-07,
+        "in_place_root_world": [
+          1.3929851014799187e-22,
+          -6.088931338841311e-30,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_W_004",
+        "grip_error": 1.0323827311807139e-07,
+        "in_place_root_world": [
+          1.565653122116356e-22,
+          -6.843687485402593e-30,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_NW_000",
+        "grip_error": 9.424321830774485e-08,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_NW_001",
+        "grip_error": 1.1627740439037686e-07,
+        "in_place_root_world": [
+          2.090897917393638e-23,
+          -2.090897917393638e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_NW_002",
+        "grip_error": 1.1756817875846847e-07,
+        "in_place_root_world": [
+          6.297887445138776e-23,
+          -6.297887445138776e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_NW_003",
+        "grip_error": 1.201947465904182e-07,
+        "in_place_root_world": [
+          9.84989207416615e-23,
+          -9.84989207416615e-23,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_NW_004",
+        "grip_error": 1.250116814828427e-07,
+        "in_place_root_world": [
+          1.1070838602903126e-22,
+          -1.1070838602903126e-22,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_N_000",
+        "grip_error": 1.0133885226201597e-07,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_N_001",
+        "grip_error": 1.1151007970493857e-07,
+        "in_place_root_world": [
+          2.5850708162153453e-30,
+          -2.9569763145500275e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_N_002",
+        "grip_error": 1.0745380149674383e-07,
+        "in_place_root_world": [
+          7.786360227756384e-30,
+          -8.906557688662208e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_N_003",
+        "grip_error": 1.228781230931777e-07,
+        "in_place_root_world": [
+          1.2177862677682622e-29,
+          -1.3929851014799187e-22,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_N_004",
+        "grip_error": 1.0323827311807139e-07,
+        "in_place_root_world": [
+          1.3687374970805187e-29,
+          -1.565653122116356e-22,
+          4.574117252093045e-15
+        ]
+      },
+      {
+        "name": "dodge_NE_000",
+        "grip_error": 9.424321830774485e-08,
+        "in_place_root_world": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "dodge_NE_001",
+        "grip_error": 1.1627740439037686e-07,
+        "in_place_root_world": [
+          -2.090897917393638e-23,
+          -2.090897917393638e-23,
+          8.638922380968907e-16
+        ]
+      },
+      {
+        "name": "dodge_NE_002",
+        "grip_error": 1.1756817875846847e-07,
+        "in_place_root_world": [
+          -6.297887445138776e-23,
+          -6.297887445138776e-23,
+          2.602085849239921e-15
+        ]
+      },
+      {
+        "name": "dodge_NE_003",
+        "grip_error": 1.201947465904182e-07,
+        "in_place_root_world": [
+          -9.84989207416615e-23,
+          -9.84989207416615e-23,
+          4.069660851125116e-15
+        ]
+      },
+      {
+        "name": "dodge_NE_004",
+        "grip_error": 1.250116814828427e-07,
+        "in_place_root_world": [
+          -1.1070838602903126e-22,
+          -1.1070838602903126e-22,
+          4.574117252093045e-15
+        ]
+      }
+    ]
+  },
+  "camera": {
+    "pitch_config_degrees": 40,
+    "ortho_scale": 3.931180953979492,
+    "rotation_euler": [
+      0.8726646304130554,
+      -0.0,
+      0.0
+    ],
+    "transparent": true,
+    "view_transform": "Standard",
+    "output": [
+      256,
+      256
+    ],
+    "samples": 16
+  },
+  "fixture": {
+    "name": "attack_E_006",
+    "source_frame": 12.0,
+    "reopened_source_sha256": "e7fdc12cab7691733b93f999817501bdb2443cd165fbfc76bb9c37be6ee5a125",
+    "output": "C:\\Users\\user\\ai-tools\\arpg-art\\player-skeleton-archer\\recovery-final-20261015T111650\\fixture-attack_E_006.png"
+  }
+}

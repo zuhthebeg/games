@@ -68,7 +68,10 @@ assert not dest.exists(), 'Never overwrite existing delivery'
 dest.mkdir(parents=True);archive=root/'atlases';archive.mkdir(exist_ok=True)
 # Shelf packing alpha-trims with 1px gutter, fixed1024 width and max2048 height.
 pages=[];page=[];x=y=rowh=0
-for r in records:
+# Height-first shelves reduce raw allocation without resampling or changing gates.
+# Frame names retain the original chronological index; consumers merge/sort by name.
+packing_order=sorted(records,key=lambda r:(-images[r['name']].getchannel('A').getbbox()[3]+images[r['name']].getchannel('A').getbbox()[1],r['name']))
+for r in packing_order:
  n=r['name'];im=images[n];b=im.getchannel('A').getbbox();crop=im.crop(b);cw,ch=crop.size
  if x+cw+2>1024:x=0;y+=rowh;rowh=0
  if y+ch+2>2048:pages.append((page,math.ceil((y+rowh)/4)*4));page=[];x=y=rowh=0
@@ -88,5 +91,5 @@ for i,(page,height) in enumerate(pages):
 assert gpu<=12*1024**2,('hard GPU limit',gpu)
 kit={'id':'player-skeleton-archer','label':'해골 궁수 — 미등록 후보','registered':False,'content_ids':[],'sheets':sheets,'animations':states,'fps':info['fps'],'anchor':info['anchor'],'logical_frame_size':256,'physical_frame_size':128,'meta_scale':'.5','pixi_texture_resolution':.5,'logical_expansion':2,'dodge_contract':json.loads((preview/'preview-meta.json').read_text())['dodge'],'source_gate_unchanged':True,'parent_visual_review_required':True}
 (dest/'kit-descriptor.json').write_text(json.dumps(kit,ensure_ascii=False,indent=2))
-report.update({'status':'PASS','groups':48,'unique_octants_each_state':8,'nonstatic_groups':48,'sheets':[[1024,h] for _,h in pages],'capacity_allocated_pixels':sum(1024*h for _,h in pages),'rgba_bytes':gpu,'rgba_mib':gpu/1024**2,'target_8mib_met':gpu<=8*1024**2,'hard_12mib_met':True,'webp_bytes':webp,'frame_alpha_exact':len(decoded_stats),'native_player_integration':False})
+report.update({'status':'PASS','groups':48,'unique_octants_each_state':8,'nonstatic_groups':48,'sheets':[[1024,h] for _,h in pages],'capacity_allocated_pixels':sum(1024*h for _,h in pages),'rgba_bytes':gpu,'rgba_mib':gpu/1024**2,'target_8mib_met':gpu<=8*1024**2,'hard_12mib_met':True,'webp_bytes':webp,'frame_alpha_exact':len(decoded_stats),'packing_order':'height-descending shelves; animation consumers merge/sort original indexed names','native_player_integration':False})
 (root/'packing-validation.json').write_text(json.dumps(report,indent=2));(root/'delivered-mask-stats.json').write_text(json.dumps(decoded_stats,indent=2));print(json.dumps(report,indent=2))

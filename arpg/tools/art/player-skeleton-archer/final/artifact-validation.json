@@ -1,0 +1,92 @@
+{
+  "status": "PASS",
+  "protected": {
+    "checkout": {
+      "files": 938,
+      "bytes": 35017447,
+      "exact": true
+    },
+    "kaykit": {
+      "files": 34,
+      "bytes": 19633386,
+      "exact": true
+    },
+    "u1": {
+      "files": 1528,
+      "bytes": 61939863,
+      "exact": true
+    },
+    "offline_at_start": {
+      "files": 551,
+      "exact": true
+    }
+  },
+  "checkpoint_source_preserved": true,
+  "full_source_sha256": "e7fdc12cab7691733b93f999817501bdb2443cd165fbfc76bb9c37be6ee5a125",
+  "frames": 464,
+  "groups": 48,
+  "counts_per_direction": {
+    "idle": 13,
+    "run": 10,
+    "attack": 12,
+    "hit": 8,
+    "death": 10,
+    "dodge": 5
+  },
+  "unique_octants_each_state": 8,
+  "source_coverage_percent": [
+    6.170654296875,
+    13.04168701171875
+  ],
+  "physical_coverage_percent": [
+    6.11572265625,
+    13.09814453125
+  ],
+  "source_reopen_fixture_rgba_exact": true,
+  "source_draw_contact_bound_frames": 96,
+  "all_frames_bow_held": 464,
+  "in_place_dodge_bound_frames": 40,
+  "delivered_alpha_exact_frames": 464,
+  "rgba_bytes": 7929856,
+  "rgba_mib": 7.5625,
+  "compressed_webp_bytes_not_gpu": 760576,
+  "native_fixture": "attack_E_006",
+  "native_fixture_alpha_exact": true,
+  "not_registered": true,
+  "visual_review_pending": true,
+  "artifact_bindings": {
+    "assets/sprites/player-skeleton-archer/atlas-0.webp": "608ff7bd21a7d12d8e8ef38ddc438010dcc407456e134cbe74e574a6cea2fe75",
+    "assets/sprites/player-skeleton-archer/atlas-0.webp.json": "17023de997587bfce868d867af3e000271d3ea7c71cac5a8eee03d5552ccc6c7",
+    "assets/sprites/player-skeleton-archer/kit-descriptor.json": "addc902847737c0da6e79a5a61333ad53cb1a4fc1b391f22d1bfd774115e50b4",
+    "tools/art/player-skeleton-archer/final/delivered-mask-stats.json": "b3cf9ed888f1c0039e69f7d7d6823ff7b55712fd8c786f2100df359d1d1202a4",
+    "tools/art/player-skeleton-archer/final/fixture-attack_E_006.png": "9865f589c5e6b6b209d14a2ad0e5438bb6f9f99267ea54b2b75388afafd2b8a4",
+    "tools/art/player-skeleton-archer/final/fixture-comparison.json": "43b4cf5bbc18410ddc6488b8139f3a4ce45acdc579513275bb0dd61f1b9a8642",
+    "tools/art/player-skeleton-archer/final/fixture-physical128.png": "81e26a7f02e0b80d686eca8797b0f91486e5aafe1da09fb0caf45f7662edc7c7",
+    "tools/art/player-skeleton-archer/final/frames.json": "7c8b0489727d49f2f992e922ee13607f8f44cced227a1e1a7567c55ae5f8ffc3",
+    "tools/art/player-skeleton-archer/final/packing-validation.json": "8a2c87872d3d2138e07853d90940bfe351b0f6c1efc769364cd8dd85e4972a7d",
+    "tools/art/player-skeleton-archer/final/source-mask-stats.json": "27ededf5ca62f515acc3138f78b84f2edd3d0acf32b2f204c0777a68d429d434",
+    "tools/art/player-skeleton-archer/final/source-validation.json": "caa340dd645ba8b3ab5b8d8485616cd27efb2e2d2152c49742c85c840705cc50",
+    "tools/art/player-skeleton-archer/source/player-skeleton-archer-full-source.blend": "e7fdc12cab7691733b93f999817501bdb2443cd165fbfc76bb9c37be6ee5a125",
+    "tools/art/player-skeleton-archer/source/player-skeleton-archer-source.blend": "e1e704a3b189679a5cc1b94a9dfb1fa0678fa28ed9826b6635230baa3769b732",
+    "tools/art/player-skeleton-archer/source/weapon-authorship.json": "0f3110f3b7f394646e1f95226e9227b8f399053c352f8fca088b6e4d08286159",
+    "tools/art/player-skeleton-archer/preview-final/arrow-release-four-frames.png": "f48b536ef9dbaa4ed30e4c0f349dc4ff8bae54932e79061ea026206e9797d536",
+    "tools/art/player-skeleton-archer/preview-final/contact-sheet.png": "e12d6f0a82f33dbfefff9e4595755761dce1fea7351191b23cf9eecd49268bd7",
+    "tools/art/player-skeleton-archer/preview-final/game-size.png": "8c1231b67ec9c6ef7efaf8acebfc1162162e332c8a0114833c7b5bf787714b1a",
+    "tools/art/player-skeleton-archer/preview-final/preview-meta.json": "6caf6b32a1b56200a80b535c922acbfed8dd84a49d966703b61ef64fc7b220c9",
+    "tools/art/player-skeleton-archer/README.md": "0534790bb211e1513f41c19074ea9b899d1e663bcbf038e3ed90c81ac4df5c81",
+    "tools/art/player-skeleton-archer/author.py": "0ba5193a35e413b540f7a65fa50859acb7adaa86b4b5854dc3ac6f1b196fb401",
+    "tools/art/player-skeleton-archer/bake.py": "7b283f360e6b85a2740fa72c1cf48223922257b3dc13749e0a2f97b0c951f0e1",
+    "tools/art/player-skeleton-archer/inspect.py": "1eea4f94c223603adccd961a194013ee5d9af45d4dd7210e27f0b0501ae76dc0",
+    "tools/art/player-skeleton-archer/pack-verify.py": "66e976c24834f04525ab8c4e3b24e954654f3ea5922e8b4b03d43a77707dd92b",
+    "tools/art/player-skeleton-archer/preview.html": "95e1bdeeec100e4f2a229fd497775ad7f008becb4901e2e177d484fdbfededf8",
+    "tools/art/player-skeleton-archer/preview.mjs": "f752dc9434ae8dae6769939be00e158ad29354f3c7448c61394305456e8a3914",
+    "tools/art/player-skeleton-archer/u1-reference-bake.py": "045aaa7af06ed6263f0b9d4f96a6f4af8146513ecfd91bd354e783defb6e999b",
+    "tools/art/player-skeleton-archer/u1-reference-pack.py": "22cb0a8d7afd1c67a7f2eb7992299a853321223c10e5c1edf5d966ec1d1e2cb2",
+    "tools/art/player-skeleton-archer/u1-reference-verify_atlases.py": "d8722787cec57ee0319c76fc3024d558348cf75f662139f921ddcac5aba8ccd6",
+    "tools/art/player-skeleton-archer/verify-artifacts.py": "612ff3ee5d86ec4594cb3cf66a9c4cdde76918d4bd8b9a2e14dfed7139f6fc3d",
+    "tools/art/player-skeleton-archer/verify-native.mjs": "36ab2ff34e7dba01475244faa7faf88183b0185a64348a6ed16e32a861c52428",
+    "tools/art/player-skeleton-archer/verify-pixi.mjs": "a12d79dcc87b416d0171dcaf374088286263bdc0f13223c0ad5c1a99b4945a2d",
+    "tools/art/player-skeleton-archer/verify-source.py": "476338bbefb346afa855b3e5ed4809aea2208e7dd18e7ac4dec93ea7eec62415",
+    "tools/art/player-skeleton-archer/weapon.py": "432e331ee67a1c5d50cad79b7d1a1fca3e8ca065e6a94e8826ea5161950e450b"
+  }
+}
