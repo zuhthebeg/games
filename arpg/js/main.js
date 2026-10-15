@@ -29,6 +29,9 @@ let tracker = null;
 let roundSave = null;
 let developmentRound = false;
 let debug = null;
+let undead = null;
+let undeadEncounter = null;
+let undeadStarting = false;
 let coop = null;
 let coopSession = null;
 let coopResult = null;
@@ -109,6 +112,7 @@ try {
       renderer.warning.visible = false;
     },
     startRound: (stageId, reduced, overrideWeapon) => {
+      if (undead || undeadStarting) return;
       closeCoop();
       audio.stop();
       input.reset();
@@ -134,6 +138,69 @@ try {
       lastTime = performance.now();
     },
   });
+  async function startUndead() {
+    if (undeadStarting) return;
+    if (!undead && (running || coop)) throw new Error('인간 전투/멀티플레이를 끝내고 여관에서 시작하세요.');
+    undeadStarting = true;
+    try {
+      if (!undead) {
+        const { createUndeadSession } = await import('./debug/undead-start.js');
+        undead = createUndeadSession(renderer.provider);
+      }
+      audio.stop(); input.reset(); input.enabled = false; debug.reset();
+      undeadEncounter = undead.restart(); world = undeadEncounter.world;
+      roundSave = undead.save; tracker = null; developmentRound = false;
+      accumulator = 0; lastTime = performance.now();
+      renderer.reset(world, matchMedia('(prefers-reduced-motion: reduce)').matches, roundSave);
+      renderer.root.visible = renderer.warning.visible = false;
+      hub.root.hidden = true;
+      hud.begin(world, loadoutOf(roundSave));
+      hud.meta(currentLoad(roundSave, createTracker(0)), createTracker(0), roundSave);
+      hud.nodes['stage-name'].textContent = '언데드 · 해골 기사 · 저장 안 됨';
+      hud.nodes.notice.textContent = '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
+      hud.noticeLeft = Infinity;
+      running = true;
+    } finally { undeadStarting = false; }
+  }
+  function leaveUndead() {
+    if (!undead) return;
+    running = false; input.reset(); input.enabled = false; audio.stop(); debug.reset();
+    undead.leave(); undead = null; undeadEncounter = null;
+    // Dispose debug views/effects under the original provider, without starting a human round.
+    const idle = createWorld(); addPlayer(idle, { pid: 'local' }); renderer.reset(idle);
+    world = null; tracker = null; roundSave = null; accumulator = 0;
+    renderer.root.visible = renderer.warning.visible = false;
+    hud.nodes.dodge.disabled = false;
+    hub.ready();
+  }
+  function frameUndead(elapsed) {
+    const ready = renderer.views.size === 2 && [...renderer.views.values()].every(v => v.visual.debug.mode === 'atlas');
+    const state = undead.state(undeadEncounter);
+    renderer.root.visible = ready;
+    input.enabled = ready && state === 'running' && !document.querySelector('#arpg-debug-panel:not([hidden])');
+    if (!ready) {
+      input.reset(); accumulator = 0;
+      hud.nodes.notice.textContent = Object.keys(renderer.provider.atlases.status().failed).length
+        ? '필수 아틀라스 실패 · 전투 중지 · 인간으로 돌아가세요' : '아틀라스 준비 중';
+    } else {
+      hud.nodes.notice.textContent = state === 'running' ? '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음'
+        : state === 'victory' ? '해골 승리 · 보상/저장 없음 · DBG에서 다시 시작/인간 복귀'
+        : '전투 종료 · 보상/저장 없음 · DBG에서 다시 시작/인간 복귀';
+      accumulator += elapsed;
+      let count = 0;
+      while (accumulator >= TICK_MS && count++ < 5 && undead.state(undeadEncounter) === 'running') {
+        renderer.snapshot(world);
+        const events = step(world, { local: input.enabled ? input.consume() : emptyInput() });
+        renderer.events(world, events); hud.events(events);
+        audio.events(events, world.entities[0].id, Object.freeze(world.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
+        accumulator -= TICK_MS;
+      }
+      if (undead.state(undeadEncounter) !== 'running') { input.reset(); input.enabled = false; accumulator = 0; }
+      if (accumulator >= TICK_MS) accumulator %= TICK_MS;
+    }
+    renderer.render(world, accumulator / TICK_MS, elapsed / 1000);
+    hud.update(world, elapsed / 1000);
+  }
   function closeCoop() {
     coop?.close(); coop = null; coopSession = null;
     document.querySelector('#coop-status').hidden = true;
@@ -171,6 +238,7 @@ try {
     hud.noticeLeft = 4;
   }
   function startCoop(stageId, threat) {
+    if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
     // The host chooses on the existing departure panel; guests retain their own build/save.
@@ -254,6 +322,7 @@ try {
   Object.defineProperty(window, '__arpg', {
     value: Object.freeze({
       get world() { return readonly(world); },
+      get mode() { return undead ? 'undead-debug' : 'human'; },
       get multi() { return readonly(coopSession ? {
         uid: coopSession.uid, host: coopSession.host, isHost: coopSession.isHost,
         phase: coopSession.phase, ownsSim: !!coopSession.world, rtt: coopSession.rtt,
@@ -294,8 +363,10 @@ try {
   } catch { /* Storage denied: explicit URL still works. */ }
   if (debugEnabled) {
     const { mountDebug } = await import('./debug/index.js');
-    debug = mountDebug({ hub, store, renderer, input,
+    debug = mountDebug({ hub, store, renderer, input, startUndead, leaveUndead,
+      get undead() { return !!undead; },
       setMastery: (id, level) => {
+        if (undead) throw new Error('언데드 디버그는 저장/숙련 수정 불가');
         const next = setMasteryLevel(hub.save, id, level);
         store.save(next); hub.save = next;
         if (roundSave) roundSave = { ...roundSave, skillMastery: { ...next.skillMastery } };
@@ -318,6 +389,7 @@ try {
   });
 
   function finishRound() {
+    if (undead) return;
     running = false;
     input.reset();
     accumulator = 0;
@@ -341,6 +413,13 @@ try {
   function frame(now) {
     const elapsed = Math.min(250, Math.max(0, now - lastTime));
     lastTime = now;
+    if (undead) {
+      if (!hidden) frameUndead(elapsed);
+      debug?.frame(now);
+      if (!hidden) app.render();
+      requestAnimationFrame(frame);
+      return;
+    }
     if (coopSession && !coopSession.isHost && !hidden) {
       coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad); guestTime = now;
     }

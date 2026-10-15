@@ -35,7 +35,7 @@ export class HUD {
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
-    this.stage = world.round.stageId;
+    this.stage = world.round?.stageId || '언데드 · 해골 기사 · 저장 안 됨';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
       const node = this.nodes[key], id = skills[i] || loadout[i] || null;
@@ -111,8 +111,8 @@ export class HUD {
     this.text(nodes['hp-text'], `${Math.ceil(player.hp)}/${Math.ceil(player.maxHp)}`);
     this.text(nodes['mp-text'], `${Math.floor(player.mp)}/${Math.ceil(player.maxMp)}`);
     const alive = world.entities.filter((entity) => entity.kind === 'monster' && !entity.dead).length;
-    const objective = world.round.objective;
-    this.text(nodes.objective, objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
+    const objective = world.round?.objective;
+    this.text(nodes.objective, !world.round ? `인간 AI: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
       : `◇ ${alive + world.round.pending.length}`);
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
@@ -133,6 +133,8 @@ export class HUD {
       node.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana;
     });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
+    nodes.dodge.disabled = !!player.dodgeDisabled;
+    nodes.dodge.title = player.dodgeDisabled ? '해골 기사 디버그: 회피 애니메이션 미지원' : '';
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;

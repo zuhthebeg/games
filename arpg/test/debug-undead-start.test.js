@@ -1,0 +1,57 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+const modulePath = new URL('../js/debug/undead-start.js', import.meta.url);
+test('main DBG has a real lazily loaded encounter entry, not a tool page', () => {
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ assert.match(main,/startUndead/);
+ assert.doesNotMatch(main,/tools\/undead-encounter-lab/);
+ assert.match(main,/if \(undead\)/);
+});
+test('ephemeral session enter/restart/victory/death/leave and provider restoration', async () => {
+ assert.ok(existsSync(modulePath),'missing debug encounter controller');
+ const { createUndeadSession }=await import(modulePath);
+ const { step, emptyInput }=await import('../js/sim/world.js');
+ const { createWorld,addPlayer,startStage }=await import('../js/sim/world.js');
+ const { createSave, validateSave }=await import('../js/meta/save.js');
+ const human=createSave({name:'SENTINEL',answers:[0,1,2,3,0],createdAt:1});
+ const raw=JSON.stringify(human), skeleton=()=>{}, blade=()=>{};
+ const factories=new Map([['skeleton_warrior',skeleton],['blade',blade]]);
+ const provider={factories,register(k,f){factories.set(k,f);}};
+ const session=createUndeadSession(provider);
+ assert.ok(validateSave(session.save)); assert.equal(session.save.lineage,'skeleton_knight');
+ assert.equal(session.save.completedRounds,0); assert.equal(session.save.level,1);
+ assert.notEqual(factories.get('blade'),blade);
+ const first=session.restart(); assert.equal(first.player.pid,'local');
+ assert.equal(first.world.round,null); assert.equal(first.player.dodgeDisabled,true);
+ assert.ok(first.player.x>first.human.x);
+ assert.equal(session.state(first),'running');
+ let result=first;
+ for(let i=0;i<3000 && session.state(result)==='running';i++) step(result.world,{local:{...emptyInput(),attack:true,autoAttack:true}});
+ assert.equal(session.state(result),'victory');
+ result=session.restart();
+ for(let i=0;i<4000 && session.state(result)==='running';i++) step(result.world,{local:emptyInput()});
+ assert.equal(session.state(result),'death');
+ const third=session.restart(); assert.equal(third.world.tick,0);
+ session.leave(); session.leave();
+ assert.equal(factories.get('blade'),blade); assert.equal(factories.has('undead_lab_human_melee'),false);
+ assert.equal(JSON.stringify(human),raw);
+ const world=createWorld();addPlayer(world,{pid:'local'});startStage(world,'S1');step(world,{local:{}});
+ assert.equal(world.entities[0].dodgeDisabled,undefined);assert.equal(world.round.stageId,'S1');
+});
+test('mode tick bypasses settlement/tracker and consumes real input, no automatic emergency return', () => {
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const frame=main.slice(main.indexOf('  function frameUndead'),main.indexOf('  function closeCoop'));
+ assert.match(frame,/input\.consume\(\)/);
+ assert.doesNotMatch(frame,/trackRound|settleRound|store\.|combatInput|startStage/);
+ assert.match(main,/if \(undead \|\| undeadStarting\) throw new Error/);
+ assert.match(main,/if \(!undead && \(running \|\| coop\)\) throw new Error/);
+});
+test('debug reset clears queued operations, speed and toggles for next character', async () => {
+ const { createCombatController }=await import('../js/debug/combat.js');
+ const { createWorld, addPlayer, startStage }=await import('../js/sim/world.js');
+ const c=createCombatController();Object.assign(c.state,{god:true,oneHit:true,mana:true,speed:4});
+ let called=false;c.enqueue(()=>{called=true});c.reset();
+ assert.deepEqual(c.state,{god:false,oneHit:false,mana:false,speed:1});
+ const w=createWorld();addPlayer(w,{pid:'local'});startStage(w,'S1');c.beforeTick(w,{});assert.equal(called,false);
+});

@@ -29,6 +29,7 @@ export function createCombatController() {
   const queue = [];
   return {
     state,
+    reset() { Object.assign(state, { god: false, oneHit: false, mana: false, speed: 1 }); queue.length = 0; },
     enqueue(action) { queue.push(action); },
     beforeTick(world, renderer) {
       const player = world?.entities.find(entity => entity.kind === 'player');

@@ -19,7 +19,7 @@ test('disabled debug does not import; explicit URL overrides persisted state; de
   assert.equal(main.includes("from './debug/"), false);
   const source = main.slice(main.indexOf('  const debugQuery'), main.indexOf('  const inputs'))
     .replace("await import('./debug/index.js')", 'await importer()');
-  const boot = new (Object.getPrototypeOf(async function(){}).constructor)('location', 'localStorage', 'importer', 'hub', 'store', 'renderer', 'input', `let debug, world, running, tracker; ${source}; return debug;`);
+  const boot = new (Object.getPrototypeOf(async function(){}).constructor)('location', 'localStorage', 'importer', 'hub', 'store', 'renderer', 'input', `let debug, world, running, tracker, undead, startUndead, leaveUndead; ${source}; return debug;`);
   const local = storage(); let loads = 0;
   const importer = async () => { loads++; return { mountDebug: () => ({ loaded: true }) }; };
   const run = (search, store = local) => boot({ search }, store, importer, {}, {}, {}, {});

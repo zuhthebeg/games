@@ -35,7 +35,7 @@ export function mountDebug(context) {
   const options = values => values.map(value => `<option value="${value}">${value}</option>`).join('');
   const btn = (action, label) => `<button type="button" data-debug="${action}">${label}</button>`;
   panel.innerHTML = `<h2>개발자 디버그 ${btn('close', '닫기')}</h2><output id="arpg-debug-status" aria-live="polite">로컬 테스트 전용 · 결정론 보장 안 함</output>
-    <h3>여관 (전투 중 저장 금지)</h3>${btn('gold:1000', '골드 +1,000')}${btn('gold:10000', '골드 +10,000')}${btn('stones', '강화석 각 +10')}${btn('materials', '모든 재료 각 +20')}${btn('potions', '물약류 +5')}
+    <h3>언데드 디버그 · 해골 기사만 · 저장 안 됨</h3>${btn('undead-start', '언데드로 시작')}${btn('undead-return', '인간으로 돌아가기')}<small>고정 프리셋 · 솔로 1전투 · 회피 미지원 · 3직업/진화 아님</small><h3>여관 (전투 중 저장 금지)</h3>${btn('gold:1000', '골드 +1,000')}${btn('gold:10000', '골드 +10,000')}${btn('stones', '강화석 각 +10')}${btn('materials', '모든 재료 각 +20')}${btn('potions', '물약류 +5')}
     <label>부위<select id="dbg-slot">${options([...SLOTS, 'random'])}</select></label><label>등급<select id="dbg-rarity">${options(RARITIES)}</select></label><label>Tier<select id="dbg-tier">${options([1, 2, 3])}</select></label>
     <small>T3 템플릿 없음: 현재 T2로 지급. affix는 템플릿 Tier 기준.</small><div>${btn('gear', '장비 지급')}${btn('set', '등급별 전 부위 세트 (20개)')}</div>
     <label>레벨<input id="dbg-level" type="number" min="1" max="${MAX_LEVEL}" value="${MAX_LEVEL}"></label>${btn('level', '레벨·포인트 설정')}${btn('points', '포인트 회수 (스탯 초기화)')}
@@ -70,7 +70,7 @@ export function mountDebug(context) {
     if (event.code !== 'Backquote' || event.repeat || event.target.closest?.('input,textarea,select')) return;
     event.preventDefault(); togglePanel();
   });
-  const requireInn = () => { if (context.running) throw new Error('전투 중 저장 수정 불가. 정산 후 여관에서 사용.'); };
+  const requireInn = () => { if (context.undead) throw new Error('언데드 디버그 저장 금지'); if (context.running) throw new Error('전투 중 저장 수정 불가. 정산 후 여관에서 사용.'); };
   const save = next => {
     requireInn(); store.save(next); hub.save = next;
     if (typeof hub.showInn === 'function') hub.showInn(); else location.reload();
@@ -79,6 +79,9 @@ export function mountDebug(context) {
   const requireSave = () => { requireInn(); if (!hub.save) throw new Error('먼저 캐릭터를 생성하세요.'); return hub.save; };
   const execute = async action => {
     if (action === 'close') { togglePanel(); return; }
+    if (action === 'undead-start') { await context.startUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); return; }
+    if (action === 'undead-return') { context.leaveUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); status('인간 세션 복귀 · 세이브 변경 없음'); return; }
+    if (context.undead) throw new Error('언데드 디버그에서는 다시 시작/인간 복귀만 사용하세요. 저장·치트·즉시 정산 불가');
     if (['god', 'oneHit', 'mana'].includes(action)) {
       combat.state[action] = !combat.state[action];
       panel.querySelector(`[data-debug="${action}"]`).setAttribute('aria-pressed', String(combat.state[action]));
@@ -114,21 +117,26 @@ export function mountDebug(context) {
     event.stopPropagation(); const action = event.target.closest('[data-debug]')?.dataset.debug;
     if (action) execute(action).catch(error => status(error.message));
   });
-  panel.querySelector('#dbg-speed').addEventListener('change', () => { combat.state.speed = Number(value('speed')); });
+  panel.querySelector('#dbg-speed').addEventListener('change', () => { combat.state.speed = context.undead ? 1 : Number(value('speed')); });
   const extensions = panel.querySelector('#dbg-extensions');
   const renderExtensions = () => {
     extensions.replaceChildren();
     for (const action of debugActions) {
       const button = document.createElement('button'); button.textContent = `${action.group} · ${action.label}`;
-      button.addEventListener('click', () => Promise.resolve().then(() => action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, persistSave: save }))).catch(error => status(error.message)));
+      button.addEventListener('click', () => Promise.resolve().then(() => (context.undead ? Promise.reject(new Error('언데드 디버그 확장 기능 금지')) : action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, persistSave: save })))).catch(error => status(error.message)));
       extensions.append(button);
     }
   };
   watchDebugActions(renderExtensions); renderExtensions();
   let last = 0, frames = 0, fps = 0, nextInfo = 0;
   return {
+    reset() {
+      combat.reset();
+      panel.querySelector('#dbg-speed').value = '1';
+      for (const action of ['god', 'oneHit', 'mana']) panel.querySelector(`[data-debug="${action}"]`).setAttribute('aria-pressed', 'false');
+    },
     get speed() { return combat.state.speed; },
-    beforeTick() { combat.beforeTick(context.world, renderer); },
+    beforeTick() { if (!context.undead) combat.beforeTick(context.world, renderer); },
     frame(now) {
       frames++;
       if (now - last >= 1000) { fps = frames * 1000 / (now - last); frames = 0; last = now; }
