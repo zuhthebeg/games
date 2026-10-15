@@ -25,7 +25,10 @@ assert sha(here/'source/player-skeleton-archer-source.blend')==checkpoint['sourc
 final=here/'final';source=json.loads((final/'source-validation.json').read_text())
 assert source['status']=='PASS' and sha(here/'source/player-skeleton-archer-full-source.blend')==source['source_blend_sha256']
 assert sha(offline/'source/player-skeleton-archer-source.blend')==source['source_blend_sha256']
-assert sha(final/'frames.json')==source['render_binding']['frames_json_sha256']
+# The offline Windows render manifest retains its exact original CRLF bytes.
+# Git-delivered evidence copies use LF; require semantic identity, not a false raw-byte claim.
+assert sha(offline/'frames/player-skeleton-archer/frames.json')==source['render_binding']['frames_json_sha256']
+assert json.loads((final/'frames.json').read_text())==json.loads((offline/'frames/player-skeleton-archer/frames.json').read_text())
 assert source['render_binding']['sampled_frames']==464 and source['render_binding']['attack_contact_rows']==96 and source['render_binding']['in_place_dodge_rows']==40
 fixture=json.loads((final/'fixture-comparison.json').read_text());assert fixture['rgba_exact'] and fixture['alpha_exact']
 a=Image.open(final/'fixture-attack_E_006.png').convert('RGBA');b=Image.open(offline/'frames/player-skeleton-archer/attack_E_006.png').convert('RGBA');assert a.tobytes()==b.tobytes()
@@ -61,7 +64,10 @@ for group,names in groups.items():assert sorted(atlas_groups[group])==sorted(nam
 native=json.loads((here/'native-validation.json').read_text());assert native['status']=='PASS' and native['nativeAlphaExact'] and native['pageErrors']==[]
 for name,digest in native['bindings'].items():assert sha(arpg/name)==digest,('native binding stale',name)
 assert sha(arpg/'vendor/pixi-8.22.0.min.mjs')==native['bindings']['vendor/pixi-8.22.0.min.mjs']
-report={'status':'PASS','protected':checks,'checkpoint_source_preserved':True,'full_source_sha256':source['source_blend_sha256'],'frames':464,'groups':48,'counts_per_direction':counts,'unique_octants_each_state':8,'source_coverage_percent':packing['source_coverage_range'],'physical_coverage_percent':packing['physical_coverage_range'],'source_reopen_fixture_rgba_exact':True,'source_draw_contact_bound_frames':96,'all_frames_bow_held':464,'in_place_dodge_bound_frames':40,'delivered_alpha_exact_frames':464,'rgba_bytes':allocated,'rgba_mib':allocated/1024**2,'compressed_webp_bytes_not_gpu':compressed,'native_fixture':'attack_E_006','native_fixture_alpha_exact':True,'not_registered':True,'visual_review_pending':True,'artifact_bindings':{str(p.relative_to(arpg)):sha(p) for folder in [kit,here/'final',here/'source',here/'preview-final'] for p in sorted(folder.rglob('*')) if p.is_file() and p.name!='artifact-validation.json'}}
+report={'status':'PASS','protected':checks,'checkpoint_source_preserved':True,'full_source_sha256':source['source_blend_sha256'],'frames':464,'groups':48,'counts_per_direction':counts,'unique_octants_each_state':8,'source_coverage_percent':packing['source_coverage_range'],'physical_coverage_percent':packing['physical_coverage_range'],'source_reopen_fixture_rgba_exact':True,'source_draw_contact_bound_frames':96,'all_frames_bow_held':464,'in_place_dodge_bound_frames':40,'delivered_alpha_exact_frames':464,'rgba_bytes':allocated,'rgba_mib':allocated/1024**2,'compressed_webp_bytes_not_gpu':compressed,'native_fixture':'attack_E_006','native_fixture_alpha_exact':True,'not_registered':True,'visual_review_pending':True,'artifact_bindings':{str(p.relative_to(arpg)):sha(p) for folder in [kit,here/'final',here/'source',here/'preview-final'] for p in sorted(folder.rglob('*')) if p.is_file() and p.name not in ('artifact-validation.json','weapon-authorship.json')}}
+report['offline_render_manifest_raw_sha256']=source['render_binding']['frames_json_sha256']
+report['delivered_render_manifest_lf_sha256']=sha(final/'frames.json')
+report['render_manifest_semantic_identity']=True
 for p in sorted(here.iterdir()):
  if p.is_file() and p.suffix in ('.py','.mjs','.html','.md'):report['artifact_bindings'][str(p.relative_to(arpg))]=sha(p)
 if '--output' in sys.argv:Path(sys.argv[sys.argv.index('--output')+1]).write_text(json.dumps(report,indent=2))

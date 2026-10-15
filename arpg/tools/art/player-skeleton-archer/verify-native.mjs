@@ -39,7 +39,10 @@ try{
  });
  if(errors.length)throw Error(errors.join('\n'));
  result.pageErrors=errors;result.bindings={};
- for(const dir of [here,path.join(root,'assets/sprites/player-skeleton-archer')])for(const n of fs.readdirSync(dir))if(fs.statSync(path.join(dir,n)).isFile()&&n!=='native-validation.json'&&['.mjs','.html','.webp','.json'].includes(path.extname(n)))result.bindings[path.relative(root,path.join(dir,n))]=sha(path.join(dir,n));
+ // Bind actual native-test inputs only, not unrelated historical checkpoint reports.
+ for(const n of ['preview.html','preview.mjs','verify-native.mjs'])result.bindings[path.relative(root,path.join(here,n))]=sha(path.join(here,n));
+ const kit=path.join(root,'assets/sprites/player-skeleton-archer');
+ for(const n of fs.readdirSync(kit))if(fs.statSync(path.join(kit,n)).isFile())result.bindings[path.relative(root,path.join(kit,n))]=sha(path.join(kit,n));
  result.bindings['vendor/pixi-8.22.0.min.mjs']=sha(path.join(root,'vendor/pixi-8.22.0.min.mjs'));result.bindings['tools/art/player-skeleton-archer/final/fixture-physical128.png']=sha(path.join(here,'final/fixture-physical128.png'));
  fs.writeFileSync(path.join(here,'native-validation.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

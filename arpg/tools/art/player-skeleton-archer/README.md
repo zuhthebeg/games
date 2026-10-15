@@ -15,7 +15,7 @@ Original Rogue GLB SHA256 `4003f2b77891bb56f7e0de7d555abcb497aebbcaee35b614211f1
 - `source/player-skeleton-archer-source.blend` + root `source-validation.json`: original checkpoint pair, preserved.
 - `source/player-skeleton-archer-full-source.blend`: completed full-bake source, SHA256 `e7fdc12cab7691733b93f999817501bdb2443cd165fbfc76bb9c37be6ee5a125`.
 - `final/source-validation.json`: reopened final source; body coordinates preserved, 8 skin modifiers, 6 moving source clips, all 464 bow grips, 96 attack contact-coordinate bindings, 40 in-place dodge source samples.
-- `final/frames.json`: original 464 render records; original 256px PNGs remain offline. Only one full-draw fixture was rerendered; its RGBA matches the original exactly.
+- `final/frames.json`: original 464 render records; original 256px PNGs remain offline. Delivered Windows JSON evidence copies use LF for stable Git blob binding; the offline manifest retains its exact CRLF bytes and original hash, and semantic identity is independently checked. Original checkpoint files are not normalized. Only one full-draw fixture was rerendered; its RGBA matches the original exactly.
 - `final/source-mask-stats.json`, `delivered-mask-stats.json`, `packing-validation.json`: source coverage 6.17065..13.04169%, physical coverage 6.11572..13.09815%, unchanged 5..60% gates, alpha reconstruction exact for all 464 frames.
 - `pixi-parser-validation.json`: shipped Pixi 8.22.0 CPU metadata parsing, all 48 groups/464 textures.
 - `native-validation.json`: installed native Chromium + WebGL SwiftShader; all metadata/decoded atlas dimensions, one 128px fixture, exact source alpha, trim/anchor/full original bounds, page errors zero. No browser screenshot or game runtime.
