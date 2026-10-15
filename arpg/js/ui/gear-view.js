@@ -1,3 +1,4 @@
+import { knightEquipmentAllowed } from '../meta/knight-equipment.js';
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
@@ -90,7 +91,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
     + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>`
     + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
-    + `${locked ? `<small class="loss">${icon('lock')}힘 ${def.requiredStr}</small>` : ''}</span></button>`;
+    + `${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : '방어구 해금 확정 대기'}</small>` : ''}</span></button>`;
 }
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
@@ -99,12 +100,12 @@ export function getHeroPortrait(save, direction = 'SW') {
   const kit = { blade:'sword', bow:'bow', focus:'focus' }[family];
   const index = PORTRAIT_DIRECTIONS.indexOf(direction);
   const [x,y] = PORTRAIT_FRAMES[index < 0 ? 3 : index];
-  return { url:`assets/sprites/hero-${kit}/atlas-0.webp`, frame:`idle_${index < 0 ? 'SW' : direction}_000`, x, y, width:128, height:128, atlasWidth:2048, atlasHeight:2048 };
+  return { url:`assets/sprites/${save.lineage === 'skeleton_knight' ? 'skeleton-warrior' : `hero-${kit}`}/atlas-0.webp`, frame:`idle_${index < 0 ? 'SW' : direction}_000`, x, y, width:128, height:128, atlasWidth:2048, atlasHeight:2048 };
 }
 
 export function portraitHtml(save, direction = 'SW') {
   const p = getHeroPortrait(save, direction);
-  const enabled = paperdollEnabled();
+  const enabled = save.lineage !== 'skeleton_knight' && paperdollEnabled();
   if (enabled) installPaperdollPortraits();
   const parts = enabled ? ` data-paperdoll-fallback="${p.url}" data-paperdoll="${escape(JSON.stringify(equipmentVisual(save)))}"` : '';
   const canvas = enabled ? '<canvas width="128" height="128" style="width:100%;height:100%" hidden></canvas>' : '';

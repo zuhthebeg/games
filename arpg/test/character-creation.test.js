@@ -45,7 +45,8 @@ for (const [lineage, family] of roles) {
       const before = structuredClone(input);
       const save = createSkeletonSave(input);
       const expected = { ...createSave({ ...input, weapon: family }), lineage };
-      assert.deepEqual(save, expected, 'only lineage differs from canonical fresh factory');
+      if (lineage === 'skeleton_knight') { expected.equipped.body = null; expected.items = expected.items.filter(item => item.uid !== 'starter:armor'); }
+      assert.deepEqual(save, expected, 'normal defaults; knight starts weapon-only');
       assert.deepEqual(input, before);
       assert.equal(validateSave(save), true);
       assert.equal(validateSave(JSON.parse(JSON.stringify(save))), true);

@@ -248,19 +248,10 @@ export class HubUI {
       ${button('해골 기사 · 검 · 생성 / 이어하기', 'choose-knight')}
       ${button('해골 마법사 · 준비 중', 'unavailable', '', true)}
       ${button('해골 궁수 · 준비 중', 'unavailable', '', true)}
-      <p>기사는 시험 전투만 지원합니다. 성장/보상·캠페인·진화·협동 미연결. 회피 미지원.</p>
+      <p>기사는 기존 여관·상점·퀘스트·성장·정산을 이용합니다. 회피 가능(이동 동작 대체). 협동 미지원.</p><p>무기만으로 시작합니다. 방어구 순차 해금 레벨·완전 장착 진화는 확정 대기입니다.</p>
       ${button('돌아가기', 'character-choice')}`), 'skeleton-role');
   }
 
-  showSkeletonProfile() {
-    const save = this.skeletonProfile;
-    this.show(this.panelHtml('해골 기사 · 시험 전투 · 성장/보상 미연결', `
-      <p id="skeleton-name">${escape(save.name)} · Lv.${save.level}</p>
-      <p>무기: 검 · 독립 저장 완료. 문답 능력치와 보급을 시험 전투에 적용합니다.</p>
-      <p>시험 전투 소모품과 승패는 저장에 반영하지 않습니다. 다음 전투는 저장된 보급으로 시작합니다. 회피 미지원.</p>
-      ${button('시험 전투 시작 / 재개', 'knight-play')}
-      ${button('인간 / 캐릭터 선택', 'character-choice')}`), 'skeleton-profile');
-  }
 
   showIntro() {
     this.show(this.panelHtml('문 너머의 불빛', `
@@ -302,7 +293,7 @@ export class HubUI {
       <p>${escape(this.name)}, ${knight ? '해골 기사 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
       ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기사 무기는 검으로 제한됩니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
-      ${button(knight ? '해골 기사 생성 · 시험 전투로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
+      ${button(knight ? '해골 기사 생성 · 여관으로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
@@ -362,7 +353,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="sr-only">잿빛 여관</h1>${room}
+    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? '<p class="minor">해골 기사 · 방어구 해금 레벨/완전 장착 진화 확정 대기 · 현재 무기만 장착 · 협동 미지원<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지 · 회피는 이동 동작 대체</p>' : ''}${room}
       <p class="recovery inn-recovery">${icon('clear')}<strong>HP·MP 회복</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family])}</b></span></p>
       ${this.weightHtml()}<nav class="npc-grid" aria-label="여관 사람들">${npcs}</nav>${devMenu}`;
@@ -1044,19 +1035,18 @@ export class HubUI {
     switch (action) {
       case 'character-choice': return this.showCharacterChoice();
       case 'choose-human':
-        this.creationLineage = null; this.skeletonProfile = null;
+        this.creationLineage = null;
         this.save = this.initialCharacters.human();
         this.receipt = this.save?.lastReceipt ?? null;
         return this.save ? this.showInn() : this.showIntro();
       case 'choose-skeleton': return this.showSkeletonRole();
       case 'choose-knight': {
         const save = this.initialCharacters.read();
-        if (save) { this.skeletonProfile = save; return this.showSkeletonProfile(); }
+        this.save = save; this.receipt = save?.lastReceipt ?? null;
+        if (save) return this.showInn();
         this.creationLineage = 'skeleton_knight'; this.answers = []; this.chosenWeapon = undefined;
         return this.showName();
       }
-      case 'knight-play':
-        return this.initialCharacters.play(this.skeletonProfile).catch(error => this.error(error.message));
       case 'weapon-confirm': return this.confirmEquipment(data);
       case 'weapon-cancel': return this.cancelEquipment();
       case 'name': return this.showName();
@@ -1069,11 +1059,9 @@ export class HubUI {
         return this.showQuizResult();
       case 'create':
         if (this.creationLineage === 'skeleton_knight') {
-          this.skeletonProfile = this.initialCharacters.create({lineage: 'skeleton_knight', name: this.name, answers: this.answers, createdAt: Date.now()});
-          this.showSkeletonProfile();
-          // Show the durable profile first so a failed/cancelled launch can safely return.
-          if (this.initialCharacters.play) return this.initialCharacters.play(this.skeletonProfile).catch(error => this.error(error.message));
-          return;
+          this.save = this.initialCharacters.create({lineage: 'skeleton_knight', name: this.name, answers: this.answers, createdAt: Date.now()});
+          this.receipt = null; this.creationLineage = null;
+          return this.showInn();
         }
         this.commit(createSave({
           name: this.name, answers: this.answers, weapon: this.chosenWeapon, createdAt: Date.now(),
@@ -1321,14 +1309,16 @@ export class HubUI {
       case 'reset-second':
         this.resetStep++;
         return this.showSettings();
-      case 'reset-final':
+      case 'reset-final': {
+        const knight = this.save?.lineage === 'skeleton_knight';
         if (this.resetStep !== 2) throw new Error('초기화 확인이 필요합니다.');
         this.resetSave();
         this.save = null;
         this.answers = [];
         this.chosenWeapon = null;
         this.receipt = null;
-        return this.showIntro();
+        return knight && this.initialCharacters ? this.showCharacterChoice() : this.showIntro();
+      }
       case 'dev-start':
         if (!this.dev) return undefined;
         return this.showSortie(

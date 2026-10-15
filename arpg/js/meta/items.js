@@ -4,6 +4,7 @@ import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
+import { knightEquipmentAllowed } from './knight-equipment.js';
 import { lineageAllowsWeapon } from '../content/player-lineages.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
@@ -108,7 +109,7 @@ for (const item of Object.values(ITEMS)) {
   if (item.huntTier !== 4) item.requiredLevel = 1;
   item.requiredStr = strRequirement(item);
 }
-export const meetsRequirement = (save, def) => lineageAllowsWeapon(save, def)
+export const meetsRequirement = (save, def) => lineageAllowsWeapon(save, def) && knightEquipmentAllowed(save, def)
   && (save.stats?.str ?? BALANCE.stats.base) >= (def?.requiredStr || 0);
 export const requirementLabel = (def) => def?.requiredStr ? `힘 ${def.requiredStr}` : '';
 // cocy 10-11: one ungraded stone + the greater stone. enhance_stone_2 is legacy only (old receipts);
@@ -160,6 +161,7 @@ export function equip(save, uid) {
   const definition = ITEMS[item.id];
   if (!SLOTS.includes(definition.kind)) throw new Error('장비가 아닙니다.');
   if (!lineageAllowsWeapon(save, definition)) throw new Error('이 계보는 해당 무기를 장착할 수 없습니다.');
+  if (!knightEquipmentAllowed(save, definition)) throw new Error('기사 방어구 해금 레벨 확정 대기 · 현재 무기만 장착할 수 있습니다.');
   if (!meetsRequirement(save, definition)) throw new Error(`힘 ${definition.requiredStr} 이상이어야 장착할 수 있습니다.`);
   const next = cloneSave(save);
   next.equipped[definition.kind] = uid;
