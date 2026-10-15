@@ -15,9 +15,19 @@ export function createUndeadSession(provider) {
       if (left) throw new Error('이미 종료한 디버그 전투');
       return createEncounter({ pid: 'local', mods: buildRoundMods(save) });
     },
+    presentation: terminalPresentation,
     state({ player, human }) {
       return player.dead ? 'death' : human.dead ? 'victory' : player.terminal ? 'returned' : 'running';
     },
     leave() { if (!left) { restoreArt(); left = true; } },
   };
+}
+
+// Render-only terminal pose. Never tick a concluded encounter to finish presentation:
+// atlas death/hurt ages use render delta, but attack uses authoritative act.elapsed.
+export function terminalPresentation(world) {
+  return { ...world, telegraphs: [], projectiles: [], entities: world.entities.map(entity => ({
+    ...entity, act: null, moving: false, staggerLeft: 0,
+    dodge: entity.dodge && { ...entity.dodge, dashLeft: 0 },
+  })) };
 }

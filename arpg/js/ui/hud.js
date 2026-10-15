@@ -59,6 +59,50 @@ export class HUD {
     this.update(world, 0);
   }
 
+  showUndeadResult(state, { next, restart, leave }) {
+    if (this.undeadResult) return;
+    const panel = document.createElement('section');
+    panel.id = 'undead-result';
+    panel.setAttribute('role', 'region');
+    panel.setAttribute('aria-label', '언데드 전투 결과');
+    const title = document.createElement('h2');
+    title.textContent = state === 'victory' ? '해골 승리' : state === 'death' ? '전투 종료 · 쓰러졌습니다' : '전투 종료 · 귀환';
+    title.setAttribute('role', 'status');
+    const detail = document.createElement('p');
+    detail.textContent = '같은 해골 기사 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
+    panel.append(title, detail);
+    const actions = state === 'victory' ? [['next', '다음 전투', next], ['restart', '다시 시작', restart]]
+      : [['restart', '다시 시작', restart]];
+    actions.push(['leave', '인간으로 돌아가기', leave]);
+    for (const [id, label, run] of actions) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.dataset.undeadAction = id; button.textContent = label;
+      // Hiding the held attack can retarget its trailing touch click here.
+      // Require a fresh press on this result button; keyboard activation has detail=0.
+      let pressed = false;
+      button.addEventListener('pointerdown', () => { pressed = true; });
+      button.addEventListener('pointercancel', () => { pressed = false; });
+      button.addEventListener('click', event => {
+        if (event.detail > 0 && !pressed) return;
+        pressed = false;
+        run();
+      });
+      panel.append(button);
+    }
+    const controls = $('#actions');
+    this.undeadControlsHidden = controls.hidden;
+    controls.hidden = true;
+    this.undeadResult = panel;
+    $('#hud').append(panel);
+  }
+
+  clearUndeadResult() {
+    if (!this.undeadResult) return;
+    this.undeadResult.remove();
+    this.undeadResult = null;
+    $('#actions').hidden = this.undeadControlsHidden;
+  }
+
   pause(hidden) {
     $('#pause').hidden = !hidden;
   }

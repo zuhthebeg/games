@@ -193,6 +193,7 @@ try {
     const attempt = {}; // Identity owns both continuation and finally; cancellation never reuses it.
     undeadStarting = attempt;
     if (!undeadHuman) undeadHuman = rememberHuman();
+    hud.clearUndeadResult();
     hub.root.hidden = true; hub.root.inert = true;
     input.reset(); input.enabled = false; debug.reset();
     let session = undead;
@@ -221,6 +222,7 @@ try {
     } catch (error) {
       if (undeadStarting !== attempt) return false;
       if (undead) audio.stop(); // A failed active restart may still have encounter voices.
+      hud.clearUndeadResult();
       session?.leave(); undead = null; undeadEncounter = null;
       const restore = undeadHuman; undeadHuman = null;
       try { restore?.(); } catch (restoreError) { error.cause = restoreError; }
@@ -234,6 +236,7 @@ try {
     undeadStarting = false;
     if (!undeadHuman && !undead) return;
     const session = undead;
+    hud.clearUndeadResult();
     undead = null; undeadEncounter = null;
     input.reset(); input.enabled = false; debug.reset();
     if (session) { audio.stop(); session.leave(); }
@@ -251,8 +254,8 @@ try {
         ? '필수 아틀라스 실패 · 전투 중지 · 인간으로 돌아가세요' : '아틀라스 준비 중';
     } else {
       hud.nodes.notice.textContent = state === 'running' ? '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음'
-        : state === 'victory' ? '해골 승리 · 보상/저장 없음 · DBG에서 다시 시작/인간 복귀'
-        : '전투 종료 · 보상/저장 없음 · DBG에서 다시 시작/인간 복귀';
+        : state === 'victory' ? '해골 승리 · 아래에서 다음 전투 또는 인간 복귀'
+        : '전투 종료 · 아래에서 다시 시작 또는 인간 복귀';
       accumulator += elapsed;
       let count = 0;
       while (accumulator >= TICK_MS && count++ < 5 && undead.state(undeadEncounter) === 'running') {
@@ -265,7 +268,16 @@ try {
       if (undead.state(undeadEncounter) !== 'running') { input.reset(); input.enabled = false; accumulator = 0; }
       if (accumulator >= TICK_MS) accumulator %= TICK_MS;
     }
-    renderer.render(world, accumulator / TICK_MS, elapsed / 1000);
+    const result = undead.state(undeadEncounter);
+    if (ready && result !== 'running') {
+      input.reset(); input.enabled = false; accumulator = 0;
+      const retry = () => startUndead().catch(error => hub.error(error.message));
+      hud.showUndeadResult(result, { next: retry, restart: retry, leave: leaveUndead });
+      const presentation = undead.presentation(world);
+      renderer.snapshot(presentation);
+      renderer.events(presentation, []);
+      renderer.render(presentation, 1, elapsed / 1000);
+    } else renderer.render(world, accumulator / TICK_MS, elapsed / 1000);
     hud.update(world, elapsed / 1000);
   }
   function closeCoop() {

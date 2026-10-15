@@ -32,7 +32,7 @@ function harness({ absent=false, failure=null, oldWorld=false }={}) {
  const input={enabled:false,reset(){this.resets=(this.resets||0)+1;}};
  const audio={stops:0,stop(){this.stops++;}};
  const debug={reset(){},frame(){}};
- const hud={nodes:{'stage-name':new Node('human stage'),notice:new Node('human notice'),dodge:new Node()},noticeLeft:7,stage:'human',
+ const hud={clearUndeadResult(){},nodes:{'stage-name':new Node('human stage'),notice:new Node('human notice'),dodge:new Node()},noticeLeft:7,stage:'human',
  begin(){nodes['#hud'].hidden=false; this.nodes.dodge.disabled=true; this.stage='debug'; if(fault==='hud') {fault=null;throw Error('injected hud');}},
  meta(){if(fault==='meta'){fault=null;throw Error('injected meta');}}};
  nodes['#hud'].childNodes=Object.values(hud.nodes);
