@@ -212,15 +212,17 @@ test('equipment, shop, storage weight, carry limit and no creation on failure', 
   assert.equal(carriedWeight(changed), weight + 10);
   assert.equal(dismantleRefund({ uid: 'drop:1', id: 'chief_maul', enhance: 5 }), 12);
   const bought = buy(freeze(base), 'potion', 2);
-  assert.equal(bought.gold, 10);
+  assert.equal(ITEMS.potion.price, 3); // Approved potion price, not the former 10G.
+  assert.equal(bought.gold, 24);
   assert.equal(bought.stacks.potion, 5);
   assert.equal(carriedWeight(bought), weight + 0.2);
-  assert.throws(() => buy(base, 'potion', 4));
+  assert.equal(buy(base, 'potion', 4).gold, 18);
+  assert.throws(() => buy(base, 'potion', 11));
   assert.throws(() => buy(base, 'potion', -1));
   assert.equal(buy(base, 'return_scroll', 2).stacks.return_scroll, 3);
   assert.throws(() => buy(base, 'scrap'));
-  assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 40 } }, 'potion'), 10);
-  assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 6 } }, 'mana_potion'), 12);
+  assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 40 } }, 'potion'), 3);
+  assert.equal(shopPrice({ ...base, stats: { ...base.stats, cha: 6 } }, 'mana_potion'), 5);
   assert.equal(base.gold, 30);
   assert.equal(base.stacks.potion, 3);
 });
