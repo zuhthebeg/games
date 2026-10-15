@@ -27,7 +27,7 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  await p.locator('#hero-name').fill(mobile?'모바일기사':'정상기사');await tap('#name-next');for(const n of [1,2,3,0,2])await tap(`[data-action="answer"][data-choice="${n}"]`);await tap('#quiz-start');
  await p.locator('#inn-name').waitFor();const born=await save();assert.equal(born.items.length,1);assert.equal(born.equipped.body,null);assert.equal(await p.locator('[data-action="knight-play"]').count(),0);
  // Existing shop interaction persists only this slot, no alternate trial menu.
- await tap('[data-action="shop"]');assert.equal(await p.locator('#meta-screen').getAttribute('data-page'),'shop');await tap('[data-action="inn"]');
+ await tap('[data-action="shop"]');assert.equal(await p.locator('#meta-screen').getAttribute('data-page'),'shop');await tap('[data-action="auto-buy"]');assert.ok((await save()).stacks.potion>born.stacks.potion);assert.ok((await save()).gold<born.gold);await tap('[data-action="inn"]');
  const launch=async id=>{await tap('[data-action="board"]');await tap(`[data-action="sortie"][data-stage="${id}"]`);await tap('#sortie-confirm');await p.waitForFunction(id=>__arpg.world?.round?.stageId===id&&__arpg.world.tick>0,id);};
  console.log('created',mobile);await launch('S1');console.log('S1 started',mobile);let w=await state();assert.equal(w.round.goal,'timer');assert.equal(w.round.playerSide,'right');assert.ok(w.entities[0].x>w.arena.w/2);assert.equal(w.entities[0].dodgeDisabled,undefined);
  await p.waitForFunction(()=>__arpg.art.visuals[0]?.id==='skeleton-warrior'&&__arpg.art.visuals[0]?.mode==='atlas');
