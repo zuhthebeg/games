@@ -26,6 +26,30 @@ try{
  assert.equal(await a.page.evaluate(()=>__arpg.world),null);assert.equal(await a.page.evaluate(k=>localStorage.getItem(k),key),knight);
  await a.page.locator('[data-action="knight-play"]').tap();await a.page.waitForFunction(()=>__arpg.mode==='skeleton-trial'&&__arpg.world.tick>0);
  await a.page.locator('#knight-return').tap();await a.page.locator('#skeleton-name').waitFor();assert.equal(await a.page.evaluate(()=>localStorage.getItem('arpg.save.v1')),raw);assert.deepEqual(a.writes.slice(baseline),[]);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push({pendingCancelReentry:true,writes:0});
+ // Change only this isolated fixture's storage while the real production import is pending.
+ for(const change of ['corrupt','remove','replace']){
+  const f=await setup();await choose(f.page);let release,requested;
+  const gate=new Promise(r=>release=r),asked=new Promise(r=>requested=r);
+  await f.page.route('**/js/solo/undead-session.js*',async r=>{requested();await gate;await r.continue();});
+  const before=f.writes.length;await f.page.locator('[data-action="knight-play"]').tap();await asked;
+  const changed=change==='remove'?null:change==='corrupt'?'CORRUPTED-WHILE-IMPORT-PENDING':JSON.stringify({...JSON.parse(knight),name:'Replacement'});
+  await f.page.evaluate(({key,changed})=>{if(changed===null)localStorage.removeItem(key);else localStorage.setItem(key,changed);},{key,changed});
+  release();await f.page.waitForFunction(()=>document.querySelector('#meta-error')?.textContent.length>0);
+  assert.match(await f.page.locator('#meta-error').textContent(),/손상|슬롯이 변경/);
+  assert.equal(await f.page.evaluate(()=>__arpg.world),null);assert.notEqual(await f.page.evaluate(()=>__arpg.mode),'skeleton-trial');
+  assert.equal(await f.page.locator('#meta-screen').isVisible(),true);assert.equal(await f.page.locator('#knight-return').count(),0);
+  assert.equal(await f.page.evaluate(k=>localStorage.getItem(k),key),changed);assert.equal(await f.page.evaluate(()=>localStorage.getItem('arpg.save.v1')),raw);
+  assert.deepEqual(f.writes.slice(before),[key],'only the explicit fixture change, no application storage writes');assert.deepEqual(f.errors,[]);
+  // A fresh native selection of a valid replacement remains playable, using the now-cached module.
+  if(change==='replace'){
+   await f.page.locator('[data-action="character-choice"]').tap();await choose(f.page);
+   await f.page.locator('[data-action="knight-play"]').tap();await f.page.waitForFunction(()=>__arpg.mode==='skeleton-trial'&&__arpg.world.tick>0);
+   assert.match(await f.page.locator('#stage-name').textContent(),/Replacement/);
+   await f.page.locator('#knight-return').tap();assert.equal(await f.page.evaluate(k=>localStorage.getItem(k),key),changed);
+   assert.equal(await f.page.evaluate(()=>localStorage.getItem('arpg.save.v1')),raw);assert.deepEqual(f.writes.slice(before),[key]);
+  }
+  await f.ctx.close();results.push({pendingSlotChange:change,refused:true,applicationWrites:0,cachedReplacement:change==='replace'});
+ }
  // Production module init failure must restore profile and preserve both slots.
  const b=await setup();await choose(b.page);await b.page.route('**/js/solo/undead-session.js*',r=>r.fulfill({contentType:'text/javascript',body:'throw new Error("native init fault");'}));const before=b.writes.length;
  await b.page.locator('[data-action="knight-play"]').tap();await b.page.waitForFunction(()=>document.querySelector('#meta-error')?.textContent.includes('native init fault'));

@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { HubUI } from '../js/ui/hub.js';
 import { createUndeadSession } from '../js/debug/undead-start.js';
-import { createSave } from '../js/meta/save.js';
+import { createSave, SAVE_KEY } from '../js/meta/save.js';
+import { createSkeletonSave } from '../js/meta/character-creation.js';
+import { readKnight } from '../js/meta/initial-characters.js';
+import { SLOT_SAVE_KEYS } from '../js/meta/character-slots.js';
+import { createKnightSession } from '../js/solo/undead-session.js';
 import { createWorld, addPlayer, startStage, setLoad } from '../js/sim/world.js';
 import { loadoutOf } from '../js/meta/skills.js';
 import { currentLoad, createTracker, buildRoundMods } from '../js/meta/run.js';
@@ -20,7 +24,10 @@ class Node {
 }
 function harness({ absent=false, failure=null, oldWorld=false }={}) {
  const human = absent ? null : createSave({name:'SENTINEL',answers:[0,1,2,3,0],createdAt:1});
- const raw=JSON.stringify(human), writes=[], imports=[], sessions=[];
+ const raw=JSON.stringify(human), writes=[], imports=[], sessions=[], reads=[];
+ const slot=SLOT_SAVE_KEYS.skeleton_knight, profile=createSkeletonSave({lineage:'skeleton_knight',name:'Original',answers:[1,2,3,0,2],createdAt:8});
+ const data=new Map([[SAVE_KEY,raw],[slot,JSON.stringify(profile)]]);
+ const storage={getItem(k){reads.push(k);return data.get(k)??null;},setItem(k,v){writes.push(['set',k]);data.set(k,v);},removeItem(k){writes.push(['remove',k]);data.delete(k);}};
  const nodes=Object.fromEntries(['#hud','#pause'].map(id=>[id,new Node('human HUD')])); nodes['#hud'].hidden=true;
  const root=new Node('original hub intro/inn'); root.childNodes=[new Node('existing child')];
  const skeleton=()=>{},blade=()=>{},previousHuman=()=>{};
@@ -38,21 +45,23 @@ function harness({ absent=false, failure=null, oldWorld=false }={}) {
  nodes['#hud'].childNodes=Object.values(hud.nodes);
  class Hub { constructor(options) {Object.assign(this,options);this.root=root;this.readyCalls=0;} ready(){this.readyCalls++;} }
  Hub.prototype.launch=HubUI.prototype.launch; Hub.prototype.commit=HubUI.prototype.commit; Hub.prototype.action=HubUI.prototype.action;
- const importer=()=>{const d=deferred();imports.push(d);return d.promise;};
- const mod={createUndeadSession(p){const s=createUndeadSession(p);const restart=s.restart.bind(s),leave=s.leave.bind(s);s.leaves=0;s.leave=()=>{s.leaves++;leave();};s.restart=()=>{if(fault==='restart'){fault=null;throw Error('injected restart');}return restart();};sessions.push(s);return s;}};
+ let cached=false;
+ const importer=()=>{if(cached)return Promise.resolve(mod);const d=deferred();imports.push(d);return d.promise;};
+ const mod={createUndeadSession(p,save){const s=save?createKnightSession(p,save):createUndeadSession(p);const restart=s.restart.bind(s),leave=s.leave.bind(s);s.leaves=0;s.leave=()=>{s.leaves++;leave();};s.restart=()=>{if(fault==='restart'){fault=null;throw Error('injected restart');}return restart();};sessions.push(s);return s;}};
+ mod.createKnightSession=(p,save)=>mod.createUndeadSession(p,save);
  const globals=source.slice(source.indexOf('let world ='),source.indexOf('// Live read-only'));
- const lifecycle=source.slice(source.indexOf('  const hub = new HubUI'),source.indexOf('  function frameUndead')).replace("await import('./debug/undead-start.js')",'await importer()');
+ const lifecycle=source.slice(source.indexOf('  const hub = new HubUI'),source.indexOf('  function frameUndead')).replace("await import('./debug/undead-start.js')",'await importer()').replace("await import('./solo/undead-session.js')",'await importer()');
  const coop=source.slice(source.indexOf('  function startCoop('),source.indexOf('  hub.startCoop ='));
  const debugContext=source.slice(source.indexOf('      get undead()'),source.indexOf('      get world() { return world; }, get save()'));
  const frame=source.slice(source.indexOf('  function frame(now)'),source.indexOf('  requestAnimationFrame(frame);\n} catch'));
  let scheduled=0;
- const boot=new Function('HubUI','store','saved','renderer','input','audio','hud','document','debugValue','importer','createWorld','addPlayer','loadoutOf','currentLoad','createTracker','matchMedia','performance','buildRoundMods','ITEMS','equippedItem','startStage','crypto','closeCoop','requestAnimationFrame','app','setLoad','showArrival',
+ const boot=new Function('HubUI','store','saved','renderer','input','audio','hud','document','debugValue','importer','createWorld','addPlayer','loadoutOf','currentLoad','createTracker','matchMedia','performance','buildRoundMods','ITEMS','equippedItem','startStage','crypto','closeCoop','requestAnimationFrame','app','setLoad','showArrival','readKnight','localStorage',
  `${globals}\ndebug=debugValue; ${lifecycle}\n${coop}\n${frame}\nreturn {hub,startUndead,leaveUndead,startCoop,frame,debugContext:({${debugContext}}),setCoop(c){coop=c;},setWorld(w){world=w;},state:()=>({undead,undeadStarting,world,running,roundSave,tracker})};`);
- const api=boot(Hub,{save:s=>writes.push(['save',s]),reset:()=>writes.push(['reset'])},human,renderer,input,audio,hud,{hidden:false,querySelector:id=>nodes[id]||null},debug,importer,createWorld,addPlayer,loadoutOf,currentLoad,createTracker,()=>({matches:false}),{now:()=>1},buildRoundMods,ITEMS,equippedItem,startStage,{getRandomValues:a=>a},()=>{},()=>scheduled++,{render(){}},setLoad,()=>{});
+ const api=boot(Hub,{save:s=>writes.push(['save',s]),reset:()=>writes.push(['reset'])},human,renderer,input,audio,hud,{hidden:false,querySelector:id=>nodes[id]||null,createElement:()=>({style:{},addEventListener(){},remove(){}}),body:{append(){}}},debug,importer,createWorld,addPlayer,loadoutOf,currentLoad,createTracker,()=>({matches:false}),{now:()=>1},buildRoundMods,ITEMS,equippedItem,startStage,{getRandomValues:a=>a},()=>{},()=>scheduled++,{render(){}},setLoad,()=>{},readKnight,storage);
  const initial=oldWorld ? createWorld() : null;if(initial)addPlayer(initial,{pid:'local'});api.setWorld(initial);
  const resolve=i=>imports[i].resolve(mod);
  const restored=()=>{assert.equal(api.state().undeadStarting,false);assert.equal(api.hub.save,human);assert.equal(api.state().undead,null);assert.equal(api.state().world,initial);assert.equal(api.state().running,false);assert.equal(root.hidden,false);assert.equal(root.inert,false);assert.equal(root.textContent,'original hub intro/inn');assert.equal(nodes['#hud'].hidden,true);assert.equal(hud.stage,'human');assert.equal(hud.nodes.dodge.disabled,false);assert.equal(input.enabled,false);assert.equal(renderer.root.visible,false);assert.equal(provider.factories.get('blade'),blade);assert.equal(provider.factories.get('undead_lab_human_melee'),previousHuman);assert.equal(JSON.stringify(human),raw);assert.deepEqual(writes,[]);};
- return {...api,imports,resolve,mod,root,hud,input,audio,renderer,writes,sessions,restored,scheduled:()=>scheduled,fail:f=>{fault=f;}};
+ return {...api,cacheModule:()=>{cached=true;},data,profile,slot,reads,humanRaw:raw,imports,resolve,mod,root,hud,input,audio,renderer,writes,sessions,restored,scheduled:()=>scheduled,fail:f=>{fault=f;}};
 }
 for(const absent of [false,true]) test(`pending return cancels real lazy entry, original hub/save restored (absent=${absent})`,async()=>{
  const h=harness({absent});const p=h.startUndead();assert.ok(h.state().undeadStarting);h.leaveUndead();h.resolve(0);await p;h.restored();assert.equal(h.sessions.length,0);assert.equal(h.audio.stops,0);
@@ -106,4 +115,32 @@ test('actual DBG pending save/mastery/extensions/reset paths, not just helper st
 });
 for(const failure of ['restart','renderer','render','hud','meta']) test(`active restart ${failure} rolls back to original human, releases only once`,async()=>{
  const h=harness();const p=h.startUndead();h.resolve(0);await p;h.fail(failure);await assert.rejects(h.startUndead(),/injected/);assert.equal(h.audio.stops,2,'failed active restart must stop encounter voices');h.restored();assert.equal(h.sessions[0].leaves,1);h.frame(16);assert.equal(h.scheduled(),1);
+});
+
+// Execute the actual main.js lifecycle with real slot reader/session, only deferring import.
+for(const change of ['corrupt','remove','replace']) test(`persistent entry rejects ${change} during import without slot writes or human-store changes`,async()=>{
+ const h=harness(),p=h.startUndead(h.profile);
+ if(change==='remove')h.data.delete(h.slot);
+ else h.data.set(h.slot,change==='corrupt'?'CORRUPTED-WHILE-PENDING':JSON.stringify({...h.profile,name:'Replacement'}));
+ const changed=h.data.get(h.slot);h.resolve(0);await assert.rejects(p,/손상|슬롯이 변경/);
+ h.restored();assert.equal(h.sessions.length,0);assert.deepEqual(h.reads,[h.slot]);
+ assert.equal(h.data.get(h.slot),changed);assert.equal(h.data.get(SAVE_KEY),h.humanRaw);
+});
+test('cached module entry revalidates after its microtask and accepts freshly selected valid replacement',async()=>{
+ const h=harness();const first=h.startUndead(h.profile);h.resolve(0);assert.equal(await first,true);h.leaveUndead();h.restored();
+ h.cacheModule();const cached=h.startUndead(h.profile);
+ h.data.set(h.slot,JSON.stringify({...h.profile,name:'Replacement'}));
+ await assert.rejects(cached,/슬롯이 변경/);h.restored();assert.equal(h.sessions.length,1);
+ const selected=JSON.parse(h.data.get(h.slot)),retry=h.startUndead(selected);assert.equal(await retry,true);
+ assert.equal(h.state().undead.save.name,'Replacement');h.leaveUndead();h.restored();
+ assert.equal(h.data.get(SAVE_KEY),h.humanRaw);assert.deepEqual(h.writes,[]);
+});
+for(const reject of [false,true]) test(`cancelled persistent attempt never reads changed slot or rolls back its newer owner (reject=${reject})`,async()=>{
+ const h=harness(),old=h.startUndead(h.profile);h.leaveUndead();
+ const current=h.startUndead(h.profile),owner=h.state().undeadStarting;h.data.set(h.slot,'CORRUPT-NEW-SLOT');
+ if(reject)h.imports[0].reject(Error('old import'));else h.resolve(0);
+ assert.equal(await old,false);assert.deepEqual(h.reads,[]);assert.equal(h.state().undeadStarting,owner);
+ assert.equal(h.root.hidden,true);assert.equal(h.root.inert,true);assert.equal(h.sessions.length,0);
+ h.data.set(h.slot,JSON.stringify(h.profile));h.resolve(1);assert.equal(await current,true);
+ assert.deepEqual(h.reads,[h.slot]);h.leaveUndead();h.restored();assert.equal(h.data.get(SAVE_KEY),h.humanRaw);
 });

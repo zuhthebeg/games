@@ -215,10 +215,10 @@ try {
       }
       if (!session) {
         if (profile) {
-          const savedKnight = readKnight(localStorage);
-          if (!savedKnight || JSON.stringify(savedKnight) !== JSON.stringify(profile)) throw new Error('저장 슬롯이 변경되었습니다. 캐릭터를 다시 선택하세요.');
           const { createKnightSession } = await import('./solo/undead-session.js');
           if (undeadStarting !== attempt) return false;
+          const savedKnight = readKnight(localStorage);
+          if (!savedKnight || JSON.stringify(savedKnight) !== JSON.stringify(profile)) throw new Error('저장 슬롯이 변경되었습니다. 캐릭터를 다시 선택하세요.');
           session = createKnightSession(renderer.provider, savedKnight);
         } else {
           const { createUndeadSession } = await import('./debug/undead-start.js');
