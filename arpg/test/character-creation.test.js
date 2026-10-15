@@ -5,7 +5,7 @@ import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.j
 import { SLOT_SAVE_KEYS, createSlotStorage } from '../js/meta/character-slots.js';
 import { playerLineage, playerForm } from '../js/content/player-lineages.js';
 import { ITEMS, START_WEAPONS } from '../js/meta/items.js';
-import { DEFAULT_SKILLS } from '../js/meta/skills.js';
+import { BOOKS, DEFAULT_SKILLS } from '../js/meta/skills.js';
 import { resolve } from '../js/meta/quiz.js';
 
 const roles = [['skeleton_mage', 'focus'], ['skeleton_knight', 'blade'], ['skeleton_archer', 'bow']];
@@ -29,6 +29,9 @@ const baseline = () => {
   human.stacks.potion = 12;
   human.stash.stacks.potion = 10;
   human.seenMaterials = ['hide'];
+  human.learned = Object.keys(BOOKS);
+  human.skillMastery = { ember_bolt: 1500 };
+  human.weaponLoadouts = { 'blade:sword': ['lunge', null, 'whirl'] };
   assert.equal(validateSave(human), true);
   return [[SAVE_KEY, JSON.stringify(human)], [`${SAVE_KEY}.corrupt.9`, 'original diagnostic'],
     ['settings', 'untouched'], ...roles.slice(1).flatMap(([id]) =>
@@ -131,7 +134,9 @@ test('valid occupied skeleton is rejected byte-exact', () => {
 
 for (const method of ['getItem', 'setItem']) {
   test(`storage ${method} failure propagates same error; all human/siblings/diagnostics preserved`, () => {
-    const f = fixture(baseline()), before = new Map(f.data);
+    const f = fixture([...baseline(), ...roles.slice(1).map(([id]) =>
+      [SLOT_SAVE_KEYS[id], JSON.stringify(createSkeletonSave(options(id)))])]);
+    const before = new Map(f.data);
     const error = new Error(method === 'getItem' ? 'access denied' : 'quota exceeded');
     f.storage[method] = (key) => { f.calls.push([method, key]); throw error; };
     assert.throws(() => persistSkeletonCharacter(f.storage, options('skeleton_mage')), e => e === error);
