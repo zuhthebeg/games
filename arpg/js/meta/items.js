@@ -169,7 +169,7 @@ export function equip(save, uid) {
   // Candidate only: normal HubUI.commit persists final equipment + permanent state in one write.
   if (next.lineage === 'skeleton_knight' && next.level === 30 && SLOTS.every(slot => {
     const worn = equippedItem(next, slot);
-    return worn && ITEMS[worn.id]?.kind === slot && meetsRequirement(next, ITEMS[worn.id]);
+    return worn && ITEMS[worn.id]?.kind === slot;
   })) next.permanentDeathKnight = true;
   return next;
 }

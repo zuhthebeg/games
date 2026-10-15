@@ -68,3 +68,10 @@ test('latch is an identity flag only: no extra stats, bonuses, costs or automati
  const h=equip(human,'head');assert.equal(Object.hasOwn(h,'permanentDeathKnight'),false);assert.equal(playerForm(h),'human');
  const incomplete={...s,equipped:{...s.equipped,feet:'nonexistent'}};assert.notEqual(equip(incomplete,'head').permanentDeathKnight,true);assert.equal(validateSave(equip(incomplete,'head')),false);
 });
+test('earlier validator-valid unlocked armor is not retroactively strength-locked by evolution',()=>{
+ let s=fixture();for(const slot of ['hands','feet','body'])s=equip(s,slot);
+ // Legacy valid armor is retained on selection even if its original strength requirement is unmet.
+ s.items.find(i=>i.uid==='body').id='warden_plate';assert.equal(validateSave(s),true);
+ const f=storage(s),selected=new CharacterStores(f).selectKnight();assert.equal(selected.equipped.body,'body');
+ assert.equal(equip(selected,'head').permanentDeathKnight,true);
+});
