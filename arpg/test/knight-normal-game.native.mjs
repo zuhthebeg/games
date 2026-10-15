@@ -55,6 +55,18 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  console.log('S2 start',mobile);
  let heldKeys=new Set(),touching=false;const joy={x:70,y:480,id:1};
  const stop=async()=>{for(const k of heldKeys)await p.keyboard.up(k);heldKeys.clear();if(touching){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});touching=false;}};
+ // Combat controls can disable/disappear between the sampled world and input.
+ const combatTap=async sel=>{
+  const availability=()=>p.evaluate(sel=>{const el=document.querySelector(sel);return {running:__arpg.world?.round?.state==='running',enabled:!!el&&!el.disabled,visible:!!el&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden'};},sel);
+  const ready=await availability();if(!ready.running||!ready.enabled||!ready.visible)return false;
+  try{await p.locator(sel).tap({timeout:600});return true;}
+  catch(error){
+   if(error.name!=='TimeoutError')throw error;
+   const current=await availability();
+   if(!current.running||(!current.enabled&&current.visible))return false;
+   throw error;
+  }
+ };
  const begun=Date.now();let lastSkill=0,lastDodge=0,lastLog=0;
  while(Date.now()-begun<260000){
   w=await state();if(w.round.state!=='running')break;
@@ -69,9 +81,9 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
    const next=new Set([...(mx<-.2?['KeyA']:mx>.2?['KeyD']:[]),...(my<-.2?['KeyW']:my>.2?['KeyS']:[])]);
    for(const k of heldKeys)if(!next.has(k))await p.keyboard.up(k);for(const k of next)if(!heldKeys.has(k))await p.keyboard.down(k);heldKeys=next;
   }
-  if(enemy&&Date.now()-lastSkill>5000&&a.mp>10){if(mobile){await stop();await tap('#skill');}else await p.keyboard.press('KeyK');lastSkill=Date.now();skills++;}
-  if(enemy?.act&&Date.now()-lastDodge>1800){if(mobile){await stop();await tap('#dodge');}else await p.keyboard.press('Space');lastDodge=Date.now();dodges++;}
-  if(a.hp<a.maxHp*.65&&a.potions>0&&a.potionCd===0){if(mobile){await stop();await tap('#potion');}else await p.keyboard.press('KeyQ');potions++;}
+  if(enemy&&Date.now()-lastSkill>5000&&a.mp>10){if(mobile){await stop();if(await combatTap('#skill')){lastSkill=Date.now();skills++;}}else{await p.keyboard.press('KeyK');lastSkill=Date.now();skills++;}}
+  if(enemy?.act&&Date.now()-lastDodge>1800){if(mobile){await stop();if(await combatTap('#dodge')){lastDodge=Date.now();dodges++;}}else{await p.keyboard.press('Space');lastDodge=Date.now();dodges++;}}
+  if(a.hp<a.maxHp*.65&&a.potions>0&&a.potionCd===0){if(mobile){await stop();if(await combatTap('#potion'))potions++;}else{await p.keyboard.press('KeyQ');potions++;}}
   await p.waitForTimeout(130);
  }
  await stop();w=await state();assert.equal(w.round.state,'clear',JSON.stringify({round:w.round,entities:w.entities,auto:await p.evaluate(()=>localStorage.getItem('arpg.autoAttack')),errors}));assert.equal(w.entities[0].terminal,'clear');
