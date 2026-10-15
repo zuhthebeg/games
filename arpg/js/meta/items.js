@@ -166,6 +166,11 @@ export function equip(save, uid) {
   const next = cloneSave(save);
   next.equipped[definition.kind] = uid;
   if (carriedWeight(next) > capacity(next) * 1.2) throw new Error('장착 후 무게가 120%를 넘습니다.');
+  // Candidate only: normal HubUI.commit persists final equipment + permanent state in one write.
+  if (next.lineage === 'skeleton_knight' && next.level === 30 && SLOTS.every(slot => {
+    const worn = equippedItem(next, slot);
+    return worn && ITEMS[worn.id]?.kind === slot && meetsRequirement(next, ITEMS[worn.id]);
+  })) next.permanentDeathKnight = true;
   return next;
 }
 

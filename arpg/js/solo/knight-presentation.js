@@ -1,3 +1,4 @@
+import { playerForm } from '../content/player-lineages.js';
 // Presentation only: original enemy type/AI/stats/lifeState/drop identity survives.
 // Unique bosses/construct guardians and the two training samples keep their art.
 export const HUMAN_PRESENTATIONS = Object.freeze({
@@ -9,7 +10,7 @@ export const HUMAN_PRESENTATIONS = Object.freeze({
 });
 export const ORIGINAL_PRESENTATIONS = Object.freeze(['scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon']);
 
-export function installKnightPresentation(provider) {
+export function installKnightPresentation(provider, save = { lineage: 'skeleton_knight', level: 1 }) {
   const previous = new Map(provider.factories);
   const skeleton = previous.get('skeleton_warrior');
   if (!skeleton || !['blade', 'bow', 'focus'].every(key => previous.has(key))) throw new Error('Required character factories missing');
@@ -17,7 +18,7 @@ export function installKnightPresentation(provider) {
     const visual = skeleton({ ...entity, kind: 'monster', type: 'skeleton_warrior' }, { ...options, color: 0xffffff, equipment: null });
     return {
       ...visual,
-      get debug() { return { ...visual.debug, presentation: 'skeleton_knight', dodgeFallback: 'run (no baked dodge clip)' }; },
+      get debug() { return { ...visual.debug, presentation: playerForm(save), artFallback: 'existing skeleton-warrior (no dedicated DeathKnight art)', dodgeFallback: 'run (no baked dodge clip)' }; },
       update(state, anim, dt) {
         // Cosmetic locomotion fallback only. Actual dash/iframes/cooldown are untouched.
         const shown = state.dodge?.dashLeft > 0 ? { ...state, moving: true, dodge: { ...state.dodge, dashLeft: 0 } } : state;

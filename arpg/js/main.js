@@ -1,3 +1,4 @@
+import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
 import { CoopLobby } from './net/lobby.js';
@@ -140,10 +141,10 @@ try {
       const weapon = overrideWeapon || ITEMS[equippedItem(roundSave, 'weapon').id].family;
       addPlayer(world, { pid: 'local', weapon, mods: buildRoundMods(roundSave) });
       const knight = roundSave.lineage === 'skeleton_knight';
-      if (knight && !restoreKnightArt) restoreKnightArt = installKnightPresentation(renderer.provider);
+      if (knight) { restoreKnightArt?.(); restoreKnightArt = installKnightPresentation(renderer.provider, roundSave); }
       if (!knight) { restoreKnightArt?.(); restoreKnightArt = null; }
       startStage(world, stageId, knight ? { playerSide: 'right' } : {});
-      if (knight) world.round.presentation = { lineage: 'skeleton_knight', humans: HUMAN_PRESENTATIONS, originals: ORIGINAL_PRESENTATIONS };
+      if (knight) world.round.presentation = { lineage: 'skeleton_knight', form: playerForm(roundSave), humans: HUMAN_PRESENTATIONS, originals: ORIGINAL_PRESENTATIONS };
       tracker = createTracker(seed);
       const load = currentLoad(roundSave, tracker);
       setLoad(world, 'local', load.ratio);

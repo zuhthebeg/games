@@ -84,6 +84,9 @@ export function validateSave(save) {
   try {
     if (!record(save) || save.version !== SAVE_VERSION || !integer(save.createdAt)) return false;
     playerLineage(save); // Strict optional identity; absence remains human, no migration/write.
+    if (Object.hasOwn(save, 'permanentDeathKnight') && (save.lineage !== 'skeleton_knight'
+      || typeof save.permanentDeathKnight !== 'boolean'
+      || (save.permanentDeathKnight && save.level !== MAX_LEVEL))) return false;
     if (typeof save.name !== 'string' || save.name !== save.name.trim()) return false;
     if (Array.from(save.name).length < 1 || Array.from(save.name).length > 12) return false;
     if (!integer(save.level, 1, MAX_LEVEL) || !integer(save.statPoints) || !integer(save.gold)) return false;

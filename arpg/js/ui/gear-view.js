@@ -1,3 +1,4 @@
+import { knightFormName } from '../content/player-lineages.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from '../meta/knight-equipment.js';
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
@@ -113,7 +114,7 @@ export function portraitHtml(save, direction = 'SW') {
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   // With paperdoll art the glow is drawn from the weapon silhouette once composed (pending until then).
   const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}"${enabled ? ' data-pending' : ''} aria-hidden="true">${enabled ? '<canvas width="128" height="128"></canvas>' : ''}<i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
-  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? '해골 · 기존 모델' : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
+  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)} · 기존 해골 외형 임시 사용` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
 }
 
 export function socketsHtml(save) {

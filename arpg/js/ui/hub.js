@@ -1,3 +1,4 @@
+import { knightFormName } from '../content/player-lineages.js';
 import { REGIONS, REGION_EDGES, MAPS, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
 import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
 import { acceptQuest, questOffered, questState } from '../meta/quest-progress.js';
@@ -296,7 +297,7 @@ export class HubUI {
     const save = this.save;
     const ratio = save.level === MAX_LEVEL ? 1 : save.xp / xpSpan(save.level);
     return `<header class="game-header"><div class="identity"><span class="seal" aria-hidden="true">${save.level}</span>
-      <div><strong id="inn-name">${escape(save.name)} <span class="muted" id="inn-level">Lv.${save.level}</span></strong>
+      <div><strong id="inn-name">${escape(save.name)}${save.lineage === 'skeleton_knight' ? ` · ${knightFormName(save)}` : ''} <span class="muted" id="inn-level">Lv.${save.level}</span></strong>
       <div class="xp-line" role="meter" aria-label="경험치" aria-valuemin="0" aria-valuemax="100"
         aria-valuenow="${Math.round(ratio * 100)}"><i style="width:${ratio * 100}%"></i></div></div></div>
       ${this.money()}
@@ -343,7 +344,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? '<p class="minor">해골 · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>영구 데스나이트 전환 미연결 · 새 외형 미제작<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지 · 회피는 이동 동작 대체</p>' : ''}${room}
+    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>전용 데스나이트 아트 미제작 · 기존 해골 외형 임시 사용<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지 · 회피는 이동 동작 대체</p>` : ''}${room}
       <p class="recovery inn-recovery">${icon('clear')}<strong>HP·MP 회복</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family])}</b></span></p>
       ${this.weightHtml()}<nav class="npc-grid" aria-label="여관 사람들">${npcs}</nav>${devMenu}`;
@@ -354,7 +355,7 @@ export class HubUI {
     const mods = deriveMods(this.save);
     const weight = carriedWeight(this.save), limit = capacity(this.save);
     const rate = attackRate(mods.attackSpeedBonus, mods.weaponWeight, weight / limit, mods.armorWeight, mods.family);
-    return `<section class="character-summary"><h3>${escape(this.save.name)} · Lv.${this.save.level}</h3>
+    return `<section class="character-summary"><h3>${escape(this.save.name)}${this.save.lineage === 'skeleton_knight' ? ` · ${knightFormName(this.save)}` : ''} · Lv.${this.save.level}</h3>
       <p class="minor">XP ${amount(this.save.xp)} / ${this.save.level === MAX_LEVEL ? 'MAX' : xpSpan(this.save.level)}</p>
       <div class="ledger"><div><span>HP / MP</span><b>${amount(mods.maxHp)} / ${amount(mods.maxMp)}</b></div>
       <div><span>공격 배율</span><b>×${amount(mods.dmgMult[mods.family])}</b></div>
