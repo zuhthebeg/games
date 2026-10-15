@@ -7,6 +7,7 @@ import { addXp } from '../js/meta/progression.js';
 import { BOOKS, learnSkill, withFamilyLoadout, weaponLoadoutCandidate } from '../js/meta/skills.js';
 import { buyGear, shopStock } from '../js/meta/shop.js';
 import { compareItems } from '../js/meta/compare.js';
+import { HubUI } from '../js/ui/hub.js';
 import { createSlotStorage, SLOT_SAVE_KEYS } from '../js/meta/character-slots.js';
 import { trained } from './weapon-loadout-fixture.js';
 import { toOldScale } from './fixtures/old-scale.js';
@@ -156,6 +157,12 @@ for (const [id, family, boss, allowed] of roles) {
 
   test(`${id}: actual shop buy-only allowed; refused buy/equip and cancelled candidates leave gold/source/storage untouched`, () => {
     const s = roleSave(id, allowed[0]), f = storageFixture(), store = new SaveStore(f.storage);
+    // Existing deterministic stock need not contain every family on every refresh.
+    s.shopRefresh = Array.from({ length: 20 }, (_, n) => n).find(n => {
+      const weapons = shopStock(s.createdAt, n).filter(i => ITEMS[i.id].kind === 'weapon');
+      return weapons.some(i => lineageAllowsWeapon(s, ITEMS[i.id])) && weapons.some(i => !lineageAllowsWeapon(s, ITEMS[i.id]));
+    });
+    assert.ok(Number.isInteger(s.shopRefresh));
     store.save(s); const raw = f.data.get(SAVE_KEY), before = structuredClone(s);
     const stock = shopStock(s.createdAt, s.shopRefresh).filter(i => ITEMS[i.id].kind === 'weapon');
     assert.ok(stock.some(i => lineageAllowsWeapon(s, ITEMS[i.id])));
@@ -207,4 +214,57 @@ test('lineage restriction does not replace strength/capacity validation or book-
   const skeleton = { ...structuredClone(human), lineage: 'skeleton_knight' };
   assert.deepEqual(learnSkill(skeleton, 'healing_light'), { ...learnSkill(human, 'healing_light'), lineage: 'skeleton_knight' });
   assert.ok(Object.hasOwn(BOOKS, 'healing_light'));
+});
+
+// Existing transaction methods under a minimal in-memory DOM stub; no browser/storage API.
+test('actual HubUI entry points reject mismatches before pending/save/purchase; allowed drafts cancel or commit once', () => {
+  const oldDocument = globalThis.document;
+  globalThis.document = { activeElement: null };
+  try {
+    for (const [id, , , allowed] of roles) {
+      const s = roleSave(id, allowed[0]);
+      const h = Object.create(HubUI.prototype);
+      h.save = s; h.root = { dataset: { page: 'bag' }, querySelector: () => null };
+      h.persisted = []; h.persist = next => { assert.equal(validateSave(next), true); h.persisted.push(next); };
+      h.mountSheet = () => null; h.returnToPanel = () => {}; h.showReceipt = () => {}; h.showMerchant = () => {}; h.lootState = {};
+      const original = structuredClone(s);
+      const denied = forms.find(form => !allowed.includes(form));
+      for (const action of ['equip', 'loot-equip']) {
+        assert.throws(() => h.action(action, { uid: denied }), /계보/);
+        assert.deepEqual(h.save, original); assert.equal(h.pendingEquipment, undefined); assert.deepEqual(h.persisted, []);
+      }
+      const deniedStock = shopStock(s.createdAt, s.shopRefresh).find(item => ITEMS[item.id].kind === 'weapon' && !lineageAllowsWeapon(s, ITEMS[item.id]));
+      assert.ok(deniedStock);
+      assert.throws(() => h.action('buy-equip', { uid: deniedStock.uid }), /계보/);
+      assert.deepEqual(h.save, original); assert.deepEqual(h.persisted, []); assert.equal(h.pendingEquipment, undefined);
+      // Distinct UID even for the archer's single form; exercises the real confirmation path.
+      h.save.items.push({ ...h.save.items.find(item => item.uid === allowed.at(-1)), uid: 'allowed-copy' });
+      const before = structuredClone(h.save);
+      h.action('equip', { uid: 'allowed-copy' }); assert.ok(h.pendingEquipment);
+      assert.deepEqual(h.save, before); assert.deepEqual(h.persisted, []);
+      h.action('weapon-cancel', {}); assert.deepEqual(h.save, before); assert.deepEqual(h.persisted, []);
+      h.action('equip', { uid: 'allowed-copy' }); const token = String(h.pendingEquipment.token);
+      h.action('weapon-confirm', { token }); h.action('weapon-confirm', { token });
+      assert.equal(h.persisted.length, 1); assert.equal(h.save.equipped.weapon, 'allowed-copy');
+      assert.equal(h.save.gold, before.gold); assert.deepEqual(h.save.learned, before.learned);
+    }
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
+  }
+});
+
+test('invalid new-lineage read uses only the existing slot quarantine; no human reset/repair or added migration', () => {
+  for (const [id, , , allowed] of roles) {
+    const invalid = roleSave(id, allowed[0]);
+    invalid.equipped.weapon = forms.find(form => !allowed.includes(form));
+    const raw = JSON.stringify(invalid);
+    const entries = Object.values(SLOT_SAVE_KEYS).map(key => [key, key === SLOT_SAVE_KEYS[id] ? raw : `preserved:${key}`]);
+    entries.push([`${SAVE_KEY}.corrupt.99`, 'human diagnostic']);
+    const f = storageFixture(entries), before = new Map(f.data);
+    assert.equal(new SaveStore(createSlotStorage(f.storage, id), () => 99).load(), null);
+    assert.equal(f.data.get(`${SLOT_SAVE_KEYS[id]}.corrupt.99`), raw);
+    assert.equal(f.data.has(SLOT_SAVE_KEYS[id]), false);
+    for (const [key, value] of before) if (key !== SLOT_SAVE_KEYS[id]) assert.equal(f.data.get(key), value);
+    assert.deepEqual(f.calls, [['get', SLOT_SAVE_KEYS[id]], ['set', `${SLOT_SAVE_KEYS[id]}.corrupt.99`], ['remove', SLOT_SAVE_KEYS[id]]]);
+  }
 });

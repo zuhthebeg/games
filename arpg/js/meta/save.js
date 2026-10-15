@@ -13,6 +13,7 @@ import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
 import { validMastery, MASTERY_SKILLS, MASTERY_MAX } from './skill-mastery.js';
 import { validSeenMaterials } from './recipe-discovery.js';
+import { playerLineage, lineageAllowsWeapon } from '../content/player-lineages.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
@@ -82,6 +83,7 @@ function validReceipt(receipt) {
 export function validateSave(save) {
   try {
     if (!record(save) || save.version !== SAVE_VERSION || !integer(save.createdAt)) return false;
+    playerLineage(save); // Strict optional identity; absence remains human, no migration/write.
     if (typeof save.name !== 'string' || save.name !== save.name.trim()) return false;
     if (Array.from(save.name).length < 1 || Array.from(save.name).length > 12) return false;
     if (!integer(save.level, 1, MAX_LEVEL) || !integer(save.statPoints) || !integer(save.gold)) return false;
@@ -111,6 +113,7 @@ export function validateSave(save) {
       if (save.equipped[slot] === null) continue;
       const item = save.items.find((candidate) => candidate.uid === save.equipped[slot]);
       if (!item || ITEMS[item.id].kind !== slot) return false;
+      if (slot === 'weapon' && !lineageAllowsWeapon(save, ITEMS[item.id])) return false;
     }
     if (!['completedRounds', 'shopRefresh', 'paidRefreshes', 'rarelessRounds'].every((key) => integer(save[key]))) return false;
     if (save.enchantCount !== undefined && !integer(save.enchantCount)) return false;
