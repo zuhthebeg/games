@@ -344,6 +344,10 @@ const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
   spawns: spawns.map(([monster, at, fx, fy]) => ({ monster, at, fx, fy })) });
 
 // Stage encounters (design §4). Positions are fractions of the arena.
+// Isolated undead encounter lab only: real living human, existing simple melee donor.
+// No stage references this ID; no ability/stat rebalance or undead identity inheritance.
+MONSTERS.undead_lab_human_melee = { ...MONSTERS.skeleton_minion, lifeState: 'living' };
+
 export const STAGES = {
   S1: {
     name: '소환 시험', goal: 'timer', timerMs: 30000, maxConcurrent: 2,

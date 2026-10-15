@@ -51,7 +51,7 @@ export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 },
 }
 
 // mods come from the meta layer (level, stats, gear). The sim never reads stats directly.
-export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
+export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodgeEnabled = true, mods = {} }) {
   // The existing launcher already passes meta mods. Freeze threat before startStage, not in step().
   if (mods.threat !== undefined) {
     if (world.round) throw new Error('Threat is frozen after stage start');
@@ -62,7 +62,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
   const maxMp = mods.maxMp ?? PB.mp;
   const ent = {
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
-    x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing: 0,
+    x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
     kx: 0, ky: 0, moving: false,
     hp: maxHp, maxHp, mp: maxMp, maxMp, mpRegen: mods.mpRegen ?? PB.mpRegen,
     hpRegen: mods.hpRegen ?? 0, critChance: mods.critChance ?? 0, critMult: mods.critMult ?? 1.5,
@@ -81,6 +81,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     skills: playerSkills(mods, weapon),
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
+    // Explicit fixture capability only; absent on every legacy player.
+    ...(dodgeEnabled === false ? { dodgeDisabled: true } : {}),
     bufferDodge: 0, bufferDodgeDir: [0, 0],
     hurtInvuln: 0,
     potions: mods.potions ?? 3, manaPotions: mods.manaPotions ?? 0, potionCd: 0,
@@ -92,14 +94,14 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
   return ent;
 }
 
-export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null } = {}) {
+export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null, facing = Math.PI } = {}) {
   const def = MONSTERS[type];
   if (!def) throw new Error(`unknown monster ${type}`);
   const size = stageId ? monsterSizeProfile(stageId, elite, type === 'goblin_chief', rand(world))
     : { scale: 1, mean: 1, hp: 1 };
   const ent = {
     id: world.nextId++, kind: 'monster', type, team: TEAM_MONSTER,
-    x, y, r: def.r * size.scale, sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing: Math.PI, kx: 0, ky: 0, moving: false,
+    x, y, r: def.r * size.scale, sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing, kx: 0, ky: 0, moving: false,
     hp: Math.max(1, Math.round(def.hp * hpMult * size.hp)), maxHp: Math.max(1, Math.round(def.hp * hpMult * size.hp)),
     dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise, maxPoise: def.poise,
     act: null, cds: {}, lastActs: [], thinkLeft: ticks(400 + rand(world) * 400),
@@ -185,7 +187,7 @@ function stepPlayer(world, p, inp) {
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
 
-  if (inp.dodgeEdge) {
+  if (inp.dodgeEdge && !p.dodgeDisabled) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
   }

@@ -8,10 +8,11 @@ export const MONSTER_PALETTES = {
   ghoul: [0xffffff], ghost: [0xffffff], bat: [0xffffff],
   demon: [0xffffff], goleling: [0xffffff], slime: [0xffffff],
   succubus: [0xffffff],
+  human: [0xffffff],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
 };
 export const MONSTER_MODELS = [
-  'scarecrow', 'training_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
+  'undead_lab_human_melee', 'scarecrow', 'training_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
   'gargoyle', 'wolf', 'rune_guardian', 'spirit', 'poison_spider',
   'skeleton_minion', 'skeleton_warrior', 'skeleton_rogue', 'skeleton_mage',
   'ghoul', 'ghost', 'bat',
@@ -19,6 +20,7 @@ export const MONSTER_MODELS = [
   'succubus',
 ];
 export const MONSTER_NAMES = {
+  undead_lab_human_melee: '인간 모험가 · 근접 AI',
   ghoul: '구울', ghost: '유령', bat: '거대 박쥐',
   demon: '악마', goleling: '고링', slime: '슬라임',
   succubus: '서큐버스',
@@ -34,6 +36,7 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
   speciesTags, lifeState, disposition: 'hostile',
 });
 export const MONSTER_VARIANTS = {
+  undead_lab_human_melee: variant('undead_lab_human_melee', 'human', ['human', 'humanoid'], 'living'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),
   goleling: variant('goleling', 'goleling', ['goleling', 'crafted'], 'construct'),
