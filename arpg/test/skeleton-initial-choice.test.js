@@ -7,15 +7,13 @@ import { SLOT_SAVE_KEYS } from '../js/meta/character-slots.js';
 import { buildRoundMods } from '../js/meta/run.js';
 const options={lineage:'skeleton_knight',name:'문답 기사',answers:[1,2,3,0,2],createdAt:123};
 const hub=()=>Object.assign(Object.create(HubUI.prototype),{answers:[],name:'',initialCharacters:{},show(html,page){this.html=html;this.page=page;}});
-test('initial UI offers human and real knight, unfinished classes disabled before name/quiz',()=>{
- const h=hub(); h.showCharacterChoice();
- assert.match(h.html,/인간/);assert.match(h.html,/해골/);assert.match(h.html,/data-action="choose-skeleton"/);
- h.action('choose-skeleton',{});assert.equal(h.page,'skeleton-role');assert.match(h.html,/기사/);assert.match(h.html,/준비 중/);
- assert.equal((h.html.match(/disabled/g)||[]).length,2);
+test('initial UI offers human and a single skeleton directly, without class choices',()=>{
+ const h=hub();h.showCharacterChoice();assert.match(h.html,/인간/);assert.match(h.html,/해골/);assert.doesNotMatch(h.html,/기사|마법사|궁수|unavailable/);
+ h.initialCharacters.read=()=>null;h.showName=()=>{h.page='name';};h.action('choose-skeleton',{});assert.equal(h.page,'name');
 });
 test('knight preview uses exact answers stats and blade without human override',()=>{
  const h=hub();Object.assign(h,{creationLineage:'skeleton_knight',name:options.name,answers:options.answers});h.showQuizResult();
- assert.match(h.html,/해골 기사/);assert.match(h.html,/검/);assert.doesNotMatch(h.html,/data-action="override"/);
+ assert.match(h.html,/해골/);assert.match(h.html,/검/);assert.doesNotMatch(h.html,/data-action="override"/);
 });
 test('knight creation callback enters the normal inn without launching a trial',()=>{
  const h=hub();let got;Object.assign(h,{creationLineage:'skeleton_knight',name:options.name,answers:options.answers,initialCharacters:{create(o){got=o;return createSkeletonSave(o);}},showInn(){this.page='inn';},commit(){assert.fail('human commit');}});

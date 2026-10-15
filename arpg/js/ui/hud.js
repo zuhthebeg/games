@@ -35,8 +35,8 @@ export class HUD {
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
-    this.stage = world.round?.stageId || '언데드 · 해골 기사 · 저장 안 됨';
-    if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += ' · 해골 기사';
+    this.stage = world.round?.stageId || '언데드 · 해골 · 저장 안 됨';
+    if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += ' · 해골';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
       const node = this.nodes[key], id = skills[i] || loadout[i] || null;
@@ -70,7 +70,7 @@ export class HUD {
     title.textContent = state === 'victory' ? '해골 승리' : state === 'death' ? '전투 종료 · 쓰러졌습니다' : '전투 종료 · 귀환';
     title.setAttribute('role', 'status');
     const detail = document.createElement('p');
-    detail.textContent = '같은 해골 기사 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
+    detail.textContent = '같은 해골 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
     panel.append(title, detail);
     const actions = state === 'victory' ? [['next', '다음 전투', next], ['restart', '다시 시작', restart]]
       : [['restart', '다시 시작', restart]];
@@ -179,7 +179,7 @@ export class HUD {
     });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.disabled = !!player.dodgeDisabled;
-    nodes.dodge.title = player.dodgeDisabled ? '해골 기사 디버그: 회피 애니메이션 미지원' : '';
+    nodes.dodge.title = player.dodgeDisabled ? '해골 디버그: 회피 애니메이션 미지원' : '';
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;

@@ -223,7 +223,7 @@ try {
       renderer.root.visible = renderer.warning.visible = false;
       hud.begin(encounter.world, loadoutOf(session.save));
       hud.meta(currentLoad(session.save, createTracker(0)), createTracker(0), session.save);
-      hud.nodes['stage-name'].textContent = '언데드 · 해골 기사 · 저장 안 됨';
+      hud.nodes['stage-name'].textContent = '언데드 · 해골 · 저장 안 됨';
       hud.nodes.notice.textContent = '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
       hud.noticeLeft = Infinity;
       // Exercise the first render inside the transaction, not in the next RAF.
@@ -334,7 +334,7 @@ try {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
-    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골 기사는 솔로만 지원합니다. 협동 미지원.');
+    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골는 솔로만 지원합니다. 협동 미지원.');
     characters.assertOwner();
     roundOwner = characters.active;
     // The host chooses on the existing departure panel; guests retain their own build/save.
@@ -477,7 +477,7 @@ try {
       create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
     hub.ready();
-    if (soloSelected && bootQuery.has('room')) hub.error('해골 기사는 솔로만 지원합니다. 협동 방에 들어갈 수 없습니다.');
+    if (soloSelected && bootQuery.has('room')) hub.error('해골는 솔로만 지원합니다. 협동 방에 들어갈 수 없습니다.');
     else if (soloSelected) {
       try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
     } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});

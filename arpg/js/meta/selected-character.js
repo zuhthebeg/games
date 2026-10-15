@@ -1,5 +1,7 @@
 import { SaveStore } from './save.js';
 import { createSlotStorage, SLOT_SAVE_KEYS } from './character-slots.js';
+import { knightEquipmentAllowed } from './knight-equipment.js';
+import { ITEMS } from './items.js';
 import { readKnight, createKnight } from './initial-characters.js';
 
 // Selection is synchronous. Each round captures an owner, never a mutable global store.
@@ -19,11 +21,14 @@ export class CharacterStores {
   selectKnight() {
     const save = readKnight(this.storage); // Reject corrupt/foreign slots, without quarantine/fallback.
     this.select('skeleton_knight', save);
-    // Previously created trial profiles included a tunic. Keep it in inventory,
-    // but do not grant an unapproved armor unlock on entering the normal campaign.
-    if (save && ['head', 'body', 'hands', 'feet'].some(slot => save.equipped[slot] !== null)) {
-      for (const slot of ['head', 'body', 'hands', 'feet']) save.equipped[slot] = null;
-      this.persist(save);
+    // Retain inventory and every already-unlocked armor slot on reload.
+    if (save) {
+      let changed = false;
+      for (const slot of ['head', 'body', 'hands', 'feet']) {
+        const item = save.items.find(item => item.uid === save.equipped[slot]);
+        if (item && !knightEquipmentAllowed(save, ITEMS[item.id])) { save.equipped[slot] = null; changed = true; }
+      }
+      if (changed) this.persist(save);
     }
     return save;
   }

@@ -243,16 +243,6 @@ export class HubUI {
       ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}`), 'character-choice');
   }
 
-  showSkeletonRole() {
-    this.show(this.panelHtml('해골의 길', `
-      ${button('해골 기사 · 검 · 생성 / 이어하기', 'choose-knight')}
-      ${button('해골 마법사 · 준비 중', 'unavailable', '', true)}
-      ${button('해골 궁수 · 준비 중', 'unavailable', '', true)}
-      <p>기사는 기존 여관·상점·퀘스트·성장·정산을 이용합니다. 회피 가능(이동 동작 대체). 협동 미지원.</p><p>무기만으로 시작합니다. 방어구 순차 해금 레벨·완전 장착 진화는 확정 대기입니다.</p>
-      ${button('돌아가기', 'character-choice')}`), 'skeleton-role');
-  }
-
-
   showIntro() {
     this.show(this.panelHtml('문 너머의 불빛', `
       <p class="story">이세계로 소환되었다.<br>낯선 하늘 아래, 꺼지지 않은 여관의 불빛이 보인다.<br>
@@ -290,10 +280,10 @@ export class HubUI {
     const choices = FAMILIES.map((family) => button(WEAPON_NAMES[family], 'override',
       `data-family="${family}" aria-pressed="${family === this.chosenWeapon}"`)).join('');
     this.show(this.panelHtml('인장이 응답했다', `
-      <p>${escape(this.name)}, ${knight ? '해골 기사 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
-      ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기사 무기는 검으로 제한됩니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
+      <p>${escape(this.name)}, ${knight ? '해골 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
+      ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기존 근접 무기 규칙을 사용합니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
-      ${button(knight ? '해골 기사 생성 · 여관으로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
+      ${button(knight ? '해골 생성 · 여관으로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
@@ -353,7 +343,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? '<p class="minor">해골 기사 · 방어구 해금 레벨/완전 장착 진화 확정 대기 · 현재 무기만 장착 · 협동 미지원<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지 · 회피는 이동 동작 대체</p>' : ''}${room}
+    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? '<p class="minor">해골 · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>영구 데스나이트 전환 미연결 · 새 외형 미제작<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지 · 회피는 이동 동작 대체</p>' : ''}${room}
       <p class="recovery inn-recovery">${icon('clear')}<strong>HP·MP 회복</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family])}</b></span></p>
       ${this.weightHtml()}<nav class="npc-grid" aria-label="여관 사람들">${npcs}</nav>${devMenu}`;
@@ -1039,7 +1029,7 @@ export class HubUI {
         this.save = this.initialCharacters.human();
         this.receipt = this.save?.lastReceipt ?? null;
         return this.save ? this.showInn() : this.showIntro();
-      case 'choose-skeleton': return this.showSkeletonRole();
+      case 'choose-skeleton':
       case 'choose-knight': {
         const save = this.initialCharacters.read();
         this.save = save; this.receipt = save?.lastReceipt ?? null;

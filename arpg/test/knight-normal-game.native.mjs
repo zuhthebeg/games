@@ -11,7 +11,7 @@ const humanKey='arpg.save.v1',key='arpg.save.v1.slots.skeleton_knight';
 const humanRaw=JSON.stringify(createSave({name:'HUMAN SENT',answers:[0,1,2,3,0],weapon:'blade',createdAt:1}));
 const server=spawn('python3',['-m','http.server','8897','--bind','127.0.0.1'],{cwd:root,stdio:'ignore'});
 const browser=await chromium.launch({executablePath:'/home/cocy/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader']});
-const rows=[];
+const rows=[],quick=process.env.SKELETON_CHOICE_ONLY==='1';
 try {
 for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
@@ -23,7 +23,7 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  const tap=async sel=>{await p.locator(sel).scrollIntoViewIfNeeded();return mobile?p.locator(sel).tap():p.locator(sel).click();};
  const state=()=>p.evaluate(()=>JSON.parse(JSON.stringify(__arpg.world)));
  const save=()=>p.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
- await p.goto('http://127.0.0.1:8897/arpg/');await p.locator('[data-action="choose-skeleton"]').waitFor();writes.length=0;await tap('[data-action="choose-skeleton"]');await tap('[data-action="choose-knight"]');
+ await p.goto('http://127.0.0.1:8897/arpg/');await p.locator('[data-action="choose-skeleton"]').waitFor();writes.length=0;await tap('[data-action="choose-skeleton"]');
  await p.locator('#hero-name').fill(mobile?'모바일기사':'정상기사');await tap('#name-next');for(const n of [1,2,3,0,2])await tap(`[data-action="answer"][data-choice="${n}"]`);await tap('#quiz-start');
  await p.locator('#inn-name').waitFor();const born=await save();assert.equal(born.items.length,1);assert.equal(born.equipped.body,null);assert.equal(await p.locator('[data-action="knight-play"]').count(),0);
  // Existing shop interaction persists only this slot, no alternate trial menu.
@@ -32,6 +32,12 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  console.log('created',mobile);await launch('S1');console.log('S1 started',mobile);let w=await state();assert.equal(w.round.goal,'timer');assert.equal(w.round.playerSide,'right');assert.ok(w.entities[0].x>w.arena.w/2);assert.equal(w.entities[0].dodgeDisabled,undefined);
  await p.waitForFunction(()=>__arpg.art.visuals[0]?.id==='skeleton-warrior'&&__arpg.art.visuals[0]?.mode==='atlas');
  if(mobile)await tap('#dodge');else await p.keyboard.press('Space');await p.waitForFunction(()=>__arpg.world.entities[0].dodge.cdLeft>0);
+ if(quick){
+  assert.equal(await p.locator('[data-action="unavailable"]').count(),0);
+  assert.deepEqual(born.quiz.answers,[1,2,3,0,2]);assert.equal(born.lineage,'skeleton_knight');
+  assert.equal(await p.evaluate(k=>localStorage.getItem(k),humanKey),humanRaw);assert.deepEqual(errors,[]);
+  rows.push({width:mobile?390:1280,singleChoice:true,name:born.name,answers:born.quiz.answers,normalS1:true,rightSide:true,actualDodge:true,humanExact:true,errors,bound:[...new Set(await Promise.all(bound))]});await ctx.close();continue;
+ }
  // Timer is the real 900-tick S1 goal, never advanced by evaluate.
  await p.waitForFunction(()=>__arpg.world.round.state!=='running',null,{timeout:60000});assert.equal((await state()).entities[0].terminal,'clear');
  const s1=await save();assert.ok(s1.lastReceipt.xpGained>0);assert.equal(s1.cleared.S1,true);assert.ok(s1.level>born.level||s1.xp>born.xp);
@@ -76,5 +82,6 @@ for(const mobile of (process.env.KNIGHT_MOBILE_ONLY ? [true] : [false,true])){
  if(mobile)await tap('#dodge');else await p.keyboard.press('Space');await p.waitForFunction(()=>__arpg.world.entities[0].dodge.cdLeft>0);assert.equal(await p.evaluate(k=>localStorage.getItem(k),key),raw);assert.deepEqual(errors,[]);
  rows.push({width:mobile?390:1280,created:born,s1Receipt:s1.lastReceipt,s2Receipt:afterS2.lastReceipt,final,skills,dodges,potions,kills,reloadExact:true,humanRawExactBeforeSelect:true,humanS1NormalAndDodge:true,errors,bound:[...new Set(await Promise.all(bound))]});writeFileSync('/home/cocy/.openclaw/workspace/tmp/arpg-knight-normal-game-native-partial.json',JSON.stringify(rows,null,2));await ctx.close();
 }
-writeFileSync('/home/cocy/.openclaw/workspace/tmp/arpg-knight-normal-game-native.json',JSON.stringify({pass:true,rows,screenshots:0,liveWorldWrites:0},null,2));console.log(JSON.stringify({pass:true,rows:rows.map(r=>({width:r.width,s1:r.s1Receipt,s2:r.s2Receipt,reloadExact:r.reloadExact,errors:r.errors}))},null,2));
+const evidence={pass:true,rows,screenshots:0,liveWorldWrites:0};
+writeFileSync('/home/cocy/.openclaw/workspace/tmp/'+(quick?'arpg-skeleton-single-choice-native.json':'arpg-knight-normal-game-native.json'),JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence,null,2));
 }finally{await browser.close();server.kill();}
