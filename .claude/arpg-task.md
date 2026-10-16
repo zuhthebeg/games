@@ -1,0 +1,3 @@
+# ARPG task harness
+Task-specific authoritative context: docs/plans/2026-10-17-knight-archer-skills.md. Ignore unrelated merge-drop task in legacy CLAUDE.md.
+ARPG content lives arpg/js/content; deterministic authoritative simulation arpg/js/sim; persisted skills arpg/js/meta; academy/HUD arpg/js/ui; render arpg/js/render. Existing tests in arpg/test. Use node --test on relevant suites and Playwright native tests, no screenshots. Do not modify auth, config, unrelated games or user saves. Parent owns deployment/stamps. Karpathy: explicit assumptions, minimum changes, no unrelated refactors, observed verification.
