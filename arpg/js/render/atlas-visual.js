@@ -33,6 +33,8 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   let transitionFailure = null;
   let lease;
   const controller = new AbortController();
+  // Never flash the generic human helmet/armor while the bare skeleton kit loads.
+  if (options.equipment?.id === 'player-skeleton-equipment') current.container.visible = false;
   container.addChild(current.container);
   const load = entity.kind === 'player' && options.equipment && (options.equipment.id === 'player-skeleton-equipment' || paperdollEnabled())
     ? (async () => {

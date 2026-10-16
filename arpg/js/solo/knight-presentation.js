@@ -56,11 +56,12 @@ export function installKnightPresentation(provider, save = { lineage: 'skeleton_
 
 // Read-only load status: never label a procedural fallback as the delivered kit.
 export function showKnightArtStatus(hud, debug) {
-  if (debug?.presentation !== 'death_knight') return;
-  const loaded = debug.mode === 'atlas' && debug.id === 'player-death-knight';
+  if (!['skeleton_knight','death_knight'].includes(debug?.presentation)) return;
+  const base = debug.presentation === 'skeleton_knight';
+  const loaded = base ? debug.mode === 'paperdoll' && debug.id === 'player-skeleton-equipment' : debug.mode === 'atlas' && debug.id === 'player-death-knight';
   hud.nodes['stage-name'].textContent = hud.stage + (loaded ? '' : debug.loadFailure ? ' · 아트 로드 실패' : ' · 아트 로딩');
   if (debug.loadFailure) {
-    hud.nodes.notice.textContent = '데스나이트 아트 로드 실패 · 임시 대체 외형/이동 회피 · 새로고침 후 재시도';
+    hud.nodes.notice.textContent = base ? '해골 장비 아트 로드 실패 · 잘못된 인간 외형은 숨김 · 새로고침 후 재시도' : '데스나이트 아트 로드 실패 · 임시 대체 외형/이동 회피 · 새로고침 후 재시도';
     hud.noticeLeft = Infinity;
   }
 }
