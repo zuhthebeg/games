@@ -14,14 +14,23 @@ export function installKnightPresentation(provider, save = { lineage: 'skeleton_
   const previous = new Map(provider.factories);
   const skeleton = previous.get('skeleton_warrior');
   if (!skeleton || !['blade', 'bow', 'focus'].every(key => previous.has(key))) throw new Error('Required character factories missing');
+  const evolved = playerForm(save) === 'death_knight';
+  const deathKnight = previous.get('death_knight');
+  if (evolved && !deathKnight) throw new Error('Required DeathKnight factory missing');
   provider.register('blade', (entity, options) => {
-    const visual = skeleton({ ...entity, kind: 'monster', type: 'skeleton_warrior' }, { ...options, color: 0xffffff, equipment: null });
+    const visual = evolved ? deathKnight({ ...entity, kind: 'player', weapon: 'death_knight' }, { ...options, color: 0xffffff, equipment: null }) : skeleton({ ...entity, kind: 'monster', type: 'skeleton_warrior' }, { ...options, color: 0xffffff, equipment: null });
     return {
       ...visual,
-      get debug() { return { ...visual.debug, presentation: playerForm(save), artFallback: 'existing skeleton-warrior (no dedicated DeathKnight art)', dodgeFallback: 'run (no baked dodge clip)' }; },
+      get debug() {
+        const loaded = evolved && visual.debug.mode === 'atlas' && visual.debug.id === 'player-death-knight';
+        return { ...visual.debug, presentation: playerForm(save),
+          artFallback: loaded ? null : evolved ? 'DeathKnight atlas loading or failed; procedural fallback (not approved art)' : 'existing skeleton-warrior (no dedicated base dodge clip)',
+          dodgeFallback: loaded ? null : 'run (no baked dodge clip)' };
+      },
       update(state, anim, dt) {
         // Cosmetic locomotion fallback only. Actual dash/iframes/cooldown are untouched.
-        const shown = state.dodge?.dashLeft > 0 ? { ...state, moving: true, dodge: { ...state.dodge, dashLeft: 0 } } : state;
+        const loaded = evolved && visual.debug.mode === 'atlas' && visual.debug.id === 'player-death-knight';
+        const shown = !loaded && state.dodge?.dashLeft > 0 ? { ...state, moving: true, dodge: { ...state.dodge, dashLeft: 0 } } : state;
         visual.update(shown, anim, dt);
       },
     };
@@ -42,4 +51,15 @@ export function installKnightPresentation(provider, save = { lineage: 'skeleton_
       else provider.factories.delete(key);
     }
   };
+}
+
+// Read-only load status: never label a procedural fallback as the delivered kit.
+export function showKnightArtStatus(hud, debug) {
+  if (debug?.presentation !== 'death_knight') return;
+  const loaded = debug.mode === 'atlas' && debug.id === 'player-death-knight';
+  hud.nodes['stage-name'].textContent = hud.stage + (loaded ? '' : debug.loadFailure ? ' · 아트 로드 실패' : ' · 아트 로딩');
+  if (debug.loadFailure) {
+    hud.nodes.notice.textContent = '데스나이트 아트 로드 실패 · 임시 대체 외형/이동 회피 · 새로고침 후 재시도';
+    hud.noticeLeft = Infinity;
+  }
 }

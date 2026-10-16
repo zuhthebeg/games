@@ -36,7 +36,7 @@ export class HUD {
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
     this.stage = world.round?.stageId || '언데드 · 해골 · 저장 안 됨';
-    if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += world.round.presentation.form === 'death_knight' ? ' · 데스나이트 · 기존 해골 외형' : ' · 해골';
+    if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += world.round.presentation.form === 'death_knight' ? ' · 데스나이트' : ' · 해골';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
       const node = this.nodes[key], id = skills[i] || loadout[i] || null;

@@ -144,7 +144,7 @@ test('U1 preserves every main sprite byte and all thirteen main manifest descrip
   assert.equal(Object.keys(evidence.files_sha256).length, evidence.preserved_files);
   for (const [path, hash] of Object.entries(evidence.files_sha256))
     assert.equal(sha(read('../assets/sprites/' + path)), hash, path);
-  assert.deepEqual(manifest.slice(evidence.preserved_kits).filter(entry => !['ghoul','ghost','bat','demon','goleling','slime','succubus'].includes(entry.id)).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
+  assert.deepEqual(manifest.slice(evidence.preserved_kits).filter(entry => !['ghoul','ghost','bat','demon','goleling','slime','succubus','player-death-knight'].includes(entry.id)).map(entry => entry.id), ids.map(id => ATLAS_IDS[id]));
 });
 
 test('U1 main-versus-definition host traces cover every stage and remain byte-identical', () => {

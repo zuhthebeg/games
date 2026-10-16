@@ -18,7 +18,7 @@ import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { CharacterStores } from './meta/selected-character.js';
-import { installKnightPresentation, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
+import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from './meta/run.js';
 
@@ -594,6 +594,12 @@ try {
       if (count === 5 && accumulator >= TICK_MS) accumulator %= TICK_MS;
       renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
       if (running) hud.update(world, elapsed / 1000);
+      showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
+    } else if (!coopSession && !hidden && world?.entities[0].terminal
+      && renderer.views.get(world.entities[0].id)?.visual.debug.presentation === 'death_knight') {
+      // Result UI owns settlement. Finish this kit's death/idle presentation
+      // without stepping the terminal world, tracking loot or saving again.
+      renderer.render(world, 1, elapsed / 1000);
     }
     debug?.frame(now);
     if (!hidden) app.render();
