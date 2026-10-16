@@ -1,0 +1,53 @@
+{
+  "id": "player-death-knight",
+  "label": "Original DeathKnight \u2014 unregistered candidate",
+  "registered": false,
+  "content_ids": [],
+  "sheets": [
+    "atlas-0.webp.json"
+  ],
+  "animations": [
+    "idle",
+    "run",
+    "attack",
+    "hit",
+    "death",
+    "dodge"
+  ],
+  "fps": 12,
+  "animation_durations": {
+    "dodge": 0.2,
+    "hit": 0.15,
+    "death": 0.6
+  },
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6383123993873596
+  },
+  "logical_frame_size": 256,
+  "physical_frame_size": 128,
+  "meta_scale": ".5",
+  "pixi_texture_resolution": 0.5,
+  "logical_expansion": 2,
+  "dodge_contract": {
+    "source": "Dodge_Forward",
+    "source_seconds": 0.4,
+    "source_frames": [
+      0,
+      1.92,
+      3.84,
+      5.76,
+      7.68,
+      9.6
+    ],
+    "sample_count": 6,
+    "presentation_seconds": 0.2,
+    "loop": false,
+    "endpoint_included": true,
+    "phase": "atlasFrame duration .2 maps 6 frames; final source endpoint at age >= 1/6s",
+    "root_translation": "horizontal root/hips constant drivers; simulation owns travel",
+    "not_run_alias": true,
+    "registration_pending": true
+  },
+  "parent_visual_review_required": true
+}
