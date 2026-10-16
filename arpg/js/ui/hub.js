@@ -199,6 +199,9 @@ export class HubUI {
     document.querySelector('#hud').hidden = true;
     this.root.hidden = false;
     this.root.dataset.page = page;
+    // Only committed skeleton context owns the theme; selection/creation stays neutral.
+    if (shell && this.save?.lineage === 'skeleton_knight') document.body.dataset.theme = 'graveyard';
+    else delete document.body.dataset.theme;
     this.root.classList.toggle('shell-mode', shell);
     this.root.innerHTML = html;
     this.root.scrollTop = 0;
