@@ -25,7 +25,8 @@ export function predictionBlocked(p) {
 
 function endAct(p) {
   const act = p.act;
-  const cd = ticks((act.def.cooldownMs || 0) * (p.cdMult || 1));
+  // Execution outcomes are host-only. Never predict a cooldown for an unresolved attempt.
+  const cd = ticks((act.def.executeUndead && !act.executionSuccess ? 0 : act.def.cooldownMs || 0) * (p.cdMult || 1));
   if (cd) p.cds = { ...p.cds, [act.id]: cd };
   finishCombo(p, act);
   p.act = null;

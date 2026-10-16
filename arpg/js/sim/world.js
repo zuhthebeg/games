@@ -72,6 +72,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     hpRegen: mods.hpRegen ?? 0, critChance: mods.critChance ?? 0, critMult: mods.critMult ?? 1.5,
     speed: PB.speed * (mods.speedMult ?? 1),
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
+    ...(mods.effectiveInt !== undefined ? { effectiveInt: Number.isFinite(mods.effectiveInt) ? Math.max(0, Math.min(10000, mods.effectiveInt)) : 0 } : {}),
+    ...( ['fire', 'frost', 'holy'].includes(mods.staffAffinity) ? { staffAffinity: mods.staffAffinity } : {}),
     cdMult: mods.cdMult ?? 1,
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
@@ -167,6 +169,9 @@ export function step(world, inputs = {}) {
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
   if (world.round?.objective && world.round.state !== 'running') return world.events;
   for (const ent of world.entities) {
+    if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) delete ent.shieldUntil;
+    if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
+    if (ent.burn) stepBurn(world, ent);
     if (ent.sunder && world.tick >= ent.sunder.expiresTick) delete ent.sunder;
     if (ent.kind === 'player') stepPlayer(world, ent, inputs[ent.pid] || emptyInput());
     else stepMonster(world, ent);
@@ -352,6 +357,7 @@ function resolveAim(world, p, inp, mlen) {
 function stepMonster(world, m) {
   for (const k in m.cds) if (m.cds[k] > 0) m.cds[k]--;
   if (m.dead) return;
+  if (m.frozenUntil > world.tick) { m.moving = false; m.kx = 0; m.ky = 0; return; }
   if (m.spawnLeft > 0) { m.spawnLeft--; return; }
   const def = MONSTERS[m.type];
   if (m.staggerLeft > 0) {
@@ -477,7 +483,7 @@ function endAct(world, ent, interrupted) {
   const act = ent.act;
   if (!act) return;
   if (act.def.major && world.majorBusyBy === ent.id) world.majorBusyBy = 0;
-  const cd = ticks((act.def.cooldownMs || 0) * (ent.cdMult || 1));
+  const cd = ticks((act.def.executeUndead && !act.executionSuccess ? 0 : act.def.cooldownMs || 0) * (ent.cdMult || 1));
   if (cd) ent.cds[act.id] = cd;
   if (ent.kind === 'monster') {
     ent.lastActs = [act.id, ...ent.lastActs].slice(0, 2);
@@ -508,15 +514,41 @@ function advanceAct(world, ent, target) {
 
 function doActive(world, ent, act) {
   const def = act.def;
-  if (def.heal) {
+  if (def.executeUndead) {
+    if (act.fired) return;
+    act.fired = true;
+    const target = world.entities.filter(t => t.kind === 'monster' && t.team !== ent.team && isTargetable(t)
+      && t.hp > 0 && MONSTERS[t.type]?.lifeState === 'undead' && !MONSTERS[t.type].invulnerable
+      && dist2(ent.x, ent.y, t.x, t.y) <= def.executeUndead.radius ** 2)
+      .sort((a, b) => dist2(ent.x, ent.y, a.x, a.y) - dist2(ent.x, ent.y, b.x, b.y) || a.id - b.id)[0];
+    act.executionSuccess = !!target && rand(world) < turnUndeadChance(ent.effectiveInt, isBoss(target), ent.staffAffinity === 'holy');
+    world.events.push({ type: 'turnUndead', src: ent.id, dst: target?.id, ability: act.id,
+      success: act.executionSuccess, x: target?.x ?? ent.x, y: target?.y ?? ent.y });
+    if (act.executionSuccess) applyHit(world, target, { srcId: ent.id, srcKind: ent.kind, srcType: ent.weapon,
+      abilityId: act.id, def, execute: true, mult: 1, poiseMult: 1, fromX: ent.x, fromY: ent.y });
+  } else if (def.shield) {
+    if (act.fired) return;
+    act.fired = true;
+    for (const target of world.entities) {
+      if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
+        || dist2(ent.x, ent.y, target.x, target.y) > def.shield.radius ** 2) continue;
+      target.shieldUntil = world.tick + ticks(def.shield.durationMs);
+      world.events.push({ type: 'shield', src: ent.id, dst: target.id, ability: act.id, x: target.x, y: target.y });
+    }
+  } else if (def.heal) {
     if (act.fired) return;
     act.fired = true;
     world.events.push({ type: 'healCast', id: ent.id, ability: act.id,
       x: ent.x, y: ent.y, radius: def.heal.radius });
     for (const target of world.entities) {
+      if (target.kind === 'monster' && target.team !== ent.team && isTargetable(target) && target.hp > 0
+        && MONSTERS[target.type]?.lifeState === 'undead' && dist2(ent.x, ent.y, target.x, target.y) <= def.heal.radius ** 2) {
+        applyHit(world, target, { srcId: ent.id, srcKind: ent.kind, srcType: ent.weapon, abilityId: act.id,
+          def: { ...def, damage: 48 }, mult: sourceMult(ent, def), poiseMult: 1, fromX: ent.x, fromY: ent.y });
+      }
       if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
         || dist2(ent.x, ent.y, target.x, target.y) > def.heal.radius ** 2) continue;
-      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * def.heal.maxHpFrac));
+      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * def.heal.maxHpFrac * (ent.staffAffinity === 'holy' ? 1.2 : 1)));
       if (heal <= 0) continue;
       target.hp += heal;
       world.events.push({ type: 'heal', src: ent.id, dst: target.id, pid: target.pid, ability: act.id,
@@ -552,8 +584,16 @@ function doActive(world, ent, act) {
   }
 }
 
+const isBoss = t => !!(t.boss || MONSTERS[t.type]?.boss || MONSTERS[t.type]?.elite || MONSTERS[t.type]?.heavyPoise);
+export function turnUndeadChance(value, boss = false, holy = false) {
+  const intelligence = Number.isFinite(value) ? Math.max(0, value) : 0;
+  return boss ? Math.min(.009, Math.min(.008, .001 + intelligence * .00002) + (holy ? .001 : 0))
+    : Math.min(.7, .10 + intelligence * .005 + (holy ? .05 : 0));
+}
+
 function sourceMult(ent, def) {
-  if (ent.kind === 'player') return ent.dmgMult[def.family] ?? 1;
+  if (ent.kind === 'player') return (ent.dmgMult[def.family] ?? 1)
+    * (def.family === 'focus' && def.element && def.element === ent.staffAffinity ? 1.25 : 1);
   return ent.dmgMult ?? 1;
 }
 
@@ -608,6 +648,7 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
 }
 
 function applyHit(world, t, hit) {
+  if (!alive(t) || t.hp <= 0) return;
   const def = hit.def;
   if (t.kind === 'player') {
     if (!hit.periodic && t.dodge.iframeLeft > 0) {
@@ -620,6 +661,7 @@ function applyHit(world, t, hit) {
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
   let dmg = def.damage * hit.mult;
+  if (mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
   if (mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
   let exposed = false;
   if (mdef) {
@@ -630,11 +672,18 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
   let crit = false;
-  if (mdef && !hit.periodic) {
+  if (mdef && !hit.periodic && !hit.execute) {
     const src = world.entities.find((e) => e.id === hit.srcId);
     if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
   }
-  dmg = Math.max(1, Math.round(dmg));
+  dmg = hit.execute ? t.hp : Math.max(1, Math.round(dmg));
+  const attacker = world.entities.find(e => e.id === hit.srcId);
+  const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
+  if (t.kind === 'player' && dmg > 0 && hostile && t.shieldUntil > world.tick) {
+    delete t.shieldUntil;
+    world.events.push({ type: 'shieldBreak', id: t.id, src: hit.srcId, ability: hit.abilityId, x: t.x, y: t.y });
+    return;
+  }
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
 
@@ -644,7 +693,7 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player') recordGuestHit(world, t, hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
 
   if (t.kind === 'player') {
     if (!hit.periodic) { t.hurtInvuln = ticks(PB.hurtInvulnMs); resetCombo(t); }
@@ -672,6 +721,7 @@ function applyHit(world, t, hit) {
     if (t.hp <= 0) {
       t.hp = 0;
       t.dead = true;
+      delete t.shieldUntil;
       t.pendingCounter = null;
       t.terminal = 'death';
       if (t.act) endAct(world, t, true);
@@ -681,6 +731,24 @@ function applyHit(world, t, hit) {
     return;
   }
 
+  if (mdef && !mdef.invulnerable && t.hp > 0 && !hit.periodic && !hit.execute && hostile) {
+    const wasFrozen = t.frozenUntil > world.tick;
+    if (wasFrozen && dmg >= Math.max(30, t.maxHp * .1)) {
+      delete t.frozenUntil;
+      world.events.push({ type: 'freezeBreak', id: t.id, x: t.x, y: t.y });
+    }
+    if (!wasFrozen && hit.abilityId === 'frost_lance' && rand(world) < (isBoss(t) ? .1 : .3)) {
+      t.frozenUntil = world.tick + ticks(isBoss(t) ? 500 : 1500);
+      if (t.act) endAct(world, t, true);
+      t.moving = false; t.kx = 0; t.ky = 0;
+      world.events.push({ type: 'freeze', id: t.id, x: t.x, y: t.y });
+    }
+    if (attacker?.kind === 'player' && def.family === 'focus' && def.element === 'fire') {
+      const burnHit = { ...hit, periodic: true, def: { damage: 4, knockback: 0 } };
+      t.burn = { expiresTick: world.tick + ticks(3000), nextTick: t.burn?.nextTick ?? world.tick + ticks(500), hit: burnHit };
+      world.events.push({ type: 'burn', id: t.id, x: t.x, y: t.y });
+    }
+  }
   if (def.sunder && t.hp > 0) {
     t.sunder = { expiresTick: world.tick + ticks(def.sunder.durationMs) };
     world.events.push({ type: 'sunder', id: t.id, ability: hit.abilityId });
@@ -700,9 +768,21 @@ function applyHit(world, t, hit) {
   if (t.hp <= 0) {
     t.hp = 0;
     t.dead = true;
+    delete t.burn; delete t.frozenUntil;
     if (t.act) endAct(world, t, true);
     world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
+}
+
+// One host-owned burn slot: recasts refresh duration, never add a second ticking stack.
+function stepBurn(world, target) {
+  const burn = target.burn;
+  if (!alive(target) || MONSTERS[target.type]?.invulnerable) { delete target.burn; return; }
+  if (world.tick >= burn.nextTick && burn.nextTick <= burn.expiresTick) {
+    burn.nextTick += ticks(500);
+    applyHit(world, target, burn.hit);
+  }
+  if (target.burn && world.tick >= burn.expiresTick) delete target.burn;
 }
 
 // ---------------------------------------------------------------- projectiles
@@ -797,7 +877,7 @@ function separate(world) {
       const d = Math.sqrt(d2);
       const push = (min - d) / 2;
       const nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
-      const aw = isDashing(a) ? 0 : 1, bw = isDashing(b) ? 0 : 1;
+      const aw = isDashing(a) || a.frozenUntil > world.tick ? 0 : 1, bw = isDashing(b) || b.frozenUntil > world.tick ? 0 : 1;
       const tot = aw + bw || 1;
       a.x -= nx * push * 2 * (aw / tot);
       a.y -= ny * push * 2 * (aw / tot);

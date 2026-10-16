@@ -56,6 +56,7 @@ test('projectile ordering and blocked events replay deterministically',()=>{
 });
 test('content audit: no hitscan/beam/long ranged instant shapes; projectile telegraphs remain maximal',()=>{
  for(const [id,a] of Object.entries(ABILITIES)) {
+  if (a.delivery === 'execution') { assert.equal(id, 'turn_undead'); assert.equal(a.executeUndead.radius,160); continue; }
   assert.ok(['shape','projectile','dash'].includes(a.delivery),id);
   if(a.delivery==='shape')assert.ok(['circle','cone'].includes(a.shape.type),id);
  }

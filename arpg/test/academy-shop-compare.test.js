@@ -37,10 +37,10 @@ test('academy preserves trainer action but displays three faculty tabs and ascen
   assert.deepEqual(h.save,before,'UI navigation must not mutate the save');
 });
 
-test('all twelve silhouettes are distinct SVG fallbacks and only registered local art creates image requests', () => {
+test('all fourteen silhouettes are distinct SVG fallbacks and only registered local art creates image requests', () => {
   assert.deepEqual(SKILL_ART,{});
-  const ids=Object.keys(SKILL_DISPLAY);assert.equal(ids.length,12);
-  const faces=ids.map(id=>skillIcon(id));assert.equal(new Set(faces.map(html=>html.match(/<svg[\s\S]+<\/svg>/)[0])).size,12);
+  const ids=Object.keys(SKILL_DISPLAY);assert.equal(ids.length,14);
+  const faces=ids.map(id=>skillIcon(id));assert.equal(new Set(faces.map(html=>html.match(/<svg[\s\S]+<\/svg>/)[0])).size,14);
   for(const face of faces) {assert.match(face,/viewBox="0 0 64 64"/);assert.doesNotMatch(face,/<img|assets\/skills/);}
   const image=skillIcon('whirl',{whirl:'assets/skills/whirl.webp'});assert.match(image,/<img src="assets\/skills\/whirl.webp"/);assert.doesNotMatch(image,/<svg/);
   assert.match(skillIcon('lunge',{whirl:'assets/skills/whirl.webp'}),/<svg/);

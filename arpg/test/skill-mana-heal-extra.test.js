@@ -23,7 +23,8 @@ test('insufficient skill MP never cancels an existing cancelable basic for any f
 });
 
 test('every accepted skill keeps its single upfront cost through recovery cancellation and cooldown rejection', () => {
-  for (const [id, def] of skills) {
+  // Execution attempts intentionally have no cooldown on failure/no target; tested in holy-skills.
+  for (const [id, def] of skills.filter(([, d]) => !d.executeUndead)) {
     const { w, p } = make(id);
     step(w, { a: castInput });
     while (p.act && p.act.phase !== 'recovery') step(w);

@@ -12,6 +12,8 @@ export const BOOKS = {
   armor_break: { family: 'blade', type: '기술교본', price: 250, req: { stat: 'str', value: 45 } },
   pierce_shot: { family: 'bow', type: '기술교본', price: 150, req: { stat: 'agi', value: 30 } },
   blast_arrow: { family: 'bow', type: '기술교본', price: 250, req: { stat: 'agi', value: 45 } },
+  protective_shield: { family: 'focus', type: '마법교본', price: 200, req: { stat: 'int', value: 30 } },
+  turn_undead: { family: 'focus', type: '마법교본', price: 200, req: { stat: 'int', value: 30 } },
   healing_light: { family: 'focus', type: '마법교본', price: 200, req: { stat: 'int', value: 30 } },
   frost_lance: { family: 'focus', type: '마법교본', price: 180, req: { stat: 'int', value: 30 } },
   flame_ring: { family: 'focus', type: '마법교본', price: 280, req: { stat: 'int', value: 45 } },
@@ -125,7 +127,8 @@ export function equipSkill(save, family, id) {
 // Display-only grades. No combat, book-price or learning requirement changes.
 export const SKILL_DISPLAY = {
   lunge:{ grade:0, label:'입문' }, volley:{ grade:0, label:'입문' }, ember_bolt:{ grade:0, label:'입문' },
-  whirl:{ grade:1, label:'숙련' }, pierce_shot:{ grade:1, label:'숙련' }, frost_lance:{ grade:1, label:'숙련' }, healing_light:{ grade:1, label:'숙련' },
+  whirl:{ grade:1, label:'숙련' }, pierce_shot:{ grade:1, label:'숙련' }, frost_lance:{ grade:1, label:'숙련' }, healing_light:{ grade:1, label:'숙련' }, turn_undead:{ grade:1, label:'숙련' },
+  protective_shield:{ grade:1, label:'숙련' },
   ground_slam:{ grade:1, label:'숙련' }, armor_break:{ grade:2, label:'상급' },
   heavy_cleave:{ grade:2, label:'상급' }, blast_arrow:{ grade:2, label:'상급' }, flame_ring:{ grade:2, label:'상급' },
 };

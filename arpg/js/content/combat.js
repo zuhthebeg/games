@@ -115,6 +115,19 @@ export const ABILITIES = {
     damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['windup', 'recovery'],
   },
 
+  protective_shield: {
+    name: '보호막', windupMs: 400, lockMs: 100, activeMs: 100, recoveryMs: 250,
+    cooldownMs: 12000, manaCost: 22, delivery: 'shape',
+    shape: { type: 'circle', radius: 160, offset: 0 }, shield: { radius: 160, durationMs: 8000 },
+    damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['windup', 'recovery'],
+  },
+
+  turn_undead: {
+    name: '턴 언데드', windupMs: 500, lockMs: 100, activeMs: 100, recoveryMs: 300,
+    cooldownMs: 8000, manaCost: 24, delivery: 'execution', executeUndead: { radius: 160 },
+    damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['recovery'],
+  },
+
   // Official post-campaign throne boss. Timings are never threat-scaled; one hit per active act.
   dragon_flame: {
     name: '화염 숨결', windupMs: 1400, lockMs: 400, activeMs: 650, recoveryMs: 1900, cooldownMs: 6200,

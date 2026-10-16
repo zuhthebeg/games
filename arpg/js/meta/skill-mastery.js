@@ -36,12 +36,15 @@ export function trackMastery(tracker, events, world, pid) {
   tracker.masteryCasts ??= {};
   tracker.skillMastery ??= {};
   for (const event of events) {
+    // An earlier cast's lingering burn must not credit a newly started cast.
+    if (event.periodic) continue;
     const source = world.entities.find(e => e.id === (event.type === 'act' ? event.id : event.src));
     const caster = event.masteryPid ?? (source?.kind === 'player' ? source.pid : null);
     if (caster !== pid || !MASTERY_SKILLS.includes(event.ability)) continue;
     if (event.type === 'act') tracker.masteryCasts[event.ability] = { counted: false };
     const positiveHeal = event.type === 'heal' && event.ability === 'healing_light' && Number.isFinite(event.heal) && event.heal > 0;
-    if (!positiveHeal && (event.type !== 'hit' || !(event.masteryEnemy || world.entities.find(e => e.id === event.dst)?.kind === 'monster'))) continue;
+    const positiveShield = event.type === 'shield' && event.ability === 'protective_shield';
+    if (!positiveShield && !positiveHeal && (event.type !== 'hit' || !(event.masteryEnemy || world.entities.find(e => e.id === event.dst)?.kind === 'monster'))) continue;
     const cast = tracker.masteryCasts[event.ability];
     if (!cast || cast.counted) continue;
     cast.counted = true;

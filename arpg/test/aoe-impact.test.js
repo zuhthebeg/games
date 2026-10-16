@@ -50,7 +50,7 @@ for (const [id, spec] of Object.entries(specs)) {
       for (let i = 0; i < 40; i++) events.push(...step(world, { local: { ...emptyInput(), aimX: 1, skillEdge: i === 0 } }));
       assert.equal(p.mp, 100 - spec.mp);
     }
-    assert.deepEqual(events.filter(e => e.type === 'hit').map(e => e.dst), [inside.id]);
+    assert.deepEqual(events.filter(e => e.type === 'hit' && !e.periodic).map(e => e.dst), [inside.id]);
     assert.equal(outside.hp, 1000);
   });
 }

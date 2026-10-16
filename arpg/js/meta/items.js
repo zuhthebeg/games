@@ -66,6 +66,8 @@ export const ITEMS = {
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 5 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 10 },
 };
+// Authored focus affinities propagate through the existing rarity-variant generator.
+for (const [id, affinity] of Object.entries({ember_wand:'fire', soulfire_wand:'fire', seal_staff:'frost', altar_staff:'holy', gravekeeper_staff:'holy'})) ITEMS[id].affinity = affinity;
 const TIER_LEVEL = { 2: 5, 3: 10, 4: 15 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {

@@ -20,7 +20,7 @@ export class ArenaRenderer {
     this.root = new Container();
     this.root.eventMode = 'none';
     this.layers = {};
-    for (const name of ['ground', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'numbers']) {
+    for (const name of ['ground', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'partyHp', 'numbers']) {
       const layer = new Container();
       this.layers[name] = layer;
       this.root.addChild(layer);
@@ -103,7 +103,8 @@ export class ArenaRenderer {
       view.shadow.destroy();
       view.portal.destroy();
       view.bluntCharge.destroy();
-      view.sunder.destroy();
+      view.sunder.destroy(); view.statusRing.destroy();
+      view.footHp?.container.destroy({ children: true });
     }
     this.views.clear();
     this.provider.beginRound?.(world.entities, equipmentSave);
@@ -183,14 +184,25 @@ export class ArenaRenderer {
     this.layers.entities.addChild(visual.container);
     this.layers.shadows.addChild(shadow);
     this.layers.fx.addChild(portal);
+    const statusRing = new Graphics(); this.layers.fx.addChild(statusRing);
     const bluntCharge = new Graphics(), sunder = new Graphics()
       .moveTo(-7, -7).lineTo(0, -2).lineTo(-3, 3).lineTo(5, 8)
       .moveTo(0, -2).lineTo(7, -6).stroke({ color: 0xe88e50, width: 3 });
     this.layers.skillFx.addChild(bluntCharge);
     this.layers.fx.addChild(sunder);
     bluntCharge.visible = sunder.visible = false;
+    let footHp = null;
+    if (entity.kind === 'player') {
+      const container = new Container(), bar = new Graphics();
+      const label = new Text({ text: '', style: { fontFamily: 'sans-serif', fontSize: 12,
+        fontWeight: 'bold', fill: 0xf2fff5, stroke: { color: 0x101915, width: 3 } } });
+      label.anchor.set(.5, 0); label.y = 7;
+      container.addChild(bar, label); this.layers.partyHp.addChild(container);
+      container.visible = false;
+      footHp = { container, bar, label, state: '' };
+    }
     view = {
-      bluntCharge, sunder,
+      bluntCharge, sunder, footHp, statusRing,
       visual,
       shadow,
       portal,
@@ -452,11 +464,27 @@ export class ArenaRenderer {
       view.visual.container.scale.set(1 + kick * FEEL.kick.squash, 1 - kick * FEEL.kick.squash);
       view.visual.container.zIndex = view.y;
       view.shadow.position.set(view.x, view.y);
+      if (view.footHp) {
+        const hp = view.footHp;
+        hp.container.visible = entity.id !== this.local.id && entity.team === this.local.team;
+        hp.container.position.set(view.x, view.y + entity.r * .48 + 6 / this.scale);
+        // Keep a compact 56px bar and readable 12px text on mobile, independent of camera zoom.
+        hp.container.scale.set(1 / this.scale);
+        const maxHp = Math.max(1, Math.round(entity.maxHp || 1));
+        const current = entity.dead || entity.terminal === 'death' ? 0 : Math.max(0, Math.min(maxHp, Math.round(entity.hp || 0)));
+        const state = entity.dead || entity.terminal === 'death' ? '쓰러짐' : entity.terminal ? '귀환' : '';
+        const text = `${current}/${maxHp}${state ? ` · ${state}` : ''}`;
+        if (hp.state !== text) {
+          hp.state = text; hp.label.text = text;
+          hp.bar.clear().roundRect(-29, -1, 58, 7, 2).fill({color:0x08120e,alpha:.9})
+            .roundRect(-28, 0, 56 * current / maxHp, 5, 1).fill(current / maxHp <= .3 ? 0xe19b6d : 0x79dca0);
+        }
+      }
       view.shadow.alpha = entity.dead ? Math.max(0, 1 - view.anim.deadAge / .7) : 1;
-      view.anim.frozen = frozen;
+      view.anim.frozen = frozen || entity.frozenUntil > world.tick;
       view.anim.flash = this.reduced || view.flashLeft <= 0 ? 0 : view.flashAlpha;
       view.flashLeft = Math.max(0, view.flashLeft - deltaTime);
-      view.visual.update(entity, view.anim, frozen ? 0 : visualDelta);
+      view.visual.update(entity, view.anim, view.anim.frozen ? 0 : visualDelta);
       if (!frozen) view.anim.hurt = Math.max(0, view.anim.hurt - visualDelta);
       view.portal.position.set(entity.x, entity.y);
       view.portal.visible = entity.spawnLeft > 0;
@@ -467,6 +495,12 @@ export class ArenaRenderer {
         this.effect(view.x, view.y, entity.r, 0x9dd4cd, FEEL.trail.life, 'trail');
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
+      const ice = entity.frozenUntil > world.tick, fire = entity.burn?.expiresTick > world.tick, shield = entity.shieldUntil > world.tick;
+      view.statusRing.clear(); view.statusRing.position.set(view.x, view.y);
+      view.statusRing.visible = !entity.dead && (ice || fire || shield);
+      if (shield) view.statusRing.ellipse(0, -entity.r * .6, entity.r + 9, entity.r * 1.6).fill({color:0x73baf0,alpha:.12}).stroke({color:0xa8dafa,width:2,alpha:.8});
+      if (ice) view.statusRing.poly([-entity.r-6,0,-entity.r,-entity.r*2,0,-entity.r*2-8,entity.r,-entity.r*2,entity.r+6,0,0,6]).fill({color:0x8cddf0,alpha:.28}).stroke({color:0xb5f0ff,width:2});
+      if (fire) for (const offset of [-10,0,10]) view.statusRing.moveTo(offset-4,-2).quadraticCurveTo(offset-8,-12,offset,-20).quadraticCurveTo(offset+8,-9,offset+4,-2).fill({color:0xf8a75e,alpha:.8});
       view.sunder.visible = !entity.dead && entity.sunder?.expiresTick > world.tick;
       view.sunder.position.set(view.x, view.y - entity.r - 18);
       const blunt = entity.kind === 'player' && (entity.act?.def.requiresForm === 'blunt' || (entity.act?.step && entity.weaponForm === 'blunt'));
@@ -495,7 +529,7 @@ export class ArenaRenderer {
     // Roster departures remove views, not just the authoritative entity.
     const liveIds = new Set(world.entities.map(e => e.id));
     for (const [id, view] of this.views) if (!liveIds.has(id)) {
-      view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); view.bluntCharge.destroy(); view.sunder.destroy(); this.views.delete(id);
+      view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); view.bluntCharge.destroy(); view.sunder.destroy(); view.statusRing.destroy(); view.footHp?.container.destroy({ children: true }); this.views.delete(id);
     }
     // Telegraph origin remains authoritative (no camera/animation lunge baked into geometry).
     const telegraphViews = this.telegraphs;

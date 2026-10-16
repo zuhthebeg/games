@@ -24,13 +24,16 @@ const SILHOUETTES = {
   ember_bolt:'<path d="M24 45C8 26 37 23 34 10c19 18 19 28 7 37-8 6-16 0-12-8 3-7 7-8 7-14M12 48l9-5m-5 11 9-6"/>',
   frost_lance:'<path d="m14 51 28-37 8-3-1 10-32 33M32 25l-11-4m17-3-2-9m3 25 12 1m-26 6-8-2"/>',
   flame_ring:'<path d="M13 40c-5-14 12-19 9-31 11 8 9 15 14 17 2-9 9-9 10-16 14 18 10 34-2 41M20 43a12 8 0 1 0 24 0 12 8 0 1 0-24 0"/>',
+  protective_shield:'<path d="M32 8 50 16v16c0 12-10 20-18 24-8-4-18-12-18-24V16zM22 32l7 7 14-16"/>',
+  turn_undead:'<path d="M18 28a14 14 0 1 1 28 0v12l-7 5v7H25v-7l-7-5zM25 31h2m10 0h2M32 36v5M11 12l42 42M45 6v12m-6-6h12"/>',
   healing_light:'<circle cx="32" cy="32" r="19"/><path d="M32 21v22M21 32h22M32 6v5m0 42v5M6 32h5m42 0h5M14 14l4 4m28 28 4 4m0-36-4 4M18 46l-4 4"/>',
 };
 export const SKILL_TYPES = {
   lunge:'근접 · 돌진', whirl:'범위', heavy_cleave:'근접 · 범위', volley:'원거리',
   ground_slam:'둔기 · 범위', armor_break:'둔기 · 파쇄',
   pierce_shot:'원거리 · 관통', blast_arrow:'원거리 · 폭발', ember_bolt:'원거리 · 화염',
-  frost_lance:'관통 · 서리', flame_ring:'범위 · 화염', healing_light:'회복',
+  protective_shield:'파티 · 1회 피해 방어',
+  frost_lance:'관통 · 서리', flame_ring:'범위 · 화염', healing_light:'회복 · 언데드 피해', turn_undead:'언데드 · 확률 즉사',
 };
 export function skillIcon(id, art = SKILL_ART) {
   const family = ABILITIES[id].family;
@@ -69,7 +72,7 @@ export function loadoutHtml(save, { interactive = true } = {}) {
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id);
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
-  const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['받는 피해 +15%', '파쇄 5초'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
+  const stats = [a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? '반경 160 · 파티 보호막 8초 · 적 피해 1회 막고 파괴' : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['받는 피해 +15%', '파쇄 5초'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
   if (context === 'character') {
     const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form), mark = useClass(id, weapon, form);
