@@ -1,0 +1,25 @@
+{
+  "pass": true,
+  "frames": 480,
+  "layers": 7,
+  "sourceRGBAFramesChecked": 3360,
+  "alphaBoundaryClips": [],
+  "deliverySHA256": {
+    "body-z.png": "6ffa67e06351b773cd3545402bc14bf63db9b6ff187ef6342e03059d84399de4",
+    "blunt.webp": "105ab83d07b050d17b49a128a88709aca6c19702ab1d2d57df73b5b8811d7aea",
+    "sword.webp": "a7519f92b1273ac4ffa3a8c6212156e8bfbb9d4b82fb668fe8ab04d0f03fa9cc",
+    "base.webp": "be3e6cbe456ecf56a392c04b18554d5bd1eb161349f81e6eb7f164560495c411",
+    "blunt-z.png": "0fb65354e78ea161af12bebaaa68d134b0ee7f602ee1317d83a9a96af0f4328e",
+    "hands.webp": "9bf92537697ac473f1d42e6e9637e72ebcf8ea72900c6b26a61fe77b3c873343",
+    "head.webp": "0825b5b33f73505d1b59fa47b54d4087c320f85e7214618a1d93fbee91b11644",
+    "base-z.png": "d1cef81cdb43fbf8be876f90536a29b0d88a698c11e225b58d468b103e301aa1",
+    "manifest.json": "5c7be4bc902c6ecea52d330336189c2ddf43cbf91f568a46fe2861a17acb083d",
+    "sword-z.png": "adc08ce7c582949515d14b8bfa6160001373c7f5c2417c761a286f18b0986309",
+    "hands-z.png": "13a1209bf63751ce1704b24c48b91c3694222da4778f4b48ec1c2b5c396785ee",
+    "head-z.png": "e8efe471d8458a1222443e3dd4271aa884081398abe6df39f275c8a017321930",
+    "feet.webp": "4f5d3fd8542b46d1cfcbeb209baa0d03c7cb053690a5693b26111a20489db266",
+    "body.webp": "0b8138c3828bf1c2b9080d7b2032835786aded1f133f083a79774587565cf130",
+    "feet-z.png": "e0a96aef202f45562b8dcf916f79d8585f668bec61b8981664cbd84cbbb426a7"
+  },
+  "sourceBlendSHA256": "848dcf48f034fd6c0eb5791ab0c73e9d6b5a3fff1c7beca5f39ec7d7fd9f1451"
+}

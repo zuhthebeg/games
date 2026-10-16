@@ -1,0 +1,13 @@
+{
+  "pass": true,
+  "referenceCount": 1536,
+  "all16FrontRear": true,
+  "all6States8Directions": true,
+  "bothWeaponFormsEveryCombination": true,
+  "sampledPose": "middle source pose per state/direction; all delivered frames separately validate nonstatic motion/clip contracts",
+  "worstMeanAlphaError": 0.00041912898069346443,
+  "worstMeanPremultipliedRGBError": 0.0006675422152615648,
+  "notes": "Independent opaque geometric layers use camera-Z. EEVEE antialias edge samples differ slightly from full-scene multisampling; measured tolerance, NOT byte equality. No 32 full atlases.",
+  "fullReportSHA256": "c8570a621b136f529056db1d61b8e6adea79254a50899067a327ad8f17d3c3f8",
+  "fullReportOfflinePath": "/mnt/c/Users/user/ai-tools/arpg-art/player-skeleton-equipment/composition-proof.json"
+}

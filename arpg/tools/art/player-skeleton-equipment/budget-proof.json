@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "compositions": 32,
+  "peakOutputs": 2,
+  "retainedOutputs": 1,
+  "referencesAfterRelease": 0,
+  "maximumSelectedSourceDecodedRGBABytes": 25329664,
+  "maximumSelectedTransferBytes": 5227129,
+  "outputCanvasAndVisibleWeaponMaskRGBABytes": 11763712,
+  "maximumComposeMs": 174.90000000596046,
+  "maximumDecodeAndComposeMs": 304,
+  "notes": "Appearance-only validator-valid SAVE fixtures. Native UI behavior verified separately. Headless desktop Chromium at390px, not real phone hardware. Canvas/decoded byte accounting, not GPU heap telemetry.",
+  "GPUHeapPeakMeasured": false
+}

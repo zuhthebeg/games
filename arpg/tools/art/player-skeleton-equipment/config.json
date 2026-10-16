@@ -1,0 +1,58 @@
+{
+  "frame_size": 128,
+  "fps": 12,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 8,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/player-skeleton-equipment/frames",
+  "characters": [
+    {
+      "name": "player-skeleton-equipment",
+      "model": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Warrior.glb",
+      "neutral": false,
+      "keep": [
+        "Skeleton_Warrior_ArmLeft",
+        "Skeleton_Warrior_ArmRight",
+        "Skeleton_Warrior_Body",
+        "Skeleton_Warrior_Eyes",
+        "Skeleton_Warrior_Head",
+        "Skeleton_Warrior_Jaw",
+        "Skeleton_Warrior_LegLeft",
+        "Skeleton_Warrior_LegRight"
+      ],
+      "animations": {
+        "idle": "Idle",
+        "run": "Running_A",
+        "attack": "1H_Melee_Attack_Slice_Horizontal",
+        "hit": "Hit_A",
+        "death": "Death_A",
+        "dodge": "Dodge_Forward"
+      },
+      "label": "Bare skeleton with independent actual equipment",
+      "content_ids": [],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6,
+        "dodge": 0.2
+      },
+      "weapon": null,
+      "weapon_bone": "handslot.r"
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/player-skeleton-equipment/source",
+  "webp_quality": 52
+}

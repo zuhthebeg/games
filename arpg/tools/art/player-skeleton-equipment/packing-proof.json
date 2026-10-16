@@ -1,0 +1,42 @@
+{
+  "frames": 480,
+  "groups": 48,
+  "metrics": {
+    "sourceDecodedRGBABytes": 27099136,
+    "transferBytes": 5529523,
+    "outputRGBABytes": 5881856,
+    "cacheOutputsMax": 2
+  },
+  "layers": {
+    "base": {
+      "decodedRGBABytes": 9764864,
+      "transferBytes": 2164823
+    },
+    "hands": {
+      "decodedRGBABytes": 3309568,
+      "transferBytes": 367955
+    },
+    "feet": {
+      "decodedRGBABytes": 2129920,
+      "transferBytes": 397017
+    },
+    "body": {
+      "decodedRGBABytes": 2981888,
+      "transferBytes": 753868
+    },
+    "head": {
+      "decodedRGBABytes": 4653056,
+      "transferBytes": 1139132
+    },
+    "sword": {
+      "decodedRGBABytes": 1769472,
+      "transferBytes": 302394
+    },
+    "blunt": {
+      "decodedRGBABytes": 2490368,
+      "transferBytes": 404334
+    }
+  },
+  "checkpoint": false,
+  "visualApproval": false
+}
