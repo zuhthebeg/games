@@ -11,7 +11,7 @@ test('real 1..30 map to stages1..7; legacy stage3/4/5 core parameters retained; 
  for(const level of [10,15]){assert.equal(masteryVisual(level).scale,1);assert.equal(masteryVisual(level).brightness,1.25);assert.equal(masteryVisual(level).extraParticles,4);}
  assert.equal(masteryVisual(20).scale,1.15);assert.equal(masteryVisual(20).brightness,1.5);assert.equal(masteryVisual(20).extraParticles,8);
 });
-test('all 12 known skills / 30 levels finite with frozen active+hit+projectile snapshots; pools fixed',()=>{
+test('all 14 known skills / 30 levels finite with frozen active+hit+projectile snapshots; pools fixed',()=>{
  const v=new MasterySkillVfx(Graphics,new Container());v.requestSkill=()=>null;
  assert.deepEqual(Object.keys(SKILL_VFX).sort(),[...MASTERY_SKILLS].sort());
  for(const id of MASTERY_SKILLS)for(let level=1;level<=30;level++){

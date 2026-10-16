@@ -46,6 +46,12 @@ export const SKILL_VFX = Object.freeze({
     projectileRadius: ABILITIES.ember_bolt.projectile.radius, color: 0xf08c46, accent: 0xffe6ad,
     windup: 'converge', impact: 'smoke', motif: 'blast', activeLife: .36, residueLife: .6,
     particles: 22, reducedParticles: 2 }),
+  protective_shield: Object.freeze({ style: 'heal', radius: ABILITIES.protective_shield.shield.radius,
+    color: 0x73baf0, accent: 0xa8dafa, windup: 'runes', impact: 'rise',
+    activeLife: .4, residueLife: .5, particles: 16, reducedParticles: 2 }),
+  turn_undead: Object.freeze({ style: 'heal', radius: ABILITIES.turn_undead.executeUndead.radius,
+    color: 0xf5df9b, accent: 0xfff5cc, windup: 'runes', impact: 'rise',
+    activeLife: .4, residueLife: .5, particles: 16, reducedParticles: 2 }),
   healing_light: Object.freeze({ style: 'heal', radius: ABILITIES.healing_light.heal.radius,
     color: 0x79dca0, accent: 0xc5d799, windup: 'runes', impact: 'rise',
     motif: 'heal', activeLife: .5, residueLife: .8, particles: 22, reducedParticles: 2 })

@@ -29,7 +29,7 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
     } else if (profile.style === 'ring') {
       assert.equal(profile.shape, ABILITIES[ability].shape);
       assert.equal(profile.radius, ABILITIES[ability].shape.radius);
-    } else assert.equal(profile.radius, ABILITIES[ability].heal.radius);
+    } else assert.equal(profile.radius, (ABILITIES[ability].heal || ABILITIES[ability].shield || ABILITIES[ability].executeUndead).radius);
   });
   test(`${ability}: reduced particle count is substantially smaller, still readable`, () => {
     const vfx = fixture();
