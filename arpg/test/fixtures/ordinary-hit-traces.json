@@ -1,0 +1,155 @@
+{
+  "source": "workspace/tmp/arpg-lag-native-corrections.json; observed local real-WebSocket S2, 2026-10-16; missing fields supplied by normal createWorld/addPlayer + original fixtureSave guest bow buildRoundMods fixture, not a full captured world",
+  "traces": [
+    {
+      "at": 7021.700000017881,
+      "distance": 35.70915350670163,
+      "snap": true,
+      "tick": 198,
+      "old": {
+        "x": 522.09,
+        "y": 380,
+        "hp": 196,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 510.5,
+        "y": 378.2,
+        "hp": 190.01,
+        "hurtInvuln": 7,
+        "kx": -9.507897142633531,
+        "ky": -1.473074009074978,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 3
+    },
+    {
+      "at": 9721.300000011921,
+      "distance": 29.25044294540455,
+      "snap": true,
+      "tick": 280,
+      "old": {
+        "x": 457.93,
+        "y": 370.25,
+        "hp": 190.7033333333333,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 446.74,
+        "y": 366.7,
+        "hp": 184.69,
+        "hurtInvuln": 7,
+        "kx": -9.16989444649706,
+        "ky": -2.912574625861707,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 2
+    },
+    {
+      "at": 12454,
+      "distance": 29.24571853481865,
+      "snap": true,
+      "tick": 362,
+      "old": {
+        "x": 396.04,
+        "y": 350.77,
+        "hp": 185.39333333333332,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 388.38,
+        "y": 341.88,
+        "hp": 179.37,
+        "hurtInvuln": 7,
+        "kx": -6.277488354894585,
+        "ky": -7.291309557635994,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 2
+    },
+    {
+      "at": 15204.5,
+      "distance": 29.236533373730225,
+      "snap": true,
+      "tick": 444,
+      "old": {
+        "x": 353.75,
+        "y": 301.6,
+        "hp": 180.0733333333333,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 342.96,
+        "y": 297.01,
+        "hp": 174.06,
+        "hurtInvuln": 7,
+        "kx": -8.85293621900042,
+        "ky": -3.76770160886205,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 2
+    },
+    {
+      "at": 17938.90000000596,
+      "distance": 29.234733800048218,
+      "snap": true,
+      "tick": 526,
+      "old": {
+        "x": 294,
+        "y": 276.34,
+        "hp": 174.7533333333333,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 282.4,
+        "y": 278.04,
+        "hp": 168.74,
+        "hurtInvuln": 7,
+        "kx": -9.519837704956737,
+        "ky": 1.3938239423955816,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 2
+    },
+    {
+      "at": 20671.5,
+      "distance": 29.247010020243607,
+      "snap": true,
+      "tick": 608,
+      "old": {
+        "x": 229.76,
+        "y": 285.52,
+        "hp": 169.4433333333333,
+        "kx": 0,
+        "ky": 0
+      },
+      "authoritative": {
+        "x": 220.8,
+        "y": 293.1,
+        "hp": 163.42,
+        "hurtInvuln": 7,
+        "kx": -7.345046505175277,
+        "ky": 6.214527089644358,
+        "dead": false,
+        "terminal": null,
+        "channel": 0
+      },
+      "pending": 2
+    }
+  ]
+}
