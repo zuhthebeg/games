@@ -174,6 +174,7 @@ export function step(world, inputs = {}) {
     if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) delete ent.shieldUntil;
     if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
     if (ent.burn) stepBurn(world, ent);
+    if (ent.slow && (world.tick >= ent.slow.expiresTick || !alive(ent))) delete ent.slow;
     if (ent.sunder && world.tick >= ent.sunder.expiresTick) delete ent.sunder;
     if (ent.kind === 'player') stepPlayer(world, ent, inputs[ent.pid] || emptyInput());
     else stepMonster(world, ent);
@@ -247,7 +248,27 @@ function stepPlayer(world, p, inp) {
     rewindGuestDodge(world, p, inp, awardPerfectDodge);
   }
 
+  // A dodge-shot must pass the same dodge gate; movement and perfect-dodge rewards
+  // remain owned by the ordinary dodge machinery, never a fabricated counter.
+  const dodgeSkillId = p.skills[SKILL_EDGES.findIndex(k => inp[k])];
+  const dodgeSkill = ABILITIES[dodgeSkillId];
+  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
+    && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
+    && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
+    const facing = resolveAim(world, p, inp, mlen);
+    if (p.act) endAct(world, p, true);
+    resetCombo(p);
+    const dir = mlen > .2 ? [mx, my] : [-Math.cos(facing), -Math.sin(facing)];
+    Object.assign(d, dodgeStart(p, dir, world.tick, multiplayerDodge(world)).dodge);
+    p.pendingCounter = null; p.bufferDodge = 0;
+    p.mp -= dodgeSkill.manaCost;
+    startAct(world, p, dodgeSkillId, facing);
+    world.events.push({ type: 'dodge', id: p.id });
+    rewindGuestDodge(world, p, inp, awardPerfectDodge);
+  }
+
   if (d.dashLeft > 0) {
+    if (p.act?.def.dodgeShot) advanceAct(world, p);
     const movement = dashPosition(p);
     Object.assign(d, movement.dodge);
     p.x = movement.x; p.y = movement.y; p.moving = movement.moving;
@@ -282,9 +303,9 @@ function stepPlayer(world, p, inp) {
   // First pressed slot wins this tick; an empty slot is a no-op.
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
-  if (skillId && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
+  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
@@ -430,7 +451,7 @@ function moveMonster(world, m, def, target, dist) {
     if (rand(world) < 0.01) m.strafe = -m.strafe;
     dir = ang + (m.strafe * Math.PI) / 2;
   }
-  const sp = dist >= lo && dist <= hi ? def.speed * 0.45 : def.speed;
+  const sp = (dist >= lo && dist <= hi ? def.speed * 0.45 : def.speed) * (m.slow?.speedMult ?? 1);
   m.x += Math.cos(dir) * sp * DT;
   m.y += Math.sin(dir) * sp * DT;
   m.facing = turnToward(m.facing, ang, (540 * Math.PI / 180) * DT);
@@ -449,7 +470,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
     ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
     const ms = def[`${phase}Ms`] || 0;
-    return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];
+    return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
   ent.act = {
     rate, phaseTicks,
@@ -565,7 +586,12 @@ function doActive(world, ent, act) {
     ent.y += Math.sin(act.facing) * act.dashStep;
     ent.moving = true;
     hitShape(world, ent, act, { type: 'circle', radius: ent.r + def.dash.bodyPad, offset: 0 }, ent.x, ent.y);
-  } else if (def.delivery === 'projectile' && !act.fired) {
+  } else if (def.delivery === 'projectile') {
+    const activeTick = act.phaseTicks.active - act.left;
+    if (def.burst) {
+      if ((act.shotsFired || 0) >= def.burst.count || activeTick % Math.max(1, ticks(def.burst.intervalMs)) !== 0) return;
+      act.shotsFired = (act.shotsFired || 0) + 1;
+    } else if (act.fired) return;
     act.fired = true;
     const pr = def.projectile;
     for (let i = 0; i < pr.count; i++) {
@@ -752,6 +778,10 @@ function applyHit(world, t, hit) {
       t.burn = { expiresTick: world.tick + ticks(3000), nextTick: t.burn?.nextTick ?? world.tick + ticks(500), hit: burnHit };
       world.events.push({ type: 'burn', id: t.id, x: t.x, y: t.y });
     }
+  }
+  if (def.slow && mdef && !mdef.invulnerable && t.hp > 0) {
+    t.slow = { expiresTick: world.tick + ticks(def.slow.durationMs), speedMult: def.slow.speedMult };
+    world.events.push({ type: 'slow', id: t.id, ability: hit.abilityId });
   }
   if (def.sunder && t.hp > 0) {
     t.sunder = { expiresTick: world.tick + ticks(def.sunder.durationMs) };

@@ -186,9 +186,10 @@ export class HUD {
       const cooldown = player.cds[skill] || 0;
       const skillAct = player.act?.id === skill;
       const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);
+      const needsDodge = ABILITIES[skill].dodgeShot && (player.dodgeDisabled || player.dodge.cdLeft > 0 || player.dodge.dashLeft > 0);
       this.text(node.lastElementChild, cooldown > 0 ? seconds(cooldown) : skillAct ? '…' : needsMana ? '−' : '');
       node.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
-      node.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana;
+      node.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana || !!needsDodge;
     });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.disabled = !!player.dodgeDisabled;

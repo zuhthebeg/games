@@ -73,6 +73,7 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
 test('windup progress uses only guest snapshot total/elapsed and handles speed rounding', () => {
   for (const ability of Object.keys(SKILL_VFX)) {
     const act = entity(1, ability).act;
+    if (!ABILITIES[ability].windupMs) { act.elapsed = 0; assert.equal(windupProgress(act), 1); continue; }
     act.total = 12; act.elapsed = 0; assert.equal(windupProgress(act), 0);
     act.elapsed = 6; assert.ok(windupProgress(act) >= .5 && windupProgress(act) <= .6);
     act.elapsed = 12; assert.equal(windupProgress(act), 1);

@@ -18,6 +18,12 @@ export const SKILL_VFX = Object.freeze({
   volley: Object.freeze({ style: 'arrow', projectile: ABILITIES.volley.projectile,
     projectileRadius: ABILITIES.volley.projectile.radius, color: 0xd2c497, accent: 0xf1ebd2,
     windup: 'bow', impact: 'spark', activeLife: .18, residueLife: .28, particles: 14, reducedParticles: 2 }),
+  triple_arrow: Object.freeze({ style: 'arrow', projectile: ABILITIES.triple_arrow.projectile,
+    projectileRadius: ABILITIES.triple_arrow.projectile.radius, color: 0xd2c497, accent: 0xf1ebd2,
+    windup: 'bow', impact: 'spark', activeLife: .18, residueLife: .28, particles: 14, reducedParticles: 2 }),
+  evasion_shot: Object.freeze({ style: 'arrow', projectile: ABILITIES.evasion_shot.projectile,
+    projectileRadius: ABILITIES.evasion_shot.projectile.radius, color: 0x91d8ee, accent: 0xf0fcff,
+    windup: 'bow', impact: 'spark', activeLife: .18, residueLife: .28, particles: 14, reducedParticles: 2 }),
   pierce_shot: Object.freeze({ style: 'pierce', projectile: ABILITIES.pierce_shot.projectile,
     projectileRadius: ABILITIES.pierce_shot.projectile.radius, color: 0x91d8ee, accent: 0xf0fcff,
     windup: 'bow', impact: 'spark', activeLife: .22, residueLife: .3, particles: 16, reducedParticles: 2 }),
@@ -71,6 +77,7 @@ const clamp01 = value => Math.max(0, Math.min(1, value));
 export function windupProgress(act) {
   if (act.phase !== 'windup') return 1;
   const def = act.def || ABILITIES[act.id];
+  if (!def.windupMs) return 1;
   const ratio = def.windupMs / Math.max(1, def.windupMs + def.lockMs);
   return clamp01(act.elapsed / Math.max(1, Math.round(act.total * ratio)));
 }

@@ -49,7 +49,7 @@ function startAct(p, abilityId, facing) {
     ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map(phase => {
     const ms = def[`${phase}Ms`] || 0;
-    return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];
+    return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
   p.act = { ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
@@ -97,7 +97,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   p.mp = Math.min(p.maxMp, p.mp + (p.mpRegen || 0) * DT);
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
-  if (inp.dodgeEdge) {
+  if (inp.dodgeEdge && !p.dodgeDisabled) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
   }
@@ -110,7 +110,22 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
     Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
+  const dodgeSkillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
+  const dodgeSkill = ABILITIES[dodgeSkillId];
+  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
+    && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
+    && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
+    const facing = resolveAim(p, inp, mlen, others);
+    if (p.act) endAct(p);
+    resetCombo(p);
+    const dir = mlen > .2 ? [mx, my] : [-Math.cos(facing), -Math.sin(facing)];
+    Object.assign(d, dodgeStart(p, dir, tick, multiplayerDodge).dodge);
+    p.pendingCounter = null; p.bufferDodge = 0;
+    p.mp -= dodgeSkill.manaCost;
+    startAct(p, dodgeSkillId, facing);
+  }
   if (d.dashLeft > 0) {
+    if (p.act?.def.dodgeShot) { p.act.elapsed++; p.act.left--; skipEmptyPhases(p); }
     const movement = dashPosition(p);
     Object.assign(d, movement.dodge); p.x = movement.x; p.y = movement.y; p.moving = movement.moving;
     return finish();
@@ -131,9 +146,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const w = WEAPONS[p.weapon];
   const skillPressed = SKILL_EDGES.some(k => inp[k]);
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
-  if (skillId && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
+  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId)) {
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));

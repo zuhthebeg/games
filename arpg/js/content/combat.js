@@ -26,7 +26,7 @@ export const ABILITIES = {
     ],
   },
   lunge: {
-    name: '돌진 베기', windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, manaCost: 16, cooldownMs: 5000,
+    name: '돌진 공격', windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, manaCost: 16, cooldownMs: 5000,
     delivery: 'dash', dash: { distance: 190, bodyPad: 14 },
     damage: 52, poise: 40, knockback: 260, family: 'blade', cancelInto: ['recovery'],
   },
@@ -77,12 +77,25 @@ export const ABILITIES = {
     name: '대지 강타', windupMs: 460, lockMs: 0, activeMs: 90, recoveryMs: 400, manaCost: 24, cooldownMs: 7000,
     delivery: 'shape', shape: { type: 'circle', radius: 128, offset: 40 },
     damage: 64, poise: 110, knockback: 120, family: 'blade', requiresForm: 'blunt', cancelInto: ['recovery'],
+    slow: { durationMs: 3000, speedMult: .65 },
   },
   armor_break: {
     name: '갑옷 부수기', windupMs: 300, lockMs: 0, activeMs: 70, recoveryMs: 300, manaCost: 20, cooldownMs: 8000,
     delivery: 'shape', shape: { type: 'cone', range: 110, arc: 60 },
     damage: 58, poise: 50, knockback: 160, family: 'blade', requiresForm: 'blunt', cancelInto: ['recovery'],
     sunder: { durationMs: 5000, damageMult: 1.15 },
+  },
+  triple_arrow: {
+    name: '트리플 애로우', windupMs: 150, lockMs: 0, activeMs: 234, recoveryMs: 240, manaCost: 22, cooldownMs: 6000,
+    delivery: 'projectile', burst: { count: 3, intervalMs: 100 },
+    projectile: { speed: 850, radius: 7, rangePx: 620, count: 1, spreadDeg: 0, pierce: 0 },
+    damage: 23, poise: 8, knockback: 60, family: 'bow', cancelInto: ['active', 'recovery'],
+  },
+  evasion_shot: {
+    name: '회피샷', windupMs: 0, lockMs: 0, activeMs: 34, recoveryMs: 200, manaCost: 18, cooldownMs: 6500,
+    delivery: 'projectile', dodgeShot: true,
+    projectile: { speed: 850, radius: 7, rangePx: 620, count: 1, spreadDeg: 0, pierce: 0 },
+    damage: 32, poise: 10, knockback: 80, family: 'bow', cancelInto: ['recovery'],
   },
   pierce_shot: {
     name: '관통 화살', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 240, manaCost: 18, cooldownMs: 5000,
