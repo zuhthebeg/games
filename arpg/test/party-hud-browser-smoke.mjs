@@ -13,13 +13,15 @@ const errors = [];
 try {
   for (let i=0; i<40; i++) { try { if ((await fetch(`${origin}/arpg/icon.svg`)).ok) break; } catch {} await new Promise(r=>setTimeout(r,100)); }
   const html = process.env.ARPG_BASE_URL ? await (await fetch(`${origin}/arpg/`)).text() : readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const importMap = html.match(/<script type="importmap">[\s\S]*?<\/script>/)?.[0] || '';
+  const css = html.match(/href="(css\/game\.css[^"]*)"/)[1];
   const hud = html.match(/<section id="hud"[\s\S]*?<\/section>/)[0];
   for (const width of [1280,390]) {
     const page = await browser.newPage({viewport:{width,height:844}});
     page.on('pageerror',error=>errors.push(error.message));
     await page.route(`${origin}/arpg/test/hud-fixture.html`, route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><body></body></html>'}));
     await page.goto(`${origin}/arpg/test/hud-fixture.html`);
-    await page.setContent(`<base href="${origin}/arpg/"><link rel="stylesheet" href="css/game.css">${hud}<div id="pause"></div>`);
+    await page.setContent(`<base href="${origin}/arpg/">${importMap}<link rel="stylesheet" href="${css}">${hud}<div id="pause"></div>`);
     await page.evaluate(async origin => {
       const [{HUD},{createWorld,addPlayer},{skillIcon}] = await Promise.all([
         import(`${origin}/arpg/js/ui/hud.js`),import(`${origin}/arpg/js/sim/world.js`),import(`${origin}/arpg/js/ui/skill-view.js`)]);
