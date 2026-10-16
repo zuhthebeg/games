@@ -10,7 +10,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 
 // A display-only local pawn. Never owns a sim world or exposes predicted HUD/combat.
 export class LocalPrediction {
-  constructor(uid) {
+  constructor(uid, { multiplayerDodge = false } = {}) {
+    this.multiplayerDodge = multiplayerDodge;
     this.uid = uid; this.pending = []; this.state = null; this.arena = null; this.others = [];
     this.enabled = false; this.offset = { x: 0, y: 0 }; this.smoothLeft = 0; this.preview = null;
     this.authority = null; this.hitSmoothing = false; this.roundEnded = false;

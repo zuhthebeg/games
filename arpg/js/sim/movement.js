@@ -1,5 +1,6 @@
 // Pure position-only helpers. No world stepping, combat, events or persistence.
 import { DT, ticks } from './core.js';
+import { dodgeTiming } from './dodge-policy.js';
 import { PLAYER_BASE as PB } from '../content/combat.js';
 
 export function loadEffects(ratio) {
@@ -11,11 +12,11 @@ export function movementInput(inp) {
   const mlen = Math.hypot(inp.mx, inp.my);
   return { mlen, mx: mlen > 1 ? inp.mx / mlen : inp.mx, my: mlen > 1 ? inp.my / mlen : inp.my };
 }
-export function dodgeStart(p, direction, tick) {
+export function dodgeStart(p, direction, tick, multiplayerDodge = false) {
   const [dx, dy] = direction, dashTicks = ticks(PB.dodge.dashMs);
   return { facing: Math.atan2(dy, dx), dodge: { ...p.dodge, dashLeft: dashTicks,
     dx: (dx * PB.dodge.distance) / dashTicks, dy: (dy * PB.dodge.distance) / dashTicks,
-    iframeLeft: ticks(PB.dodge.iframeMs + p.iframeBonusMs),
+    iframeLeft: dodgeTiming(p, multiplayerDodge).iframeTicks,
     cdLeft: ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd),
     startedTick: tick, perfectPaid: false } };
 }

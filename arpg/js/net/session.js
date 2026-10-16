@@ -26,7 +26,7 @@ export class CoopSession {
     Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
-    this.prediction = new LocalPrediction(uid); this.appliedInputSeqs = {};
+    this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
     this.bytes = 0; this.snapshots = 0; this.lost = false;
@@ -50,7 +50,7 @@ export class CoopSession {
     if (this.isHost) {
       const levels = Object.values(this.profiles).map(p => p.level || 1);
       const partyLevel = Math.round(levels.reduce((a, b) => a + b, 0) / levels.length);
-      this.world = createWorld({ seed: data.seed, threat: data.config.threat,
+      this.world = createWorld({ seed: data.seed, threat: data.config.threat, multiplayerDodge: true,
         partyHpMult: partyHpScale(this.players.size, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
