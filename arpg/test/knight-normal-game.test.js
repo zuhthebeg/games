@@ -60,7 +60,7 @@ test('public factory overrides preserve combat entities, all roles, honest dodge
  const provider={factories:new Map(original),register(k,f){this.factories.set(k,f);}};const restore=installKnightPresentation(provider);
  for(const type of new Set(Object.values(STAGES).flatMap(s=>s.spawns.map(p=>p.monster))))assert.ok(HUMAN_PRESENTATIONS[type]||ORIGINAL_PRESENTATIONS.includes(type),type);
  const player={kind:'player',weapon:'blade',dodge:{dashLeft:3},x:500},raw=JSON.stringify(player);
- const visual=provider.factories.get('blade')(player,{});visual.update(player,{},.03);assert.equal(calls.at(-1).key,'skeleton_warrior');assert.equal(updates.at(-1)[0].dodge.dashLeft,0);assert.equal(updates.at(-1)[0].moving,true);assert.equal(JSON.stringify(player),raw);assert.match(visual.debug.dodgeFallback,/no baked/);
+ const visual=provider.factories.get('blade')(player,{});visual.update(player,{},.03);assert.equal(calls.at(-1).key,'blade');assert.equal(calls.at(-1).options.equipment.id,'player-skeleton-equipment');assert.equal(updates.at(-1)[0].dodge.dashLeft,0);assert.equal(updates.at(-1)[0].moving,true);assert.equal(JSON.stringify(player),raw);assert.match(visual.debug.dodgeFallback,/no baked/);
  for(const type of ['goblin_grunt','goblin_slinger','spirit']){const e={kind:'monster',type,hp:100};const v=provider.factories.get(type)(e,{});v.update(e,{},.03);assert.equal(calls.at(-1).key,HUMAN_PRESENTATIONS[type]);assert.equal(v.debug.species,'human');assert.equal(updates.at(-1)[0],e);}
  restore();restore();assert.deepEqual(provider.factories,original);
 });

@@ -34,13 +34,14 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   let lease;
   const controller = new AbortController();
   container.addChild(current.container);
-  const load = entity.kind === 'player' && options.equipment && paperdollEnabled()
+  const load = entity.kind === 'player' && options.equipment && (options.equipment.id === 'player-skeleton-equipment' || paperdollEnabled())
     ? (async () => {
       try {
         lease = await paperdolls.acquire(options.equipment, controller.signal);
         if (destroyed) { lease.release(); lease = null; return null; }
         return paperdollTextures(lease.asset);
-      } catch { lease?.release(); lease = null; if (destroyed) return null; }
+      } catch (error) { lease?.release(); lease = null; if (destroyed) return null;
+        if(options.equipment.id === 'player-skeleton-equipment') { transitionFailure=error.message; return null; } }
       return library.load(visualKey(entity));
     })() : library.load(visualKey(entity));
   load.then((asset) => {
@@ -96,7 +97,7 @@ function paperdollTextures(asset) {
   }
   asset.weaponAnimations = maskSource ? Object.fromEntries(Object.entries(asset.manifest.animations)
     .map(([name,frames])=>[name,frames.map(frame=>weaponTextures[frame] || null)])) : null;
-  asset.anchor=asset.manifest.anchor;asset.fps=asset.manifest.fps;
+  asset.anchor=asset.manifest.anchor;asset.fps=asset.manifest.fps;asset.animation_durations=asset.manifest.animation_durations;
   asset.disposeTextures = () => {
     Object.values(textures).forEach(texture=>texture.destroy()); source.destroy(true);
     Object.values(weaponTextures).forEach(w=>w.texture.destroy()); maskSource?.destroy(true);
@@ -146,7 +147,7 @@ function spriteVisual(entity, { color }, asset) {
     get debug() {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         equipment: asset.descriptor || null,
-        ...(asset.id === 'player-death-knight' ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
+        ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
     update(state, animation, deltaTime) {
@@ -155,9 +156,9 @@ function spriteVisual(entity, { color }, asset) {
       if (animation.frozen) return;
       animation.age += deltaTime;
       if (state.dead) animation.deadAge += deltaTime;
-      const wanted = asset.id === 'player-death-knight' ? deathKnightAnimation(state, animation, atlasAnimation, deathKnightPlayback, asset.animation_durations.dodge) : atlasAnimation(state, animation);
+      const wanted = ['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? deathKnightAnimation(state, animation, atlasAnimation, deathKnightPlayback, asset.animation_durations.dodge) : atlasAnimation(state, animation);
       const next = asset.animations[`${wanted}_E`] ? wanted : 'idle';
-      if (asset.id === 'player-death-knight') {
+      if (['player-death-knight','player-skeleton-equipment'].includes(asset.id)) {
         age = advanceDeathKnightPlayback(deathKnightPlayback, state, next, deltaTime);
       } else if (next !== stateName || next === 'attack' && previousAct !== state.act
         || next === 'dodge' && previousDodge !== state.dodge?.startedTick) age = 0;

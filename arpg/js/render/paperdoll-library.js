@@ -82,6 +82,8 @@ function drawLayer(ctx, bitmap, layer, name, x, y) {
   ctx.drawImage(bitmap,sx,sy,w,h,x+frame.offset[0],y+frame.offset[1],w,h);
 }
 async function compose(descriptor) {
+  if (descriptor.id === 'player-death-knight') return (await import('./skeleton-equipment-compose.js')).composeDeathKnightPortrait(descriptor);
+  if (descriptor.id === 'player-skeleton-equipment') return (await import('./skeleton-equipment-compose.js')).composeSkeleton(descriptor);
   const started = performance.now(), manifest = await manifestFor(descriptor.kit);
   const weaponKey = `weapon-${descriptor.weapon}-${descriptor.head}`;
   const keys = ['base', ...(descriptor.colours.some(Boolean) ? ['mask'] : []),
