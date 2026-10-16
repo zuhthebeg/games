@@ -1,66 +1,72 @@
+import { abortable, loadJSON, loadBlob, decodeBitmap } from './composition-load.js';
 // One selected kit/head/weapon only. Bitmaps live for one serial composition;
 // output cache holds at most two atlases (old live sprite + new gear).
 export class PaperdollLibrary {
-  constructor({ compose, dispose }) {
-    this.compose = compose; this.dispose = dispose;
-    this.entries = new Map(); this.tail = Promise.resolve(); this.serial = 0;
-    this.metrics = { compositions: 0, peakOutputs: 0, last: null };
+  constructor({ compose, dispose, timeoutMs = 15000 }) {
+    this.compose=compose;this.dispose=dispose;this.timeoutMs=timeoutMs;
+    this.entries=new Map();this.tail=Promise.resolve();this.serial=0;
+    this.metrics={compositions:0,peakOutputs:0,last:null};
   }
   async acquire(descriptor, signal) {
-    const key = descriptor.key;
-    let record = this.entries.get(key);
-    if (!record) {
-      record = { refs: 0, asset: null, promise: null, age: ++this.serial };
-      this.entries.set(key, record);
-      record.promise = this.tail.then(async () => {
-        if (signal?.aborted && record.refs === 1) throw new Error('Paperdoll superseded');
+    if(signal?.aborted)throw new Error('Paperdoll superseded');
+    const key=descriptor.key;
+    let record=this.entries.get(key);
+    if(!record){
+      record={refs:0,asset:null,age:++this.serial,controller:new AbortController(),state:'queued'};
+      this.entries.set(key,record);
+      const jobSignal=record.controller.signal;
+      record.promise=this.tail.then(async()=>{
+        jobSignal.throwIfAborted();record.state='running';
         this.trim(1);
-        if ([...this.entries.values()].filter(r => r.asset).length >= 2)
-          throw new Error('Paperdoll live-output budget exceeded');
-        record.asset = await this.compose(descriptor);
-        this.metrics.compositions++;
-        this.metrics.last = record.asset.metrics;
-        this.metrics.peakOutputs = Math.max(this.metrics.peakOutputs,
-          [...this.entries.values()].filter(r => r.asset).length);
-        return record.asset;
-      }).catch(error => { this.entries.delete(key); throw error; });
-      this.tail = record.promise.catch(() => {});
+        if([...this.entries.values()].filter(r=>r.asset).length>=2)throw new Error('Paperdoll live-output budget exceeded');
+        const timer=setTimeout(()=>record.controller.abort(new Error('Paperdoll deadline exceeded')),this.timeoutMs);
+        try {
+          const asset=await abortable(Promise.resolve().then(()=>this.compose(descriptor,jobSignal)),jobSignal,a=>this.dispose(a));
+          if(jobSignal.aborted){this.dispose(asset);jobSignal.throwIfAborted();}
+          record.asset=asset;record.state='ready';this.metrics.compositions++;this.metrics.last=asset.metrics;
+          this.metrics.peakOutputs=Math.max(this.metrics.peakOutputs,[...this.entries.values()].filter(r=>r.asset).length);
+          return asset;
+        }finally{clearTimeout(timer);}
+      }).catch(error=>{record.state='failed';if(this.entries.get(key)===record)this.entries.delete(key);throw error;});
+      this.tail=record.promise.catch(()=>{});
     }
-    // Reserve ownership before await; a later request cannot evict this result
-    // in the promise handoff between compose and the caller attaching its sprite.
     record.refs++;
+    let released=false;
+    const release=()=>{
+      if(released)return;released=true;signal?.removeEventListener('abort',release);record.refs--;
+      if(!record.refs&&!record.asset){
+        if(this.entries.get(key)===record)this.entries.delete(key);
+        record.controller.abort(new Error('Paperdoll superseded'));
+      }
+      this.trim(1);
+    };
+    signal?.addEventListener('abort',release,{once:true});
     try {
-      const asset = await record.promise;
-      if (signal?.aborted) throw new Error('Paperdoll superseded');
-      let released = false;
-      return { asset, release: () => {
-        if (released) return; released = true; record.refs--; this.trim(1);
-      } };
-    } catch (error) { record.refs--; this.trim(1); throw error; }
+      const asset=await abortable(record.promise,signal);
+      if(signal?.aborted)throw new Error('Paperdoll superseded');
+      // A delivered lease owns its reference until explicit release, not caller abort.
+      signal?.removeEventListener('abort',release);
+      return {asset,release};
+    }catch(error){release();if(signal?.aborted)throw new Error('Paperdoll superseded');throw error;}
   }
   trim(limit) {
-    const loaded = [...this.entries].filter(([, r]) => r.asset).sort((a,b) => a[1].age-b[1].age);
-    let count = loaded.length;
-    for (const [key, record] of loaded) {
-      if (count <= limit) break;
-      if (record.refs) continue;
-      this.entries.delete(key); this.dispose(record.asset); count--;
-    }
+    const loaded=[...this.entries].filter(([,r])=>r.asset).sort((a,b)=>a[1].age-b[1].age);
+    let count=loaded.length;
+    for(const [key,record] of loaded){if(count<=limit)break;if(record.refs)continue;
+      this.entries.delete(key);this.dispose(record.asset);count--;}
   }
-  status() {
-    return { ...this.metrics, outputs: [...this.entries.values()].filter(r => r.asset).length,
-      references: [...this.entries.values()].reduce((sum,r) => sum+r.refs,0),
-      outputRGBABytes: [...this.entries.values()].reduce((sum,r) => sum+(r.asset?.metrics.outputRGBABytes || 0),0) };
-  }
+  status(){return {...this.metrics,outputs:[...this.entries.values()].filter(r=>r.asset).length,
+    references:[...this.entries.values()].reduce((n,r)=>n+r.refs,0),
+    pending:[...this.entries.values()].filter(r=>!r.asset).length,
+    outputRGBABytes:[...this.entries.values()].reduce((n,r)=>n+(r.asset?.metrics.outputRGBABytes||0),0)};}
 }
 
 const baseUrl = new URL('../../assets/sprites/paperdoll/', import.meta.url);
 const manifests = new Map();
-async function manifestFor(kit) {
+async function manifestFor(kit, signal) {
   if (!['blade','bow','focus'].includes(kit)) throw new Error('Unknown paperdoll kit');
-  if (!manifests.has(kit)) manifests.set(kit, fetch(new URL(`${kit}/manifest.json`, baseUrl)).then(async response => {
-    if (!response.ok) throw new Error(`Paperdoll manifest HTTP ${response.status}`);
-    const manifest = await response.json();
+  if (manifests.has(kit)) return manifests.get(kit);
+  const manifest = await loadJSON(new URL(`${kit}/manifest.json`,baseUrl),signal);
     if (manifest.version !== 'b1' || manifest.kit !== kit || manifest.size !== 128
       || manifest.layout.size[0] > 2048 || manifest.layout.size[1] > 4096
       || Object.keys(manifest.animations).length !== 48) throw new Error('Invalid paperdoll manifest');
@@ -69,9 +75,7 @@ async function manifestFor(kit) {
         const f=layer.frames[index];return [name,f ? {index:f[0],offset:[f[1],f[2]]} : null];
       }));
     }
-    return manifest;
-  }).catch(error => { manifests.delete(kit); throw error; }));
-  return manifests.get(kit);
+    signal?.throwIfAborted();manifests.set(kit,manifest);return manifest;
 }
 const canvas = (width,height) => {
   const c = document.createElement('canvas'); c.width=width; c.height=height; return c;
@@ -81,20 +85,20 @@ function drawLayer(ctx, bitmap, layer, name, x, y) {
   const [sx,sy,w,h] = layer.rects[frame.index];
   ctx.drawImage(bitmap,sx,sy,w,h,x+frame.offset[0],y+frame.offset[1],w,h);
 }
-async function compose(descriptor) {
-  const started = performance.now(), manifest = await manifestFor(descriptor.kit);
+async function compose(descriptor, signal) {
+  if (descriptor.id === 'player-death-knight') return (await import('./skeleton-equipment-compose.js')).composeDeathKnightPortrait(descriptor, signal);
+  if (descriptor.id === 'player-skeleton-equipment') return (await import('./skeleton-equipment-compose.js')).composeSkeleton(descriptor, signal);
+  const started = performance.now(), manifest = await manifestFor(descriptor.kit, signal);
   const weaponKey = `weapon-${descriptor.weapon}-${descriptor.head}`;
   const keys = ['base', ...(descriptor.colours.some(Boolean) ? ['mask'] : []),
     ...(descriptor.head !== 'none' ? [`head-${descriptor.head}`] : []), weaponKey];
-  const bitmaps = {}; let output, weaponCanvas, weaponMask, sourceRGBABytes = 0, stagingRGBABytes = 0;
+  const bitmaps = {}; let output, weaponCanvas, weaponMask, frameCanvas, sourceRGBABytes = 0, stagingRGBABytes = 0;
   try {
     // Serial decoding also bounds transient fetch/blob ownership.
     for (const key of keys) {
       const layer = manifest.layers[key];
       if (!layer || layer.size[0] > 2048 || layer.size[1] > 4096) throw new Error('Invalid paperdoll layer');
-      const response = await fetch(new URL(`${descriptor.kit}/${layer.image}`,baseUrl));
-      if (!response.ok) throw new Error(`Paperdoll image HTTP ${response.status}`);
-      bitmaps[key] = await createImageBitmap(await response.blob());
+      bitmaps[key] = await decodeBitmap(await loadBlob(new URL(`${descriptor.kit}/${layer.image}`,baseUrl),signal),signal);
       sourceRGBABytes += bitmaps[key].width*bitmaps[key].height*4;
     }
     const decodedMs = performance.now()-started;
@@ -112,7 +116,7 @@ async function compose(descriptor) {
     const maskContext=weaponMask.getContext('2d');maskContext.drawImage(weaponBitmap,0,0);
     maskContext.globalCompositeOperation='source-in';maskContext.fillStyle='#fff';
     maskContext.fillRect(0,0,weaponMask.width,weaponMask.height);
-    const frameCanvas = canvas(128,128), ctx = frameCanvas.getContext('2d',{willReadFrequently:true});
+    frameCanvas = canvas(128,128); const ctx = frameCanvas.getContext('2d',{willReadFrequently:true});
     ctx.imageSmoothingEnabled=false;
     let basePixels, maskPixels;
     const readPixels = key => {
@@ -162,7 +166,7 @@ async function compose(descriptor) {
         outputRGBABytes:output.width*output.height*4+weaponMask.width*weaponMask.height*4,frames:manifest.frames.length,
         sourceImages:keys.length,phoneEvidence:false} };
   } catch(error) { if(output) output.width=output.height=1; if(weaponMask) weaponMask.width=weaponMask.height=1; throw error; }
-  finally { if(weaponCanvas) weaponCanvas.width=weaponCanvas.height=1; Object.values(bitmaps).forEach(bitmap=>bitmap.close()); }
+  finally { if(frameCanvas) frameCanvas.width=frameCanvas.height=1; if(weaponCanvas) weaponCanvas.width=weaponCanvas.height=1; Object.values(bitmaps).forEach(bitmap=>bitmap.close()); }
 }
 export const paperdolls = new PaperdollLibrary({compose,dispose:asset=>{
   asset.disposeTextures?.(); asset.canvas.width=asset.canvas.height=1;

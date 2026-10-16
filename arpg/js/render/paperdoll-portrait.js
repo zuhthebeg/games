@@ -69,7 +69,8 @@ function scan() {
       const canvas=node.querySelector('canvas');
       setPortraitDirection(node, node.dataset.direction || 'SW');
       canvas.hidden=false;node.style.backgroundImage='none';node.dataset.paperdollReady=descriptor.key;
-    }).catch(()=>{ if(node.isConnected) {node.dataset.paperdollFailed='true';node.style.backgroundImage=`url("${node.dataset.paperdollFallback}")`;
+    }).catch(()=>{ if(node.isConnected) {node.dataset.paperdollFailed='true';node.style.backgroundImage=descriptor.kit === 'skeleton' ? 'none' : `url("${node.dataset.paperdollFallback}")`;
+      if (descriptor.kit === 'skeleton') node.setAttribute('aria-label','캐릭터 외형 로드 실패');
       const glow=node.querySelector('.portrait-weapon-glow');if(glow) delete glow.dataset.pending;} });
   }
 }

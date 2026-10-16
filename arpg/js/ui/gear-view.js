@@ -1,3 +1,5 @@
+import { SKELETON_PORTRAITS } from '../render/skeleton-portrait-frames.js';
+import { skeletonAppearance } from '../render/skeleton-equipment-state.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from '../meta/knight-equipment.js';
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
@@ -97,6 +99,11 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
 export function getHeroPortrait(save, direction = 'SW') {
+  if (save.lineage === 'skeleton_knight') {
+    const appearance=skeletonAppearance(save), dir=PORTRAIT_DIRECTIONS.includes(direction)?direction:'SW';
+    const metadata=SKELETON_PORTRAITS[appearance.id], frame=`idle_${dir}_000`, layout=metadata.frames[frame];
+    return {url:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp' : 'base.webp'}`,frame,appearance,anchor:metadata.anchor,packedFrame:layout.rect,trim:layout.trim,x:layout.rect[0],y:layout.rect[1],width:128,height:128,atlasWidth:metadata.size[0],atlasHeight:metadata.size[1],metadata:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp.json' : 'manifest.json'}`};
+  }
   const family = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   const kit = { blade:'sword', bow:'bow', focus:'focus' }[family];
   const index = PORTRAIT_DIRECTIONS.indexOf(direction);
@@ -106,7 +113,7 @@ export function getHeroPortrait(save, direction = 'SW') {
 
 export function portraitHtml(save, direction = 'SW') {
   const p = getHeroPortrait(save, direction);
-  const enabled = save.lineage !== 'skeleton_knight' && paperdollEnabled();
+  const enabled = save.lineage === 'skeleton_knight' || paperdollEnabled();
   if (enabled) installPaperdollPortraits();
   const parts = enabled ? ` data-paperdoll-fallback="${p.url}" data-paperdoll="${escape(JSON.stringify(equipmentVisual(save)))}"` : '';
   const canvas = enabled ? '<canvas width="128" height="128" style="width:100%;height:100%" hidden></canvas>' : '';
@@ -114,7 +121,7 @@ export function portraitHtml(save, direction = 'SW') {
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   // With paperdoll art the glow is drawn from the weapon silhouette once composed (pending until then).
   const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}"${enabled ? ' data-pending' : ''} aria-hidden="true">${enabled ? '<canvas width="128" height="128"></canvas>' : ''}<i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
-  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)} · 기존 해골 외형 임시 사용` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
+  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)} · 실제 장착 외형` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
 }
 
 export function socketsHtml(save) {

@@ -1,0 +1,88 @@
+{
+  "asset": "player-skeleton-equipment",
+  "base": "KayKit Skeleton_Warrior skull/jaw/eyes, rig and real animations CC0",
+  "source": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Warrior.glb",
+  "sourceSHA256": "178b6fda810b814c250d8a2010c24dfd9b458b9006dd323353e620b7ff118bbe",
+  "baseLicenseSHA256": "5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954",
+  "authored": "New exposed ribs/spine/pelvis/limbs plus independently bone-attached helmet/body/hands/feet/sword/maul geometry, CC0",
+  "originalWarriorBodyLimbs": "hidden source references only; do not render their armor",
+  "sourceRoot": "/mnt/c/Users/user/ai-tools/arpg-art/player-skeleton-equipment",
+  "sourceBlend": "source/player-skeleton-equipment-source.blend",
+  "animations": {
+    "idle": "Idle",
+    "run": "Running_A",
+    "attack": "1H_Melee_Attack_Slice_Horizontal",
+    "hit": "Hit_A",
+    "death": "Death_A",
+    "dodge": "Dodge_Forward"
+  },
+  "dodge": {
+    "sourceSeconds": 0.4,
+    "runtimeSeconds": 0.2,
+    "frames": [
+      0,
+      1.92,
+      3.84,
+      5.76,
+      7.68,
+      9.6
+    ],
+    "endpointInclusive": true,
+    "horizontalRootDrivers": [
+      {
+        "bone": "root",
+        "channel": 0
+      },
+      {
+        "bone": "root",
+        "channel": 2
+      },
+      {
+        "bone": "hips",
+        "channel": 0
+      },
+      {
+        "bone": "hips",
+        "channel": 2
+      }
+    ]
+  },
+  "frames": 480,
+  "groups": 48,
+  "eightDistinctDirectionsEveryState": true,
+  "nonStaticGroups": 48,
+  "fixedCamera": {
+    "ortho_scale": 4.26558780670166,
+    "target": [
+      0.0,
+      -0.15748058259487152,
+      0.8953790068626404
+    ],
+    "margin_factor": 1.13,
+    "includes_outline_hulls": true,
+    "root_motion_drivers": [
+      {
+        "bone": "root",
+        "channel": 0
+      },
+      {
+        "bone": "root",
+        "channel": 2
+      },
+      {
+        "bone": "hips",
+        "channel": 0
+      },
+      {
+        "bone": "hips",
+        "channel": 2
+      }
+    ]
+  },
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6370674967765808
+  },
+  "screenshots": 0,
+  "paidServices": 0
+}

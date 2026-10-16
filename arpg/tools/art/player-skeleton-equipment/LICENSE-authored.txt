@@ -1,0 +1,4 @@
+Project-authored procedural bare bone and equipment geometry in this namespace is dedicated to the public domain under CC0 1.0 Universal.
+This applies to the new geometry, not a relicense of unrelated project code.
+Base skull, rig, materials and animations: KayKit, CC0, see LICENSE-KayKit.txt.
+https://creativecommons.org/publicdomain/zero/1.0/

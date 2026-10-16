@@ -1,3 +1,4 @@
+import { skeletonAppearance } from './skeleton-equipment-state.js';
 import { ITEMS, equippedItem } from '../meta/items.js';
 
 // B only: fixed clothed Knight; hats/weapons are geometry, other slots colour only.
@@ -22,6 +23,7 @@ function slotColour(def) {
   return base.map((v, i) => Math.min(235, v + boost + (def.rarity === 'epic' && i === 2 ? 22 : 0)));
 }
 export function equipmentVisual(save, overrideKit) {
+  if (save.lineage === 'skeleton_knight') return skeletonAppearance(save);
   const def = slot => ITEMS[equippedItem(save, slot)?.id];
   const weapon = def('weapon'), head = def('head');
   const kit = overrideKit || weapon?.family || 'blade';

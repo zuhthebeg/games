@@ -946,3 +946,26 @@ select, input:not([type="checkbox"]) {
 #undead-result p { font-size: 13px; line-height: 1.5; color: #c9bea9; }
 #undead-result button { display: block; width: 100%; margin-top: 8px; }
 #undead-result [data-undead-action=next] { background: #425b46; border-color: #b1c49a; }
+
+/* Skeleton / permanent DK only. Existing graveyard SVG and human palette unchanged. */
+body[data-theme="graveyard"] {
+  --ash:#111713; --surface:#1b241f; --raised:#29382f;
+  --ink:#e1e9de; --muted:#b5c5b7; --brass:#b7cba2;
+  --edge:#839687; --hairline:#506457; --gain:#bed6aa;
+  --hp:#527735; --mp:#46344f;
+  color:var(--ink); background:#0c110f;
+}
+body[data-theme="graveyard"] .inn-shell { background:var(--ash); }
+body[data-theme="graveyard"] :is(.game-header,.action-footer,.story-panel,.p2-sheet) { background:var(--surface); border-color:var(--edge); }
+body[data-theme="graveyard"] :is(.p2-socket,.p2-card,.shop-item,.p2-loot-card) { background:var(--surface); border-color:var(--edge); }
+body[data-theme="graveyard"] .p2-room { background:#172019; border-color:var(--edge); }
+body[data-theme="graveyard"] .primary { color:#111713; background:var(--brass); border-color:#d2dfc7; }
+body[data-theme="graveyard"] .primary:hover { background:#d2dfc7; }
+body[data-theme="graveyard"] .hp-tone { color:#c3dfa7!important; }
+body[data-theme="graveyard"] .mp-tone { color:#d5bfdf!important; }
+body[data-theme="graveyard"] .bar { background:#0c110f; border-color:var(--edge); }
+body[data-theme="graveyard"] .hp i { background:linear-gradient(90deg,#426431,var(--hp)); }
+body[data-theme="graveyard"] .mp i { background:linear-gradient(270deg,#211b29,var(--mp)); }
+body[data-theme="graveyard"] :is(.hp,.mp) span { color:#f4f6ed; text-shadow:0 1px 2px #000,0 0 2px #000; }
+body[data-theme="graveyard"] .game-header :is(.seal,.money) { color:var(--brass); border-color:var(--edge); }
+body[data-theme="graveyard"] .xp-line i { background:var(--brass); }
