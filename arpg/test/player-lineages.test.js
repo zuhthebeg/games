@@ -54,14 +54,14 @@ test('canonical own-key lineage whitelist and deeply frozen role descriptors', (
   assert.throws(() => playerLineage({ lineage: undefined }));
 });
 
-test('level 1..29 base and exactly 30 boss form are pure, repeated lookups never stack effects', () => {
+test('legacy inactive roles keep level metadata; knight requires explicit permanent state, lookups stay pure', () => {
   for (const [id, , boss] of roles) {
     const s = roleSave(id, id === 'skeleton_mage' ? 'wand' : id === 'skeleton_knight' ? 'sword' : 'bow');
     const before = structuredClone(s);
     for (let repeat = 0; repeat < 3; repeat++) {
       for (let level = 1; level < 30; level++) assert.equal(playerForm(id, level), id);
-      assert.equal(playerForm(id, 30), boss);
-      assert.equal(playerForm(s), boss);
+      assert.equal(playerForm(id, 30), id === 'skeleton_knight' ? id : boss);
+      assert.equal(playerForm(s), id === 'skeleton_knight' ? id : boss);
       assert.equal(playerForm({ ...s, level: 29 }), id);
     }
     assert.deepEqual(s, before);
@@ -152,7 +152,7 @@ for (const [id, family, boss, allowed] of roles) {
     }
     const armored = equip(s, s.equipped.body);
     assert.equal(validateSave(armored), true); assert.deepEqual(armored, s);
-    assert.equal(playerForm(s), boss); assert.equal(ITEMS[s.items.find(i => i.uid === s.equipped.weapon).id].family, family);
+    assert.equal(playerForm(s), id === 'skeleton_knight' ? id : boss); assert.equal(ITEMS[s.items.find(i => i.uid === s.equipped.weapon).id].family, family);
   });
 
   test(`${id}: actual shop buy-only allowed; refused buy/equip and cancelled candidates leave gold/source/storage untouched`, () => {
@@ -196,7 +196,7 @@ for (const [id, family, boss, allowed] of roles) {
     const s29 = addXp({ ...s, level: 29, statPoints: s.statPoints - 8 }, 0);
     assert.equal(validateSave(s29), true); store.save(s29); assert.deepEqual(store.load(), s29); assert.equal(playerForm(store.load()), id);
     store.save(s); const before = structuredClone(s);
-    for (let n = 0; n < 3; n++) { const loaded = store.load(); assert.deepEqual(loaded, before); assert.equal(playerForm(loaded), boss); }
+    for (let n = 0; n < 3; n++) { const loaded = store.load(); assert.deepEqual(loaded, before); assert.equal(playerForm(loaded), id === 'skeleton_knight' ? id : boss); }
     assert.equal(f.data.get(SLOT_SAVE_KEYS[id]), JSON.stringify(s));
     assert.equal(f.data.get(SAVE_KEY), humanRaw); assert.equal(f.data.get(`${SAVE_KEY}.corrupt.9`), 'human diagnostic');
     assert.ok(f.calls.every(([, key]) => key === SLOT_SAVE_KEYS[id]));

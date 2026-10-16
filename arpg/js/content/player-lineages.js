@@ -21,6 +21,7 @@ export function playerLineage(saveOrId = 'human') {
 export function playerForm(saveOrId, level = saveOrId?.level) {
   const lineage = playerLineage(saveOrId);
   if (!Number.isInteger(level) || level < 1 || level > 30) throw new Error('캐릭터 레벨은 1~30이어야 합니다.');
+  if (lineage.id === 'skeleton_knight') return saveOrId?.permanentDeathKnight === true ? lineage.evolvedForm : lineage.baseForm;
   return level === 30 ? lineage.evolvedForm : lineage.baseForm;
 }
 
@@ -32,3 +33,6 @@ export function lineageAllowsWeapon(saveOrId, def) {
   return def?.kind !== 'weapon' || lineage.id === 'human'
     || (def.family === lineage.family && lineage.weaponForms.includes(normalizedWeaponForm(def)));
 }
+
+// Public single-skeleton identity; old internal slot/lineage names remain unchanged.
+export const knightFormName = save => playerForm(save) === 'death_knight' ? '데스나이트' : '해골';

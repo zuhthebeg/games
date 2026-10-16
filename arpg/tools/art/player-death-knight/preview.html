@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8"><title>DeathKnight — unregistered art review</title>
+<style>body{background:#171b22;color:#eee;font:15px system-ui;margin:24px}canvas{border:1px solid #657;image-rendering:auto}label{margin-right:12px}p{max-width:800px}button,select{font:inherit}</style>
+<h1>DeathKnight · unregistered candidate</h1>
+<p>Original black armor, split skull helm, red eyes and flame blade on credited CC0 KayKit Warrior body/rig/animations. Not playable, not registered. Parent visual approval pending. 256 logical / 128 physical, meta.scale=.5 (Pixi source resolution .5; expansion 2).</p>
+<label>State <select id="state"></select></label><label>Direction <select id="direction"></select></label><button id="play">Pause</button><input id="frame" type="range" min="0" value="0" step="1"><output id="status"></output>
+<div id="stage"></div><p>Fixed ground anchor, 40° camera. Real Dodge_Forward is in-place: full .4s source (including endpoint) is retimed to .2s presentation; simulation owns movement. No idle fallback. This preview does not change game state or storage.</p>
+<script type="module" src="./preview.mjs"></script>

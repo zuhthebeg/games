@@ -7,7 +7,6 @@ import { createSave, SAVE_KEY } from '../js/meta/save.js';
 import { createSkeletonSave } from '../js/meta/character-creation.js';
 import { readKnight } from '../js/meta/initial-characters.js';
 import { SLOT_SAVE_KEYS } from '../js/meta/character-slots.js';
-import { createKnightSession } from '../js/solo/undead-session.js';
 import { createWorld, addPlayer, startStage, setLoad } from '../js/sim/world.js';
 import { loadoutOf } from '../js/meta/skills.js';
 import { currentLoad, createTracker, buildRoundMods } from '../js/meta/run.js';
@@ -47,7 +46,7 @@ function harness({ absent=false, failure=null, oldWorld=false }={}) {
  Hub.prototype.launch=HubUI.prototype.launch; Hub.prototype.commit=HubUI.prototype.commit; Hub.prototype.action=HubUI.prototype.action;
  let cached=false;
  const importer=()=>{if(cached)return Promise.resolve(mod);const d=deferred();imports.push(d);return d.promise;};
- const mod={createUndeadSession(p,save){const s=save?createKnightSession(p,save):createUndeadSession(p);const restart=s.restart.bind(s),leave=s.leave.bind(s);s.leaves=0;s.leave=()=>{s.leaves++;leave();};s.restart=()=>{if(fault==='restart'){fault=null;throw Error('injected restart');}return restart();};sessions.push(s);return s;}};
+ const mod={createUndeadSession(p,save){const s=createUndeadSession(p);const restart=s.restart.bind(s),leave=s.leave.bind(s);s.leaves=0;s.leave=()=>{s.leaves++;leave();};s.restart=()=>{if(fault==='restart'){fault=null;throw Error('injected restart');}return restart();};sessions.push(s);return s;}};
  mod.createKnightSession=(p,save)=>mod.createUndeadSession(p,save);
  const globals=source.slice(source.indexOf('let world ='),source.indexOf('// Live read-only'));
  const lifecycle=source.slice(source.indexOf('  const hub = new HubUI'),source.indexOf('  function frameUndead')).replace("await import('./debug/undead-start.js')",'await importer()').replace("await import('./solo/undead-session.js')",'await importer()');
@@ -56,7 +55,7 @@ function harness({ absent=false, failure=null, oldWorld=false }={}) {
  const frame=source.slice(source.indexOf('  function frame(now)'),source.indexOf('  requestAnimationFrame(frame);\n} catch'));
  let scheduled=0;
  const boot=new Function('HubUI','store','saved','renderer','input','audio','hud','document','debugValue','importer','createWorld','addPlayer','loadoutOf','currentLoad','createTracker','matchMedia','performance','buildRoundMods','ITEMS','equippedItem','startStage','crypto','closeCoop','requestAnimationFrame','app','setLoad','showArrival','readKnight','localStorage',
- `${globals}\ndebug=debugValue; ${lifecycle}\n${coop}\n${frame}\nreturn {hub,startUndead,leaveUndead,startCoop,frame,debugContext:({${debugContext}}),setCoop(c){coop=c;},setWorld(w){world=w;},state:()=>({undead,undeadStarting,world,running,roundSave,tracker})};`);
+ `${globals}\nconst characters={assertOwner(){},active:{}}; debug=debugValue; ${lifecycle}\n${coop}\n${frame}\nreturn {hub,startUndead,leaveUndead,startCoop,frame,debugContext:({${debugContext}}),setCoop(c){coop=c;},setWorld(w){world=w;},state:()=>({undead,undeadStarting,world,running,roundSave,tracker})};`);
  const api=boot(Hub,{save:s=>writes.push(['save',s]),reset:()=>writes.push(['reset'])},human,renderer,input,audio,hud,{hidden:false,querySelector:id=>nodes[id]||null,createElement:()=>({style:{},addEventListener(){},remove(){}}),body:{append(){}}},debug,importer,createWorld,addPlayer,loadoutOf,currentLoad,createTracker,()=>({matches:false}),{now:()=>1},buildRoundMods,ITEMS,equippedItem,startStage,{getRandomValues:a=>a},()=>{},()=>scheduled++,{render(){}},setLoad,()=>{},readKnight,storage);
  const initial=oldWorld ? createWorld() : null;if(initial)addPlayer(initial,{pid:'local'});api.setWorld(initial);
  const resolve=i=>imports[i].resolve(mod);
@@ -115,32 +114,4 @@ test('actual DBG pending save/mastery/extensions/reset paths, not just helper st
 });
 for(const failure of ['restart','renderer','render','hud','meta']) test(`active restart ${failure} rolls back to original human, releases only once`,async()=>{
  const h=harness();const p=h.startUndead();h.resolve(0);await p;h.fail(failure);await assert.rejects(h.startUndead(),/injected/);assert.equal(h.audio.stops,2,'failed active restart must stop encounter voices');h.restored();assert.equal(h.sessions[0].leaves,1);h.frame(16);assert.equal(h.scheduled(),1);
-});
-
-// Execute the actual main.js lifecycle with real slot reader/session, only deferring import.
-for(const change of ['corrupt','remove','replace']) test(`persistent entry rejects ${change} during import without slot writes or human-store changes`,async()=>{
- const h=harness(),p=h.startUndead(h.profile);
- if(change==='remove')h.data.delete(h.slot);
- else h.data.set(h.slot,change==='corrupt'?'CORRUPTED-WHILE-PENDING':JSON.stringify({...h.profile,name:'Replacement'}));
- const changed=h.data.get(h.slot);h.resolve(0);await assert.rejects(p,/손상|슬롯이 변경/);
- h.restored();assert.equal(h.sessions.length,0);assert.deepEqual(h.reads,[h.slot]);
- assert.equal(h.data.get(h.slot),changed);assert.equal(h.data.get(SAVE_KEY),h.humanRaw);
-});
-test('cached module entry revalidates after its microtask and accepts freshly selected valid replacement',async()=>{
- const h=harness();const first=h.startUndead(h.profile);h.resolve(0);assert.equal(await first,true);h.leaveUndead();h.restored();
- h.cacheModule();const cached=h.startUndead(h.profile);
- h.data.set(h.slot,JSON.stringify({...h.profile,name:'Replacement'}));
- await assert.rejects(cached,/슬롯이 변경/);h.restored();assert.equal(h.sessions.length,1);
- const selected=JSON.parse(h.data.get(h.slot)),retry=h.startUndead(selected);assert.equal(await retry,true);
- assert.equal(h.state().undead.save.name,'Replacement');h.leaveUndead();h.restored();
- assert.equal(h.data.get(SAVE_KEY),h.humanRaw);assert.deepEqual(h.writes,[]);
-});
-for(const reject of [false,true]) test(`cancelled persistent attempt never reads changed slot or rolls back its newer owner (reject=${reject})`,async()=>{
- const h=harness(),old=h.startUndead(h.profile);h.leaveUndead();
- const current=h.startUndead(h.profile),owner=h.state().undeadStarting;h.data.set(h.slot,'CORRUPT-NEW-SLOT');
- if(reject)h.imports[0].reject(Error('old import'));else h.resolve(0);
- assert.equal(await old,false);assert.deepEqual(h.reads,[]);assert.equal(h.state().undeadStarting,owner);
- assert.equal(h.root.hidden,true);assert.equal(h.root.inert,true);assert.equal(h.sessions.length,0);
- h.data.set(h.slot,JSON.stringify(h.profile));h.resolve(1);assert.equal(await current,true);
- assert.deepEqual(h.reads,[h.slot]);h.leaveUndead();h.restored();assert.equal(h.data.get(SAVE_KEY),h.humanRaw);
 });

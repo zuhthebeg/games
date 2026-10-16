@@ -71,7 +71,7 @@ test('every registered content key has eight-direction WebP clips and bounded ki
       assert.ok(data.meta.size.w <= 2048 && data.meta.size.h <= 2048);
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {
-        if (id === 'succubus') {
+        if (id === 'succubus' || id === 'player-death-knight') {
           // Only the newly registered kit uses true128px trims at256px logical size.
           // Historical kit assertions below retain their original sizes and budgets.
           assert.equal(frame.trimmed, true);

@@ -113,7 +113,7 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
   return ent;
 }
 
-export function startStage(world, stageId) {
+export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
   if (st.arena) {
@@ -127,8 +127,21 @@ export function startStage(world, stageId) {
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
     pending: st.spawns.map((s) => ({ ...s, atTicks: ticks(s.at) })),
   };
+  if (playerSide === 'right') {
+    world.round.playerSide = 'right';
+    world.round.pending = world.round.pending.map(s => ({ ...s, fx: 1 - s.fx }));
+    for (const p of world.entities.filter(e => e.kind === 'player')) {
+      p.x = world.arena.w - p.x; p.facing = Math.PI;
+    }
+  }
   if (st.objective) {
     world.round.objective = createObjective(st.objective, world.arena);
+    if (playerSide === 'right') {
+      const o = world.round.objective;
+      // All existing objective geometry is owned by this round, not STAGES.
+      for (const key of ['entry', 'token']) if (o[key]) o[key].x = world.arena.w - o[key].x;
+      if (o.markers) o.markers = o.markers.map(p => ({ ...p, x: world.arena.w - p.x }));
+    }
     for (const p of world.entities.filter(e => e.kind === 'player')) {
       p.x = world.round.objective.entry.x; p.y = world.round.objective.entry.y;
     }
@@ -817,6 +830,7 @@ function stepRound(world, inputs) {
       hpMult: (world.partyHpMult ?? 1) * BALANCE.monsterHp * (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1) * (s.monster === 'goblin_chief' ? (stage.bossHpMult || 1) : 1),
       dmgMult: (stage.dmgMult || 1) * threat.damage * (elite ? BALANCE.elite.damage : 1),
       elite, threat: rd.threat, stageId: rd.stageId,
+      ...(rd.playerSide === 'right' ? { facing: 0 } : {}),
     });
     if (rd.objective?.kind === 'kill-target' && s.slot === rd.objective.targetSlot && rd.objective.targetId === null) rd.objective.targetId = spawned.id;
     aliveCount++;

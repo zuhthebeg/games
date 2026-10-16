@@ -1,3 +1,4 @@
+import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
 import { CoopLobby } from './net/lobby.js';
@@ -16,8 +17,8 @@ import { bindBattleSettings } from './ui/battle-settings.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
-import { SaveStore } from './meta/save.js';
-import { readKnight, createKnight } from './meta/initial-characters.js';
+import { CharacterStores } from './meta/selected-character.js';
+import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from './meta/run.js';
 
@@ -35,7 +36,8 @@ let undeadEncounter = null;
 let undeadStarting = false;
 let undeadHuman = null;
 let undeadRendererChanged = false;
-let knightReturn = null;
+let roundOwner = null;
+let restoreKnightArt = null;
 let coop = null;
 let coopSession = null;
 let coopResult = null;
@@ -67,7 +69,8 @@ function readonly(value) {
 }
 
 try {
-  const store = new SaveStore(localStorage);
+  const characters = new CharacterStores(localStorage);
+  const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
   const soloSelected = bootQuery.get('character') === 'skeleton_knight';
   const legacyEntry = !soloSelected && (bootQuery.get('debug') === '1' || bootQuery.get('dev') === '1' || bootQuery.has('room'));
@@ -110,7 +113,6 @@ try {
     canInteract: () => !undead && !undeadStarting,
     persist: (save) => {
       if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
-      if (save.lineage && save.lineage !== 'human') throw new Error('인간 저장소에 해골을 저장할 수 없습니다.');
       store.save(save);
     },
     resetSave: () => {
@@ -127,6 +129,8 @@ try {
     },
     startRound: (stageId, reduced, overrideWeapon) => {
       if (undead || undeadStarting) return;
+      characters.assertOwner();
+      roundOwner = characters.active;
       closeCoop();
       audio.stop();
       input.reset();
@@ -136,7 +140,11 @@ try {
       world = createWorld({ seed, arena: { w: 1400, h: 860 } });
       const weapon = overrideWeapon || ITEMS[equippedItem(roundSave, 'weapon').id].family;
       addPlayer(world, { pid: 'local', weapon, mods: buildRoundMods(roundSave) });
-      startStage(world, stageId);
+      const knight = roundSave.lineage === 'skeleton_knight';
+      if (knight) { restoreKnightArt?.(); restoreKnightArt = installKnightPresentation(renderer.provider, roundSave); }
+      if (!knight) { restoreKnightArt?.(); restoreKnightArt = null; }
+      startStage(world, stageId, knight ? { playerSide: 'right' } : {});
+      if (knight) world.round.presentation = { lineage: 'skeleton_knight', form: playerForm(roundSave), humans: HUMAN_PRESENTATIONS, originals: ORIGINAL_PRESENTATIONS };
       tracker = createTracker(seed);
       const load = currentLoad(roundSave, tracker);
       setLoad(world, 'local', load.ratio);
@@ -170,14 +178,14 @@ try {
     };
   }
   function rememberHuman() {
-    const previous = { world, running, tracker, roundSave, developmentRound, accumulator };
+    const previous = { world, running, tracker, roundSave, roundOwner, developmentRound, accumulator };
     const rootHidden = hub.root.hidden, inert = hub.root.inert, enabled = input.enabled;
     const visible = renderer.root.visible, warning = renderer.warning.visible, reduced = renderer.reduced;
     const stage = hud.stage, noticeLeft = hud.noticeLeft;
     const restoreHud = rememberHud(document.querySelector('#hud'));
     const restorePause = rememberHud(document.querySelector('#pause'));
     return () => {
-      ({ world, running, tracker, roundSave, developmentRound, accumulator } = previous);
+      ({ world, running, tracker, roundSave, roundOwner, developmentRound, accumulator } = previous);
       lastTime = performance.now();
       try {
         if (undeadRendererChanged) {
@@ -194,7 +202,7 @@ try {
       }
     };
   }
-  async function startUndead(profile = null) {
+  async function startUndead() {
     if (undeadStarting) return false;
     if (!undead && (running || coop)) throw new Error('인간 전투/멀티플레이를 끝내고 여관에서 시작하세요.');
     const attempt = {}; // Identity owns both continuation and finally; cancellation never reuses it.
@@ -205,26 +213,10 @@ try {
     input.reset(); input.enabled = false; debug?.reset();
     let session = undead;
     try {
-      if ((profile || session?.persistent) && !knightReturn) {
-        knightReturn = document.createElement('button');
-        knightReturn.id = 'knight-return'; knightReturn.type = 'button';
-        knightReturn.textContent = '전투 취소 · 캐릭터로';
-        Object.assign(knightReturn.style, {position: 'fixed', top: '168px', right: '12px', zIndex: '80'});
-        knightReturn.addEventListener('click', leaveUndead);
-        document.body.append(knightReturn);
-      }
       if (!session) {
-        if (profile) {
-          const { createKnightSession } = await import('./solo/undead-session.js');
-          if (undeadStarting !== attempt) return false;
-          const savedKnight = readKnight(localStorage);
-          if (!savedKnight || JSON.stringify(savedKnight) !== JSON.stringify(profile)) throw new Error('저장 슬롯이 변경되었습니다. 캐릭터를 다시 선택하세요.');
-          session = createKnightSession(renderer.provider, savedKnight);
-        } else {
-          const { createUndeadSession } = await import('./debug/undead-start.js');
-          if (undeadStarting !== attempt) return false;
-          session = createUndeadSession(renderer.provider);
-        }
+        const { createUndeadSession } = await import('./debug/undead-start.js');
+        if (undeadStarting !== attempt) return false;
+        session = createUndeadSession(renderer.provider);
       }
       const encounter = session.restart();
       undeadRendererChanged = true;
@@ -232,8 +224,8 @@ try {
       renderer.root.visible = renderer.warning.visible = false;
       hud.begin(encounter.world, loadoutOf(session.save));
       hud.meta(currentLoad(session.save, createTracker(0)), createTracker(0), session.save);
-      hud.nodes['stage-name'].textContent = session.persistent ? `${session.save.name} · Lv.${session.save.level} · 해골 기사 · 시험 전투 · 성장/보상 미연결` : '언데드 · 해골 기사 · 저장 안 됨';
-      hud.nodes.notice.textContent = session.persistent ? '문답 능력치 · 저장된 보급 적용 · 회피 미지원 · 시험 전투 결과/소모 저장 없음' : '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
+      hud.nodes['stage-name'].textContent = '언데드 · 해골 · 저장 안 됨';
+      hud.nodes.notice.textContent = '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음';
       hud.noticeLeft = Infinity;
       // Exercise the first render inside the transaction, not in the next RAF.
       renderer.render(encounter.world, 0, 0);
@@ -247,7 +239,6 @@ try {
       if (undead) audio.stop(); // A failed active restart may still have encounter voices.
       hud.clearUndeadResult();
       session?.leave(); undead = null; undeadEncounter = null;
-      knightReturn?.remove(); knightReturn = null;
       const restore = undeadHuman; undeadHuman = null;
       try { restore?.(); } catch (restoreError) { error.cause = restoreError; }
       throw error;
@@ -258,7 +249,6 @@ try {
   function leaveUndead() {
     // Invalidate even when import is unresolved and no session exists yet.
     undeadStarting = false;
-    knightReturn?.remove(); knightReturn = null;
     if (!undeadHuman && !undead) return;
     const session = undead;
     hud.clearUndeadResult();
@@ -278,7 +268,7 @@ try {
       hud.nodes.notice.textContent = Object.keys(renderer.provider.atlases.status().failed).length
         ? '필수 아틀라스 실패 · 전투 중지 · 인간으로 돌아가세요' : '아틀라스 준비 중';
     } else {
-      hud.nodes.notice.textContent = state === 'running' ? (undead.persistent ? '해골 기사 · 시험 전투 · 성장/보상 미연결 · 회피 미지원 · 전투 소모 저장 없음' : '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음')
+      hud.nodes.notice.textContent = state === 'running' ? '디버그 고정 프리셋 · 솔로 1전투 · 회피 미지원 · 보상/저장 없음'
         : state === 'victory' ? '해골 승리 · 아래에서 다음 전투 또는 인간 복귀'
         : '전투 종료 · 아래에서 다시 시작 또는 인간 복귀';
       accumulator += elapsed;
@@ -297,7 +287,7 @@ try {
     if (ready && result !== 'running') {
       input.reset(); input.enabled = false; accumulator = 0;
       const retry = () => startUndead().catch(error => hub.error(error.message));
-      hud.showUndeadResult(result, { next: retry, restart: retry, leave: leaveUndead, persistent: undead.persistent });
+      hud.showUndeadResult(result, { next: retry, restart: retry, leave: leaveUndead });
       const presentation = undead.presentation(world);
       renderer.snapshot(presentation);
       renderer.events(presentation, []);
@@ -317,7 +307,7 @@ try {
       stageId: world.round.stageId, terminal: player.terminal,
       depositedXp: tracker.depositedXp, tempLoot: tracker.tempLoot, used: usedConsumables(roundSave, player), skillMastery: tracker.skillMastery,
     });
-    store.save(coopResult.save);
+    characters.persist(coopResult.save, roundOwner);
     input.reset(); input.enabled = false;
   }
   function finishCoop() {
@@ -345,7 +335,9 @@ try {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
-    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골 기사는 솔로 시험 전투만 지원합니다.');
+    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골는 솔로만 지원합니다. 협동 미지원.');
+    characters.assertOwner();
+    roundOwner = characters.active;
     // The host chooses on the existing departure panel; guests retain their own build/save.
     const localSave = structuredClone(hub.save);
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
@@ -357,8 +349,12 @@ try {
     coopResult = null; coopNote = ''; coopRenderReady = false; coopFinished = false; developmentRound = false;
     world = null; tracker = null; roundSave = null;
     running = false; input.reset(); input.enabled = false; renderer.root.visible = false;
-    coop = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
+    const profileOwner = characters.active;
+    let lobby;
+    const ownsLobby = () => characters.active === profileOwner && coop === lobby;
+    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
       onSession: session => {
+        if (!ownsLobby()) return;
         coopSession = session; guestTime = performance.now();
         hub.root.hidden = false; hub.root.replaceChildren();
         const panel = document.createElement('div'); panel.className = 'story-panel';
@@ -366,16 +362,18 @@ try {
         const leave = document.createElement('button'); leave.textContent = '나가기'; leave.onclick = () => { closeCoop(); hub.showBoard(); };
         panel.append(message, leave); hub.root.append(panel);
       },
-      onStatus: message => { const node = document.querySelector('#coop-preparing'); if (node) node.textContent = message; },
-      onLeave: () => { closeCoop(); hub.showBoard(); },
+      onStatus: message => { if (!ownsLobby()) return; const node = document.querySelector('#coop-preparing'); if (node) node.textContent = message; },
+      onLeave: () => { if (!ownsLobby()) return; closeCoop(); hub.showBoard(); },
       onBegin: config => {
+        if (!ownsLobby()) return;
         roundSave = selectThreat(localSave, config.stageId, config.threat);
         tracker = createTracker(crypto.getRandomValues(new Uint32Array(1))[0]);
         coopLoad = currentLoad(roundSave, tracker).ratio;
         hub.root.hidden = true; audio.stop(); input.reset(); running = true;
       },
-      onBeforeTick: view => renderer.snapshot(view),
+      onBeforeTick: view => { if (ownsLobby()) renderer.snapshot(view); },
       onFrame: (view, events) => {
+        if (!ownsLobby()) return;
         if (coopFinished) return;
         world = view;
         if (!coopRenderReady) {
@@ -394,6 +392,7 @@ try {
         if (view.round.state !== 'running') finishCoop();
       },
       onLost: message => {
+        if (!ownsLobby()) return;
         if (!world || !tracker) {
           closeCoop(); hub.showBoard();
           const note = document.createElement('p'); note.className = 'risk-note'; note.textContent = message; hub.root.prepend(note);
@@ -427,8 +426,8 @@ try {
   Object.defineProperty(window, '__arpg', {
     value: Object.freeze({
       get world() { return readonly(world); },
-      get mode() { return undead ? (undead.persistent ? 'skeleton-trial' : 'undead-debug') : 'human'; },
-      get character() { return readonly(undead?.save || hub.skeletonProfile || hub.save); },
+      get mode() { return undead ? 'undead-debug' : characters.active?.slot || 'human'; },
+      get character() { return readonly(undead?.save || hub.save); },
       get multi() { return readonly(coopSession ? {
         uid: coopSession.uid, host: coopSession.host, isHost: coopSession.isHost,
         phase: coopSession.phase, ownsSim: !!coopSession.world, rtt: coopSession.rtt,
@@ -465,13 +464,21 @@ try {
       history.replaceState(null, '', url);
     };
     hub.initialCharacters = {
-      human: () => { const save = store.load(); chooseUrl('human'); return save; },
-      read: () => { const save = readKnight(localStorage); chooseUrl('skeleton_knight'); return save; },
-      create: options => { const save = createKnight(localStorage, options); chooseUrl('skeleton_knight'); return save; },
-      play: profile => startUndead(profile),
+      human: () => {
+        const save = characters.selectHuman();
+        restoreKnightArt?.(); restoreKnightArt = null;
+        world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
+        chooseUrl('human'); return save;
+      },
+      read: () => {
+        const save = characters.selectKnight();
+        world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
+        chooseUrl('skeleton_knight'); return save;
+      },
+      create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
     hub.ready();
-    if (soloSelected && bootQuery.has('room')) hub.error('해골 기사는 솔로 시험 전투만 지원합니다. 협동 방에 들어갈 수 없습니다.');
+    if (soloSelected && bootQuery.has('room')) hub.error('해골는 솔로만 지원합니다. 협동 방에 들어갈 수 없습니다.');
     else if (soloSelected) {
       try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
     } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
@@ -527,7 +534,7 @@ try {
     });
     // Development kit overrides never grant progression or consume real supplies.
     const nextSave = developmentRound ? hub.save : result.save;
-    store.save(nextSave);
+    characters.persist(nextSave, roundOwner);
     if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
     hub.finish(nextSave, result.receipt, hud.deathExplanation(world));
     if (result.receipt.levelsGained > 0) audio.play('level-up');
@@ -587,6 +594,12 @@ try {
       if (count === 5 && accumulator >= TICK_MS) accumulator %= TICK_MS;
       renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
       if (running) hud.update(world, elapsed / 1000);
+      showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
+    } else if (!coopSession && !hidden && world?.entities[0].terminal
+      && renderer.views.get(world.entities[0].id)?.visual.debug.presentation === 'death_knight') {
+      // Result UI owns settlement. Finish this kit's death/idle presentation
+      // without stepping the terminal world, tracking loot or saving again.
+      renderer.render(world, 1, elapsed / 1000);
     }
     debug?.frame(now);
     if (!hidden) app.render();

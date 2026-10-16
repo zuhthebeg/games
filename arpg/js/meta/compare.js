@@ -1,3 +1,4 @@
+import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from './knight-equipment.js';
 import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight } from './items.js';
 import { deriveMods } from './stats.js';
 import { attackRate } from '../content/balance.js';
@@ -54,7 +55,7 @@ export function compareItems(equipped, candidate, save) {
   line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
   const weightAfter = carriedWeight(afterSave);
   const weightLimit = capacity(afterSave);
-  const lockReason = !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
+  const lockReason = !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
   return { lines, weightAfter, weightLimit, locked: !!lockReason, lockReason };
 }

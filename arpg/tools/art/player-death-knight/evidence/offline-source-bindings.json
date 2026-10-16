@@ -1,0 +1,14 @@
+{
+  "source/player-death-knight-source.blend": {
+    "bytes": 7316021,
+    "sha256": "258fe40fc0f97611d2f508ce50330d6b4629e73b1d2fd18d1716df3c6f49319d"
+  },
+  "source/player-death-knight-source-checkpoint.blend": {
+    "bytes": 7316650,
+    "sha256": "bb5592fd8b29acee9c74cade373e1a5f7275a8443b12250b3ec87b45b868f1fc"
+  },
+  "checkpoint-v1/source/player-death-knight-source.blend": {
+    "bytes": 7334287,
+    "sha256": "58ccf31d148de6f4e5c5ea271abd84eb0b573113595db828e7db577c9992dc93"
+  }
+}

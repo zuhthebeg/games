@@ -691,5 +691,37 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "player-death-knight",
+    "label": "데스나이트 · 영구 진화",
+    "content_ids": [
+      "death_knight"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death",
+      "dodge"
+    ],
+    "fps": 12,
+    "animation_durations": {
+      "dodge": 0.2,
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6383123993873596
+    },
+    "lineage": "skeleton_knight",
+    "form": "death_knight",
+    "monster": false,
+    "bytes": 837266
   }
 ]

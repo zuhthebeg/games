@@ -1,0 +1,168 @@
+{
+  "status": "PASS",
+  "mode": "actual shipped Pixi8.22.0 Spritesheet.parse CPU, not native canvas/GPU",
+  "groups": {
+    "death_S": 10,
+    "run_N": 10,
+    "death_SE": 10,
+    "death_SW": 10,
+    "dodge_N": 6,
+    "run_NW": 10,
+    "run_NE": 10,
+    "attack_N": 13,
+    "attack_NW": 13,
+    "hit_SW": 8,
+    "dodge_NW": 6,
+    "hit_S": 8,
+    "idle_SE": 13,
+    "idle_SW": 13,
+    "attack_SE": 13,
+    "attack_W": 13,
+    "attack_NE": 13,
+    "hit_SE": 8,
+    "dodge_SE": 6,
+    "dodge_SW": 6,
+    "idle_W": 13,
+    "idle_N": 13,
+    "attack_E": 13,
+    "attack_SW": 13,
+    "hit_W": 8,
+    "hit_NW": 8,
+    "death_W": 10,
+    "dodge_W": 6,
+    "idle_E": 13,
+    "idle_S": 13,
+    "idle_NW": 13,
+    "attack_S": 13,
+    "hit_E": 8,
+    "hit_N": 8,
+    "hit_NE": 8,
+    "death_E": 10,
+    "death_NW": 10,
+    "dodge_E": 6,
+    "dodge_S": 6,
+    "dodge_NE": 6,
+    "idle_NE": 13,
+    "death_N": 10,
+    "death_NE": 10,
+    "run_E": 10,
+    "run_W": 10,
+    "run_SE": 10,
+    "run_SW": 10,
+    "run_S": 10
+  },
+  "frames": 480,
+  "sheets": [
+    {
+      "physical": {
+        "w": 1024,
+        "h": 1692
+      },
+      "actualResolution": 0.5,
+      "logicalTexture": [
+        2048,
+        3384
+      ],
+      "textures": 480
+    }
+  ],
+  "logicalOriginal": [
+    256,
+    256
+  ],
+  "physicalOriginal": [
+    128,
+    128
+  ],
+  "metaScale": ".5",
+  "actualTextureSourceResolution": 0.5,
+  "inverseLogicalExpansion": 2,
+  "dodgePresentation": {
+    "ticks": [
+      {
+        "age": 0,
+        "frame": 0
+      },
+      {
+        "age": 0.03333333333333333,
+        "frame": 1
+      },
+      {
+        "age": 0.06666666666666667,
+        "frame": 2
+      },
+      {
+        "age": 0.1,
+        "frame": 3
+      },
+      {
+        "age": 0.13333333333333333,
+        "frame": 4
+      },
+      {
+        "age": 0.16666666666666666,
+        "frame": 5
+      },
+      {
+        "age": 0.2,
+        "frame": 5
+      }
+    ],
+    "endpointReachedBefore200ms": true,
+    "resetAgeFrameZero": true,
+    "sourceSeconds": 0.4,
+    "presentationSeconds": 0.2,
+    "runtimeBinding": false
+  },
+  "ObjectAssignMergeGroups": 48,
+  "groupOwner": {
+    "death_S": "atlas-0.webp.json",
+    "run_N": "atlas-0.webp.json",
+    "death_SE": "atlas-0.webp.json",
+    "death_SW": "atlas-0.webp.json",
+    "dodge_N": "atlas-0.webp.json",
+    "run_NW": "atlas-0.webp.json",
+    "run_NE": "atlas-0.webp.json",
+    "attack_N": "atlas-0.webp.json",
+    "attack_NW": "atlas-0.webp.json",
+    "hit_SW": "atlas-0.webp.json",
+    "dodge_NW": "atlas-0.webp.json",
+    "hit_S": "atlas-0.webp.json",
+    "idle_SE": "atlas-0.webp.json",
+    "idle_SW": "atlas-0.webp.json",
+    "attack_SE": "atlas-0.webp.json",
+    "attack_W": "atlas-0.webp.json",
+    "attack_NE": "atlas-0.webp.json",
+    "hit_SE": "atlas-0.webp.json",
+    "dodge_SE": "atlas-0.webp.json",
+    "dodge_SW": "atlas-0.webp.json",
+    "idle_W": "atlas-0.webp.json",
+    "idle_N": "atlas-0.webp.json",
+    "attack_E": "atlas-0.webp.json",
+    "attack_SW": "atlas-0.webp.json",
+    "hit_W": "atlas-0.webp.json",
+    "hit_NW": "atlas-0.webp.json",
+    "death_W": "atlas-0.webp.json",
+    "dodge_W": "atlas-0.webp.json",
+    "idle_E": "atlas-0.webp.json",
+    "idle_S": "atlas-0.webp.json",
+    "idle_NW": "atlas-0.webp.json",
+    "attack_S": "atlas-0.webp.json",
+    "hit_E": "atlas-0.webp.json",
+    "hit_N": "atlas-0.webp.json",
+    "hit_NE": "atlas-0.webp.json",
+    "death_E": "atlas-0.webp.json",
+    "death_NW": "atlas-0.webp.json",
+    "dodge_E": "atlas-0.webp.json",
+    "dodge_S": "atlas-0.webp.json",
+    "dodge_NE": "atlas-0.webp.json",
+    "idle_NE": "atlas-0.webp.json",
+    "death_N": "atlas-0.webp.json",
+    "death_NE": "atlas-0.webp.json",
+    "run_E": "atlas-0.webp.json",
+    "run_W": "atlas-0.webp.json",
+    "run_SE": "atlas-0.webp.json",
+    "run_SW": "atlas-0.webp.json",
+    "run_S": "atlas-0.webp.json"
+  }
+}

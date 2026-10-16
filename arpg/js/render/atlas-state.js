@@ -6,6 +6,7 @@ export const ATLAS_IDS = Object.freeze({
   demon: 'demon', goleling: 'goleling', slime: 'slime',
   succubus: 'succubus',
   blade: 'hero-sword',
+  death_knight: 'player-death-knight',
   bow: 'hero-bow',
   focus: 'hero-focus',
   goblin_grunt: 'goblin-grunt',

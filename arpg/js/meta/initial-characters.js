@@ -8,7 +8,7 @@ export function readKnight(storage) {
   if (raw === null) return null;
   let save;
   try { save = JSON.parse(raw); } catch { /* Reject below, preserving original bytes. */ }
-  if (!validateSave(save) || save.lineage !== 'skeleton_knight') throw new Error('해골 기사 저장이 손상되었습니다. 원본을 보존하고 진입을 차단합니다.');
+  if (!validateSave(save) || save.lineage !== 'skeleton_knight') throw new Error('해골 저장이 손상되었습니다. 원본을 보존하고 진입을 차단합니다.');
   return save;
 }
 export function createKnight(storage, options) {

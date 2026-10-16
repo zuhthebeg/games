@@ -13,6 +13,10 @@ export function createSkeletonSave({ lineage, name, answers, createdAt }) {
     throw new Error('Invalid quiz answers');
   }
   const save = { ...createSave({ name, answers, weapon: role.family, createdAt }), lineage: role.id };
+  if (role.id === 'skeleton_knight') {
+    save.equipped.body = null;
+    save.items = save.items.filter(item => item.uid !== 'starter:armor');
+  }
   if (!validateSave(save)) throw new Error('Invalid fresh skeleton save');
   return save;
 }

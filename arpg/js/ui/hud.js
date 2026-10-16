@@ -35,7 +35,8 @@ export class HUD {
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
-    this.stage = world.round?.stageId || '언데드 · 해골 기사 · 저장 안 됨';
+    this.stage = world.round?.stageId || '언데드 · 해골 · 저장 안 됨';
+    if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += world.round.presentation.form === 'death_knight' ? ' · 데스나이트' : ' · 해골';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
       const node = this.nodes[key], id = skills[i] || loadout[i] || null;
@@ -59,7 +60,7 @@ export class HUD {
     this.update(world, 0);
   }
 
-  showUndeadResult(state, { next, restart, leave, persistent = false }) {
+  showUndeadResult(state, { next, restart, leave }) {
     if (this.undeadResult) return;
     const panel = document.createElement('section');
     panel.id = 'undead-result';
@@ -69,11 +70,11 @@ export class HUD {
     title.textContent = state === 'victory' ? '해골 승리' : state === 'death' ? '전투 종료 · 쓰러졌습니다' : '전투 종료 · 귀환';
     title.setAttribute('role', 'status');
     const detail = document.createElement('p');
-    detail.textContent = persistent ? '저장된 캐릭터로 같은 시험 전투를 반복합니다. 성장/보상 미연결. 전투 결과·소모는 저장하지 않습니다. 회피 미지원.' : '같은 해골 기사 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
+    detail.textContent = '같은 해골 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
     panel.append(title, detail);
     const actions = state === 'victory' ? [['next', '다음 전투', next], ['restart', '다시 시작', restart]]
       : [['restart', '다시 시작', restart]];
-    actions.push(['leave', persistent ? '캐릭터로 돌아가기' : '인간으로 돌아가기', leave]);
+    actions.push(['leave', '인간으로 돌아가기', leave]);
     for (const [id, label, run] of actions) {
       const button = document.createElement('button');
       button.type = 'button'; button.dataset.undeadAction = id; button.textContent = label;
@@ -178,7 +179,7 @@ export class HUD {
     });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.disabled = !!player.dodgeDisabled;
-    nodes.dodge.title = player.dodgeDisabled ? '해골 기사 디버그: 회피 애니메이션 미지원' : '';
+    nodes.dodge.title = player.dodgeDisabled ? '해골 디버그: 회피 애니메이션 미지원' : '';
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;
@@ -198,7 +199,13 @@ export class HUD {
     const player = world.entities[0];
     const cause = player.deathCause;
     if (player.terminal === 'death' && cause) {
-      return `${MONSTER_NAMES[cause.by] || cause.by} · ${PATTERN_NAMES[cause.ability] || cause.ability}`;
+      const humanRole = world.round?.presentation?.humans?.[cause.by];
+      const name = humanRole ? `인간 모험가 · ${{blade:'근접',bow:'원거리',focus:'마법'}[humanRole]} (원형: ${MONSTER_NAMES[cause.by] || cause.by})` : MONSTER_NAMES[cause.by] || cause.by;
+      return `${name} · ${PATTERN_NAMES[cause.ability] || cause.ability}`;
+    }
+    if (world.round?.presentation?.lineage === 'skeleton_knight') {
+      return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 잊힌 묘지로 이끌었습니다.'
+        : '영혼에 힘이 깃들었다. 잊힌 묘지에서 다음 길을 준비하자.';
     }
     return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 여관으로 이끌었습니다.'
       : '인장에 힘이 깃들었다. 난로 곁에서 다음 길을 준비하자.';

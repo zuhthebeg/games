@@ -1,0 +1,57 @@
+{
+  "candidate": "player-death-knight",
+  "base_commit": "8c2b156",
+  "authors": {
+    "new_design_and_geometry": "project-authored procedural armor, split skull helmet/faceplate, red eye inserts, new sword and flame shape-key meshes",
+    "base": "Kay Lousberg / KayKit \u2014 CC0 Skeleton_Warrior body, 41-joint rig, skin weights, six reused animation clips",
+    "pipeline_adaptation": "existing project generic / player-skeleton-archer bake and validation techniques; new isolated namespace"
+  },
+  "not_wholly_original_rig_body_or_animation": true,
+  "no_Lineage_assets_or_tracing": true,
+  "design_direction_only": "dark skeletal armored knight with ember sword; independently constructed geometry",
+  "base_model": {
+    "path": "/mnt/c/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Warrior.glb",
+    "bytes": 4863620,
+    "sha256": "178b6fda810b814c250d8a2010c24dfd9b458b9006dd323353e620b7ff118bbe",
+    "joints": 41,
+    "clips_available": 95
+  },
+  "license": {
+    "path": "/mnt/c/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Skeletons-1.0-main/addons/kaykit_character_pack_skeletons/LICENSE.txt",
+    "sha256": "5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954",
+    "identifier": "CC0-1.0",
+    "upstream": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
+    "network_fetch_performed": false
+  },
+  "clips": {
+    "1H_Melee_Attack_Slice_Horizontal": {
+      "seconds": 1.0666666666666667,
+      "channels": 123
+    },
+    "Death_A": {
+      "seconds": 0.8,
+      "channels": 123
+    },
+    "Dodge_Forward": {
+      "seconds": 0.4,
+      "channels": 123
+    },
+    "Hit_A": {
+      "seconds": 0.6666666666666666,
+      "channels": 123
+    },
+    "Idle": {
+      "seconds": 1.0666666666666667,
+      "channels": 123
+    },
+    "Running_A": {
+      "seconds": 0.8,
+      "channels": 122
+    }
+  },
+  "modifications": "remove imported helmet/cloak/props; preserve all 8 base skin coordinate buffers and armature modifiers; replace skull/eye materials for shell recess; add independently modeled bone-parented armor/mask/blade; add 7 source-animated flame shapes; root/hips horizontal location constant drivers only",
+  "offline_root": "C:/Users/user/ai-tools/arpg-art/player-death-knight",
+  "source_delivery": "editable .blend retained offline, never web sprite folder",
+  "registration": false,
+  "visual_approval": false
+}

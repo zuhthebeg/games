@@ -1,3 +1,4 @@
+import { advanceDeathKnightPlayback, deathKnightAnimation } from './death-knight-playback.js';
 import { BALANCE } from '../content/balance.js';
 import { Assets, Container, Graphics, Sprite, Text, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
 import { paperdolls } from './paperdoll-library.js';
@@ -29,6 +30,7 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   let current = fallbackFactory(entity, options);
   let destroyed = false;
   let mode = 'procedural';
+  let transitionFailure = null;
   let lease;
   const controller = new AbortController();
   container.addChild(current.container);
@@ -48,13 +50,14 @@ function lazyVisual(entity, options, library, fallbackFactory) {
     current = next;
     mode = asset.descriptor ? 'paperdoll' : 'atlas';
     container.addChild(current.container);
-  }).catch(() => {
+  }).catch((error) => {
     // Invalid/unsupported art is never a fatal gameplay error.
+    transitionFailure = error.message || 'Atlas presentation failed';
     mode = 'procedural';
   });
   return {
     container,
-    get debug() { return { mode, key: visualKey(entity), ...current.debug }; },
+    get debug() { return { mode, key: visualKey(entity), loadFailure: transitionFailure || library.failed.get(visualKey(entity)) || null, ...current.debug }; },
     weaponPose() { return current.weaponPose?.() || null; },
     update(state, animation, deltaTime) {
       if (!destroyed) current.update(state, animation, deltaTime);
@@ -106,7 +109,9 @@ function spriteVisual(entity, { color }, asset) {
   const sprite = new Sprite(asset.animations.idle_E[0]);
   sprite.anchor.set(asset.anchor.x, asset.anchor.y);
   sprite.tint = entity.kind === 'monster' ? (entity.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;
-  sprite.scale.set(atlasScale(entity));
+  // This candidate's parser expands physical128 to logical256 (resolution .5).
+  // Normalize only this kit; historical skeleton/human geometry is unchanged.
+  sprite.scale.set(atlasScale(entity) * (asset.id === 'player-death-knight' ? .5 : 1));
   // Same atlas geometry, additive bright impact; no filters or base-palette tint changes.
   const flash = new Sprite(sprite.texture);
   flash.anchor.copyFrom(sprite.anchor);
@@ -126,6 +131,7 @@ function spriteVisual(entity, { color }, asset) {
   health.x = -entity.r;
   if (dragon) { bar.y=health.y=-164; } // Boss bar above wings; training atlas is untouched.
   container.addChild(sprite, flash, stars, bar, health);
+  const deathKnightPlayback = {};
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {
     container,
@@ -140,6 +146,7 @@ function spriteVisual(entity, { color }, asset) {
     get debug() {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         equipment: asset.descriptor || null,
+        ...(asset.id === 'player-death-knight' ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
     update(state, animation, deltaTime) {
@@ -148,9 +155,11 @@ function spriteVisual(entity, { color }, asset) {
       if (animation.frozen) return;
       animation.age += deltaTime;
       if (state.dead) animation.deadAge += deltaTime;
-      const wanted = atlasAnimation(state, animation);
+      const wanted = asset.id === 'player-death-knight' ? deathKnightAnimation(state, animation, atlasAnimation, deathKnightPlayback, asset.animation_durations.dodge) : atlasAnimation(state, animation);
       const next = asset.animations[`${wanted}_E`] ? wanted : 'idle';
-      if (next !== stateName || next === 'attack' && previousAct !== state.act
+      if (asset.id === 'player-death-knight') {
+        age = advanceDeathKnightPlayback(deathKnightPlayback, state, next, deltaTime);
+      } else if (next !== stateName || next === 'attack' && previousAct !== state.act
         || next === 'dodge' && previousDodge !== state.dodge?.startedTick) age = 0;
       else age += deltaTime;
       previousAct = state.act;
