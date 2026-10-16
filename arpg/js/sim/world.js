@@ -250,7 +250,8 @@ function stepPlayer(world, p, inp) {
 
   // A dodge-shot must pass the same dodge gate; movement and perfect-dodge rewards
   // remain owned by the ordinary dodge machinery, never a fabricated counter.
-  const dodgeSkillId = p.skills[SKILL_EDGES.findIndex(k => inp[k])];
+  const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
+  const dodgeSkillId = p.skills[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
   if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
     && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
@@ -264,7 +265,7 @@ function stepPlayer(world, p, inp) {
     p.mp -= dodgeSkill.manaCost;
     startAct(world, p, dodgeSkillId, facing);
     world.events.push({ type: 'dodge', id: p.id });
-    rewindGuestDodge(world, p, inp, awardPerfectDodge);
+    rewindGuestDodge(world, p, inp, awardPerfectDodge, dodgeSkillEdge);
   }
 
   if (d.dashLeft > 0) {

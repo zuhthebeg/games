@@ -40,10 +40,16 @@ export function trackGuestKnock(p) {
     row.ky = Math.abs(p.ky * .82) < .05 ? 0 : row.ky * .82;
   }
 }
-export function rewindGuestDodge(world, p, inp, awardPerfect) {
+// A timestamp belongs to the pressed edge, not to a newer held/movement frame.
+// Missing history is explicit undefined: never substitute a newer render timestamp.
+export function dodgeInputViewTick(inp, edge = 'dodgeEdge') {
+  return edge !== 'dodgeEdge' && Object.hasOwn(inp.skillViewTicks || {}, edge)
+    ? inp.skillViewTicks[edge] : inp.viewTick;
+}
+export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge') {
   const state = guests.get(p);
-  if (!state || !inp.dodgeEdge || p.dead || p.terminal) return;
-  const start = dodgeViewTick(world.tick, inp.viewTick, multiplayerDodge(world)), age = world.tick - start;
+  if (!state || !inp[edge] || p.dead || p.terminal) return;
+  const start = dodgeViewTick(world.tick, dodgeInputViewTick(inp, edge), multiplayerDodge(world)), age = world.tick - start;
   if (!age) return;
   p.dodge.startedTick = start;
   const iframeTicks = dodgeTiming(p, multiplayerDodge(world)).iframeTicks;

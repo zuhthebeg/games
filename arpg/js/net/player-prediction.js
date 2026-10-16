@@ -4,7 +4,7 @@
 // attacking/casting. It never deals damage, emits events or touches a sim world.
 // Kept honest by test/net-player-prediction.test.js, which replays it against the
 // real host step() every tick.
-import { dodgeViewTick } from '../sim/dodge-lag.js';
+import { dodgeViewTick, dodgeInputViewTick } from '../sim/dodge-lag.js';
 import { DT, ticks, dist2, shapeHitsCircle } from '../sim/core.js';
 import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/combat.js';
 import { attackRate } from '../content/balance.js';
@@ -110,7 +110,8 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
     Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
-  const dodgeSkillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
+  const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
+  const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
   if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
     && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
@@ -119,7 +120,10 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     if (p.act) endAct(p);
     resetCombo(p);
     const dir = mlen > .2 ? [mx, my] : [-Math.cos(facing), -Math.sin(facing)];
-    Object.assign(d, dodgeStart(p, dir, tick, multiplayerDodge).dodge);
+    const start = dodgeViewTick(tick, dodgeInputViewTick(inp, dodgeSkillEdge), multiplayerDodge);
+    const movement = dodgeStart(p, dir, start, multiplayerDodge);
+    movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
+    Object.assign(d, movement.dodge);
     p.pendingCounter = null; p.bufferDodge = 0;
     p.mp -= dodgeSkill.manaCost;
     startAct(p, dodgeSkillId, facing);

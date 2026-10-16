@@ -1,3 +1,4 @@
+import { dodgeInputViewTick } from '../sim/dodge-lag.js';
 import { currentTelegraphs } from '../render/telegraph-time.js';
 import { emptyInput, getTelegraphs } from '../sim/world.js';
 import { ABILITIES } from '../content/combat.js';
@@ -5,22 +6,28 @@ import { comboDef } from '../sim/basic-combo.js';
 import { BALANCE } from '../content/balance.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
+export const TIMED_SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 const finite = v => Number.isFinite(v) ? v : 0;
 const q = v => Math.round(finite(v) * 100) / 100;
 // Cumulative edge counters survive dropped RT packets; receiver queues each press once.
 // Guests send one packet per 30Hz sim tick; `prev` repeats the two prior movement
 // commands so a dropped relay message does not lose a tick of movement.
 export class InputSender {
-  constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; }
+  constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; this.skillViews = {}; }
   packet(input = {}, load = 0, ack = 0) {
     for (const k of EDGES) if (input[k]) this.edges[k]++;
     const viewTick = Number.isSafeInteger(input.viewTick) && input.viewTick >= 0 ? input.viewTick : undefined;
     if (input.dodgeEdge) this.dodgeViews = [...this.dodgeViews, [this.edges.dodgeEdge, viewTick]].slice(-4);
+    for (const k of TIMED_SKILL_EDGES) if (input[k]) {
+      const tick = dodgeInputViewTick(input, k);
+      this.skillViews[k] = [...(this.skillViews[k] || []), [this.edges[k], Number.isSafeInteger(tick) && tick >= 0 ? tick : undefined]].slice(-4);
+    }
     const v = ['mx', 'my', 'aimX', 'aimY'].map(k => q(input[k]));
     const packet = { t: 'input', seq: ++this.seq, v, prev: this.history.slice(),
       attack: !!input.attack, autoAttack: !!input.autoAttack, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
-      ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}) };
-    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, dodgeViews: packet.dodgeViews }]].slice(-2);
+      ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}),
+      ...(Object.keys(this.skillViews).length ? { skillViews: Object.fromEntries(Object.entries(this.skillViews).map(([k, rows]) => [k, rows.map(row => [...row])])) } : {}) };
+    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
     return packet;
   }
 }
@@ -32,7 +39,7 @@ export class InputQueue {
   constructor() {
     this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0])); this.pending = { ...this.seen };
-    this.dodgeViews = [];
+    this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.stats = { consumed: 0, starved: 0, skipped: 0 };
   }
   receive(p, now = 0) {
@@ -41,10 +48,10 @@ export class InputQueue {
     for (const row of Array.isArray(p.prev) ? p.prev : []) {
       const [seq, v, metadata] = Array.isArray(row) ? row : [];
       if (Number.isSafeInteger(seq) && seq > this.last && seq < p.seq && Array.isArray(v)) {
-        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, dodgeViews: metadata?.dodgeViews, arrived: now }); this.last = seq;
+        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, dodgeViews: metadata?.dodgeViews, skillViews: metadata?.skillViews, arrived: now }); this.last = seq;
       }
     }
-    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, dodgeViews: p.dodgeViews, arrived: now }); this.last = p.seq; this.at = now;
+    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, dodgeViews: p.dodgeViews, skillViews: p.skillViews, arrived: now }); this.last = p.seq; this.at = now;
     if (this.queue.length > 30) { this.stats.skipped += this.queue.length - 30; this.queue.splice(0, this.queue.length - 30); }
     return true;
   }
@@ -61,6 +68,11 @@ export class InputQueue {
         if (k === 'dodgeEdge') for (let i = n - count + 1; i <= n; i++) {
           const row = Array.isArray(cmd.dodgeViews) ? cmd.dodgeViews.find(r => Array.isArray(r) && r[0] === i) : null;
           this.dodgeViews.push(row ? row[1] : n - this.seen[k] === 1 ? cmd.viewTick : undefined);
+        }
+        if (TIMED_SKILL_EDGES.includes(k)) for (let i = n - count + 1; i <= n; i++) {
+          const rows = cmd.skillViews?.[k];
+          const row = Array.isArray(rows) ? rows.find(r => Array.isArray(r) && r[0] === i) : null;
+          this.skillViews[k].push(row ? row[1] : !cmd.skillViews && n - this.seen[k] === 1 ? cmd.viewTick : undefined);
         }
         this.pending[k] += count; this.seen[k] = n;
       }
@@ -85,6 +97,8 @@ export class InputQueue {
     const input = { ...this.value };
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
     if (input.dodgeEdge) input.viewTick = this.dodgeViews.shift();
+    input.skillViewTicks = {};
+    for (const k of TIMED_SKILL_EDGES) if (input[k]) input.skillViewTicks[k] = this.skillViews[k].shift();
     return input;
   }
 }

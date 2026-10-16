@@ -1,6 +1,6 @@
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
-import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
+import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
@@ -15,6 +15,11 @@ const TICK_MS = 1000 / 30;
 const mergeInput = (held, input) => {
   const next = { ...input };
   if (held) for (const k of EDGES) next[k] = !!(held[k] || input[k]);
+  next.skillViewTicks = {};
+  for (const k of TIMED_SKILL_EDGES) if (next[k]) {
+    next.skillViewTicks[k] = held?.[k] ? held.skillViewTicks?.[k]
+      : Object.hasOwn(input.skillViewTicks || {}, k) ? input.skillViewTicks[k] : input.viewTick;
+  }
   if (held?.dodgeEdge) next.viewTick = held.viewTick;
   return next;
 };
