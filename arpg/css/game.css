@@ -947,6 +947,20 @@ select, input:not([type="checkbox"]) {
 #undead-result button { display: block; width: 100%; margin-top: 8px; }
 #undead-result [data-undead-action=next] { background: #425b46; border-color: #b1c49a; }
 
+/* Combat uses the academy silhouettes without covering hotkeys or cooldown text. */
+#actions .skill-slot .skill-icon { position:absolute; top:4px; left:50%; transform:translateX(-50%); width:24px; height:24px; margin:0; border:0; border-radius:0; background:transparent; pointer-events:none; }
+#actions .skill-slot .skill-icon svg { padding:0; }
+#actions .skill-slot small { position:absolute; bottom:16px; left:0; width:100%; height:12px; line-height:12px; margin:0; transform:none; }
+#actions .skill-slot.blocked .skill-icon { opacity:.35; }
+#party-vitals { position:absolute; top:calc(140px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); width:min(240px,62vw); pointer-events:none; }
+.party-member { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 6px; margin-bottom:6px; padding:4px 6px; background:#121b18db; border:1px solid #53675b; border-radius:4px; font-size:11px; }
+.party-name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#e1e8df; }
+.party-state { color:#c8bca2; }
+#party-vitals .bar { grid-column:1/-1; height:17px; margin:0; }
+#party-vitals .bar i { background:linear-gradient(90deg,#286345,#6caa70); }
+#party-vitals .bar span { font-size:11px; line-height:15px; font-variant-numeric:tabular-nums; }
+.party-member.inactive { opacity:.65; }
+
 /* Skeleton / permanent DK only. Existing graveyard SVG and human palette unchanged. */
 body[data-theme="graveyard"] {
   --ash:#111713; --surface:#1b241f; --raised:#29382f;

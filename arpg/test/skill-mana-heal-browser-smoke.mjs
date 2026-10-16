@@ -79,11 +79,20 @@ try {
   };
   const prepare=async c=>{
     await c.wait('!!document.querySelector("#arpg-debug-panel")');
+    // The multiplayer HUD receives decorated entity copies, not the authoritative world.
+    // Capture the public host session world only inside this test fixture.
+    await c.eval(`(async()=>{
+      if(window.healSmokeHook)return;window.healSmokeHook=true;
+      const {CoopSession}=await import('./js/net/session.js');
+      const update=CoopSession.prototype.update;
+      CoopSession.prototype.update=function(...args){if(this.isHost)window.healSmokeWorld=this.world;return update.apply(this,args);};
+    })()`);
+    if(await c.eval('!!__arpg.multi')) await c.wait('!!window.healSmokeWorld');
     await c.eval(`(async()=>{
       const {registerDebugAction}=await import('./js/debug/index.js');
       registerDebugAction({group:'Heal smoke',label:'Prepare heal smoke',run:ctx=>{
-        for(const e of ctx.world.entities) {
-          if(e.kind==='player'){e.hp=10;e.mp=e.maxMp;e.mpRegen=0;e.x=500;e.y=400+20*(e.pid!==ctx.world.entities[0].pid);e.cds={};e.act=null;}
+        for(const e of (window.healSmokeWorld || ctx.world).entities) {
+          if(e.kind==='player'){e.hp=10;e.mp=e.maxMp;e.mpRegen=0;e.hpRegen=0;e.x=500;e.y=400+20*(e.pid!==ctx.world.entities[0].pid);e.cds={};e.act=null;}
           else {e.x=1250;e.y=750;e.thinkLeft=100000;e.act=null;}
         }
       }});
@@ -123,6 +132,12 @@ try {
   assert.equal(await guest.eval('__arpg.multi.ownsSim'),false);
   await probe(host);await probe(guest);await prepare(host);
   await guest.wait('__arpg.world.entities[0].hp>=10&&__arpg.world.entities[0].hp<10.5');
+  for (const client of [host,guest]) {
+    await client.cmd('Page.bringToFront');
+    await client.wait('document.querySelector("#party-vitals .bar span")?.textContent.startsWith("10/")');
+    assert.equal(await client.eval('document.querySelectorAll("#party-vitals .party-member").length'),1);
+    assert.equal(await client.eval('document.querySelector("#skill [data-skill-icon]").dataset.skillIcon'),'healing_light');
+  }
   const guestUid=await guest.eval('__arpg.multi.uid');
   const guestSelector=`__arpg.world.entities.find(e=>e.pid===${JSON.stringify(guestUid)})`;
   const maxHp=await guest.eval('__arpg.world.entities[0].maxHp');
@@ -143,6 +158,14 @@ try {
   await guest.wait('__arpg.world.entities[0].cds.healing_light>0');
   assert.equal(await guest.eval('document.querySelector("#skill").disabled'),true);
   assert.ok(await guest.eval('__arpg.feedback.pools.effects>0 && __arpg.feedback.pools.numbers>0'));
+  for (const client of [host,guest]) {
+    await client.cmd('Page.bringToFront');
+    await client.wait(`document.querySelector('#party-vitals .bar span')?.textContent === (()=>{
+      const p=__arpg.world.entities.find(p=>p.kind==='player'&&p.pid!==__arpg.multi.uid);
+      return Math.ceil(p.hp)+'/'+Math.ceil(p.maxHp);
+    })()`);
+    assert.ok(await client.eval('Number(document.querySelector("#party-vitals [role=meter]").getAttribute("aria-valuenow"))>10'));
+  }
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));
   console.log(JSON.stringify({passed:true,actualIndex:true,single:{hp:singleHp,mp:initialMp-28,healEvents:1,manual:true,visiblePhases:true},
     coop:{guestOwnsSim:false,guestUid,hp:10+Math.round(maxHp*.3),mp:maxMp-28,healEventsPerPeer:2,healCastPerPeer:1,personalHud:true,guestSaveUnchanged:true},consoleErrors:0},null,2));

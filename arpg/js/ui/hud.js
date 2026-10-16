@@ -3,6 +3,7 @@ import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
 import { MAX_LEVEL, xpSpan } from '../meta/progression.js';
 import { MONSTER_NAMES } from '../content/monsters.js';
+import { skillIcon } from './skill-view.js';
 
 const $ = (selector) => document.querySelector(selector);
 const PATTERN_NAMES = {
@@ -31,6 +32,12 @@ export class HUD {
       'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
       'lv-text', 'xp-fill', 'xp-pending',
     ]) this.nodes[id] = $(`#${id}`);
+    this.party = document.createElement('section');
+    this.party.id = 'party-vitals';
+    this.party.setAttribute('aria-label', '파티원 HP');
+    this.party.hidden = true;
+    $('#hud').append(this.party);
+    this.partyRows = new Map();
   }
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
@@ -46,7 +53,9 @@ export class HUD {
       node.hidden = !id;
       node.classList.toggle('blocked', !skills[i] && !!id);
       node.querySelector('.slot-blocked')?.remove();
+      node.querySelector('.icon, .skill-icon')?.remove();
       if (!id) return;
+      node.insertAdjacentHTML('afterbegin', skillIcon(id));
       const name = ABILITIES[id].name;
       node.setAttribute('aria-label', name);
       node.title = `${name} · ${SLOT_KEYS[i]}`;
@@ -153,6 +162,7 @@ export class HUD {
 
   update(world, dt) {
     const player = world.entities[0];
+    this.updateParty(world, player);
     const nodes = this.nodes;
     nodes['hp-fill'].style.transform = `scaleX(${player.hp / player.maxHp})`;
     nodes['mp-fill'].style.transform = `scaleX(${player.mp / player.maxMp})`;
@@ -196,6 +206,41 @@ export class HUD {
 
   text(node, value) {
     if (node.textContent !== value) node.textContent = value;
+  }
+
+  updateParty(world, local) {
+    const members = world.entities.filter(p => p.kind === 'player' && p.id !== local.id && p.team === local.team);
+    const ids = new Set(members.map(p => p.id));
+    for (const [id, row] of this.partyRows) if (!ids.has(id)) {
+      row.remove();
+      this.partyRows.delete(id);
+    }
+    this.party.hidden = members.length === 0;
+    for (const p of members) {
+      let row = this.partyRows.get(p.id);
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'party-member';
+        row.innerHTML = '<span class="party-name"></span><span class="party-state"></span><div class="bar hp" role="meter"><i></i><span></span></div>';
+        this.partyRows.set(p.id, row);
+        this.party.append(row);
+      }
+      const name = p.name || p.pid;
+      const max = Math.max(1, Math.ceil(p.maxHp));
+      const hp = Math.max(0, Math.min(max, Math.ceil(p.hp)));
+      const state = p.dead || p.terminal === 'death' ? '쓰러짐' : p.terminal === 'return_scroll' ? '귀환' : p.terminal ? '전투 완료' : '';
+      this.text(row.children[0], name);
+      row.children[0].title = name;
+      this.text(row.children[1], state);
+      row.classList.toggle('inactive', !!state);
+      const bar = row.children[2];
+      bar.setAttribute('aria-label', `${name} HP${state ? ` · ${state}` : ''}`);
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', String(max));
+      bar.setAttribute('aria-valuenow', String(hp));
+      bar.firstElementChild.style.transform = `scaleX(${hp / max})`;
+      this.text(bar.lastElementChild, `${hp}/${max}`);
+    }
   }
 
   deathExplanation(world) {

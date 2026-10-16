@@ -562,7 +562,7 @@ try {
         hud.update(world, elapsed / 1000);
         coopStatus.hidden = false;
         const player = world.entities[0];
-        coopStatus.textContent = `${player.terminal ? '관전 · 개인 정산 완료 · ' : ''}${[...coopSession.players].length}인 · ${coopSession.isHost ? '방장' : `RTT ${coopSession.rtt === null ? '—' : Math.round(coopSession.rtt) + 'ms'}`} · ${world.entities.filter(e => e.kind === 'player').map(p => `${p.name || p.pid}${p.terminal ? ' (관전)' : ''}`).join(' / ')}`;
+        coopStatus.textContent = `${player.terminal ? '관전 · 개인 정산 완료 · ' : ''}${[...coopSession.players].length}인 · ${coopSession.isHost ? '방장' : `RTT ${coopSession.rtt === null ? '—' : Math.round(coopSession.rtt) + 'ms'}`}`;
       }
     } else if (!coopSession && !hidden && world && running) {
       accumulator += elapsed * (debug?.speed || 1);
