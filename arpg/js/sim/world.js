@@ -822,10 +822,17 @@ function stepRound(world, inputs) {
   // Combat/death already ran: a same-tick death cannot be resurrected by success.
   const objectiveCleared = rd.objective ? stepObjective(world, inputs) : false;
   if (objectiveCleared) rd.pending = [];
-  const monsters = world.entities.filter((e) => e.kind === 'monster' && !e.dead);
+  const monsters = world.entities.filter((e) => e.kind === 'monster' && !e.dead && !e.terminal && e.team !== TEAM_PLAYER);
   let aliveCount = monsters.length;
+  const timerCleared = rd.goal === 'timer' && rd.t >= rd.timerTicks;
+  // Empty combat advances only the next scheduled timestamp group, never the round clock.
+  // Spawn-in grace counts alive; overflow stays due under the normal concurrency gate.
+  if (!aliveCount && !objectiveCleared && !timerCleared && rd.pending.length) {
+    const next = Math.min(...rd.pending.map(s => s.atTicks));
+    if (next > rd.t) rd.pending = rd.pending.map(s => s.atTicks === next ? { ...s, atTicks: rd.t } : s);
+  }
   rd.pending = rd.pending.filter((s) => {
-    if (s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
+    if (timerCleared || s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
     const stage = STAGES[rd.stageId];
     const threat = threatMultipliers(rd.threat);
     // Random damage variant, not the old archetype classification. No new attack or AI loop.
