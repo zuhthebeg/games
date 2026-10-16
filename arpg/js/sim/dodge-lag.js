@@ -1,15 +1,19 @@
 // Host-only, opt-in guest history. Weak storage never changes serialized worlds/snapshots.
-import { TICK_MS, ticks } from './core.js';
-import { PLAYER_BASE as PB } from '../content/combat.js';
+import { TICK_MS } from './core.js';
+import { multiplayerDodge, dodgeTiming, MULTIPLAYER_REWIND_TICKS } from './dodge-policy.js';
 const guests = new WeakMap();
 export const DODGE_LAG_CAP_TICKS = Math.floor(250 / TICK_MS);
-export function dodgeViewTick(now, viewTick) {
+export function dodgeViewTick(now, viewTick, multi = false) {
   return Number.isSafeInteger(viewTick) && viewTick >= 0 && viewTick <= now
-    && now - viewTick <= DODGE_LAG_CAP_TICKS ? viewTick : now;
+    && now - viewTick <= (multi ? MULTIPLAYER_REWIND_TICKS : DODGE_LAG_CAP_TICKS) ? viewTick : now;
 }
 export function enableGuestDodgeLag(world, pid) {
   const pawn = world.entities.find(e => e.kind === 'player' && e.pid === pid);
   if (pawn) guests.set(pawn, { hits: [], lastDirect: null });
+}
+export function resetGuestDodgeHits(p) {
+  const state = guests.get(p);
+  if (state) { state.hits = []; state.lastDirect = null; }
 }
 export function pruneGuestHits(p, now) {
   const state = guests.get(p);
@@ -39,10 +43,10 @@ export function trackGuestKnock(p) {
 export function rewindGuestDodge(world, p, inp, awardPerfect) {
   const state = guests.get(p);
   if (!state || !inp.dodgeEdge || p.dead || p.terminal) return;
-  const start = dodgeViewTick(world.tick, inp.viewTick), age = world.tick - start;
+  const start = dodgeViewTick(world.tick, inp.viewTick, multiplayerDodge(world)), age = world.tick - start;
   if (!age) return;
   p.dodge.startedTick = start;
-  const iframeTicks = ticks(PB.dodge.iframeMs + p.iframeBonusMs);
+  const iframeTicks = dodgeTiming(p, multiplayerDodge(world)).iframeTicks;
   p.dodge.iframeLeft = Math.max(0, iframeTicks - age);
   const keep = [];
   for (const row of state.hits) {

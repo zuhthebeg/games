@@ -81,7 +81,7 @@ function basicReachTarget(p, def, others) {
 }
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
-export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } = {}) {
+export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
   if (predictionBlocked(state)) return state;
   const p = { ...state, dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   tickCombo(p);
@@ -104,8 +104,8 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0 } =
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(p);
     resetCombo(p);
-    const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick) : tick;
-    const movement = dodgeStart(p, p.bufferDodgeDir, start);
+    const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick, multiplayerDodge) : tick;
+    const movement = dodgeStart(p, p.bufferDodgeDir, start, multiplayerDodge);
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
     Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }

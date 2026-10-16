@@ -14,11 +14,13 @@ import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, mon
 import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
-import { pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } from './dodge-lag.js';
+import { resetGuestDodgeHits, pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } from './dodge-lag.js';
 
 import { createObjective, stepObjective } from './quest-objectives.js';
 
 import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep } from './basic-combo.js';
+
+import { enableMultiplayerDodge, multiplayerDodge, dodgeTiming } from './dodge-policy.js';
 
 const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
@@ -40,14 +42,16 @@ export function emptyInput() {
   return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
-export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 }, partyHpMult = 1 } = {}) {
+export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 }, partyHpMult = 1, multiplayerDodge: multiDodge = false } = {}) {
   threatMultipliers(threat);
-  return {
+  const world = {
     tick: 0, rng: seed >>> 0, nextId: 1, arena, threat, partyHpMult,
     entities: [], projectiles: [], events: [],
     majorBusyBy: 0, // EncounterDirector majorAttackToken: one big attack at a time early on (design §7.1)
     round: null,
   };
+  if (multiDodge) enableMultiplayerDodge(world);
+  return world;
 }
 
 // mods come from the meta layer (level, stats, gear). The sim never reads stats directly.
@@ -116,6 +120,7 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
 export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
+  for (const p of world.entities) if (p.kind === 'player') resetGuestDodgeHits(p);
   if (st.arena) {
     for (const p of world.entities.filter(e => e.kind === 'player')) {
       p.x *= st.arena.w / world.arena.w; p.y *= st.arena.h / world.arena.h;
@@ -226,7 +231,7 @@ function stepPlayer(world, p, inp) {
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
     if (p.act) endAct(world, p, true);
     resetCombo(p);
-    const movement = dodgeStart(p, p.bufferDodgeDir, world.tick);
+    const movement = dodgeStart(p, p.bufferDodgeDir, world.tick, multiplayerDodge(world));
     Object.assign(d, movement.dodge);
     p.facing = movement.facing;
     p.pendingCounter = null;
@@ -592,11 +597,11 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
   // Orphaned hostile shots count as perfect, but cannot schedule a counter.
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
   if (hit.counter || !hostile || t.dodge.perfectPaid || sinceDodge < 0
-    || sinceDodge > ticks(PB.dodge.perfectMs)) return false;
+    || sinceDodge > dodgeTiming(t, multiplayerDodge(world)).perfectTicks) return false;
   t.dodge.perfectPaid = true;
   if (attacker) t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
     expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
-      ticks(PB.dodge.iframeMs + t.iframeBonusMs)) + ticks(BALANCE.counter.graceMs) };
+      dodgeTiming(t, multiplayerDodge(world)).iframeTicks) + ticks(BALANCE.counter.graceMs) };
   world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
     srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId });
   return true;
@@ -817,10 +822,17 @@ function stepRound(world, inputs) {
   // Combat/death already ran: a same-tick death cannot be resurrected by success.
   const objectiveCleared = rd.objective ? stepObjective(world, inputs) : false;
   if (objectiveCleared) rd.pending = [];
-  const monsters = world.entities.filter((e) => e.kind === 'monster' && !e.dead);
+  const monsters = world.entities.filter((e) => e.kind === 'monster' && !e.dead && !e.terminal && e.team !== TEAM_PLAYER);
   let aliveCount = monsters.length;
+  const timerCleared = rd.goal === 'timer' && rd.t >= rd.timerTicks;
+  // Empty combat advances only the next scheduled timestamp group, never the round clock.
+  // Spawn-in grace counts alive; overflow stays due under the normal concurrency gate.
+  if (!aliveCount && !objectiveCleared && !timerCleared && rd.pending.length) {
+    const next = Math.min(...rd.pending.map(s => s.atTicks));
+    if (next > rd.t) rd.pending = rd.pending.map(s => s.atTicks === next ? { ...s, atTicks: rd.t } : s);
+  }
   rd.pending = rd.pending.filter((s) => {
-    if (s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
+    if (timerCleared || s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
     const stage = STAGES[rd.stageId];
     const threat = threatMultipliers(rd.threat);
     // Random damage variant, not the old archetype classification. No new attack or AI loop.
