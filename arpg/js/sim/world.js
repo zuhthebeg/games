@@ -9,6 +9,8 @@ import {
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseSkill } from '../content/combat.js';
 
+import { MONSTER_VARIANTS } from '../content/monsters.js';
+
 import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
 import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
@@ -584,7 +586,9 @@ function doActive(world, ent, act) {
   }
 }
 
-const isBoss = t => !!(t.boss || MONSTERS[t.type]?.boss || MONSTERS[t.type]?.elite || MONSTERS[t.type]?.heavyPoise);
+// Boss identity is authored, not inferred from durability or random elite stats.
+const isBoss = t => !!(t.boss || MONSTERS[t.type]?.boss || t.type === 'goblin_chief'
+  || MONSTER_VARIANTS[t.type]?.speciesTags.includes('boss'));
 export function turnUndeadChance(value, boss = false, holy = false) {
   const intelligence = Number.isFinite(value) ? Math.max(0, value) : 0;
   return boss ? Math.min(.009, Math.min(.008, .001 + intelligence * .00002) + (holy ? .001 : 0))

@@ -112,3 +112,19 @@ test('old burn tick cannot claim a new cast mastery success before its direct hi
  trackMastery(tracker,[{type:'act',id:p.id,ability:'ember_bolt'},{type:'hit',src:p.id,dst:target.id,ability:'ember_bolt',periodic:true}],w,p.pid);assert.equal(tracker.skillMastery.ember_bolt||0,0);
  trackMastery(tracker,[{type:'hit',src:p.id,dst:target.id,ability:'ember_bolt'}],w,p.pid);assert.equal(tracker.skillMastery.ember_bolt,1);
 });
+test('only actual boss markers select boss execution and freeze rules; elite/heavy-poise alone stay normal',()=>{
+ const seedBetween=(lo,hi)=>{for(let seed=1;seed<100000;seed++){const n=rand({rng:seed});if(n>=lo&&n<hi)return seed;}throw Error('seed');};
+ const cases=[['heavyPoise',false],['elite',false],['eliteVariant',false],['entityBoss',true],['definitionBoss',true],['goblin_chief',true],['throne_dragon',true]];
+ for(const [mode,boss]of cases){
+  const type=['goblin_chief','throne_dragon'].includes(mode)?mode:'ghoul';const original=MONSTERS[type];
+  MONSTERS[type]={...original,lifeState:'undead',...(mode==='heavyPoise'?{heavyPoise:true}:{}),...(mode==='elite'?{elite:true}:{}),...(mode==='definitionBoss'?{boss:true}:{})};
+  try {
+   const mark=t=>{if(mode==='entityBoss')t.boss=true;if(mode==='eliteVariant')t.eliteVariant=true;};
+   const execute=fixture('turn_undead',{effectiveInt:10000,staffAffinity:'holy'}),target=mob(execute.w,type);mark(target);target.frozenUntil=10000;execute.w.rng=seedBetween(.1,.3);
+   cast(execute.w,execute.p);assert.equal(target.dead,!boss,mode+' execution');
+   const freeze=fixture(),frozen=mob(freeze.w,type,1000);mark(frozen);freeze.w.rng=seedBetween(.1,.3);shot(freeze.w,freeze.p,frozen);
+   assert.equal(frozen.frozenUntil!==undefined,!boss,mode+' freeze chance');if(!boss)assert.equal(frozen.frozenUntil,freeze.w.tick-1+ticks(1500),mode+' normal duration');
+   if(boss){freeze.w.rng=seedBelow(.1);shot(freeze.w,freeze.p,frozen);assert.equal(frozen.frozenUntil,freeze.w.tick-1+ticks(500),mode+' boss duration');}
+  }finally{MONSTERS[type]=original;}
+ }
+});
