@@ -284,10 +284,15 @@ export class HubUI {
       <p>${escape(this.name)}, ${knight ? '해골 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
       ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기존 근접 무기 규칙을 사용합니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
-      ${button(knight ? '해골 생성 · 여관으로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
+      ${button(knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
+
+  // Presentation only: permanent DeathKnight keeps the skeleton lineage/save key.
+  hubCopy(human, graveyard) {
+    return this.save?.lineage === 'skeleton_knight' ? graveyard : human;
+  }
 
   money() {
     return `<span class="money" id="inn-gold" aria-label="골드 ${this.save.gold}">${icon('gold')}${this.save.gold}</span>`;
@@ -334,21 +339,21 @@ export class HubUI {
     const mods = deriveMods(this.save);
     const pins = SLOTS.map(slot => `<i class="pin-${slot} ${equippedItem(this.save, slot) ? 'worn' : ''}"></i>`).join('');
     const portrait = button(`${portraitHtml(this.save, this.portraitDirection || 'SW')}${this.save.statPoints ? `<b class="badge alert">${this.save.statPoints}</b>` : ''}`, 'character',
-      `class="character-portrait" aria-label="캐릭터${this.save.statPoints ? ` · 미분배 ${this.save.statPoints}점` : ''}"`);
+      `class="character-portrait" aria-label="${this.hubCopy('캐릭터', '영혼의 제단')}${this.save.statPoints ? ` · 미분배 ${this.save.statPoints}점` : ''}"`);
     const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
-      ['shop', '만물상', 'potion'], ['merchant', '장비상', 'weapon'], ['forge', '대장장이', 'forge'],
-      ['trainer', '아카데미', 'trainer'], ['inventory', '창고', 'load'], ['bag', '가방', 'load'],
+      ['shop', '만물상', 'potion'], ['merchant', this.hubCopy('장비상', '도굴꾼'), 'weapon'], ['forge', this.hubCopy('대장장이', '저주받은 대장장이'), 'forge'],
+      ['trainer', '아카데미', 'trainer'], ['inventory', this.hubCopy('창고', '묘실의 유품함'), 'load'], ['bag', '가방', 'load'],
     ].map(([action, name, glyph]) => button(`${icon(glyph)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
     const devMenu = this.dev ? `<details class="dev-menu"><summary>M0 개발 메뉴</summary>
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="sr-only">잿빛 여관</h1>${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '기존 해골 외형 · 회피는 이동 동작 대체'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
-      <p class="recovery inn-recovery">${icon('clear')}<strong>HP·MP 회복</strong>
+    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '기존 해골 외형 · 회피는 이동 동작 대체'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
+      <p class="recovery inn-recovery">${icon('clear')}<strong>${this.hubCopy('HP·MP 회복', '관에서 안식')}</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family])}</b></span></p>
-      ${this.weightHtml()}<nav class="npc-grid" aria-label="여관 사람들">${npcs}</nav>${devMenu}`;
-    this.show(this.shellHtml(this.topBar(), content, button(`<span>퀘스트 고르기</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
+      ${this.weightHtml()}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
+    this.show(this.shellHtml(this.topBar(), content, button(`<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
   characterHtml() {
@@ -361,7 +366,7 @@ export class HubUI {
       <div><span>공격 배율</span><b>×${amount(mods.dmgMult[mods.family])}</b></div>
       <div><span>공격 속도</span><b>×${amount(rate)}</b></div>
       <div><span>기술</span><b>${loadoutOf(this.save).filter(Boolean).map(id => escape(ABILITIES[id].name)).join(' · ')}</b></div></div>${this.weightHtml()}</section>
-      <h3 class="section-title">능력치 분배</h3>`;
+      <h3 class="section-title">${this.hubCopy('능력치 분배', '영혼의 제단')}</h3>`;
   }
 
   // --- Bag / weightless stash ---
@@ -372,7 +377,7 @@ export class HubUI {
       const controls = (sell || destination) ? `<div class="stack-counts" role="group" aria-label="${ITEMS[id].name} ${sell ? '판매' : '이동'} 수량">${[1, 5, count].map((n, i) =>
         button(i === 2 ? '전부' : String(n), sell ? 'sell-stack' : 'move-stack', `${args} data-count="${n}"`, n > count)).join('')}</div>` : '';
       return `<article class="stack-row"><div class="stack-heading"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span>
-        <div><strong>${ITEMS[id].name}</strong><small>${count}개${sell ? ` · 개당 ${stackSellPrice(id)} G` : destination ? ` · ${destination === 'stash' ? '창고로 맡기기' : '가방으로 꺼내기'}` : ''}</small></div></div>${controls}</article>`;
+        <div><strong>${ITEMS[id].name}</strong><small>${count}개${sell ? ` · 개당 ${stackSellPrice(id)} G` : destination ? ` · ${destination === 'stash' ? this.hubCopy('창고로 맡기기', '유품함으로 맡기기') : '가방으로 꺼내기'}` : ''}</small></div></div>${controls}</article>`;
     }).join('');
     return `<div class="stack-list">${rows || '<p class="muted">보관 중인 물품이 없다.</p>'}</div>`;
   }
@@ -391,12 +396,12 @@ export class HubUI {
     this.stashTab ??= 'gear';
     const tabs = [['gear', '장비'], ['material', '재료'], ['consumable', '소모품']].map(([tab, label]) =>
       button(label, 'stash-tab', `data-tab="${tab}" aria-pressed="${this.stashTab === tab}"`)).join('');
-    const tabHtml = `<div class="p2-merchant-tabs" role="group" aria-label="창고 종류">${tabs}</div>`;
+    const tabHtml = `<div class="p2-merchant-tabs" role="group" aria-label="${this.hubCopy('창고 종류', '유품함 종류')}">${tabs}</div>`;
     if (this.stashTab !== 'gear') {
       const supplies = this.stashTab === 'consumable';
-      return this.showInnPanel('창고', `${tabHtml}
+      return this.showInnPanel(this.hubCopy('창고', '묘실의 유품함'), `${tabHtml}
         ${this.stackRowsHtml(supplies ? this.save.stash.stacks : this.save.stacks, { source: supplies ? 'stash' : 'bag', kind: this.stashTab, destination: supplies ? 'bag' : null })}`,
-      'inventory', '', { eyebrow: '창고 · 무게 없음' });
+      'inventory', '', { eyebrow: this.hubCopy('창고 · 무게 없음', '유품함 · 무게 없음') });
     }
     this.filter ??= 'all';
     this.sort ??= 'grade';
@@ -410,9 +415,9 @@ export class HubUI {
     const filters = ['all', ...SLOTS].map(slot => button(slot === 'all' ? '전체' : SLOT_NAMES[slot], 'filter',
       `data-slot="${slot}" aria-pressed="${this.filter === slot}"`)).join('');
     const cards = items.map(item => cardHtml(item, this.save, { compact: true, note: isWorn(this.save, item.uid) ? '착용 중' : '' })).join('');
-    this.showInnPanel('창고', `${tabHtml}<div class="p2-filters" role="group" aria-label="부위">${filters}</div>
+    this.showInnPanel(this.hubCopy('창고', '묘실의 유품함'), `${tabHtml}<div class="p2-filters" role="group" aria-label="부위">${filters}</div>
       <div class="p2-toolbar"><span>${items.length}개</span>${button(`정렬 · ${{ grade: '등급', recent: '최근', weight: '무게' }[this.sort]}`, 'sort')}</div>
-      <div class="p2-grid">${cards || '<p class="muted">비어 있음 · 몬스터 드랍이나 장비상에서 얻는다</p>'}</div>`, 'inventory', '', { eyebrow: '창고 · 무게 없음' });
+      <div class="p2-grid">${cards || `<p class="muted">비어 있음 · 몬스터 드랍이나 ${this.hubCopy('장비상', '도굴꾼')}에서 얻는다</p>`}</div>`, 'inventory', '', { eyebrow: this.hubCopy('창고 · 무게 없음', '유품함 · 무게 없음') });
   }
 
   // --- Comparison sheet: current → candidate per line, then one primary action. ---
@@ -545,7 +550,7 @@ export class HubUI {
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
     this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
-      `<div class="socket-actions">${button(`${icon('weapon')}장비상 둘러보기`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}</div>`));
+      `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}</div>`));
   }
 
   findOffer(uid) {
@@ -622,7 +627,7 @@ export class HubUI {
   }
 
   showMerchant() {
-    this.showInnPanel('장비상', this.gearShopHtml(), 'merchant', '', { eyebrow: '일반 · 양질만 취급' });
+    this.showInnPanel(this.hubCopy('장비상', '도굴꾼'), this.gearShopHtml(), 'merchant', '', { eyebrow: '일반 · 양질만 취급' });
   }
 
   // --- Supply shop ---
@@ -634,13 +639,13 @@ export class HubUI {
     if (this.shopTab === 'sell') {
       return this.showInnPanel('만물상', `${tabs}
         <h3 class="section-title">가방 소모품</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'consumable' })}
-        <h3 class="section-title">창고 소모품</h3>${this.stackRowsHtml(this.save.stash.stacks, { sell: true, source: 'stash' })}
-        <h3 class="section-title">창고 재료</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'material' })}`,
+        <h3 class="section-title">${this.hubCopy('창고 소모품', '유품함 소모품')}</h3>${this.stackRowsHtml(this.save.stash.stacks, { sell: true, source: 'stash' })}
+        <h3 class="section-title">${this.hubCopy('창고 재료', '유품함 재료')}</h3>${this.stackRowsHtml(this.save.stacks, { sell: true, kind: 'material' })}`,
       'shop', '', { eyebrow: '보급 · 재료 매입' });
     }
     const tone = { potion:'hp-tone', mana_potion:'mp-tone' };
     const cards = SUPPLIES.map(id => button(`<span class="item-emblem ${tone[id] || ''}">${itemIcon(id, ITEMS[id])}</span>`
-      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0} · 창고 ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
+      + `<span class="item-name"><strong>${ITEMS[id].name}</strong><small>${shopPrice(this.save,id)} G / 개 · ${ITEMS[id].weight} kg</small><small>보유 ${this.save.stacks[id] || 0} · ${this.hubCopy('창고', '유품함')} ${this.save.stash.stacks[id] || 0}</small></span>`, 'shop-select',
       `data-id="${id}" class="shop-item" aria-pressed="${id === this.shopId}"`)).join('');
     this.showInnPanel('만물상', `${tabs}<div class="p2-two">${button('자동 구매 설정', 'auto-buy-settings')}${button('자동 구매', 'auto-buy', 'class="primary"')}</div><p role="status" aria-live="polite">${escape(this.autoBuyResult || '')}</p><div class="shop-items">${cards}</div>`, 'shop', '', {eyebrow:'보급'});
   }
@@ -690,7 +695,7 @@ export class HubUI {
     }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount}</p>` : '');
     this.forgeTab ||= 'enhance';
     const { html, footer } = this.forgeDetail();
-    const tabs = `<nav class="forge-tabs" aria-label="대장장이 작업">${[['enhance', '강화'], ['scrolls', '주문서 제작'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
+    const tabs = `<nav class="forge-tabs" aria-label="${this.hubCopy('대장장이 작업', '저주받은 대장장이 작업')}">${[['enhance', '강화'], ['scrolls', '주문서 제작'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
     // Plain result line; the enchant animation layer replaces this presentation, not the outcome.
     // forgeNotice is one-shot; lastEnchant/lastCrack stay readable for the FX layer and debugging.
     const notice = this.forgeNotice;
@@ -704,7 +709,7 @@ export class HubUI {
     const content = this.forgeTab === 'scrolls' ? this.scrollWorkshopHtml()
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
         : `${html}${picker}`;
-    this.showInnPanel('대장장이', `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
+    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
       'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 파괴 위험` });
   }
 
@@ -835,7 +840,7 @@ export class HubUI {
       <div class="allocation">${rows}</div><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
     const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
     this.panel = required ? null : 'character';
-    this.show(this.shellHtml(this.panelHeader(required ? '레벨이 올랐다' : '캐릭터', required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),
+    this.show(this.shellHtml(this.panelHeader(required ? this.hubCopy('레벨이 올랐다', '영혼의 제단 · 레벨이 올랐다') : this.hubCopy('캐릭터', '영혼의 제단'), required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),
       required ? 'level-up' : 'character', { shell: true, keepScroll: !initialize });
   }
 
@@ -860,7 +865,7 @@ export class HubUI {
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
-    this.showInnPanel('월드맵', `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3` });
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3` });
   }
 
   sideQuestsHtml(regionId) {
@@ -943,7 +948,7 @@ export class HubUI {
       <p>확보: ${listLoot(receipt.lootKept)}</p><p>상실: ${listLoot(receipt.lootLost)}</p>
       <p>사용: ${used}</p>${restored ? `<p>첫 S2 구조 보급: ${restored}</p>` : ''}
       ${receipt.xpDiscarded ? `<p>Lv30 상한으로 받지 못한 XP: ${amount(receipt.xpDiscarded)}</p>` : ''}
-      ${receipt.pityGranted ? '<p>첫 대장 격파 보증: 대장의 망치를 창고에 맡겼다.</p>' : ''}</div>`;
+      ${receipt.pityGranted ? `<p>첫 대장 격파 보증: 대장의 망치를 ${this.hubCopy('창고에', '유품함에')} 맡겼다.</p>` : ''}</div>`;
   }
 
   finish(save, receipt, cause) {
@@ -970,7 +975,7 @@ export class HubUI {
       return `<article class="p2-loot-card ${rare ? 'sheen' : ''}">${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
     }).join('');
     const left = items.length - this.revealed;
-    return `<section class="reveal"><p class="minor">마을로 돌아가면 자동 보관</p><h3>획득 장비 <span class="muted">${this.revealed} / ${items.length}</span></h3><div class="p2-loot">${cards}</div>
+    return `<section class="reveal"><p class="minor">${this.hubCopy('마을로 돌아가면 자동 보관', '묘지로 돌아가면 유품함에 자동 보관')}</p><h3>획득 장비 <span class="muted">${this.revealed} / ${items.length}</span></h3><div class="p2-loot">${cards}</div>
       ${left ? button(`${this.revealed ? '다음 장비' : '장비'} 공개 · ${left}개 남음`, 'reveal', 'class="reveal-button"') : ''}</section>`;
   }
 
@@ -988,7 +993,7 @@ export class HubUI {
       <div><small>${receipt.stageId} · 위협 ${receipt.threat}</small><h1>${title}</h1>${receipt.terminal === 'death' ? `<p id="cause">${escape(cause)}</p>` : ''}</div></div>
       ${this.receiptHtml(receipt, false)}${this.questReceiptHtml(receipt)}${lost}${this.revealHtml(receipt)}`;
     this.panel = null;
-    this.show(this.shellHtml('', content, button('<span>여관으로</span>' + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
+    this.show(this.shellHtml('', content, button(`<span>${this.hubCopy('여관으로', '잊힌 묘지로')}</span>` + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
   }
 
   autoUseHtml() {
@@ -1012,7 +1017,7 @@ export class HubUI {
 
   showSettings() {
     this.showInnPanel('설정', `${this.presentationHtml()}${this.autoUseHtml()}
-      <p class="minor">캐릭터는 이 브라우저에 저장된다. 전투 중 새로고침하면 마지막 여관으로 돌아온다.</p>
+      <p class="minor">캐릭터는 이 브라우저에 저장된다. 전투 중 새로고침하면 마지막 ${this.hubCopy('여관으로', '묘지로')} 돌아온다.</p>
       <p class="p2-lock">${icon('lock')}초기화하면 캐릭터·보급·장비·진척을 모두 잃는다.</p>
       ${this.resetStep === 0 ? button('저장 초기화', 'reset-first') : this.resetStep === 1
     ? button('캐릭터를 지울까? 한 번 더 확인', 'reset-second')

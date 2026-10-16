@@ -203,6 +203,10 @@ export class HUD {
       const name = humanRole ? `인간 모험가 · ${{blade:'근접',bow:'원거리',focus:'마법'}[humanRole]} (원형: ${MONSTER_NAMES[cause.by] || cause.by})` : MONSTER_NAMES[cause.by] || cause.by;
       return `${name} · ${PATTERN_NAMES[cause.ability] || cause.ability}`;
     }
+    if (world.round?.presentation?.lineage === 'skeleton_knight') {
+      return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 잊힌 묘지로 이끌었습니다.'
+        : '영혼에 힘이 깃들었다. 잊힌 묘지에서 다음 길을 준비하자.';
+    }
     return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 여관으로 이끌었습니다.'
       : '인장에 힘이 깃들었다. 난로 곁에서 다음 길을 준비하자.';
   }
