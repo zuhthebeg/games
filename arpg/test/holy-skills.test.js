@@ -4,7 +4,7 @@ import { createWorld, addPlayer, spawnMonster, step, emptyInput } from '../js/si
 import { ABILITIES, MONSTERS } from '../js/content/combat.js';
 import { rand, ticks } from '../js/sim/core.js';
 import { createSave, validateSave } from '../js/meta/save.js';
-import { deriveMods } from '../js/meta/stats.js';
+import { deriveMods, eff } from '../js/meta/stats.js';
 import { learnSkill, equipSkill } from '../js/meta/skills.js';
 import { trained } from './fixtures/trained.js';
 const fixture = (skill, int = 100) => { const world = createWorld(); const p = addPlayer(world, {pid:'p',weapon:'focus',x:500,y:400,mods:{skill,effectiveInt:int,mpRegen:0}}); return {world,p}; };
@@ -14,7 +14,7 @@ test('heal harms hostile undead once and heals friendly skeleton players, not li
  const {world,p}=fixture('healing_light');p.hp=10; p.dmgMult.focus=2;
  const ally=addPlayer(world,{pid:'ally',x:520,y:400});ally.hp=10;ally.lifeState='undead';
  const undead=mob(world,'ghoul'),living=mob(world,'goblin_grunt',560),friendly=mob(world,'skeleton_minion',570);friendly.team=p.team;
- const events=cast(world,p);assert.equal(undead.hp,129);assert.equal(living.hp,62);assert.equal(friendly.hp,62);assert.equal(ally.hp,40);assert.equal(p.hp,40);assert.equal(events.filter(e=>e.type==='hit'&&e.dst===undead.id).length,1);
+ const events=cast(world,p);assert.equal(undead.hp,129);assert.equal(living.hp,62);assert.equal(friendly.hp,62);assert.equal(ally.hp,10+Math.round(30*(1+.04*eff(100))));assert.equal(p.hp,ally.hp);assert.equal(events.filter(e=>e.type==='hit'&&e.dst===undead.id).length,1);
 });
 test('turn undead consumes mana, executes one nearest undead on success and sets success cooldown',()=>{
  const {world,p}=fixture('turn_undead',120);const near=mob(world,'ghoul'),far=mob(world,'ghoul',570);mob(world,'goblin_grunt',510);
@@ -28,7 +28,7 @@ test('failed or missing turn target has no cooldown, consumes MP, and never dama
 });
 test('effective INT reaches simulation; academy book and three-slot save work',()=>{
  const save=trained(createSave({name:'holy',answers:[0,0,0,0,0],weapon:'focus',createdAt:1}));save.gold=500;
- assert.equal(deriveMods(save).effectiveInt,save.stats.int);const learned=learnSkill(save,'turn_undead'),equipped=equipSkill(learned,'focus','turn_undead');assert.ok(equipped.loadout.includes('turn_undead'));assert.ok(validateSave(equipped));assert.equal(learned.gold,300);assert.equal(ABILITIES.turn_undead.manaCost,24);
+ assert.equal(deriveMods(save).effectiveInt,save.stats.int+6);const learned=learnSkill(save,'turn_undead'),equipped=equipSkill(learned,'focus','turn_undead');assert.ok(equipped.loadout.includes('turn_undead'));assert.ok(validateSave(equipped));assert.equal(learned.gold,300);assert.equal(ABILITIES.turn_undead.manaCost,24);
 });
 
 test('chance rises with effective INT, caps at 70%, clamps invalid input',async()=>{

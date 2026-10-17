@@ -45,15 +45,15 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   const mods = deriveMods(freeze(save));
   near(mods.maxHp, 180);
   assert.equal(mods.ac, ITEMS.boar_hide_armor.ac + 5);
-  near(mods.maxMp, 196);
-  near(mods.mpRegen, 5 * (0.2 + 0.8 * 2.2)); // WIS 220: 0.2 floor + 0.8 x WIS/100, past 100 keeps rising
+  near(mods.maxMp, 200); // Staff innate INT +6.
+  near(mods.mpRegen, 5 * (0.2 + 0.8 * 2.26)); // WIS 226 (staff +6): 0.2 floor + 0.8 x WIS/100, past 100 keeps rising
   near(mods.hpRegen, 2.5 * 0.1); assert.equal(mods.critChance, 0); assert.equal(mods.dropLuck, 0);
   near(mods.speedMult, 1.07);
   near(mods.dodgeCdMult, .79);
   near(mods.iframeBonusMs, 42);
   near(mods.potionHealMult, 1.18);
   near(mods.poiseMult, 1.48);
-  near(mods.dmgMult.focus, 1.15 * 1.25 * 1.27 * 1.48);
+  near(mods.dmgMult.focus, 1.15 * 1.25 * 1.27 * 1.5); // Effective INT 136.
   near(mods.dmgMult.blade, 1.15 * 1.25 * 1.27 * 0.35); // skills-v2: blade skills from a staff at 35%, no INT scaling
   assert.equal(mods.dmgMult.bow, 1);
   assert.equal(mods.capacity, 124);

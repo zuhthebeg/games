@@ -93,7 +93,8 @@ export function weaponLoadoutCandidate(prev, next, { keepCurrent = false } = {})
   }
   const from = weaponLoadoutKey(prev), to = weaponLoadoutKey(next);
   const history = prev.weaponLoadouts || {}, remembered = history[to];
-  const filtered = remembered?.map(id => id !== null && canUseSkill(id, weaponFamily(next), weaponForm(next)) ? id : null);
+  // Staff-locked selections remain remembered/visible; only runtime casting is blocked.
+  const filtered = remembered?.map(id => id !== null && (ABILITIES[id]?.requiresFocus || canUseSkill(id, weaponFamily(next), weaponForm(next))) ? id : null);
   const reason = keepCurrent ? 'current' : from === to ? 'same-form' : !remembered ? 'unseen'
     : filtered.some(Boolean) ? 'remembered' : 'unusable';
   const after = reason === 'remembered' ? filtered : before;

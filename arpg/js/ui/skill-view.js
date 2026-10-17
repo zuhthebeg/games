@@ -50,7 +50,7 @@ export const skillUse = skillDamageShare;
 const useClass = (id, weapon, form) => { const use = skillUse(id, weapon, form); return use === undefined ? ' use-blocked' : use < 1 ? ' use-weak' : ''; };
 export function weaponWarnHtml(id, save) {
   const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form), table = SKILL_USE[ABILITIES[id].family];
-  const allowed = ABILITIES[id].requiresForm ? '둔기 100%' : Object.entries(table).map(([w, v]) => `${WEAPON_NAMES[w]} ${Math.round(v * 100)}%`).join(' · ');
+  const allowed = ABILITIES[id].requiresFocus ? '지팡이 100%' : ABILITIES[id].shield ? '검 100% · 활 100% · 지팡이 100%' : ABILITIES[id].requiresForm ? '둔기 100%' : Object.entries(table).map(([w, v]) => `${WEAPON_NAMES[w]} ${Math.round(v * 100)}%`).join(' · ');
   return `<dl class="p2-lines weapon-warn${useClass(id, weapon, form)}"><div><dt>현재 무기</dt><dd>${form === 'blunt' ? '둔기' : WEAPON_NAMES[weapon]}</dd></div>`
     + `<div><dt>${use === undefined ? '사냥 중 사용' : '위력'}</dt><dd>${use === undefined ? '불가' : `${Math.round(use * 100)}%`}</dd></div>`
     + `<div><dt>사용 가능 무기</dt><dd>${allowed}</dd></div></dl>`;
@@ -75,7 +75,7 @@ export function loadoutHtml(save, { interactive = true } = {}) {
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id);
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
-  const stats = [a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? '반경 160 · 파티 보호막 8초 · 적 피해 1회 막고 파괴' : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['방어 약화 · 받는 피해 +15%', '파쇄 5초'] : []), ...(a.slow ? ['이동 속도 35% 감소 · 3초'] : []), ...(a.burst ? ['조준 방향 빠른 3연사 · 0.1초 간격'] : []), ...(a.dodgeShot ? ['회피 이동·무적 중 조준 사격', '회피 재사용 대기 중 사용 불가'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
+  const stats = [a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? '반경 160 · 파티 보호막 8초 · 적 피해 1회 막고 파괴' : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresFocus ? ['지팡이 필수'] : []), ...(a.heal ? ['지능에 비례해 회복량 증가'] : []), ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['방어 약화 · 받는 피해 +15%', '파쇄 5초'] : []), ...(a.slow ? ['이동 속도 35% 감소 · 3초'] : []), ...(a.burst ? ['조준 방향 빠른 3연사 · 0.1초 간격'] : []), ...(a.dodgeShot ? ['회피 이동·무적 중 조준 사격', '회피 재사용 대기 중 사용 불가'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
   if (context === 'character') {
     const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form), mark = useClass(id, weapon, form);
@@ -83,9 +83,9 @@ export function skillCardHtml(id, save, { context = 'academy' } = {}) {
     return `<article class="skill-card character-skill faculty-${a.family}${mark}" data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><button type="button" class="skill-card-main" data-action="skill-detail" data-id="${id}">${copy}</button><div class="slot-row">${slotPickHtml(id, save, 'character')}${warn}</div></article>`;
   }
   const req = !known && book ? bookRequirement(save,id) : null, blocked = !known && (save.gold < book.price || !req.ok);
-  const formBlocked = a.requiresForm && !canUseSkill(id, weaponFamily(save), weaponForm(save));
+  const formBlocked = (a.requiresForm || a.requiresFocus) && !canUseSkill(id, weaponFamily(save), weaponForm(save));
   const control = context === 'detail' ? '' : known ? slotPickHtml(id, save, 'academy')
     : `<button type="button" data-action="learn-skill" data-id="${id}" ${blocked ? 'disabled' : ''}>배우기</button>`;
   const lack = !known ? [req && !req.ok ? req.label : '', save.gold < book.price ? '골드 부족' : ''].filter(Boolean) : [];
-  return `<article class="skill-card faculty-${a.family}${formBlocked ? ' use-blocked' : ''}" data-skill="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><div class="skill-card-main">${copy}${formBlocked ? '<i class="slot-blocked" aria-label="무기: 둔기">✕</i>' : ''}</div>${control}${lack.length ? `<small class="loss">${lack.join(' · ')}</small>` : ''}</article>`;
+  return `<article class="skill-card faculty-${a.family}${formBlocked ? ' use-blocked' : ''}" data-skill="${id}" data-grade="${SKILL_DISPLAY[id].grade}"><div class="skill-card-main">${copy}${formBlocked ? '<i class="slot-blocked" aria-label="필수 무기">✕</i>' : ''}</div>${control}${lack.length ? `<small class="loss">${lack.join(' · ')}</small>` : ''}</article>`;
 }

@@ -94,3 +94,9 @@ export function attackRate(agiBonus = 0, weaponWeight = 8, loadRatio = 0, armorW
   return Math.max(a.min, Math.min(a.max, (1 + Math.max(0, Math.min(a.agiCap, agiBonus)))
     / (1 + a.weightPerUnit * (weight - a.weightReference) + a.loadSlope * load + armor)));
 }
+
+// Shared stat effect curve: equipment/meta damage and authoritative healing agree.
+export function statEffect(value) {
+  const delta = Math.max(0, value - BALANCE.stats.base) / BALANCE.stats.pointScale;
+  return delta <= BALANCE.stats.knee ? delta : BALANCE.stats.knee + (delta - BALANCE.stats.knee) * BALANCE.stats.slope;
+}

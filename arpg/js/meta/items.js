@@ -9,6 +9,7 @@ import { lineageAllowsWeapon } from '../content/player-lineages.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
   name, kind: 'weapon', slot: 'weapon', huntTier: 1, material: family === 'blade' ? 'metal' : 'wood', family, rarity, power, weight, form,
+  ...(family === 'focus' ? { innateStats: { int: 6, wis: 6 } } : {}),
   requiredLevel: { common: 1, fine: 2, rare: 4 }[rarity],
 });
 // AC = old armor HP × 2/3: keeps effective HP within ~10% of the old HP model across hunting tiers.

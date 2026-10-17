@@ -116,6 +116,7 @@ export const ABILITIES = {
     damage: 48, poise: 20, knockback: 100, family: 'focus', element: 'frost', cancelInto: ['recovery'],
   },
   flame_ring: {
+    requiresFocus: true,
     name: '화염 고리', windupMs: 360, lockMs: 0, activeMs: 100, recoveryMs: 280, cooldownMs: 5500, manaCost: 18,
     delivery: 'shape', shape: { type: 'circle', radius: 169, offset: 0 },
     damage: 68, poise: 40, knockback: 240, family: 'focus', element: 'fire', cancelInto: ['recovery'],
@@ -136,6 +137,7 @@ export const ABILITIES = {
   },
 
   turn_undead: {
+    requiresFocus: true,
     name: '턴 언데드', windupMs: 500, lockMs: 100, activeMs: 100, recoveryMs: 300,
     cooldownMs: 8000, manaCost: 24, delivery: 'execution', executeUndead: { radius: 160 },
     damage: 0, poise: 0, knockback: 0, family: 'focus', cancelInto: ['recovery'],
@@ -260,6 +262,8 @@ export const SKILL_USE = {
 export const SKILL_SLOTS = 3;
 export function skillDamageShare(abilityId, weapon, form) {
   const def = ABILITIES[abilityId];
+  if (def?.requiresFocus && weapon !== 'focus') return undefined;
+  if (def?.shield) return SKILL_USE.focus[weapon] === undefined ? undefined : 1;
   if (def?.requiresForm && (weapon !== def.family || form !== def.requiresForm)) return undefined;
   return SKILL_USE[def?.family]?.[weapon];
 }

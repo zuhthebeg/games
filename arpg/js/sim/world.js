@@ -11,7 +11,7 @@ import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseS
 
 import { MONSTER_VARIANTS } from '../content/monsters.js';
 
-import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
+import { BALANCE, statEffect, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
 import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
@@ -32,11 +32,12 @@ const BASIC_ABILITIES = new Set(Object.values(WEAPONS).map((w) => w.basic));
 export const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 
 // Up to three skill slots (skills-v2 §2). Unknown or weapon-forbidden ids become empty;
-// an empty first slot falls back to the kit skill so a fresh character always has one.
+// an empty first slot falls back to the kit skill, except a staff-locked request
+// stays empty so a blocked button cannot silently cast the weapon kit instead.
 export function playerSkills(mods, weapon) {
   const ids = Array.isArray(mods.skills) ? mods.skills : [mods.skill];
   const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon, mods.weaponForm) ? ids[i] : null));
-  if (!slots[0]) slots[0] = WEAPONS[weapon].skill;
+  if (!slots[0] && !ABILITIES[ids[0]]?.requiresFocus) slots[0] = WEAPONS[weapon].skill;
   return slots;
 }
 
@@ -572,7 +573,7 @@ function doActive(world, ent, act) {
       }
       if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
         || dist2(ent.x, ent.y, target.x, target.y) > def.heal.radius ** 2) continue;
-      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * def.heal.maxHpFrac * (ent.staffAffinity === 'holy' ? 1.2 : 1)));
+      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * def.heal.maxHpFrac * (1 + BALANCE.stats.focusDamage * statEffect(ent.effectiveInt ?? BALANCE.stats.base)) * (ent.staffAffinity === 'holy' ? 1.2 : 1)));
       if (heal <= 0) continue;
       target.hp += heal;
       world.events.push({ type: 'heal', src: ent.id, dst: target.id, pid: target.pid, ability: act.id,

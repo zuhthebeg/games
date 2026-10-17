@@ -3,6 +3,7 @@ import { skeletonAppearance } from '../render/skeleton-equipment-state.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from '../meta/knight-equipment.js';
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
+import { STAT_NAMES } from '../meta/stats.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
@@ -142,6 +143,7 @@ export function itemDetailsHtml(item) {
     row('rarity', '등급', GRADES[def.rarity]),
     def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
+    ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),
     ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));

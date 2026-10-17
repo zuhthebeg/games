@@ -1,4 +1,4 @@
-import { BALANCE } from '../content/balance.js';
+import { BALANCE, statEffect } from '../content/balance.js';
 import { SKILL_USE } from '../content/combat.js';
 const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
@@ -12,10 +12,7 @@ export const cap = (level) => Math.min(S.capMax, S.capBase + S.capPerLevel * lev
 // Total points a level grants (allocated above base + unspent).
 export const statBudget = (level) => S.startPoints + S.pointsPerLevel * (level - 1);
 
-export function eff(value) {
-  const delta = Math.max(0, value - S.base) / S.pointScale;
-  return delta <= S.knee ? delta : S.knee + (delta - S.knee) * S.slope;
-}
+export const eff = statEffect;
 // 0 at base, 1 at 100, keeps rising past 100 (gear).
 export const norm = (value) => Math.max(0, value - S.base) / (S.capMax - S.base);
 
@@ -23,7 +20,8 @@ export const norm = (value) => Math.max(0, value - S.base) / (S.capMax - S.base)
 export function effectiveStats(save) {
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
-  return Object.fromEntries(STAT_KEYS.map((key) => [key, (save.stats[key] ?? S.base) + (affixes[`${key}_flat`] || 0)]));
+  return Object.fromEntries(STAT_KEYS.map((key) => [key, (save.stats[key] ?? S.base) + (affixes[`${key}_flat`] || 0)
+    + gear.reduce((sum, item) => sum + (ITEMS[item.id].innateStats?.[key] || 0), 0)]));
 }
 
 export function allocateStats(save, allocation) {
