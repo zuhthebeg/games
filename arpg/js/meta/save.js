@@ -191,7 +191,21 @@ export function repairTwohandShield(data) {
   const weapon=Array.isArray(data?.items) ? data.items.find(item=>item?.uid===data?.equipped?.weapon) : null;
   if(ITEMS[weapon?.id]?.handedness !== 2 || !data?.equipped?.offhand) return data;
   const next={...data,equipped:{...data.equipped,offhand:null}};
-  return validateSave(next) ? next : data;
+  if(validateSave(next))return next;
+  // A shield's capacity affix may have supported a nearly full supply bag.
+  // Reclassification must not quarantine that valid character: use its existing stash.
+  if(!record(next.stacks)||!record(next.stash?.stacks))return data;
+  const work=structuredClone(next);
+  try {
+    for(const id of CONSUMABLES) {
+      const excess=carriedWeight(work)-capacity(work)*1.2;
+      if(excess<=0)break;
+      if(!integer(work.stacks[id],1))continue;
+      const count=Math.min(work.stacks[id],Math.ceil((excess-1e-9)/ITEMS[id].weight));
+      work.stacks[id]-=count;work.stash.stacks[id]=(work.stash.stacks[id]||0)+count;
+    }
+    return validateSave(work)?work:data;
+  } catch {return data;}
 }
 export class SaveStore {
   constructor(storage, now = () => Date.now()) {
