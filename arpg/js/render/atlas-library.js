@@ -1,3 +1,4 @@
+import { MONSTER_VARIANTS } from '../content/monsters.js';
 import { ATLAS_IDS } from './atlas-state.js';
 
 // One promise per requested kit: no download of other weapons or future spawns.
@@ -16,7 +17,7 @@ export class AtlasLibrary {
   }
 
   beginRound(keys) {
-    this.active = new Set(keys);
+    this.active = new Set(keys.map(key => MONSTER_VARIANTS[key]?.baseModelId || key));
     for (const [key, record] of this.entries) {
       if (!this.active.has(key) && record.asset) {
         this.entries.delete(key);
@@ -32,6 +33,7 @@ export class AtlasLibrary {
   }
 
   load(key) {
+    key = MONSTER_VARIANTS[key]?.baseModelId || key;
     this.active.add(key);
     if (this.entries.has(key)) return this.entries.get(key).promise;
     if (this.failed.has(key)) return Promise.resolve(null);

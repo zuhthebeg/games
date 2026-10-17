@@ -9,7 +9,7 @@ export const HUMAN_PRESENTATIONS = Object.freeze({
   ghoul: 'blade', ghost: 'focus', bat: 'blade', demon: 'blade', goleling: 'blade',
   slime: 'blade', succubus: 'bow',
 });
-export const ORIGINAL_PRESENTATIONS = Object.freeze(['scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon']);
+export const ORIGINAL_PRESENTATIONS = Object.freeze(['scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon', 'necropolis_lord']);
 
 export function installKnightPresentation(provider, save = { lineage: 'skeleton_knight', level: 1 }) {
   const previous = new Map(provider.factories);

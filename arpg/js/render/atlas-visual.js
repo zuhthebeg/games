@@ -4,6 +4,7 @@ import { Assets, Container, Graphics, Sprite, Text, Texture, Rectangle } from '.
 import { paperdolls } from './paperdoll-library.js';
 import { paperdollEnabled } from './paperdoll-state.js';
 import { AtlasLibrary } from './atlas-library.js';
+import { MONSTER_NAMES } from '../content/monsters.js';
 import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
 
 export function registerAtlasFactories(provider, fallbackFactory) {
@@ -121,6 +122,14 @@ function spriteVisual(entity, { color }, asset) {
   flash.scale.copyFrom(sprite.scale);
   flash.blendMode = 'add';
   flash.visible = false;
+  const necropolisBoss = entity.type === 'necropolis_lord';
+  // Authored boss identity is visible without relying on elite tint: crown + name on the reused warrior.
+  const bossTitle = necropolisBoss ? new Text({ text: MONSTER_NAMES[entity.type], style: {
+    fontFamily:'sans-serif', fontSize:16, fontWeight:'bold', fill:0xffdda0, stroke:{color:0x17151a,width:4},
+  } }) : null;
+  const crown = necropolisBoss ? new Graphics().poly([-14,-114,-17,-128,-7,-122,0,-134,7,-122,17,-128,14,-114])
+    .fill(0xffcf71).stroke({color:0x35261c,width:2}) : null;
+  if (bossTitle) { bossTitle.anchor.set(.5); bossTitle.y=-151; container.addChild(bossTitle, crown); }
   const dragon = entity.type === 'throne_dragon';
   const cue = dragon ? new Text({ text:'', style:{fontFamily:'sans-serif',fontSize:17,fill:0xffe1a8,
     stroke:{color:0x17151a,width:4}} }) : null;
@@ -149,6 +158,7 @@ function spriteVisual(entity, { color }, asset) {
     get debug() {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         equipment: asset.descriptor || null,
+        ...(necropolisBoss ? {bossMarker:true, bossName:bossTitle.text, crown:true} : {}),
         ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
@@ -182,6 +192,7 @@ function spriteVisual(entity, { color }, asset) {
       // Training samples (scarecrow, dragon) never lose HP, so no bar.
       bar.visible = health.visible = state.kind === 'monster' && !state.dead && state.type !== 'training_dragon';
       health.scale.x = Math.max(0, state.hp / state.maxHp);
+      if (bossTitle) bossTitle.visible = crown.visible = !state.dead;
       if (cue) { cue.visible=!!state.act && !state.dead;
         cue.text=state.act ? `공격: ${state.act.def.name} · 단계: ${state.act.phase==='recovery'?'회복':state.act.phase==='active'?'발동':'준비'}` : ''; }
     },

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { ATLAS_IDS, DIRECTIONS, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from '../js/render/atlas-state.js';
+import { MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { AtlasLibrary } from '../js/render/atlas-library.js';
 
 const base = new URL('../assets/sprites/', import.meta.url);
@@ -59,7 +60,7 @@ test('display-state priority and bounded frame indices never mutate frozen simul
 test('every registered content key has eight-direction WebP clips and bounded kit (legacy <=1.5MB / 504-frame throne <=4MB); no PNG delivery', async () => {
   for (const [key, id] of Object.entries(ATLAS_IDS)) {
     const entry = manifest.find((candidate) => candidate.id === id);
-    assert.ok(entry?.content_ids.includes(key), key);
+    assert.ok(entry?.content_ids.includes(MONSTER_VARIANTS[key]?.baseModelId || key), key);
     let bytes = 0;
     const animations = {};
     const files = await readdir(new URL(`${id}/`, base));

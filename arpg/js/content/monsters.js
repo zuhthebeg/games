@@ -9,6 +9,7 @@ export const MONSTER_PALETTES = {
   demon: [0xffffff], goleling: [0xffffff], slime: [0xffffff],
   succubus: [0xffffff],
   human: [0xffffff],
+  necropolis: [0xffdca0],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
 };
 export const MONSTER_MODELS = [
@@ -37,7 +38,7 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
   speciesTags, lifeState, disposition: 'hostile',
 });
 export const MONSTER_VARIANTS = {
-  necropolis_lord: { ...variant('necropolis_lord', 'skeleton', ['skeleton', 'humanoid', 'boss'], 'undead'), baseModelId: 'skeleton_warrior' },
+  necropolis_lord: { ...variant('necropolis_lord', 'necropolis', ['skeleton', 'humanoid', 'boss'], 'undead'), baseModelId: 'skeleton_warrior' },
   undead_lab_human_melee: variant('undead_lab_human_melee', 'human', ['human', 'humanoid'], 'living'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),
