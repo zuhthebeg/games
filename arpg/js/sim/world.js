@@ -262,11 +262,12 @@ function stepPlayer(world, p, inp) {
   if (p.pendingCounter?.kind === 'shield' && !p.act) {
     const pending=p.pendingCounter,target=world.entities.find(e=>e.id===pending.attackerId);
     p.pendingCounter=null;
-    if(target && isTargetable(target) && target.team!==p.team) {
-      startAct(world,p,'shield_bash',Math.atan2(target.y-p.y,target.x-p.x),true);
-      p.act.counter=true;p.act.counterTarget=target.id;
-      world.events.push({type:'counter',id:p.id,pid:p.pid,attackerId:target.id,dodgeTick:pending.dodgeTick,ability:'shield_bash'});
-    }
+    const liveTarget=target && isTargetable(target) && target.team!==p.team ? target : null;
+    const x=liveTarget?.x ?? pending.fromX,y=liveTarget?.y ?? pending.fromY;
+    startAct(world,p,'shield_bash',Number.isFinite(x)&&Number.isFinite(y)?Math.atan2(y-p.y,x-p.x):p.facing,true);
+    p.act.counter=true;p.act.counterTarget=pending.attackerId;
+    if(p.shieldGuard?.left>0)p.shieldGuard.facing=p.facing;
+    world.events.push({type:'counter',id:p.id,pid:p.pid,attackerId:pending.attackerId,dodgeTick:pending.dodgeTick,ability:'shield_bash'});
   }
   if (guarding && p.act?.id !== 'shield_bash') {
     if(p.act) endAct(world,p,true);
@@ -715,7 +716,7 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
       for (const id of t.skills.filter(Boolean)) t.cds[id]=0;
       t.focusResetUntil=world.tick+ticks(8000);
     }
-  } else if (attacker) t.pendingCounter = { ...(t.offhand === 'shield' ? {kind:'shield'} : {}), attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
+  } else if (attacker || t.offhand === 'shield') t.pendingCounter = { ...(t.offhand === 'shield' ? {kind:'shield',fromX:hit.fromX,fromY:hit.fromY} : {}), attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
     expiresTick: t.dodge.startedTick + Math.max(ticks(t.offhand === 'shield' ? 400 : PB.dodge.dashMs),
       dodgeTiming(t, multiplayerDodge(world)).iframeTicks) + ticks(BALANCE.counter.graceMs) };
   world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
