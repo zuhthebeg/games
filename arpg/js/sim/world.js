@@ -7,7 +7,7 @@ import {
   DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle, segmentCircleEntry,
   TEAM_PLAYER, TEAM_MONSTER,
 } from './core.js';
-import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseSkill } from '../content/combat.js';
+import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseSkill, weaponAttackMultiplier } from '../content/combat.js';
 
 import { MONSTER_VARIANTS } from '../content/monsters.js';
 
@@ -77,6 +77,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     ...(mods.effectiveInt !== undefined ? { effectiveInt: Number.isFinite(mods.effectiveInt) ? Math.max(0, Math.min(10000, mods.effectiveInt)) : 0 } : {}),
     ...( ['fire', 'frost', 'holy'].includes(mods.staffAffinity) ? { staffAffinity: mods.staffAffinity } : {}),
+    ...(mods.silverWeapon === true ? { silverWeapon: true } : {}),
     cdMult: mods.cdMult ?? 1,
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
@@ -721,6 +722,11 @@ function applyHit(world, t, hit) {
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
   let dmg = hit.fixedDamage ?? def.damage * hit.mult;
+  // Fixed follow-up counters already include the first hit's silver bonus; DOT and
+  // execution bypass specialization. No RNG or timing change for ordinary weapons.
+  if (hit.srcKind === 'player' && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
+    dmg *= weaponAttackMultiplier(world.entities.find(e => e.id === hit.srcId)?.silverWeapon, hit.abilityId, mdef?.lifeState);
+  }
   if (hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
   if (hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
   let exposed = false;

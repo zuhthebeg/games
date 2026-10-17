@@ -493,3 +493,13 @@ export const PLAYER_BASE = {
   manaPotion: 30,
   scroll: { channelMs: 2000, retryMs: 1000 },
 };
+
+// Weapon-target specialization shared by host damage and client-derived presentation.
+// Focus basic pulses are weapon attacks; authored focus spells and shield attacks are not.
+export const SILVER_UNDEAD_MULTIPLIER = 1.5;
+export function weaponAttackMultiplier(silverWeapon, abilityId, lifeState) {
+  const def = ABILITIES[abilityId];
+  const weaponAttack = def && (def.family === 'blade' || def.family === 'bow' || abilityId === 'focus_pulse')
+    && abilityId !== 'shield_bash' && !def.heal && !def.executeUndead && !def.shield;
+  return silverWeapon === true && lifeState === 'undead' && weaponAttack ? SILVER_UNDEAD_MULTIPLIER : 1;
+}
