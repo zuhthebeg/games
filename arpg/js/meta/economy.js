@@ -30,7 +30,10 @@ export const MATERIAL_STACK = { metal: 'scrap', leather: 'hide', wood: 'wood', c
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
   questExtraGearChance: 0.1, // Per-player quest budget: 90% one slot, 10% two; never scales with threat.
-  gearChance: 0.1, eliteGearChance: 0.35, stoneChance: 0.125, eliteStoneChance: 0.4,
+  gearChance: 0.04, eliteGearChance: 0.16, stoneChance: 0.125, eliteStoneChance: 0.4,
+  gearTierMultiplier: { 1: 1, 2: 0.85, 3: 0.70, 4: 0.55 },
+  gearRarityMultiplier: { common: 1, fine: 1, rare: 0.7, epic: 0.5 },
+  dropEnhanceWeights: { normal: [50,25,12,7,4,2,0], elite: [20,25,22,17,10,5,1], boss: [5,15,20,25,20,10,5] },
   normalRarity: BALANCE.threats[0].rarity, bossRarity: BALANCE.threats[0].bossRarity,
   // [강화석, 상급 강화석] weight per stone drop event, by hunting tier.
   stoneWeights: { 1: [97, 3], 2: [92, 8], 3: [82, 18] },
@@ -38,7 +41,7 @@ export const ECONOMY = {
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },
   starterBodyHp: { common: 0, fine: 12, rare: 20, epic: 28 },
   slotPrice: { offhand: 40, weapon: 60, head: 24, body: 50, hands: 22, feet: 22 },
-  craftRefundFraction: 0.25, optionPriceFactor: 0.2, bossExtraChance: 0.5, sellFraction: 0.25, dropBonusCap: 15, pityRounds: 6, refreshRounds: 3, refreshGold: 20,
+  craftRefundFraction: 0.25, optionPriceFactor: 0.2, bossExtraChance: 0.25, stoneExtraChance: 0.5, sellFraction: 0.25, dropBonusCap: 15, pityRounds: 6, refreshRounds: 3, refreshGold: 20,
   affixCount: { common: 0, fine: 1, rare: 2, epic: 3 },
 };
 export const AFFIX_RANGES = {

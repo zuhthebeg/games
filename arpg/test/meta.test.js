@@ -142,16 +142,16 @@ test('drops: deterministic, table ranges and probabilities over seeded populatio
     const chief = rollDrops('goblin_chief', seed);
     assert.ok(grunt.gold >= Math.floor(3 * BALANCE.normalGold) && grunt.gold <= Math.ceil(6 * BALANCE.normalGold));
     assert.ok(chief.gold >= 25 && chief.gold <= 40);
-    assert.equal(chief.stacks.scrap, 3);
-    assert.equal(chief.stacks.fang, 2);
+    assert.ok(chief.stacks.scrap === 4 || chief.stacks.scrap === 5);
+    assert.equal(chief.stacks.fang, 3);
     cleavers += grunt.items.filter((item) => !item.uid.includes(':rolled:')).length;
     mauls += chief.items.filter((item) => !item.uid.includes(':rolled:')).length;
     const boar = rollDrops('iron_boar', seed);
-    assert.equal(boar.stacks.hide, 2);
-    assert.ok(boar.stacks.scrap >= 1 && boar.stacks.scrap <= 2);
+    assert.equal(boar.stacks.hide, 3);
+    assert.ok(boar.stacks.scrap >= 1 && boar.stacks.scrap <= 3);
   }
-  assert.ok(cleavers > 500 && cleavers < 700, `cleavers: ${cleavers}`);
-  assert.ok(mauls > 2300 && mauls < 2700, `mauls: ${mauls}`);
+  assert.ok(cleavers > 180 && cleavers < 300, `cleavers: ${cleavers}`);
+  assert.ok(mauls > 750 && mauls < 1000, `mauls: ${mauls}`);
 });
 
 test('economy: every craft/dismantle cycle loses resources; enhance never refunds', () => {

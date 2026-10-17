@@ -278,7 +278,7 @@ function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
     if (random() < Math.min(1, chance + (ITEMS[id].kind === 'material' ? materialBonus / 100 : 0))) loot.stacks[id] = count;
   };
   const gear = (id, chance) => {
-    if (random() < Math.min(1, chance * gearMultiplier)) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
+    if (random() < Math.min(1, chance * gearMultiplier * ECONOMY.gearRarityMultiplier[ITEMS[id].rarity])) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
   };
   const table = NEW_MONSTER_DROPS[monsterType];
   if (table) {
@@ -322,24 +322,28 @@ function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
   return loot;
 }
 
-// Additive M1.5 stream: legacy probabilities/seed order remain intact.
+// Craft-first gear rolls; gold, consumable and stone draws retain their pre-B streams.
 export function rollDrops(monsterType, seed, ctx = {}) {
   const bonusSum = Math.max(0, (ctx.goldBonus || 0) + (ctx.materialBonus || 0));
   const capScale = bonusSum > ECONOMY.dropBonusCap ? ECONOMY.dropBonusCap / bonusSum : 1;
   const materialBonus = Math.max(0, ctx.materialBonus || 0) * capScale;
   const threat = threatMultipliers(ctx.threat ?? 1);
-  const loot = legacyDrops(monsterType, seed, materialBonus, threat.drop);
-  if (monsterType === 'scarecrow') return loot;
-  const random = rng(seed ^ 0xa521d937);
   const tier = Math.max(1, Math.min(4, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
+  const rank = boss ? 'boss' : elite ? 'elite' : 'normal';
+  const tierMultiplier = ECONOMY.gearTierMultiplier[tier];
+  const gearMultiplier = threat.drop * (boss ? 0.5 : elite ? 0.16 / 0.35 : 0.4) * tierMultiplier;
+  const loot = legacyDrops(monsterType, seed, materialBonus, gearMultiplier);
+  if (monsterType === 'scarecrow') return loot;
+  const random = rng(seed ^ 0xa521d937);
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
   // LUK raises the gear drop chance (cocy 10-12); same single draw, so seeds stay aligned.
-  if (random() < Math.min(1, chance * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
+  if (random() < Math.min(1, chance * (boss ? 1 : tierMultiplier) * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
-      let rarity = weighted(Object.entries((ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity)), random);
+      const rarityPool = (ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity);
+      let rarity = weighted(Object.entries(rarityPool).map(([key, weight]) => [key, weight * ECONOMY.gearRarityMultiplier[key]]), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       // I1 authored no T4 head/hands/feet. Retain slot odds, falling back to existing T3 gear.
@@ -352,19 +356,25 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       loot.items.push(instance(`drop:${seed >>> 0}:rolled:${i}:${id}`, id, rollSeed));
     }
   }
+  // Previously gear and ordinary stones shared one stream. Replay only its draw count
+  // using the OLD gates, so lower gear odds/rarity never reroll a stone or its amount.
+  const stoneRandom = rng(seed ^ 0xa521d937);
+  if (stoneRandom() < Math.min(1, (boss ? 1 : elite ? 0.35 : 0.1) * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
+    const oldCount = boss ? 1 + (stoneRandom() < 0.5 ? 1 : 0) : 1;
+    for (let i = 0; i < oldCount * 3; i++) stoneRandom();
+  }
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
-  if (random() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
-    const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
+  if (stoneRandom() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
+    const count = boss ? 1 + (stoneRandom() < ECONOMY.stoneExtraChance ? 1 : 0) : 1;
     // A drop event is either a pile of plain stones (5 = one attempt) or a single greater stone.
     const [min, max] = ENCHANT.stoneCount[boss ? 'boss' : elite ? 'elite' : 'normal'];
     for (let i = 0; i < count; i++) {
-      const stone = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], random);
-      const amount = stone === STONE ? min + Math.floor(random() * (max - min + 1)) : 1;
+      const stone = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], stoneRandom);
+      const amount = stone === STONE ? min + Math.floor(stoneRandom() * (max - min + 1)) : 1;
       loot.stacks[stone] = (loot.stacks[stone] || 0) + amount;
     }
   }
   // Special stones have independent streams so legacy gear/stone/gold rolls stay unchanged.
-  const rank = boss ? 'boss' : elite ? 'elite' : 'normal';
   const blessedRandom = rng(seed ^ 0x5b1e55ed);
   if (blessedRandom() < ENCHANT.blessedChance[rank] * threat.drop) {
     loot.stacks[BLESSED_STONE] = (loot.stacks[BLESSED_STONE] || 0) + 1;
@@ -378,9 +388,28 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   // Guardian-only rewards use an isolated stream: adding them cannot shift old loot rolls.
   const exclusiveRandom = rng(seed ^ 0x741d4a91);
   for (const entry of NEW_MONSTER_DROPS[monsterType]?.items || []) {
-    if (entry.exclusive && exclusiveRandom() < Math.min(1, entry.chance * threat.drop * (1 + Math.max(0, ctx.dropLuck || 0)))) {
+    if (entry.exclusive && exclusiveRandom() < Math.min(1, entry.chance * gearMultiplier * ECONOMY.gearRarityMultiplier[ITEMS[entry.id].rarity] * (1 + Math.max(0, ctx.dropLuck || 0)))) {
       loot.items.push(instance(`drop:${seed >>> 0}:${entry.id}`, entry.id, seed));
     }
+  }
+  // Monsters were using gear lost by earlier adventurers. One independent roll per
+  // instance (not the loot-order index), shared by ordinary, legacy and exclusive gear.
+  for (const item of loot.items) item.enhance = Number(weighted(
+    ECONOMY.dropEnhanceWeights[rank].map((weight, level) => [level, weight]), rng(item.rolledAt ^ 0xd09e6a31)));
+  // Stochastic 1.5x quantities preserve each old material/consumable gate and RNG order.
+  const materialRandom = rng(seed ^ 0xba51c150);
+  for (const id of ['scrap', 'hide', 'wood', 'web', 'fang']) {
+    const scaled = (loot.stacks[id] || 0) * 1.5;
+    if (scaled) loot.stacks[id] = Math.floor(scaled) + (materialRandom() < scaled % 1 ? 1 : 0);
+  }
+  // Retire guaranteed legacy rune/frost piles in favor of the rare T2+ material pool.
+  // Still consumed the old table draws above; dragon_scale remains exactly unchanged.
+  delete loot.stacks.rune_shard;
+  delete loot.stacks.frost_shard;
+  const premiumRandom = rng(seed ^ 0x9e771a15);
+  if (tier >= 2) for (const id of ['rune_shard', 'frost_shard']) {
+    if (boss) loot.stacks[id] = 1 + Math.floor(premiumRandom() * 2);
+    else if (premiumRandom() < (elite ? 0.08 : 0.01) * threat.drop) loot.stacks[id] = 1;
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];

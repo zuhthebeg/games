@@ -44,9 +44,9 @@ test('C1 every equipment rarity yields only its primary material plus unchanged 
   }
 });
 
-test('C1 recipe IDs/gold unchanged; exact consumption, deterministic affixes/UID and 25% primary refund persist', () => {
+test('C1 authored recipe costs unchanged; exact consumption, deterministic affixes/UID and 25% primary refund persist', () => {
   const prices = {iron_sword:60,hunter_bow:60,ember_wand:60,boar_hide_armor:50,leather_vest:40,rune_blade:140,rune_maul:140,warden_maul:240,pack_bow:140,altar_staff:140,woven_armor:140};
-  assert.deepEqual(Object.fromEntries(Object.entries(RECIPES).filter(([id]) => ITEMS[id].huntTier < 4).map(([id,r]) => [id,r.gold])), prices);
+  assert.deepEqual(Object.fromEntries(Object.entries(RECIPES).filter(([id]) => Object.hasOwn(prices,id)).map(([id,r]) => [id,r.gold])), prices);
   for (const [id, recipe] of Object.entries(RECIPES)) {
     const base = freeze(rich()), made = craft(base, id), item = made.items.at(-1), primary = dismantleMaterial(item);
     assert.ok(recipe[primary] > 0); assert.deepEqual(made, craft(base,id));
@@ -130,16 +130,16 @@ test('C1 wood reaches the actual S2/S5 quest bag and settlement/save without ext
 });
 
 // Load the committed baseline in a fresh node process: compare actual previous seeded drops,
-// not a rewritten oracle. Reassignment keeps count/chance/weight/sell, RNG order and other loot.
-test('C1 1,000 seeds per monster retain all baseline drop bytes except slinger/wolf scrap -> wood', () => {
+// not a rewritten oracle. B deliberately tunes gear/materials, preserving independent streams.
+test('B 1,000 seeds per monster retain pre-B gold, consumables and stone bytes', () => {
   // Preserve all original nine seeded-drop baselines; main's three and U1's four additions are explicit.
   const baselineIds = ['scarecrow','goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','spirit','poison_spider'];
   assert.deepEqual(Object.keys(MONSTERS).filter(id => !baselineIds.includes(id)),
-    ['throne_dragon','training_dragon','gargoyle','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat','demon','goleling','slime','succubus']);
+    ['throne_dragon','training_dragon','gargoyle','necropolis_lord','skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost','bat','demon','goleling','slime','succubus','undead_lab_human_melee']);
   assert.ok(baselineIds.every(id => Object.hasOwn(MONSTERS, id)));
-  const oldItems=execFileSync('git',['show','cb53781:arpg/js/meta/items.js'],{encoding:'utf8'});
-  const oldLoot=execFileSync('git',['show','cb53781:arpg/js/content/loot.js'],{encoding:'utf8'});
-  const oldEconomy=execFileSync('git',['show','cb53781:arpg/js/meta/economy.js'],{encoding:'utf8'});
+  const oldItems=execFileSync('git',['show','5f82b40:arpg/js/meta/items.js'],{encoding:'utf8'});
+  const oldLoot=execFileSync('git',['show','5f82b40:arpg/js/content/loot.js'],{encoding:'utf8'});
+  const oldEconomy=execFileSync('git',['show','5f82b40:arpg/js/meta/economy.js'],{encoding:'utf8'});
   const script=`const root=new URL(${JSON.stringify(new URL('../js/meta/', import.meta.url).href)});
     let src=${JSON.stringify(oldItems)}.replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,root).href));
     src=src.replace(new URL('../content/loot.js',root).href,'data:text/javascript;base64,'+Buffer.from(${JSON.stringify(oldLoot)}).toString('base64'));
@@ -148,13 +148,13 @@ test('C1 1,000 seeds per monster retain all baseline drop bytes except slinger/w
     const out=[];for(const m of ${JSON.stringify(baselineIds)}) for(let seed=0;seed<1000;seed++) out.push(rollDrops(m,seed,{materialBonus:7,threat:2}));
     console.log(JSON.stringify(out));`;
   const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:16*1024*1024}));
-  let index=0, wood=0;
+  const stable = loot => ({gold:loot.gold,stacks:Object.fromEntries(Object.entries(loot.stacks).filter(([id])=>ITEMS[id]?.kind==='consumable'||id.startsWith('enhance_stone')))});
+  let index=0;
   for(const m of baselineIds) for(let seed=0;seed<1000;seed++) {
     const expected=old[index++];
-    if(['goblin_slinger','wolf'].includes(m) && expected.stacks.scrap) {expected.stacks.wood=expected.stacks.scrap;delete expected.stacks.scrap;wood+=expected.stacks.wood;}
-    const actual=rollDrops(m,seed,{materialBonus:7,threat:2});assert.deepEqual(actual,expected,`${m}:${seed}`);
+    const actual=rollDrops(m,seed,{materialBonus:7,threat:2});assert.deepEqual(stable(actual),stable(expected),`${m}:${seed}`);
     assert.deepEqual(actual,rollDrops(m,seed,{materialBonus:7,threat:2}));
   }
-  assert.ok(wood>2000);assert.equal(ITEMS.wood.weight,ITEMS.scrap.weight);assert.equal(ITEMS.wood.sell,ITEMS.scrap.sell);
-  assert.equal(rollDrops('wolf',0).stacks.wood,2);
+  assert.equal(ITEMS.wood.weight,ITEMS.scrap.weight);assert.equal(ITEMS.wood.sell,ITEMS.scrap.sell);
+  assert.equal(rollDrops('wolf',0).stacks.wood,3);
 });
