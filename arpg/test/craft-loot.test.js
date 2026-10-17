@@ -10,13 +10,14 @@ test('B gear gates reduce normal/elite by tier; boss retains guarantee with quar
  assert.equal(ECONOMY.gearChance,.04);assert.equal(ECONOMY.eliteGearChance,.16);assert.equal(ECONOMY.bossExtraChance,.25);
  const rows=[];
  for(const [rank,flags,chance] of [['normal',{},.04],['elite',{elite:true},.16],['boss',{boss:true},1]])for(const [tier,mult] of [[1,1],[2,.85],[3,.7],[4,.55]]){
-  let gear=0,extra=0;
+  let gear=0,extra=0,oldGear=0;
   for(let seed=1;seed<=n;seed++){
+   const old=rng(seed^0xa521d937);if(old()<(rank==='normal'?.1:rank==='elite'?.35:1))oldGear++;
    const items=rolled(rollDrops('skeleton_minion',seed,{...flags,huntTier:tier}));
    if(rank==='boss'){assert.ok(items.length>=1);extra+=items.length-1;}else gear+=items.length;
   }
   const actual=(rank==='boss'?extra:gear)/n,expected=rank==='boss'?.25:chance*mult;
-  assert.ok(Math.abs(actual-expected)<.012,`${rank} T${tier} ${actual} expected ${expected}`);rows.push({rank,tier,actual,expected});
+  assert.ok(Math.abs(actual-expected)<.012,`${rank} T${tier} ${actual} expected ${expected}`);rows.push({rank,tier,actual,expected,...(rank==='boss'?{}:{oldRate:oldGear/n,reduction:1-gear/oldGear})});
  }
  console.log('B deterministic gear rates',JSON.stringify(rows));
 });
@@ -52,6 +53,7 @@ test('B premium materials are rare T2+ independent rolls, boss guarantees 1~2 ea
    for(const id of Object.keys(bins)){const count=loot.stacks[id]||0;if(rank==='boss')assert.ok(count===1||count===2);else assert.ok(count<=1);if(count)bins[id]++;}
   }
   for(const id of Object.keys(bins))assert.ok(Math.abs(bins[id]/n-chance)<.012,`${rank} ${id}`);
+  console.log('B premium drops',JSON.stringify({rank,n,bins}));
  }
  for(let seed=1;seed<=300;seed++){
   const t1=rollDrops('skeleton_minion',seed,{huntTier:1});assert.ok(!t1.stacks.rune_shard&&!t1.stacks.frost_shard);

@@ -149,12 +149,16 @@ test('B 1,000 seeds per monster retain pre-B gold, consumables and stone bytes',
     console.log(JSON.stringify(out));`;
   const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:16*1024*1024}));
   const stable = loot => ({gold:loot.gold,stacks:Object.fromEntries(Object.entries(loot.stacks).filter(([id])=>ITEMS[id]?.kind==='consumable'||id.startsWith('enhance_stone')))});
+  const basic = Object.fromEntries(['scrap','hide','wood','web','fang'].map(id=>[id,{before:0,after:0}]));
   let index=0;
   for(const m of baselineIds) for(let seed=0;seed<1000;seed++) {
     const expected=old[index++];
     const actual=rollDrops(m,seed,{materialBonus:7,threat:2});assert.deepEqual(stable(actual),stable(expected),`${m}:${seed}`);
     assert.deepEqual(actual,rollDrops(m,seed,{materialBonus:7,threat:2}));
+    for(const id of Object.keys(basic)){basic[id].before+=expected.stacks[id]||0;basic[id].after+=actual.stacks[id]||0;}
   }
+  for(const [id,row] of Object.entries(basic))assert.ok(Math.abs(row.after/row.before-1.5)<.025,`${id}: ${row.after/row.before}`);
+  console.log('B basic material old/new',JSON.stringify(basic));
   assert.equal(ITEMS.wood.weight,ITEMS.scrap.weight);assert.equal(ITEMS.wood.sell,ITEMS.scrap.sell);
   assert.equal(rollDrops('wolf',0).stacks.wood,3);
 });

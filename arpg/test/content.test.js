@@ -136,7 +136,7 @@ test('real board renders S4 → S5 → S6 → S7 locks and recommended levels', 
   assert.doesNotMatch(hub.html, /undefined/);
 });
 
-test('new seeded tables always award region materials, stay bounded and never add antidotes', () => {
+test('craft-first seeded tables raise basic quantities, make premium materials rare and never add antidotes', () => {
   assert.deepEqual(CONSUMABLES, ['potion', 'mana_potion', 'return_scroll']);
   assert.equal(ITEMS.antidote, undefined);
   assert.ok(Object.values(ITEMS).filter((item) => item.kind === 'material').length <= 20);
@@ -146,7 +146,9 @@ test('new seeded tables always award region materials, stay bounded and never ad
       assert.deepEqual(result, rollDrops(id, seed));
       assert.ok(result.gold >= Math.floor(table.gold[0] * BALANCE.normalGold) && result.gold <= Math.ceil(table.gold[1] * BALANCE.normalGold));
       for (const stack of table.stacks.filter((entry) => entry.chance === undefined)) {
-        assert.equal(result.stacks[stack.id], stack.count);
+        if (['scrap','hide','wood','web','fang'].includes(stack.id)) assert.ok(result.stacks[stack.id] >= Math.floor(stack.count * 1.5) && result.stacks[stack.id] <= Math.ceil(stack.count * 1.5));
+        else if (['rune_shard','frost_shard'].includes(stack.id)) assert.ok(!result.stacks[stack.id] || result.stacks[stack.id] === 1);
+        else assert.equal(result.stacks[stack.id], stack.count);
       }
       assert.ok(result.items.every((item) => Object.hasOwn(ITEMS, item.id)));
     }

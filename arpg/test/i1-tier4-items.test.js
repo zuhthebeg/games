@@ -37,33 +37,35 @@ for(const id of [...common,...rare]) test(`I1 ${id}: exact T4 definition, craft/
  const it=made.items.at(-1);roundtrip(made);const equipped=equip(made,it.uid);assert.equal(equipped.equipped[d.slot],it.uid);roundtrip(equipped);
  if(d.requiredStr){const weak=structuredClone(made);weak.stats.str=d.requiredStr-1;assert.throws(()=>equip(weak,it.uid),/힘/);}
 });
-test('I1 rare guardian rolls: each 4%, LUK monotonic, reproducible, no rare recipe/ordinary pool',()=>{
+test('B guardian exclusive gear has tier/rarity scarcity, LUK monotonicity and no recipe/ordinary pool',()=>{
  for(const id of rare){assert.equal(NEW_MONSTER_DROPS.throne_dragon.items.find(e=>e.id===id).chance,.04);let base=0,lucky=0;
  for(let seed=0;seed<10000;seed++){
   const a=rollDrops('throne_dragon',seed,{boss:true,huntTier:3}),b=rollDrops('throne_dragon',seed,{boss:true,huntTier:3,dropLuck:1});
   assert.equal(a.stacks.dragon_scale,1);assert.deepEqual(a,rollDrops('throne_dragon',seed,{boss:true,huntTier:3}));
   const hit=a.items.some(i=>i.id===id),boost=b.items.some(i=>i.id===id);if(hit){base++;assert.ok(boost);}if(boost)lucky++;
- }assert.ok(base>300&&base<500,`${id}: ${base}`);assert.ok(lucky>650&&lucky<950,`${id}: ${lucky}`);
+ }assert.ok(base>65&&base<130,`${id}: ${base}`);assert.ok(lucky>150&&lucky<250,`${id}: ${lucky}`);
  }
  assert.ok(Object.values(ITEMS).filter(d=>rare.includes(d.baseId)).every(d=>d.dropOnly==='throne_dragon'));
 });
-test('I1 1,000 seeds / existing monster: exact baseline JSON bytes, TD1 only adds new rewards',()=>{
+test('B 1,000 seeds / existing monster / contexts: exact pre-B gold/consumable/stone bytes and unchanged definitions/recipes',()=>{
  const root=new URL('../js/meta/',import.meta.url);
- const read=p=>execFileSync('git',['show',`7792637:arpg/js/${p}`],{encoding:'utf8'});
+ const read=p=>execFileSync('git',['show',`5f82b40:arpg/js/${p}`],{encoding:'utf8'});
  let src=read('meta/items.js').replace(/from '([^']+)'/g,(_,p)=>'from '+JSON.stringify(new URL(p,root).href));
  src=src.replace(new URL('../content/loot.js',root).href,'data:text/javascript;base64,'+Buffer.from(read('content/loot.js')).toString('base64'));
  src=src.replaceAll(new URL('economy.js',root).href,'data:text/javascript;base64,'+Buffer.from(read('meta/economy.js').replace('../content/balance.js',new URL('../content/balance.js',root).href)).toString('base64'));
  const monsters=['scarecrow','goblin_grunt','goblin_slinger','iron_boar','goblin_chief','wolf','rune_guardian','gargoyle','spirit','poison_spider','throne_dragon'];
  const contexts=[{}, {huntTier:3,boss:true,materialBonus:7,dropLuck:.5,threat:2}];
+ const stable=loot=>({gold:loot.gold,stacks:Object.fromEntries(Object.entries(loot.stacks).filter(([id])=>ITEMS[id]?.kind==='consumable'||id.startsWith('enhance_stone')))});
  const script=`const {rollDrops,ITEMS,RECIPES}=await import(${JSON.stringify('data:text/javascript;base64,'+Buffer.from(src).toString('base64'))});
- const drops=[];for(const m of ${JSON.stringify(monsters)})for(const c of ${JSON.stringify(contexts)})for(let seed=0;seed<1000;seed++)drops.push(JSON.stringify(rollDrops(m,seed,c)));
+ const stable=${stable.toString()};
+ const drops=[];for(const m of ${JSON.stringify(monsters)})for(const c of ${JSON.stringify(contexts)})for(let seed=0;seed<1000;seed++)drops.push(JSON.stringify(stable(rollDrops(m,seed,c))));
  console.log(JSON.stringify({items:ITEMS,recipes:RECIPES,drops}));`;
  const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:64*1024*1024}));let ix=0;
  for(const [id,d]of Object.entries(old.items))assert.equal(JSON.stringify(ITEMS[id]),JSON.stringify(d),`unchanged definition: ${id}`);
  for(const [id,r]of Object.entries(old.recipes))assert.deepEqual(RECIPES[id],r,`unchanged recipe: ${id}`);
  for(const m of monsters)for(const c of contexts)for(let seed=0;seed<1000;seed++){
-  const a=rollDrops(m,seed,c);if(m==='throne_dragon'){assert.equal(a.stacks.dragon_scale,1);delete a.stacks.dragon_scale;a.items=a.items.filter(i=>!rare.includes(i.id));}
-  assert.equal(JSON.stringify(a),old.drops[ix++],`${m}/${seed}/${JSON.stringify(c)}`);
+  const a=rollDrops(m,seed,c);if(m==='throne_dragon')assert.equal(a.stacks.dragon_scale,1);
+  assert.equal(JSON.stringify(stable(a)),old.drops[ix++],`${m}/${seed}/${JSON.stringify(c)}`);
  }
 });
 test('I1 UI labels and new material render from definitions with no schema/UI redesign',()=>{

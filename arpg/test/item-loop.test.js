@@ -124,9 +124,9 @@ const sigma = (count, n, p, label) => {
   assert.ok(Math.abs(count - expected) <= tolerance, `${label}: ${count}/${n}, expected ${expected} ±${tolerance}`);
 };
 
-test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones and tier mix within ±2σ; legacy tables retained', () => {
+test('10,000 seeded kills: craft-first equipment rates, discounted rarity, unchanged stones and tier mix within ±2σ', () => {
   for (const [monster, ctx, gearP, stoneP] of [
-    ['goblin_slinger', {}, 0.1, 0.125], ['goblin_slinger', { elite: true }, 0.35, 0.4],
+    ['goblin_slinger', {}, 0.04, 0.125], ['goblin_slinger', { elite: true }, 0.16, 0.4],
     ['goblin_chief', {}, 1, 1],
   ]) {
     let gearKills = 0, stoneKills = 0, bossExtra = 0;
@@ -144,13 +144,14 @@ test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones 
       assert.equal(loot.stacks.enhance_stone_2, undefined);
       if (stones.some(Boolean)) stoneKills++;
       stoneTypes[0] += stones[0] ? 1 : 0; stoneTypes[1] += stones[1] ? 1 : 0;
-      if (monster === 'goblin_chief') assert.equal(loot.stacks.scrap, 3);
+      if (monster === 'goblin_chief') assert.ok(loot.stacks.scrap === 4 || loot.stacks.scrap === 5);
     }
     sigma(gearKills, 10000, gearP, `${monster} gear`); sigma(stoneKills, 10000, stoneP, `${monster} stones`);
-    if (gearP === 1) sigma(bossExtra, 10000, 0.5, 'boss 2 gear');
+    if (gearP === 1) sigma(bossExtra, 10000, 0.25, 'boss 2 gear');
     const total = Object.values(rarities).reduce((a, b) => a + b, 0);
-    const weights = gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity;
-    for (const [rarity, weight] of Object.entries(weights)) sigma(rarities[rarity], total, weight / 100, `${monster} ${rarity}`);
+    const weights = Object.entries(gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity).map(([rarity,weight])=>[rarity,weight*ECONOMY.gearRarityMultiplier[rarity]]);
+    const weightSum = weights.reduce((sum,[,weight])=>sum+weight,0);
+    for (const [rarity, weight] of weights) sigma(rarities[rarity], total, weight / weightSum, `${monster} ${rarity}`);
     const stoneTotal = stoneTypes.reduce((a, b) => a + b, 0);
     if (gearP !== 1) stoneTypes.forEach((count, i) => sigma(count, stoneTotal, ECONOMY.stoneWeights[1][i] / 100, `${monster} stone ${i + 1}`));
     console.log(`P1 distribution ${monster} elite=${ctx.elite || false}: gear=${gearKills}, stones=${stoneKills}, rarity=${JSON.stringify(rarities)}, stoneTypes=${stoneTypes}`);
