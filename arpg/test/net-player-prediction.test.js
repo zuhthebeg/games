@@ -45,3 +45,41 @@ for (const [weapon, skills, weaponForm] of LOADOUTS) {
     assert.equal(checked, 1500);
   });
 }
+
+test('shield bash prediction matches host moving, positions and action timeline across windup/active/recovery (16000 deterministic ticks)',()=>{
+  let replayed=0,movingMismatches=0;
+  const phases=new Set();
+  for(const multiplayerDodge of [false,true])for(const held of [false,true]) {
+    const world=createWorld({seed:17,multiplayerDodge});
+    const host=addPlayer(world,{pid:'g',x:500,y:400,mods:{offhand:'shield',mpRegen:0}});
+    startStage(world,'S2');world.entities=world.entities.filter(e=>e.kind==='player');
+    world.round.pending=[];world.round.goal='timer';world.round.timerTicks=1e6;
+    let random=431;
+    const next=()=>((random=(Math.imul(random,1664525)+1013904223)>>>0)/4294967296);
+    for(let t=0;t<4000;t++) {
+      const inp={...emptyInput(),mx:next()<.5?1:-1,my:next()<.5?.5:-.5,
+        aimX:1,aimY:next()<.5?0:1,dodgeHeld:held&&t%100>5};
+      // Only the host earns rewards. Replay each resulting authoritative action,
+      // including one reached after walking and one reached while holding guard.
+      if(t%60===0) {
+        host.pendingCounter={kind:'shield',attackerId:-1,fromX:host.x+100,fromY:host.y,dodgeTick:world.tick,expiresTick:world.tick+100};
+        step(world,{g:inp});continue;
+      }
+      const before=structuredClone(host),phase=host.act?.phase;
+      if(host.act?.id==='shield_bash')phases.add(phase);
+      const predicted=predictPlayerTick(before,inp,{arena:world.arena,tick:world.tick,multiplayerDodge});
+      step(world,{g:inp});replayed++;
+      if(predicted.moving!==host.moving)movingMismatches++;
+      assert.equal(predicted.x,host.x,`x ${multiplayerDodge}/${held}/${t}`);
+      assert.equal(predicted.y,host.y,`y ${multiplayerDodge}/${held}/${t}`);
+      assert.equal(predicted.facing,host.facing);
+      for(const k of ['id','phase','left','elapsed'])assert.equal(predicted.act?.[k],host.act?.[k],`${k} at ${t}`);
+      assert.deepEqual(predicted.dodge,host.dodge);
+      assert.deepEqual(predicted.shieldGuard,host.shieldGuard);
+      assert.equal(predicted.mp,host.mp);
+    }
+  }
+  assert.ok(replayed>15000);
+  assert.deepEqual([...phases].sort(),['active','recovery','windup']);
+  assert.equal(movingMismatches,0,`${movingMismatches} moving mismatches in ${replayed} replayed ticks`);
+});
