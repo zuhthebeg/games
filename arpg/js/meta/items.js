@@ -1,8 +1,9 @@
 import { eff, effectiveStats } from './stats.js';
-import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
+import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, BLESSED_STONE, CURSED_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
+import { MONSTER_VARIANTS } from '../content/monsters.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from './knight-equipment.js';
 import { lineageAllowsWeapon } from '../content/player-lineages.js';
@@ -121,10 +122,8 @@ export const requirementLabel = (def) => def?.requiredStr ? `힘 ${def.requiredS
 ITEMS.enhance_stone_1 = { name: '강화석', kind: 'material', weight: 0.1, sell: 2 };
 ITEMS.enhance_stone_2 = { name: '중급 강화석', kind: 'material', weight: 0.1, sell: 2, legacy: true };
 ITEMS.enhance_stone_3 = { name: '상급 강화석', kind: 'material', weight: 0.1, sell: 25 };
-ITEMS.scroll_enchant_weapon = { name: '무기 강화 주문서', kind: 'material', weight: 0, sell: 8, enchant: 'weapon' };
-ITEMS.scroll_enchant_armor = { name: '방어구 강화 주문서', kind: 'material', weight: 0, sell: 8, enchant: 'armor' };
-ITEMS.scroll_blessed_weapon = { name: '축복받은 무기 강화 주문서', kind: 'material', weight: 0, sell: 30, enchant: 'weapon', blessed: true };
-ITEMS.scroll_blessed_armor = { name: '축복받은 방어구 강화 주문서', kind: 'material', weight: 0, sell: 30, enchant: 'armor', blessed: true };
+ITEMS[BLESSED_STONE] = { name: '축복받은 강화석', kind: 'material', weight: 0, sell: 30, blessed: true };
+ITEMS[CURSED_STONE] = { name: '저주받은 강화석', kind: 'material', weight: 0, sell: 30, cursed: true };
 export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rarity, ITEMS[id].huntTier, seed)) =>
   ({ uid, id, enhance: 0, affixes, rolledAt: seed >>> 0 });
 
@@ -356,7 +355,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
   if (random() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
-    // A drop event is either a pile of plain stones (5 = one scroll) or a single greater stone.
+    // A drop event is either a pile of plain stones (5 = one attempt) or a single greater stone.
     const [min, max] = ENCHANT.stoneCount[boss ? 'boss' : elite ? 'elite' : 'normal'];
     for (let i = 0; i < count; i++) {
       const stone = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], random);
@@ -364,11 +363,17 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       loot.stacks[stone] = (loot.stacks[stone] || 0) + amount;
     }
   }
-  // Blessed scrolls use their own stream so earlier gear/stone/gold rolls keep their seeds.
+  // Special stones have independent streams so legacy gear/stone/gold rolls stay unchanged.
+  const rank = boss ? 'boss' : elite ? 'elite' : 'normal';
   const blessedRandom = rng(seed ^ 0x5b1e55ed);
-  if (blessedRandom() < ENCHANT.blessedChance[boss ? 'boss' : elite ? 'elite' : 'normal'] * threat.drop) {
-    const id = blessedRandom() < 0.5 ? 'scroll_blessed_weapon' : 'scroll_blessed_armor';
-    loot.stacks[id] = (loot.stacks[id] || 0) + 1;
+  if (blessedRandom() < ENCHANT.blessedChance[rank] * threat.drop) {
+    loot.stacks[BLESSED_STONE] = (loot.stacks[BLESSED_STONE] || 0) + 1;
+  }
+  const cursedRandom = rng(seed ^ 0xc075ed01);
+  const cursedArea = /^S2[1-7]$/.test(ctx.stageId || '');
+  if ((MONSTER_VARIANTS[monsterType]?.lifeState === 'undead' || cursedArea)
+    && cursedRandom() < ENCHANT.cursedChance[rank] * threat.drop) {
+    loot.stacks[CURSED_STONE] = (loot.stacks[CURSED_STONE] || 0) + 1;
   }
   // Guardian-only rewards use an isolated stream: adding them cannot shift old loot rolls.
   const exclusiveRandom = rng(seed ^ 0x741d4a91);

@@ -3,34 +3,34 @@ import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import { instance, dismantle, rollDrops } from '../js/meta/items.js';
 import { ENCHANT, enhanceMultiplier } from '../js/meta/economy.js';
-import { enchant, enchantPreview, craftScroll, crackGreaterStone, scrollsFor } from '../js/meta/enchant.js';
+import { enchant, enchantPreview, crackGreaterStone } from '../js/meta/enchant.js';
 
 const fresh = (createdAt = 7) => createSave({ name: '강화 시험', answers: [0, 0, 0, 0, 0], createdAt });
-const W = 'scroll_enchant_weapon', A = 'scroll_enchant_armor', BW = 'scroll_blessed_weapon';
-const withScrolls = (save, n = 100) => ({ ...save, stacks: { ...save.stacks, [W]: n, [A]: n, [BW]: n } });
+const W = 'enhance_stone_1', A = W, BW = 'enhance_stone_blessed', CW = 'enhance_stone_cursed';
+const withStones = (save, n = 100) => ({ ...save, stacks: { ...save.stacks, [W]: n, [A]: n, [BW]: n, [CW]: n } });
 const weaponAt = (save, level) => ({ ...save, items: save.items.map((item) => item.uid === 'starter:weapon' ? { ...item, enhance: level } : item) });
 
-test('safe line: +0→+6 always succeeds, costs exactly one scroll and no gold', () => {
-  let save = withScrolls(fresh());
+test('safe line: +0→+6 always succeeds, costs exactly five stones and no gold', () => {
+  let save = withStones(fresh());
   for (let level = 0; level < ENCHANT.safe; level++) {
     const { save: next, result } = enchant(save, 'starter:weapon', W);
     assert.equal(result.outcome, 'success'); assert.equal(result.from, level); assert.equal(result.to, level + 1);
     assert.equal(result.risky, false);
-    assert.equal(next.stacks[W], save.stacks[W] - 1); assert.equal(next.gold, save.gold);
+    assert.equal(next.stacks[W], save.stacks[W] - 5); assert.equal(next.gold, save.gold);
     assert.ok(validateSave(next));
     save = next;
   }
   assert.equal(enchantPreview(save, 'starter:weapon', W).risky, true);
 });
 
-test('scroll family must match the slot; no scroll or +12 refuses without spending', () => {
-  const save = withScrolls(fresh());
-  assert.throws(() => enchant(save, 'starter:weapon', A), /쓸 수 없는/);
-  assert.throws(() => enchant(save, 'starter:armor', W), /쓸 수 없는/);
-  assert.ok(enchant(save, 'starter:armor', A).save);
-  assert.throws(() => enchant(fresh(), 'starter:weapon', W), /없습니다/);
-  assert.throws(() => enchant(weaponAt(save, ENCHANT.max), 'starter:weapon', W), /최대/);
-  assert.equal(scrollsFor(save.items[1]).normal, A);
+test('stones are shared by all slots; insufficient/invalid stone and +12 refuse without spending', () => {
+  const save = withStones(fresh());
+  assert.ok(enchant(save, 'starter:armor', BW).save);
+  assert.ok(enchant(save, 'starter:weapon', CW).save);
+  assert.throws(() => enchant(save, 'starter:weapon', 'potion'), /강화석/);
+  assert.throws(() => enchant({...save,stacks:{[W]:4}}, 'starter:weapon', W), /부족/);
+  assert.throws(() => enchant(fresh(), 'starter:weapon', BW), /부족/);
+  for (const id of [W,BW,CW]) assert.throws(() => enchant(weaponAt(save, ENCHANT.max), 'starter:weapon', id), /최대/);
 });
 
 test('risky rates over 4,000 accounts match 50/40/30/20/15/10 within ±3σ; failure destroys and refunds half the stones', () => {
@@ -38,14 +38,14 @@ test('risky rates over 4,000 accounts match 50/40/30/20/15/10 within ±3σ; fail
     let kept = 0;
     const n = 4000;
     for (let seed = 1; seed <= n; seed++) {
-      const save = weaponAt(withScrolls(fresh(seed)), level);
+      const save = weaponAt(withStones(fresh(seed)), level);
       save.items.push(instance('spare', 'iron_sword', 1, []));
       const { save: next, result } = enchant(save, 'starter:weapon', W);
       assert.ok(validateSave(next), `valid after ${result.outcome}`);
       if (result.outcome === 'success') { kept++; assert.equal(result.to, level + 1); continue; }
       assert.equal(next.items.some((item) => item.uid === 'starter:weapon'), false);
       const refund = Math.floor(ENCHANT.dismantleStones[level] * ENCHANT.failRefund);
-      assert.equal(next.stacks.enhance_stone_1 || 0, refund);
+      assert.equal(next.stacks.enhance_stone_1 || 0, save.stacks[W] - 5 + refund);
       assert.equal(next.stacks.enhance_stone_3 || 0, 0);
       assert.equal(next.equipped.weapon, 'spare');
     }
@@ -57,7 +57,7 @@ test('risky rates over 4,000 accounts match 50/40/30/20/15/10 within ±3σ; fail
 test('destroying the only weapon re-issues the quiz starter weapon so the save stays launchable', () => {
   let destroyed = 0;
   for (let seed = 1; seed <= 200; seed++) {
-    const save = weaponAt(withScrolls(fresh(seed)), 9);
+    const save = weaponAt(withStones(fresh(seed)), 9);
     const { save: next, result } = enchant(save, 'starter:weapon', W);
     if (result.outcome !== 'destroyed') continue;
     destroyed++;
@@ -70,7 +70,7 @@ test('destroying the only weapon re-issues the quiz starter weapon so the save s
 });
 
 test('outcome is fixed by the saved attempt counter: replaying the same save never rerolls', () => {
-  const save = weaponAt(withScrolls(fresh(42)), 8);
+  const save = weaponAt(withStones(fresh(42)), 8);
   const first = enchant(save, 'starter:weapon', W);
   for (let i = 0; i < 5; i++) assert.deepEqual(enchant(save, 'starter:weapon', W), first);
   assert.equal(first.save.enchantCount, 1);
@@ -81,52 +81,45 @@ test('outcome is fixed by the saved attempt counter: replaying the same save nev
   assert.deepEqual(store.load(), first.save);
 });
 
-test('safe blessed starts +0..+5 always gain uniformly +1/+2/+3, including +5→+8', () => {
-  for (let level = 0; level < ENCHANT.safe; level++) {
-    const counts = [0, 0, 0], n = 1500;
-    for (let seed = 1; seed <= n; seed++) {
-      const { save, result } = enchant(weaponAt(withScrolls(fresh(seed)), level), 'starter:weapon', BW);
-      assert.equal(result.outcome, 'success'); assert.equal(result.risky, false);
-      counts[result.to - level - 1]++;
-      assert.ok(validateSave(save));
+test('blessed guarantees safe uniform +1/+2 and risky 85/15, never destroys or spends plain stones', () => {
+  for (const level of [0,5,6,9,10]) {
+    const n=5000, counts=[0,0], p=level<6?.5:.85;
+    for(let seed=1;seed<=n;seed++) {
+      const base=weaponAt(withStones(fresh(seed)),level), {save,result}=enchant(base,'starter:weapon',BW);
+      assert.equal(result.outcome,'success'); counts[result.to-level-1]++;
+      assert.equal(save.stacks[BW],base.stacks[BW]-1);assert.equal(save.stacks[W],base.stacks[W]);
+      assert.ok(validateSave(save)); assert.equal(enchantPreview(base,'starter:weapon',BW).chance,1);
+      assert.deepEqual(enchant(base,'starter:weapon',BW),{save,result});
     }
-    for (const count of counts) assert.ok(Math.abs(count - n / 3) < 4 * Math.sqrt(n * 2 / 9), counts.join('/'));
-    assert.deepEqual(enchantPreview(weaponAt(withScrolls(fresh()), level), 'starter:weapon', BW).outcomes, [level+1, level+2, level+3]);
+    assert.ok(Math.abs(counts[0]-n*p)<4*Math.sqrt(n*p*(1-p)),`${level}: ${counts}`);
+    assert.deepEqual(enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',BW).outcomes,[level+1,level+2]);
   }
 });
 
-test('risky blessed successes use 70/25/5 on the same stream and normal success rates; +9→+12 is possible', () => {
-  for (let level = 6; level <= 9; level++) {
-    const counts = [0, 0, 0], n = 8000;
-    let kept = 0;
-    for (let seed = 1; seed <= n; seed++) {
-      const base = weaponAt(withScrolls(fresh(seed)), level);
-      const attempt = enchant(base, 'starter:weapon', BW), normal = enchant(base, 'starter:weapon', W);
-      assert.equal(attempt.result.outcome, normal.result.outcome);
-      if (attempt.result.outcome === 'destroyed') {
-        assert.deepEqual(attempt.result.refund, normal.result.refund);
-        assert.equal(attempt.save.items.some(i => i.uid === 'starter:weapon'), false);
-        continue;
-      }
-      kept++; counts[attempt.result.to - level - 1]++;
-      assert.deepEqual(enchant(base, 'starter:weapon', BW), attempt, 'replay cannot reroll the step');
-      assert.ok(validateSave(attempt.save));
-    }
-    const rate = ENCHANT.rates[level];
-    assert.ok(Math.abs(kept - n * rate) < 4 * Math.sqrt(n * rate * (1-rate)));
-    for (const [i, p] of [0.70, 0.25, 0.05].entries()) assert.ok(Math.abs(counts[i] - kept*p) < 4 * Math.sqrt(kept*p*(1-p)), `+${level}: ${counts}`);
-    assert.ok(counts[2] > 0);
+test('cursed -1/0/+1/+2/+3 uses 15/20/30/25/10 with no destruction, floor 0 and cap 12', () => {
+  const n=10000,counts=[0,0,0,0,0];
+  for(let seed=1;seed<=n;seed++) {
+    const base=weaponAt(withStones(fresh(seed)),7),attempt=enchant(base,'starter:weapon',CW);
+    assert.equal(attempt.result.outcome,'success'); counts[attempt.result.to-6]++;
+    assert.equal(attempt.save.stacks[CW],99);assert.equal(attempt.save.stacks[W],100);
+    assert.ok(validateSave(attempt.save));assert.deepEqual(enchant(base,'starter:weapon',CW),attempt);
+  }
+  for(const [i,p] of [.15,.20,.30,.25,.10].entries()) assert.ok(Math.abs(counts[i]-n*p)<4*Math.sqrt(n*p*(1-p)),`${counts}`);
+  for(const [level,targets] of [[0,[0,1,2,3]],[11,[10,11,12]]]) {
+    assert.deepEqual(enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',CW).outcomes,targets);
+    const seen=new Set();for(let seed=1;seed<400;seed++) {const {save,result}=enchant(weaponAt(withStones(fresh(seed)),level),'starter:weapon',CW);seen.add(result.to);assert.ok(validateSave(save));}
+    assert.deepEqual([...seen].sort((a,b)=>a-b),targets);
   }
 });
 
 test('+12 caps all jumps and save validation while +10 and older saves still roundtrip', () => {
   assert.equal(ENCHANT.max, 12);
   for (const level of [10, 11]) {
-    const base = weaponAt(withScrolls(fresh()), level);
+    const base = weaponAt(withStones(fresh()), level);
     assert.deepEqual(enchantPreview(base, 'starter:weapon', BW).outcomes, level === 10 ? [11,12] : [12]);
     const seen = new Set();
     for (let seed = 1; seed <= 1000; seed++) {
-      const { save, result } = enchant(weaponAt(withScrolls(fresh(seed)), level), 'starter:weapon', BW);
+      const { save, result } = enchant(weaponAt(withStones(fresh(seed)), level), 'starter:weapon', BW);
       assert.ok(validateSave(save));
       if (result.outcome === 'success') {assert.ok(result.to <= 12);seen.add(result.to);}
     }
@@ -135,30 +128,23 @@ test('+12 caps all jumps and save validation while +10 and older saves still rou
   const storage = new Map();
   const store = new SaveStore({getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)});
   for (let level = 0; level <= 12; level++) {
-    const save = weaponAt(withScrolls(fresh()), level);
+    const save = weaponAt(withStones(fresh()), level);
     store.save(save);assert.deepEqual(store.load(),save);
   }
-  for (const scroll of [W,BW]) assert.throws(()=>enchant(weaponAt(withScrolls(fresh()),12),'starter:weapon',scroll), /최대/);
-  assert.equal(validateSave(weaponAt(withScrolls(fresh()),13)),false);
+  for (const scroll of [W,BW]) assert.throws(()=>enchant(weaponAt(withStones(fresh()),12),'starter:weapon',scroll), /최대/);
+  assert.equal(validateSave(weaponAt(withStones(fresh()),13)),false);
 });
 
-test('stones become scrolls: 5 → 1, greater stone → 5~10 seeded; never the other way', () => {
-  const save = { ...fresh(), stacks: { ...fresh().stacks, enhance_stone_1: 12, enhance_stone_3: 1 } };
-  const one = craftScroll(save, 'weapon');
-  assert.equal(one.stacks.enhance_stone_1, 7); assert.equal(one.stacks[W], 1);
-  assert.equal(craftScroll(save, 'armor', 2).stacks[A], 2);
-  assert.throws(() => craftScroll(save, 'armor', 3), /강화석이 부족/);
-  const counts = new Set();
-  for (let seed = 1; seed <= 400; seed++) {
-    const base = { ...fresh(seed), stacks: { ...fresh(seed).stacks, enhance_stone_3: 1 } };
-    const { save: next, result } = crackGreaterStone(base, 'weapon');
-    assert.ok(result.count >= 5 && result.count <= 10); counts.add(result.count);
-    assert.equal(next.stacks.enhance_stone_3, 0); assert.equal(next.stacks[W], result.count);
-    assert.deepEqual(crackGreaterStone(base, 'weapon').result, result);
-    assert.ok(validateSave(next));
+test('greater stone keeps 5~10 attempts of value as 25~50 plain stones, seeded and replayable', () => {
+  const counts=new Set();
+  for(let seed=1;seed<=400;seed++) {
+    const base=withStones(fresh(seed));base.stacks.enhance_stone_3=1;
+    const attempt=crackGreaterStone(base),{save,result}=attempt;
+    assert.equal(result.id,W);assert.ok(result.count>=25&&result.count<=50);assert.equal(result.count%5,0);counts.add(result.count);
+    assert.equal(save.stacks.enhance_stone_3,0);assert.equal(save.stacks[W],base.stacks[W]+result.count);
+    assert.deepEqual(crackGreaterStone(base),attempt);assert.ok(validateSave(save));
   }
-  assert.equal(counts.size, 6);
-  assert.throws(() => crackGreaterStone(fresh(), 'weapon'), /상급/);
+  assert.equal(counts.size,6);assert.throws(()=>crackGreaterStone(fresh()),/상급/);
 });
 
 test('dismantle refund scales with enhance; +7 and above also give the greater stone', () => {
@@ -189,7 +175,7 @@ test('risky levels hit harder; legacy mid stones convert on load; drops never em
   for (let seed = 0; seed < 20000; seed++) {
     const loot = rollDrops('goblin_chief', seed, {});
     assert.equal(loot.stacks.enhance_stone_2, undefined);
-    blessed += (loot.stacks.scroll_blessed_weapon || 0) + (loot.stacks.scroll_blessed_armor || 0);
+    blessed += (loot.stacks.enhance_stone_blessed || 0);
   }
   assert.ok(Math.abs(blessed / 20000 - ENCHANT.blessedChance.boss) < 0.015, `boss blessed ${blessed}`);
 });
@@ -197,7 +183,7 @@ test('risky levels hit harder; legacy mid stones convert on load; drops never em
 test('forge renders risky odds, danger button and a one-shot result line for success/destroyed', async () => {
   const { HubUI } = await import('../js/ui/hub.js');
   const hub = Object.create(HubUI.prototype);
-  hub.save = weaponAt(withScrolls(fresh()), 7);
+  hub.save = weaponAt(withStones(fresh()), 7);
   hub.selectedUid = 'starter:weapon';
   hub.showInnPanel = (_title, html, _panel, footer) => { hub.html = html; hub.footer = footer; };
   hub.showForge();
@@ -211,5 +197,13 @@ test('forge renders risky odds, danger button and a one-shot result line for suc
 });
 test('every enhanced level returns stones on dismantle and no enhance->dismantle loop is profitable (cocy 10-14)', () => {
   for (let level = 1; level <= ENCHANT.max; level++) assert.ok(ENCHANT.dismantleStones[level] >= 1, `+${level}`);
-  for (let level = 1; level < ENCHANT.safe; level++) assert.ok(ENCHANT.dismantleStones[level] < level * ENCHANT.stonesPerScroll);
+  for (let level = 1; level < ENCHANT.safe; level++) assert.ok(ENCHANT.dismantleStones[level] < level * ENCHANT.stonesPerAttempt);
+});
+
+test('removed scroll saves reject safely and valid special stones load normally', () => {
+  for(const id of ['scroll_enchant_weapon','scroll_enchant_armor','scroll_blessed_weapon','scroll_blessed_armor']) {
+    const old=fresh();old.stacks[id]=1;
+    const data=new Map([[SAVE_KEY,JSON.stringify(old)]]),store=new SaveStore({getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)});
+    assert.equal(validateSave(old),false);assert.doesNotThrow(()=>assert.equal(store.load(),null));
+  }
 });
