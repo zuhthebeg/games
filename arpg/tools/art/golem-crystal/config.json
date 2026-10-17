@@ -1,0 +1,91 @@
+{
+  "frame_size": 128,
+  "fps": 8,
+  "pitch": 40,
+  "samples": 8,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.012
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/golem-crystal/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/golem-crystal/source",
+  "webp_quality": 72,
+  "characters": [
+    {
+      "name": "rune-guardian",
+      "label": "룬 수호자",
+      "model": "C:/Users/user/ai-tools/arpg-art/golem-crystal/source/rune-guardian.glb",
+      "keep": [
+        "RuneGuardian"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Arm.L",
+        "Arm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "pose_profile": "humanoid",
+      "animations": {
+        "idle": "rune-guardian_idle",
+        "run": "rune-guardian_run",
+        "attack": "rune-guardian_attack",
+        "hit": "rune-guardian_hit",
+        "death": "rune-guardian_death"
+      },
+      "content_ids": [
+        "rune_guardian"
+      ],
+      "animation_durations": {
+        "hit": 0.18,
+        "death": 0.65
+      },
+      "framing_margin": 1.13,
+      "preview_tint": "7e8f94"
+    },
+    {
+      "name": "spirit",
+      "label": "제단 수정 정령",
+      "model": "C:/Users/user/ai-tools/arpg-art/golem-crystal/source/spirit.glb",
+      "keep": [
+        "CrystalSpirit"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Shard0",
+        "Shard2"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "pose_profile": "floating",
+      "animations": {
+        "idle": "spirit_idle",
+        "run": "spirit_run",
+        "attack": "spirit_attack",
+        "hit": "spirit_hit",
+        "death": "spirit_death"
+      },
+      "content_ids": [
+        "spirit"
+      ],
+      "animation_durations": {
+        "hit": 0.18,
+        "death": 0.65
+      },
+      "framing_margin": 1.13,
+      "preview_tint": "9c91c9"
+    }
+  ]
+}

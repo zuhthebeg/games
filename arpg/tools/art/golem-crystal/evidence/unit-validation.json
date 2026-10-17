@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "tests": 16,
+  "passed": 16,
+  "failed": 0,
+  "command": "node --test arpg/test/atlas.test.js arpg/test/golem-crystal-atlas.test.js arpg/test/monster-size.test.js",
+  "log": "/home/cocy/.openclaw/workspace/tmp/arpg-golem-crystal-unit.log",
+  "includes": [
+    "registry and manifest octants",
+    "on-spawn leases/dedup/unload/failure",
+    "unchanged procedural fallback",
+    "source128 fixed anchors and byte budget",
+    "real guardian_crush/guardian_ring/spirit_bolt phase alignment",
+    "collision/atlas scale and ability preservation"
+  ]
+}

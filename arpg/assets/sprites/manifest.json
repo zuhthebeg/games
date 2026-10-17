@@ -723,5 +723,63 @@
     "form": "death_knight",
     "monster": false,
     "bytes": 837266
+  },
+  {
+    "id": "rune-guardian",
+    "label": "룬 수호자",
+    "monster": true,
+    "content_ids": [
+      "rune_guardian"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 8,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7877338081598282
+    },
+    "bytes": 401481,
+    "animation_durations": {
+      "hit": 0.18,
+      "death": 0.65
+    }
+  },
+  {
+    "id": "spirit",
+    "label": "제단 수정 정령",
+    "monster": true,
+    "content_ids": [
+      "spirit"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 8,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7958693504333496
+    },
+    "bytes": 451649,
+    "animation_durations": {
+      "hit": 0.18,
+      "death": 0.65
+    }
   }
 ]

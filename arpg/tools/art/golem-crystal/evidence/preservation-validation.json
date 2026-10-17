@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "baseline": "2e27e64a2785fe8e1f421d9b1bdfcd786bc16cdf",
+  "unchanged_gameplay_files": 22,
+  "sha256": {
+    "arpg/js/content/balance.js": "ce8c4e7ebe94610f1bdf8c79d5dc71a07f1eef872cf0db54dcc8380b6d4f51af",
+    "arpg/js/content/biomes.js": "863565665abd6d4685a793a7046ac8ae9fd2cb0474f30b1e947ffff7d104f3ca",
+    "arpg/js/content/combat.js": "4821aa26abf643804df501577ffe81182d2f1c632925eccb1053d0254b4081ff",
+    "arpg/js/content/loot.js": "e15a6ec151caf66a586319885564c419ad0f5346d6006c237e00759c1c9a855d",
+    "arpg/js/content/monsters.js": "ed5edbea2c0355768a001f3a1e14eb041ac783c20bc22123e613c4a951b2550a",
+    "arpg/js/content/player-lineages.js": "661e92f93a3cc22109b339f9a197bb18c8004000537740c4bbdc74663c468052",
+    "arpg/js/content/quest-expansion.js": "450d5baca81c6bef55000b3aa17d9bade310145ef21f4fa8b439f9b7a54f8d28",
+    "arpg/js/content/world-map.js": "5c4328bdbd3399a0f734167c3c87e46a5fd6b398b51d8fb24a12dcd4f519c9cc",
+    "arpg/js/net/lobby.js": "5ea93e84243a33836f4ed5d4006edc77bf986d4404fb6a6465d4d65a5a24acb8",
+    "arpg/js/net/loopback.js": "2d8418b44f064e158889d57cc35fe1e1e04df4dfb1adf2f3134433284c5facd7",
+    "arpg/js/net/player-prediction.js": "be0c811050a94e6ef4a323ddf5b2e060673fbade1eebe6dcb149026e5053bfdb",
+    "arpg/js/net/prediction.js": "87c688f8b9cb5d0f326644e25fa54168a9a6353939882ef49939303235890d23",
+    "arpg/js/net/protocol.js": "322d10d8af78ef58cb299842a795c47ae21180d8f8f204cdc17c8071688472b9",
+    "arpg/js/net/session.js": "8dc709647fcf380a40a90648194e24efdd7146304c7092dfc59f069d0ae1a9c0",
+    "arpg/js/net/skill-presentation.js": "0c2407f9a5e20ec8a175a96e14f0531c400214e91d096ebc3c12bd1da4497595",
+    "arpg/js/sim/basic-combo.js": "3a13273d0450559dc2b0dab7abf3e6f85ef436232f44e2f121cb97b650bb0ac6",
+    "arpg/js/sim/core.js": "458215ac2761180349a20426f763fe5246f2779d5b6825af196ad96432d3a991",
+    "arpg/js/sim/dodge-lag.js": "c5655ee5f346212afef8ba73e6ffd72387680189f9e72e7a0e22f04f86757fd1",
+    "arpg/js/sim/dodge-policy.js": "59f6542634aff6531831c4189bacf73b70c4ed3a0cdc62b7461d368138591135",
+    "arpg/js/sim/movement.js": "989ed85bd31c5226bee3be5bb4dc34e8383593575c2c398945a8e70ddcef256a",
+    "arpg/js/sim/quest-objectives.js": "7f663769124e11f4240a1894d9ef1aef1f37cfaa38cb9388f6389b79254eeb6a",
+    "arpg/js/sim/world.js": "5fbd0d60f5d29e039502ad60494532589b452e430ab3ef3286d1da3aec2a4a5a"
+  },
+  "old_procedural_fallback_sha256": "2869b3f886775a410d56cfe5e44a7c816e7e30e1248ba12be754a4442fd3947a"
+}
