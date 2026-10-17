@@ -466,12 +466,14 @@ try {
     hub.initialCharacters = {
       human: () => {
         const save = characters.selectHuman();
+        hub.equipmentNotice=characters.equipmentNotice;
         restoreKnightArt?.(); restoreKnightArt = null;
         world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
         chooseUrl('human'); return save;
       },
       read: () => {
         const save = characters.selectKnight();
+        hub.equipmentNotice=characters.equipmentNotice;
         world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
         chooseUrl('skeleton_knight'); return save;
       },

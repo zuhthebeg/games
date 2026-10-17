@@ -15,6 +15,11 @@ export class CharacterStores {
   select(slot, save) {
     this.active = { slot, store: slot === 'human' ? this.human : this.knight,
       raw: this.storage.getItem(SLOT_SAVE_KEYS[slot]) };
+    this.equipmentNotice=null;
+    try { const before=JSON.parse(this.active.raw);
+      if(before?.equipped?.offhand && save && !save.equipped.offhand && ITEMS[save.items.find(i=>i.uid===save.equipped.weapon)?.id]?.handedness===2)
+        this.equipmentNotice='양손무기 분류 적용: 방패는 해제되어 가방에 보관됩니다. 캐릭터와 장비는 모두 유지됩니다.';
+    } catch { /* Save readers own validation. */ }
     return save;
   }
   selectHuman() { return this.select('human', this.human.load()); }
