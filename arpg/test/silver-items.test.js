@@ -44,13 +44,15 @@ test('C silver ingots drop only combat constructs T2+, with exact normal/elite/b
  for(const monster of constructs)for(let seed=1;seed<=300;seed++)assert.equal(rollDrops(monster,seed,{huntTier:1,boss:true}).stacks.silver_ingot,undefined);
  console.log('C construct ingot cohorts',JSON.stringify(rows));
 });
-test('C silver rolls cannot reroll any old loot bytes (gold/gear/material/stones historical projection)',()=>{
+// Approved four T2/T4 twohand bases extend gear pools. Only gear identity fingerprints change;
+// i1-tier4-items still differentially checks 22,000 exact old gold/consumable/all-stone projections.
+test('C silver rolls retain approved catalog loot fingerprint (gold/gear/material/stones projection)',()=>{
  const rows=[];for(const [monster,ctx]of [['goblin_grunt',{}],['ghoul',{huntTier:3,elite:true,stageId:'S21',threat:2}],['necropolis_lord',{huntTier:4,boss:true,stageId:'S27',threat:3}]]){
   const output=[];for(let seed=1;seed<=1000;seed++){const l=rollDrops(monster,seed,ctx);delete l.stacks.silver_ingot;output.push(l);}rows.push(createHash('sha256').update(JSON.stringify(output)).digest('hex'));
  }console.log('C historical loot hashes',JSON.stringify(rows));
  assert.deepEqual(rows,HISTORICAL);
 });
-const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','8e3508fb3367d2ea0159e2150aa67e5f8ffba26f1085488817b650de6dcbd307'];
+const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','a973114d4e44465ba1a56fdc4e9ea2d535b44134c76ef036f6e3ed7f1666635a'];
 
 test('C real T2/T3 construct stages award ingots through tracker/settlement; necropolis boss never does',async()=>{
  const {createTracker,trackRound,settleRound}=await import('../js/meta/run.js');
@@ -81,10 +83,10 @@ test('C authored construct boss identity guarantees 1-2 without ctx.boss; non-bo
   for(let seed=1;seed<=1000;seed++)assert.equal(rollDrops('rune_guardian',seed,{huntTier:2}).stacks.silver_ingot,1+Math.floor(rng(seed^0x5117e201)()*2));
  }finally{MONSTER_VARIANTS.rune_guardian.speciesTags=tags;}
 });
-test('C construct non-silver loot retains exact pre-fix bytes, including all special stones',()=>{
+test('C construct non-silver loot retains approved catalog fingerprint, including all special stones',()=>{
  for(const[monster,ctx,hash]of[
   ['goleling',{huntTier:3,stageId:'S12'},'f3401799d5b56e16a012304ceea9feed8267e70f3374affbceed7d9d18cbb233'],
-  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'c84ffb788a7adad2c693cb388a1675a4398dea86adfdc0af45999ca64bd8a8b9'],
+  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'dffda049258742edf0715497718259c497b97207080a76930ec8417857e3bc2d'],
   ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'059a55f8e95d95853e43e60f7a6aea0f4d0d641be4300e83f029a070d43bae0e'],
   ['scarecrow',{huntTier:4,boss:true},'ff461329715346518d112f0b0180ba61d46671d9a5363dca3ff8f58d90208e6e']]){
   const rows=[];for(let seed=1;seed<=1000;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks.silver_ingot;rows.push(loot);}

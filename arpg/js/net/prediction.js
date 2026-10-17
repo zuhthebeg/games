@@ -106,7 +106,7 @@ export class LocalPrediction {
     if (this.preview && !this.roundEnded && !predictionBlocked(p)) {
       // Blend toward the tick the current input will produce; continuous at tick boundaries.
       const next = predictPlayerTick(p, this.preview.input, this), t = Math.min(1, this.preview.ms / TICK_MS);
-      p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving };
+      p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving, ...(next.shieldGuard ? {shieldGuard:{...next.shieldGuard}} : {}) };
     }
     return p;
   }
@@ -114,7 +114,7 @@ export class LocalPrediction {
     if (!world || !this.enabled || !this.state) return world;
     const p = this.displayPawn(this.state);
     return { ...world, entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? { ...e, ...(p.combo ? { combo: { ...p.combo },
+      ? { ...e, ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo },
           ...((p.act?.id === WEAPONS[p.weapon].basic || e.act?.id === WEAPONS[p.weapon].basic) ? { act: p.act } : {}) } : {}), x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
   }
   diagnostics() {

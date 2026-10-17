@@ -61,7 +61,8 @@ test('B 1,000 seeds / existing monster / contexts: exact pre-B gold/consumable/s
  const drops=[];for(const m of ${JSON.stringify(monsters)})for(const c of ${JSON.stringify(contexts)})for(let seed=0;seed<1000;seed++)drops.push(JSON.stringify(stable(rollDrops(m,seed,c))));
  console.log(JSON.stringify({items:ITEMS,recipes:RECIPES,drops}));`;
  const old=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',maxBuffer:64*1024*1024}));let ix=0;
- for(const [id,d]of Object.entries(old.items))assert.equal(JSON.stringify(ITEMS[id]),JSON.stringify(d),`unchanged definition: ${id}`);
+ // Approved shield/twohand metadata is the only change to these old definitions.
+ for(const [id,d]of Object.entries(old.items))assert.deepEqual(JSON.parse(JSON.stringify(ITEMS[id])),{...d,...(d.kind==='weapon'?{handedness:['warden_blade','warden_maul'].includes(d.baseId)?2:1}:{})},`unchanged definition except approved handedness: ${id}`);
  for(const [id,r]of Object.entries(old.recipes))assert.deepEqual(RECIPES[id],r,`unchanged recipe: ${id}`);
  for(const m of monsters)for(const c of contexts)for(let seed=0;seed<1000;seed++){
   const a=rollDrops(m,seed,c);if(m==='throne_dragon')assert.equal(a.stacks.dragon_scale,1);

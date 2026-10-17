@@ -14,7 +14,7 @@ export function movementInput(inp) {
 }
 export function dodgeStart(p, direction, tick, multiplayerDodge = false) {
   const [dx, dy] = direction, dashTicks = ticks(PB.dodge.dashMs);
-  if (p.offhand === 'shield') return { facing:Math.atan2(dy,dx), shieldGuard:{left:ticks(400),facing:Math.atan2(dy,dx)},
+  if (p.offhand === 'shield') return { facing:Math.atan2(dy,dx), shieldGuard:{left:1,facing:Math.atan2(dy,dx)},
     dodge:{...p.dodge,dashLeft:0,iframeLeft:0,startedTick:tick,perfectPaid:false,
       cdLeft:ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd)} };
   return { facing: Math.atan2(dy, dx), dodge: { ...p.dodge, dashLeft: dashTicks,
@@ -86,7 +86,10 @@ export function movementBlocked(p) {
     || !!p.kx || !!p.ky || (p.act && ['lock', 'active'].includes(p.act.phase));
 }
 export function predictMovement(p, inp, dt, arena, tick = 0) {
-  if (movementBlocked(p)) return p;
+  if (movementBlocked(p)) {
+    if(p?.shieldGuard) {const n={...p,shieldGuard:{...p.shieldGuard}};updateShieldGuard(n,inp);return n;}
+    return p;
+  }
   const n = { ...p, ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), dodge: { ...p.dodge } }, fraction = dt / DT;
   updateShieldGuard(n,inp);
   n.dodge.cdLeft = Math.max(0, n.dodge.cdLeft - fraction);

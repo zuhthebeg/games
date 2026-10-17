@@ -49,15 +49,15 @@ test('S20 and S23 gates cannot be bypassed by forged new clears, then maps unloc
 test('all pre-existing encounters, monsters, abilities, maps, biome/reward/tuning entries and living bats stay exactly at approved base',async()=>{
  for(const [file,names] of Object.entries({'content/combat.js':['STAGES','MONSTERS','ABILITIES'],'content/balance.js':['BALANCE'],'content/world-map.js':['MAPS'],'content/monsters.js':['MONSTER_VARIANTS'],'content/biomes.js':['BIOMES','STAGE_BIOMES'],'content/loot.js':['NEW_MONSTER_DROPS'],'meta/progression.js':['STAGE_XP']})){
   const old=await baseline(file),now=await import(new URL('../js/'+file,import.meta.url));
-  for(const name of names)for(const [id,value] of Object.entries(old[name])){if(name==='BALANCE'&&id==='stages'){for(const [key,tune] of Object.entries(value))assert.deepEqual(now[name][id][key],tune,key);}else assert.deepEqual(now[name][id],value,file+'/'+id);}
+  for(const name of names)for(const [id,value] of Object.entries(old[name])){if(name==='BALANCE'&&id==='stages'){for(const [key,tune] of Object.entries(value))assert.deepEqual(now[name][id][key],tune,key);}else if(name==='ABILITIES'&&id==='shield_bash') {const expected={...value,activeMs:200,delivery:'dash',dash:{distance:85,bodyPad:8}};delete expected.shape;assert.deepEqual(now[name][id],expected,'approved perfect-contact rush only');}else assert.deepEqual(now[name][id],value,file+'/'+id);}
  }
  assert.equal(MONSTERS.bat.lifeState,'beast');assert.equal(MONSTER_VARIANTS.bat.lifeState,'beast');
  // Later approved presentation-only atlas and species-audio releases may change only these assets.
  const changedAssets=execFileSync('git',['diff','--name-only','c7b1abe','--','arpg/assets'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
  const allowedAudio=new Set(['SPECIES.md','bat-death.ogg','bat-hit.ogg','beast-death.ogg','boar-death.ogg','boar-hit.ogg','demon-hit.ogg','dragon-death.ogg','dragon-hit.ogg','generation.json','goblin-death.ogg','goblin-hit.ogg','goleling-death.ogg','profiles-manifest.json','slime-hit.ogg','species-audit.json','spider-death.ogg','spider-hit.ogg','stone-death.ogg','stone-hit.ogg','wolf-death.ogg','wolf-hit.ogg']);
  for(const path of changedAssets) assert.ok(path==='arpg/assets/sprites/manifest.json'||/^arpg\/assets\/sprites\/(rune-guardian|spirit)\/atlas-[01]\.webp(?:\.json)?$/.test(path)||(path.startsWith('arpg/assets/audio/')&&allowedAudio.has(path.slice('arpg/assets/audio/'.length))),path+' is outside approved art/audio scope');
-  // The later silver-weapon feature intentionally owns exactly one shared host damage hook and one prediction capability field.
-  assert.deepEqual(execFileSync('git',['diff','--name-only','c7b1abe','--','arpg/js/sim','arpg/js/net'],{encoding:'utf8'}).trim().split('\n'),['arpg/js/net/protocol.js','arpg/js/sim/world.js']);
+  // Later approved silver + held-shield/twohand own these coupled sim/network files only.
+  assert.deepEqual(execFileSync('git',['diff','--name-only','c7b1abe','--','arpg/js/sim','arpg/js/net'],{encoding:'utf8'}).trim().split('\n'),['arpg/js/net/player-prediction.js','arpg/js/net/prediction.js','arpg/js/net/protocol.js','arpg/js/sim/dodge-lag.js','arpg/js/sim/movement.js','arpg/js/sim/world.js']);
 });
 
 test('authored boss identity is undead and strict boss; existing skeleton art/audio and unique boss name',()=>{

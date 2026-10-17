@@ -19,3 +19,12 @@ Files: `render/physical-shield.js`, gear portrait. Lightweight shaded round Grap
 Focused tests plus named regression files; compare any failure against exact 74f4fa1 base rather than whole-green claim. Ordinary `/arpg/` isolated valid save fixture at PC1280 and touch390: actual >=10s hold, release/cancel/blur, perfect contact/rush once and held subsequent attacks, twohand warning/reject/craft/attack. Native harness supports `ARPG_BASE_URL` and `ARPG_SHIELD_EVIDENCE` for parent replay; no live world writes/private saves/screenshots. Record source hashes, logs and limitations in workspace tmp implementation report. Local commits only; no stamp/push/release.
 
 Tuning: reuse perfect window and dodge cooldown; rush distance85 / active200ms matches existing bash range and dodge duration, body pad8. No stamina or extra parry system.
+
+## Implemented tuning / review notes
+- Runtime-only ×2: source power/affixes/enhancement remain unscaled; one direct-hit multiplier composes handedness + silver. Ordinary/silver onehand combat trace SHA remains historical.
+- Reclassified existing bases: `warden_blade`, `warden_maul` (all rarity variants). Added `rune_greatsword`, `revenant_greatsword`, `rune_warhammer`, `ossuary_warhammer`; generated rarity variants and recipes use existing catalogs and drop gates.
+- Perfect rush is 85px/200ms with bodyPad8 and collision sweep, no iframe; earned rush survives ordinary button release, but real incoming damage interrupts it. Existing dodge cooldown gates a fresh perfect press, not sustained guarding.
+- Shield is lightweight shaded round geometry with front metal boss/rivets, backside strap/grip, depth, left-hand forearm connector and shadow; no assets/dependencies/leases added. Offline actual-atlas contact sheet exposed and fixed handedness.
+- Guest own-pawn visual predicts held/release only, never contact reward/damage. Remote host InputQueue uses newest held level, retains original edge timestamps and existing cap30 / 1000ms disconnect timeout.
+- Native browser keyboard/touch input is real. This headless Chromium does not deliver OS tab-focus blur (attempted), so blur is handler-event injection and is explicitly disclosed. No screenshots/private contexts/live-world writes.
+- Whole-suite GREEN is not claimed. Exact 74f4fa1 comparison is recorded in workspace tmp; release stamps intentionally remain parent-owned. The old TD1 XP/minute policy fixture uses reclassified warden twohand and is separately measured, never silently retuned.

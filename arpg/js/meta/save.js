@@ -188,7 +188,7 @@ export function migrateStatScale(data) {
 // Reclassification is not corruption: retain the character and every owned item.
 // Validation remains strict; only loading an otherwise valid old combo repairs the binding.
 export function repairTwohandShield(data) {
-  const weapon=data?.items?.find?.(item=>item.uid===data?.equipped?.weapon);
+  const weapon=Array.isArray(data?.items) ? data.items.find(item=>item?.uid===data?.equipped?.weapon) : null;
   if(ITEMS[weapon?.id]?.handedness !== 2 || !data?.equipped?.offhand) return data;
   const next={...data,equipped:{...data.equipped,offhand:null}};
   return validateSave(next) ? next : data;
