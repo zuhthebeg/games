@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
 import { ITEMS, dismantleMaterial, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, RECIPES } from '../js/meta/items.js';
-import { enchant, scrollsFor } from '../js/meta/enchant.js';
+import { enchant } from '../js/meta/enchant.js';
 import { deriveMods } from '../js/meta/stats.js';
 import { rollAffixes, affixTotals, DEFERRED_AFFIXES, validAffixes } from '../js/meta/affixes.js';
 import { SLOTS, ECONOMY, AFFIX_RANGES, ENCHANT } from '../js/meta/economy.js';
@@ -265,14 +265,14 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
     for (const id of Object.keys(RECIPES)) {
       let made = craft(before, id); const item = made.items.at(-1);
       const sellBefore = gearPrice(item);
-      const scroll = scrollsFor(item).normal;
-      for (let level = 0; level < 5; level++) made = enchant(made, item.uid, scroll).save;
+      const stone = 'enhance_stone_1';
+      for (let level = 0; level < 5; level++) made = enchant(made, item.uid, stone).save;
       assert.equal(gearPrice(made.items.at(-1)), sellBefore);
       assert.equal(made.gold, before.gold - RECIPES[id].gold);
       const salvaged = dismantle(made, item.uid);
-      // Refunded stones never pay back the scrolls that made the +5 (5 scrolls = 25 stones).
+      // Refunded stones never pay back the 25 stones spent reaching +5.
       assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5]);
-      assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerScroll);
+      assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerAttempt);
       assert.equal(salvaged.stacks.enhance_stone_3, made.stacks.enhance_stone_3);
       assert.ok(salvaged.stacks[dismantleMaterial(item)] < before.stacks[dismantleMaterial(item)]);
       assert.ok(sellItem(made, item.uid).gold < before.gold);
@@ -306,14 +306,14 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(allowed.weightLimit, 112); assert.equal(allowed.locked, false);
 });
 
-test('forge tabs preserve five-slot overview, scroll costs, stock comparison and item receipts', () => {
+test('forge tabs preserve five-slot overview, stone costs, stock comparison and item receipts', () => {
   const hub = Object.create(HubUI.prototype);
   hub.save = fresh(); hub.save.gold = 10000;
   hub.selectedUid = hub.save.equipped.weapon;
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   hub.showForge();
-  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /forge-progress[\s\S]*?\+1/);
-  hub.action('forge-tab', {tab:'scrolls'});assert.match(hub.html, /강화석 5 → 1장/);
+  assert.match(hub.html, /강화석/); assert.match(hub.html, /forge-progress[\s\S]*?\+1/);
+  hub.action('forge-tab', {tab:'stones'});assert.match(hub.html, /강화석 25~50개/);
   hub.action('forge-tab', {tab:'salvage'});for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
   assert.match(hub.gearShopHtml(), /refresh-shop/);
   assert.match(hub.gearShopHtml(), /공격력/);

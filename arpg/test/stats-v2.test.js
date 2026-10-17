@@ -80,9 +80,9 @@ test('LUK: crit only above 0% (no RNG draw at 0), ~chance x 1.5 damage; more gea
   const gear = (dropLuck) => Array.from({ length: 4000 }, (_, i) => rollDrops('wolf', i * 7919 + 1, { dropLuck }).items.filter((it) => it.uid.includes(':rolled:')).length).reduce((a, b) => a + b, 0);
   const base = gear(0), more = gear(.3);
   near(more / base, 1.3, .08);
-  const s = { ...fresh(), stacks: { scroll_enchant_weapon: 1 } }; s.items[0].enhance = 7;
+  const s = { ...fresh(), stacks: { enhance_stone_1: 1 } }; s.items[0].enhance = 7;
   const lucky7 = { ...s, stats: { ...s.stats, luk: 100 } };
-  near(enchantPreview(lucky7, s.items[0].uid, 'scroll_enchant_weapon').chance - enchantPreview(s, s.items[0].uid, 'scroll_enchant_weapon').chance, .08);
+  near(enchantPreview(lucky7, s.items[0].uid, 'enhance_stone_1').chance - enchantPreview(s, s.items[0].uid, 'enhance_stone_1').chance, .08);
 });
 
 test('gear stat affixes push past 100; allocation itself stops at the cap', () => {

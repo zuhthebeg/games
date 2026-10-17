@@ -705,18 +705,13 @@ select, input:not([type="checkbox"]) {
 .forge-odds span { font-size:12px; font-weight:normal; }
 .risky .forge-odds { color:#ffa995; }
 #meta-screen button.primary.danger { background:linear-gradient(#9d4439,#6e2c29); border-color:#f49d80; color:#fff2e9; box-shadow:inset 0 1px #ffc7a540; }
-.scroll-picker { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.scroll-picker button { display:flex; align-items:center; gap:6px; min-width:0; white-space:normal; padding:8px; }
-.scroll-picker button .item-art { width:40px;height:40px;flex-shrink:0; }
-.scroll-picker button span { min-width:0; }
-.scroll-picker button small { display:block; margin-top:3px; }
-.scroll-picker button[aria-pressed="true"] { border-color:#d9ba75; background:#55442e; box-shadow:inset 0 0 0 1px #d9ba75; }
-.scroll-recipe { display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr); }
-.scroll-recipe>div { grid-column:2 / span 2; }
-.scroll-recipe .item-emblem { width:32px; }
-.scroll-recipe button { min-width:0;white-space:normal; }
-.scroll-recipe button:first-of-type { grid-column:1 / span 2; }
-.scroll-recipe button:last-of-type { grid-column:3; }
+.stone-picker { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.stone-picker button { display:flex; align-items:center; gap:6px; min-width:0; white-space:normal; padding:8px; }
+.stone-picker button .item-art { width:40px;height:40px;flex-shrink:0; }
+.stone-picker button span { min-width:0; }
+.stone-picker button small { display:block; margin-top:3px; }
+.stone-picker button[aria-pressed="true"] { border-color:#d9ba75; background:#55442e; box-shadow:inset 0 0 0 1px #d9ba75; }
+
 
 /* Enhancement borders override grade colour, but never its explicit text label. */
 [data-enhance="6"] { --enhance-color:#cde8ee; }
@@ -799,7 +794,7 @@ select, input:not([type="checkbox"]) {
 .forge-salvage .p2-item-heading{align-items:center}.forge-salvage h3{font-size:16px}
 @media(prefers-reduced-motion:reduce){.ritual-runes,.ritual-seal,.ritual-circle{animation:none!important}.forge-hero-art{filter:none}}
 
-.scroll-picker button .item-art{flex:0 0 40px}
+.stone-picker button .item-art{flex:0 0 40px}
 .forge-hero-art[data-enhance="6"]:after,.forge-hero-art[data-enhance="7"]:after,.forge-hero-art[data-enhance="8"]:after,.forge-hero-art[data-enhance="9"]:after,.forge-hero-art[data-enhance="10"]:after{content:"";position:absolute;inset:12px;border:1px solid var(--enhance-color);border-radius:50%;opacity:.5}
 .enchant-fx.reduced .enchant-fracture{display:none}
 /* Isolate fullscreen flashes/shake from repainting the background and item raster. */
@@ -808,7 +803,7 @@ select, input:not([type="checkbox"]) {
 .enchant-gear,.enchant-scroll,.enchant-ritual .ritual-runes,.enchant-copy .enchant-result{will-change:transform}
 .enchant-fx.reduced .enchant-stage,.enchant-fx.reduced .enchant-gear,.enchant-fx.reduced .enchant-result{will-change:auto}
 .ritual-runes i svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2}
-.scroll-picker button>span:not(.item-art){font-size:12px;word-break:keep-all;line-height:1.4;text-align:left}
+.stone-picker button>span:not(.item-art){font-size:12px;word-break:keep-all;line-height:1.4;text-align:left}
 
 /* Static sixteen-ray raster, composited once: avoid full-canvas triangle overdraw every frame. */
 .enchant-rays{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;background:repeating-conic-gradient(at 50% 42%,#ffdf8c55 0deg 3deg,transparent 4deg 18deg,#9bddff55 19deg 22deg,transparent 23deg 45deg);will-change:opacity}

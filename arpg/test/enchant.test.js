@@ -207,3 +207,9 @@ test('removed scroll saves reject safely and valid special stones load normally'
     assert.equal(validateSave(old),false);assert.doesNotThrow(()=>assert.equal(store.load(),null));
   }
 });
+
+test('forge salvage shows and pays exact plain/greater refund for dropped enhanced gear', async () => {
+ const {HubUI}=await import('../js/ui/hub.js');const h=Object.create(HubUI.prototype);h.save=withStones(fresh());h.selectedUid='drop:42:weapon';h.save.items.push({...instance(h.selectedUid,'iron_sword',1,[]),enhance:9});
+ assert.match(h.forgeSalvageHtml(),/강화석: 18.*상급 강화석: 2/);
+ const next=dismantle(h.save,h.selectedUid);assert.equal(next.stacks[W]-h.save.stacks[W],18);assert.equal(next.stacks.enhance_stone_3,2);
+});

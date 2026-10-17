@@ -8,7 +8,7 @@ import {
   ITEMS, RECIPES, enhanceMultiplier, rollDrops, dropSeed,
   equip, craft, dismantle, dismantleRefund, dismantleMaterial, buy, shopPrice, carriedWeight, capacity,
 } from '../js/meta/items.js';
-import { enchant, scrollsFor } from '../js/meta/enchant.js';
+import { enchant } from '../js/meta/enchant.js';
 import { resolve } from '../js/meta/quiz.js';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import {
@@ -175,25 +175,24 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     }
     assert.throws(() => dismantle(cycle, item.uid));
     let upgraded = crafted;
-    const scroll = scrollsFor(item).normal;
-    for (let level = 0; level < 5; level++) upgraded = enchant(upgraded, item.uid, scroll).save;
+    const stone = 'enhance_stone_1';
+    for (let level = 0; level < 5; level++) upgraded = enchant(upgraded, item.uid, stone).save;
     assert.equal(upgraded.items.at(-1).enhance, 5);
     assert.equal(upgraded.gold, crafted.gold);
     assert.equal(upgraded.stacks.scrap, crafted.stacks.scrap);
-    assert.equal(upgraded.stacks[scroll], 95);
-    assert.equal(upgraded.stacks.enhance_stone_1, 100);
+    assert.equal(upgraded.stacks[stone], 75);
     near(enhanceMultiplier(5), 1.25);
     const refund = dismantle(upgraded, item.uid);
     assert.equal(refund.stacks[primary] - upgraded.stacks[primary], dismantleRefund(item));
     assert.equal(refund.stacks.enhance_stone_1 - upgraded.stacks.enhance_stone_1, 5);
     assert.equal(refund.gold, upgraded.gold);
-    assert.throws(() => enchant({ ...upgraded, stacks: { ...upgraded.stacks, [scroll]: 0 } }, item.uid, scroll), /없습니다/);
+    assert.throws(() => enchant({ ...upgraded, stacks: { ...upgraded.stacks, [stone]: 0 } }, item.uid, stone), /부족/);
     const again = craft(crafted, id);
     assert.notEqual(again.items.at(-1).uid, item.uid);
   }
   const poor = freeze(fresh());
   assert.throws(() => craft(poor, 'iron_sword'));
-  assert.throws(() => enchant(poor, poor.equipped.weapon, 'scroll_enchant_weapon'));
+  assert.throws(() => enchant(poor, poor.equipped.weapon, 'enhance_stone_1'));
   assert.throws(() => dismantle(poor, poor.equipped.weapon));
   assert.throws(() => dismantle(poor, poor.equipped.body));
 });

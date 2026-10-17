@@ -60,7 +60,7 @@ export function setLevel(save, level) {
 export function mutateSave(save, action) {
   const next = structuredClone(save);
   if (action.startsWith('gold:')) next.gold += Number(action.split(':')[1]);
-  else if (action === 'stones') for (const [id, n] of [['enhance_stone_1', 50], ['enhance_stone_3', 2], ['scroll_enchant_weapon', 10], ['scroll_enchant_armor', 10], ['scroll_blessed_weapon', 2], ['scroll_blessed_armor', 2]]) next.stacks[id] = (next.stacks[id] || 0) + n;
+  else if (action === 'stones') for (const [id, n] of [['enhance_stone_1', 50], ['enhance_stone_3', 2], ['enhance_stone_blessed', 2], ['enhance_stone_cursed', 2]]) next.stacks[id] = (next.stacks[id] || 0) + n;
   else if (action === 'materials') {
     for (const [id, item] of Object.entries(ITEMS)) if (item.kind === 'material') next.stacks[id] = (next.stacks[id] || 0) + 20;
   } else if (action === 'potions') {

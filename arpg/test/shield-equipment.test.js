@@ -46,7 +46,7 @@ test('human shield socket removes equipment without deleting, charging or resett
 });
 
 test('destroyed sword fallback to focus also removes shield atomically without losing owned shield',async()=>{
- const {enchant}=await import('../js/meta/enchant.js');let s=trained();s.items=s.items.filter(i=>ITEMS[i.id].slot!=='weapon'||['sword','wand'].includes(i.uid));s.items.push(instance('shield','round_shield'));s=equip(s,'sword');s=equip(s,'shield');s.items.find(i=>i.uid==='sword').enhance=11;s.stacks.scroll_enchant_weapon=100;
- let next;for(let count=0;count<100;count++){s.enchantCount=count;const result=enchant(s,'sword','scroll_enchant_weapon');if(result.result.outcome==='destroyed'){next=result.save;break;}}
+ const {enchant}=await import('../js/meta/enchant.js');let s=trained();s.items=s.items.filter(i=>ITEMS[i.id].slot!=='weapon'||['sword','wand'].includes(i.uid));s.items.push(instance('shield','round_shield'));s=equip(s,'sword');s=equip(s,'shield');s.items.find(i=>i.uid==='sword').enhance=11;s.stacks.enhance_stone_1=100;
+ let next;for(let count=0;count<100;count++){s.enchantCount=count;const result=enchant(s,'sword','enhance_stone_1');if(result.result.outcome==='destroyed'){next=result.save;break;}}
  assert.ok(next);assert.equal(next.equipped.weapon,'wand');assert.equal(next.equipped.offhand,null);assert.ok(next.items.some(i=>i.uid==='shield'));assert.ok(validateSave(next));
 });

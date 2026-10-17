@@ -20,8 +20,8 @@ test('safe/risky/destroyed/crack presentation uses only committed immutable resu
   assert.equal(enchantPresentation({...result,risky:true,to:7}).title,'+7 강화 성공!');
   const destroyed = enchantPresentation({...result,outcome:'destroyed',to:null,risky:true,refund:{enhance_stone_1:4}});
   assert.equal(destroyed.title,'장비가 산산조각 났다');assert.equal(destroyed.detail,'남은 강화석 4개');assert.equal(destroyed.sound,'kill');
-  const crack = enchantPresentation({id:'scroll_enchant_armor',count:7});
-  assert.equal(crack.kind,'crack');assert.equal(crack.title,'주문서 7장');
+  const crack = enchantPresentation({id:'enhance_stone_1',count:35});
+  assert.equal(crack.kind,'crack');assert.equal(crack.title,'강화석 35개');
   assert.equal(enchantPresentation({...result,risky:true},true).chargeMs,80);
 });
 test('weapon tiers have bounded distinct effects and reduced motion has no particles/pulse/trail', () => {
@@ -54,7 +54,7 @@ test('enhancement metadata changes badges/portrait/combat but not paperdoll bake
 });
 test('hub commits before playing and blocks actions during animation; no presentation writes to save/sim', () => {
   const hub=readFileSync(new URL('../js/ui/hub.js',import.meta.url),'utf8');
-  const section=hub.slice(hub.indexOf("case 'enhance':"),hub.indexOf("case 'craft-scroll':"));
+  const section=hub.slice(hub.indexOf("case 'enhance':"),hub.indexOf("case 'crack-greater':"));
   assert.ok(section.indexOf('this.commit(save)')<section.indexOf('playEnchantFx'));
   assert.ok(hub.includes('if (this.enchantFx?.active) return;'));
   const fx=readFileSync(new URL('../js/ui/enchant-fx.js',import.meta.url),'utf8');
@@ -64,7 +64,7 @@ test('hub commits before playing and blocks actions during animation; no present
 test('a persistence failure neither plays a result nor advances in-memory save', () => {
   const hub=Object.create(HubUI.prototype);
   hub.save=createSave({name:'저장 실패',answers:[0,0,0,0,0],createdAt:1});
-  hub.save.stacks.scroll_enchant_weapon=1;hub.forgeScroll='scroll_enchant_weapon';
+  hub.save.stacks.enhance_stone_1=5;hub.forgeStone='enhance_stone_1';
   hub.persist=()=>{throw new Error('quota');};hub.showForge=()=>{throw new Error('must not show result');};
   const before=JSON.stringify(hub.save);
   assert.throws(()=>hub.action('enhance',{uid:'starter:weapon'}),/quota/);
@@ -97,7 +97,7 @@ test('ritual has reusable bounded rune geometry and tier palette, not per-partic
 test('forge separates all legacy actions, defaults to ritual, and keeps selected gear on tab switches', () => {
   const hub=Object.create(HubUI.prototype);
   hub.save=createSave({name:'탭 시험',answers:[0,0,0,0,0],createdAt:1});
-  hub.save.stacks.scroll_enchant_weapon=10;hub.save.stacks.scrap=1; // recipes reveal once a material is seen (cocy 10-14)
+  hub.save.stacks.enhance_stone_1=50;hub.save.stacks.scrap=1; // recipes reveal once a material is seen (cocy 10-14)
   hub.showInnPanel=(_title,html,_page,footer)=>{hub.html=html;hub.footer=footer;};
   hub.action('forge',{});
   assert.equal(hub.forgeTab,'enhance');
@@ -105,12 +105,16 @@ test('forge separates all legacy actions, defaults to ritual, and keeps selected
   assert.match(hub.footer,/data-action="enhance"/);
   assert.doesNotMatch(hub.html,/data-action="(?:craft-scroll|crack-greater|dismantle|sell|craft|equip)"/);
   hub.action('select-gear',{uid:'starter:armor'});
-  for (const tab of ['scrolls','salvage','enhance']) {
+  for (const tab of ['stones','salvage','enhance']) {
     hub.action('forge-tab',{tab});assert.equal(hub.selectedUid,'starter:armor');
-    if(tab==='scrolls') {assert.match(hub.html,/craft-scroll/);assert.match(hub.html,/crack-greater/);assert.equal(hub.footer,'');}
+    if(tab==='stones') {assert.doesNotMatch(hub.html,/craft-scroll|주문서/);assert.match(hub.html,/crack-greater/);assert.equal(hub.footer,'');}
     if(tab==='salvage') {for(const action of ['equip','dismantle','sell','craft'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.equal(hub.footer,'');}
   }
   hub.action('forge-tab',{tab:'bad'});assert.equal(hub.forgeTab,'enhance');
   hub.save.items[0].enhance=12;hub.selectedUid='starter:weapon';hub.showForge();
   assert.match(hub.footer,/disabled/);assert.doesNotMatch(hub.html,/undefined|NaN/);
+});
+
+test('all forge FX including count-up copy uses stone counts, never scroll wording',()=>{
+ const fx=readFileSync(new URL('../js/ui/enchant-fx.js',import.meta.url),'utf8');assert.doesNotMatch(fx,/주문서/);
 });

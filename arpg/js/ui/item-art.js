@@ -11,8 +11,6 @@ const artwork = {
   hands: 'hands.webp', 'hands-heavy': 'hands-heavy.webp', feet: 'feet.webp', 'feet-heavy': 'feet-heavy.webp',
   'stone-low': 'stone-low.webp', 'stone-mid': 'stone-mid.webp', 'stone-high': 'stone-high.webp',
   potion: 'potion.webp', mana_potion: 'mana-potion.webp', return_scroll: 'scroll.webp',
-  scroll_enchant_weapon: 'scroll-enchant-weapon.webp', scroll_enchant_armor: 'scroll-enchant-armor.webp',
-  scroll_blessed_weapon: 'scroll-blessed-weapon.webp', scroll_blessed_armor: 'scroll-blessed-armor.webp',
   wood: 'wood.webp', scrap: 'scrap.webp', hide: 'leather.webp', fang: 'fang.webp', web: 'web.webp',
   rune_shard: 'ore.webp', frost_shard: 'ore.webp',
 };
@@ -41,7 +39,7 @@ export function itemArtKey(id, definition = {}) {
   if (definition.slot === 'head' && definition.armorClass === 'light') return 'head-light';
   if (['hands', 'feet'].includes(definition.slot) && definition.armorClass === 'heavy') return `${definition.slot}-heavy`;
   if (definition.slot) return Object.hasOwn(artwork, definition.slot) ? definition.slot : null;
-  return { enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high' }[id]
+  return { enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high', enhance_stone_blessed:'stone-high', enhance_stone_cursed:'stone-mid' }[id]
     || (Object.hasOwn(artwork, id) ? id : null);
 }
 

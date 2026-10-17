@@ -5,7 +5,7 @@ import { HubUI } from '../js/ui/hub.js';
 import { getHeroPortrait } from '../js/ui/gear-view.js';
 import { createSave } from '../js/meta/save.js';
 import { instance } from '../js/meta/items.js';
-import { ENCHANT, SCROLLS } from '../js/meta/economy.js';
+import { ENCHANT, STONE, BLESSED_STONE } from '../js/meta/economy.js';
 import { PORTRAIT_DIRECTIONS, setPortraitDirection } from '../js/render/paperdoll-portrait.js';
 const fresh = () => createSave({name:'H1',answers:[0,0,0,0,0],createdAt:1});
 const hub = () => Object.assign(Object.create(HubUI.prototype), {save:fresh(), dialogHtml:(title,body,footer)=>footer, mountSheet(html){this.html=html;}, showForge(){this.forgeShown=true;}});
@@ -18,11 +18,11 @@ test('socket footer has merchant and selected-equipment forge shortcut; max/empt
   h.save.items[0].enhance=ENCHANT.max;h.showSocket('weapon');assert.match(h.html,/data-action="socket-forge"[^>]*disabled/);
   h.showSocket('head');assert.match(h.html,/data-action="socket-forge"[^>]*disabled/);
 });
-test('shortcut resets forge tab/scroll and selects armor, not default weapon; invalid/max no-op', () => {
+test('shortcut resets forge tab/stone and selects armor, not default weapon; invalid/max no-op', () => {
   const h=hub();const item=instance('head','head_light_common_t1');h.save.items.push(item);h.save.equipped.head=item.uid;
-  h.forgeTab='salvage';h.forgeScroll=SCROLLS.weapon.blessed;
+  h.forgeTab='salvage';h.forgeStone=BLESSED_STONE;
   const before=JSON.stringify(h.save);h.action('socket-forge',{uid:item.uid});
-  assert.equal(h.selectedUid,item.uid);assert.equal(h.forgeTab,'enhance');assert.equal(h.forgeScroll,SCROLLS.armor.normal);assert.equal(h.forgeShown,true);assert.equal(JSON.stringify(h.save),before);
+  assert.equal(h.selectedUid,item.uid);assert.equal(h.forgeTab,'enhance');assert.equal(h.forgeStone,STONE);assert.equal(h.forgeShown,true);assert.equal(JSON.stringify(h.save),before);
   h.forgeShown=false;item.enhance=ENCHANT.max;h.action('socket-forge',{uid:item.uid});assert.equal(h.forgeShown,false);
   h.action('socket-forge',{uid:'missing'});assert.equal(h.forgeShown,false);
 });

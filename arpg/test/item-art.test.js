@@ -24,7 +24,7 @@ test('all existing item IDs including wood resolve local reviewed art', () => {
     assert.ok(!html.includes('onerror=') && !html.includes('https:'), id);
     used.add(path.split('/').pop());
   }
-  assert.deepEqual([...used].sort(), records.map(r=>r.file).sort(), 'no unused delivered icons');
+  assert.deepEqual([...used].sort(), records.filter(r=>!/^scroll-(?:enchant|blessed)-(?:weapon|armor)\.webp$/.test(r.file)).map(r=>r.file).sort(), 'no unused active icons (retired enchant art is not loaded)');
 });
 
 test('rarity/affix variants share base art; real forms and hunt tiers stay meaningful', () => {
@@ -71,10 +71,9 @@ test('delivered WebPs match source manifest and stay below legacy 200 KiB + T4 3
   assert.ok(bytes < 232*1024, `${bytes} bytes`);
 });
 
-test('four enchant scrolls use distinct art and never share the return-scroll icon', () => {
-  const paths = ['scroll_enchant_weapon', 'scroll_enchant_armor', 'scroll_blessed_weapon', 'scroll_blessed_armor'].map(id => itemArtPath(itemArtKey(id, ITEMS[id])));
-  assert.equal(new Set(paths).size, 4);
-  assert.ok(paths.every(path=>path !== itemArtPath('return_scroll')));
+test('plain, blessed and cursed stones have distinct stone art, never the return-scroll icon', () => {
+ const paths=['enhance_stone_1','enhance_stone_blessed','enhance_stone_cursed'].map(id=>itemArtPath(itemArtKey(id,ITEMS[id])));
+ assert.equal(new Set(paths).size,3);assert.ok(paths.every(path=>path&&path!==itemArtPath('return_scroll')));
 });
 
 test('wood has its own timber picture and matching SVG fallback, not leather/ore/load', () => {

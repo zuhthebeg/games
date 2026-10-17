@@ -16,7 +16,7 @@ export function enchantPresentation(result, reduced = false) {
     kind: crack ? 'crack' : destroyed ? 'destroyed' : 'success',
     chargeMs: reduced ? 80 : crack ? 850 : result.risky ? 1250 : 180,
     holdMs: reduced ? 700 : crack ? 700 : destroyed ? 1050 : result.risky ? 900 : 420,
-    title: crack ? `주문서 ${result.count}장` : destroyed ? '장비가 산산조각 났다' : `+${result.to}${result.risky ? ' 강화 성공!' : ''}`,
+    title: crack ? `강화석 ${result.count}개` : destroyed ? '장비가 산산조각 났다' : result.to < result.from ? `+${result.to} 약화` : result.to === result.from ? `+${result.to} 변화 없음` : `+${result.to}${result.risky ? ' 강화 성공!' : ''}`,
     detail: crack ? ITEMS[result.id].name : destroyed ? `남은 강화석 ${result.refund?.enhance_stone_1 || 0}개` : ITEMS[result.id].name,
     sound: destroyed ? 'kill' : 'level-up',
   };
@@ -26,9 +26,9 @@ export const ENCHANT_PARTICLE_LIMIT = 160;
 const tierColor = level => `#${(WEAPON_GLOW_COLORS[Math.max(0, Math.min(4, (level || 6) - 6))]).toString(16).padStart(6, '0')}`;
 const sound = clip => document.dispatchEvent(new CustomEvent('arpg:presentation-sound', {detail: clip}));
 
-export function playEnchantFx(root, result, scrollId) {
+export function playEnchantFx(root, result, stoneId) {
   const reduced = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
-  const view = enchantPresentation(result, reduced), blessed = !!ITEMS[scrollId]?.blessed;
+  const view = enchantPresentation(result, reduced), blessed = !!ITEMS[stoneId]?.blessed, cursed = !!ITEMS[stoneId]?.cursed;
   let origin = document.activeElement;
   let dialog = document.createElement('dialog');
   dialog.className = `enchant-fx ${view.kind} ${result.risky ? 'risky' : ''} ${blessed ? 'blessed' : ''} ${reduced ? 'reduced' : ''}`;
@@ -38,16 +38,16 @@ export function playEnchantFx(root, result, scrollId) {
   dialog.style.setProperty('--charge', `${view.chargeMs}ms`);
   dialog.style.setProperty('--fx-color', blessed ? '#ffd36f' : '#70cfff');
   dialog.style.setProperty('--tier-color', tierColor(result.to));
-  const scroll = scrollId || result.id;
+  const stone = stoneId || result.id;
   dialog.innerHTML = `<button type="button" class="enchant-stage" aria-label="연출 건너뛰기">
     <span class="enchant-veil" aria-hidden="true"></span><span class="enchant-rays" aria-hidden="true"></span>${reduced ? '' : '<canvas class="enchant-particles" aria-hidden="true"></canvas>'}
     <span class="enchant-ritual" aria-hidden="true">${ritualCircleHtml()}</span>
     <span class="enchant-beam" aria-hidden="true"></span>
-    <span class="enchant-scroll" aria-hidden="true">${itemIcon(scroll, ITEMS[scroll])}</span>
+    <span class="enchant-scroll" aria-hidden="true">${itemIcon(stone, ITEMS[stone])}</span>
     <span class="enchant-gear" aria-hidden="true">${itemIcon(view.kind === 'crack' ? 'enhance_stone_3' : result.id, ITEMS[view.kind === 'crack' ? 'enhance_stone_3' : result.id])}<i class="enchant-fracture"></i></span>
     <span class="enchant-burst" aria-hidden="true"></span><span class="enchant-shards" aria-hidden="true"></span>
-    ${view.kind === 'crack' ? `<span class="enchant-cards" aria-hidden="true">${Array.from({length: result.count}, (_, i) => `<i style="--card:${i};--fan:${(i - (result.count - 1) / 2) * 7}deg">${itemIcon(result.id, ITEMS[result.id])}</i>`).join('')}</span>` : ''}
-    <span class="enchant-copy"><small class="enchant-caption">${view.kind === 'crack' ? '상급 강화석 · 주문서 개봉' : blessed ? '축복의 인챈트' : result.risky ? '한계를 넘는 의식' : '안전 강화'}${view.kind === 'crack' ? '' : ` · +${result.from}`}</small>
+    ${view.kind === 'crack' ? `<span class="enchant-cards" aria-hidden="true">${Array.from({length: result.count / 5}, (_, i) => `<i style="--card:${i};--fan:${(i - (result.count / 5 - 1) / 2) * 7}deg">${itemIcon(result.id, ITEMS[result.id])}</i>`).join('')}</span>` : ''}
+    <span class="enchant-copy"><small class="enchant-caption">${view.kind === 'crack' ? '상급 강화석 · 강화석 개봉' : blessed ? '축복의 인챈트' : cursed ? '저주의 인챈트' : result.risky ? '한계를 넘는 의식' : '안전 강화'}${view.kind === 'crack' ? '' : ` · +${result.from}`}</small>
       <strong class="enchant-result" role="status" aria-live="off"></strong><span class="enchant-detail"></span><small class="enchant-skip">탭 또는 Esc · 건너뛰기</small></span></button>`;
   root.append(dialog); dialog.showModal();
   let stage = dialog.querySelector('button'), title = dialog.querySelector('.enchant-result'), detail = dialog.querySelector('.enchant-detail');
@@ -116,7 +116,7 @@ export function playEnchantFx(root, result, scrollId) {
       const elapsed = now - start, progress = Math.min(1, elapsed / view.chargeMs), age = revealed ? (now - revealAt) / 1000 : 0;
       if (view.kind === 'crack' && !revealed) {
         const count = Math.min(result.count, Math.floor(Math.max(0, elapsed - 280) / (view.chargeMs - 280) * result.count));
-        if (count !== lastCount) { title.textContent = `주문서 ${count}장`; lastCount = count; }
+        if (count !== lastCount) { title.textContent = `강화석 ${count}개`; lastCount = count; }
       }
       if (context && dialog.dataset.beat !== 'fracture') {
         const cx = width / 2, cy = height * .42, scale = Math.min(width / 390, height / 700, 1.3);
