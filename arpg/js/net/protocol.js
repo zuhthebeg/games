@@ -7,6 +7,7 @@ import { BALANCE } from '../content/balance.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
 export const TIMED_SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
+const MAX_PENDING_EDGES = 30;
 const finite = v => Number.isFinite(v) ? v : 0;
 const q = v => Math.round(finite(v) * 100) / 100;
 // Cumulative edge counters survive dropped RT packets; receiver queues each press once.
@@ -63,8 +64,12 @@ export class InputQueue {
     if (cmd.edges) for (const k of EDGES) {
       const n = cmd.edges[k];
       if (Number.isSafeInteger(n) && n >= this.seen[k]) {
-        // Bound cumulative presses, including untrusted counter jumps.
-        const count = Math.min(30, n - this.seen[k]);
+        // Retain at most 30 newest presses TOTAL, not 30 more per packet.
+        // Advance seen to n even when dropping overflow, so it cannot be repaid.
+        const count = Math.min(MAX_PENDING_EDGES, n - this.seen[k]);
+        const dropped = Math.max(0, this.pending[k] + count - MAX_PENDING_EDGES);
+        if (k === 'dodgeEdge') this.dodgeViews.splice(0, dropped);
+        if (TIMED_SKILL_EDGES.includes(k)) this.skillViews[k].splice(0, dropped);
         if (k === 'dodgeEdge') for (let i = n - count + 1; i <= n; i++) {
           const row = Array.isArray(cmd.dodgeViews) ? cmd.dodgeViews.find(r => Array.isArray(r) && r[0] === i) : null;
           this.dodgeViews.push(row ? row[1] : n - this.seen[k] === 1 ? cmd.viewTick : undefined);
@@ -74,7 +79,7 @@ export class InputQueue {
           const row = Array.isArray(rows) ? rows.find(r => Array.isArray(r) && r[0] === i) : null;
           this.skillViews[k].push(row ? row[1] : !cmd.skillViews && n - this.seen[k] === 1 ? cmd.viewTick : undefined);
         }
-        this.pending[k] += count; this.seen[k] = n;
+        this.pending[k] = Math.min(MAX_PENDING_EDGES, this.pending[k] + count); this.seen[k] = n;
       }
     }
   }
@@ -116,7 +121,7 @@ export class InputLatch {
     for (const k of EDGES) {
       const n = p.edges?.[k];
       if (Number.isSafeInteger(n) && n >= this.seen[k]) {
-        this.pending[k] += n - this.seen[k]; this.seen[k] = n;
+        this.pending[k] = Math.min(MAX_PENDING_EDGES, this.pending[k] + (n - this.seen[k])); this.seen[k] = n;
       }
     }
     return true;
