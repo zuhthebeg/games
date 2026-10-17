@@ -49,3 +49,25 @@ for(const [base,silver]of Object.entries(pair))test(`C ${silver}: same-seed host
   assert.equal(predicted.dodge.cdLeft,a.p.dodge.cdLeft);assert.equal(predicted.dodge.iframeLeft,a.p.dodge.iframeLeft);assert.equal(predicted.mp,a.p.mp);
  }
 });
+
+test('C 800 actual silver casts remain same-seed same-tick deterministic including hits, statuses and turn attempts',()=>{
+ for(const[base,ability]of ORDINARY_CASES)for(const target of ['ghoul','goblin_grunt'])for(let seed=1;seed<=20;seed++){
+  const a=combatRun(pair[base],ability,target,seed),b=combatRun(pair[base],ability,target,seed);assert.deepEqual(a.w,b.w);assert.deepEqual(a.events,b.events);
+ }
+});
+test('C guest silver attack is resolved only by host and delivered as identical authoritative damage/capability',async()=>{
+ const[{CoopSession},{createMemoryTransport}]=await Promise.all([import('../js/net/session.js'),import('../js/net/loopback.js')]);
+ const net=createMemoryTransport(),sessions={},events=[],mods=combatRun('silver_bow','basic').mods;
+ for(const uid of ['host','guest']){const transport=net.connect(uid,(from,p)=>p.t==='action'?sessions[uid].action(p.action):sessions[uid].rt(from,p));sessions[uid]=new CoopSession({uid,host:'host',players:['host','guest'],config:{stageId:'S21',seed:555,threat:1},profile:{name:uid,level:30,weapon:'bow',mods,threats:{S21:1}},...transport,onFrame:uid==='guest'?(_view,es)=>events.push(...es):()=>{}});}
+ sessions.guest.update(34,emptyInput());const w=sessions.host.world;w.round.pending=[];w.entities=w.entities.filter(e=>e.kind==='player');const p=w.entities.find(e=>e.pid==='guest');p.x=500;p.y=400;const target=spawnMonster(w,'ghoul',600,400,{hpMult:1000});target.spawnLeft=0;target.thinkLeft=100000;target.frozenUntil=100000;
+ sessions.guest.update(34,{...emptyInput(),aimX:1,attack:true});for(let i=0;i<50;i++)sessions.host.update(34,emptyInput());
+ const hit=events.find(e=>e.type==='hit'&&e.src===p.id&&e.dst===target.id);assert.ok(hit);assert.equal(hit.dmg,Math.round(combat.ABILITIES.arrow.damage*mods.dmgMult.bow*1.5));assert.equal(sessions.guest.world,null);assert.equal(sessions.guest.view().entities[0].silverWeapon,true);
+});
+
+test('C silver sword counter followup reuses 70% of already boosted first damage exactly once',()=>{
+ for(const silverWeapon of [false,true]){
+  const w=createWorld(),p=addPlayer(w,{pid:'p',weapon:'blade',x:500,y:400,mods:{silverWeapon,mpRegen:0}}),t=spawnMonster(w,'ghoul',550,400,{hpMult:1000});t.spawnLeft=0;t.thinkLeft=100000;t.frozenUntil=100000;p.pendingCounter={attackerId:t.id,dodgeTick:0,expiresTick:100};const events=[];
+  for(let i=0;i<60;i++){t.x=550;t.kx=0;t.ky=0;events.push(...step(w));}
+  const hits=events.filter(e=>e.type==='hit'&&e.dst===t.id);assert.equal(hits.length,2);assert.equal(hits[0].dmg,Math.round(combat.ABILITIES.slash.damage*2.2*(silverWeapon?1.5:1)));assert.equal(hits[1].dmg,Math.round(hits[0].dmg*.7));
+ }
+});
