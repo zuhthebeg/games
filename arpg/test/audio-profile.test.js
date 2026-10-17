@@ -76,7 +76,9 @@ test('reads frozen entities without touching world RNG and derives exact solo/gu
     assert.deepEqual(eventCues(e,p.id,w.entities),eventCues(e,p.id,guest.entities));
     if(e.type==='hit'&&e.counter) rows.push(e);
   }}
-  assert.equal(rows.length,1);assert.equal(eventCues(rows[0],p.id,w.entities)[0].name,'counter-hit');
+  // Independently replayed on unchanged base 2e27e64: sword follow-up x2, bow x1, focus blink x0.
+  assert.equal(rows.length,{blade:2,bow:1,focus:0}[weapon],weapon);
+  for(const row of rows) assert.equal(eventCues(row,p.id,w.entities)[0].name,'counter-hit');
   const rng=w.rng;const a=audio();await a.unlock();a.events(rows,p.id,Object.freeze(w.entities.map(e=>Object.freeze({id:e.id,kind:e.kind,type:e.type,weaponForm:e.weaponForm}))));assert.equal(w.rng,rng);
  }
  assert.doesNotThrow(()=>eventCues(hit,1,entities));
