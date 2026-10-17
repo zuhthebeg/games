@@ -62,8 +62,12 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
     const since = row.tick - start;
     if (since < 0 || since >= (physical ? ticks(400) : iframeTicks)) { keep.push(row); continue; }
     if (physical) {
-      if (row.hit.shieldBlocked || !shieldBlocks({...p,x:row.x,y:row.y},row.hit,{...p.shieldGuard,left:1})) {keep.push(row);continue;}
+      if (!shieldBlocks({...p,x:row.x,y:row.y},row.hit,{...p.shieldGuard,left:1})) {keep.push(row);continue;}
       const perfect=awardPerfect(world,p,row.hit,since);
+      // Newest held can block before its edge exits the jitter queue. That contact
+      // can still earn the edge's one perfect reward, but has already paid ×0.3:
+      // refund its recorded applied damage on perfect, never mitigate it twice.
+      if (row.hit.shieldBlocked && !perfect) {keep.push(row);continue;}
       const refund=perfect?row.dmg:row.dmg-shieldDamage(row.dmg);
       p.hp=Math.min(p.maxHp,p.hp+refund);
       if(perfect)undoContact(world,p,row,state);
