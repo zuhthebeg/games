@@ -10,7 +10,8 @@
     "duration": 0.24,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 5608
+    "bytes": 5608,
+    "outputSha256": "aec9bce864f77c705bd43d6feabb54543bb48a42a604b20049dbc21ae54d6c36"
   },
   {
     "name": "hit.ogg",
@@ -23,7 +24,8 @@
     "duration": 0.26,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 5778
+    "bytes": 5778,
+    "outputSha256": "985bf71c257bef13e6608fa4057c741184b66ddbd0608babb860d2a08c81c879"
   },
   {
     "name": "critical.ogg",
@@ -36,7 +38,8 @@
     "duration": 0.36,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 6445
+    "bytes": 6445,
+    "outputSha256": "75e9e4229323438380acdeeef8a9109988e6fe6bfc96a65d4f425a092fa3e122"
   },
   {
     "name": "dodge.ogg",
@@ -49,7 +52,8 @@
     "duration": 0.28,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 5334
+    "bytes": 5334,
+    "outputSha256": "4c905b934473a4081cbbab657e663a90d7690f495b34a2bfb9c2b0cdcb8d942a"
   },
   {
     "name": "hurt.ogg",
@@ -62,7 +66,8 @@
     "duration": 0.3,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 5967
+    "bytes": 5967,
+    "outputSha256": "07cc6e5a2c5932c1201f7eace55e522a22029ae797a8c1ef03a089b0887d2eeb"
   },
   {
     "name": "kill.ogg",
@@ -75,7 +80,8 @@
     "duration": 0.55,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 8369
+    "bytes": 8369,
+    "outputSha256": "06b5b272100cc621998dc33cf1e0810b18a4347e9537e34725f830f133dec6e5"
   },
   {
     "name": "level-up.ogg",
@@ -88,6 +94,7 @@
     "duration": 1.15,
     "sampleRate": 48000,
     "channels": 1,
-    "bytes": 13112
+    "bytes": 13112,
+    "outputSha256": "6e7338c07b5183f92828a6fde5f5d149368dc9d9bf29cada65d199454f891767"
   }
 ]
