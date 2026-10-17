@@ -74,8 +74,9 @@ test('repeat TD1 does not outfarm S20 XP/gold/gear in the same late solo policy 
  for(const seed of [1,11,79]){
   const results={};
   for(const id of ['TD1','S20']){
-   const save=throneLateSave('host');save.cleared[id]=true;save.stageThreat[id]=1;
-   const w=createWorld({seed}),p=addPlayer(w,{pid:'a',weapon:'blade',mods:buildRoundMods(save)});startStage(w,id);let tracker=createTracker(seed);
+   // Two-handed warden blade/maul intentionally doubles weapon damage; this repeat-farm guard measures an unaffected one-hand-rate bow build.
+   const save=throneLateSave('host','bow');save.cleared[id]=true;save.stageThreat[id]=1;
+   const w=createWorld({seed}),p=addPlayer(w,{pid:'a',weapon:'bow',mods:buildRoundMods(save)});startStage(w,id);let tracker=createTracker(seed);
    for(let t=0;t<18000&&w.round.state==='running';t++)tracker=trackRound(save,tracker,step(w,{a:botInput(w,p)})).tracker;
    assert.equal(w.round.state,'clear');const out=settleRound(save,{stageId:id,terminal:p.terminal,...tracker});
    const minute=w.tick/1800;results[id]={xp:(out.receipt.stageXp+tracker.depositedXp)/minute,gold:out.receipt.goldGained/minute,gear:out.receipt.lootKept.items.length/minute};
