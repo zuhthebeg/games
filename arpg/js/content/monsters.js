@@ -20,6 +20,7 @@ export const MONSTER_MODELS = [
   'succubus',
 ];
 export const MONSTER_NAMES = {
+  necropolis_lord: '망자의 군주',
   undead_lab_human_melee: '인간 모험가 · 근접 AI',
   ghoul: '구울', ghost: '유령', bat: '거대 박쥐',
   demon: '악마', goleling: '고링', slime: '슬라임',
@@ -36,6 +37,7 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
   speciesTags, lifeState, disposition: 'hostile',
 });
 export const MONSTER_VARIANTS = {
+  necropolis_lord: { ...variant('necropolis_lord', 'skeleton', ['skeleton', 'humanoid', 'boss'], 'undead'), baseModelId: 'skeleton_warrior' },
   undead_lab_human_melee: variant('undead_lab_human_melee', 'human', ['human', 'humanoid'], 'living'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),

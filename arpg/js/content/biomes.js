@@ -28,7 +28,7 @@ export const STAGE_BIOMES = Object.fromEntries([
   ...[8, 9, 10].map(n => [`S${n}`, 'ash_pass']),
   ['M_THRONE_GARGOYLE', 'fortress'], ['M_MARSH_MARKERS', 'marsh'], ['M_MINE_CART', 'mine'], ['S12', 'mine'], ['S13', 'marsh'],
   ...[14, 15, 17, 19].map(n => [`S${n}`, 'fortress']),
-  ['S21','graveyard'], ['S22','graveyard'], ['S23','graveyard'], ['S18', 'nest'], ['S20', 'throne'], ['TD1', 'throne_forecourt']
+  ...[24,25,26,27].map(n => [`S${n}`, 'graveyard']), ['S21','graveyard'], ['S22','graveyard'], ['S23','graveyard'], ['S18', 'nest'], ['S20', 'throne'], ['TD1', 'throne_forecourt']
 ]);
 export const biomeForStage = stageId => STAGE_BIOMES[stageId] || 'village_outskirts';
 // Derived solely from stageId; guest snapshots do not carry simulation RNG/seed.

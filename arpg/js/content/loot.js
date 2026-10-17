@@ -1,5 +1,7 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
+  // Same bounded late guardian materials; ordinary T4 rolls, no chief-only guarantee.
+  necropolis_lord: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
   // Succubus placement: exact slinger draws; unchanged explicit S19 hunt tier.
   succubus: { gold:[2,5], stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}], items:[] },
   // Succubus placement end.

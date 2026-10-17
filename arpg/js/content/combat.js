@@ -321,6 +321,11 @@ export const MONSTERS = {
     hp: 170, r: 23, speed: 115, poise: 50, kbResist: 0.25,
     abilities: ['spider_bite', 'spider_puddle'], xp: 28, keepRange: [45, 85],
   },
+  // Authored undead boss: existing chief attacks, no new combat/AI mechanics or invulnerability.
+  necropolis_lord: {
+    lifeState: 'undead', boss: true, hp: 560, r: 24, speed: 100, heavyPoise: true, poise: 120, kbResist: .7,
+    abilities: ['chief_cleave', 'chief_charge', 'chief_slam'], xp: 40, keepRange: [60, 110],
+  },
   skeleton_minion: {
     lifeState: 'undead', hp: 62, r: 18, speed: 118, poise: 30, kbResist: 0,
     abilities: ['goblin_slash'], xp: 8, keepRange: [40, 70],
@@ -447,6 +452,10 @@ export const STAGES = {
   S21: stage('버려진 묘지 입구', [['skeleton_minion',0,.76,.35],['bat',2000,.84,.7],['skeleton_warrior',4000,.88,.5],['skeleton_rogue',6000,.9,.25],['ghoul',8000,.8,.65],['skeleton_mage',10000,.9,.75]]),
   S22: stage('잠들지 못한 납골당', [['ghoul',0,.76,.35],['ghost',2000,.86,.7],['skeleton_warrior',4000,.88,.5],['skeleton_rogue',6000,.9,.25],['bat',8000,.8,.65],['skeleton_mage',10000,.9,.75]]),
   S23: stage('묘지의 해골 마법사', [['skeleton_minion',0,.76,.35],['skeleton_warrior',0,.84,.7],['bat',0,.88,.5],['skeleton_rogue',0,.9,.25],['ghoul',0,.8,.65],['ghost',0,.9,.75],['skeleton_warrior',0,.84,.7],['skeleton_mage',0,.88,.5]]),
+  S24: stage('매장지', [['skeleton_minion',0,.76,.35],['skeleton_warrior',0,.84,.7],['skeleton_minion',2000,.88,.5],['skeleton_rogue',4000,.9,.25],['skeleton_warrior',6000,.8,.65],['skeleton_mage',8000,.9,.75]]),
+  S25: stage('구울 소굴', [['ghoul',0,.76,.35],['ghoul',2000,.84,.7],['skeleton_rogue',4000,.88,.5],['ghoul',6000,.9,.25],['skeleton_mage',8000,.8,.65]]),
+  S26: stage('망령 회랑', [['ghost',0,.76,.35],['skeleton_warrior',0,.84,.7],['skeleton_mage',2000,.88,.5],['ghost',4000,.9,.25],['skeleton_rogue',6000,.8,.65],['skeleton_mage',8000,.9,.75]]),
+  S27: stage('망자의 성소', [['necropolis_lord',0,.78,.5],['skeleton_warrior',0,.86,.3],['skeleton_minion',0,.86,.7],['skeleton_rogue',6000,.9,.25],['skeleton_mage',8000,.9,.75],['skeleton_warrior',10000,.84,.5]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };
