@@ -56,6 +56,7 @@ export const ITEMS = {
   ossuary_plate: { ...armor('납골 판금', 'fine', 100, 15, 'metal'), huntTier: 4, requiredLevel: 15 },
   dragonfang_blade: { ...weapon('용송곳니 검', 'blade', 'rare', 1.95, 17), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
   dragon_scale_armor: { ...armor('수호룡 비늘 갑옷', 'rare', 110, 15, 'metal'), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
+  silver_ingot: { name: '은 주괴', kind: 'material', weight: 0.3, sell: 6 },
   dragon_scale: { name: '수호룡 비늘', kind: 'material', weight: 0.3, sell: 6 },
   scrap: { material: 'metal', name: '고철', kind: 'material', weight: 0.2, sell: 1 },
   hide: { material: 'leather', name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
@@ -71,6 +72,17 @@ export const ITEMS = {
 };
 // Authored focus affinities propagate through the existing rarity-variant generator.
 for (const [id, affinity] of Object.entries({ember_wand:'fire', soulfire_wand:'fire', seal_staff:'frost', altar_staff:'holy', gravekeeper_staff:'holy'})) ITEMS[id].affinity = affinity;
+// Craft-only silver counterparts inherit exactly the authored T4 weapon stats.
+for (const [id, base, name] of [
+  ['silver_blade', 'revenant_blade', '은 장검'], ['silver_maul', 'ossuary_maul', '은 철퇴'],
+  ['silver_bow', 'bone_bow', '은촉 장궁'], ['silver_wand', 'soulfire_wand', '은장 완드'],
+  ['silver_staff', 'gravekeeper_staff', '은장 지팡이'],
+]) {
+  ITEMS[id] = { ...ITEMS[base], name, craftOnly: true, silverWeapon: true };
+  // Bone bow has hide rather than rune as its secondary ingredient.
+  const secondary = RECIPES[base].rune_shard ? 'rune_shard' : 'hide';
+  RECIPES[id] = { ...RECIPES[base], [secondary]: RECIPES[base][secondary] - 6, silver_ingot: 6 };
+}
 const TIER_LEVEL = { 2: 5, 3: 10, 4: 15 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {
@@ -431,6 +443,12 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   if (tier >= 2) for (const id of ['rune_shard', 'frost_shard']) {
     if (boss) loot.stacks[id] = 1 + Math.floor(premiumRandom() * 2);
     else if (premiumRandom() < (elite ? 0.08 : 0.01) * threat.drop) loot.stacks[id] = 1;
+  }
+  // Silver is an undead-only T3+ reward; this stream never advances any old roll.
+  const silverRandom = rng(seed ^ 0x5117e201);
+  if (tier >= 3 && MONSTER_VARIANTS[monsterType]?.lifeState === 'undead') {
+    if (boss) loot.stacks.silver_ingot = 1 + Math.floor(silverRandom() * 2);
+    else if (silverRandom() < (elite ? 0.08 : 0.008) * threat.drop) loot.stacks.silver_ingot = 1;
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];
