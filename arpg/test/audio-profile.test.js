@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { CombatAudio, AUDIO_FILES } from '../js/audio.js';
 import { SPECIES_AUDIO, PROFILE_FILES, eventCues } from '../js/audio-profile.js';
-import { MONSTER_MODELS } from '../js/content/monsters.js';
+import { MONSTER_MODELS, MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { FEEL } from '../js/render/feel.js';
 import { createWorld, addPlayer, spawnMonster, step, emptyInput } from '../js/sim/world.js';
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
@@ -18,7 +18,7 @@ const entities=Object.freeze([Object.freeze({id:1,kind:'player',weaponForm:'swor
 const hit={type:'hit',src:1,dst:2,ability:'slash'};
 function audio(options={}) {return new CombatAudio({Context,storage:null,random:()=>.5,fetchAudio:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}),...options});}
 test('all species identities are exact current content IDs; skeleton pitch differs and missing guest metadata stays generic',()=>{
- assert.ok(Object.keys(SPECIES_AUDIO).every(id=>MONSTER_MODELS.includes(id)));
+ assert.ok(Object.keys(SPECIES_AUDIO).every(id=>MONSTER_VARIANTS[id]&&MONSTER_MODELS.includes(MONSTER_VARIANTS[id].baseModelId)));
  assert.equal(new Set(['minion','warrior','rogue','mage'].map(s=>SPECIES_AUDIO['skeleton_'+s].pitch)).size,4);
  for(const type of ['skeleton_minion','skeleton_warrior','skeleton_rogue','skeleton_mage','ghoul','ghost']) {
   const result=eventCues(hit,1,[{id:2,kind:'monster',type}])[0];assert.equal(result.name,SPECIES_AUDIO[type].hit);assert.equal(result.pitch,SPECIES_AUDIO[type].pitch);

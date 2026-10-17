@@ -55,9 +55,10 @@ test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded g
  }
  assert.ok(zeroGear>0);
 });
-test('map keeps parchment, connects castle to separate centered throne row and removes provisional UI',()=>{
+test('map keeps parchment, connects castle to throne in separate final columns from necropolis',()=>{
  assert.equal(REGIONS.find(r=>r.id==='throne').name,'왕좌 앞뜰');
- assert.deepEqual(REGIONS.find(r=>r.id==='throne').pos,[50,92]);
+ assert.deepEqual(REGIONS.find(r=>r.id==='throne').pos,[24,92]);
+ assert.deepEqual(REGIONS.find(r=>r.id==='necropolis').pos,[76,92]);
  assert.ok(REGION_EDGES.some(([a,b])=>a==='castle'&&b==='throne'));
  const s=fresh(),h=Object.assign(Object.create(HubUI.prototype),{save:s,showInnPanel:(title,html,page,footer,opts)=>{h.html=html;h.opts=opts;}});
  h.showBoard();assert.doesNotMatch(h.html,/시험: 도전|시험 도전|균형:|잠정/);assert.match(h.html,/data-stage="TD1" class="contract lock" disabled/);
