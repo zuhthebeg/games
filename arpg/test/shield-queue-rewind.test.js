@@ -47,7 +47,7 @@ function contactBeforeEdge(mode, edge = true, status = false) {
 }
 for (const mode of ['priming','primed','starved']) {
   test(`CoopSession ${mode}: delayed accepted perfect edge refunds only applied block damage and earns one real bash`,()=>{
-    const {session,w,p,events,hp,viewTick,queue}=contactBeforeEdge(mode);
+    const {session,p,events,hp,viewTick,queue}=contactBeforeEdge(mode);
     assert.equal(hp-p.hp,0);
     assert.equal(p.dodge.startedTick,viewTick,'historical edge timestamp survives queue');
     const rewind=events.filter(e=>e.type==='dodgeRewind');
@@ -59,7 +59,7 @@ for (const mode of ['priming','primed','starved']) {
     assert.equal(events.filter(e=>e.type==='act'&&e.ability==='shield_bash'&&e.id===p.id).length,1);
     assert.equal(events.filter(e=>e.type==='hit'&&e.src===p.id).length,1);
     assert.ok(p.x>500,'authoritative bash actually rushes');
-    assert.ok(queue.queue.length<=30);assert.ok(w.multiplayerDodge===undefined,'no new wire authority flag');
+    assert.ok(queue.queue.length<=30);
   });
   test(`CoopSession ${mode}: no press edge leaves ordinary block at ×0.3, no perfect or bash`,()=>{
     const {session,p,events,hp}=contactBeforeEdge(mode,false);

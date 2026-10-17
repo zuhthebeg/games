@@ -202,7 +202,7 @@ export class InputLayer {
     for (const action of this.pointers.values()) if (action === 'attack') held = true;
     value.attack = keys.has('KeyJ') || held || !!this.edges.attackTap;
     value.autoAttack = this.autoAttack;
-    value.dodgeHeld = this.enabled && (keys.has('Space') || keys.has('ShiftLeft') || keys.has('ShiftRight') || [...this.pointers.values()].includes('dodgeEdge')); 
+    value.dodgeHeld = this.enabled && (keys.has('Space') || keys.has('ShiftLeft') || keys.has('ShiftRight') || [...this.pointers.values()].includes('dodgeEdge'));
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
     for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge']) {
       value[action] = !!this.edges[action];
