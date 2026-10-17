@@ -13,7 +13,7 @@ import { trace } from './fixtures/n3/trace.mjs';
 import { dodgeLatency } from '../tools/dodge-latency.mjs';
 const input = o => ({ ...emptyInput(), ...o });
 function fixture(guest = true, mods = {}) {
-  const w = createWorld(), p = addPlayer(w, { pid: 'guest', x: 400, y: 400, mods });
+  const w = createWorld(), p = addPlayer(w, { pid: 'guest', x: 400, y: 400, mods: {weaponForm:'blunt',...mods} });
   const m = spawnMonster(w, 'goblin_grunt', 610, 400);
   m.spawnLeft = 0; m.staggerLeft = 9999; m.hp = m.maxHp = 10000;
   if (guest) enableGuestDodgeLag(w, p.pid);

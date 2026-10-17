@@ -371,12 +371,12 @@ export class ArenaRenderer {
       else if (event.type === 'explode')
         this.effect(event.x, event.y, event.radius, 0xffaf56, .4);
       else if (event.type === 'counter' && entity) {
-        this.number('반격!', entity.x, entity.y - 22, FEEL.colors.counter, FEEL.counter.scale);
+        this.number(event.ability === 'shield_bash' ? '방패 강타!' : '반격!', entity.x, entity.y - 22, FEEL.colors.counter, FEEL.counter.scale);
         this.effect(entity.x, entity.y, FEEL.perfect.radius * 1.4, FEEL.colors.counter, FEEL.perfect.ringLife);
       }
       else if (event.type === 'perfectDodge' && entity) {
         this.slowLeft = this.reduced ? 0 : FEEL.perfect.life;
-        this.number('완벽 회피', entity.x, entity.y, FEEL.colors.perfect, true);
+        this.number(event.kind === 'block' ? '완벽 막기' : event.kind === 'blink' ? '점멸' : '완벽 회피', entity.x, entity.y, FEEL.colors.perfect, true);
         this.effect(entity.x, entity.y, FEEL.perfect.radius, FEEL.colors.perfect, FEEL.perfect.ringLife);
       }
       else if (event.type === 'potion' && entity)

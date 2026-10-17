@@ -13,7 +13,7 @@ export function shopStock(accountSeed, refreshIndex) {
   const stock = [];
   for (const kind of ['weapon', 'armor']) {
     const pool = Object.entries(ITEMS).filter(([, item]) =>
-      (kind === 'weapon' ? item.slot === 'weapon' : item.slot && item.slot !== 'weapon')
+      (kind === 'weapon' ? item.slot === 'weapon' : item.slot && !['weapon','offhand'].includes(item.slot))
       && ['common', 'fine'].includes(item.rarity) && !item.craftOnly && item.huntTier < 4);
     const count = 3 + (random() < 0.5 ? 1 : 0);
     for (let i = 0; i < count; i++) {
@@ -26,6 +26,8 @@ export function shopStock(accountSeed, refreshIndex) {
       stock.push({ ...item, price: gearPrice(item) });
     }
   }
+  const shield = instance(`stock:${seed}:offhand:0`, 'round_shield');
+  stock.push({ ...shield, price: gearPrice(shield) });
   return stock;
 }
 export function buyGear(save, uid) {

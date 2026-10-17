@@ -57,7 +57,7 @@ test('real CoopSession opts in both host and guest, prediction parity survives s
  }
 });
 test('multi late contact reward pays once and counter occurs once; cooldown not invincible chain',()=>{
- const f=fixture(true,true);f.m.x=610;shot(f);step(f.w);for(let t=0;t<7;t++)step(f.w);
+ const f=fixture(true,true);f.p.weaponForm='blunt';f.m.x=610;shot(f);step(f.w);for(let t=0;t<7;t++)step(f.w);
  const ev=step(f.w,{p:input({dodgeEdge:true,mx:1,viewTick:0})});
  assert.equal(ev.filter(e=>e.type==='perfectDodge').length,1);const rng=f.w.rng;
  let paid=0,counters=0,dodges=0;

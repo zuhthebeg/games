@@ -13,7 +13,7 @@ import { installPaperdollPortraits, PORTRAIT_DIRECTIONS, PORTRAIT_FRAMES } from 
 // Pure HTML builders shared by the inn, bag, merchant, forge and reveal screens (ui-mock §7.4).
 export const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 export const amount = value => Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
-export const SLOT_NAMES = { weapon:'무기', head:'머리', body:'몸', hands:'손', feet:'발' };
+export const SLOT_NAMES = { offhand:'방패', weapon:'무기', head:'머리', body:'몸', hands:'손', feet:'발' };
 export const GRADES = { common:'일반', fine:'양질', rare:'희귀', epic:'영웅' };
 export const GRADE_ORDER = ['common', 'fine', 'rare', 'epic'];
 export const itemLabel = item => `${ITEMS[item.id].name} +${item.enhance}`;
@@ -122,7 +122,8 @@ export function portraitHtml(save, direction = 'SW') {
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   // With paperdoll art the glow is drawn from the weapon silhouette once composed (pending until then).
   const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}"${enabled ? ' data-pending' : ''} aria-hidden="true">${enabled ? '<canvas width="128" height="128"></canvas>' : ''}<i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
-  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)} · 실제 장착 외형` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
+  const physicalShield = ITEMS[equippedItem(save,'offhand')?.id]?.form === 'shield' ? '<svg class="portrait-shield" viewBox="0 0 32 40" aria-label="장착 방패"><path d="M3 4h26v18L16 37 3 22z" fill="#526575" stroke="#c6bd9e" stroke-width="3"/><circle cx="16" cy="17" r="4" fill="#baaa7c"/></svg>' : '';
+  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)} · 실제 장착 외형` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}${physicalShield}</div>`;
 }
 
 export function socketsHtml(save) {
@@ -141,7 +142,8 @@ export function itemDetailsHtml(item) {
   const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
   const rows = [row('family', '종류', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경갑',medium:'중갑',heavy:'판금'}[def.armorClass] || SLOT_NAMES[def.slot]),
     row('rarity', '등급', GRADES[def.rarity]),
-    def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
+    def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance && def.kind !== 'offhand' ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
+    ...(def.kind === 'offhand' ? [row('guard','막기','정면 120° · 0.4초 · 피해 80% 감소')] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),

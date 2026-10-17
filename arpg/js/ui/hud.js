@@ -3,6 +3,7 @@ import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
 import { MAX_LEVEL, xpSpan } from '../meta/progression.js';
 import { MONSTER_NAMES } from '../content/monsters.js';
+import { icon } from './icons.js';
 import { skillIcon } from './skill-view.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -189,11 +190,17 @@ export class HUD {
       const needsDodge = ABILITIES[skill].dodgeShot && (player.dodgeDisabled || player.dodge.cdLeft > 0 || player.dodge.dashLeft > 0);
       this.text(node.lastElementChild, cooldown > 0 ? seconds(cooldown) : skillAct ? '…' : needsMana ? '−' : '');
       node.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
-      node.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana || !!needsDodge;
+      node.disabled = player.shieldGuard?.left > 0 || cooldown > 0 || skillAct || player.channel > 0 || needsMana || !!needsDodge;
     });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.disabled = !!player.dodgeDisabled;
-    nodes.dodge.title = player.dodgeDisabled ? '해골 디버그: 회피 애니메이션 미지원' : '';
+    const block=player.offhand === 'shield', label=block?'막기':'회피';
+    nodes.dodge.setAttribute('aria-label',label);
+    if (nodes.dodge.dataset.guard !== String(block)) { nodes.dodge.dataset.guard=String(block);nodes.dodge.querySelector('svg')?.remove();nodes.dodge.insertAdjacentHTML('afterbegin',icon(block?'offhand':'dodge')); }
+    let guardLabel=nodes.dodge.querySelector('.guard-label');
+    if(block && !guardLabel){nodes.dodge.querySelector('small').insertAdjacentHTML('beforebegin','<span class="guard-label">막기</span>');}
+    else if(!block)guardLabel?.remove();
+    nodes.dodge.title = player.dodgeDisabled ? '해골 디버그: 회피 애니메이션 미지원' : `${label} · ⇧`;
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;

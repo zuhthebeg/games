@@ -23,7 +23,7 @@ function slotColour(def) {
   return base.map((v, i) => Math.min(235, v + boost + (def.rarity === 'epic' && i === 2 ? 22 : 0)));
 }
 export function equipmentVisual(save, overrideKit) {
-  if (save.lineage === 'skeleton_knight') return skeletonAppearance(save);
+  if (save.lineage === 'skeleton_knight') return { ...skeletonAppearance(save), ...(ITEMS[equippedItem(save,'offhand')?.id]?.form === 'shield' ? {offhand:'shield'} : {}) };
   const def = slot => ITEMS[equippedItem(save, slot)?.id];
   const weapon = def('weapon'), head = def('head');
   const kit = overrideKit || weapon?.family || 'blade';
@@ -31,6 +31,7 @@ export function equipmentVisual(save, overrideKit) {
   const alternate = kit === 'blade' ? weapon?.form === 'blunt'
     : kit === 'bow' ? base === 'short_bow' : weapon?.form === 'wand';
   const descriptor = {
+    ...(kit === 'blade' && def('offhand')?.form === 'shield' ? {offhand:'shield'} : {}),
     kit, head: !head ? 'none' : { light: 'mage', medium: 'barbarian', heavy: 'knight' }[head.armorClass],
     weapon: alternate ? 'alternate' : 'standard',
     weaponColour: weapon?.family === kit ? WEAPON_COLOURS[base] || [255,255,255] : [255,255,255],

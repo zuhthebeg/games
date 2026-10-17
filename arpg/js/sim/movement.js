@@ -14,13 +14,23 @@ export function movementInput(inp) {
 }
 export function dodgeStart(p, direction, tick, multiplayerDodge = false) {
   const [dx, dy] = direction, dashTicks = ticks(PB.dodge.dashMs);
+  if (p.offhand === 'shield') return { facing:Math.atan2(dy,dx), shieldGuard:{left:ticks(400),facing:Math.atan2(dy,dx)},
+    dodge:{...p.dodge,dashLeft:0,iframeLeft:0,startedTick:tick,perfectPaid:false,
+      cdLeft:ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd)} };
   return { facing: Math.atan2(dy, dx), dodge: { ...p.dodge, dashLeft: dashTicks,
     dx: (dx * PB.dodge.distance) / dashTicks, dy: (dy * PB.dodge.distance) / dashTicks,
     iframeLeft: dodgeTiming(p, multiplayerDodge).iframeTicks,
     cdLeft: ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd),
-    startedTick: tick, perfectPaid: false } };
+    ...(p.weapon === 'focus' ? {originX:p.x,originY:p.y} : {}), startedTick: tick, perfectPaid: false } };
 }
+export function shieldBlocks(p, hit, guard = p.shieldGuard) {
+  if (!(guard?.left > 0) || hit.periodic) return false;
+  const angle = Math.atan2(hit.fromY-p.y,hit.fromX-p.x)-guard.facing;
+  return Math.cos(angle) >= .5-1e-10;
+}
+export const shieldDamage = damage => Math.max(1,Math.round(damage*.2));
 export function walkingPosition(p, inp, dt = DT) {
+  if (p.shieldGuard?.left > 0) return {x:p.x,y:p.y,moving:false,facing:p.shieldGuard.facing};
   const { mlen, mx, my } = movementInput(inp);
   const phase = p.act ? p.act.phase : null;
   const f = !phase ? 1 : phase === 'recovery' ? 0.55 : p.act.def.delivery === 'dash' ? 0 : 0.3;
@@ -54,7 +64,8 @@ export function movementBlocked(p) {
 }
 export function predictMovement(p, inp, dt, arena, tick = 0) {
   if (movementBlocked(p)) return p;
-  const n = { ...p, dodge: { ...p.dodge } }, fraction = dt / DT;
+  const n = { ...p, ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), dodge: { ...p.dodge } }, fraction = dt / DT;
+  if(n.shieldGuard?.left>0)n.shieldGuard.left=Math.max(0,n.shieldGuard.left-fraction);
   n.dodge.cdLeft = Math.max(0, n.dodge.cdLeft - fraction);
   n.dodge.iframeLeft = Math.max(0, n.dodge.iframeLeft - fraction);
   if (inp.dodgeEdge && n.dodge.cdLeft === 0 && n.dodge.dashLeft === 0

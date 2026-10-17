@@ -1,5 +1,5 @@
 import { eff, effectiveStats } from './stats.js';
-import { SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
+import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
@@ -20,6 +20,7 @@ const armor = (name, rarity, hp, weight, material = 'leather') => ({
 });
 
 export const ITEMS = {
+  round_shield: { name: '원형 방패', kind: 'offhand', slot: 'offhand', form: 'shield', material: 'metal', rarity: 'common', huntTier: 1, ac: 0, weight: 4, requiredLevel: 1 },
   training_sword: weapon('수련용 검', 'blade', 'common', 1, 8),
   short_bow: weapon('짧은 활', 'bow', 'common', 1, 6),
   apprentice_wand: weapon('견습 지팡이', 'focus', 'common', 1, 4, 'wand'),
@@ -91,7 +92,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
-      ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
+      ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.kind === 'offhand' ? 0 : base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
@@ -131,7 +132,7 @@ export const START_WEAPONS = { blade: 'training_sword', bow: 'short_bow', focus:
 export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll'];
 export { RECIPES, enhanceMultiplier } from './economy.js';
 // Lineage-style: every armor enchant level is +1 AC on that piece.
-export const armorAc = (item) => item && ITEMS[item.id]?.power === undefined ? (ITEMS[item.id]?.ac || 0) + (item.enhance || 0) : 0;
+export const armorAc = (item) => item && ITEMS[item.id]?.power === undefined ? (ITEMS[item.id]?.ac || 0) + (ITEMS[item.id]?.kind === 'offhand' ? 0 : item.enhance || 0) : 0;
 // Strength requirements remain tied to the definition’s original weight.
 export const effectiveWeight = (item) => (ITEMS[item?.id]?.weight || 0) * (1 - 0.03 * (item?.enhance || 0));
 export const cloneSave = (save) => structuredClone(save);
@@ -167,10 +168,12 @@ export function equip(save, uid) {
   if (!knightEquipmentAllowed(save, definition)) throw new Error(`해골 방어구는 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]}부터 장착할 수 있습니다.`);
   if (!meetsRequirement(save, definition)) throw new Error(`힘 ${definition.requiredStr} 이상이어야 장착할 수 있습니다.`);
   const next = cloneSave(save);
+  if (definition.kind === 'offhand' && ITEMS[equippedItem(save, 'weapon')?.id]?.family !== 'blade') throw new Error('방패는 검·둔기와 함께 장착합니다.');
   next.equipped[definition.kind] = uid;
+  if (definition.kind === 'weapon' && definition.family !== 'blade' && next.equipped.offhand) next.equipped.offhand = null;
   if (carriedWeight(next) > capacity(next) * 1.2) throw new Error('장착 후 무게가 120%를 넘습니다.');
   // Candidate only: normal HubUI.commit persists final equipment + permanent state in one write.
-  if (next.lineage === 'skeleton_knight' && next.level === 30 && SLOTS.every(slot => {
+  if (next.lineage === 'skeleton_knight' && next.level === 30 && LEGACY_SLOTS.every(slot => {
     const worn = equippedItem(next, slot);
     return worn && ITEMS[worn.id]?.kind === slot;
   })) next.permanentDeathKnight = true;
@@ -341,7 +344,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       // I1 authored no T4 head/hands/feet. Retain slot odds, falling back to existing T3 gear.
-      const slotTier = tier === 4 && !['weapon', 'body'].includes(slot) ? 3 : tier;
+      const slotTier = slot === 'offhand' ? 1 : tier === 4 && !['weapon', 'body'].includes(slot) ? 3 : tier;
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
         && item.huntTier === slotTier && !item.craftOnly && !item.dropOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');

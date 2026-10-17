@@ -1,6 +1,7 @@
 import { BALANCE } from '../content/balance.js';
 // M1.5 proposal constants: P3 tunes this file, not simulation code.
-export const SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
+export const LEGACY_SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
+export const SLOTS = [...LEGACY_SLOTS, 'offhand'];
 // cocy 10-11: Lineage-style enchant. Scrolls are the only cost; within the safe line every scroll
 // succeeds, above it a failure destroys the item. Rates are keyed by the CURRENT level (6 → 7 = 50%).
 export const ENCHANT = {
@@ -35,7 +36,7 @@ export const ECONOMY = {
   rarityPrice: { common: 1, fine: 1.6, rare: 3, epic: 5 },
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },
   starterBodyHp: { common: 0, fine: 12, rare: 20, epic: 28 },
-  slotPrice: { weapon: 60, head: 24, body: 50, hands: 22, feet: 22 },
+  slotPrice: { offhand: 40, weapon: 60, head: 24, body: 50, hands: 22, feet: 22 },
   craftRefundFraction: 0.25, optionPriceFactor: 0.2, bossExtraChance: 0.5, sellFraction: 0.25, dropBonusCap: 15, pityRounds: 6, refreshRounds: 3, refreshGold: 20,
   affixCount: { common: 0, fine: 1, rare: 2, epic: 3 },
 };
