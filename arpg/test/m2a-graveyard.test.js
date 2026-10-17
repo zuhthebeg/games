@@ -40,7 +40,7 @@ test('M2a adds three hostile graveyard identities, role-scaled T4 numbers and on
  assert.ok(combat.MONSTERS.ghoul.poise>combat.MONSTERS.skeleton_warrior.poise);
  assert.ok(combat.MONSTERS.ghoul.speed<combat.MONSTERS.skeleton_warrior.speed);assert.ok(combat.MONSTERS.bat.speed>combat.MONSTERS.skeleton_rogue.speed);
  assert.deepEqual(combat.MONSTERS.ghost.keepRange,[230,330]);
- for(const stage of Object.entries(combat.STAGES).filter(([id])=>!/^S2[123]$/.test(id)).map(([,stage])=>stage))assert.ok(stage.spawns.every(e=>!ids.includes(e.monster)));
+ for(const stage of Object.entries(combat.STAGES).filter(([id])=>!/^S2[1-7]$/.test(id)).map(([,stage])=>stage))assert.ok(stage.spawns.every(e=>!ids.includes(e.monster)));
 });
 
 test('M2a real host spawns and runs all three archetypes without simulation changes',()=>{
@@ -82,7 +82,7 @@ test('M2a delivered bytes bind every frame alpha to real articulated geometry an
 test('M2a preserves all main combat/identity entries, sprites, sim/net/renderer/index/loot bytes',()=>withoutCombos(()=>{
  assert.equal(preservation.ok,true);assert.equal(preservation.baseline,'fef289f739ed2fa7d2bd86a93e15d3bd39165249');assert.equal(Object.keys(preservation.original_monster_sha256).length,16);
  for(const [id,hash] of Object.entries(preservation.original_monster_sha256))assert.equal(sha(stable(combat.MONSTERS[id])),hash,id);
- for(const [key,hash] of Object.entries(preservation.other_combat_exports_sha256))assert.equal(sha(stable(key==='STAGES'?Object.fromEntries(Object.entries(legacyPlacementStages(combat.STAGES)).filter(([id])=>!/^S2[123]$/.test(id))):combat[key])),hash,key);
+ for(const [key,hash] of Object.entries(preservation.other_combat_exports_sha256))assert.equal(sha(stable(key==='STAGES'?Object.fromEntries(Object.entries(legacyPlacementStages(combat.STAGES)).filter(([id])=>!/^S2[1-7]$/.test(id))):combat[key])),hash,key);
  for(const [key,baseline] of Object.entries(preservation.identity_baseline)){if(baseline.entries)for(const [id,hash] of Object.entries(baseline.entries))assert.equal(sha(stable(identity[key][id])),hash);else assert.equal(sha(stable(identity[key].slice(0,baseline.prefix_length))),baseline.sha256);}
  for(const [file,hash] of Object.entries({...preservation.unchanged_files_sha256,...preservation.preserved_sprite_sha256})){if(av1.files[file])assert.equal(sha(read('../'+file.replace(/^arpg\//,''))),av1.files[file], 'intentional AV1 file: '+file);else if(file==='arpg/index.html')assert.equal(read('../index.html').toString().replace(/^\s*"\.\/js\/sim\/basic-combo.js".*\n/gm,'').replace(/^\s*<div id="movepad".*\n/gm,'').replace(/^\s*<div class="xpbar".*\n/gm,'').replace(/^\s*<div class="vrow">[\s\S]*?\n\s*<\/div>\n(?=\s*<div class="bar load">)/m,'        <div class="bar hp"><i id="hp-fill"></i><span id="hp-text"></span></div>\n        <div class="bar mp"><i id="mp-fill"></i><span id="mp-text"></span></div>\n').replace(/\?v=[a-f0-9]{10}/g,'?v=STAMP'),execFileSync('git',['show','3104089:'+file],{encoding:'utf8'}).replace(/\?v=[a-f0-9]{10}/g,'?v=STAMP'),'reviewed N3 imports, parent stamps, the one AV1 helper import and the auto-mode move pad element and the HUD vitals/XP restructure only');else if(file.startsWith('arpg/js/sim/')||file.startsWith('arpg/js/net/'))assert.deepEqual(read('../'+file.replace(/^arpg\//,'')),execFileSync('git',['show','3104089:'+file]),'reviewed N3 bytes: '+file);else if(file==='arpg/js/content/loot.js') { const original=execFileSync('git',['show',preservation.baseline+':'+file],{encoding:'utf8'}); const base=original.replace('export const NEW_MONSTER_DROPS =','const NEW_MONSTER_DROPS =').replace('export const TIER4_GEAR_DROPS =','const TIER4_GEAR_DROPS ='); const old=Function(base+';return {NEW_MONSTER_DROPS,TIER4_GEAR_DROPS}')(); for(const [id,table] of Object.entries(old.NEW_MONSTER_DROPS))assert.deepEqual(NEW_MONSTER_DROPS[id],table,id); assert.deepEqual(TIER4_GEAR_DROPS,old.TIER4_GEAR_DROPS); } else assert.equal(sha(read('../'+file.replace(/^arpg\//,''))),hash,file);}
  assert.deepEqual(manifest.slice(0,preservation.original_manifest.length),preservation.original_manifest);
@@ -90,7 +90,7 @@ test('M2a preserves all main combat/identity entries, sprites, sim/net/renderer/
 }));
 
 test('M2a preserves every stage host digest across 216 seeded weapon runs',()=>{
- const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES).filter(id=>!/^S2[123]$/.test(id)));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
+ const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES).filter(id=>!/^S2[1-7]$/.test(id)));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
 });
 
 test('M2a states and octants are readonly; humanoid and unknown-profile guards are not relaxed',()=>{

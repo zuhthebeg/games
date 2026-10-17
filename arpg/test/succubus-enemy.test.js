@@ -28,7 +28,7 @@ async function oldCombat(){let s=git('show',base+':arpg/js/content/combat.js').t
 
 test('SUC hostile S19 replaces exactly one slinger; M2b/quests/TD1/archetypes stay exact and only approved S1 dragon spawn is removed',async()=>{
  const old=await oldCombat();assert.deepEqual(Object.keys(combat),Object.keys(old));
- assert.deepEqual(Object.fromEntries(Object.entries(combat.MONSTERS).filter(([id])=>id!=='succubus')),old.MONSTERS);
+ assert.deepEqual(Object.fromEntries(Object.entries(combat.MONSTERS).filter(([id])=>id!=='succubus'&&id!=='necropolis_lord')),old.MONSTERS);
  assert.deepEqual(combat.MONSTERS.succubus,{...old.MONSTERS.goblin_slinger,lifeState:'living'});
  assert.ok(!combat.MONSTERS.succubus.invulnerable);assert.equal(combat.MONSTERS.training_succubus,undefined);
  for(const [key,value] of Object.entries(old))if(!['MONSTERS','STAGES'].includes(key)){if(typeof value==='function')assert.equal(combat[key].toString(),value.toString());else assert.deepEqual(combat[key],value,key);}
@@ -59,7 +59,7 @@ test('SUC identity is additive hostile/living only; ATLAS_IDS adds exactly one k
 
 test('SUC slinger raw gold/material/gear/stone/scroll outputs equal isolated checkpoint for all tiers/threats/elite/bonus seeds',async()=>{
  const oldSource=git('show',base+':arpg/js/content/loot.js');const old=await import('data:text/javascript;base64,'+oldSource.toString('base64'));
- assert.deepEqual(Object.fromEntries(Object.entries(NEW_MONSTER_DROPS).filter(([id])=>id!=='succubus')),old.NEW_MONSTER_DROPS);
+ assert.deepEqual(Object.fromEntries(Object.entries(NEW_MONSTER_DROPS).filter(([id])=>id!=='succubus'&&id!=='necropolis_lord')),old.NEW_MONSTER_DROPS);
  assert.deepEqual(NEW_MONSTER_DROPS.succubus,{gold:[2,5],stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}],items:[]});
  // meta/items is exactly frozen below, so existing slinger remains the checkpoint implementation.
  for(const huntTier of [1,2,3,4])for(const threat of [1,2,3])for(const elite of [false,true])for(const bonus of [0,20])for(let seed=0;seed<256;seed++){
