@@ -28,3 +28,20 @@ Scope: local implementation on `feat/arpg-necropolis`, based on clean `c7b1abe`.
 Only a validated pre-boot fixture is seeded (Lv30, ordinary T3 epic +6, normal potions). After boot, `__arpg` is read-only: all map/departure/combat/receipt/reload actions use native keyboard/touch. Touch steering uses the game's existing fixed movement pad. A floating-joystick harness stalled after the PC cases; a bounded fresh fixed-pad probe cleared S24 through settlement/reload (1548 ticks), without any runtime change. This is harness troubleshooting, not a production gameplay fix.
 
 No screenshots or pixel-appearance claims; layout is DOM geometry and boss art is verified from actual loaded atlas/renderer state. Source/atlas bytes delivered to the browser are SHA256-bound to the checkout. Fresh-context fixtures do not read existing user storage.
+
+## Final actual-app native result
+
+PASS: both PC1280 keyboard and touch390, four negative prerequisite fixtures, eight normal battle clears and post-clear reloads, and both full region layouts. `tmp/arpg-necropolis-native.json` SHA256: `b7cce694e7940be19bfce723dbdd43c5eb94ae9d512835df149604a796afc0e7`. Native runtime source HEAD: `7857eb356ab71e8a962babb663b43cd360971201` (later ledger edits only).
+
+| Input | Map | Actual ticks | Kills / scheduled | Gold | Save reload |
+|---|---|---:|---:|---:|---|
+| PC1280 | S24 | 1536 | 24 / 24 | 204 | PASS |
+| PC1280 | S25 | 1670 | 20 / 20 | 308 | PASS |
+| PC1280 | S26 | 1644 | 24 / 24 | 303 | PASS |
+| PC1280 | S27 | 551 | 6 / 6 | 134 | PASS |
+| Touch390 | S24 | 1646 | 24 / 24 | 209 | PASS |
+| Touch390 | S25 | 1752 | 20 / 20 | 301 | PASS |
+| Touch390 | S26 | 2915 | 24 / 24 | 304 | PASS |
+| Touch390 | S27 | 618 | 6 / 6 | 143 | PASS |
+
+Each map used actual normal departure, killAll, bounded ordinary reward receipt, sequential next unlock and persisted reload. All placed species loaded their real atlas. S27 loaded `necropolis_lord` from skeleton-warrior with rendered boss-name/crown metadata. Revisit cards remain selectable after clears. Page exceptions: 0. DOM overflow, clipped region nodes and region-node overlaps: 0. Delivered source binding covers 13 changed runtime modules plus requested existing atlas assets. Screenshots: 0; authoritative browser-world writes: 0. The eight co-op cases are in-memory existing transport tests, not WAN/native co-op claims.
