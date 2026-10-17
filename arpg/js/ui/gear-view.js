@@ -1,3 +1,4 @@
+import { SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
 import { SKELETON_PORTRAITS } from '../render/skeleton-portrait-frames.js';
 import { skeletonAppearance } from '../render/skeleton-equipment-state.js';
 import { knightFormName } from '../content/player-lineages.js';
@@ -148,6 +149,7 @@ export function itemDetailsHtml(item) {
     ...(def.kind === 'offhand' ? [row('guard','막기','정면 120° · 0.4초 · 피해 80% 감소')] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
+    ...(def.silverWeapon ? [row('silver', '은 무기', `제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% (기본타·무기 기술) · 일반 생물 보너스 없음 · 힐·턴 언데드·지속피해·마법 스킬 제외`)] : []),
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),
     ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));

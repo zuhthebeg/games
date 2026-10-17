@@ -39,6 +39,7 @@ const button = (label, action, extra = '', disabled = false) =>
   `<button type="button" data-action="${action}" ${extra} ${disabled ? 'disabled' : ''}>${label}</button>`;
 
 const sellPrice = item => Math.floor(gearPrice(item) * ECONOMY.sellFraction);
+const UNDEAD_RECOMMENDATION = '<p class="undead-recommendation">언데드 다수 출현 · 성속성·턴 언데드·은 무기 추천 (일반 무기도 가능, 보스에게 턴 언데드는 낮은 확률)</p>';
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
 const pct = (value) => `${Math.round(value * 100)}%`;
 
@@ -900,7 +901,7 @@ export class HubUI {
       return button(`${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${r.name}</span><small>${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
         `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" style="left:${r.pos[0]}%;top:${r.pos[1]}%" aria-pressed="${this.mapRegion === r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
     }).join('');
-    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
+    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
       const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
@@ -939,7 +940,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
@@ -961,7 +962,7 @@ export class HubUI {
   receiptHtml(receipt, includeGear = true) {
     const loot = receipt.lootKept;
     const materials = Object.entries(loot.stacks).filter(([, count]) => count > 0).map(([id, count]) =>
-      `<span class="reward ${['rune_shard','frost_shard','dragon_scale'].includes(id) ? 'loot-highlight' : ''}" ${['rune_shard','frost_shard','dragon_scale'].includes(id) ? `data-premium="${id}"` : ''} title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}${['rune_shard','frost_shard','dragon_scale'].includes(id) ? `득템 · ${ITEMS[id].name} ` : ''}×${count}</span>`).join('');
+      `<span class="reward ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? 'loot-highlight' : ''}" ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `data-premium="${id}"` : ''} title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `득템 · ${ITEMS[id].name} ` : ''}×${count}</span>`).join('');
     const gear = loot.items.map(item => `<article class="gear-card ${item.enhance > 0 ? 'loot-highlight' : ''}">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${dropOriginHtml(item)}${linesHtml(comparisonFor(item, this.save))}</div></article>`).join('');
     return `<div class="receipt"><div class="reward-pair">
       <div><small>경험치</small><strong class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</strong>

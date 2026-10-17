@@ -12,7 +12,7 @@ const artwork = {
   'stone-low': 'stone-low.webp', 'stone-mid': 'stone-mid.webp', 'stone-high': 'stone-high.webp',
   potion: 'potion.webp', mana_potion: 'mana-potion.webp', return_scroll: 'scroll.webp',
   wood: 'wood.webp', scrap: 'scrap.webp', hide: 'leather.webp', fang: 'fang.webp', web: 'web.webp',
-  rune_shard: 'ore.webp', frost_shard: 'ore.webp',
+  silver_ingot: 'ore.webp', rune_shard: 'ore.webp', frost_shard: 'ore.webp',
 };
 
 export function itemArtKey(id, definition = {}) {
