@@ -174,6 +174,11 @@ export class HubUI {
       this.showQuiz();
     });
     this.root.addEventListener('change', (event) => {
+      if (event.target.id === 'compare-ignore-enhancement') {
+        this.ignoreEnhancement = event.target.checked;
+        event.target.defaultChecked = event.target.checked; // Confirmation cancellation restores serialized sheets.
+        return this.refreshComparison();
+      }
       if (event.target.id !== 'shop-count') return;
       this.shopCount = Math.max(1, Math.min(99, Math.trunc(Number(event.target.value)) || 1));
       this.openSupply();
@@ -470,6 +475,10 @@ export class HubUI {
       return this.finishEquipment(action, uid);
     }
     const candidate = weaponLoadoutCandidate(this.save, next);
+    if (candidate.reason === 'same-form' && !(this.save.equipped.offhand && !next.equipped.offhand)) {
+      this.commit(candidate.save);
+      return this.finishEquipment(action, uid);
+    }
     const active = document.activeElement;
     const pending = { action, uid, source: JSON.stringify(this.save),
       token: this.equipmentToken = (this.equipmentToken || 0) + 1,
@@ -540,9 +549,25 @@ export class HubUI {
 
   comparisonHtml(item) {
     const comparison = comparisonFor(item, this.save);
-    return `${splitComparisonHtml(item, this.save)}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
+    return `<label class="compare-toggle"><input id="compare-ignore-enhancement" type="checkbox" ${this.ignoreEnhancement ? 'checked' : ''}>강화 제외하고 비교</label>${splitComparisonHtml(item, this.save, { ignoreEnhancement: this.ignoreEnhancement })}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">실제 장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
+      + `<small class="compare-actual">실제 장착 조건 · 실제 무게 적용 / 필요 힘은 기본 장비 기준</small>`
       + `${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
+  }
+
+  refreshComparison() {
+    const sheet = this.root.querySelector('.compare-sheet');
+    if (!sheet || !this.itemContext) return;
+    const { uid, mode } = this.itemContext;
+    const item = mode === 'buy' ? this.findOffer(uid) : this.save.items.find(item => item.uid === uid);
+    if (!item) return;
+    const body = sheet.closest('.p2-sheet-body'), scroll = body.scrollTop;
+    this.comparisonExpanded ??= {};
+    for (const details of sheet.querySelectorAll('[data-comparison-group]')) this.comparisonExpanded[details.dataset.comparisonGroup] = details.open;
+    // The checkbox and actual eligibility/price context stay mounted, preserving focus and state.
+    sheet.outerHTML = splitComparisonHtml(item, this.save, { ignoreEnhancement: this.ignoreEnhancement });
+    for (const details of this.root.querySelectorAll('.compare-sheet [data-comparison-group]')) details.open = !!this.comparisonExpanded[details.dataset.comparisonGroup];
+    body.scrollTop = scroll;
   }
 
   showSocket(slot) {
@@ -554,7 +579,13 @@ export class HubUI {
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
     this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
-      `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}${current && (slot === 'offhand' || this.save.lineage === 'skeleton_knight' && slot !== 'weapon') ? button('장착 해제', 'unequip', `data-slot="${slot}" data-uid="${escape(current.uid)}"`) : ''}</div>`));
+      `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${current && (slot === 'offhand' || this.save.lineage === 'skeleton_knight' && slot !== 'weapon') ? button('장착 해제', 'unequip', `data-slot="${slot}" data-uid="${escape(current.uid)}"`) : ''}</div>${current ? this.enhanceAction(current) : ''}`));
+  }
+
+  enhanceAction(item) {
+    const maxed = item.enhance >= ENCHANT.max;
+    return `<div class="item-enhance-action">${button('강화', 'socket-forge', `data-uid="${escape(item.uid)}" aria-describedby="item-enhance-reason"`, maxed)}`
+      + `<small id="item-enhance-reason">${maxed ? `최대 강화 +${ENCHANT.max}` : '대장장이에서 강화 · 주문서와 비용 확인'}</small></div>`;
   }
 
   findOffer(uid) {
@@ -564,6 +595,8 @@ export class HubUI {
   openItem(uid, mode = 'equip') {
     const item = mode === 'buy' ? this.findOffer(uid) : this.save.items.find(candidate => candidate.uid === uid);
     if (!item) throw new Error('장비를 찾을 수 없습니다.');
+    this.itemContext = { uid, mode };
+    this.comparisonExpanded = {};
     this.selectedUid = mode === 'buy' ? this.selectedUid : uid;
     const def = ITEMS[item.id];
     const comparison = comparisonFor(item, this.save);
@@ -585,6 +618,7 @@ export class HubUI {
         + `${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${args} class="quiet-danger"`, worn)}</div>`
         + button(label, 'equip', `${args} class="primary"`, worn || comparison.locked);
     }
+    if (mode !== 'buy') footer += this.enhanceAction(item);
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
     const buyQuote = { total:item.price, remaining:this.save.gold-item.price, weightAfter:carriedWeight(this.save), limit:capacity(this.save), reasons:this.save.shopBought.includes(uid) ? ['품절'] : this.save.gold < item.price ? ['골드 부족'] : [] };
     // Compare only when actually choosing against a worn piece (cocy 10-11: no compare while just viewing).

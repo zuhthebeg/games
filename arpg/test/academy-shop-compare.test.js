@@ -118,7 +118,7 @@ test('split comparison shows signed gain/loss, no neutral, missing options and a
   const {s,candidate}=pair(),html=splitComparisonHtml(candidate,s);
   assert.match(html,/compare-delta gain[^>]*aria-label="▲\+/);assert.match(html,/compare-delta loss[^>]*aria-label="▼−/);assert.doesNotMatch(html,/compare-delta neutral|data-delta="0"/);
   assert.match(html,/data-line="hp_flat"[^>]*><td><span>최대 HP<\/span><b>10 HP<\/b><\/td><td><span>최대 HP<\/span><b>—<\/b>/);
-  assert.match(html,/<details class="compare-more"><summary>옵션 3개 더/);assert.doesNotMatch(html,/<details[^>]+open/);
+  assert.match(html,/<details class="compare-more"[^>]*><summary>옵션 3개 더/);assert.doesNotMatch(html,/<details[^>]+open/);
   const h=hub(s);h.openItem(candidate.uid);assert.match(h.sheet,/<details class="compare-more own-details"/);
 });
 

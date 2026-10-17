@@ -1,11 +1,11 @@
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from './knight-equipment.js';
-import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight } from './items.js';
+import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight, uniqueUid } from './items.js';
 import { deriveMods } from './stats.js';
 import { attackRate } from '../content/balance.js';
 import { loadEffects } from '../sim/world.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from './affixes.js';
 
-export function compareItems(equipped, candidate, save) {
+export function compareItems(equipped, candidate, save, { ignoreEnhancement = false } = {}) {
   const definition = ITEMS[candidate?.id];
   if (!definition?.slot) throw new Error('비교할 장비가 없습니다.');
   if (equipped && ITEMS[equipped.id].slot !== definition.slot) throw new Error('동일 부위만 비교할 수 있습니다.');
@@ -14,14 +14,24 @@ export function compareItems(equipped, candidate, save) {
   // Compare exactly the supplied pair, not whichever item happens to be equipped in save.
   const substitute = (target, item, prefix) => {
     if (!item) { target.equipped[definition.slot] = null; return; }
-    const gear = { ...item, uid: prefix };
+    const gear = { ...item, uid: uniqueUid(target, prefix) };
     target.items.push(gear);
-    target.equipped[definition.slot] = prefix;
+    target.equipped[definition.slot] = gear.uid;
+    return gear;
   };
-  substitute(beforeSave, equipped, 'compare:from');
-  substitute(afterSave, candidate, 'compare:to');
+  const beforeItem = substitute(beforeSave, equipped, 'compare:from');
+  const afterItem = substitute(afterSave, candidate, 'compare:to');
   const removesOffhand = definition.slot === 'weapon' && definition.family !== 'blade' && !!afterSave.equipped.offhand;
   if (removesOffhand) afterSave.equipped.offhand = null;
+  // Eligibility and carried-weight context always describe the real candidate, not the preview.
+  const weightAfter = carriedWeight(afterSave);
+  const weightLimit = capacity(afterSave);
+  if (ignoreEnhancement) {
+    if (equipped) equipped = { ...equipped, enhance: 0 };
+    candidate = { ...candidate, enhance: 0 };
+    if (beforeItem) beforeItem.enhance = 0;
+    afterItem.enhance = 0;
+  }
   const before = deriveMods(beforeSave);
   const after = deriveMods(afterSave);
   const lines = [];
@@ -55,8 +65,6 @@ export function compareItems(equipped, candidate, save) {
   line('manaRegen', '마나 재생', before.mpRegen, after.mpRegen, false, { unit:'MP/초', section:'derived' });
   line('goldBonus', '골드 획득', before.goldBonus, after.goldBonus, false, { unit:'%', section:'derived' });
   line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
-  const weightAfter = carriedWeight(afterSave);
-  const weightLimit = capacity(afterSave);
   const lockReason = definition.kind === 'offhand' && ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]?.family !== 'blade' ? '방패는 검·둔기와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
   return { lines, removesOffhand, weightAfter, weightLimit, locked: !!lockReason, lockReason };

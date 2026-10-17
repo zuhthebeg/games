@@ -1,0 +1,23 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><base href="/arpg/"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/game.css"><body><section id="hud" hidden></section><section id="meta-screen" class="overlay"></section><script type="module">
+import {HubUI} from './js/ui/hub.js';
+import {SaveStore,SAVE_KEY,validateSave} from './js/meta/save.js';
+import {shopStock} from './js/meta/shop.js';
+import {ITEMS} from './js/meta/items.js';
+import {trained} from './test/weapon-loadout-fixture.js';
+const s=trained();s.equipped.weapon='bow';s.loadout=['volley',null,'pierce_shot'];
+s.weaponLoadouts={'bow:bow':['volley',null,null],'blade:sword':['lunge',null,'whirl']};
+s.items.find(i=>i.uid==='bow').enhance=9;
+s.items.push({uid:'bow2',id:'hunter_bow_epic',enhance:2,rolledAt:0,affixes:[{k:'atk_pct',v:5},{k:'hp_flat',v:10},{k:'mana_pct',v:3}]},
+ {uid:'shield',id:'round_shield',enhance:0,rolledAt:0,affixes:[]});
+s.items.find(i=>i.uid==='staff').enhance=12;
+const loot={gold:0,stacks:{},items:[structuredClone(s.items.find(i=>i.uid==='bow2'))]};
+s.lastReceipt={stageId:'S1',terminal:'clear',threat:1,depositedXp:0,xpForfeited:0,stageXp:0,levelsGained:0,statPointsGained:0,goldGained:0,xpGained:0,xpLost:0,firstClear:false,pityGranted:false,used:{},restored:{},lootKept:loot,lootLost:{gold:0,stacks:{},items:[]}};
+if(!validateSave(s))throw Error('Invalid equipment UX fixture');
+const data=new Map([[SAVE_KEY,JSON.stringify(s)]]);
+const storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
+const store=new SaveStore(storage);window.probe={commits:0};
+const hub=new HubUI({save:store.load(),persist:n=>{if(!validateSave(n))throw Error('Invalid commit');store.save(n);probe.commits++},onOverlay:()=>{},startRound:()=>{},resetSave:()=>{}});
+window.fixture={hub,store,raw:()=>storage.getItem(SAVE_KEY),stock:shopStock(s.createdAt,s.shopRefresh).find(i=>ITEMS[i.id].family==='bow').uid,
+ receipt:()=>{hub.pendingReceipt={receipt:hub.save.lastReceipt};hub.revealed=1;hub.lootState={};hub.showReceipt()}};
+hub.showInn();window.ready=true;
+</script></body></html>

@@ -995,3 +995,6 @@ body[data-theme="graveyard"] .xp-line i { background:var(--brass); }
 .p2-hero>canvas{position:relative;z-index:1}#dodge{position:relative}#dodge .guard-label{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:10px;pointer-events:none}
 
 #dodge[data-guard="true"] small{transform:translateY(-5px)}
+
+/* Comparison controls stay outside the refreshed numeric sheet; owned actions share one footer slot. */
+.compare-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;cursor:pointer}.compare-toggle input{width:20px;height:20px;margin:0;flex-shrink:0;accent-color:var(--brass)}.compare-mode,.compare-actual{display:block;font-size:11px;color:var(--muted);line-height:1.5}.compare-mode{margin:0 0 6px}.item-enhance-action{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--edge)}.item-enhance-action button{min-width:80px;min-height:44px;flex-shrink:0}.item-enhance-action small{font-size:11px;line-height:1.5;color:var(--muted)}

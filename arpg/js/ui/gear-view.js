@@ -26,7 +26,7 @@ export const emblem = item => {
     + `${item.enhance ? `<b class="enhance-badge" data-enhance="${Math.min(10, item.enhance)}">+${item.enhance}</b>` : ''}</span>`;
 };
 
-export const comparisonFor = (item, save) => compareItems(equippedItem(save, ITEMS[item.id].slot), item, save);
+export const comparisonFor = (item, save, options) => compareItems(equippedItem(save, ITEMS[item.id].slot), item, save, options);
 
 export function deltaText(line) {
   if (line.delta === 0) return '= 유지';
@@ -46,8 +46,8 @@ export function linesHtml(comparison) {
 }
 
 // Two item columns share each row; the existing comparison model remains the numeric source.
-export function splitComparisonHtml(item, save) {
-  const current = equippedItem(save, ITEMS[item.id].slot), c = comparisonFor(item, save);
+export function splitComparisonHtml(item, save, { ignoreEnhancement = false } = {}) {
+  const current = equippedItem(save, ITEMS[item.id].slot), c = comparisonFor(item, save, { ignoreEnhancement });
   const line = key => c.lines.find(row => row.key === key);
   const short = { attack:'피해 배율', maxHp:'최대 HP', weight:'무게', basePower:'기본 공격', enhancePower:'강화 공격', ac:'방어력', totalAc:'총 방어력', capacity:'가방 한도', attackRate:'공격 속도', moveSpeed:'이동 속도', dodgeCooldown:'회피 재사용', potionEfficiency:'물약 효율', manaRegen:'마나 재생', goldBonus:'골드 보너스', materialBonus:'재료 보너스' };
   const delta = row => `<small class="compare-delta ${row.delta === 0 ? 'neutral' : row.good ? 'gain' : 'loss'}" aria-label="${escape(deltaText(row))}">${row.delta === 0 ? '= 유지' : `${row.delta > 0 ? '▲+' : '▼−'}${amount(Math.abs(row.delta))}${row.unit === '%' ? '%p' : ''}`}</small>`;
@@ -62,13 +62,13 @@ export function splitComparisonHtml(item, save) {
   const table = rows => `<table class="compare-split"><thead><tr><th scope="col">현재 착용<br><strong>${current ? escape(itemLabel(current)) : '빈 슬롯'}</strong></th><th scope="col">후보<br><strong>${escape(itemLabel(item))}</strong></th></tr></thead><tbody>${rows}</tbody></table>`;
   const summary = ['attack','totalAc','maxHp','attackRate','moveSpeed'].map(line).filter(row => row?.delta).map(row => `<span>${short[row.key]} ${delta(row)}</span>`).join(' · ') || '<span>변화 없음</span>';
   const more = affixes.slice(2), derived = c.lines.filter(row => row.section !== 'affix' && !primaryKeys.includes(row.key) && row.delta !== 0);
-  return `<section class="compare-sheet" aria-label="현재 착용과 후보 비교"><p class="compare-summary" aria-label="최종 캐릭터 변화">${summary}</p>`
+  return `<section class="compare-sheet" aria-label="현재 착용과 후보 비교"><p class="compare-mode" role="status">${ignoreEnhancement ? '강화 제외 · 선택한 두 장비 +0 기준' : '강화 포함 · 실제 능력치'}</p><p class="compare-summary" aria-label="최종 캐릭터 변화">${summary}</p>`
     + table(primary.map(rowHtml).join('')
-      + (changedOrSet(current?.enhance || 0, item.enhance || 0) ? extraRow('enhance','강화',current?.enhance || 0,item.enhance || 0) : '')
+      + (!ignoreEnhancement && changedOrSet(current?.enhance || 0, item.enhance || 0) ? extraRow('enhance','강화',current?.enhance || 0,item.enhance || 0) : '')
       + (changedOrSet(ITEMS[current?.id]?.requiredStr || 0, ITEMS[item.id].requiredStr || 0) ? extraRow('requiredStr','필요 힘',ITEMS[current?.id]?.requiredStr || 0,ITEMS[item.id].requiredStr || 0) : '')
       + affixes.slice(0,2).map(rowHtml).join(''))
-    + `${more.length ? `<details class="compare-more"><summary>옵션 ${more.length}개 더</summary>${table(more.map(rowHtml).join(''))}</details>` : ''}`
-    + `${derived.length ? `<details class="compare-more"><summary>세부 변화 ${derived.length}</summary>${table(derived.map(rowHtml).join(''))}</details>` : ''}</section>`;
+    + `${more.length ? `<details class="compare-more" data-comparison-group="affixes"><summary>옵션 ${more.length}개 더</summary>${table(more.map(rowHtml).join(''))}</details>` : ''}`
+    + `${derived.length ? `<details class="compare-more" data-comparison-group="derived"><summary>세부 변화 ${derived.length}</summary>${table(derived.map(rowHtml).join(''))}</details>` : ''}</section>`;
 }
 
 // Cards are deliberately brief, but explicitly disclose every changed/lost affix count.
