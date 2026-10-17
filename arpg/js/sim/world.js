@@ -563,6 +563,9 @@ function advanceAct(world, ent, target) {
     act.ox = ent.x; act.oy = ent.y;
   }
   ent.facing = act.facing;
+  // Bash movement is phase-owned, like prediction: no stale walking flag in
+  // windup or stale active-rush flag in recovery/final frames.
+  if (act.id === 'shield_bash') ent.moving = act.phase === 'active';
   if (act.phase === 'active') doActive(world, ent, act);
   if (!ent.act) return;
   act.elapsed++;
