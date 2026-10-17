@@ -67,6 +67,31 @@ try {
       });
       assert.deepEqual(result,{initial:true,healed:true,dead:true,returned:true,guest:true,soloHidden:true});
     });
+    await test(`${width}: three companions fit a compact passive one-line panel without control overlap`,async()=>{
+      const result=await page.evaluate(()=>{
+        const {hud,world,p,addPlayer}=fixture;world.entities=[p];
+        for(let i=0;i<3;i++) {const a=addPlayer(world,{pid:`ally-${i}`,x:240,y:200});a.name='길고 긴 파티원 이름 '+i;a.hp=42;}
+        hud.update(world,0);
+        const panel=document.querySelector('#party-vitals'),box=panel.getBoundingClientRect();
+        const rect=r=>({x:r.x,y:r.y,width:r.width,height:r.height});
+        const rows=[...panel.children].map(n=>rect(n.getBoundingClientRect()));
+        const bars=[...panel.querySelectorAll('[role="meter"]')];
+        const controls=[...document.querySelectorAll('#hud button,#hud .vitals,#hud .stage')].filter(n=>!n.hidden).map(n=>n.getBoundingClientRect());
+        const overlap=controls.some(r=>r.width&&r.height&&box.left<r.right&&box.right>r.left&&box.top<r.bottom&&box.bottom>r.top);
+        const passive=getComputedStyle(panel).pointerEvents==='none'&&[...panel.querySelectorAll('*')].every(n=>getComputedStyle(n).pointerEvents==='none');
+        const clickThrough=!panel.contains(document.elementFromPoint(box.x+10,box.y+10));
+        const sameLine=[...panel.children].every(n=>{const name=n.firstElementChild.getBoundingClientRect(),bar=n.lastElementChild.getBoundingClientRect();return Math.abs(name.y+name.height/2-bar.y-bar.height/2)<2;});
+        world.entities[2].dead=true;world.entities[2].hp=0;world.entities[3].terminal='return_scroll';hud.update(world,0);
+        const statusCompact=panel.getBoundingClientRect().height<=76&&[...panel.children].every(n=>n.getBoundingClientRect().height===22)&&panel.textContent.includes('쓰러짐')&&panel.textContent.includes('귀환');
+        document.body.dataset.theme='graveyard';const graveyardCompact=panel.getBoundingClientRect().width<=160&&panel.getBoundingClientRect().height<=76;delete document.body.dataset.theme;
+        return {box:rect(box),rows,sameLine,statusCompact,graveyardCompact,barHeights:bars.map(n=>n.getBoundingClientRect().height),labels:bars.every(n=>n.getAttribute('aria-label').includes('HP')&&Number(n.getAttribute('aria-valuenow'))>=0),overlap,passive,clickThrough,overflow:document.documentElement.scrollWidth>innerWidth};
+      });
+      console.log(`${width} party geometry ${JSON.stringify(result)}`);
+      assert.ok(result.box.width>=140&&result.box.width<=160,`panel width ${result.box.width}`);
+      assert.ok(result.box.height<=76,`panel height ${result.box.height}`);assert.equal(result.rows.length,3);
+      assert.ok(result.rows.every(r=>r.height>=20&&r.height<=24));assert.ok(result.barHeights.every(h=>h>=6&&h<=8));
+      assert.equal(result.overlap,false);assert.equal(result.passive,true);assert.equal(result.clickThrough,true);assert.equal(result.labels,true);assert.equal(result.sameLine,true);assert.equal(result.statusCompact,true);assert.equal(result.graveyardCompact,true);assert.equal(result.overflow,false);
+    });
     await page.close();
   }
   assert.deepEqual(errors,[]);

@@ -45,8 +45,8 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   const mods = deriveMods(freeze(save));
   near(mods.maxHp, 180);
   assert.equal(mods.ac, ITEMS.boar_hide_armor.ac + 5);
-  near(mods.maxMp, 200); // Staff innate INT +6.
-  near(mods.mpRegen, 5 * (0.2 + 0.8 * 2.26)); // WIS 226 (staff +6): 0.2 floor + 0.8 x WIS/100, past 100 keeps rising
+  near(mods.maxMp, 40 + 2 * 9 + .8 * (226 - 10)); // Level 10 + effective WIS 226 (staff +6), not INT.
+  near(mods.mpRegen, .15 + .01 * 9 + .02 * (226 - 10)); // WIS from gear keeps scaling past 100.
   near(mods.hpRegen, 2.5 * 0.1); assert.equal(mods.critChance, 0); assert.equal(mods.dropLuck, 0);
   near(mods.speedMult, 1.07);
   near(mods.dodgeCdMult, .79);

@@ -842,7 +842,7 @@ export class HubUI {
       .map(([label, from, to]) => `<span>${label} <b>${amount(to)}</b>${to !== from ? `<small class="gain">▲+${amount(to - from)}</small>` : ''}</span>`).join('');
     const tabs = required ? '' : this.characterTabs('stats');
     const content = `${tabs}${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
-      <div class="allocation">${rows}</div><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
+      <div class="allocation">${rows}</div><p class="muted">지능: 마법 위력 · 지혜: 최대 MP · 마나 재생 · 물약 효율</p><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
     const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
     this.panel = required ? null : 'character';
     this.show(this.shellHtml(this.panelHeader(required ? this.hubCopy('레벨이 올랐다', '영혼의 제단 · 레벨이 올랐다') : this.hubCopy('캐릭터', '영혼의 제단'), required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),

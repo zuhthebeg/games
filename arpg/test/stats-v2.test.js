@@ -45,9 +45,9 @@ test('every legal v4 save (all levels, random allocations, unspent points) migra
   assert.equal(migrateStatScale({ version: 4, level: 3, statPoints: 99, stats: { str: 5, agi: 5, int: 5, wis: 5, cha: 5 } }).version, 4);
 });
 
-test('WIS sets mana regen (100 = the old 5/s), CON sets HP regen (100 = 2.5/s); both keep rising past 100', () => {
+test('WIS increases level-based mana regen, CON sets HP regen (100 = 2.5/s); both keep rising past 100', () => {
   const at = (key, v) => deriveMods({ ...fresh(), stats: { ...fresh().stats, [key]: v } });
-  near(at('wis', 10).mpRegen, 1.4); near(at('wis', 100).mpRegen, 5); near(at('wis', 150).mpRegen, 7);
+  near(at('wis', 10).mpRegen, .15); near(at('wis', 100).mpRegen, 1.95); near(at('wis', 150).mpRegen, 2.95);
   near(at('con', 10).hpRegen, .25); near(at('con', 100).hpRegen, 2.5);
   const world = createWorld({ seed: 1 });
   const p = addPlayer(world, { pid: 'p', mods: { hpRegen: 2.5, maxHp: 100 } }); startStage(world, 'S1');

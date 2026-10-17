@@ -26,11 +26,13 @@ export const BALANCE = {
   // Effect units: eff(v) = knee curve over (v - base) / pointScale (same curve as before).
   stats: { base: 10, startPoints: 36, pointsPerLevel: 8, pointScale: 6, knee: 4, slope: .5,
     capBase: 40, capPerLevel: 2, capMax: 100,
-    // WIS 100 = the old flat 5 MP/s; CON 100 = half of it in HP/s; both keep scaling past 100.
-    mpRegenAt100: 5, mpRegenFloor: .2, hpRegenAt100: 2.5,
+    // Hunting mana: a small level baseline; only WIS above base adds pool/regen (including gear).
+    mpBase: 40, mpPerLevel: 2, mpPerWis: .8,
+    mpRegenBase: .15, mpRegenPerLevel: .01, mpRegenPerWis: .02,
+    hpRegenAt100: 2.5,
     // LUK, normalized (luk - base) / 90: crit chance/multiplier, gear drop chance, enhance success.
     luckCrit: .25, critMult: 1.5, luckDrop: .3, luckEnchant: .08,
-    focusDamage: .04, mp: 8, regen: .06, speed: .01, speedCap: .07,
+    focusDamage: .04, regen: .06, speed: .01, speedCap: .07,
     dodge: .03, dodgeFloor: .79, iframe: 6, iframeCap: 42,
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },

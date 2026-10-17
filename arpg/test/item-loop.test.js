@@ -55,7 +55,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   assert.equal(base.maxHp, 108);
   assert.equal(base.dmgMult.blade, 1);
   assert.equal(base.family, 'blade');
-  assert.equal(base.maxMp, 108);
+  assert.equal(base.maxMp, 44.8); // Level 1, WIS 16: smaller WIS-based hunting pool.
   assert.equal(base.capacity, 106);
   assert.equal(carriedWeight(save), 12.41);
   const five = structuredClone(save);

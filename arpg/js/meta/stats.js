@@ -47,6 +47,7 @@ export function deriveMods(save) {
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
   const family = ITEMS[weapon?.id]?.family || 'blade';
+  const manaWis = Math.max(0, stats.wis - S.base);
   const weaponDamage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
     * (1 + 0.03 * (save.level - 1));
   // Skills-v2 §4: every family the held weapon may fire gets weapon damage × its share; magic always scales with INT.
@@ -59,8 +60,8 @@ export function deriveMods(save) {
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     effectiveInt: stats.int,
     ...(ITEMS[weapon?.id]?.affinity ? { staffAffinity: ITEMS[weapon.id].affinity } : {}),
-    maxMp: 100 + S.mp * eff(stats.int),
-    mpRegen: S.mpRegenAt100 * (S.mpRegenFloor + (1 - S.mpRegenFloor) * stats.wis / 100) * (1 + affixes.mana_pct / 100),
+    maxMp: S.mpBase + S.mpPerLevel * (save.level - 1) + S.mpPerWis * manaWis,
+    mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100),
     hpRegen: S.hpRegenAt100 * stats.con / 100,
     critChance: S.luckCrit * norm(stats.luk), critMult: S.critMult,
     dropLuck: S.luckDrop * norm(stats.luk), enchantLuck: S.luckEnchant * norm(stats.luk),
