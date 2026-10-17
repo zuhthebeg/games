@@ -32,8 +32,8 @@ export const shieldDamage = damage => Math.max(1,Math.round(damage*.3));
 // Held is a level, perfect eligibility belongs only to an accepted press edge.
 export function updateShieldGuard(p, inp) {
   const held = p.offhand === 'shield' && !p.dead && !p.terminal && !p.dodgeDisabled && !!inp.dodgeHeld;
-  if (!held) { if(p.pendingCounter?.kind === 'shield')p.pendingCounter=null; if (p.shieldGuard) p.shieldGuard.left = 0; if(p.offhand === 'shield') p.bufferDodge=0; return false; }
-  const facing = inp.aimX || inp.aimY ? Math.atan2(inp.aimY,inp.aimX) : p.shieldGuard?.facing ?? p.facing;
+  if (!held) { if(p.pendingCounter?.kind === 'shield' && (p.dead || p.terminal || p.offhand !== 'shield'))p.pendingCounter=null; if (p.shieldGuard) p.shieldGuard.left = 0; if(p.offhand === 'shield') p.bufferDodge=0; return false; }
+  const facing = p.act?.id === 'shield_bash' ? p.act.facing : inp.aimX || inp.aimY ? Math.atan2(inp.aimY,inp.aimX) : Math.hypot(inp.mx,inp.my)>.2 ? Math.atan2(inp.my,inp.mx) : p.shieldGuard?.facing ?? p.facing;
   p.shieldGuard = {...p.shieldGuard,left:1,facing};
   if (p.act?.id !== 'shield_bash') p.facing=facing;
   return true;

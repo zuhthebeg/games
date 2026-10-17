@@ -114,6 +114,13 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     Object.assign(d, movement.dodge); if (movement.shieldGuard) { p.shieldGuard=movement.shieldGuard; p.shieldGuard.left=1; } p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
   if (guarding && p.act?.id !== 'shield_bash') { if(p.act)endAct(p); p.moving=false; return finish(); }
+  if(p.act?.id === 'shield_bash') {
+    const act=p.act;
+    if(act.phase === 'active') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
+    p.facing=act.facing;p.moving=act.phase === 'active';
+    act.elapsed++;act.left--;skipEmptyPhases(p);
+    return finish();
+  }
   const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
   const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];

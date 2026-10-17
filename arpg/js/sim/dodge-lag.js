@@ -66,10 +66,22 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
       const perfect=awardPerfect(world,p,row.hit,since);
       const refund=perfect?row.dmg:row.dmg-shieldDamage(row.dmg);
       p.hp=Math.min(p.maxHp,p.hp+refund);
+      if(perfect)undoContact(world,p,row,state);
       world.events.push({type:'dodgeRewind',id:p.id,pid:p.pid,srcId:row.hit.srcId,hitTick:row.tick,dodgeTick:start,heal:refund,kind:'block'});
       continue;
     }
     p.hp = Math.min(p.maxHp, p.hp + row.dmg);
+    undoContact(world,p,row,state);
+    world.events.push({ type: 'dodgeRewind', id: p.id, pid: p.pid, srcId: row.hit.srcId,
+      hitTick: row.tick, dodgeTick: start, heal: row.dmg });
+    if(p.weapon === 'focus') focusRewards.push([row.hit,since]);
+    else awardPerfect(world, p, row.hit, since);
+  }
+  for(const [hit,since] of focusRewards) awardPerfect(world,p,hit,since);
+  state.hits = keep;
+}
+
+function undoContact(world,p,row,state) {
     p.kx -= row.kx; p.ky -= row.ky;
     p.x -= row.movedX; p.y -= row.movedY;
     if(p.weapon === 'focus') {p.dodge.originX-=row.movedX;p.dodge.originY-=row.movedY;}
@@ -86,11 +98,4 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
         if (p.poison.left <= 0) p.poison = null;
       }
     }
-    world.events.push({ type: 'dodgeRewind', id: p.id, pid: p.pid, srcId: row.hit.srcId,
-      hitTick: row.tick, dodgeTick: start, heal: row.dmg });
-    if(p.weapon === 'focus') focusRewards.push([row.hit,since]);
-    else awardPerfect(world, p, row.hit, since);
-  }
-  for(const [hit,since] of focusRewards) awardPerfect(world,p,hit,since);
-  state.hits = keep;
 }

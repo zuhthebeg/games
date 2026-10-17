@@ -501,5 +501,5 @@ export function weaponAttackMultiplier(silverWeapon, abilityId, lifeState, hande
   const def = ABILITIES[abilityId];
   const weaponAttack = def && (def.family === 'blade' || def.family === 'bow' || abilityId === 'focus_pulse')
     && abilityId !== 'shield_bash' && !def.heal && !def.executeUndead && !def.shield;
-  return weaponAttack ? (handedness === 2 ? 2 : 1) * (silverWeapon === true && lifeState === 'undead' ? SILVER_UNDEAD_MULTIPLIER : 1) : 1;
+  return weaponAttack ? (handedness === 2 && def.family === 'blade' ? 2 : 1) * (silverWeapon === true && lifeState === 'undead' ? SILVER_UNDEAD_MULTIPLIER : 1) : 1;
 }

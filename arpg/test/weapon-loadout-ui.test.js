@@ -11,7 +11,7 @@ function hub(s=trained()) {
 }
 test('all three UI entry points are candidate-only, cancel is exact, confirm once',()=>{
  for(const action of ['equip','buy-equip','loot-equip']){
-  const h=hub(),uid=action==='buy-equip'?shopStock(h.save.createdAt,h.save.shopRefresh).find(i=>ITEMS[i.id].kind==='weapon').uid:'blunt',before=structuredClone(h.save);
+  const h=hub(),uid=action==='buy-equip'?shopStock(h.save.createdAt,h.save.shopRefresh).find(i=>ITEMS[i.id].kind==='weapon'&&(ITEMS[i.id].family!=='blade'||ITEMS[i.id].form==='blunt')).uid:'blunt',before=structuredClone(h.save);
   h.action(action,{uid});assert.equal(h.persisted.length,0);assert.deepEqual(h.save,before);assert.ok(h.pendingEquipment);assert.match(h.html,/무기·스킬 장착/);assert.match(h.html,/현재 스킬로 장착/);assert.match(h.html,/슬롯 3/);
   h.action('weapon-cancel',{});assert.deepEqual(h.save,before);assert.equal(h.pendingEquipment,null);
   h.action(action,{uid});const token=String(h.pendingEquipment.token);h.action('weapon-confirm',{token});h.action('weapon-confirm',{token});assert.equal(h.persisted.length,1);assert.notEqual(h.save.equipped.weapon,before.equipped.weapon);if(action==='buy-equip'){assert.ok(h.save.gold<before.gold);assert.deepEqual(h.save.shopBought,[uid]);}

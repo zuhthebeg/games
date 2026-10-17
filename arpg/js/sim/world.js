@@ -77,7 +77,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     ...(mods.effectiveInt !== undefined ? { effectiveInt: Number.isFinite(mods.effectiveInt) ? Math.max(0, Math.min(10000, mods.effectiveInt)) : 0 } : {}),
     ...( ['fire', 'frost', 'holy'].includes(mods.staffAffinity) ? { staffAffinity: mods.staffAffinity } : {}),
-    ...(mods.handedness === 2 ? {handedness:2} : {}),
+    ...(weapon === 'blade' && mods.handedness === 2 ? {handedness:2} : {}),
     ...(mods.silverWeapon === true ? { silverWeapon: true } : {}),
     cdMult: mods.cdMult ?? 1,
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
@@ -258,7 +258,7 @@ function stepPlayer(world, p, inp) {
     if (p.weapon === 'focus' && d.perfectPaid) {p.moving=false;decayKnock(p);return;}
   }
 
-  if (guarding && p.pendingCounter?.kind === 'shield' && !p.act) {
+  if (p.pendingCounter?.kind === 'shield' && !p.act) {
     const pending=p.pendingCounter,target=world.entities.find(e=>e.id===pending.attackerId);
     p.pendingCounter=null;
     if(target && isTargetable(target) && target.team!==p.team) {
@@ -788,6 +788,8 @@ function applyHit(world, t, hit) {
   world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
 
   if (t.kind === 'player') {
+    if(!hit.periodic && t.pendingCounter?.kind === 'shield')t.pendingCounter=null;
+    if (!hit.periodic && t.act?.id === 'shield_bash') {endAct(world,t,true);t.pendingCounter=null;}
     if (!hit.periodic) { t.hurtInvuln = ticks(PB.hurtInvulnMs); resetCombo(t); }
     if (def.poison && t.hp > 0) {
       const status = def.poison;
