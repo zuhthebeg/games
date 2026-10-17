@@ -56,7 +56,7 @@ export const ITEMS = {
   ossuary_plate: { ...armor('납골 판금', 'fine', 100, 15, 'metal'), huntTier: 4, requiredLevel: 15 },
   dragonfang_blade: { ...weapon('용송곳니 검', 'blade', 'rare', 1.95, 17), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
   dragon_scale_armor: { ...armor('수호룡 비늘 갑옷', 'rare', 110, 15, 'metal'), huntTier: 4, requiredLevel: 15, dropOnly: 'throne_dragon' },
-  silver_ingot: { name: '은 주괴', kind: 'material', weight: 0.3, sell: 6 },
+  silver_ingot: { name: '은 주괴', kind: 'material', weight: 0.3, sell: 6, description: 'T2 이상 구조물 몬스터(고링·룬 수호자·가고일)에게서 획득 · 은 무기 제작 재료' },
   dragon_scale: { name: '수호룡 비늘', kind: 'material', weight: 0.3, sell: 6 },
   scrap: { material: 'metal', name: '고철', kind: 'material', weight: 0.2, sell: 1 },
   hide: { material: 'leather', name: '가죽', kind: 'material', weight: 0.5, sell: 2 },
@@ -444,12 +444,12 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     if (boss) loot.stacks[id] = 1 + Math.floor(premiumRandom() * 2);
     else if (premiumRandom() < (elite ? 0.08 : 0.01) * threat.drop) loot.stacks[id] = 1;
   }
-  // Silver is an undead-only T3+ reward; this stream never advances any old roll.
+  // Silver is a construct-only T2+ reward; this stream never advances any old roll.
   const silverRandom = rng(seed ^ 0x5117e201);
-  if (tier >= 3 && MONSTER_VARIANTS[monsterType]?.lifeState === 'undead') {
+  if (tier >= 2 && MONSTER_VARIANTS[monsterType]?.lifeState === 'construct') {
     const silverBoss = boss || MONSTER_VARIANTS[monsterType].speciesTags.includes('boss');
     if (silverBoss) loot.stacks.silver_ingot = 1 + Math.floor(silverRandom() * 2);
-    else if (silverRandom() < (elite ? 0.08 : 0.008) * threat.drop) loot.stacks.silver_ingot = 1;
+    else if (silverRandom() < (elite ? 0.12 : 0.03) * threat.drop) loot.stacks.silver_ingot = 1;
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
   const stage = BALANCE.stages[ctx.stageId];

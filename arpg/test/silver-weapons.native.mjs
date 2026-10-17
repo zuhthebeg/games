@@ -18,20 +18,27 @@ try{
    const {createSave,validateSave,SaveStore}=await import('./js/meta/save.js'),{trained}=await import('./test/fixtures/trained.js'),{BASE_STATS,STAT_KEYS,statBudget}=await import('./js/meta/stats.js'),{noteMaterials}=await import('./js/meta/recipe-discovery.js'),{createTracker,trackRound,settleRound}=await import('./js/meta/run.js');
    let s=trained(createSave({name:'은궁 여정',weapon:'bow',answers:[0,0,0,0,0],createdAt:1}),30);s.stats={...BASE_STATS,str:45,agi:45,int:45};s.statPoints=statBudget(30)-STAT_KEYS.reduce((n,k)=>n+s.stats[k]-BASE_STATS[k],0);
    for(const id of Object.keys(s.cleared)){s.cleared[id]=true;s.stageThreat[id]=1;}s.flags.chiefPity=true;
-   // Reward fixture goes through the real authored undead-boss kill/tracker/settlement.
-   // Repeated journey kills supply ingots; no synthesized loot or receipt fields.
+   // Reward fixture goes through real T2 construct kill/tracker/settlement.
+   // Seeded journeys supply ingots; no synthesized loot or receipt fields.
    s.stacks.return_scroll=10;
-   for(let journey=1;journey<=6;journey++){
-    const events=[{type:'kill',id:100+journey,monster:'necropolis_lord',stageId:'S27',threat:1,elite:false,xp:0}];
-    const{tracker}=trackRound(s,createTracker(journey),events);s=settleRound(s,{stageId:'S27',terminal:'return_scroll',...tracker,used:{scrolls:1}}).save;
+   let journeys=0;
+   for(let seed=1;seed<=2000&&(s.stacks.silver_ingot||0)<6;seed++){
+    const events=[{type:'kill',id:100+seed,monster:'rune_guardian',stageId:'S9',threat:1,elite:false,xp:0}];
+    const{tracker}=trackRound(s,createTracker(seed),events);
+    if(!tracker.tempLoot.stacks.silver_ingot)continue;
+    s=settleRound(s,{stageId:'S9',terminal:'return_scroll',...tracker,used:{scrolls:1}}).save;journeys++;
    }
-   s.gold=10000;s.stacks={...s.stacks,wood:100,hide:30,frost_shard:30,dragon_scale:1,potion:30,mana_potion:10,return_scroll:3};s=noteMaterials(s);if(!validateSave(s))throw Error('invalid isolated fixture');if(s.stacks.silver_ingot<6)throw Error('insufficient authentic ingots');new SaveStore(localStorage).save(s);return{journeys:6,ingots:s.stacks.silver_ingot,receipt:s.lastReceipt};
+   const undead=trackRound(s,createTracker(1),[{type:'kill',id:999,monster:'necropolis_lord',stageId:'S27',threat:1,elite:false,xp:0}]).tracker;
+   if(undead.tempLoot.stacks.silver_ingot)throw Error('undead must not drop ingots');
+   s.gold=10000;s.stacks={...s.stacks,wood:100,hide:30,frost_shard:30,dragon_scale:1,potion:30,mana_potion:10,return_scroll:3};s=noteMaterials(s);if(!validateSave(s))throw Error('invalid isolated fixture');if(s.stacks.silver_ingot<6)throw Error('insufficient authentic ingots');new SaveStore(localStorage).save(s);return{journeys,monster:'rune_guardian',stage:'S9',undeadBossIngots:undead.tempLoot.stacks.silver_ingot||0,ingots:s.stacks.silver_ingot,receipt:s.lastReceipt};
   });
   await page.reload();await press('[data-action="choose-human"]');await page.locator('[data-action="craft-hub"]').waitFor();assert.ok(!new URL(page.url()).searchParams.has('debug')&&!new URL(page.url()).searchParams.has('dev'));
   await press('[data-action="character"]');assert.match(await page.locator('.receipt [data-premium="silver_ingot"]').innerText(),/득템 · 은 주괴/);await press('[data-action="inn"]');
-  await press('[data-action="craft-hub"]');const before=await save();await press('[data-action="craft"][data-id="silver_bow"]');assert.match(await page.locator('.craft-notice').innerText(),/은촉 장궁 제작 완료/);const after=await save(),made=after.items.at(-1);assert.equal(made.id,'silver_bow');assert.equal(after.stacks.silver_ingot,before.stacks.silver_ingot-6);assert.equal(after.gold,before.gold-360);
+  await press('[data-action="board"]');await press('[data-action="map-region"][data-region="pass"]');const sourceRegionText=await page.locator('.map-quests:not([hidden]) .silver-source').innerText();assert.match(sourceRegionText,/은 주괴.*T2.*구조물/);
+  await press('[data-action="sortie"][data-stage="S9"]');const sourceSortieText=await page.locator('.departure-check .silver-source').innerText();assert.match(sourceSortieText,/고링·룬 수호자·가고일/);await press('[data-action="board"]');await press('[data-action="inn"]');
+  await press('[data-action="craft-hub"]');const recipeText=await page.locator('[data-action="craft"][data-id="silver_bow"]').locator('..').innerText();assert.match(recipeText,/제작 전용.*언데드.*\+50%/);assert.match(recipeText,/은 주괴.*T2.*구조물/);const before=await save();await press('[data-action="craft"][data-id="silver_bow"]');assert.match(await page.locator('.craft-notice').innerText(),/은촉 장궁 제작 완료/);const after=await save(),made=after.items.at(-1);assert.equal(made.id,'silver_bow');assert.equal(after.stacks.silver_ingot,before.stacks.silver_ingot-6);assert.equal(after.gold,before.gold-360);
   await press('[data-action="forge-tab"][data-tab="salvage"]');await press('.forge-salvage [data-action="equip"]');if(await page.locator('[data-action="weapon-confirm"]').count())await press('[data-action="weapon-confirm"]');assert.equal((await save()).equipped.weapon,made.uid);
-  await press('[data-action="inn"]');await press('[data-action="socket"][data-slot="weapon"]');const itemText=await page.locator('.item-details').innerText();assert.match(itemText,/언데드.*무기 공격 피해 \+50%/);assert.match(itemText,/제작 전용/);assert.match(itemText,/힐·턴 언데드·지속피해·마법 스킬 제외/);await press('[data-action="close-sheet"]');
+  await press('[data-action="inn"]');await press('[data-action="socket"][data-slot="weapon"]');const itemText=await page.locator('.item-details').innerText();assert.match(itemText,/언데드.*무기 공격 피해 \+50%/);assert.match(itemText,/제작 전용/);assert.match(itemText,/은 주괴.*T2.*구조물/s);assert.match(itemText,/힐·턴 언데드·지속피해·마법 스킬 제외/);await press('[data-action="close-sheet"]');
   const equipped=await save();await page.reload();await page.locator('#inn-name').waitFor();assert.deepEqual(await save(),equipped);
   await press('[data-action="board"]');await press('[data-action="map-region"][data-region="graveyard"]');const regionText=await page.locator('.map-quests:not([hidden]) .undead-recommendation').innerText();assert.match(regionText,/성속성·턴 언데드·은 무기 추천/);await press('[data-action="sortie"][data-stage="S21"]');const sortieText=await page.locator('.departure-check .undead-recommendation').innerText();assert.match(sortieText,/일반 무기도 가능/);assert.match(sortieText,/보스.*낮은 확률/);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -51,7 +58,7 @@ try{
    for(const k of held)await page.keyboard.up(k);if(touching)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
    const observed=await page.evaluate(()=>{window.silverObserve=false;return silverObserved;});const hit=observed.find(o=>o.lifeState===lifeState);assert.ok(hit,`actual ${lifeState} damage observed: ${JSON.stringify(observed)}`);assert.equal(hit.silverWeapon,true);assert.equal(hit.damage,Math.round(hit.baseDamage*hit.sourceMult*multiplier));observations.push({...hit,expectedMultiplier:multiplier});console.log('silver native combat',width,stage,JSON.stringify(hit));
   }
-  assert.deepEqual(report.errors,[]);report.rows.push({width,input:mobile?'native touch/CDP joystick':'keyboard Enter/WASD',fixture,crafted:made,ingotCost:6,goldCost:360,equipped:true,reloadExact:true,itemText,regionText,sortieText,observations});await ctx.close();
+  assert.deepEqual(report.errors,[]);report.rows.push({width,input:mobile?'native touch/CDP joystick':'keyboard Enter/WASD',fixture,crafted:made,ingotCost:6,goldCost:360,equipped:true,reloadExact:true,recipeText,itemText,sourceRegionText,sourceSortieText,regionText,sortieText,observations});await ctx.close();
  }
  report.status='PASS';console.log(JSON.stringify(report));
-}catch(e){report.status='FAIL';report.failure=e.stack;throw e;}finally{await writeFile('/home/cocy/.openclaw/workspace/tmp/arpg-craft-c-native.json',JSON.stringify(report,null,2)+'\n');await browser.close();server.kill();}
+}catch(e){report.status='FAIL';report.failure=e.stack;throw e;}finally{await writeFile(process.env.ARPG_SILVER_RESULT||'/home/cocy/.openclaw/workspace/tmp/arpg-silver-source-native.json',JSON.stringify(report,null,2)+'\n');await browser.close();server.kill();}

@@ -7,7 +7,8 @@ import { unlockedThreat, clearedThreat, selectThreat } from '../meta/run.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, stackSellPrice, sellStack } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
-import { STAGES, ABILITIES, canUseSkill } from '../content/combat.js';
+import { MONSTER_VARIANTS } from '../content/monsters.js';
+import { STAGES, ABILITIES, canUseSkill, SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
 import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
@@ -40,6 +41,10 @@ const button = (label, action, extra = '', disabled = false) =>
 
 const sellPrice = item => Math.floor(gearPrice(item) * ECONOMY.sellFraction);
 const UNDEAD_RECOMMENDATION = '<p class="undead-recommendation">언데드 다수 출현 · 성속성·턴 언데드·은 무기 추천 (일반 무기도 가능, 보스에게 턴 언데드는 낮은 확률)</p>';
+const SILVER_SOURCE = `<p class="silver-source">은 주괴 · ${escape(ITEMS.silver_ingot.description)}</p>`;
+const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
+  && STAGES[id]?.spawns.some(s => MONSTER_VARIANTS[s.monster]?.lifeState === 'construct'
+    && !MONSTER_VARIANTS[s.monster].speciesTags.includes('trainingDummy'));
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
 const pct = (value) => `${Math.round(value * 100)}%`;
 
@@ -386,7 +391,7 @@ export class HubUI {
       const controls = (sell || destination) ? `<div class="stack-counts" role="group" aria-label="${ITEMS[id].name} ${sell ? '판매' : '이동'} 수량">${[1, 5, count].map((n, i) =>
         button(i === 2 ? '전부' : String(n), sell ? 'sell-stack' : 'move-stack', `${args} data-count="${n}"`, n > count)).join('')}</div>` : '';
       return `<article class="stack-row"><div class="stack-heading"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span>
-        <div><strong>${ITEMS[id].name}</strong><small>${count}개${sell ? ` · 개당 ${stackSellPrice(id)} G` : destination ? ` · ${destination === 'stash' ? this.hubCopy('창고로 맡기기', '유품함으로 맡기기') : '가방으로 꺼내기'}` : ''}</small></div></div>${controls}</article>`;
+        <div><strong>${ITEMS[id].name}</strong><small>${count}개${sell ? ` · 개당 ${stackSellPrice(id)} G` : destination ? ` · ${destination === 'stash' ? this.hubCopy('창고로 맡기기', '유품함으로 맡기기') : '가방으로 꺼내기'}` : ''}</small>${ITEMS[id].description ? `<small>${escape(ITEMS[id].description)}</small>` : ''}</div></div>${controls}</article>`;
     }).join('');
     return `<div class="stack-list">${rows || '<p class="muted">보관 중인 물품이 없다.</p>'}</div>`;
   }
@@ -732,7 +737,7 @@ export class HubUI {
         return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
       });
       const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small><small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small>${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
     }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : '');
     this.forgeTab ||= 'enhance';
@@ -901,7 +906,7 @@ export class HubUI {
       return button(`${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${r.name}</span><small>${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
         `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" style="left:${r.pos[0]}%;top:${r.pos[1]}%" aria-pressed="${this.mapRegion === r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
     }).join('');
-    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
+    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${r.maps.some(silverSourceStage) ? SILVER_SOURCE : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
       const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
@@ -940,7 +945,7 @@ export class HubUI {
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
-      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>

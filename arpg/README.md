@@ -397,3 +397,12 @@ missing HP and stationary enemies; healing itself travels through normal input,
 host simulation, snapshots, journal and personal HUD. No screenshots or external
 relay writes are needed. Existing full unit and general browser/co-op smokes are
 still required before parent deployment.
+
+## Silver crafting material
+
+Silver ingots come from combat constructs (goleling, rune guardian, gargoyle) in
+T2+ hunts, starting at S9 before the undead regions. Normal/elite chances are
+3%/12% times threat.drop; construct bosses (explicit or authored boss identity)
+guarantee 1–2. Training dummies and undead, including the necropolis lord, do
+not drop silver. The dedicated silver RNG stream does not alter other loot.
+Silver weapons remain craft-only and deal +50% weapon-attack damage to undead.
