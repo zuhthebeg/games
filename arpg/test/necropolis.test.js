@@ -52,7 +52,9 @@ test('all pre-existing encounters, monsters, abilities, maps, biome/reward/tunin
   for(const name of names)for(const [id,value] of Object.entries(old[name])){if(name==='BALANCE'&&id==='stages'){for(const [key,tune] of Object.entries(value))assert.deepEqual(now[name][id][key],tune,key);}else assert.deepEqual(now[name][id],value,file+'/'+id);}
  }
  assert.equal(MONSTERS.bat.lifeState,'beast');assert.equal(MONSTER_VARIANTS.bat.lifeState,'beast');
- assert.equal(execFileSync('git',['diff','c7b1abe','--','arpg/js/sim','arpg/js/net','arpg/assets'],{encoding:'utf8'}),'','no simulation, protocol or art-byte changes');
+ assert.equal(execFileSync('git',['diff','c7b1abe','--','arpg/assets'],{encoding:'utf8'}),'','no art-byte changes');
+  // The later silver-weapon feature intentionally owns exactly one shared host damage hook and one prediction capability field.
+  assert.deepEqual(execFileSync('git',['diff','--name-only','c7b1abe','--','arpg/js/sim','arpg/js/net'],{encoding:'utf8'}).trim().split('\n'),['arpg/js/net/protocol.js','arpg/js/sim/world.js']);
 });
 
 test('authored boss identity is undead and strict boss; existing skeleton art/audio and unique boss name',()=>{
