@@ -37,9 +37,9 @@ try{for(const mobile of [false,true]){
   thresholds.push({slot,level,allowed:level>=min});
  }
  // Fixture has no equipped armor and no permanent flag. All four actual UI equips are required.
- const final=fixture(30);final.items.find(i=>i.uid==='head').enhance=11;final.stacks.scroll_enchant_armor=1;
+ const final=fixture(30);final.items.find(i=>i.uid==='head').enhance=11;final.stacks.enhance_stone_1=5;
  // Select a deterministic ordinary forge failure, not an injected result or random override.
- for(let n=0;n<100;n++){final.enchantCount=n;const candidate={...final,permanentDeathKnight:true};if(enchant(candidate,'head','scroll_enchant_armor').result.outcome==='destroyed')break;}
+ for(let n=0;n<100;n++){final.enchantCount=n;const candidate={...final,permanentDeathKnight:true};if(enchant(candidate,'head','enhance_stone_1').result.outcome==='destroyed')break;}
  await seed(final);assert.doesNotMatch(await p.locator('#inn-name').innerText(),/데스나이트/);
  for(const slot of ['hands','feet','body']){await open(slot);await tap(`[data-action="equip"][data-uid="${slot}"]`);assert.notEqual((await save()).permanentDeathKnight,true);await tap('[data-action="inn"]');}
  await open('head');const old=await raw();

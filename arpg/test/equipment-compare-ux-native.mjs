@@ -42,7 +42,7 @@ try {
     layouts.push(await layout());
     await press('dialog[open] footer>.item-enhance-action [data-action="socket-forge"]');
     assert.equal(await page.evaluate(()=>fixture.hub.selectedUid),'bow2');assert.equal(await page.evaluate(()=>fixture.hub.forgeTab),'enhance');assert.deepEqual(await state(),initial);
-    assert.match(await page.locator('.action-footer').innerText(),/주문서 부족/);
+    assert.match(await page.locator('.action-footer').innerText(),/강화석 부족/);
     // Bag and seller owned details use the same footer slot; maximum is disabled with reason.
     await press('[data-action="inn"]');await press('[data-action="inventory"]');await press('[data-action="open-item"][data-uid="staff"]');
     assert.equal(await page.locator('.item-enhance-action button').isDisabled(),true);assert.match(await page.locator('#item-enhance-reason').innerText(),/최대 강화 \+12/);await close();

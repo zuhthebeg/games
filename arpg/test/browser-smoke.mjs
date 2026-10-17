@@ -508,7 +508,7 @@ try {
     const {createSave,SaveStore}=await import('./js/meta/save.js');
     const {addXp}=await import('./js/meta/progression.js');
     const base=addXp(createSave({name:'대장장이 시험',answers:[0,0,0,0,0],createdAt:1}),451);
-    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:2,scroll_enchant_weapon:10}};
+    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:52}};
     new SaveStore(localStorage).save(fixture);
   })()`);
   await command('Page.reload');
