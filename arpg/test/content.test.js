@@ -63,12 +63,12 @@ test('validator enforces simple ≥400ms / elite ≥800ms and rejects danger pal
   }
 });
 
-test('new monsters keep explicit orthogonal identity; only verified wolf and spider have atlases', () => {
+test('new monsters keep explicit orthogonal identity; verified atlas ids are explicit', () => {
   for (const id of ['throne_dragon','wolf','gargoyle','rune_guardian','spirit','poison_spider']) {
     const variant = MONSTER_VARIANTS[id];
     assert.equal(variant.disposition, 'hostile');
     assert.ok(variant.speciesTags.length);
-    assert.equal(ATLAS_IDS[variant.baseModelId], {gargoyle:'gargoyle',wolf:'wolf',poison_spider:'poison-spider',throne_dragon:'throne-dragon'}[id]);
+    assert.equal(ATLAS_IDS[variant.baseModelId], {gargoyle:'gargoyle',wolf:'wolf',poison_spider:'poison-spider',throne_dragon:'throne-dragon',rune_guardian:'rune-guardian',spirit:'spirit'}[id]);
     assert.ok(MONSTERS[id].abilities.some((ability) => ABILITIES[ability].recoveryMs >= (id==='throne_dragon'?1500:2500)));
   }
   assert.deepEqual(MONSTER_VARIANTS.wolf.speciesTags, ['wolf', 'beast']);
