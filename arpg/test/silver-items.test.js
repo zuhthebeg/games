@@ -39,3 +39,12 @@ test('C silver rolls cannot reroll any old loot bytes (gold/gear/material/stones
  assert.deepEqual(rows,HISTORICAL);
 });
 const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','8e3508fb3367d2ea0159e2150aa67e5f8ffba26f1085488817b650de6dcbd307'];
+
+test('C authored undead boss guarantees ingots through actual tracker without a synthetic ctx.boss flag',async()=>{
+ const {createTracker,trackRound}=await import('../js/meta/run.js');
+ for(let seed=1;seed<=1000;seed++){
+  const s=createSave({name:'보스 재료',answers:[0,0,0,0,0],createdAt:1});
+  const {tracker}=trackRound(s,createTracker(seed),[{type:'kill',id:55,monster:'necropolis_lord',stageId:'S27',threat:1,elite:false,xp:0}]);
+  assert.ok([1,2].includes(tracker.tempLoot.stacks.silver_ingot),`seed ${seed}`);
+ }
+});

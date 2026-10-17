@@ -447,7 +447,8 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   // Silver is an undead-only T3+ reward; this stream never advances any old roll.
   const silverRandom = rng(seed ^ 0x5117e201);
   if (tier >= 3 && MONSTER_VARIANTS[monsterType]?.lifeState === 'undead') {
-    if (boss) loot.stacks.silver_ingot = 1 + Math.floor(silverRandom() * 2);
+    const silverBoss = boss || MONSTER_VARIANTS[monsterType].speciesTags.includes('boss');
+    if (silverBoss) loot.stacks.silver_ingot = 1 + Math.floor(silverRandom() * 2);
     else if (silverRandom() < (elite ? 0.08 : 0.008) * threat.drop) loot.stacks.silver_ingot = 1;
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
