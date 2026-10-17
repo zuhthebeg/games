@@ -97,6 +97,27 @@ for (const [id, base] of Object.entries(ITEMS)) {
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
+// Cover the whole T2+ catalogue, including generated rarity variants, without
+// making guardian dropOnly trophies craftable. Authored recipes remain untouched.
+for (const [id, def] of Object.entries(ITEMS)) {
+  if (!def.slot || def.huntTier < 2 || def.dropOnly || RECIPES[id]) continue;
+  if (id !== def.baseId) continue;
+  const primary = MATERIAL_STACK[def.material], tier = def.huntTier;
+  const slotScale = ECONOMY.slotPrice[def.slot] / ECONOMY.slotPrice.weapon;
+  const budget = tier === 2 ? { main: 16, rune: 4, frost: 2, gold: 140 } : { main: 24, rune: 8, frost: 4, gold: 240 };
+  RECIPES[id] = { [primary]: Math.max(1, Math.ceil(budget.main * slotScale)), gold: Math.ceil(budget.gold * slotScale) };
+  // Never overwrite a rune-primary ingredient with a smaller secondary requirement.
+  if (primary !== 'rune_shard') RECIPES[id].rune_shard = Math.ceil(budget.rune * slotScale);
+  RECIPES[id].frost_shard = Math.ceil(budget.frost * slotScale);
+}
+for (const [id, def] of Object.entries(ITEMS)) {
+  if (!def.slot || def.huntTier < 2 || def.dropOnly || RECIPES[id]) continue;
+  const base = ITEMS[def.baseId], recipe = RECIPES[def.baseId];
+  const materialScale = ECONOMY.rarityPower[def.rarity] / ECONOMY.rarityPower[base.rarity];
+  const goldScale = ECONOMY.rarityPrice[def.rarity] / ECONOMY.rarityPrice[base.rarity];
+  RECIPES[id] = Object.fromEntries(Object.entries(recipe).map(([key, count]) =>
+    [key, Math.max(1, Math.ceil(count * (key === 'gold' ? goldScale : materialScale)))]));
+}
 // cocy 10-11 16:04: no level gates at all. Heavy gear asks for strength instead — the weight is the reason.
 // [제안] Weapons from 12 kg, heavy armor of any slot; the hunting tier adds 2 per tier so tier-3 heavy
 // gear still lands mid-game. Light/medium gear and bows/wands stay free.

@@ -17,6 +17,8 @@ export const SLOT_NAMES = { offhand:'방패', weapon:'무기', head:'머리', bo
 export const GRADES = { common:'일반', fine:'양질', rare:'희귀', epic:'영웅' };
 export const GRADE_ORDER = ['common', 'fine', 'rare', 'epic'];
 export const itemLabel = item => `${ITEMS[item.id].name} +${item.enhance}`;
+export const dropOriginHtml = item => item.uid.startsWith('drop:')
+  ? `<p class="drop-origin">${item.enhance > 0 ? '<strong class="loot-highlight">득템 · 강화 장비</strong> · ' : ''}누군가 떨군 장비를 몬스터가 쓰고 있었다</p>` : '';
 export const isWorn = (save, uid) => Object.values(save.equipped).includes(uid);
 
 export const emblem = item => {
@@ -149,5 +151,5 @@ export function itemDetailsHtml(item) {
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),
     ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));
-  return `<section class="item-details"><dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl></section>`;
+  return `<section class="item-details">${dropOriginHtml(item)}<dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl></section>`;
 }

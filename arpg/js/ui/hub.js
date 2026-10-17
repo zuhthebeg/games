@@ -27,7 +27,7 @@ import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWa
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
-  escape, amount, itemLabel, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
+  escape, amount, itemLabel, dropOriginHtml, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
   linesHtml, splitComparisonHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml,
 } from './gear-view.js';
 
@@ -351,7 +351,7 @@ export class HubUI {
     const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
       ['shop', '만물상', 'potion'], ['merchant', this.hubCopy('장비상', '도굴꾼'), 'weapon'], ['forge', this.hubCopy('대장장이', '저주받은 대장장이'), 'forge'],
-      ['trainer', '아카데미', 'trainer'], ['inventory', this.hubCopy('창고', '묘실의 유품함'), 'load'], ['bag', '가방', 'load'],
+      ['craft-hub', '장비 제작', 'forge'], ['trainer', '아카데미', 'trainer'], ['inventory', this.hubCopy('창고', '묘실의 유품함'), 'load'], ['bag', '가방', 'load'],
     ].map(([action, name, glyph]) => button(`${icon(glyph)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
     const devMenu = this.dev ? `<details class="dev-menu"><summary>M0 개발 메뉴</summary>
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
@@ -726,11 +726,14 @@ export class HubUI {
     const shown = Object.entries(RECIPES).filter(([id]) => recipeRevealed(this.save, id, seen));
     const hiddenCount = Object.keys(RECIPES).length - shown.length;
     const recipes = shown.map(([id, recipe]) => {
-      const available = Object.entries(recipe).every(([key, count]) => (key === 'gold' ? this.save.gold : this.save.stacks[key] || 0) >= count);
+      const shortages = Object.entries(recipe).flatMap(([key, count]) => {
+        const held = key === 'gold' ? this.save.gold : this.save.stacks[key] || 0;
+        return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
+      });
       const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}</b><small>${parts}</small></div>`
-        + `${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
-    }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount}</p>` : '');
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small><small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+        + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
+    }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : '');
     this.forgeTab ||= 'enhance';
     const { html, footer } = this.forgeDetail();
     const tabs = `<nav class="forge-tabs" aria-label="${this.hubCopy('대장장이 작업', '저주받은 대장장이 작업')}">${[['enhance', '강화'], ['stones', '강화석'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
@@ -747,7 +750,7 @@ export class HubUI {
     const content = this.forgeTab === 'stones' ? this.stoneWorkshopHtml()
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
         : `${html}${picker}`;
-    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
+    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
       'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험` });
   }
 
@@ -958,8 +961,8 @@ export class HubUI {
   receiptHtml(receipt, includeGear = true) {
     const loot = receipt.lootKept;
     const materials = Object.entries(loot.stacks).filter(([, count]) => count > 0).map(([id, count]) =>
-      `<span class="reward" title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}×${count}</span>`).join('');
-    const gear = loot.items.map(item => `<article class="gear-card">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${linesHtml(comparisonFor(item, this.save))}</div></article>`).join('');
+      `<span class="reward ${['rune_shard','frost_shard','dragon_scale'].includes(id) ? 'loot-highlight' : ''}" ${['rune_shard','frost_shard','dragon_scale'].includes(id) ? `data-premium="${id}"` : ''} title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}${['rune_shard','frost_shard','dragon_scale'].includes(id) ? `득템 · ${ITEMS[id].name} ` : ''}×${count}</span>`).join('');
+    const gear = loot.items.map(item => `<article class="gear-card ${item.enhance > 0 ? 'loot-highlight' : ''}">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${dropOriginHtml(item)}${linesHtml(comparisonFor(item, this.save))}</div></article>`).join('');
     return `<div class="receipt"><div class="reward-pair">
       <div><small>경험치</small><strong class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</strong>
         ${receipt.xpLost ? `<small class="loss" aria-label="손실 경험치">−${amount(receipt.xpLost)}</small>` : ''}</div>
@@ -1005,12 +1008,12 @@ export class HubUI {
     const cards = items.slice(0, this.revealed).map(drop => {
       const item = this.save.items.find(candidate => candidate.uid === drop.uid);
       const state = item ? (isWorn(this.save, item.uid) ? '착용 중' : this.lootState[drop.uid] || '') : this.lootState[drop.uid] || '보유하지 않음';
-      const rare = ['rare', 'epic'].includes(ITEMS[drop.id].rarity);
+      const rare = drop.enhance > 0 || ['rare', 'epic'].includes(ITEMS[drop.id].rarity);
       const uid = `data-uid="${escape(drop.uid)}"`;
       const actions = item && !state
         ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
         : `<small class="p2-loot-status" role="status">${state || '보관함'}</small>`;
-      return `<article class="p2-loot-card ${rare ? 'sheen' : ''}">${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
+      return `<article class="p2-loot-card ${rare ? 'sheen' : ''} ${drop.enhance > 0 ? 'loot-highlight' : ''}">${dropOriginHtml(drop)}${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
     }).join('');
     const left = items.length - this.revealed;
     return `<section class="reveal"><p class="minor">${this.hubCopy('마을로 돌아가면 자동 보관', '묘지로 돌아가면 유품함에 자동 보관')}</p><h3>획득 장비 <span class="muted">${this.revealed} / ${items.length}</span></h3><div class="p2-loot">${cards}</div>
@@ -1225,6 +1228,10 @@ export class HubUI {
         this.forgeStone = STONE;
         return this.showForge();
       }
+      case 'craft-hub':
+        this.forgeTab = 'salvage';
+        this.selectedUid = null;
+        return this.showForge();
       case 'forge':
         this.forgeTab = 'enhance';
         this.selectedUid = null;
@@ -1261,6 +1268,7 @@ export class HubUI {
       case 'craft':
         this.commit(craft(this.save, data.id));
         this.selectedUid = this.save.items.at(-1).uid;
+        this.craftNotice = `${ITEMS[data.id].name} 제작 완료 · +0`;
         this.forgeTab = 'enhance';
         return this.showForge();
       // Settlement reveal

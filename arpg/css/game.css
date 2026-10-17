@@ -993,3 +993,6 @@ body[data-theme="graveyard"] .xp-line i { background:var(--brass); }
 
 /* Comparison controls stay outside the refreshed numeric sheet; owned actions share one footer slot. */
 .compare-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;cursor:pointer}.compare-toggle input{width:20px;height:20px;margin:0;flex-shrink:0;accent-color:var(--brass)}.compare-mode,.compare-actual{display:block;font-size:11px;color:var(--muted);line-height:1.5}.compare-mode{margin:0 0 6px}.item-enhance-action{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--edge)}.item-enhance-action button{min-width:80px;min-height:44px;flex-shrink:0}.item-enhance-action small{font-size:11px;line-height:1.5;color:var(--muted)}
+
+/* Craft-first economy: durable text labels as well as a premium color accent. */
+.loot-highlight{color:#f3d68c}.reward.loot-highlight{padding:6px 8px;border:1px solid #aa8950;border-radius:4px;background:#302b20}.drop-origin{font-size:12px;line-height:1.6;color:#c4baa5;margin:8px 0}.drop-origin strong{font-weight:700}.recipe-shortage{display:block;margin-top:5px;line-height:1.6;overflow-wrap:anywhere}.recipe b{overflow-wrap:anywhere}
