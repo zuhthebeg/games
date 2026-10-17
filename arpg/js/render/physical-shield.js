@@ -6,8 +6,9 @@ export function physicalShieldPose(e, age=0) {
   const reach=bashing && e.act.phase === 'active' ? 27 : blocking ? 20 : 4;
   const yaw=facing+(blocking?0:.3),bob=e.moving?Math.sin(age*15)*1.4:Math.sin(age*3)*.35;
   // Left forearm in pawn-local coordinates. Root inherits atlas/renderer scale.
-  return {x:Math.cos(facing)*reach-Math.sin(facing)*13,
-    y:-21+Math.sin(facing)*reach*.5+Math.cos(facing)*5-bob,
+  return {x:Math.cos(facing)*reach+Math.sin(facing)*13,
+    y:-21+Math.sin(facing)*reach*.5-Math.cos(facing)*5-bob,
+    handX:Math.sin(facing)*12,handY:-23-Math.cos(facing)*5-bob,
     width:4+10*Math.abs(Math.sin(yaw)),height:14,thickness:3,
     behind:Math.sin(facing)<-.2,front:Math.sin(yaw)>=0,round:true,blocking,bashing};
 }
@@ -33,20 +34,24 @@ export function drawPhysicalShield(g,p) {
   return g;
 }
 export function withPhysicalShield(visual,Graphics) {
-  const shadow=new Graphics(),shield=new Graphics();
-  visual.container.addChild(shadow,shield);
+  const shadow=new Graphics(),arm=new Graphics(),shield=new Graphics();
+  visual.container.addChild(shadow,arm,shield);
   let pose=null,destroyed=false;
   return {...visual,get debug(){return {...visual.debug,physicalShield:pose};},update(e,anim,dt){
     if(destroyed)return;
     visual.update(e,anim,dt);pose=physicalShieldPose(e,anim.age||0);
-    shield.visible=shadow.visible=!!pose;
+    shield.visible=arm.visible=shadow.visible=!!pose;
     if(!pose)return;
+    arm.clear().moveTo(pose.handX,pose.handY).lineTo(pose.x,pose.y).stroke({color:0x35454e,width:5})
+      .moveTo(pose.handX,pose.handY-1).lineTo(pose.x,pose.y-1).stroke({color:0x8b9a9c,width:2})
+      .circle(pose.x,pose.y,2.7).fill(0xa7aaa0);
     drawPhysicalShield(shield,pose);shield.position.set(pose.x,pose.y);
     shadow.clear().ellipse(pose.x*.6,2,pose.width*.65,2.5).fill({color:0x0b1115,alpha:.22});
     visual.container.setChildIndex(shadow,0);
-    visual.container.setChildIndex(shield,pose.behind?1:visual.container.children.length-1);
+    visual.container.setChildIndex(arm,pose.behind?1:visual.container.children.length-2);
+    visual.container.setChildIndex(shield,pose.behind?2:visual.container.children.length-1);
   },destroy(){if(destroyed)return;destroyed=true;
-    for(const g of [shield,shadow]){g.removeFromParent();g.destroy();}
+    for(const g of [shield,arm,shadow]){g.removeFromParent();g.destroy();}
     visual.destroy();
   }};
 }

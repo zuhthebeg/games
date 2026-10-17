@@ -128,7 +128,7 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
 export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
-  for (const p of world.entities) if (p.kind === 'player') resetGuestDodgeHits(p);
+  for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;}
   if (st.arena) {
     for (const p of world.entities.filter(e => e.kind === 'player')) {
       p.x *= st.arena.w / world.arena.w; p.y *= st.arena.h / world.arena.h;
@@ -187,6 +187,7 @@ export function step(world, inputs = {}) {
   separate(world);
   for (const ent of world.entities) clampToArena(world, ent);
   stepRound(world, inputs);
+  for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
   world.tick++;
   return world.events;
 }

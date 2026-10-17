@@ -96,7 +96,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
   const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${amount(effectiveWeight(item))} kg`}`;
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
-    + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>`
+    + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>${def.handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}`
     + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
     + `${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : `해골 Lv.${KNIGHT_ARMOR_LEVELS[def.kind]} 해금`}</small>` : ''}</span></button>`;
 }

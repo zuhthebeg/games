@@ -42,6 +42,7 @@ export class InputLayer {
     });
     window.addEventListener('keyup', (event) => this.keys.delete(event.code));
     window.addEventListener('blur', () => this.reset());
+    document.addEventListener('freeze',()=>this.reset());
     document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});
     window.addEventListener('pagehide',()=>this.reset());
     window.addEventListener('touchcancel',()=>this.reset());

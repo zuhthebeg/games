@@ -113,3 +113,9 @@ test('input: fixed move pad steers only in auto-attack mode and releases cleanly
   input.setAutoAttack(false);
   assert.equal(input.consume().mx, 0, 'turning auto off releases a held pad');
 });
+test('guard keyboard held level is separate from once-only press, key-up, blur, hidden, pagehide and freeze clear it',()=>{
+ for(const event of ['keyup','blur','visibilitychange','pagehide','freeze']){const{input}=fixture();fire(window,'keydown',{code:'Space'});for(let i=0;i<360;i++){const v=input.consume();assert.equal(v.dodgeHeld,true);assert.equal(v.dodgeEdge,i===0);}if(event==='visibilitychange'){document.hidden=true;fire(document,event);}else if(event==='freeze')fire(document,event);else fire(window,event,{code:'Space'});assert.equal(input.consume().dodgeHeld,false,event);assert.equal(input.consume().dodgeEdge,false);}
+});
+test('guard native button held state releases on up, pointercancel, lost capture, touchcancel and disable without replaying an edge',()=>{
+ for(const type of ['pointerup','pointercancel','lostpointercapture','touchcancel','disable']){const{input,buttons}=fixture(),button=buttons[1];fire(button,'pointerdown',{pointerId:7});assert.equal(input.consume().dodgeHeld,true);assert.equal(input.consume().dodgeEdge,false);if(type==='disable')input.enabled=false;else if(type==='lostpointercapture')fire(button,type,{pointerId:7});else fire(window,type,{pointerId:7});assert.equal(input.consume().dodgeHeld,false,type);}
+});
