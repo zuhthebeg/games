@@ -1,5 +1,6 @@
 // Host-only, opt-in guest history. Weak storage never changes serialized worlds/snapshots.
-import { TICK_MS } from './core.js';
+import { shieldBlocks, shieldDamage } from './movement.js';
+import { TICK_MS, ticks } from './core.js';
 import { multiplayerDodge, dodgeTiming, MULTIPLAYER_REWIND_TICKS } from './dodge-policy.js';
 const guests = new WeakMap();
 export const DODGE_LAG_CAP_TICKS = Math.floor(250 / TICK_MS);
@@ -23,7 +24,7 @@ export function recordGuestHit(world, p, hit, dmg, kx, ky) {
   const state = guests.get(p);
   if (!state || hit.periodic) return;
   const attacker = world.entities.find(e => e.id === hit.srcId);
-  const row = { tick: world.tick, hit, dmg, kx, ky, movedX: 0, movedY: 0,
+  const row = { x:p.x,y:p.y,tick: world.tick, hit, dmg, kx, ky, movedX: 0, movedY: 0,
     arena: world.arena, hurtInvuln: p.hurtInvuln, poison: p.poison ? structuredClone(p.poison) : null };
   state.lastDirect = row;
   if (!hit.counter && (attacker ? attacker.team !== p.team : hit.srcKind !== 'player')) state.hits.push(row);
@@ -53,14 +54,25 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
   if (!age) return;
   p.dodge.startedTick = start;
   const iframeTicks = dodgeTiming(p, multiplayerDodge(world)).iframeTicks;
-  p.dodge.iframeLeft = Math.max(0, iframeTicks - age);
-  const keep = [];
+  const physical=p.offhand === 'shield';
+  if (physical) { p.dodge.iframeLeft=0;p.shieldGuard.left=Math.max(0,ticks(400)-age); }
+  else p.dodge.iframeLeft = Math.max(0, iframeTicks - age);
+  const keep = [], focusRewards = [];
   for (const row of state.hits) {
     const since = row.tick - start;
-    if (since < 0 || since >= iframeTicks) { keep.push(row); continue; }
+    if (since < 0 || since >= (physical ? ticks(400) : iframeTicks)) { keep.push(row); continue; }
+    if (physical) {
+      if (row.hit.shieldBlocked || !shieldBlocks({...p,x:row.x,y:row.y},row.hit,{...p.shieldGuard,left:1})) {keep.push(row);continue;}
+      const refund=row.dmg-shieldDamage(row.dmg);
+      p.hp=Math.min(p.maxHp,p.hp+refund);
+      world.events.push({type:'dodgeRewind',id:p.id,pid:p.pid,srcId:row.hit.srcId,hitTick:row.tick,dodgeTick:start,heal:refund,kind:'block'});
+      awardPerfect(world,p,row.hit,since);
+      continue;
+    }
     p.hp = Math.min(p.maxHp, p.hp + row.dmg);
     p.kx -= row.kx; p.ky -= row.ky;
     p.x -= row.movedX; p.y -= row.movedY;
+    if(p.weapon === 'focus') {p.dodge.originX-=row.movedX;p.dodge.originY-=row.movedY;}
     if (Math.abs(p.kx) < .05) p.kx = 0;
     if (Math.abs(p.ky) < .05) p.ky = 0;
     if (state.lastDirect === row) p.hurtInvuln = Math.max(0, row.hurtInvuln - (world.tick - row.tick));
@@ -76,7 +88,9 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
     }
     world.events.push({ type: 'dodgeRewind', id: p.id, pid: p.pid, srcId: row.hit.srcId,
       hitTick: row.tick, dodgeTick: start, heal: row.dmg });
-    awardPerfect(world, p, row.hit, since);
+    if(p.weapon === 'focus') focusRewards.push([row.hit,since]);
+    else awardPerfect(world, p, row.hit, since);
   }
+  for(const [hit,since] of focusRewards) awardPerfect(world,p,hit,since);
   state.hits = keep;
 }

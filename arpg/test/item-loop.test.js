@@ -79,7 +79,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   const empty = structuredClone(save); empty.equipped = Object.fromEntries(SLOTS.map((slot) => [slot, null]));
   assert.equal(deriveMods(empty).maxHp, 108); assert.equal(carriedWeight(empty), 0.41);
   assert.equal(capacity(five), deriveMods(five).capacity);
-  const savedFive = SLOTS.slice(1).reduce((next, slot) => equip(next, next.equipped[slot]), five);
+  const savedFive = SLOTS.slice(1).filter(slot=>five.equipped[slot]).reduce((next, slot) => equip(next, next.equipped[slot]), five);
   assert.ok(validateSave(savedFive));
   assert.deepEqual(storeWith(JSON.stringify(savedFive)).store.load(), savedFive);
   const modded = structuredClone(five);
@@ -215,14 +215,14 @@ test('reward affixes apply only through meta, shared cap prevents inflation and 
   assert.ok(extraMaterials > 0);
 });
 
-test('shop determinism, unique 6~8 gear stock, fine maximum/midpoint, sold-out state and 3-clear/paid refresh persistence', () => {
+test('shop determinism, unique 6~8 legacy gear stock plus one shield, fine maximum/midpoint, sold-out state and 3-clear/paid refresh persistence', () => {
   for (let seed = 0; seed < 1000; seed++) {
     const stock = shopStock(seed, 2);
-    assert.deepEqual(stock, shopStock(seed, 2)); assert.ok(stock.length >= 6 && stock.length <= 8);
+    assert.deepEqual(stock, shopStock(seed, 2)); assert.ok(stock.length >= 7 && stock.length <= 9);
     assert.equal(new Set(stock.map(({ id }) => id)).size, stock.length);
     const weapons = stock.filter((item) => ITEMS[item.id].slot === 'weapon').length;
     assert.ok(weapons >= 3 && weapons <= 4);
-    assert.ok(stock.length - weapons >= 3 && stock.length - weapons <= 4);
+    assert.ok(stock.length - weapons - 1 >= 3 && stock.length - weapons - 1 <= 4);
     for (const item of stock) {
       assert.ok(['common', 'fine'].includes(ITEMS[item.id].rarity)); assert.ok(item.affixes.length <= 1);
       for (const { k, v } of item.affixes) {

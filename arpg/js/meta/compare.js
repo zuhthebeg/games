@@ -20,6 +20,8 @@ export function compareItems(equipped, candidate, save) {
   };
   substitute(beforeSave, equipped, 'compare:from');
   substitute(afterSave, candidate, 'compare:to');
+  const removesOffhand = definition.slot === 'weapon' && definition.family !== 'blade' && !!afterSave.equipped.offhand;
+  if (removesOffhand) afterSave.equipped.offhand = null;
   const before = deriveMods(beforeSave);
   const after = deriveMods(afterSave);
   const lines = [];
@@ -55,7 +57,7 @@ export function compareItems(equipped, candidate, save) {
   line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
   const weightAfter = carriedWeight(afterSave);
   const weightLimit = capacity(afterSave);
-  const lockReason = !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
+  const lockReason = definition.kind === 'offhand' && ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]?.family !== 'blade' ? '방패는 검·둔기와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
-  return { lines, weightAfter, weightLimit, locked: !!lockReason, lockReason };
+  return { lines, removesOffhand, weightAfter, weightLimit, locked: !!lockReason, lockReason };
 }

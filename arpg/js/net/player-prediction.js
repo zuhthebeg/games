@@ -84,9 +84,10 @@ function basicReachTarget(p, def, others) {
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
   if (predictionBlocked(state)) return state;
-  const p = { ...state, dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
+  const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   tickCombo(p);
   const d = p.dodge;
+  if (p.shieldGuard?.left > 0) p.shieldGuard.left--;
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -99,7 +100,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const { mlen, mx, my } = movementInput(inp);
   if (inp.dodgeEdge && !p.dodgeDisabled) {
     p.bufferDodge = ticks(PB.bufferMs);
-    p.bufferDodgeDir = mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
+    p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
+      ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
+      : p.offhand !== 'shield' && mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
   }
   const finish = () => { Object.assign(p, knockPosition(p)); Object.assign(p, arenaPosition(p, arena)); return p; };
   if (p.bufferDodge > 0 && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)) {
@@ -108,8 +111,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick, multiplayerDodge) : tick;
     const movement = dodgeStart(p, p.bufferDodgeDir, start, multiplayerDodge);
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
-    Object.assign(d, movement.dodge); p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
+    Object.assign(d, movement.dodge); if (movement.shieldGuard) { p.shieldGuard=movement.shieldGuard; p.shieldGuard.left=Math.max(0,p.shieldGuard.left-(tick-start)); } p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
+  if (p.shieldGuard?.left > 0) { p.moving=false; return finish(); }
   const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
   const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];

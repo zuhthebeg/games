@@ -59,6 +59,7 @@ export function deriveMods(save) {
     maxHp: 100 + 8 * save.level + affixes.hp_flat,
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     effectiveInt: stats.int,
+    ...(family === 'blade' && ITEMS[equippedItem(save, 'offhand')?.id]?.form === 'shield' ? { offhand: 'shield' } : {}),
     ...(ITEMS[weapon?.id]?.affinity ? { staffAffinity: ITEMS[weapon.id].affinity } : {}),
     maxMp: S.mpBase + S.mpPerLevel * (save.level - 1) + S.mpPerWis * manaWis,
     mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100),

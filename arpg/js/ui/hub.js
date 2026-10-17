@@ -485,11 +485,12 @@ export class HubUI {
     };
     const rows = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, this.save)} → ${describe(candidate.after[i], next)}${candidate.reason === 'remembered' && candidate.remembered[i] && candidate.after[i] === null ? ' · 사용 불가 제외' : ''}</dd></div>`).join('');
     const current = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, next)}</dd></div>`).join('');
+    const shieldWarning = this.save.equipped.offhand && !next.equipped.offhand ? '<p class="p2-hint">활·지팡이 장착 시 방패는 해제되어 가방에 보관됩니다.</p>' : '';
     const warnings = candidate.before.some(id => id && !canUseSkill(id, weaponFamily(next), weaponForm(next)))
       ? '<p class="p2-hint">사용 불가: 사냥 중 제외 · 빈 슬롯 1: 무기 기본 기술</p>' : '';
     const cost = this.save.gold - next.gold;
     const body = `<dl class="p2-lines"><div><dt>무기</dt><dd>${escape(itemLabel(equippedItem(this.save, 'weapon')))} → ${escape(itemLabel(equippedItem(next, 'weapon')))}</dd></div><div><dt>선택</dt><dd>${reasons[candidate.reason]}</dd></div>${cost ? `<div><dt>구매</dt><dd>${cost} G · 확인 시 결제</dd></div>` : ''}</dl>`
-      + `<h3>무기·스킬 장착</h3><dl class="p2-lines">${rows}</dl><details><summary>현재 스킬로 장착</summary><dl class="p2-lines">${current}</dl></details>${warnings}`;
+      + `<h3>무기·스킬 장착</h3><dl class="p2-lines">${rows}</dl><details><summary>현재 스킬로 장착</summary><dl class="p2-lines">${current}</dl></details>${shieldWarning}${warnings}`;
     this.mountSheet(this.dialogHtml('무기 변경 · 스킬 확인', body,
       button('무기·스킬 장착', 'weapon-confirm', `data-token="${pending.token}" class="primary"`)
       + button('현재 스킬로 장착', 'weapon-confirm', `data-token="${pending.token}" data-current="true"`)
@@ -553,7 +554,7 @@ export class HubUI {
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
     this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
-      `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}${this.save.lineage === 'skeleton_knight' && current && slot !== 'weapon' ? button('장착 해제', 'unequip', `data-slot="${slot}" data-uid="${escape(current.uid)}"`) : ''}</div>`));
+      `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${button('강화', 'socket-forge', current ? `data-uid="${escape(current.uid)}"` : '', !current || current.enhance >= ENCHANT.max)}${current && (slot === 'offhand' || this.save.lineage === 'skeleton_knight' && slot !== 'weapon') ? button('장착 해제', 'unequip', `data-slot="${slot}" data-uid="${escape(current.uid)}"`) : ''}</div>`));
   }
 
   findOffer(uid) {
@@ -1151,7 +1152,7 @@ export class HubUI {
       case 'equip': return this.beginEquipment(action, data.uid);
       case 'unequip': {
         // Actual skeleton armor only; no item deletion, costs, gate or permanent-form change.
-        if (this.save.lineage !== 'skeleton_knight' || !['hands','feet','body','head'].includes(data.slot)
+        if (!(data.slot === 'offhand' || this.save.lineage === 'skeleton_knight' && ['hands','feet','body','head'].includes(data.slot))
           || this.save.equipped[data.slot] !== data.uid) throw new Error('해제할 장비가 변경되었습니다.');
         this.commit({ ...this.save, equipped: { ...this.save.equipped, [data.slot]: null } });
         return this.returnToPanel();

@@ -22,9 +22,11 @@ function shot(w, owner, x, y, extra = {}) {
     r: 8, travelled: 0, range: 560, pierce: 0, hit: [], dmgMult: 1, poiseMult: 1, ...extra };
   w.projectiles.push(pr); return pr;
 }
+// Generic one-counter checks exercise retained blunt behavior; sword/focus identities
+// are covered by shield-weapon-counter.test.js. Bow retains one shot, now guaranteed crit.
 function fixture(weapon = 'blade', mods = {}) {
   const w = createWorld({ seed: 72 });
-  const p = addPlayer(w, { pid: 'a', weapon, x: 400, y: 400, mods });
+  const p = addPlayer(w, { pid: 'a', weapon, x: 400, y: 400, mods: { ...(weapon === 'blade' ? {weaponForm:'blunt'} : {}), ...mods } });
   const g = enemy(w);
   return { w, p, g };
 }
@@ -33,7 +35,7 @@ function perfect(f, count = 1) {
   return step(f.w, { a: input({ dodgeEdge: true, mx: 1 }) });
 }
 
-for (const weapon of ['blade', 'bow', 'focus']) {
+for (const weapon of ['blade', 'bow']) {
   test(`${weapon}: actual dodged multi-hit schedules ONE delayed real basic counter, counter bonus/free MP`, () => {
     const f = fixture(weapon, { mpRegen: 0 });
     const first = perfect(f, 4);
@@ -57,7 +59,7 @@ for (const weapon of ['blade', 'bow', 'focus']) {
     assert.equal(firstCounterTick, ticks(PLAYER_BASE.dodge.iframeMs));
     assert.equal(counters.length, 1); assert.equal(hits.length, 1);
     assert.equal(hits[0].dst, f.g.id);
-    assert.equal(hits[0].dmg, Math.round(ABILITIES[WEAPONS[weapon].basic].damage * BALANCE.counter.damage * 1.3));
+    assert.equal(hits[0].dmg, Math.round(ABILITIES[WEAPONS[weapon].basic].damage * BALANCE.counter.damage * 1.3 * (weapon === 'bow' ? 1.8 : 1)));
     assert.equal(f.p.mp, f.p.maxMp); assert.equal(f.p.pendingCounter, null);
   });
 }
@@ -137,7 +139,7 @@ test('projectile source wins over nearer decoy; allied body still blocks counter
   assert.equal(ally.hp, ally.maxHp);
 });
 
-for (const weapon of ['blade', 'bow', 'focus']) {
+for (const weapon of ['blade', 'bow']) {
   for (const iframeBonusMs of [0, 42]) {
     test(`${weapon}: held basic throughout perfect dodge yields one counter (iframe bonus ${iframeBonusMs})`, () => {
       const f = fixture(weapon, { iframeBonusMs, mpRegen: 0 });
@@ -205,7 +207,7 @@ test('return channel and new dodge clear pending; standard counter windup is dod
 });
 
 test('co-op counters maintain separate pid and original attacker; counter cannot trigger counter', () => {
-  const f = fixture('bow'); const b = addPlayer(f.w, { pid: 'b', weapon: 'focus', x: 400, y: 600 });
+  const f = fixture('bow'); const b = addPlayer(f.w, { pid: 'b', weapon: 'blade', mods:{weaponForm:'blunt'}, x: 400, y: 600 });
   const other = enemy(f.w, 610, 600);
   shot(f.w, f.g, 425, 400); shot(f.w, other, 425, 600);
   step(f.w, { a: input({ dodgeEdge: true, mx: 1 }), b: input({ dodgeEdge: true, mx: 1 }) });
@@ -362,10 +364,10 @@ test('normal damage/poise per hit unchanged by attack rate; counter poise boost 
         evs.push(...ev);
         const landed = ev.find(e => e.type === 'hit' && e.src === f.p.id);
         if (landed) {
-          assert.equal(landed.dmg, Math.round(def.damage * (isCounter ? BALANCE.counter.damage : 1)));
+          assert.equal(landed.dmg, Math.round(def.damage * (isCounter ? BALANCE.counter.damage * (weapon === 'bow' ? 1.8 : 1) : 1)));
           // Shapes hit before monster idle regen; projectiles sweep after monster stepping.
           const regen = def.delivery === 'shape' ? 5 : 0;
-          assert.equal(f.g.poise, before - def.poise * (isCounter ? BALANCE.counter.poise : 1) + regen);
+          assert.equal(f.g.poise, before - def.poise * (isCounter ? BALANCE.counter.poise : 1) * (weapon === 'blade' ? 1.4 : 1) + regen);
           return;
         }
       }
@@ -373,7 +375,7 @@ test('normal damage/poise per hit unchanged by attack rate; counter poise boost 
     }
     hit(fixture(weapon, { attackSpeedBonus: 0 }), false);
     hit(fixture(weapon, { attackSpeedBonus: .2 }), false);
-    hit(fixture(weapon, { attackSpeedBonus: .2 }), true);
+    if (weapon !== 'focus') hit(fixture(weapon, { attackSpeedBonus: .2 }), true);
   }
 });
 

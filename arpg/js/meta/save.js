@@ -34,7 +34,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
     statPoints: 0,
     stats: Object.fromEntries(STAT_KEYS.map((key) => [key, BASE_STATS[key] + result.points[key]])),
     gold: 30,
-    equipped: { weapon: 'starter:weapon', head: null, body: 'starter:armor', hands: null, feet: null },
+    equipped: { offhand: null, weapon: 'starter:weapon', head: null, body: 'starter:armor', hands: null, feet: null },
     items: [
       { uid: 'starter:weapon', id: START_WEAPONS[chosen], enhance: 0, affixes: [], rolledAt: 0 },
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0, affixes: [], rolledAt: 0 },
@@ -111,11 +111,12 @@ export function validateSave(save) {
       uids.add(item.uid);
     }
     // A weapon is still mandatory to launch main.js; newly added armor slots may be empty.
-    if (save.equipped.weapon === null || !SLOTS.every((slot) => Object.hasOwn(save.equipped, slot))) return false;
+    if (save.equipped.weapon === null || !SLOTS.every((slot) => slot === 'offhand' || Object.hasOwn(save.equipped, slot))) return false;
     for (const slot of SLOTS) {
-      if (save.equipped[slot] === null) continue;
+      if (save.equipped[slot] === null || (slot === 'offhand' && save.equipped[slot] === undefined)) continue;
       const item = save.items.find((candidate) => candidate.uid === save.equipped[slot]);
       if (!item || ITEMS[item.id].kind !== slot) return false;
+      if (slot === 'offhand' && ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]?.family !== 'blade') return false;
       if (slot === 'weapon' && !lineageAllowsWeapon(save, ITEMS[item.id])) return false;
     }
     if (!['completedRounds', 'shopRefresh', 'paidRefreshes', 'rarelessRounds'].every((key) => integer(save[key]))) return false;

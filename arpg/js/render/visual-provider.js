@@ -1,3 +1,4 @@
+import { withPhysicalShield } from './physical-shield.js';
 import { BALANCE } from '../content/balance.js';
 import { Container, Graphics } from '../../vendor/pixi-8.22.0.min.mjs';
 import { registerAtlasFactories } from './atlas-visual.js';
@@ -34,7 +35,8 @@ export class VisualProvider {
     const color = this.palette[key] ?? (variant ? MONSTER_PALETTES[variant.paletteId][0] : COLORS[key]);
     const equipment = entity.kind === 'player' ? entity.equipmentVisual || (this.equipmentSave ? equipmentVisual(this.equipmentSave, entity.weapon) : null) : null;
     const visual = this.factories.has(key) ? this.factories.get(key)(entity, { color, equipment }) : procedural(entity, { color });
-    return equipment ? withWeaponGlow(visual, equipment.enhance, entity.weapon) : visual;
+    const dressed=equipment ? withWeaponGlow(visual, equipment.enhance, entity.weapon) : visual;
+    return entity.kind === 'player' ? withPhysicalShield(dressed,Graphics) : dressed;
   }
 }
 function procedural(entity, { color }) {

@@ -63,6 +63,7 @@ export function enchant(save, uid, scrollId) {
         next.equipped.weapon = starter.uid;
       }
     }
+    if (next.equipped.offhand && ITEMS[next.items.find(i=>i.uid===next.equipped.weapon)?.id]?.family !== 'blade') next.equipped.offhand=null;
     const refund = preview.refund[STONE];
     if (refund) next.stacks[STONE] = (next.stacks[STONE] || 0) + refund;
     return { save: next, result: { outcome: 'destroyed', uid, id: preview.item.id, from, to: null, risky: true, refund: preview.refund } };

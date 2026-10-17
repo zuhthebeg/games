@@ -984,3 +984,14 @@ body[data-theme="graveyard"] .mp i { background:linear-gradient(270deg,#211b29,v
 body[data-theme="graveyard"] :is(.hp,.mp) span { color:#f4f6ed; text-shadow:0 1px 2px #000,0 0 2px #000; }
 body[data-theme="graveyard"] .game-header :is(.seal,.money) { color:var(--brass); border-color:var(--edge); }
 body[data-theme="graveyard"] .xp-line i { background:var(--brass); }
+
+/* Optional shield socket uses the open upper-right corner; existing five remain. */
+.socket-offhand{right:10px;top:8px}.pin-offhand{right:0;top:49px}
+.p2-filters{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+.portrait-shield{position:absolute;width:27px;height:36px;left:75px;top:61px;pointer-events:none;z-index:2}
+[data-direction="W"]>.portrait-shield,[data-direction="NW"]>.portrait-shield,[data-direction="SW"]>.portrait-shield{left:28px}
+[data-direction="N"]>.portrait-shield,[data-direction="NE"]>.portrait-shield,[data-direction="NW"]>.portrait-shield{top:52px;z-index:0}
+.p2-hero>canvas{position:relative;z-index:1}#dodge{position:relative}#dodge .guard-label{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:10px;pointer-events:none}
+
+#dodge[data-guard="true"] small{transform:translateY(-5px)}

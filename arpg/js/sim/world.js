@@ -13,7 +13,7 @@ import { MONSTER_VARIANTS } from '../content/monsters.js';
 
 import { BALANCE, statEffect, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
-import { loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
+import { shieldBlocks, shieldDamage, loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
 import { resetGuestDodgeHits, pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } from './dodge-lag.js';
@@ -81,6 +81,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
     ...(mods.armorWeight ? { armorWeight: mods.armorWeight } : {}),
+    ...(weapon === 'blade' && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
@@ -198,6 +199,7 @@ function stepPlayer(world, p, inp) {
   const d = p.dodge;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
+  if (p.shieldGuard?.left > 0) p.shieldGuard.left--;
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -216,7 +218,9 @@ function stepPlayer(world, p, inp) {
 
   if (inp.dodgeEdge && !p.dodgeDisabled) {
     p.bufferDodge = ticks(PB.bufferMs);
-    p.bufferDodgeDir = mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
+    p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
+      ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
+      : p.offhand !== 'shield' && mlen > 0.2 ? [mx, my] : [Math.cos(p.facing), Math.sin(p.facing)];
   }
 
   // return scroll channel (design §6.2): no move/attack; dodge cancels it voluntarily.
@@ -243,11 +247,16 @@ function stepPlayer(world, p, inp) {
     const movement = dodgeStart(p, p.bufferDodgeDir, world.tick, multiplayerDodge(world));
     Object.assign(d, movement.dodge);
     p.facing = movement.facing;
+    if (movement.shieldGuard) p.shieldGuard = movement.shieldGuard;
     p.pendingCounter = null;
     p.bufferDodge = 0;
     world.events.push({ type: 'dodge', id: p.id });
     rewindGuestDodge(world, p, inp, awardPerfectDodge);
+    // Rewound focus contact already completed this dodge at its total blink endpoint.
+    if (p.weapon === 'focus' && d.perfectPaid) {p.moving=false;decayKnock(p);return;}
   }
+
+  if (p.shieldGuard?.left > 0) { p.moving=false; decayKnock(p); return; }
 
   // A dodge-shot must pass the same dodge gate; movement and perfect-dodge rewards
   // remain owned by the ordinary dodge machinery, never a fabricated counter.
@@ -319,7 +328,8 @@ function stepPlayer(world, p, inp) {
     && !skillPressed && !inp.scrollEdge) {
     const pending = p.pendingCounter;
     const target = world.entities.find((e) => e.id === pending.attackerId);
-    const def = ABILITIES[w.basic];
+    const counterAbility = pending.kind === 'shield' ? 'shield_bash' : w.basic;
+    const def = ABILITIES[counterAbility];
     const facing = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
     const inRange = target && isTargetable(target) && target.team !== p.team
       && (def.delivery === 'shape'
@@ -327,10 +337,13 @@ function stepPlayer(world, p, inp) {
         : dist2(p.x, p.y, target.x, target.y) <= def.projectile.rangePx ** 2);
     p.pendingCounter = null; // consume even when the original attacker is gone/out of reach
     if (inRange && !(p.cds[w.basic] > 0)) {
-      startAct(world, p, w.basic, facing, true);
+      startAct(world, p, counterAbility, facing, true);
       p.act.counter = true;
+      p.act.counterTarget = target.id;
+      if (pending.kind === 'second') { p.act.counterSecond = true; p.act.firstCounterDamage = pending.damage; }
+      else if (p.weapon === 'blade' && p.weaponForm !== 'blunt' && p.offhand !== 'shield') p.act.doubleCounter = true;
       world.events.push({ type: 'counter', id: p.id, pid: p.pid, attackerId: target.id,
-        dodgeTick: pending.dodgeTick, ability: w.basic });
+        dodgeTick: pending.dodgeTick, ability: counterAbility });
     }
   }
 
@@ -514,7 +527,10 @@ function endAct(world, ent, interrupted) {
     ent.lastActs = [act.id, ...ent.lastActs].slice(0, 2);
     ent.thinkLeft = ticks(220 + rand(world) * 380);
   }
-  if (ent.kind === 'player') finishCombo(ent, act, interrupted);
+  if (ent.kind === 'player') {
+    finishCombo(ent, act, interrupted);
+    if (!interrupted && act.doubleCounter && alive(ent)) ent.pendingCounter = {kind:'second',attackerId:act.counterTarget,damage:act.firstCounterDamage || {},dodgeTick:ent.dodge.startedTick,expiresTick:world.tick+ticks(BALANCE.counter.graceMs)};
+  }
   ent.act = null;
   if (interrupted) world.events.push({ type: 'actCancel', id: ent.id, ability: act.id, ...(act.step ? { step: act.step } : {}) });
 }
@@ -633,15 +649,18 @@ function hitShape(world, ent, act, shape, ox, oy) {
   for (const t of world.entities) {
     if (t.team === ent.team || !isTargetable(t) || act.hit.includes(t.id)) continue;
     if (!shapeHitsCircle(shape, ox, oy, act.facing, t.x, t.y, t.r)) continue;
+    if (act.counterSecond && !act.firstCounterDamage?.[t.id]) continue;
     act.hit.push(t.id);
-    applyHit(world, t, {
+    const dealt = applyHit(world, t, {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
+      ...(act.counterSecond ? {fixedDamage:act.firstCounterDamage[t.id]*.7} : {}),
       def: act.def, counter: !!act.counter, ...(act.step ? { step: act.step } : {}),
       mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
       poiseMult: (ent.poiseMult ?? 1) * (act.id === 'slash' && ent.kind === 'player' && ent.weaponForm === 'blunt' ? 1.4 : 1)
         * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
       cause: { shape, ox: act.ox, oy: act.oy, facing: act.facing },
     });
+    if (act.doubleCounter && dealt) (act.firstCounterDamage ||= {})[t.id] = dealt;
     if (!ent.act) return; // attacker got interrupted by its own hit side-effects (not expected, defensive)
   }
 }
@@ -671,11 +690,20 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
   if (hit.counter || !hostile || t.dodge.perfectPaid || sinceDodge < 0
     || sinceDodge > dodgeTiming(t, multiplayerDodge(world)).perfectTicks) return false;
   t.dodge.perfectPaid = true;
-  if (attacker) t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
-    expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
+  if (t.weapon === 'focus') {
+    const length=Math.hypot(t.dodge.dx,t.dodge.dy)||1;
+    t.x=(t.dodge.originX ?? t.x)+t.dodge.dx/length*PB.dodge.distance*1.6;
+    t.y=(t.dodge.originY ?? t.y)+t.dodge.dy/length*PB.dodge.distance*1.6;
+    Object.assign(t,arenaPosition(t,world.arena));t.dodge.dashLeft=0;t.pendingCounter=null;
+    if (!(t.focusResetUntil > world.tick)) {
+      for (const id of t.skills.filter(Boolean)) t.cds[id]=0;
+      t.focusResetUntil=world.tick+ticks(8000);
+    }
+  } else if (attacker) t.pendingCounter = { ...(t.offhand === 'shield' ? {kind:'shield'} : {}), attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
+    expiresTick: t.dodge.startedTick + Math.max(ticks(t.offhand === 'shield' ? 400 : PB.dodge.dashMs),
       dodgeTiming(t, multiplayerDodge(world)).iframeTicks) + ticks(BALANCE.counter.graceMs) };
   world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
-    srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId });
+    srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId, ...(t.offhand === 'shield' ? {kind:'block'} : t.weapon === 'focus' ? {kind:'blink'} : {}) });
   return true;
 }
 
@@ -692,11 +720,11 @@ function applyHit(world, t, hit) {
     if (!hit.periodic && t.hurtInvuln > 0) return;
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
-  let dmg = def.damage * hit.mult;
-  if (mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
-  if (mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
+  let dmg = hit.fixedDamage ?? def.damage * hit.mult;
+  if (hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
+  if (hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
   let exposed = false;
-  if (mdef) {
+  if (mdef && hit.fixedDamage === undefined) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
@@ -704,11 +732,14 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
   let crit = false;
-  if (mdef && !hit.periodic && !hit.execute) {
+  if (mdef && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
     const src = world.entities.find((e) => e.id === hit.srcId);
-    if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
+    if (hit.counter && src?.weapon === 'bow') { crit=true;dmg*=1.8; }
+    else if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
   }
   dmg = hit.execute ? t.hp : Math.max(1, Math.round(dmg));
+  const blocked = t.kind === 'player' && shieldBlocks(t,hit);
+  if (blocked) dmg=shieldDamage(dmg);
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
   if (t.kind === 'player' && dmg > 0 && hostile && t.shieldUntil > world.tick) {
@@ -716,13 +747,17 @@ function applyHit(world, t, hit) {
     world.events.push({ type: 'shieldBreak', id: t.id, src: hit.srcId, ability: hit.abilityId, x: t.x, y: t.y });
     return;
   }
+  if (blocked) {
+    world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg});
+    awardPerfectDodge(world,t,hit,world.tick-t.dodge.startedTick);
+  }
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
 
   const kbResist = mdef ? mdef.kbResist : 0;
   const ang = Math.atan2(t.y - hit.fromY, t.x - hit.fromX);
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
-  if (t.kind === 'player') recordGuestHit(world, t, hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
+  if (t.kind === 'player') recordGuestHit(world, t, blocked ? {...hit,shieldBlocked:true} : hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
   world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
@@ -808,6 +843,7 @@ function applyHit(world, t, hit) {
     if (t.act) endAct(world, t, true);
     world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
+  return dmg;
 }
 
 // One host-owned burn slot: recasts refresh duration, never add a second ticking stack.

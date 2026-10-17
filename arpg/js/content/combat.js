@@ -10,6 +10,8 @@ import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 // trackTurnDeg: max turn rate (deg/s) toward the target during windup. Zero during lock (no re-target, no snap).
 
 export const ABILITIES = {
+  shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:100, recoveryMs:180, cooldownMs:0,
+    delivery:'shape', shape:{type:'cone',range:85,arc:120}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
   // ---------- player: blade (Vanguard)
   slash: {
     windupMs: 110, lockMs: 0, activeMs: 70, recoveryMs: 190, cooldownMs: 0,
