@@ -6,6 +6,7 @@ export const ATLAS_IDS = Object.freeze({
   ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',
   demon: 'demon', goleling: 'goleling', slime: 'slime',
   succubus: 'succubus',
+  rune_guardian: 'rune-guardian', spirit: 'spirit',
   blade: 'hero-sword',
   death_knight: 'player-death-knight',
   bow: 'hero-bow',
@@ -50,6 +51,22 @@ export function atlasAnimation(entity, animation) {
 export function atlasFrame(state, count, age, fps, entity, duration) {
   if (entity.type === 'throne_dragon' && entity.act && Object.values(DRAGON_CLIPS).includes(state)) return dragonFrame(entity.act, count);
   if (state === 'attack' && entity.act) {
+    // These authored eight-frame clips separate anticipation / impact / recovery.
+    // Long authoritative recovery must not delay the baked slam or bolt release.
+    if (['rune_guardian', 'spirit'].includes(entity.type) && ['windup', 'lock', 'active', 'recovery'].includes(entity.act.phase)) {
+      const act = entity.act;
+      const ticks = act.phaseTicks || Object.fromEntries(['windup', 'lock', 'active', 'recovery']
+        .map(phase => [phase, Math.ceil((act.def[`${phase}Ms`] || 0) / (1000 / 30))]));
+      const starts = { windup:0, lock:ticks.windup, active:ticks.windup + ticks.lock,
+        recovery:ticks.windup + ticks.lock + ticks.active };
+      const progress = Math.max(0, Math.min(.999, (act.elapsed - starts[act.phase]) / Math.max(1, ticks[act.phase])));
+      const guardian = entity.type === 'rune_guardian';
+      const frame = act.phase === 'windup' ? Math.floor(progress * 4)
+        : act.phase === 'lock' ? (guardian ? 4 : 3)
+        : act.phase === 'active' ? (guardian ? 5 + Math.floor(progress * 2) : 4)
+        : guardian ? 6 + Math.floor(progress * 2) : 5 + Math.floor(progress * 3);
+      return Math.min(count - 1, frame);
+    }
     const def = entity.act.def;
     const ticks = ['windup', 'lock', 'active', 'recovery']
       .reduce((sum, phase) => sum + Math.ceil((def[`${phase}Ms`] || 0) / (1000 / 30)), 0);

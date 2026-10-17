@@ -160,6 +160,12 @@ function spriteVisual(entity, { color }, asset) {
         equipment: asset.descriptor || null,
         ...(necropolisBoss ? {bossMarker:true, bossName:bossTitle.text, crown:true} : {}),
         ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
+        // Read-only art diagnostics: actual drawn atlas bounds, not combat radius/telegraph geometry.
+        ...(['rune-guardian', 'spirit'].includes(asset.id) ? { geometry: {
+          anchor: { x: sprite.anchor.x, y: sprite.anchor.y },
+          width: sprite.width, height: sprite.height,
+          bounds: (() => { const b = sprite.getBounds(); return { x:b.x, y:b.y, width:b.width, height:b.height }; })(),
+        } } : {}),
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
     update(state, animation, deltaTime) {

@@ -1,0 +1,729 @@
+{
+  "status": "PASS",
+  "url": "http://127.0.0.1:8972/arpg/",
+  "rows": [
+    {
+      "width": 1280,
+      "stage": "S9",
+      "input": "keyboard Enter/WASD",
+      "fixture": {
+        "level": 30,
+        "cleared": {
+          "S1": true,
+          "S2": true,
+          "S3": true,
+          "S4": true,
+          "S5": true,
+          "S6": true,
+          "S7": true,
+          "S8": true,
+          "S9": true,
+          "S10": true,
+          "S11": true,
+          "S12": true,
+          "S13": true,
+          "S14": true,
+          "S15": true,
+          "S16": true,
+          "S17": true,
+          "S18": true,
+          "S19": true,
+          "S20": true,
+          "S21": true,
+          "S22": true,
+          "S23": true,
+          "S24": true,
+          "S25": true,
+          "S26": true,
+          "S27": true,
+          "TD1": true,
+          "M_MINE_CART": true,
+          "M_MARSH_MARKERS": true,
+          "M_THRONE_GARGOYLE": true
+        },
+        "valid": true
+      },
+      "startedTick": 7,
+      "spawnOnly": true,
+      "seen": {
+        "rune_guardian": {
+          "tick": 66,
+          "entity": {
+            "id": 2,
+            "type": "rune_guardian",
+            "r": 40.5,
+            "sizeScale": 1.35,
+            "x": 964.2789417096648,
+            "y": 429.62484688589205
+          },
+          "visual": {
+            "id": "rune-guardian",
+            "mode": "atlas",
+            "key": "rune_guardian",
+            "loadFailure": null,
+            "state": "run",
+            "direction": "W",
+            "frame": 3,
+            "tint": 12162285,
+            "scale": 1.35,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7877338081598282
+              },
+              "width": 172.8,
+              "height": 172.8,
+              "bounds": {
+                "x": 774.8774728242095,
+                "y": 289.43870411352964,
+                "width": 172.79999999999995,
+                "height": 172.80000000000007
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 197.52346321169492,
+          "viewport": {
+            "w": 1280,
+            "h": 844
+          }
+        },
+        "spirit": {
+          "tick": 66,
+          "entity": {
+            "id": 3,
+            "type": "spirit",
+            "r": 21.909313684046268,
+            "sizeScale": 1.2887831578850746,
+            "x": 1204,
+            "y": 240.8
+          },
+          "visual": {
+            "id": "spirit",
+            "mode": "atlas",
+            "key": "spirit",
+            "loadFailure": null,
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "tint": 10260937,
+            "scale": 1.2887831578850746,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7958693504333496
+              },
+              "width": 164.96424420928955,
+              "height": 164.96424420928955,
+              "bounds": {
+                "x": 1017.3826105744067,
+                "y": 105.34813984746793,
+                "width": 164.96424420928952,
+                "height": 164.96424420928955
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 469.25133922368826,
+          "viewport": {
+            "w": 1280,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "rune_guardian": [
+          "",
+          "run"
+        ],
+        "spirit": [
+          "idle"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "stage": "S19",
+      "input": "keyboard Enter/WASD",
+      "fixture": {
+        "level": 30,
+        "cleared": {
+          "S1": true,
+          "S2": true,
+          "S3": true,
+          "S4": true,
+          "S5": true,
+          "S6": true,
+          "S7": true,
+          "S8": true,
+          "S9": true,
+          "S10": true,
+          "S11": true,
+          "S12": true,
+          "S13": true,
+          "S14": true,
+          "S15": true,
+          "S16": true,
+          "S17": true,
+          "S18": true,
+          "S19": true,
+          "S20": true,
+          "S21": true,
+          "S22": true,
+          "S23": true,
+          "S24": true,
+          "S25": true,
+          "S26": true,
+          "S27": true,
+          "TD1": true,
+          "M_MINE_CART": true,
+          "M_MARSH_MARKERS": true,
+          "M_THRONE_GARGOYLE": true
+        },
+        "valid": true
+      },
+      "startedTick": 4,
+      "spawnOnly": true,
+      "seen": {
+        "rune_guardian": {
+          "tick": 64,
+          "entity": {
+            "id": 2,
+            "type": "rune_guardian",
+            "r": 40.5,
+            "sizeScale": 1.35,
+            "x": 968.8127070394263,
+            "y": 429.618360061377
+          },
+          "visual": {
+            "id": "rune-guardian",
+            "mode": "atlas",
+            "key": "rune_guardian",
+            "loadFailure": null,
+            "state": "run",
+            "direction": "W",
+            "frame": 3,
+            "tint": 12162285,
+            "scale": 1.35,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7877338081598282
+              },
+              "width": 172.8,
+              "height": 172.8,
+              "bounds": {
+                "x": 772.2841274580505,
+                "y": 289.91726387236974,
+                "width": 172.79999999999995,
+                "height": 172.8
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 194.0258350145024,
+          "viewport": {
+            "w": 1280,
+            "h": 844
+          }
+        },
+        "spirit": {
+          "tick": 64,
+          "entity": {
+            "id": 3,
+            "type": "spirit",
+            "r": 21.51065495717805,
+            "sizeScale": 1.2653326445398854,
+            "x": 1176,
+            "y": 215
+          },
+          "visual": {
+            "id": "spirit",
+            "mode": "atlas",
+            "key": "spirit",
+            "loadFailure": null,
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "tint": 10260937,
+            "scale": 1.2653326445398854,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7958693504333496
+              },
+              "width": 161.96257850110533,
+              "height": 161.96257850110533,
+              "bounds": {
+                "x": 984.8856146204664,
+                "y": 82.517863959979,
+                "width": 161.96257850110533,
+                "height": 161.96257850110533
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 446.7382143621436,
+          "viewport": {
+            "w": 1280,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "rune_guardian": [
+          "",
+          "idle",
+          "run"
+        ],
+        "spirit": [
+          "idle"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "stage": "S9",
+      "input": "native touch joystick",
+      "fixture": {
+        "level": 30,
+        "cleared": {
+          "S1": true,
+          "S2": true,
+          "S3": true,
+          "S4": true,
+          "S5": true,
+          "S6": true,
+          "S7": true,
+          "S8": true,
+          "S9": true,
+          "S10": true,
+          "S11": true,
+          "S12": true,
+          "S13": true,
+          "S14": true,
+          "S15": true,
+          "S16": true,
+          "S17": true,
+          "S18": true,
+          "S19": true,
+          "S20": true,
+          "S21": true,
+          "S22": true,
+          "S23": true,
+          "S24": true,
+          "S25": true,
+          "S26": true,
+          "S27": true,
+          "TD1": true,
+          "M_MINE_CART": true,
+          "M_MARSH_MARKERS": true,
+          "M_THRONE_GARGOYLE": true
+        },
+        "valid": true
+      },
+      "startedTick": 3,
+      "spawnOnly": true,
+      "seen": {
+        "rune_guardian": {
+          "tick": 104,
+          "entity": {
+            "id": 2,
+            "type": "rune_guardian",
+            "r": 40.5,
+            "sizeScale": 1.35,
+            "x": 964.2666666666673,
+            "y": 430
+          },
+          "visual": {
+            "id": "rune-guardian",
+            "mode": "atlas",
+            "key": "rune_guardian",
+            "loadFailure": null,
+            "state": "attack",
+            "direction": "W",
+            "frame": 4,
+            "tint": 8294292,
+            "scale": 1.35,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7877338081598282
+              },
+              "width": 172.8,
+              "height": 172.8,
+              "bounds": {
+                "x": 74.58112922623351,
+                "y": 323.9933105239868,
+                "width": 124.416,
+                "height": 124.416
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 163.35865856387332,
+          "viewport": {
+            "w": 390,
+            "h": 844
+          }
+        },
+        "spirit": {
+          "tick": 104,
+          "entity": {
+            "id": 3,
+            "type": "spirit",
+            "r": 22.950000000000003,
+            "sizeScale": 1.35,
+            "x": 1213.3025483335753,
+            "y": 215.5306934782666
+          },
+          "visual": {
+            "id": "spirit",
+            "mode": "atlas",
+            "key": "spirit",
+            "loadFailure": null,
+            "state": "run",
+            "direction": "SW",
+            "frame": 6,
+            "tint": 10260937,
+            "scale": 1.35,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7958693504333496
+              },
+              "width": 172.8,
+              "height": 172.8,
+              "bounds": {
+                "x": 253.87450518253658,
+                "y": 168.5704388108805,
+                "width": 124.41599999999997,
+                "height": 124.416
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 171.33774672919097,
+          "viewport": {
+            "w": 390,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "rune_guardian": [
+          "idle",
+          "run",
+          "attack"
+        ],
+        "spirit": [
+          "idle",
+          "run"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "stage": "S19",
+      "input": "native touch joystick",
+      "fixture": {
+        "level": 30,
+        "cleared": {
+          "S1": true,
+          "S2": true,
+          "S3": true,
+          "S4": true,
+          "S5": true,
+          "S6": true,
+          "S7": true,
+          "S8": true,
+          "S9": true,
+          "S10": true,
+          "S11": true,
+          "S12": true,
+          "S13": true,
+          "S14": true,
+          "S15": true,
+          "S16": true,
+          "S17": true,
+          "S18": true,
+          "S19": true,
+          "S20": true,
+          "S21": true,
+          "S22": true,
+          "S23": true,
+          "S24": true,
+          "S25": true,
+          "S26": true,
+          "S27": true,
+          "TD1": true,
+          "M_MINE_CART": true,
+          "M_MARSH_MARKERS": true,
+          "M_THRONE_GARGOYLE": true
+        },
+        "valid": true
+      },
+      "startedTick": 3,
+      "spawnOnly": true,
+      "seen": {
+        "rune_guardian": {
+          "tick": 105,
+          "entity": {
+            "id": 2,
+            "type": "rune_guardian",
+            "r": 40.139721722574905,
+            "sizeScale": 1.3379907240858302,
+            "x": 964.2666666666673,
+            "y": 430
+          },
+          "visual": {
+            "id": "rune-guardian",
+            "mode": "atlas",
+            "key": "rune_guardian",
+            "loadFailure": null,
+            "state": "attack",
+            "direction": "W",
+            "frame": 4,
+            "tint": 8294292,
+            "scale": 1.3379907240858302,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7877338081598282
+              },
+              "width": 171.26281268298627,
+              "height": 171.26281268298627,
+              "bounds": {
+                "x": 76.34853232665395,
+                "y": 324.8651545057289,
+                "width": 123.30922513175011,
+                "height": 123.30922513175005
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 174.99174073917914,
+          "viewport": {
+            "w": 390,
+            "h": 844
+          }
+        },
+        "spirit": {
+          "tick": 105,
+          "entity": {
+            "id": 3,
+            "type": "spirit",
+            "r": 22.950000000000003,
+            "sizeScale": 1.35,
+            "x": 1211.0667891083567,
+            "y": 216.38286915456524
+          },
+          "visual": {
+            "id": "spirit",
+            "mode": "atlas",
+            "key": "spirit",
+            "loadFailure": null,
+            "state": "run",
+            "direction": "SW",
+            "frame": 6,
+            "tint": 10260937,
+            "scale": 1.35,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.7958693504333496
+              },
+              "width": 172.8,
+              "height": 172.8,
+              "bounds": {
+                "x": 252.40791746111265,
+                "y": 169.7202654451974,
+                "width": 124.41599999999997,
+                "height": 124.416
+              }
+            },
+            "textureLoaded": true
+          },
+          "distance": 160.8885117149034,
+          "viewport": {
+            "w": 390,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "rune_guardian": [
+          "idle",
+          "run",
+          "attack"
+        ],
+        "spirit": [
+          "",
+          "idle",
+          "run"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/rune-guardian/atlas-1.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8972/arpg/assets/sprites/spirit/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "sourceBinding": {
+    "arpg/js/render/atlas-state.js": "917425fb296fdb5262162795489fb58acaac20108f2a9a0f449ebb8f58751d6b",
+    "arpg/js/render/atlas-visual.js": "c8723db6eb5e439f836368a7f5159b797b61d18852fb0cfd726c292b45f6fd76",
+    "arpg/assets/sprites/manifest.json": "468754edd7064a5678fc60fb443d04d51d77d889dbe66134da531f4bcb5ab05c",
+    "arpg/assets/sprites/rune-guardian/atlas-0.webp.json": "d43f921fa513e13ac3f3a056d3be54f66f2bf80a58cfd568e3d87c3eac3a5a58",
+    "arpg/assets/sprites/rune-guardian/atlas-0.webp": "4defc2fd3143554bd4ffd85f5bb083183e53248cd92b20b6f036fd42f98ee951",
+    "arpg/assets/sprites/rune-guardian/atlas-1.webp.json": "f0aaccb6c2dc668eb54f447f9f502e9e845dd92ab0e2b5229a85a9f6dcf3de2a",
+    "arpg/assets/sprites/rune-guardian/atlas-1.webp": "2946729d61ce0069e3a4047454d25ba2b5a66f7d0e778617a1ca34e78696a3f7",
+    "arpg/assets/sprites/spirit/atlas-0.webp.json": "65562231af6372c02c42085534be7bcf2737c1ffecc8ede61a6e4a913264ef56",
+    "arpg/assets/sprites/spirit/atlas-0.webp": "dce74c902f1d55c3e1f4a0080d16a0b4ca644d72374f25f8e9df239cb5bc4a29",
+    "arpg/assets/sprites/spirit/atlas-1.webp.json": "ee7b59bb6d23f9b88de3ff342ade7a976314828a1f904030b9ce3d0078b6831b",
+    "arpg/assets/sprites/spirit/atlas-1.webp": "4aad47d76825717600daba56024876882ec6afaca0ce214e3840a9aeb94dded7"
+  },
+  "screenshots": 0,
+  "existingUserStorage": 0,
+  "runtimeWorldWrites": 0
+}

@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "baseline": "2e27e64a2785fe8e1f421d9b1bdfcd786bc16cdf",
+  "sha256": {
+    "arpg/js/render/atlas-state.js": "917425fb296fdb5262162795489fb58acaac20108f2a9a0f449ebb8f58751d6b",
+    "arpg/js/render/atlas-visual.js": "c8723db6eb5e439f836368a7f5159b797b61d18852fb0cfd726c292b45f6fd76",
+    "arpg/assets/sprites/manifest.json": "468754edd7064a5678fc60fb443d04d51d77d889dbe66134da531f4bcb5ab05c",
+    "arpg/assets/sprites/rune-guardian/atlas-0.webp": "4defc2fd3143554bd4ffd85f5bb083183e53248cd92b20b6f036fd42f98ee951",
+    "arpg/assets/sprites/rune-guardian/atlas-0.webp.json": "d43f921fa513e13ac3f3a056d3be54f66f2bf80a58cfd568e3d87c3eac3a5a58",
+    "arpg/assets/sprites/rune-guardian/atlas-1.webp": "2946729d61ce0069e3a4047454d25ba2b5a66f7d0e778617a1ca34e78696a3f7",
+    "arpg/assets/sprites/rune-guardian/atlas-1.webp.json": "f0aaccb6c2dc668eb54f447f9f502e9e845dd92ab0e2b5229a85a9f6dcf3de2a",
+    "arpg/assets/sprites/spirit/atlas-0.webp": "dce74c902f1d55c3e1f4a0080d16a0b4ca644d72374f25f8e9df239cb5bc4a29",
+    "arpg/assets/sprites/spirit/atlas-0.webp.json": "65562231af6372c02c42085534be7bcf2737c1ffecc8ede61a6e4a913264ef56",
+    "arpg/assets/sprites/spirit/atlas-1.webp": "4aad47d76825717600daba56024876882ec6afaca0ce214e3840a9aeb94dded7",
+    "arpg/assets/sprites/spirit/atlas-1.webp.json": "ee7b59bb6d23f9b88de3ff342ade7a976314828a1f904030b9ce3d0078b6831b",
+    "arpg/tools/art/golem-crystal/bake.py": "9d95e7d5334d05f3a245c381467cde18a680e39d7bf2bfd06fb65de47ca0664c",
+    "arpg/tools/art/golem-crystal/generate.py": "8cb3b210e496012ed538a01d6e6abd8eb2d63f71a69cb8d8de2b1fb0ed17a4e8",
+    "arpg/tools/art/golem-crystal/verify-delivery.py": "897f449181fbcbde4feecf7481f705f6efd4f80aa6e986e2194182861ce2bec3",
+    "arpg/tools/art/golem-crystal/verify-source.py": "1b1548674f866b4d4c0ece120573ff05b8a3ca4911a4555fef9874591e540a95",
+    "arpg/tools/art/golem-crystal/config.json": "515d76f654383b5881be5cda854aec0aae57eaf55b8dc9ec046052a431c03b1b"
+  },
+  "native_rows": 4,
+  "pageerrors": 0,
+  "screenshots": 0,
+  "only_new_sprite_formats": [
+    ".webp",
+    ".webp.json"
+  ],
+  "contact_sheet": "/mnt/c/Users/user/ai-tools/arpg-art/golem-crystal/contact-sheet.png",
+  "source_archive": "C:/Users/user/ai-tools/arpg-art/golem-crystal",
+  "license": "CC0-1.0; both meshes/rigs/actions original project work"
+}
