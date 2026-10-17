@@ -10,8 +10,8 @@ import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 // trackTurnDeg: max turn rate (deg/s) toward the target during windup. Zero during lock (no re-target, no snap).
 
 export const ABILITIES = {
-  shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:100, recoveryMs:180, cooldownMs:0,
-    delivery:'shape', shape:{type:'cone',range:85,arc:120}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
+  shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:200, recoveryMs:180, cooldownMs:0,
+    delivery:'dash', dash:{distance:85,bodyPad:8}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
   // ---------- player: blade (Vanguard)
   slash: {
     windupMs: 110, lockMs: 0, activeMs: 70, recoveryMs: 190, cooldownMs: 0,
@@ -497,9 +497,9 @@ export const PLAYER_BASE = {
 // Weapon-target specialization shared by host damage and client-derived presentation.
 // Focus basic pulses are weapon attacks; authored focus spells and shield attacks are not.
 export const SILVER_UNDEAD_MULTIPLIER = 1.5;
-export function weaponAttackMultiplier(silverWeapon, abilityId, lifeState) {
+export function weaponAttackMultiplier(silverWeapon, abilityId, lifeState, handedness = 1) {
   const def = ABILITIES[abilityId];
   const weaponAttack = def && (def.family === 'blade' || def.family === 'bow' || abilityId === 'focus_pulse')
     && abilityId !== 'shield_bash' && !def.heal && !def.executeUndead && !def.shield;
-  return silverWeapon === true && lifeState === 'undead' && weaponAttack ? SILVER_UNDEAD_MULTIPLIER : 1;
+  return weaponAttack ? (handedness === 2 ? 2 : 1) * (silverWeapon === true && lifeState === 'undead' ? SILVER_UNDEAD_MULTIPLIER : 1) : 1;
 }

@@ -25,7 +25,7 @@ export class InputSender {
     }
     const v = ['mx', 'my', 'aimX', 'aimY'].map(k => q(input[k]));
     const packet = { t: 'input', seq: ++this.seq, v, prev: this.history.slice(),
-      attack: !!input.attack, autoAttack: !!input.autoAttack, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
+      attack: !!input.attack, autoAttack: !!input.autoAttack, dodgeHeld:!!input.dodgeHeld, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
       ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}),
       ...(Object.keys(this.skillViews).length ? { skillViews: Object.fromEntries(Object.entries(this.skillViews).map(([k, rows]) => [k, rows.map(row => [...row])])) } : {}) };
     this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
@@ -41,10 +41,12 @@ export class InputQueue {
     this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0])); this.pending = { ...this.seen };
     this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
+    this.newestDodgeHeld=false;
     this.stats = { consumed: 0, starved: 0, skipped: 0 };
   }
   receive(p, now = 0) {
     if (p?.t !== 'input' || !Number.isSafeInteger(p.seq) || p.seq <= this.last || !Array.isArray(p.v)) return false;
+    this.newestDodgeHeld=!!p.dodgeHeld;
     const held = { attack: !!p.attack, autoAttack: !!p.autoAttack };
     for (const row of Array.isArray(p.prev) ? p.prev : []) {
       const [seq, v, metadata] = Array.isArray(row) ? row : [];
@@ -88,18 +90,18 @@ export class InputQueue {
       // A hidden/disconnected tab cannot leave movement or auto-attack held indefinitely.
       for (const cmd of this.queue) this.apply(cmd);
       this.queue = []; this.primed = false;
-      Object.assign(this.value, { mx: 0, my: 0, attack: false, autoAttack: false });
+      Object.assign(this.value, { mx: 0, my: 0, attack: false, autoAttack: false, dodgeHeld:false });
     } else if (this.primed ? this.queue.length : this.queue.length >= 2 || this.queue[0] && now - this.queue[0].arrived >= 1000 / 30) {
       if (this.queue.length > 4) { this.apply(this.queue.shift()); this.stats.skipped++; }
       this.apply(this.queue.shift()); this.primed = true; this.stats.consumed++;
     } else {
       // Starved: hold aim/attack but take no step, so applied movement still equals the commands.
       this.primed = false; this.stats.starved++;
-      const input = { ...this.value, mx: 0, my: 0 };
+      const input = { ...this.value, mx: 0, my: 0, dodgeHeld:this.newestDodgeHeld };
       for (const k of EDGES) input[k] = false;
       return input;
     }
-    const input = { ...this.value };
+    const input = { ...this.value, dodgeHeld:now-this.at<=1000 && this.newestDodgeHeld };
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
     if (input.dodgeEdge) input.viewTick = this.dodgeViews.shift();
     input.skillViewTicks = {};
@@ -117,7 +119,7 @@ export class InputLatch {
     if (p?.t !== 'input' || !Number.isSafeInteger(p.seq) || p.seq <= this.seq || !Array.isArray(p.v)) return false;
     this.seq = p.seq; this.at = now;
     ['mx', 'my', 'aimX', 'aimY'].forEach((k, i) => { this.value[k] = finite(p.v[i]); });
-    this.value.attack = !!p.attack; this.value.autoAttack = !!p.autoAttack;
+    this.value.attack = !!p.attack; this.value.autoAttack = !!p.autoAttack; this.value.dodgeHeld=!!p.dodgeHeld;
     for (const k of EDGES) {
       const n = p.edges?.[k];
       if (Number.isSafeInteger(n) && n >= this.seen[k]) {
@@ -129,7 +131,7 @@ export class InputLatch {
   consume(now = this.at) {
     const input = { ...this.value };
     // A hidden/disconnected tab cannot leave movement or auto-attack held indefinitely.
-    if (now - this.at > 1000) Object.assign(input, { mx: 0, my: 0, attack: false, autoAttack: false });
+    if (now - this.at > 1000) Object.assign(input, { mx: 0, my: 0, attack: false, autoAttack: false, dodgeHeld:false });
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
     return input;
   }
@@ -144,7 +146,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 const COMMON = ['id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
-  'offhand', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+  'handedness', 'offhand', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
   'mpRegen', 'hpRegen', 'effectiveInt', 'silverWeapon', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'armorWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];

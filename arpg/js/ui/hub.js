@@ -500,7 +500,7 @@ export class HubUI {
     };
     const rows = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, this.save)} → ${describe(candidate.after[i], next)}${candidate.reason === 'remembered' && candidate.remembered[i] && candidate.after[i] === null ? ' · 사용 불가 제외' : ''}</dd></div>`).join('');
     const current = candidate.before.map((id, i) => `<div><dt>슬롯 ${i + 1}</dt><dd>${describe(id, next)}</dd></div>`).join('');
-    const shieldWarning = this.save.equipped.offhand && !next.equipped.offhand ? '<p class="p2-hint">활·지팡이 장착 시 방패는 해제되어 가방에 보관됩니다.</p>' : '';
+    const shieldWarning = this.save.equipped.offhand && !next.equipped.offhand ? '<p class="p2-hint">양손무기·활·지팡이 장착 시 방패는 해제되어 가방에 보관됩니다.</p>' : '';
     const warnings = candidate.before.some(id => id && !canUseSkill(id, weaponFamily(next), weaponForm(next)))
       ? '<p class="p2-hint">사용 불가: 사냥 중 제외 · 빈 슬롯 1: 무기 기본 기술</p>' : '';
     const cost = this.save.gold - next.gold;

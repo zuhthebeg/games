@@ -1,5 +1,5 @@
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from './knight-equipment.js';
-import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight, uniqueUid } from './items.js';
+import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight, uniqueUid, permitsShield } from './items.js';
 import { deriveMods } from './stats.js';
 import { attackRate } from '../content/balance.js';
 import { loadEffects } from '../sim/world.js';
@@ -21,7 +21,7 @@ export function compareItems(equipped, candidate, save, { ignoreEnhancement = fa
   };
   const beforeItem = substitute(beforeSave, equipped, 'compare:from');
   const afterItem = substitute(afterSave, candidate, 'compare:to');
-  const removesOffhand = definition.slot === 'weapon' && definition.family !== 'blade' && !!afterSave.equipped.offhand;
+  const removesOffhand = definition.slot === 'weapon' && !permitsShield(definition) && !!afterSave.equipped.offhand;
   if (removesOffhand) afterSave.equipped.offhand = null;
   // Eligibility and carried-weight context always describe the real candidate, not the preview.
   const weightAfter = carriedWeight(afterSave);
@@ -39,7 +39,7 @@ export function compareItems(equipped, candidate, save, { ignoreEnhancement = fa
     const delta = Math.round((to - from) * 1e9) / 1e9;
     lines.push({ key, label, from, to, delta, good: delta === 0 ? null : lower ? delta < 0 : delta > 0, ...display });
   };
-  line('attack', '공격력', before.dmgMult[before.family], after.dmgMult[after.family], false, { unit:'배율', prefix:'×', section:'derived' });
+  line('attack', '공격력', before.dmgMult[before.family] * (before.handedness === 2 ? 2 : 1), after.dmgMult[after.family] * (after.handedness === 2 ? 2 : 1), false, { unit:'배율', prefix:'×', section:'derived' });
   line('maxHp', '최대 HP', before.maxHp, after.maxHp, false, { unit:'HP', section:'derived' });
   line('totalAc', '총 방어력', before.ac, after.ac, false, { unit:'', section:'derived' });
   line('weight', '무게', effectiveWeight(equipped), effectiveWeight(candidate), true, { unit:'kg', section:'base' });
@@ -65,7 +65,7 @@ export function compareItems(equipped, candidate, save, { ignoreEnhancement = fa
   line('manaRegen', '마나 재생', before.mpRegen, after.mpRegen, false, { unit:'MP/초', section:'derived' });
   line('goldBonus', '골드 획득', before.goldBonus, after.goldBonus, false, { unit:'%', section:'derived' });
   line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
-  const lockReason = definition.kind === 'offhand' && ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]?.family !== 'blade' ? '방패는 검·둔기와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
+  const lockReason = definition.kind === 'offhand' && !permitsShield(ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]) ? '방패는 한손 검·한손 둔기와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
   return { lines, removesOffhand, weightAfter, weightLimit, locked: !!lockReason, lockReason };
 }

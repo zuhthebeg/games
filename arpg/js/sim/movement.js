@@ -28,7 +28,30 @@ export function shieldBlocks(p, hit, guard = p.shieldGuard) {
   const angle = Math.atan2(hit.fromY-p.y,hit.fromX-p.x)-guard.facing;
   return Math.cos(angle) >= .5-1e-10;
 }
-export const shieldDamage = damage => Math.max(1,Math.round(damage*.2));
+export const shieldDamage = damage => Math.max(1,Math.round(damage*.3));
+// Held is a level, perfect eligibility belongs only to an accepted press edge.
+export function updateShieldGuard(p, inp) {
+  const held = p.offhand === 'shield' && !p.dead && !p.terminal && !p.dodgeDisabled && !!inp.dodgeHeld;
+  if (!held) { if(p.pendingCounter?.kind === 'shield')p.pendingCounter=null; if (p.shieldGuard) p.shieldGuard.left = 0; if(p.offhand === 'shield') p.bufferDodge=0; return false; }
+  const facing = inp.aimX || inp.aimY ? Math.atan2(inp.aimY,inp.aimX) : p.shieldGuard?.facing ?? p.facing;
+  p.shieldGuard = {...p.shieldGuard,left:1,facing};
+  if (p.act?.id !== 'shield_bash') p.facing=facing;
+  return true;
+}
+// Sweep to the first hostile body, never leap through one between discrete ticks.
+export function shieldRushPosition(p, distance, others, arena) {
+  const dx=Math.cos(p.act.facing),dy=Math.sin(p.act.facing);
+  let travel=distance;
+  for(const e of others) {
+    if(e.id===p.id || e.team===p.team || e.dead || e.terminal || e.spawnLeft>0) continue;
+    const ex=e.x-p.x,ey=e.y-p.y,along=ex*dx+ey*dy,r=p.r+e.r;
+    if(along<0) continue;
+    const side2=ex*ex+ey*ey-along*along;
+    if(side2>r*r) continue;
+    travel=Math.min(travel,Math.max(0,along-Math.sqrt(Math.max(0,r*r-side2))-.01));
+  }
+  return arenaPosition({...p,x:p.x+dx*travel,y:p.y+dy*travel},arena);
+}
 export function walkingPosition(p, inp, dt = DT) {
   if (p.shieldGuard?.left > 0) return {x:p.x,y:p.y,moving:false,facing:p.shieldGuard.facing};
   const { mlen, mx, my } = movementInput(inp);
@@ -65,10 +88,10 @@ export function movementBlocked(p) {
 export function predictMovement(p, inp, dt, arena, tick = 0) {
   if (movementBlocked(p)) return p;
   const n = { ...p, ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), dodge: { ...p.dodge } }, fraction = dt / DT;
-  if(n.shieldGuard?.left>0)n.shieldGuard.left=Math.max(0,n.shieldGuard.left-fraction);
+  updateShieldGuard(n,inp);
   n.dodge.cdLeft = Math.max(0, n.dodge.cdLeft - fraction);
   n.dodge.iframeLeft = Math.max(0, n.dodge.iframeLeft - fraction);
-  if (inp.dodgeEdge && n.dodge.cdLeft === 0 && n.dodge.dashLeft === 0
+  if (inp.dodgeEdge && (n.offhand !== 'shield' || inp.dodgeHeld) && n.dodge.cdLeft === 0 && n.dodge.dashLeft === 0
     && (!n.act || (n.act.def.cancelInto || []).includes(n.act.phase))) {
     const { mlen, mx, my } = movementInput(inp);
     Object.assign(n, dodgeStart(n, mlen > .2 ? [mx, my] : [Math.cos(n.facing), Math.sin(n.facing)], tick));

@@ -3,7 +3,7 @@ export const SAVE_VERSION = 5;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, cap, statBudget } from './stats.js';
-import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity } from './items.js';
+import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity, permitsShield } from './items.js';
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
@@ -116,7 +116,7 @@ export function validateSave(save) {
       if (save.equipped[slot] === null || (slot === 'offhand' && save.equipped[slot] === undefined)) continue;
       const item = save.items.find((candidate) => candidate.uid === save.equipped[slot]);
       if (!item || ITEMS[item.id].kind !== slot) return false;
-      if (slot === 'offhand' && ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]?.family !== 'blade') return false;
+      if (slot === 'offhand' && !permitsShield(ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id])) return false;
       if (slot === 'weapon' && !lineageAllowsWeapon(save, ITEMS[item.id])) return false;
     }
     if (!['completedRounds', 'shopRefresh', 'paidRefreshes', 'rarelessRounds'].every((key) => integer(save[key]))) return false;
@@ -185,6 +185,14 @@ export function migrateStatScale(data) {
 }
 
 // Only this adapter knows about browser storage. Inject storage/clock in tests or future adapters.
+// Reclassification is not corruption: retain the character and every owned item.
+// Validation remains strict; only loading an otherwise valid old combo repairs the binding.
+export function repairTwohandShield(data) {
+  const weapon=data?.items?.find?.(item=>item.uid===data?.equipped?.weapon);
+  if(ITEMS[weapon?.id]?.handedness !== 2 || !data?.equipped?.offhand) return data;
+  const next={...data,equipped:{...data.equipped,offhand:null}};
+  return validateSave(next) ? next : data;
+}
 export class SaveStore {
   constructor(storage, now = () => Date.now()) {
     this.storage = storage;
@@ -209,6 +217,7 @@ export class SaveStore {
       data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };
       delete data.stacks.enhance_stone_2;
     }
+    data=repairTwohandShield(data);
     if (validateSave(data)) {
       const family = ITEMS[data.items.find(item => item.uid === data.equipped.weapon)?.id]?.family || 'blade';
       return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse },

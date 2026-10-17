@@ -3,7 +3,7 @@ import { SKILL_USE } from '../content/combat.js';
 const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
-import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc, effectiveWeight } from './items.js';
+import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc, effectiveWeight, permitsShield } from './items.js';
 
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'con', 'luk', 'cha'];
 export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, S.base]));
@@ -59,8 +59,9 @@ export function deriveMods(save) {
     maxHp: 100 + 8 * save.level + affixes.hp_flat,
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     effectiveInt: stats.int,
+    ...(ITEMS[weapon?.id]?.handedness === 2 ? {handedness:2} : {}),
     ...(ITEMS[weapon?.id]?.silverWeapon ? { silverWeapon: true } : {}),
-    ...(family === 'blade' && ITEMS[equippedItem(save, 'offhand')?.id]?.form === 'shield' ? { offhand: 'shield' } : {}),
+    ...(permitsShield(ITEMS[weapon?.id]) && ITEMS[equippedItem(save, 'offhand')?.id]?.form === 'shield' ? { offhand: 'shield' } : {}),
     ...(ITEMS[weapon?.id]?.affinity ? { staffAffinity: ITEMS[weapon.id].affinity } : {}),
     maxMp: S.mpBase + S.mpPerLevel * (save.level - 1) + S.mpPerWis * manaWis,
     mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100),

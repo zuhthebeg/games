@@ -13,7 +13,7 @@ import { MONSTER_VARIANTS } from '../content/monsters.js';
 
 import { BALANCE, statEffect, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
-import { shieldBlocks, shieldDamage, loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
+import { updateShieldGuard, shieldRushPosition, shieldBlocks, shieldDamage, loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
 import { resetGuestDodgeHits, pruneGuestHits, recordGuestHit, trackGuestKnock, rewindGuestDodge } from './dodge-lag.js';
@@ -42,7 +42,7 @@ export function playerSkills(mods, weapon) {
 }
 
 export function emptyInput() {
-  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
+  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, dodgeHeld: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
 export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 }, partyHpMult = 1, multiplayerDodge: multiDodge = false } = {}) {
@@ -77,12 +77,13 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     ...(mods.effectiveInt !== undefined ? { effectiveInt: Number.isFinite(mods.effectiveInt) ? Math.max(0, Math.min(10000, mods.effectiveInt)) : 0 } : {}),
     ...( ['fire', 'frost', 'holy'].includes(mods.staffAffinity) ? { staffAffinity: mods.staffAffinity } : {}),
+    ...(mods.handedness === 2 ? {handedness:2} : {}),
     ...(mods.silverWeapon === true ? { silverWeapon: true } : {}),
     cdMult: mods.cdMult ?? 1,
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
     ...(mods.armorWeight ? { armorWeight: mods.armorWeight } : {}),
-    ...(weapon === 'blade' && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
+    ...(weapon === 'blade' && mods.handedness !== 2 && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
@@ -172,7 +173,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 export function step(world, inputs = {}) {
   world.events = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
-  if (world.round?.objective && world.round.state !== 'running') return world.events;
+  if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) if(p.shieldGuard) p.shieldGuard.left=0; return world.events; }
   for (const ent of world.entities) {
     if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) delete ent.shieldUntil;
     if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
@@ -200,7 +201,7 @@ function stepPlayer(world, p, inp) {
   const d = p.dodge;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
-  if (p.shieldGuard?.left > 0) p.shieldGuard.left--;
+  const guarding=updateShieldGuard(p,inp);
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -208,16 +209,16 @@ function stepPlayer(world, p, inp) {
   if (p.scrollRetry > 0) p.scrollRetry--;
   if (p.bufferDodge > 0) p.bufferDodge--;
   for (const k in p.cds) if (p.cds[k] > 0) p.cds[k]--;
-  if (!alive(p)) { p.pendingCounter = null; return; }
+  if (!alive(p)) { p.pendingCounter = null; if(p.shieldGuard)p.shieldGuard.left=0; return; }
   stepPoison(world, p);
-  if (!alive(p)) { p.pendingCounter = null; return; }
+  if (!alive(p)) { p.pendingCounter = null; if(p.shieldGuard)p.shieldGuard.left=0; return; }
   if (p.pendingCounter && world.tick > p.pendingCounter.expiresTick) p.pendingCounter = null;
 
   p.mp = Math.min(p.maxMp, p.mp + p.mpRegen * DT);
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
 
-  if (inp.dodgeEdge && !p.dodgeDisabled) {
+  if (inp.dodgeEdge && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
       ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
@@ -248,7 +249,7 @@ function stepPlayer(world, p, inp) {
     const movement = dodgeStart(p, p.bufferDodgeDir, world.tick, multiplayerDodge(world));
     Object.assign(d, movement.dodge);
     p.facing = movement.facing;
-    if (movement.shieldGuard) p.shieldGuard = movement.shieldGuard;
+    if (movement.shieldGuard) p.shieldGuard = {...movement.shieldGuard,left:1};
     p.pendingCounter = null;
     p.bufferDodge = 0;
     world.events.push({ type: 'dodge', id: p.id });
@@ -257,7 +258,20 @@ function stepPlayer(world, p, inp) {
     if (p.weapon === 'focus' && d.perfectPaid) {p.moving=false;decayKnock(p);return;}
   }
 
-  if (p.shieldGuard?.left > 0) { p.moving=false; decayKnock(p); return; }
+  if (guarding && p.pendingCounter?.kind === 'shield' && !p.act) {
+    const pending=p.pendingCounter,target=world.entities.find(e=>e.id===pending.attackerId);
+    p.pendingCounter=null;
+    if(target && isTargetable(target) && target.team!==p.team) {
+      startAct(world,p,'shield_bash',Math.atan2(target.y-p.y,target.x-p.x),true);
+      p.act.counter=true;p.act.counterTarget=target.id;
+      world.events.push({type:'counter',id:p.id,pid:p.pid,attackerId:target.id,dodgeTick:pending.dodgeTick,ability:'shield_bash'});
+    }
+  }
+  if (guarding && p.act?.id !== 'shield_bash') {
+    if(p.act) endAct(world,p,true);
+    p.moving=false; decayKnock(p); return;
+  }
+  if (p.act?.id === 'shield_bash') { advanceAct(world,p); decayKnock(p); return; }
 
   // A dodge-shot must pass the same dodge gate; movement and perfect-dodge rewards
   // remain owned by the ordinary dodge machinery, never a fabricated counter.
@@ -601,8 +615,8 @@ function doActive(world, ent, act) {
     if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
-    ent.x += Math.cos(act.facing) * act.dashStep;
-    ent.y += Math.sin(act.facing) * act.dashStep;
+    if(act.id === 'shield_bash') Object.assign(ent,shieldRushPosition(ent,act.dashStep,world.entities,world.arena));
+    else { ent.x += Math.cos(act.facing) * act.dashStep; ent.y += Math.sin(act.facing) * act.dashStep; }
     ent.moving = true;
     hitShape(world, ent, act, { type: 'circle', radius: ent.r + def.dash.bodyPad, offset: 0 }, ent.x, ent.y);
   } else if (def.delivery === 'projectile') {
@@ -725,7 +739,8 @@ function applyHit(world, t, hit) {
   // Fixed follow-up counters already include the first hit's silver bonus; DOT and
   // execution bypass specialization. No RNG or timing change for ordinary weapons.
   if (hit.srcKind === 'player' && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
-    dmg *= weaponAttackMultiplier(world.entities.find(e => e.id === hit.srcId)?.silverWeapon, hit.abilityId, mdef?.lifeState);
+    const source=world.entities.find(e=>e.id===hit.srcId);
+    dmg *= weaponAttackMultiplier(source?.silverWeapon, hit.abilityId, mdef?.lifeState, source?.handedness);
   }
   if (hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
   if (hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
@@ -745,7 +760,12 @@ function applyHit(world, t, hit) {
   }
   dmg = hit.execute ? t.hp : Math.max(1, Math.round(dmg));
   const blocked = t.kind === 'player' && shieldBlocks(t,hit);
-  if (blocked) dmg=shieldDamage(dmg);
+  if (blocked) {
+    if (awardPerfectDodge(world,t,hit,world.tick-t.dodge.startedTick)) {
+      world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg:0});return;
+    }
+    dmg=shieldDamage(dmg);
+  }
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
   if (t.kind === 'player' && dmg > 0 && hostile && t.shieldUntil > world.tick) {
@@ -755,7 +775,6 @@ function applyHit(world, t, hit) {
   }
   if (blocked) {
     world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg});
-    awardPerfectDodge(world,t,hit,world.tick-t.dodge.startedTick);
   }
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;

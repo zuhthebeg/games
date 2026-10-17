@@ -23,7 +23,7 @@ export class InputLayer {
     this.py = 0;
     this.value = {
       mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false,
-      skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false,
+      skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, dodgeHeld:false, potionEdge: false, manaEdge: false, scrollEdge: false,
     };
     const edgeKeys = {
       Space: 'dodgeEdge', ShiftLeft: 'dodgeEdge', ShiftRight: 'dodgeEdge',
@@ -42,6 +42,9 @@ export class InputLayer {
     });
     window.addEventListener('keyup', (event) => this.keys.delete(event.code));
     window.addEventListener('blur', () => this.reset());
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});
+    window.addEventListener('pagehide',()=>this.reset());
+    window.addEventListener('touchcancel',()=>this.reset());
     for (const button of actions.querySelectorAll('[data-input]')) {
       const action = button.dataset.input;
       this.buttons.set(action, button);
@@ -54,6 +57,7 @@ export class InputLayer {
         if (action !== 'attack') this.latch(action);
       });
       // Native keyboard activation, not a duplicate pointer click.
+      button.addEventListener('lostpointercapture',event=>release(event));
       button.addEventListener('click', (event) => {
         if (this.enabled && event.detail === 0) this.latch(action === 'attack' ? 'attackTap' : action);
       });
@@ -197,6 +201,7 @@ export class InputLayer {
     for (const action of this.pointers.values()) if (action === 'attack') held = true;
     value.attack = keys.has('KeyJ') || held || !!this.edges.attackTap;
     value.autoAttack = this.autoAttack;
+    value.dodgeHeld = this.enabled && (keys.has('Space') || keys.has('ShiftLeft') || keys.has('ShiftRight') || [...this.pointers.values()].includes('dodgeEdge')); 
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
     for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge']) {
       value[action] = !!this.edges[action];

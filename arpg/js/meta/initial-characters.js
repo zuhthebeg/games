@@ -1,4 +1,4 @@
-import { validateSave } from './save.js';
+import { validateSave, repairTwohandShield } from './save.js';
 import { SLOT_SAVE_KEYS } from './character-slots.js';
 import { persistSkeletonCharacter } from './character-creation.js';
 
@@ -8,6 +8,7 @@ export function readKnight(storage) {
   if (raw === null) return null;
   let save;
   try { save = JSON.parse(raw); } catch { /* Reject below, preserving original bytes. */ }
+  save=repairTwohandShield(save);
   if (!validateSave(save) || save.lineage !== 'skeleton_knight') throw new Error('해골 저장이 손상되었습니다. 원본을 보존하고 진입을 차단합니다.');
   return save;
 }

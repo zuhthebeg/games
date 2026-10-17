@@ -8,7 +8,7 @@ import { dodgeViewTick, dodgeInputViewTick } from '../sim/dodge-lag.js';
 import { DT, ticks, dist2, shapeHitsCircle } from '../sim/core.js';
 import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/combat.js';
 import { attackRate } from '../content/balance.js';
-import { movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from '../sim/movement.js';
+import { updateShieldGuard, shieldRushPosition, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from '../sim/movement.js';
 
 import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep } from '../sim/basic-combo.js';
 
@@ -87,7 +87,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   tickCombo(p);
   const d = p.dodge;
-  if (p.shieldGuard?.left > 0) p.shieldGuard.left--;
+  const guarding=updateShieldGuard(p,inp);
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
   if (p.hurtInvuln > 0) p.hurtInvuln--;
@@ -98,7 +98,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   p.mp = Math.min(p.maxMp, p.mp + (p.mpRegen || 0) * DT);
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
-  if (inp.dodgeEdge && !p.dodgeDisabled) {
+  if (inp.dodgeEdge && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
       ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
@@ -111,9 +111,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     const start = inp.dodgeEdge ? dodgeViewTick(tick, inp.viewTick, multiplayerDodge) : tick;
     const movement = dodgeStart(p, p.bufferDodgeDir, start, multiplayerDodge);
     movement.dodge.iframeLeft = Math.max(0, movement.dodge.iframeLeft - (tick - start));
-    Object.assign(d, movement.dodge); if (movement.shieldGuard) { p.shieldGuard=movement.shieldGuard; p.shieldGuard.left=Math.max(0,p.shieldGuard.left-(tick-start)); } p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
+    Object.assign(d, movement.dodge); if (movement.shieldGuard) { p.shieldGuard=movement.shieldGuard; p.shieldGuard.left=1; } p.facing = movement.facing; p.bufferDodge = 0; p.pendingCounter = null;
   }
-  if (p.shieldGuard?.left > 0) { p.moving=false; return finish(); }
+  if (guarding && p.act?.id !== 'shield_bash') { if(p.act)endAct(p); p.moving=false; return finish(); }
   const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
   const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
@@ -172,7 +172,8 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     const act = p.act;
     p.facing = act.facing;
     if (act.phase === 'active' && act.def.delivery === 'dash') {
-      p.x += Math.cos(act.facing) * act.dashStep; p.y += Math.sin(act.facing) * act.dashStep; p.moving = true;
+      if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
+      else {p.x += Math.cos(act.facing) * act.dashStep; p.y += Math.sin(act.facing) * act.dashStep;} p.moving = true;
     }
     act.elapsed++; act.left--;
     skipEmptyPhases(p);

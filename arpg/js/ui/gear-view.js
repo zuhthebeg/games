@@ -17,7 +17,7 @@ export const amount = value => Number.isInteger(value) ? String(value) : String(
 export const SLOT_NAMES = { offhand:'방패', weapon:'무기', head:'머리', body:'몸', hands:'손', feet:'발' };
 export const GRADES = { common:'일반', fine:'양질', rare:'희귀', epic:'영웅' };
 export const GRADE_ORDER = ['common', 'fine', 'rare', 'epic'];
-export const itemLabel = item => `${ITEMS[item.id].name} +${item.enhance}`;
+export const itemLabel = item => `${ITEMS[item.id].name}${ITEMS[item.id].handedness === 2 ? ' [양손 · 피해 ×2 · 방패 불가]' : ''} +${item.enhance}`;
 export const dropOriginHtml = item => item.uid.startsWith('drop:')
   ? `<p class="drop-origin">${item.enhance > 0 ? '<strong class="loot-highlight">득템 · 강화 장비</strong> · ' : ''}누군가 떨군 장비를 몬스터가 쓰고 있었다</p>` : '';
 export const isWorn = (save, uid) => Object.values(save.equipped).includes(uid);
@@ -145,8 +145,9 @@ export function itemDetailsHtml(item) {
   const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
   const rows = [row('family', '종류', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경갑',medium:'중갑',heavy:'판금'}[def.armorClass] || SLOT_NAMES[def.slot]),
     row('rarity', '등급', GRADES[def.rarity]),
+    ...(def.handedness === 2 ? [row('hands','양손 무기','무기 공격 피해 ×2 · 방패 장착 불가 · 힐·주문·지속피해 제외')] : []),
     def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance && def.kind !== 'offhand' ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
-    ...(def.kind === 'offhand' ? [row('guard','막기','정면 120° · 0.4초 · 피해 80% 감소')] : []),
+    ...(def.kind === 'offhand' ? [row('guard','막기','누르는 동안 정면 120° · 피해 70% 감소 · 타이밍 막기 피해 0 + 방패 돌진')] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
     ...(def.silverWeapon ? [row('silver', '은 무기', `제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% (기본타·무기 기술) · 일반 생물 보너스 없음 · 힐·턴 언데드·지속피해·마법 스킬 제외`)] : []),
