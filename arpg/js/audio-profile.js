@@ -66,7 +66,7 @@ export function eventCues(event, localId, entities = []) {
     return [cue('perfect-dodge', 'dodge', 1, .8, 'perfect-dodge', .09)];
   if (event.type === 'dodge' && event.id === localId) return [cue('dodge', 'dodge')];
   if (event.type === 'hit') {
-    if (event.dst === localId) return [cue('hurt', 'hurt')];
+    if (event.dst === localId) return event.crit === true || event.critical === true ? [cue('hurt', 'hurt')] : [];
     // Only the actual confirmed hit flag is a counter payoff, not counter act,
     // ordinary crit/exposed, pendingCounter or a guessed post-dodge interval.
     if (event.counter === true && event.src === localId)

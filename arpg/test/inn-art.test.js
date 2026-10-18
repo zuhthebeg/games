@@ -56,3 +56,10 @@ test('delivered model art has nine distinct hash-bound WebP files within the UI 
   }
   assert.equal(total,manifest.totalWebPBytes);assert.ok(total<512*1024,'all nine decode-ready images fit under 512 KiB');
 });
+
+test("main inn omits recovery and load rows but bag retains load information", () => {
+ const hub=hubFor("human"),before=structuredClone(hub.save);hub.showInn();
+ assert.doesNotMatch(hub.html,/inn-recovery|class="p2-weight"/);
+ hub.action("bag",{});assert.match(hub.html,/class="p2-weight(?: |")/);
+ assert.deepEqual(hub.save,before);
+});

@@ -66,7 +66,8 @@ test('event selection respects local actions and actual weak-point events; no si
   assert.equal(eventSound({ type: 'act', id: 2 }, 1), null);
   assert.equal(eventSound({ type: 'hit', src: 1, dst: 2 }, 1), 'hit');
   assert.equal(eventSound({ type: 'hit', dst: 2, exposed: true }, 1), 'critical');
-  assert.equal(eventSound({ type: 'hit', dst: 1, exposed: true }, 1), 'hurt');
+  assert.equal(eventSound({ type: 'hit', dst: 1, exposed: true }, 1), null);
+  assert.equal(eventSound({ type: 'hit', dst: 1, crit: true }, 1), 'hurt');
   assert.equal(eventSound({ type: 'dodge', id: 1 }, 1), 'dodge');
   assert.equal(eventSound({ type: 'kill' }, 1), 'kill');
 });

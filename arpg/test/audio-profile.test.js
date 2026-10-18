@@ -91,3 +91,10 @@ test('every profile clip is documented local Ogg with bounded peak/duration and 
  assert.equal(new Set(AUDIO_FILES).size,AUDIO_FILES.length);
  const counter=manifest.clips.find(c=>c.name==='counter-hit.ogg');const blunt=manifest.clips.find(c=>c.name==='blunt-impact.ogg');assert.ok(counter.decodedRms<=blunt.decodedRms*1.25);
 });
+test('local hurt audio only on confirmed critical hits, not ordinary or exposed hits',()=>{
+ const incoming={type:'hit',src:2,dst:1,ability:'slash'};
+ for(const extra of [{},{crit:false},{exposed:true},{periodic:true},{counter:true}])assert.deepEqual(eventCues({...incoming,...extra},1,entities),[]);
+ for(const extra of [{crit:true},{critical:true}])assert.equal(eventCues({...incoming,...extra},1,entities)[0].name,'hurt');
+ assert.equal(eventCues({type:'death',id:1},1,entities)[0].name,'hurt');
+ assert.ok(eventCues(hit,1,entities).length,'outgoing hit sounds remain');
+});

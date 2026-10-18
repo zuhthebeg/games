@@ -1027,3 +1027,10 @@ body[data-theme="graveyard"] .npc-grid .hotspot{background:#1c241e;border-color:
 body[data-theme="graveyard"] .facility-art{filter:saturate(.6) brightness(.85)}
 body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 @media(prefers-reduced-motion:reduce){.inn-fire i{animation:none!important}.inn-fire-halo{opacity:.8}.inn-flame-outer{transform:scale(.96,1.03);opacity:.85}.inn-flame-middle{transform:scale(1,.94);opacity:.87}.inn-flame-core{transform:scale(.94,1.02);opacity:.9}.inn-ember{display:none}}
+
+/* Fit main inn facilities on short phones; keep other pages unchanged. */
+#meta-screen[data-page="inn"] .npc-grid{margin-top:8px}
+@media(max-height:740px){
+ #meta-screen[data-page="inn"] .npc-grid .hotspot{min-height:72px;gap:3px;padding-bottom:5px}
+ #meta-screen[data-page="inn"] .npc-grid .facility-art{height:44px}
+}

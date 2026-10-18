@@ -41,6 +41,9 @@ try{
   await page.goto(base+'/arpg/',{waitUntil:'domcontentloaded'});await press(`[data-action="choose-${lineage==='human'?'human':'skeleton'}"]`);await page.waitForSelector('.inn-fire');
   assert.equal(await page.locator('[data-action="craft-hub"]').count(),0);assert.equal(await page.locator('.npc-grid button').count(),6);assert.equal(await page.locator('#meta-screen').getAttribute('data-page'),'inn');
   assert.equal(await page.evaluate(()=>document.body.dataset.theme||'human'),lineage==='human'?'human':'graveyard');
+  assert.equal(await page.locator('.inn-recovery,.content>.p2-weight').count(),0);
+  const fit=await page.evaluate(()=>{const c=document.querySelector('.inn-shell>.content');return {height:c.clientHeight,scroll:c.scrollHeight};});
+  if(lineage==='human')assert.ok(fit.scroll<=fit.height+1,JSON.stringify(fit));
   const baseline=await state();assert.deepEqual(baseline.save,seed);assert.equal(baseline.world,null);assert.equal(baseline.writes.length,0);
   const images=await page.locator('img[src*="assets/inn/"]').evaluateAll(async ns=>{const rows=[];for(const n of ns){await n.decode();const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;const cx=canvas.getContext('2d');cx.drawImage(n,0,0,32,32);const px=cx.getImageData(0,0,32,32).data;let min=255,max=0,opaque=0;for(let i=0;i<px.length;i+=4){const v=px[i]+px[i+1]+px[i+2];min=Math.min(min,v);max=Math.max(max,v);if(px[i+3]>0)opaque++;}rows.push({src:n.getAttribute('src'),w:n.naturalWidth,h:n.naturalHeight,variation:max-min,opaque,alt:n.alt});}return rows;});
   assert.equal(images.length,9);for(const im of images){assert.ok(im.w>=160&&im.h>=160);assert.ok(im.variation>30&&im.opaque>900);assert.equal(im.alt,'');}
