@@ -33,12 +33,12 @@ async function board(p){await p.press('[data-action="board"]');await p.press('[d
 async function casts(p,host=p){
  for(const[id,selector]of pairs.map(([id,slot])=>[id,slot===0?'#skill':'#skill2'])){
   await p.page.waitForFunction(selector=>!document.querySelector(selector)?.disabled,selector);const before=await p.page.evaluate(()=>__arpg.world.entities[0].mp);await p.press(selector);
-  await host.page.waitForFunction(id=>(__arpg.world.zones?.some(z=>z.abilityId===id)||__arpg.world.projectiles.some(z=>z.abilityId===id)),id);
+  await host.page.waitForFunction(id=>(__arpg.world.zones?.some(z=>z.abilityId===id)||__arpg.world.projectiles.some(z=>z.abilityId===id)),id,{polling:50});
   const active=await host.page.evaluate(id=>({tick:__arpg.world.tick,zone:(__arpg.world.zones?.find(z=>z.abilityId===id)||__arpg.world.projectiles.find(z=>z.abilityId===id)),owner:__arpg.world.entities.find(e=>e.id===(__arpg.world.zones?.find(z=>z.abilityId===id)||__arpg.world.projectiles.find(z=>z.abilityId===id)).ownerId)}),id);
   assert.equal(active.owner.pid,host===p?active.owner.pid:'guest');
   await p.page.waitForFunction(id=>(__arpg.world.entities[0].cds[id]||0)>0,id);
   const after=await p.page.evaluate(()=>__arpg.world.entities[0].mp);assert.ok(after<before-15,`${id} cost paid`);
-  if(host!==p){await p.page.waitForFunction(id=>(__arpg.world.zones?.some(z=>z.abilityId===id)||__arpg.world.projectiles.some(z=>z.abilityId===id)),id);assert.equal(await p.page.evaluate(()=>__arpg.multi.ownsSim),false);}
+  if(host!==p){await p.page.waitForFunction(id=>(__arpg.world.zones?.some(z=>z.abilityId===id)||__arpg.world.projectiles.some(z=>z.abilityId===id)),id,{polling:50});assert.equal(await p.page.evaluate(()=>__arpg.multi.ownsSim),false);}
   report.rows.push({case:'native cast authoritative zone/projectile + MP/CD',width:await p.page.evaluate(()=>innerWidth),id,role:host===p?'solo':'guest',active});
  }
 }
