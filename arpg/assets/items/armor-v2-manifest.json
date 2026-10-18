@@ -1,0 +1,151 @@
+{
+  "model": "C:\\Users\\user\\.cache\\huggingface\\models--John6666--luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl\\snapshots\\0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "gpu": "NVIDIA GeForce RTX 3080 Ti",
+  "modelIndexSha256": "5488341d01c8e9e3f1beaea12c24e217e74f42ddee08a8001331daefadc456d0",
+  "pipelineSourceSha256": "269f5999952d09f40a9b59271d7f2f931addd8ecd82a056da57bdb99245dff6d",
+  "assets": [
+    {
+      "id": "feet",
+      "prompt": "boots, a pair of brown leather boots, two empty boots standing side by side, brass buckles, thick soles, footwear only, still life object, fantasy game item illustration, detailed painted object, centered isolated on plain white background, entire object visible",
+      "negative": "human, man, woman, person, 1girl, 1boy, character, full body, upper body, torso, shoulders, arms, legs, face, eyes, hands, holding, text, lettering, logo, watermark, cropped, scenery, background scene, pedestal, glow, silhouette",
+      "seed": 2026101900,
+      "steps": 30,
+      "guidance": 7,
+      "width": 768,
+      "height": 768,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-20261018-pass2\\feet.png",
+      "sourceSha256": "1cd4551f7b4d71c023c17bf6ed034d6613acc3e458bb04f189c7c0b29720db18",
+      "sourceBytes": 277132,
+      "output": "feet-armor-v2.webp",
+      "outputSha256": "3320c09a1c28a8d8bbd9a3924dead3875fb83b9144107f7a5a0aa24cd02dd215",
+      "outputBytes": 6392,
+      "outputSize": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "reviewedDirectly": true
+    },
+    {
+      "referenceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-guides\\feet-heavy.png",
+      "referenceSha256": "2cc04143ae9789e9c4510faa1ca53588f69f416c611d67a8421a7c65f43a7fef",
+      "strength": 0.68,
+      "id": "feet-heavy",
+      "prompt": "boots, a pair of short armored steel boots, empty steel sabatons, two complete metal boots, brass buckles, thick leather soles, footwear still life, fantasy game item illustration, detailed painted object, centered isolated on plain white background, entire object visible",
+      "negative": "human, man, woman, person, 1girl, 1boy, character, full body, upper body, torso, shoulders, arms, legs, face, eyes, hands, holding, text, lettering, logo, watermark, cropped, scenery, background scene, pedestal, glow, silhouette",
+      "seed": 2026102000,
+      "steps": 30,
+      "guidance": 7,
+      "width": 768,
+      "height": 768,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-20261018-pass3\\feet-heavy.png",
+      "sourceSha256": "d91f1fcfec9b21c928afbfabffc1df8d097b8c6d4fe1fcf9beaa71da2a3871f5",
+      "sourceBytes": 282114,
+      "output": "feet-heavy-armor-v2.webp",
+      "outputSha256": "bdd25bc1428a06391fa2302f5d1ec6ac995de2ca0b770bcfc8a7e56817577300",
+      "outputBytes": 6960,
+      "outputSize": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "head",
+      "prompt": "helmet, a single empty closed steel helmet, standalone detached helmet with narrow visor eye slit, brass rim, still life object, helmet only, fantasy game item illustration, detailed painted object, centered isolated on plain white background, entire object visible",
+      "negative": "human, man, woman, person, 1girl, 1boy, character, full body, upper body, torso, shoulders, arms, legs, face, eyes, hands, holding, text, lettering, logo, watermark, cropped, scenery, background scene, pedestal, glow, silhouette",
+      "seed": 2026101902,
+      "steps": 30,
+      "guidance": 7,
+      "width": 768,
+      "height": 768,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-20261018-pass2\\head.png",
+      "sourceSha256": "66fbdfd3a7851297e7c54e73be3a25a3a6f1066082c72344e928e887664812c3",
+      "sourceBytes": 303149,
+      "output": "head-armor-v2.webp",
+      "outputSha256": "1aa01c3384c3b6825fa0bf810b76292cfaee1e986beafd282ab14eb0dd8f6463",
+      "outputBytes": 8350,
+      "outputSize": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "reviewedDirectly": true
+    },
+    {
+      "referenceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-guides\\head-light.png",
+      "referenceSha256": "da6b8b47f23810ee01977d5b8f14a590a60454a228eec81f1898ae0d1fd351e4",
+      "strength": 0.68,
+      "id": "head-light",
+      "prompt": "cap, an empty brown leather medieval skullcap, stitched rounded leather cap with a dark hollow opening, cap still life, no ears, no eyes, fantasy game item illustration, detailed painted object, centered isolated on plain white background, entire object visible",
+      "negative": "human, man, woman, person, 1girl, 1boy, character, full body, upper body, torso, shoulders, arms, legs, face, eyes, hands, holding, text, lettering, logo, watermark, cropped, scenery, background scene, pedestal, glow, silhouette",
+      "seed": 2026102001,
+      "steps": 30,
+      "guidance": 7,
+      "width": 768,
+      "height": 768,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-20261018-pass3\\head-light.png",
+      "sourceSha256": "8a5f4909da21a6afec75f1c67e2bde678fea652e80c27d744bf6286ea4f14768",
+      "sourceBytes": 259229,
+      "output": "head-light-armor-v2.webp",
+      "outputSha256": "5106d5c327f0adfd8cd58766e174cadc509e3bc0795226fc1f4b5f457ccff6d8",
+      "outputBytes": 5076,
+      "outputSize": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "reviewedDirectly": true
+    },
+    {
+      "referenceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-guides\\shield.png",
+      "referenceSha256": "6a4f1f25ac09722e72ba78734e695564513d1a1792a0781ed22d4f41c849fa86",
+      "strength": 0.68,
+      "id": "shield",
+      "prompt": "shield, a broad flat medieval heater shield viewed from front, wooden face with steel rim, round brass boss, pointed bottom, shield still life, fantasy game item illustration, detailed painted object, centered isolated on plain white background, entire object visible",
+      "negative": "human, man, woman, person, 1girl, 1boy, character, full body, upper body, torso, shoulders, arms, legs, face, eyes, hands, holding, text, lettering, logo, watermark, cropped, scenery, background scene, pedestal, glow, silhouette",
+      "seed": 2026102002,
+      "steps": 30,
+      "guidance": 7,
+      "width": 768,
+      "height": 768,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-armor-v2-20261018-pass3\\shield.png",
+      "sourceSha256": "84c527ebe3fc497ed71a98209626be33b880be037e0af8d8e8f95ab0cf973076",
+      "sourceBytes": 214437,
+      "output": "shield-armor-v2.webp",
+      "outputSha256": "c5d3e485722ec4fc1de5a8319b29d7ab786490ab869a738f4ec459e5bff1abe2",
+      "outputBytes": 5136,
+      "outputSize": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "reviewedDirectly": true
+    }
+  ],
+  "schemaVersion": 1,
+  "targetUse": "in-game web ARPG inventory icons",
+  "offline": true,
+  "paidApiUsed": false,
+  "installs": false,
+  "runtime": "Windows native diffusion-win Python via PowerShell; CPU offload with CUDA inference",
+  "cachedRevision": "0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "scheduler": "EulerAncestralDiscreteScheduler",
+  "generationScriptSha256": "c4bf16cf687819cdb00cc04080ca8423dfcb9bab8907efc32c1174a29a0887c8",
+  "encoding": {
+    "format": "WebP",
+    "quality": 88,
+    "method": 6,
+    "postprocessing": "RGB conversion and Lanczos square downscale only; white-background boundary flood fill (min RGB >145, channel spread <110), 1px matte erosion and 0.45px feather, composite on charcoal #252726 then Lanczos downscale; no painted replacement"
+  },
+  "attempts": 13,
+  "rejected": 8,
+  "rejectedSources": [
+    "arpg-armor-v2-20261018: all five wrong subjects (character armor/lantern)",
+    "arpg-armor-v2-20261018-pass2: greaves too long, hood had eyes/ears, shield became barrel"
+  ],
+  "contactSheet": "/home/cocy/.openclaw/workspace/tmp/arpg-armor-v2-contact.png",
+  "deliveredContactSheet": "/home/cocy/.openclaw/workspace/tmp/arpg-armor-v2-delivered-contact.png",
+  "review": "Direct private contact-sheet inspection at 184px and actual 44/64px; no browser screenshots. Two complete boots per pair, closed empty visor helmet, empty leather hood, front shield."
+}
