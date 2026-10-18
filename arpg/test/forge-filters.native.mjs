@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {createSave,validateSave,SAVE_KEY} from '../js/meta/save.js';
 import {forgeRecipeSet} from '../js/ui/hub.js';
-import {ITEMS,RECIPES,craft} from '../js/meta/items.js';
+import {ITEMS,RECIPES,craft,craftingRecipes} from '../js/meta/items.js';
 import {noteMaterials,recipeRevealed} from '../js/meta/recipe-discovery.js';
 const root=fileURLToPath(new URL('../..',import.meta.url));
 const remote=!!process.env.ARPG_BASE_URL,port=Number(process.env.ARPG_FORGE_PORT||8973);
@@ -23,7 +23,7 @@ const fixture=name=>{
  if(name==='history')save.stacks={};assert.equal(validateSave(save),true);return save;
 };
 const held=(save,key)=>key==='gold'?save.gold:save.stacks[key]||0;
-const expected=(save,mode,kind='all')=>Object.keys(RECIPES).filter(id=>recipeRevealed(save,id)&&(kind==='all'||(ITEMS[id].slot?(['weapon','offhand'].includes(ITEMS[id].slot)?ITEMS[id].slot:'armor'):'material')===kind)&&(mode==='all'||(mode==='owned'?Object.keys(RECIPES[id]).some(k=>k!=='gold'&&held(save,k)>0):Object.entries(RECIPES[id]).every(([k,n])=>held(save,k)>=n))));
+const expected=(save,mode,kind='all')=>craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id)&&(kind==='all'||(ITEMS[id].slot?(['weapon','offhand'].includes(ITEMS[id].slot)?ITEMS[id].slot:'armor'):'material')===kind)&&(mode==='all'||(mode==='owned'?Object.keys(RECIPES[id]).some(k=>k!=='gold'&&held(save,k)>0):Object.entries(RECIPES[id]).every(([k,n])=>held(save,k)>=n))));
 try{
  if(!remote){server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1'],{cwd:root,stdio:'ignore'});for(let i=0;i<40;i++){try{if((await fetch(base+'/arpg/')).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}assert.equal(server.exitCode,null);}
  const html=await(await fetch(base+'/arpg/')).text(),map=JSON.parse(html.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports;

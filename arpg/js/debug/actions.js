@@ -1,7 +1,7 @@
 import { ITEMS, instance, uniqueUid, rollDrops, meetsRequirement } from '../meta/items.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { MAX_LEVEL, STAGE_XP } from '../meta/progression.js';
-import { STAT_KEYS, cap, statBudget } from '../meta/stats.js';
+import { STAT_KEYS, statBudget } from '../meta/stats.js';
 import { BALANCE } from '../content/balance.js';
 
 export const RARITIES = ['common', 'fine', 'rare', 'epic'];
@@ -41,8 +41,7 @@ export function setLevel(save, level) {
   if (!Number.isInteger(level) || level < 1 || level > MAX_LEVEL) throw new Error(`레벨 1~${MAX_LEVEL}`);
   const next = structuredClone(save);
   next.level = level; next.xp = 0;
-  // Respect SaveStore's point-conservation invariant; reclaim points above the new cap.
-  for (const key of STAT_KEYS) next.stats[key] = Math.min(next.stats[key], cap(level));
+  // Keep concentrated allocations unless lowering the level exhausts its total budget.
   const budget = statBudget(level), base = BALANCE.stats.base;
   let spent = STAT_KEYS.reduce((sum, key) => sum + next.stats[key] - base, 0);
   if (spent > budget) { for (const key of STAT_KEYS) next.stats[key] = base; spent = 0; }

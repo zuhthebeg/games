@@ -9,12 +9,13 @@ import { ITEMS, equippedItem, enhanceMultiplier, cloneSave, armorAc, effectiveWe
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'con', 'luk', 'cha'];
 export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, S.base]));
 export const STAT_NAMES = { str: '힘', agi: '민첩', int: '지능', wis: '지혜', con: '체력', luk: '행운', cha: '카리스마' };
-export const cap = (level) => Math.min(S.capMax, S.capBase + S.capPerLevel * level);
+// Compatibility for older tools/fixtures: allocation has no per-stat cap.
+export const cap = () => Infinity;
 // Total points a level grants (allocated above base + unspent).
 export const statBudget = (level) => S.startPoints + S.pointsPerLevel * (level - 1);
 
 export const eff = statEffect;
-// 0 at base, 1 at 100, keeps rising past 100 (gear).
+// 0 at base, 1 at 100, keeps rising past 100 (allocation and gear).
 export const norm = (value) => Math.max(0, value - S.base) / (S.capMax - S.base);
 
 // Allocated stats + flat stat affixes on equipped gear (gear is not capped).
@@ -30,12 +31,12 @@ export function allocateStats(save, allocation) {
   let spent = 0;
   for (const key of STAT_KEYS) {
     const points = allocation[key] ?? 0;
-    if (!Number.isSafeInteger(points) || points < 0 || save.stats[key] + points > cap(save.level)) {
-      throw new Error('능력치 상한 또는 배분 수량을 확인하세요.');
+    if (!Number.isSafeInteger(points) || points < 0 || !Number.isSafeInteger(save.stats[key] + points)) {
+      throw new Error('능력치 배분 수량을 확인하세요.');
     }
     spent += points;
   }
-  if (spent > save.statPoints) throw new Error('배분할 포인트가 부족합니다.');
+  if (!Number.isSafeInteger(spent) || spent > save.statPoints) throw new Error('배분할 포인트가 부족합니다.');
   const next = cloneSave(save);
   for (const key of STAT_KEYS) next.stats[key] += allocation[key] ?? 0;
   next.statPoints -= spent;

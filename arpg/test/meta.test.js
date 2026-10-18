@@ -29,14 +29,14 @@ const freeze = (value) => {
 
 // Every externally-facing transformation is checked against frozen inputs below.
 test('stats: effective points, cap, all derived formulas and allocation are pure', () => {
-  // cocy 10-12 scale: base 10, 6 points = one old point (old 15 -> 70, old 25 -> 130), cap 40 + 2/level to 100.
+  // cocy 10-12 scale: base 10, 6 points = one old point (old 15 -> 70, old 25 -> 130), earned-point allocation has no per-stat cap.
   assert.equal(eff(9), 0);
   assert.equal(eff(70), 7);
   assert.equal(eff(130), 12);
-  assert.equal(cap(1), 42);
-  assert.equal(cap(20), 80);
-  assert.equal(cap(30), 100);
-  assert.equal(cap(40), 100);
+  assert.equal(cap(1), Infinity);
+  assert.equal(cap(20), Infinity);
+  assert.equal(cap(30), Infinity);
+  assert.equal(cap(40), Infinity);
   const save = fresh();
   save.level = 10;
   save.stats = { str: 130, agi: 220, int: 130, wis: 220, con: 10, luk: 10, cha: 220 };
@@ -66,8 +66,8 @@ test('stats: effective points, cap, all derived formulas and allocation are pure
   assert.throws(() => allocateStats(base, { agi: 9 }));
   assert.throws(() => allocateStats(base, { str: -1 }));
   assert.throws(() => allocateStats(base, { nope: 1 }));
-  const capped = { ...base, stats: { ...base.stats, str: cap(base.level) } };
-  assert.throws(() => allocateStats(capped, { str: 1 }));
+  const focused = { ...base, stats: { ...base.stats, str: 100 } };
+  assert.equal(allocateStats(focused, { str: 1 }).stats.str, 101);
 });
 
 test('progression: multi-level, maximum, course loss factors and never level down', () => {

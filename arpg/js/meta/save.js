@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance.js';
 export const SAVE_VERSION = 5;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
-import { BASE_STATS, STAT_KEYS, cap, statBudget } from './stats.js';
+import { BASE_STATS, STAT_KEYS, statBudget } from './stats.js';
 import { ITEMS, craftRecipeId, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity, permitsShield } from './items.js';
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
@@ -103,7 +103,7 @@ export function validateSave(save) {
         && (value === 0 || save.cleared?.[id] === true)))) return false;
     if (!record(save.stats) || Object.keys(save.stats).length !== STAT_KEYS.length) return false;
     const base = BALANCE.stats.base;
-    if (!STAT_KEYS.every((key) => integer(save.stats[key], base, cap(save.level)))) return false;
+    if (!STAT_KEYS.every((key) => integer(save.stats[key], base))) return false;
     const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - base, 0);
     if (spent + save.statPoints !== statBudget(save.level)) return false;
     if (!Array.isArray(save.items) || !save.items.length || !record(save.equipped)) return false;
@@ -181,7 +181,7 @@ export function validateSave(save) {
   }
 }
 
-// cocy 10-12: v4 stats (base 5, cap 19, 1 point/level) -> v5 (base 10, cap 100). One old point is
+// cocy 10-12: v4 stats (base 5, cap 19, 1 point/level) -> v5 (base 10, conserved earned-point budget). One old point is
 // worth pointScale new points, so every allocation keeps its exact effect; CON/LUK start at base and
 // the extra per-level points they come with arrive unspent.
 export function migrateStatScale(data) {

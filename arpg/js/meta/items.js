@@ -300,10 +300,19 @@ function spend(save, cost) {
 
 const CRAFT_GRADES = ['common','fine','rare','epic'];
 const CRAFT_VARIANTS = new Map(Object.entries(ITEMS).filter(([,d])=>d.slot).map(([id,d])=>[`${d.baseId}:${d.rarity}`,id]));
+// Catalogue keeps legacy rarity IDs/costs for old crafted provenance and direct callers.
+// The smith offers only each authored base recipe, at its original material/gold budget.
+export const craftingRecipes = () => Object.entries(RECIPES).filter(([id]) => !ITEMS[id]?.slot || ITEMS[id].baseId === id);
+export function craftPreview(id) {
+  if (!RECIPES[id] || !ITEMS[id]?.slot) return null;
+  return { uid: `recipe:${ITEMS[id].baseId}`, id: CRAFT_VARIANTS.get(`${ITEMS[id].baseId}:fine`), enhance: 0, affixes: [], rolledAt: 0 };
+}
 export function craftOdds(save, id) {
   if (!RECIPES[id]) throw new Error('없는 제작법입니다.');
-  const def=ITEMS[id],rank=CRAFT_GRADES.indexOf(def.rarity),luck=Math.max(0,Math.min(1,(effectiveStats(save).luk-10)/90));
-  const upgrades=[.1+.15*luck,.01+.04*luck,.001+.009*luck],odds=new Map([[id,1-upgrades.reduce((a,b)=>a+b,0)]]);
+  const def=ITEMS[id];
+  if (!def.slot) return [{id,rarity:def.rarity,chance:1}];
+  const floor=craftPreview(id).id,rank=1,luck=Math.max(0,Math.min(1,(effectiveStats(save).luk-10)/90));
+  const upgrades=[.1+.15*luck,.01+.04*luck,.001+.009*luck],odds=new Map([[floor,1-upgrades.reduce((a,b)=>a+b,0)]]);
   for(let step=1;step<=3;step++) {
     const rarity=CRAFT_GRADES[Math.min(3,rank+step)];
     const output=CRAFT_VARIANTS.get(`${def.baseId}:${rarity}`)||id;

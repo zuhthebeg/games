@@ -12,11 +12,11 @@ import { STAGES, ABILITIES, canUseSkill, WEAPONS, weaponAttackMultiplier, SILVER
 import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
-import { equippedSets, STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
+import { equippedSets, STAT_KEYS, STAT_NAMES, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
   ITEMS, RECIPES, equippedItem, carriedWeight, capacity, effectiveWeight,
-  buy, equip, craft, craftOdds, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
+  buy, equip, craft, craftOdds, craftingRecipes, craftPreview, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { enchant, enchantPreview, crackGreaterStone } from '../meta/enchant.js';
 import { noteMaterials, seenMaterials, recipeRevealed } from '../meta/recipe-discovery.js';
@@ -752,8 +752,14 @@ export class HubUI {
     const content = this.forgeTab === 'stones' ? this.stoneWorkshopHtml()
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}${this.forgeRecipesHtml()}`
         : `${html}${picker}`;
-    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
+    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>${this.craftResultHtml()}` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
       'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험 · 뼈 세트는 +0부터 모든 강화석 파괴 위험` });
+  }
+
+  craftResultHtml() {
+    const item = this.save.items.find(candidate => candidate.uid === this.craftedUid);
+    if (!item || !ITEMS[item.id]?.slot) return '';
+    return `<details class="craft-result-comparison" open data-result-uid="${escape(item.uid)}"><summary>실제 제작 결과 · ${GRADES[ITEMS[item.id].rarity]} · 현재 착용과 비교</summary>${splitComparisonHtml(item, this.save)}</details>`;
   }
 
   forgeRecipesHtml() {
@@ -761,7 +767,7 @@ export class HubUI {
     this.forgeRecipeKind ||= 'all';
     this.forgeRecipeSet ||= 'all';
     const seen = seenMaterials(this.save);
-    const revealed = Object.entries(RECIPES).filter(([id]) => recipeRevealed(this.save, id, seen));
+    const revealed = craftingRecipes().filter(([id]) => recipeRevealed(this.save, id, seen));
     const sets = new Map(revealed.flatMap(([id]) => { const set = forgeRecipeSet(id); return set ? [[`set:${set.id}`, set.name]] : []; }));
     const shown = revealed.filter(([id, recipe]) => (this.forgeRecipeKind === 'all' || recipeKind(id) === this.forgeRecipeKind)
       && (this.forgeRecipeSet === 'all' || (this.forgeRecipeSet === 'none' ? !forgeRecipeSet(id) : `set:${forgeRecipeSet(id)?.id}` === this.forgeRecipeSet))
@@ -778,12 +784,13 @@ export class HubUI {
         return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
       });
       const set = forgeRecipeSet(id);
+      const preview = craftPreview(id);
       const odds = craftOdds(this.save, id).map(o => `${GRADES[o.rarity]} ${Number((o.chance * 100).toFixed(3))}%`).join(" · ");
       const parts = Object.entries(recipe).map(([key, count]) => `<span class="${recipeHeld(this.save, key) < count ? 'loss' : ''}">${key === 'gold' ? 'G' : ITEMS[key].name}: ${recipeHeld(this.save, key)} / ${count}</span>`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b>${set ? `<small class="recipe-set">세트 · ${escape(set.name)}</small>` : ''}<small class="recipe-parts">${parts}</small><small class="craft-odds">행운 반영 결과: ${odds} · 기본 등급 이하 없음</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}${preview ? ` · T${ITEMS[id].huntTier} 양질 이상 · 무작위 등급` : ''}</b>${set ? `<small class="recipe-set">세트 · ${escape(set.name)}</small>` : ''}<small class="recipe-parts">${parts}</small>${preview ? `<small class="craft-odds">행운 반영 결과: ${odds} · 양질 이상 보장</small>` : ''}${preview ? `<details class="recipe-comparison" data-preview-id="${preview.id}"><summary>양질 +0 기준 · 현재 착용과 비교</summary><p class="minor">무작위 옵션 제외 · 실제 결과는 제작 후 확정</p>${splitComparisonHtml(preview, this.save)}</details>` : ''}${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
     }).join('');
-    const hiddenCount = Object.keys(RECIPES).length - revealed.length;
+    const hiddenCount = craftingRecipes().length - revealed.length;
     const empty = shown.length ? '' : `<div class="recipe-empty"><p>${revealed.length ? '조건에 맞는 레시피가 없습니다. 재료·골드 또는 종류·세트 필터를 확인하세요.' : '아직 공개된 레시피가 없습니다. 제작 재료를 얻으면 공개됩니다.'}</p>${button('전체 공개 레시피 보기', 'forge-show-all')}</div>`;
     return `<section class="craft-list" aria-label="제작 레시피"><h3 class="section-title">제작 · 재료</h3>
       <div class="recipe-filters" role="group" aria-label="제작 조건">${modes}</div>
@@ -902,7 +909,7 @@ export class HubUI {
     const remaining = this.save.statPoints - spent;
     const gearStats = effectiveStats(this.save);
     const rows = STAT_KEYS.map((key) => {
-      const full = remaining === 0 || this.save.stats[key] + this.draft[key] >= cap(this.save.level);
+      const full = remaining === 0;
       const gear = gearStats[key] - this.save.stats[key];
       return `<div class="allocation-row ${this.draft[key] ? 'changed' : ''}"><span>${STAT_NAMES[key]}</span>
       ${button('−', 'stat-minus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 줄이기"`, this.draft[key] === 0)}
@@ -918,7 +925,7 @@ export class HubUI {
       ['치명 %', pct(before.critChance), pct(after.critChance)], ['소지 kg', before.capacity, after.capacity]]
       .map(([label, from, to]) => `<span>${label} <b>${amount(to)}</b>${to !== from ? `<small class="gain">▲+${amount(to - from)}</small>` : ''}</span>`).join('');
     const tabs = required ? '' : this.characterTabs('stats');
-    const content = `${tabs}${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
+    const content = `${tabs}${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>보유 포인트 내 자유 배분</small></p>
       <div class="allocation">${rows}</div><p class="muted">지능: 마법 위력 · 지혜: 최대 MP · 마나 재생 · 물약 효율</p><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
     const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
     this.panel = required ? null : 'character';
@@ -1382,7 +1389,7 @@ export class HubUI {
       }
       case 'craft':
         this.commit(craft(this.save, data.id));
-        this.selectedUid = this.save.items.at(-1).uid;
+        this.selectedUid = this.craftedUid = this.save.items.at(-1).uid;
         this.craftNotice = `${itemLabel(this.save.items.at(-1))} · ${GRADES[ITEMS[this.save.items.at(-1).id].rarity]} 제작 완료`;
         this.forgeTab = 'enhance';
         return this.showForge();
@@ -1414,10 +1421,9 @@ export class HubUI {
       case 'stat-minus':
         if (action === 'stat-minus') this.draft[data.key] -= 1;
         else {
-          // +5 stops at whatever is left of the points or the cap.
+          // +5 stops at the remaining earned points.
           const left = this.save.statPoints - Object.values(this.draft).reduce((sum, value) => sum + value, 0);
-          const room = cap(this.save.level) - this.save.stats[data.key] - this.draft[data.key];
-          this.draft[data.key] += Math.max(0, Math.min(Number(data.step) || 1, left, room));
+          this.draft[data.key] += Math.max(0, Math.min(Number(data.step) || 1, left));
         }
         return this.showAllocation(this.allocationRequired, false);
       case 'allocate':

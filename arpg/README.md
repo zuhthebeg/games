@@ -406,3 +406,9 @@ T2+ hunts, starting at S9 before the undead regions. Normal/elite chances are
 guarantee 1–2. Training dummies and undead, including the necropolis lord, do
 not drop silver. The dedicated silver RNG stream does not alter other loot.
 Silver weapons remain craft-only and deal +50% weapon-attack damage to undead.
+
+### Crafting quality and earned stat allocation
+
+The smith lists one recipe per underlying equipment base, preserving its authored gold/material cost, tier, set, form and silver properties. Gear always crafts at **fine (양질)** or better: at effective LUK ≤10, fine/rare/epic chances are 88.9%/10%/1.1%; at LUK ≥100 they are 69%/25%/6%. Higher LUK monotonically improves higher-grade chances. Recipes compare a fixed fine +0 representative without random affixes against equipped gear; completion compares the actual rolled result, including its affixes. Legacy item/recipe IDs and paid-cost salvage provenance remain valid; old direct recipe calls also receive at least fine gear. Materials keep their existing recipe path.
+
+Earned stat points may all be placed into one stat, without a level-dependent or fixed 100-point allocation cap. Total available points remain conserved and validated; invalid/negative/fractional/unsafe spending is rejected. Gear requirements, skeletal armor level restrictions, the level-30 ceiling and derived combat-effect caps are unchanged.

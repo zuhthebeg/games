@@ -16,7 +16,7 @@ let seed = 5; const rnd = () => (seed = (Math.imul(seed, 1664525) + 1013904223) 
 test('10-12 scale: 6 new points = 1 old point, so every old effect is unchanged', () => {
   const oldEff = (v) => { const d = Math.max(0, v - 5); return d <= 4 ? d : 4 + (d - 4) * .5; };
   for (let v = 5; v <= 19; v++) near(eff(10 + 6 * (v - 5)), oldEff(v));
-  assert.equal(cap(30), 100); assert.equal(statBudget(30), 36 + 8 * 29);
+  assert.equal(cap(30), Infinity); assert.equal(statBudget(30), 36 + 8 * 29);
 });
 
 test('every legal v4 save (all levels, random allocations, unspent points) migrates exactly and stays valid', () => {
@@ -85,10 +85,10 @@ test('LUK: crit only above 0% (no RNG draw at 0), ~chance x 1.5 damage; more gea
   near(enchantPreview(lucky7, s.items[0].uid, 'enhance_stone_1').chance - enchantPreview(s, s.items[0].uid, 'enhance_stone_1').chance, .08);
 });
 
-test('gear stat affixes push past 100; allocation itself stops at the cap', () => {
+test('gear stat affixes push past 100; allocation also continues beyond 100', () => {
   let s = addXp(fresh(), 999999);
   s = allocateStats(s, { luk: 90 }); assert.equal(s.stats.luk, 100);
-  assert.throws(() => allocateStats(s, { luk: 1 }));
+  assert.equal(allocateStats(s, { luk: 1 }).stats.luk, 101);
   s.items[0].affixes = [{ k: 'luk_flat', v: 5 }]; s.items[1].affixes = [{ k: 'luk_flat', v: 4 }];
   assert.equal(effectiveStats(s).luk, 109); near(deriveMods(s).critChance, .25 * 99 / 90);
   assert.equal(STAT_KEYS.length, 7);

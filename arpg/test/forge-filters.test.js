@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {HubUI,forgeRecipeSet} from '../js/ui/hub.js';
 import {createSave} from '../js/meta/save.js';
-import {ITEMS,RECIPES,craft} from '../js/meta/items.js';
+import {ITEMS,RECIPES,craft,craftingRecipes} from '../js/meta/items.js';
 import {noteMaterials,recipeRevealed} from '../js/meta/recipe-discovery.js';
 const fresh=()=>createSave({name:'Filters',answers:[0,0,0,0,0],createdAt:1});
 const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'salvage',showInnPanel(_title,html){this.html=html;},commit(next){this.save=next;}});
@@ -13,15 +13,15 @@ const affordable=(s,id)=>Object.entries(RECIPES[id]).every(([k,n])=>(k==='gold'?
 test('default list only renders revealed affordable recipes including gold, no stash; quantities and save unchanged',()=>{
  const save=noteMaterials({...fresh(),gold:0,stacks:{scrap:100,wood:100,fang:100},stash:{stacks:{scrap:99999}}}),before=structuredClone(save),hub=hubFor(save);
  hub.showForge();assert.deepEqual(ids(hub.html),[]);assert.match(hub.html,/recipe-empty/);assert.match(hub.html,/forge-show-all/);assert.deepEqual(save,before);
- save.gold=100000;save.stacks.scrap=1;hub.showForge();assert.deepEqual(ids(hub.html),Object.keys(RECIPES).filter(id=>recipeRevealed(save,id)&&affordable(save,id)));assert.ok(ids(hub.html).length<Object.keys(RECIPES).length);assert.ok(!ids(hub.html).includes('iron_sword'),'stash cannot satisfy crafting costs');
+ save.gold=100000;save.stacks.scrap=1;hub.showForge();assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id)&&affordable(save,id)));assert.ok(ids(hub.html).length<Object.keys(RECIPES).length);assert.ok(!ids(hub.html).includes('iron_sword'),'stash cannot satisfy crafting costs');
  hub.action('forge-recipe-mode',{mode:'all'});assert.match(hub.html,/보유 \/ 필요/);assert.match(hub.html,/고철[^<]*1 \/ /);assert.match(hub.html,/G[^<]*100000 \/ /);assert.match(hub.html,/disabled/);
 });
 
 test('owned is current non-gold possession, all preserves hidden recipes, categories intersect and controls never save',()=>{
  const save=noteMaterials({...fresh(),gold:99999,stacks:{fang:1}});save.stacks={hide:1};const before=structuredClone(save),hub=hubFor(save);
  hub.action('forge-recipe-mode',{mode:'owned'});
- const relevant=Object.keys(RECIPES).filter(id=>recipeRevealed(save,id)&&Object.keys(RECIPES[id]).some(k=>k!=='gold'&&(save.stacks[k]||0)>0));assert.deepEqual(ids(hub.html),relevant);assert.ok(!ids(hub.html).includes('iron_sword'));
- hub.action('forge-recipe-mode',{mode:'all'});const all=Object.keys(RECIPES).filter(id=>recipeRevealed(save,id));assert.deepEqual(ids(hub.html),all);assert.ok(all.length<Object.keys(RECIPES).length);
+ const relevant=craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id)&&Object.keys(RECIPES[id]).some(k=>k!=='gold'&&(save.stacks[k]||0)>0));assert.deepEqual(ids(hub.html),relevant);assert.ok(!ids(hub.html).includes('iron_sword'));
+ hub.action('forge-recipe-mode',{mode:'all'});const all=craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id));assert.deepEqual(ids(hub.html),all);assert.ok(all.length<Object.keys(RECIPES).length);
  hub.action('forge-recipe-kind',{kind:'weapon'});assert.deepEqual(ids(hub.html),all.filter(id=>ITEMS[id].slot==='weapon'));
  const previous=hub.html;hub.action('forge-recipe-mode',{mode:'__proto__'});hub.action('forge-recipe-kind',{kind:'nope'});assert.equal(hub.html,previous);
  hub.action('forge-show-all',{});assert.deepEqual(ids(hub.html),all);assert.deepEqual(save,before);
@@ -31,10 +31,10 @@ test('rich data-driven categories combine in both modes; entry resets, tab switc
  const save=rich(),hub=hubFor(save);
  for(const mode of ['craftable','owned','all'])for(const kind of ['all','weapon','armor','offhand','material']){
   hub.action('forge-recipe-mode',{mode});hub.action('forge-recipe-kind',{kind});
-  const expected=Object.keys(RECIPES).filter(id=>recipeRevealed(save,id)&&(kind==='all'||(ITEMS[id].slot ? (['weapon','offhand'].includes(ITEMS[id].slot) ? ITEMS[id].slot : 'armor') : 'material')===kind));assert.deepEqual(ids(hub.html),expected);
+  const expected=craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id)&&(kind==='all'||(ITEMS[id].slot ? (['weapon','offhand'].includes(ITEMS[id].slot) ? ITEMS[id].slot : 'armor') : 'material')===kind));assert.deepEqual(ids(hub.html),expected);
  }
  hub.action('forge-recipe-kind',{kind:'weapon'});hub.action('forge-tab',{tab:'enhance'});assert.deepEqual(ids(hub.html),[]);hub.action('forge-tab',{tab:'salvage'});assert.ok(ids(hub.html).every(id=>ITEMS[id].slot==='weapon'));
- hub.action('forge',{});hub.action('forge-tab',{tab:'salvage'});assert.deepEqual(ids(hub.html),Object.keys(RECIPES));assert.equal(hub.forgeRecipeMode,'craftable');assert.equal(hub.forgeRecipeKind,'all');
+ hub.action('forge',{});hub.action('forge-tab',{tab:'salvage'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id));assert.equal(hub.forgeRecipeMode,'craftable');assert.equal(hub.forgeRecipeKind,'all');
 });
 
 test('exact craft cost and enhancement route remain; unaffordable crafting still rejects',()=>{
@@ -44,10 +44,10 @@ test('exact craft cost and enhancement route remain; unaffordable crafting still
 
 test('set filter intersects availability/kind; options only revealed sets; reset clears all three',()=>{
  const save=rich(),before=structuredClone(save),hub=hubFor(save);hub.showForge();
- hub.action('forge-recipe-set',{set:'set:warden'});assert.deepEqual(ids(hub.html),Object.keys(RECIPES).filter(id=>['warden_blade','warden_maul','warden_plate'].includes(ITEMS[id].baseId||id)));assert.match(hub.html,/recipe-set/);
+ hub.action('forge-recipe-set',{set:'set:warden'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id).filter(id=>['warden_blade','warden_maul','warden_plate'].includes(ITEMS[id].baseId||id)));assert.match(hub.html,/recipe-set/);
  hub.action('forge-recipe-kind',{kind:'armor'});assert.ok(ids(hub.html).length>0);assert.ok(ids(hub.html).every(id=>(ITEMS[id].baseId||id)==='warden_plate'));
  const prior=hub.html;for(const set of ['set:unknown','set:undefined','set:hidden'])hub.action('forge-recipe-set',{set});assert.equal(hub.html,prior);
- hub.action('forge-show-all',{});assert.equal(hub.forgeRecipeSet,'all');assert.deepEqual(ids(hub.html),Object.keys(RECIPES));
+ hub.action('forge-show-all',{});assert.equal(hub.forgeRecipeSet,'all');assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id));
  hub.action('forge-recipe-set',{set:'none'});assert.ok(!ids(hub.html).includes('boar_hide_armor'));assert.ok(!ids(hub.html).includes('warden_blade'));assert.ok(ids(hub.html).includes('iron_sword'));assert.deepEqual(save,before);
  const empty=hubFor({...fresh(),stacks:{},seenMaterials:[]});empty.showForge();assert.doesNotMatch(empty.html,/data-set="set:/);assert.match(empty.html,/전체 세트/);assert.match(empty.html,/세트 없음/);
 });
