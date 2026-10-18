@@ -44,7 +44,7 @@ export function allocateStats(save, allocation) {
 
 export function equippedSets(save) {
   return Object.entries(EQUIPMENT_SETS).map(([id,def])=>{
-    const slots=new Set(SLOTS.filter(slot=>ITEMS[equippedItem(save,slot)?.id]?.setId===id));
+    const slots=new Set(SLOTS.filter(slot=>ITEMS[equippedItem(save,slot)?.id]?.setId===id && ITEMS[equippedItem(save,slot)?.id]?.slot===slot));
     return {id,...def,count:slots.size,bonuses:def.bonuses.map(b=>({...b,active:slots.size>=b.count}))};
   });
 }
@@ -69,7 +69,7 @@ export function deriveMods(save) {
     return share === undefined ? 1 : weaponDamage * share * (skillFamily === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
   };
   return {
-    ...( ['weapon','head','body','hands','feet'].every(slot => ITEMS[equippedItem(save, slot)?.id]?.boneSet) ? { boneRevival: true } : {}),
+    ...( ['weapon','head','body','hands','feet'].every(slot => ITEMS[equippedItem(save, slot)?.id]?.boneSet && ITEMS[equippedItem(save, slot)?.id]?.slot === slot) ? { boneRevival: true } : {}),
     maxHp: 100 + 8 * save.level + affixes.hp_flat + (sets.maxHp || 0),
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0) + (sets.ac || 0),
     effectiveInt: stats.int,

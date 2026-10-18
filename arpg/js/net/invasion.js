@@ -4,11 +4,13 @@ import {buildRoundMods, unlockedThreat} from '../meta/run.js';
 import {ITEMS, equippedItem, carriedWeight, capacity} from '../meta/items.js';
 import {availableStages} from '../content/world-map.js';
 import {STAGES} from '../content/combat.js';
+export const validBoneParts = parts => Array.isArray(parts) && parts.length === 5
+  && ['weapon','head','body','hands','feet'].every(slot => parts.filter(id=>ITEMS[id]?.boneSet && ITEMS[id].slot === slot).length === 1);
 export function validParty(config, profiles) {
   if (!config || !STAGES[config.stageId] || !Number.isInteger(config.threat) || config.threat < 1 || config.threat > 3
     || config.invasion !== undefined && typeof config.invasion !== 'boolean') return false;
   const list = Object.values(profiles);
-  if (!config.invasion) return list.every(p => p && (!p.lineage || p.lineage === 'human') && (!p.role || p.role === 'hunter') && !p.invasionConsent);
+  if (!config.invasion) return list.every(p => p && (!p.lineage || p.lineage === 'human') && (!p.role || p.role === 'hunter') && !p.invasionConsent && (!p.mods?.boneRevival || validBoneParts(p.boneParts)));
   return list.every(p => {
     const save=p?.rewardSave;
     return typeof save?.activeInvasion === 'string' && p?.invasionConsent === true && !Object.hasOwn(p,'team') && validateSave(save)

@@ -348,7 +348,8 @@ try {
     }
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
     const load = currentLoad(localSave, createTracker(0));
-    const profile = { lineage: localSave.lineage || 'human', ...(invasion ? { invasionConsent: true, role: localSave.lineage === 'skeleton_knight' ? 'invader' : 'hunter', rewardSave: localSave } : {}), name: localSave.name, level: localSave.level, weapon,
+    const boneParts = ['weapon','head','body','hands','feet'].map(slot => equippedItem(localSave, slot)?.id);
+    const profile = { ...(boneParts.every(id=>ITEMS[id]?.boneSet) ? { boneParts } : {}), lineage: localSave.lineage || 'human', ...(invasion ? { invasionConsent: true, role: localSave.lineage === 'skeleton_knight' ? 'invader' : 'hunter', rewardSave: localSave } : {}), name: localSave.name, level: localSave.level, weapon,
       mods: buildRoundMods(localSave), skillMasteryLevels: masteryLevels(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
       threats: Object.fromEntries(Object.keys(STAGES).map(id => [id, unlockedThreat(localSave, id)])),
       stages: availableStages(localSave) };
