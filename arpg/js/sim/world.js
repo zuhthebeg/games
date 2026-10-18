@@ -26,6 +26,8 @@ import { enableMultiplayerDodge, multiplayerDodge, dodgeTiming } from './dodge-p
 
 import { lockSpellPoint, zoneContains, MAX_ZONES } from './spell-zones.js';
 
+import { skillGrowth, boundedMasteryLevels } from '../content/skill-growth.js';
+
 const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
@@ -60,7 +62,7 @@ export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 },
 }
 
 // mods come from the meta layer (level, stats, gear). The sim never reads stats directly.
-export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodgeEnabled = true, mods = {} }) {
+export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodgeEnabled = true, mods = {}, skillMasteryLevels }) {
   // The existing launcher already passes meta mods. Freeze threat before startStage, not in step().
   if (mods.threat !== undefined) {
     if (world.round) throw new Error('Threat is frozen after stage start');
@@ -71,6 +73,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
   const maxMp = mods.maxMp ?? PB.mp;
   const ent = {
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
+    ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
     kx: 0, ky: 0, moving: false,
     hp: maxHp, maxHp, mp: maxMp, maxMp, mpRegen: mods.mpRegen ?? PB.mpRegen,
@@ -342,7 +345,7 @@ function stepPlayer(world, p, inp) {
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) < MAX_ZONES)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
@@ -516,7 +519,9 @@ function startAct(world, ent, abilityId, facing, counter = false) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
+    ...(growth && growth.count !== skillGrowth(abilityId).count ? { growth } : {}),
     rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -595,10 +600,11 @@ function doActive(world, ent, act) {
     act.fired = true;
     if ((world.zones?.length || 0) >= MAX_ZONES) return;
     const point = act.zonePoint;
-    const zone = { id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
+    const growth = act.growth;
+    const zone = { ...(growth ? { pulsesLeft: growth.count, intervalTicks: ticks(growth.intervalMs) } : {}), id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
       x: point.x, y: point.y, facing: act.facing, startTick: world.tick,
       activeTick: world.tick + ticks(def.zone.delayMs || 0),
-      endTick: world.tick + ticks((def.zone.delayMs || 0) + (def.zone.durationMs || 0)),
+      endTick: world.tick + ticks((def.zone.delayMs || 0) + (growth?.durationMs ?? (act.id === 'meteor' && growth ? (growth.count - 1) * growth.intervalMs : def.zone.durationMs || 0))),
       nextTick: world.tick + ticks(def.zone.delayMs || 0), dmgMult: sourceMult(ent, def) };
     (world.zones ||= []).push(zone);
     world.events.push({ type: 'zoneCast', id: ent.id, castId: zone.id, ability: act.id, x: zone.x, y: zone.y });
@@ -654,14 +660,15 @@ function doActive(world, ent, act) {
   } else if (def.delivery === 'projectile') {
     const activeTick = act.phaseTicks.active - act.left;
     if (def.burst) {
-      if ((act.shotsFired || 0) >= def.burst.count || activeTick % Math.max(1, ticks(def.burst.intervalMs)) !== 0) return;
+      const count = act.growth?.count ?? def.burst.count;
+      if ((act.shotsFired || 0) >= count || (act.growth ? activeTick < Math.floor((act.shotsFired || 0) * act.phaseTicks.active / count) : activeTick % Math.max(1, ticks(def.burst.intervalMs)) !== 0)) return;
       act.shotsFired = (act.shotsFired || 0) + 1;
     } else if (act.fired) return;
     act.fired = true;
     const pr = def.projectile;
     for (let i = 0; i < pr.count; i++) {
       const spread = pr.count > 1 ? ((i / (pr.count - 1)) - 0.5) * pr.spreadDeg * Math.PI / 180 : 0;
-      const a = act.facing + spread + (def.spin ? Math.PI * 2 * activeTick / act.phaseTicks.active : 0);
+      const a = act.facing + spread + (def.spin ? Math.PI * 2 * (act.growth ? (act.shotsFired - 1) / act.growth.count : activeTick / act.phaseTicks.active) : 0);
       world.projectiles.push({
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
@@ -939,7 +946,8 @@ function stepZones(world) {
     const def = ABILITIES[zone.abilityId];
     if (world.tick >= zone.nextTick && world.tick >= zone.activeTick && (zone.abilityId === 'meteor' || world.tick < zone.endTick)) {
       const pulse = !!def.zone.intervalMs;
-      zone.nextTick += ticks(def.zone.intervalMs || 10000);
+      zone.nextTick += zone.intervalTicks ?? ticks(def.zone.intervalMs || 10000);
+      if (zone.pulsesLeft !== undefined) zone.pulsesLeft--;
       world.events.push({ type: pulse ? 'zonePulse' : 'explode', id: zone.id, ability: zone.abilityId,
         x: zone.x, y: zone.y, radius: def.zone.radius || 0 });
       for (const target of world.entities) {
@@ -951,7 +959,7 @@ function stepZones(world) {
           cause: { shape: { type: 'circle', radius: def.zone.radius || def.zone.width, offset: 0 }, ox: zone.x, oy: zone.y, facing: zone.facing } });
       }
     }
-    if (world.tick < zone.endTick && (zone.abilityId !== 'meteor' || world.tick < zone.activeTick)) keep.push(zone);
+    if (world.tick < zone.endTick && (zone.abilityId !== 'meteor' || (zone.pulsesLeft || 0) > 0 || world.tick < zone.activeTick)) keep.push(zone);
   }
   world.zones = keep;
 }

@@ -9,6 +9,7 @@ import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
 import { presentSkillEvents } from './skill-presentation.js';
+import { boundedMasteryLevels } from '../content/skill-growth.js';
 import { MASTERY_SKILLS, MASTERY_MAX } from '../meta/skill-mastery.js';
 const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
   && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= MASTERY_MAX);
@@ -51,6 +52,7 @@ export class CoopSession {
     if (!validLevels(levels)) return;
     this.profile = { ...this.profile, skillMasteryLevels: { ...levels } };
     this.profiles[this.uid] = { ...this.profiles[this.uid], skillMasteryLevels: { ...levels } };
+    if (this.isHost && this.world) { const pawn = this.world.entities.find(e => e.pid === this.uid); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(levels); }
     if (!this.isHost) this.sendRt({ t: 'mastery', levels: { ...levels } });
   }
   begin(data) {
@@ -64,6 +66,7 @@ export class CoopSession {
     }
     this.config = data.config; this.profiles = data.config.invasion
       ? Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,invasionProfile(p)])) : data.profiles; this.seed = data.seed;
+    this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
       const party = Object.values(this.profiles).filter(p => !data.config.invasion || p.role === 'hunter');
@@ -73,7 +76,7 @@ export class CoopSession {
         partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        const player = addPlayer(this.world, { pid, weapon: p.weapon, y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels), y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
         if (data.config.invasion) {
           player.invasionRole = p.role;
           if (p.role === 'invader') { player.team = TEAM_MONSTER; player.skeletal = true; player.x = this.world.arena.w * .78; player.facing = Math.PI; }
@@ -116,6 +119,7 @@ export class CoopSession {
       this.lootLedger.claim(this.world, from, {id:data.id});
     } else if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
+      const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
       this.profiles[from] = data.profile; this.tryStart();
     } else if (data.t === 'input' && this.isHost && this.world && from !== this.uid) {

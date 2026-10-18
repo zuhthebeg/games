@@ -18,3 +18,22 @@
 3. Browser PC and 390px learn/equip/save/reload and actual casts; real two-player host/guest state checks where applicable. No screenshots.
 4. Independent spec review then code-quality review. Resolve important findings.
 5. Parent refreshes main/lab import stamps, commits, merges/pushes, verifies live files and live browser behavior. Existing main dirty configuration files remain untouched.
+
+## Four-skill mastery correction — bounded handoff
+
+- [x] Canonical `content/skill-growth.js`: Lv1/5/10/15/20/25/30 real meteor
+  1–7, rain 4–10, spin 12–24, wall 4–7 seconds/8–14 pulses.
+- [x] Meteor repeats at the initially locked point, every 0.3s after the first
+  0.7s delay, using one zone slot; no instantaneous sevenfold damage.
+- [x] Host pawn receives solo/host/guest save levels, clamps known integer inputs,
+  preserves levels on stage reset, and freezes growth per cast. Profiles are not
+  an anti-cheat authority upgrade. Existing thresholds/saves remain untouched.
+- [x] Card and detail show current and next milestone; finite duration, payment,
+  per-hit scaling, team ownership and prediction/rewind regressions are tested.
+- [ ] Parent independent review, import stamps/main+lab release, deployment, and
+  production rerun with `ARPG_BASE_URL=https://game.cocy.io`.
+
+Every future skill addition must explicitly address actual level progression,
+canonical UI values, authoritative scheduling, one-cast accounting, bounded
+lifetime/caps and solo/host/guest native verification. Existing skills outside
+this four-skill correction are not rebalanced here.

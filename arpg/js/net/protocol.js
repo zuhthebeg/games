@@ -157,14 +157,14 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
   return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
     round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat', 'invasion', 'invasionExitAt']),
     ...(world.round.objective ? { objective: structuredClone(world.round.objective) } : {}), pending: world.round.pending.length,
-    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION),
+    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION), ...select(e, ['skillMasteryLevels']),
         pendingCounter: !!e.pendingCounter,
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
-    ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick'])) } : {}),
+    ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }

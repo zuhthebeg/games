@@ -138,7 +138,7 @@ try {
       const seed = developmentRound ? 11 : crypto.getRandomValues(new Uint32Array(1))[0];
       world = createWorld({ seed, arena: { w: 1400, h: 860 } });
       const weapon = overrideWeapon || ITEMS[equippedItem(roundSave, 'weapon').id].family;
-      addPlayer(world, { pid: 'local', weapon, mods: buildRoundMods(roundSave) });
+      addPlayer(world, { pid: 'local', weapon, skillMasteryLevels: masteryLevels(roundSave), mods: buildRoundMods(roundSave) });
       const knight = roundSave.lineage === 'skeleton_knight';
       if (knight) { restoreKnightArt?.(); restoreKnightArt = installKnightPresentation(renderer.provider, roundSave); }
       if (!knight) { restoreKnightArt?.(); restoreKnightArt = null; }
@@ -535,6 +535,7 @@ try {
         const pid = coopSession?.uid || 'local';
         renderer.skillVfx.setMastery(pid, masteryLevels(next));
         if (coopSession) coopSession.setMastery(masteryLevels(next));
+        else { const pawn = world?.entities.find(e => e.pid === pid); if (pawn) pawn.skillMasteryLevels = masteryLevels(next); }
         if (!running) hub.showInn();
       },
       get world() { return world; }, get save() { return hub.save; },

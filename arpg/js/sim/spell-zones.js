@@ -21,5 +21,8 @@ export function validZones(zones) {
   return zones === undefined || Array.isArray(zones) && zones.length <= MAX_ZONES && zones.every(z => z && ['meteor','firewall','rain_arrow'].includes(z.abilityId)
     && ['id','ownerId','team','startTick','activeTick','endTick'].every(k=>Number.isSafeInteger(z[k]) && z[k]>=0)
     && ['x','y','facing'].every(k=>Number.isFinite(z[k]) && Math.abs(z[k])<=100000)
-    && z.activeTick>=z.startTick && z.endTick>=z.activeTick && z.endTick-z.startTick<=120);
+    && z.activeTick>=z.startTick && z.endTick>=z.activeTick && z.endTick-z.startTick<=(z.abilityId === 'firewall' ? 210 : z.abilityId === 'rain_arrow' ? 99 : 75)
+    && (z.pulsesLeft === undefined || Number.isInteger(z.pulsesLeft) && z.pulsesLeft >= 0 && z.pulsesLeft <= (z.abilityId === 'meteor' ? 7 : z.abilityId === 'rain_arrow' ? 10 : 14))
+    && (z.intervalTicks === undefined || z.intervalTicks === (z.abilityId === 'firewall' ? 15 : 9))
+    && (z.nextTick === undefined || Number.isSafeInteger(z.nextTick) && z.nextTick >= z.activeTick));
 }

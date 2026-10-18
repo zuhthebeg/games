@@ -25,7 +25,7 @@ export function paintSpellZones(g, world, reduced = false) {
         g.arc(x,y,def.radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xf4e4bc,width:4});
       }
     } else if (def.radius) {
-      const remaining=zone.pending ? 1 : Math.max(0,(zone.activeTick-world.tick)/Math.max(1,zone.activeTick-zone.startTick));
+      const remaining=zone.pending ? 1 : Math.max(0,((zone.nextTick ?? zone.activeTick)-world.tick)/Math.max(1,zone.intervalTicks ?? (zone.activeTick-zone.startTick)));
       g.circle(x,y,def.radius).fill({color:0xf06d28,alpha:.12}).stroke({color:0xffb34b,width:3,alpha:.9});
       g.moveTo(x-12,y).lineTo(x+12,y).moveTo(x,y-12).lineTo(x,y+12).stroke({color:0xffe3aa,width:2});
       g.arc(x,y,def.radius-7,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-remaining)).stroke({color:0xffdc81,width:4});

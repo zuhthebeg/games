@@ -6,6 +6,7 @@ import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { emptyInput } from '../js/sim/world.js';
 import { createTracker, trackRound } from '../js/meta/run.js';
 import { createSave } from '../js/meta/save.js';
+const combatState = world => { const copy = structuredClone(world); for (const p of copy.entities) delete p.skillMasteryLevels; return copy; };
 const config={stageId:'S2',seed:42,threat:1};
 const make = (levels=true) => {
  const net=createMemoryTransport(),sessions={};
@@ -16,22 +17,22 @@ const make = (levels=true) => {
  }
  sessions.g.update(34,emptyInput()); return sessions;
 };
-test('round profile/snapshot carries each caster level, never the sim pawn/mods; decoration is a copy',()=>{
+test('round profile/snapshot carries caster levels on host pawn; non-growth combat and decoration stay unchanged',()=>{
  const a=make(),b=make(false);
- assert.deepEqual(a.h.world,b.h.world);
+ assert.deepEqual(combatState(a.h.world),combatState(b.h.world));
  const before=JSON.stringify(a.h.world),view=a.h.view(); assert.equal(view.entities[0].skillMasteryLevels.ember_bolt,20); assert.equal(view.entities[1].skillMasteryLevels.ember_bolt,30); assert.equal(JSON.stringify(a.h.world),before);
  const packet=encodeSnapshot(a.h.world,null,a.h.profiles); assert.equal(packet.entities[1].skillMasteryLevels.ember_bolt,30);
  packet.entities[1].skillMasteryLevels.ember_bolt=2; assert.equal(a.h.profiles.g.skillMasteryLevels.ember_bolt,30);
  assert.equal(decodeSnapshot(encodeSnapshot(a.h.world,null,a.h.profiles),'g').entities[0].skillMasteryLevels.ember_bolt,30);
  for(let n=0;n<100;n++) {const input={...emptyInput(),skillEdge:n===0};a.g.update(34,input);b.g.update(34,input);a.h.update(34,input);b.h.update(34,input);}
- assert.deepEqual(a.h.world,b.h.world);
+ assert.deepEqual(combatState(a.h.world),combatState(b.h.world));
 });
-test('debug levels use a separate render message, update remote display, reject malformed payload, leave sim unchanged',()=>{
+test('mastery message updates host level and remote display, rejects malformed payload without other sim changes',()=>{
  const a=make(),before=JSON.stringify(a.h.world);
  a.g.setMastery({ember_bolt:1}); assert.equal(a.h.profiles.g.skillMasteryLevels.ember_bolt,1);
  a.h.update(34,emptyInput()); a.h.update(34,emptyInput()); assert.equal(a.g.view().entities[0].skillMasteryLevels.ember_bolt,1);
  const world=JSON.stringify(a.h.world); a.h.rt('g',{t:'mastery',levels:{ember_bolt:31}}); assert.equal(a.h.profiles.g.skillMasteryLevels.ember_bolt,1); assert.equal(JSON.stringify(a.h.world),world);
- a.h.setMastery({ember_bolt:30}); assert.equal(JSON.stringify(a.h.world),world); assert.equal(a.h.view().entities.find(e=>e.pid==='h').skillMasteryLevels.ember_bolt,30);
+ a.h.setMastery({ember_bolt:30}); assert.equal(a.h.world.entities[0].skillMasteryLevels.ember_bolt,30); assert.deepEqual(combatState(a.h.world),combatState(JSON.parse(world))); assert.equal(a.h.view().entities.find(e=>e.pid==='h').skillMasteryLevels.ember_bolt,30);
  assert.ok(before);
 });
 test('guest journal duplicate packets never count the same host cast twice',()=>{

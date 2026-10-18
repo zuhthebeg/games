@@ -412,3 +412,49 @@ Silver weapons remain craft-only and deal +50% weapon-attack damage to undead.
 The smith lists one recipe per underlying equipment base, preserving its authored gold/material cost, tier, set, form and silver properties. Gear always crafts at **fine (양질)** or better: at effective LUK ≤10, fine/rare/epic chances are 88.9%/10%/1.1%; at LUK ≥100 they are 69%/25%/6%. Higher LUK monotonically improves higher-grade chances. Recipes compare a fixed fine +0 representative without random affixes against equipped gear; completion compares the actual rolled result, including its affixes. Legacy item/recipe IDs and paid-cost salvage provenance remain valid; old direct recipe calls also receive at least fine gear. Materials keep their existing recipe path.
 
 Earned stat points may all be placed into one stat, without a level-dependent or fixed 100-point allocation cap. Total available points remain conserved and validated; invalid/negative/fractional/unsafe spending is rejected. Gear requirements, skeletal armor level restrictions, the level-30 ceiling and derived combat-effect caps are unchanged.
+
+## Four-skill mastery growth
+
+`js/content/skill-growth.js` is the shared bounded growth definition for simulation
+and card/detail descriptions. Existing successful-cast thresholds and save format
+are unchanged. Levels 1–4 retain the original MP, cooldown, hit power and counts.
+
+| Mastery level | 1 | 5 | 10 | 15 | 20 | 25 | 30 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Meteor landings | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| Rain arrow pulses | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| Spinning shot arrows | 12 | 14 | 16 | 18 | 20 | 22 | 24 |
+| Firewall seconds | 4 | 4.5 | 5 | 5.5 | 6 | 6.5 | 7 |
+| Firewall pulses | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+
+These are bounded design defaults, not user-specified balance numbers. Meteor
+uses one locked point and one zone slot: first landing after 0.7s, subsequent
+real impacts every 0.3s. It does not follow the target or multiply damage in one
+instant. Rain retains 0.3s spacing; firewall retains 0.5s spacing. Spinning shot
+spreads real projectiles uniformly across 360 degrees in the same 1.2s active
+window (30Hz cadence uses integer distributed ticks rather than rounded intervals).
+
+The host alone schedules damage/projectiles from validated/clamped profile
+levels; clients only render snapshots/journal. Ordinary valid local saves are
+profile inputs, not a new secure server-verified progression system. Cast growth
+is captured on start and cannot change midway. MP/cooldown are paid once and
+mastery credit is at most once per successful cast, not per pulse/arrow or burn.
+Pending zone casts reserve slots within the existing 32-zone limit. Round resets
+clear effects, not player levels. Existing unrelated skill combat/VFX are unchanged.
+
+Verification:
+
+```sh
+node --test arpg/test/four-skill-growth.test.js arpg/test/meteor-firewall.test.js arpg/test/bow-area-spin.test.js arpg/test/skill-mastery-net.test.js
+node arpg/test/four-skill-growth.native.mjs
+# Native replay accepts ARPG_BASE_URL for the parent production run.
+# Optional matrix filters: ARPG_GROWTH_MODES, ARPG_GROWTH_WIDTHS,
+# ARPG_GROWTH_FAMILIES, ARPG_GROWTH_LEVELS; comma-separated.
+```
+
+New skill checklist (applies on every addition): define actual bounded level
+progression or explicitly document no gameplay growth; share current/next UI
+values with host scheduling; preserve save thresholds and existing skill behavior;
+test milestone/boundary levels, MP/CD, finite effects, mastery credit, ownership,
+dodge/rewind, solo/host/guest profile flow, and native PC/touch with real relay
+snapshots. Decorative VFX alone never establishes gameplay growth.

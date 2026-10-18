@@ -14,6 +14,8 @@ import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep
 
 import { lockSpellPoint } from '../sim/spell-zones.js';
 
+import { skillGrowth } from '../content/skill-growth.js';
+
 const PHASES = ['windup', 'lock', 'active', 'recovery'];
 const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 const AUTO_AIM_RANGE = 560, AUTO_SHOT_REACH = 0.85;
@@ -53,7 +55,8 @@ function startAct(p, abilityId, facing) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
-  p.act = { ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
+  p.act = { ...(growth && growth.count !== skillGrowth(abilityId).count ? { growth } : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }

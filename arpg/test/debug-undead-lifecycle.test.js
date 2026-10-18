@@ -8,6 +8,7 @@ import { createSkeletonSave } from '../js/meta/character-creation.js';
 import { readKnight } from '../js/meta/initial-characters.js';
 import { SLOT_SAVE_KEYS } from '../js/meta/character-slots.js';
 import { createWorld, addPlayer, startStage, setLoad } from '../js/sim/world.js';
+import { masteryLevels } from '../js/meta/skill-mastery.js';
 import { loadoutOf } from '../js/meta/skills.js';
 import { currentLoad, createTracker, buildRoundMods } from '../js/meta/run.js';
 import { ITEMS, equippedItem } from '../js/meta/items.js';
@@ -54,9 +55,9 @@ function harness({ absent=false, failure=null, oldWorld=false }={}) {
  const debugContext=source.slice(source.indexOf('      get undead()'),source.indexOf('      get world() { return world; }, get save()'));
  const frame=source.slice(source.indexOf('  function frame(now)'),source.indexOf('  requestAnimationFrame(frame);\n} catch'));
  let scheduled=0;
- const boot=new Function('HubUI','store','saved','renderer','input','audio','hud','document','debugValue','importer','createWorld','addPlayer','loadoutOf','currentLoad','createTracker','matchMedia','performance','buildRoundMods','ITEMS','equippedItem','startStage','crypto','closeCoop','requestAnimationFrame','app','setLoad','showArrival','readKnight','localStorage',
+ const boot=new Function('HubUI','store','saved','renderer','input','audio','hud','document','debugValue','importer','createWorld','addPlayer','loadoutOf','currentLoad','createTracker','matchMedia','performance','buildRoundMods','ITEMS','equippedItem','startStage','crypto','closeCoop','requestAnimationFrame','app','setLoad','showArrival','readKnight','localStorage','masteryLevels',
  `${globals}\nconst characters={assertOwner(){},active:{}}; debug=debugValue; ${lifecycle}\n${coop}\n${frame}\nreturn {hub,startUndead,leaveUndead,startCoop,frame,debugContext:({${debugContext}}),setCoop(c){coop=c;},setWorld(w){world=w;},state:()=>({undead,undeadStarting,world,running,roundSave,tracker})};`);
- const api=boot(Hub,{save:s=>writes.push(['save',s]),reset:()=>writes.push(['reset'])},human,renderer,input,audio,hud,{hidden:false,querySelector:id=>nodes[id]||null,createElement:()=>({style:{},addEventListener(){},remove(){}}),body:{append(){}}},debug,importer,createWorld,addPlayer,loadoutOf,currentLoad,createTracker,()=>({matches:false}),{now:()=>1},buildRoundMods,ITEMS,equippedItem,startStage,{getRandomValues:a=>a},()=>{},()=>scheduled++,{render(){}},setLoad,()=>{},readKnight,storage);
+ const api=boot(Hub,{save:s=>writes.push(['save',s]),reset:()=>writes.push(['reset'])},human,renderer,input,audio,hud,{hidden:false,querySelector:id=>nodes[id]||null,createElement:()=>({style:{},addEventListener(){},remove(){}}),body:{append(){}}},debug,importer,createWorld,addPlayer,loadoutOf,currentLoad,createTracker,()=>({matches:false}),{now:()=>1},buildRoundMods,ITEMS,equippedItem,startStage,{getRandomValues:a=>a},()=>{},()=>scheduled++,{render(){}},setLoad,()=>{},readKnight,storage,masteryLevels);
  const initial=oldWorld ? createWorld() : null;if(initial)addPlayer(initial,{pid:'local'});api.setWorld(initial);
  const resolve=i=>imports[i].resolve(mod);
  const restored=()=>{assert.equal(api.state().undeadStarting,false);assert.equal(api.hub.save,human);assert.equal(api.state().undead,null);assert.equal(api.state().world,initial);assert.equal(api.state().running,false);assert.equal(root.hidden,false);assert.equal(root.inert,false);assert.equal(root.textContent,'original hub intro/inn');assert.equal(nodes['#hud'].hidden,true);assert.equal(hud.stage,'human');assert.equal(hud.nodes.dodge.disabled,false);assert.equal(input.enabled,false);assert.equal(renderer.root.visible,false);assert.equal(provider.factories.get('blade'),blade);assert.equal(provider.factories.get('undead_lab_human_melee'),previousHuman);assert.equal(JSON.stringify(human),raw);assert.deepEqual(writes,[]);};
