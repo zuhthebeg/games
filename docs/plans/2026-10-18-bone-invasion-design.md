@@ -1,0 +1,13 @@
+# Approved bone set and consent invasion design
+
+User 6290148363 approved reply 30537 in message 30551 (2026-10-18): all recommended design, drop option 1.
+
+- Explicit opt-in invasion rooms only. Ordinary coop remains default and cannot accept hostile skeletons. Skeleton participant is opposing monster-team player, never trusted to self-assign authority. Host validates lineage/role/config, team and actions; reject invalid profiles before world creation. No relay/auth/global changes.
+- Undead bone material creates five parts: weapon/head/body/hands/feet; shield excluded. Existing crafting/discovery, UI, gear appearance, storage validation and dismantle contracts apply. Tune recipe costs and enhancement probabilities conservatively and document exact numbers; every attempt from +0 has visible destruction risk; blessing cannot bypass it. No paid/new dependencies/art generation required.
+- Full equipped set arms ONE revival per sortie. On lethal damage replace death with 30% max HP and skeleton transformation. Not permanent lineage/slot conversion. Once consumed, equipment toggles/reconnect/reload cannot replenish within same sortie. Normal new sortie resets. Must integrate existing death/terminal/quest and host snapshot semantics.
+- Revived skeleton is not first targeted by ordinary undead unless provoked; bosses and hostile skeleton players excluded. Retaliation after player attack remains possible. Preserve friendly-team, ranged targeting, aggro and quest completion contracts.
+- Drop ONLY current sortie unbanked loot; owned gear, carried pre-run items and stored items protected. Host owns drop ledger, unique IDs, claims, theft and settlement; remove transferred loot from victim before granting to looter. Replayed/out-of-order/repeated claim/settlement/disconnect must not duplicate. Do not advertise anti-cheat guarantees for local storage. Client requests cannot supply item/value/owner or claim arbitrary distance/dead state. Reuse existing loot lifecycle where possible. Define atomic per-session idempotence and safe loss on unrecoverable host loss, never fallback grant.
+- Monster loot continues existing behavior. No full inventory loss. Revival intercepts death before death-drop, first actual later death drops once. PVP must not trigger ordinary stage success from monster counts and must not let hostile players collect human victory rewards.
+- Preserve previous hidden skeleton entry, archive migration, compact inn, critical-only hurt, shield/twohand, input queue30, deterministic 30Hz host sim, 400ms iframe/300ms rewind.
+
+Boundary: isolated fixtures and fresh contexts only. No user saves/private profiles/screenshots, no server/config/auth/deps/paid changes. Parent owns integration/push/deploy.

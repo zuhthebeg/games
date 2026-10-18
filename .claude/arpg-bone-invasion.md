@@ -1,0 +1,2 @@
+# ARPG approved current task
+Read docs/plans/2026-10-18-bone-invasion-design.md and 2026-10-18-bone-invasion.md. These supersede unrelated merge-drop task in root CLAUDE.md. Layering: content immutable catalog, meta pure save/run reducers, sim deterministic host world, net authoritative session/snapshot, main orchestration, UI DOM. Only edit arpg and these task-specific docs. Unit first, preserve nonbone/default-coop behavior. Single editor in isolated tree. No private user data/screenshots/deps/server/global changes/push. Parent reviews and releases.
