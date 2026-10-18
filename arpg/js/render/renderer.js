@@ -4,7 +4,7 @@ import { paintDragonVfx } from './dragon-presentation.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
-import { DANGER_COLORS } from '../content/monsters.js';
+import { DANGER_COLORS, MONSTER_VARIANTS } from '../content/monsters.js';
 import { ABILITIES, MONSTERS } from '../content/combat.js';
 import { paintSpellZones } from './spell-zones.js';
 import { healingFeedback } from './healing-feedback.js';
@@ -477,7 +477,11 @@ export class ArenaRenderer {
       const kick = this.reduced ? 0 : kickEnvelope(view.kickAge);
       if (!frozen) view.kickAge = Math.min(FEEL.kick.life, view.kickAge + visualDelta);
       view.visual.container.position.set(view.x + view.kickX * kick, view.y + view.kickY * kick);
-      view.visual.container.scale.set(1 + kick * FEEL.kick.squash, 1 - kick * FEEL.kick.squash);
+      // Match authored sim boss identity; scale the outer visual once, including lazy atlas swaps.
+      // Ground anchors, shadows and authoritative attack/collision geometry stay unchanged.
+      const bossScale = entity.kind === 'monster' && (entity.boss || MONSTERS[entity.type]?.boss
+        || entity.type === 'goblin_chief' || MONSTER_VARIANTS[entity.type]?.speciesTags.includes('boss')) ? 2 : 1;
+      view.visual.container.scale.set(bossScale * (1 + kick * FEEL.kick.squash), bossScale * (1 - kick * FEEL.kick.squash));
       view.visual.container.zIndex = view.y;
       view.shadow.position.set(view.x, view.y);
       if (view.footHp) {
