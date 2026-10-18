@@ -171,6 +171,12 @@ export class ArenaRenderer {
 
   ensure(entity) {
     let view = this.views.get(entity.id);
+    if (view && !!view.skeletal !== !!entity.skeletal) {
+      view.visual.destroy?.(); view.visual.container.destroy({ children: true });
+      view.visual = this.provider.createVisual(entity);
+      this.layers.entities.addChild(view.visual.container);
+      view.skeletal = !!entity.skeletal;
+    }
     if (view)
       return view;
     const visual = this.provider.createVisual(entity), shadow = new Graphics()
@@ -202,7 +208,7 @@ export class ArenaRenderer {
       footHp = { container, bar, label, state: '' };
     }
     view = {
-      bluntCharge, sunder, footHp, statusRing,
+      skeletal: !!entity.skeletal, bluntCharge, sunder, footHp, statusRing,
       visual,
       shadow,
       portal,

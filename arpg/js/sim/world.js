@@ -99,6 +99,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     hurtInvuln: 0,
     potions: mods.potions ?? 3, manaPotions: mods.manaPotions ?? 0, potionCd: 0,
     scrolls: mods.scrolls ?? 1, scrollRetry: 0, channel: 0,
+    ...(mods.boneRevival === true ? { boneRevival: true, boneRevivalReady: true } : {}),
     dead: false, terminal: null, deathCause: null,
   };
   tickCombo(ent);
@@ -458,10 +459,12 @@ function stepMonster(world, m) {
 }
 
 function pickTarget(world, m) {
-  let cur = world.entities.find((e) => e.id === m.targetId && e.kind === 'player' && alive(e));
+  const eligible = e => e.kind === 'player' && alive(e) && e.team !== m.team
+    && !(e.skeletal && MONSTERS[m.type]?.lifeState === 'undead' && !isBoss(m) && !m.provokedBy?.includes(e.id));
+  let cur = world.entities.find((e) => e.id === m.targetId && eligible(e));
   let best = null, bestD = Infinity;
   for (const e of world.entities) {
-    if (e.kind !== 'player' || !alive(e)) continue;
+    if (!eligible(e)) continue;
     const d2 = dist2(m.x, m.y, e.x, e.y);
     if (d2 < bestD) { bestD = d2; best = e; }
   }
@@ -781,6 +784,7 @@ function applyHit(world, t, hit) {
   if (blocked) {
     world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg});
   }
+  if (mdef && attacker?.kind === 'player' && hostile && attacker.skeletal) t.provokedBy = [...new Set([...(t.provokedBy || []), attacker.id])];
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
 
@@ -816,6 +820,18 @@ function applyHit(world, t, hit) {
       t.channel = 0;
       t.scrollRetry = ticks(PB.scroll.retryMs);
       world.events.push({ type: 'channelBroken', id: t.id });
+    }
+    if (t.hp <= 0 && t.boneRevivalReady) {
+      t.boneRevivalReady = false;
+      t.skeletal = true;
+      t.hp = Math.max(1, Math.round(t.maxHp * 0.3));
+      t.poison = null;
+      delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil;
+      t.pendingCounter = null; t.channel = 0; t.kx = 0; t.ky = 0;
+      if (t.shieldGuard) t.shieldGuard.left = 0;
+      if (t.act) endAct(world, t, true);
+      world.events.push({ type: 'revive', id: t.id, pid: t.pid, hp: t.hp, x: t.x, y: t.y });
+      return;
     }
     if (t.hp <= 0) {
       t.hp = 0;
