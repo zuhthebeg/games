@@ -50,7 +50,7 @@ export function equippedSets(save) {
 }
 export function setBonuses(save) {
   const totals={};
-  for(const set of equippedSets(save))for(const b of set.bonuses)if(b.active)for(const key of ['maxHp','capacity','ac','hpRegen'])if(b[key])totals[key]=(totals[key]||0)+b[key];
+  for(const set of equippedSets(save))for(const b of set.bonuses)if(b.active)for(const key of ['maxHp','capacity','ac','hpRegen','speed_pct','mpRegen','atk_pct'])if(b[key])totals[key]=(totals[key]||0)+b[key];
   return totals;
 }
 export function deriveMods(save) {
@@ -61,7 +61,7 @@ export function deriveMods(save) {
   const affixes = affixTotals(gear);
   const family = ITEMS[weapon?.id]?.family || 'blade';
   const manaWis = Math.max(0, stats.wis - S.base);
-  const weaponDamage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
+  const weaponDamage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + (affixes.atk_pct + (sets.atk_pct || 0)) / 100)
     * (1 + 0.03 * (save.level - 1));
   // Skills-v2 §4: every family the held weapon may fire gets weapon damage × its share; magic always scales with INT.
   const familyDamage = (skillFamily) => {
@@ -78,11 +78,11 @@ export function deriveMods(save) {
     ...(permitsShield(ITEMS[weapon?.id]) && ITEMS[equippedItem(save, 'offhand')?.id]?.form === 'shield' ? { offhand: 'shield' } : {}),
     ...(ITEMS[weapon?.id]?.affinity ? { staffAffinity: ITEMS[weapon.id].affinity } : {}),
     maxMp: S.mpBase + S.mpPerLevel * (save.level - 1) + S.mpPerWis * manaWis,
-    mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100),
+    mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100) + (sets.mpRegen || 0),
     hpRegen: S.hpRegenAt100 * stats.con / 100 + (sets.hpRegen || 0),
     critChance: S.luckCrit * norm(stats.luk), critMult: S.critMult,
     dropLuck: S.luckDrop * norm(stats.luk), enchantLuck: S.luckEnchant * norm(stats.luk),
-    speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
+    speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100) * (1 + (sets.speed_pct || 0) / 100),
     dodgeCdMult: Math.max(S.dodgeFloor, 1 - S.dodge * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
     iframeBonusMs: Math.min(S.iframeCap, S.iframe * eff(stats.agi)),
     potionHealMult: (1 + Math.min(S.potionCap, S.potion * eff(stats.wis))) * (1 + affixes.potion_pct / 100),

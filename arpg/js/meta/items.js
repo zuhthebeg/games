@@ -125,8 +125,12 @@ for (const [slot,base,bones,gold] of [['head','head_medium_fine_t1',6,50],['feet
 }
 for (const [id,def] of Object.entries(ITEMS)) {
   const setId=def.boneSet ? 'bone' : ['boar_hide_armor','boar_cap','boar_boots'].includes(id) ? 'boar'
-    : ['warden_blade','warden_maul','warden_plate'].includes(id) ? 'warden' : null;
-  if(setId)Object.assign(def,{setId,setName:{bone:'뼈',boar:'멧돼지',warden:'파수꾼'}[setId]});
+    : ['warden_blade','warden_maul','warden_plate'].includes(id) ? 'warden'
+    : ['hunter_bow','leather_vest'].includes(id) ? 'hunter'
+    : ['ossuary_maul','ossuary_plate'].includes(id) ? 'ossuary'
+    : ['soulfire_wand','gravekeeper_staff','shroud_robe'].includes(id) ? 'soulfire'
+    : ['dragonfang_blade','dragon_scale_armor'].includes(id) ? 'dragon' : null;
+  if(setId)Object.assign(def,{setId,setName:{bone:'뼈',boar:'멧돼지',warden:'파수꾼',hunter:'사냥꾼',ossuary:'납골당',soulfire:'넋불',dragon:'수호룡'}[setId]});
 }
 // Add rarity variants for every existing base, retaining original IDs and original stats.
 for (const [id, base] of Object.entries(ITEMS)) {
