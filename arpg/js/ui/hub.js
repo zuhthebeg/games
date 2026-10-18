@@ -21,7 +21,7 @@ import {
 import { enchant, enchantPreview, crackGreaterStone } from '../meta/enchant.js';
 import { noteMaterials, seenMaterials, recipeRevealed } from '../meta/recipe-discovery.js';
 import { ENCHANT, STONE, GREATER_STONE, ENCHANT_STONES } from '../meta/economy.js';
-import { createSave, DEFAULT_AUTO_BUY } from '../meta/save.js';
+import { createSave, DEFAULT_AUTO_BUY, RETIRED_SCROLLS } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
 import { icon, itemIcon } from './icons.js';
 import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
@@ -280,9 +280,11 @@ export class HubUI {
       `<i class="${position <= index ? 'lit' : ''}" aria-hidden="true"></i>`).join('');
     const choices = question.options.map((option, choice) =>
       button(escape(option.text), 'answer', `data-choice="${choice}" class="quiz-option"`)).join('');
+    const hiddenChoice = index === 0 && this.initialCharacters && this.creationLineage !== 'skeleton_knight'
+      ? button('인간을 증오한다.', 'answer-skeleton', 'class="quiz-option"') : '';
     this.show(this.panelHtml(escape(question.text), `
       <div class="quiz-dots" aria-label="문답 ${index + 1} / 5">${dots}</div>
-      <div class="choice-list">${choices}</div>${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`, `소환 문답 · ${index + 1} / 5`), 'quiz');
+      <div class="choice-list">${choices}${hiddenChoice}</div>${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`, `소환 문답 · ${index + 1} / 5`), 'quiz');
   }
 
   showQuizResult() {
@@ -366,7 +368,7 @@ export class HubUI {
     const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
       <p class="recovery inn-recovery">${icon('clear')}<strong>${this.hubCopy('HP·MP 회복', '관에서 안식')}</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family] * weaponAttackMultiplier(false, WEAPONS[mods.family].basic, null, mods.handedness))}</b></span></p>
-      ${this.weightHtml()}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
+      ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}${this.weightHtml()}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
@@ -1089,6 +1091,30 @@ export class HubUI {
         if (save) return this.showInn();
         this.creationLineage = 'skeleton_knight'; this.answers = []; this.chosenWeapon = undefined;
         return this.showName();
+      }
+      case 'answer-skeleton': {
+        if (!this.initialCharacters || this.answers.length !== 0 || this.creationLineage === 'skeleton_knight') return;
+        const save = this.initialCharacters.read(true); // Acquire the real slot owner before any creation.
+        if (save) {
+          return this.show(this.panelHtml('이미 깨어난 해골이 있다', `
+            <p>${escape(save.name)}의 모험을 이어갈 수 있습니다. 새 캐릭터로 덮어쓰지 않습니다.</p>
+            ${button('기존 해골 이어하기', 'skeleton-resume')}
+            ${button('취소 · 문답으로', 'skeleton-resume-cancel')}`), 'skeleton-resume');
+        }
+        this.save = null; this.receipt = null;
+        this.creationLineage = 'skeleton_knight'; this.chosenWeapon = undefined;
+        this.answers.push(0); // Narrative action, not a fifth answer value in the save schema.
+        return this.showQuiz();
+      }
+      case 'skeleton-resume-cancel':
+        this.initialCharacters.cancel(); // Restore original draft owner; never reload/quarantine human bytes.
+        return this.showQuiz();
+      case 'skeleton-resume': {
+        const save = this.initialCharacters.read(); // Recheck an occupied slot after the prompt.
+        if (!save) throw new Error('해골 저장 슬롯이 변경되었습니다. 취소 후 다시 선택하세요.');
+        this.save = save; this.receipt = save.lastReceipt ?? null;
+        this.creationLineage = null;
+        return this.showInn();
       }
       case 'weapon-confirm': return this.confirmEquipment(data);
       case 'weapon-cancel': return this.cancelEquipment();

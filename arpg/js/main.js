@@ -463,6 +463,7 @@ try {
       const url = new URL(location.href); url.searchParams.set('character', character);
       history.replaceState(null, '', url);
     };
+    let humanDraftSelection = null;
     hub.initialCharacters = {
       human: () => {
         const save = characters.selectHuman();
@@ -471,11 +472,18 @@ try {
         world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
         chooseUrl('human'); return save;
       },
-      read: () => {
-        const save = characters.selectKnight();
+      read: (fromQuiz = false) => {
+        const owner = characters.active, notice = hub.equipmentNotice;
+        const save = characters.selectKnight({ persistRepairs: !fromQuiz });
+        if (fromQuiz) humanDraftSelection = { owner, notice };
         hub.equipmentNotice=characters.equipmentNotice;
         world = null; running = false; tracker = null; roundSave = null; roundOwner = null;
         chooseUrl('skeleton_knight'); return save;
+      },
+      cancel: () => {
+        characters.active = humanDraftSelection.owner;
+        characters.equipmentNotice = hub.equipmentNotice = humanDraftSelection.notice;
+        chooseUrl('human');
       },
       create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
