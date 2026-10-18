@@ -2,6 +2,22 @@ import { CoopSession } from './session.js';
 import { STAGES } from '../content/combat.js';
 import { connectBroadcast } from './loopback.js';
 
+// Invitations carry room mode, not the host's character slot or test identity.
+export function invitationUrl(href, room, invasion) {
+  const url = new URL(href);
+  url.searchParams.set('room', room); url.searchParams.set('relay', 'do');
+  for (const key of ['u', 'coopTest', 'coopRelayTest']) url.searchParams.delete(key);
+  if (invasion) { url.searchParams.set('invasion', '1'); url.searchParams.delete('character'); }
+  else { url.searchParams.delete('invasion'); url.searchParams.set('character', 'human'); }
+  return url.toString();
+}
+export function roomEntry(query) {
+  const soloSelected = query.get('character') === 'skeleton_knight';
+  const invasionInvite = query.has('room') && query.get('invasion') === '1';
+  return { soloSelected, invasionInvite,
+    legacyEntry: !invasionInvite && !soloSelected && (query.get('debug') === '1' || query.get('dev') === '1' || query.has('room')) };
+}
+
 export class CoopLobby {
   constructor({ profile, config, onSession, onLeave, ...callbacks }) {
     Object.assign(this, { profile, config, onSession, onLeave, callbacks });
@@ -18,6 +34,7 @@ export class CoopLobby {
         if (type === 'event') this.action(event?.data);
       },
     });
+    this.lobby._inviteUrl = () => invitationUrl(location.href, this.lobby.room, !!this.config.invasion);
     const renderLobby = this.lobby._renderLobby.bind(this.lobby);
     this.lobby._renderLobby = () => { renderLobby(); this.renderConfig(); };
     // Same started + roster.started fallback as spudsquad: relay has no initial state callback.

@@ -1,7 +1,7 @@
 import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
-import { CoopLobby } from './net/lobby.js';
+import { CoopLobby, roomEntry } from './net/lobby.js';
 import { equipmentVisual } from './render/paperdoll-state.js';
 import { emptyInput } from './sim/world.js';
 import { selectThreat, unlockedThreat } from './meta/run.js';
@@ -72,8 +72,7 @@ try {
   const characters = new CharacterStores(localStorage);
   const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
-  const soloSelected = bootQuery.get('character') === 'skeleton_knight';
-  const legacyEntry = !soloSelected && (bootQuery.get('debug') === '1' || bootQuery.get('dev') === '1' || bootQuery.has('room'));
+  const { soloSelected, invasionInvite, legacyEntry } = roomEntry(bootQuery);
   // Human loading may quarantine old/corrupt bytes: defer until human is selected.
   const saved = legacyEntry ? store.load() : null;
   const app = new Application();
@@ -336,6 +335,8 @@ try {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
+    const entryQuery = new URLSearchParams(location.search);
+    if (entryQuery.has('room') && (entryQuery.get('invasion') === '1') !== invasion) throw new Error('초대 링크의 방 모드가 다릅니다. 침입 동의방과 일반 협동방은 분리됩니다.');
     if (!invasion && hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골은 침입 동의방에서 몬스터 편으로 참가하세요.');
     characters.assertOwner();
     roundOwner = characters.active;
@@ -478,6 +479,7 @@ try {
     }),
   });
   document.querySelector('#boot').hidden = true;
+  hub.invasionInvite = invasionInvite;
   if (!legacyEntry) {
     const chooseUrl = character => {
       const url = new URL(location.href); url.searchParams.set('character', character);
@@ -508,12 +510,12 @@ try {
       create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
     hub.ready();
-    if (soloSelected && bootQuery.has('room')) hub.error('해골는 솔로만 지원합니다. 협동 방에 들어갈 수 없습니다.');
+    if (soloSelected && bootQuery.has('room') && !invasionInvite) hub.error('일반 협동방에는 해골로 들어갈 수 없습니다. 침입 동의방 초대 링크를 사용하세요.');
     else if (soloSelected) {
       try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
     } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
   } else hub.ready();
-  if (saved && new URLSearchParams(location.search).has('room')) startCoop('S2', 1, new URLSearchParams(location.search).get('invasion') === '1');
+  if (saved && bootQuery.has('room') && !invasionInvite) startCoop('S2', 1);
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';
   try {

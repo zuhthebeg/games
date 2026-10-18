@@ -308,7 +308,7 @@ export class HubUI {
       <p>${escape(this.name)}, ${knight ? '해골 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
       ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기존 근접 무기 규칙을 사용합니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
-      ${button(knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
+      ${button(this.invasionInvite ? '캐릭터 생성 · 침입 동의 확인' : knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
@@ -358,6 +358,7 @@ export class HubUI {
   // --- Inn: the room shows the hero with five equipment sockets; NPCs sit below. ---
 
   showInn() {
+    if (this.invasionInvite) { this.invasionInvite = false; return this.showInvasionConsent(); }
     this.panel = null;
     this.recoverVitals();
     const pins = SLOTS.map(slot => `<i class="pin-${slot} ${equippedItem(this.save, slot) ? 'worn' : ''}"></i>`).join('');
@@ -945,7 +946,7 @@ export class HubUI {
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
-    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `${this.save.lineage === 'skeleton_knight' ? '' : '<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button>'}<button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
   }
 
   sideQuestsHtml(regionId) {
@@ -980,7 +981,7 @@ export class HubUI {
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
       <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      ${this.save.lineage === 'skeleton_knight' ? '' : '<button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button>'}<button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
@@ -1180,7 +1181,7 @@ export class HubUI {
         this.commit(createSave({
           name: this.name, answers: this.answers, weapon: this.chosenWeapon, createdAt: Date.now(),
         }));
-        return this.launch('S1');
+        return this.invasionInvite ? this.showInn() : this.launch('S1');
       case 'inn':
       case 'result-inn': return this.showInn();
       case 'character-tab':
