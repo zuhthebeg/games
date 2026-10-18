@@ -169,6 +169,7 @@ export function validateSave(save) {
         && ['stacks', 'lootKept', 'lootLost'].includes(entry.source)
         && Object.hasOwn(RETIRED_SCROLLS, entry.id) && integer(entry.count))
       || new Set(save.retiredScrolls.map(entry => `${entry.source}:${entry.id}`)).size !== save.retiredScrolls.length)) return false;
+    for (const key of ['activeInvasion', 'invasionReceiptId']) if (save[key] !== undefined && (typeof save[key] !== 'string' || !/^[a-zA-Z0-9:_-]{1,160}$/.test(save[key]))) return false;
     if (save.lastReceipt !== undefined && !validReceipt(save.lastReceipt)) return false;
     // Optional side-contract ledger; absent on every older save means no contract taken.
     if (save.quests !== undefined && !validQuests(save.quests)) return false;

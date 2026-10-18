@@ -154,7 +154,7 @@ const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'sc
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
   return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
-    round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat']),
+    round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat', 'invasion', 'invasionExitAt']),
     ...(world.round.objective ? { objective: structuredClone(world.round.objective) } : {}), pending: world.round.pending.length,
     entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION),
         pendingCounter: !!e.pendingCounter,

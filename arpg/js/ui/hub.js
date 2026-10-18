@@ -908,7 +908,7 @@ export class HubUI {
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
     }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
-    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
   }
 
   sideQuestsHtml(regionId) {
@@ -943,11 +943,20 @@ export class HubUI {
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
       <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
     'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: '출정 확인', back: 'board' });
+  }
+
+  showInvasionConsent() {
+    const invader = this.save.lineage === 'skeleton_knight';
+    this.showInnPanel('침입 동의방', `<p>일반 협동과 분리된 적대 전투입니다. 모두 동의한 방에서만 시작합니다.</p>
+      <p>내 역할: <b>${invader ? '해골 · 몬스터 편' : '인간 · 사냥꾼 편'}</b></p>
+      <p>사망하면 이번 출정에서 얻고 아직 확보하지 않은 전리품만 바닥에 남습니다. 적이 가까이 오면 가져갑니다. 원래 소지품·착용 장비·창고는 잃지 않습니다.</p>
+      <p>해골은 인간의 퀘스트 클리어 보상을 받지 않습니다. 인간 전원 퇴장 뒤 10초간 전리품을 줍고 자동 귀환합니다. 방장 연결이 끊기면 미확정 전리품은 확보하지 못합니다.</p>`,
+      'invasion-consent', button('위험에 동의하고 방 입장', 'invasion-accept', 'class="primary danger"'), { eyebrow: '명시적 참가 동의', back: 'board' });
   }
 
   launch(stage, reduced = false, weapon = null) {
@@ -1335,6 +1344,12 @@ export class HubUI {
         this.commit(allocateStats(this.save, this.draft));
         return this.allocationRequired ? this.showReceipt() : this.showAllocation(false);
       // Board
+      case 'invasion':
+        return this.showInvasionConsent();
+      case 'invasion-accept': {
+        const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
+        return this.startCoop?.(stage, this.sortieThreat || 1, true);
+      }
       case 'coop': {
         const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
         return this.startCoop?.(stage, this.sortieThreat || 1);

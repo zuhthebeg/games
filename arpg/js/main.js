@@ -20,7 +20,7 @@ import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { CharacterStores } from './meta/selected-character.js';
 import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
-import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from './meta/run.js';
+import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, settleInvasion, emptyLoot, currentLoad } from './meta/run.js';
 
 let world = null;
 let running = false;
@@ -303,7 +303,8 @@ try {
     if (coopResult || !world) return;
     const player = world.entities[0];
     if (!player.terminal) return;
-    coopResult = settleRound(roundSave, {
+    if (world.round.invasion && !world.invasionAccount?.terminal) return;
+    coopResult = world.round.invasion ? settleInvasion(roundSave, world.invasionAccount) : settleRound(roundSave, {
       stageId: world.round.stageId, terminal: player.terminal,
       depositedXp: tracker.depositedXp, tempLoot: tracker.tempLoot, used: usedConsumables(roundSave, player), skillMastery: tracker.skillMastery,
     });
@@ -331,18 +332,23 @@ try {
     hud.nodes.notice.textContent = arrivalNotice(seen ? { cleared: { [stageId]: true } } : save, stageId);
     hud.noticeLeft = 4;
   }
-  function startCoop(stageId, threat) {
+  function startCoop(stageId, threat, invasion = false) {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
-    if (hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골는 솔로만 지원합니다. 협동 미지원.');
+    if (!invasion && hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골은 침입 동의방에서 몬스터 편으로 참가하세요.');
     characters.assertOwner();
     roundOwner = characters.active;
     // The host chooses on the existing departure panel; guests retain their own build/save.
     const localSave = structuredClone(hub.save);
+    if (invasion) {
+      localSave.activeInvasion = crypto.randomUUID();
+      characters.persist(localSave, roundOwner);
+      hub.save = localSave;
+    }
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
     const load = currentLoad(localSave, createTracker(0));
-    const profile = { name: localSave.name, level: localSave.level, weapon,
+    const profile = { lineage: localSave.lineage || 'human', ...(invasion ? { invasionConsent: true, role: localSave.lineage === 'skeleton_knight' ? 'invader' : 'hunter', rewardSave: localSave } : {}), name: localSave.name, level: localSave.level, weapon,
       mods: buildRoundMods(localSave), skillMasteryLevels: masteryLevels(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
       threats: Object.fromEntries(Object.keys(STAGES).map(id => [id, unlockedThreat(localSave, id)])),
       stages: availableStages(localSave) };
@@ -352,7 +358,7 @@ try {
     const profileOwner = characters.active;
     let lobby;
     const ownsLobby = () => characters.active === profileOwner && coop === lobby;
-    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
+    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat, ...(invasion ? { invasion: true } : {}) },
       onSession: session => {
         if (!ownsLobby()) return;
         coopSession = session; guestTime = performance.now();
@@ -381,7 +387,13 @@ try {
           renderer.root.visible = renderer.warning.visible = true;
           hud.begin(view, loadoutOf(roundSave)); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
         }
-        const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]), view, coopSession.uid);
+        let progress;
+        if (view.round.invasion) {
+          const account = view.invasionAccount;
+          if (!account) return; // Never fall back to client-rolled rewards.
+          tracker = { ...tracker, tempLoot: structuredClone(account.tempLoot), depositedXp: account.depositedXp, skillMastery: account.skillMastery };
+          progress = { tracker, fx: [], load: currentLoad(roundSave, tracker, usedConsumables(roundSave, view.entities[0])) };
+        } else progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]), view, coopSession.uid);
         tracker = progress.tracker; coopLoad = progress.load.ratio;
         if (coopSession.isHost) setLoad(coopSession.world, coopSession.uid, coopLoad);
         renderer.events(view, [...events, ...progress.fx]);
@@ -399,6 +411,13 @@ try {
           return;
         }
         coopNote = message;
+        if (world.round.invasion && !coopResult) {
+          tracker.tempLoot = emptyLoot(); // Host loss never grants cached or guessed ownership.
+          world.invasionAccount = { token: roundSave.activeInvasion, stageId: world.round.stageId,
+            role: profile.role, terminal: 'return_scroll', tempLoot: emptyLoot(), depositedXp: 0,
+            used: usedConsumables(roundSave, world.entities[0]), skillMastery: {} };
+          coopNote = '방장 연결 종료: 미확정 전리품은 확보하지 못했습니다. 원래 소지품과 장비는 유지됩니다.';
+        }
         if (!world.entities[0].terminal) world.entities[0].terminal = 'return_scroll';
         settleCoopPlayer(); finishCoop(); closeCoop();
       },
@@ -493,7 +512,7 @@ try {
       try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
     } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
   } else hub.ready();
-  if (saved && new URLSearchParams(location.search).has('room')) startCoop('S2', 1);
+  if (saved && new URLSearchParams(location.search).has('room')) startCoop('S2', 1, new URLSearchParams(location.search).get('invasion') === '1');
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';
   try {

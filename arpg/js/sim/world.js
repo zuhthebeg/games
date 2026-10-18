@@ -1049,10 +1049,17 @@ function stepRound(world, inputs) {
     return false;
   });
   const players = world.entities.filter((e) => e.kind === 'player');
-  const cleared = rd.goal === 'objective' ? objectiveCleared
-    : rd.goal === 'timer' ? rd.t >= rd.timerTicks : !rd.pending.length && aliveCount === 0;
+  const invaders = players.filter(p => p.invasionRole === 'invader');
+  const hunters = players.filter(p => p.invasionRole !== 'invader');
+  const cleared = !invaders.some(alive) && (rd.goal === 'objective' ? objectiveCleared
+    : rd.goal === 'timer' ? rd.t >= rd.timerTicks : !rd.pending.length && aliveCount === 0);
   if (cleared) {
-    for (const p of players) if (!p.terminal && (!rd.objective || alive(p) && p.hp > 0)) { p.terminal = 'clear'; p.pendingCounter = null; }
+    for (const p of hunters) if (!p.terminal && (!rd.objective || alive(p) && p.hp > 0)) { p.terminal = 'clear'; p.pendingCounter = null; }
+  }
+  // Last defender gone: leave ten seconds for the survivor to collect death loot, then extract without a consumable.
+  if (rd.invasion && hunters.every(p => p.terminal) && invaders.some(alive)) {
+    rd.invasionExitAt ??= rd.t + ticks(10000);
+    if (rd.t >= rd.invasionExitAt) for (const p of invaders) if (!p.terminal) p.terminal = 'return_scroll';
   }
   if (players.length && players.every((p) => p.terminal)) {
     rd.state = players.some((p) => p.terminal === 'clear') ? 'clear'

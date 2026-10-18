@@ -121,7 +121,7 @@ export function trackRound(save, tracker, events, used = {}, world = null, pid =
   return { tracker: next, fx, load: load() };
 }
 
-export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot = emptyLoot(), used = {}, skillMastery = {} }) {
+export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot = emptyLoot(), used = {}, skillMastery = {}, invasionToken = null }) {
   if (!Object.hasOwn(STAGE_XP, stageId)
     || !['clear', 'return_scroll', 'death'].includes(terminal)) throw new Error('Invalid settlement');
   if (!Number.isSafeInteger(depositedXp) || depositedXp < 0) throw new Error('Invalid XP deposit');
@@ -130,7 +130,8 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   tempLoot = structuredClone(tempLoot);
   const questLoot = tempLoot.quest;
   delete tempLoot.quest;
-  tempLoot.items = stageId === 'S1' ? [] : tempLoot.items.slice(0, 2);
+  const invasion = invasionToken !== null && invasionToken === save.activeInvasion;
+  tempLoot.items = invasion ? tempLoot.items : stageId === 'S1' ? [] : tempLoot.items.slice(0, 2);
   const threat = stageId === 'S1' ? 1 : save.threat ?? 1;
   selectThreat(save, stageId, threat);
   let next = cloneSave(save);
@@ -242,4 +243,19 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   // Optional v1 metadata keeps the innkeeper's last-run summary across browser reloads.
   next.lastReceipt = structuredClone(receipt);
   return { save: next, receipt };
+}
+
+// Applies only a terminal host ledger receipt matching this locally persisted sortie token.
+// Clearing the token and banking resources are one save write; old/replayed receipts cannot grant again.
+export function settleInvasion(save, account) {
+  if (!account || typeof account.token !== 'string') throw new Error('Missing invasion receipt');
+  if (save.invasionReceiptId === account.token) return {save,receipt:save.lastReceipt};
+  if (save.activeInvasion !== account.token || !['clear','return_scroll','death'].includes(account.terminal)
+    || !['hunter','invader'].includes(account.role) || account.role === 'invader' && account.terminal === 'clear') throw new Error('Invalid invasion receipt');
+  const result=settleRound(save,{stageId:account.stageId,terminal:account.terminal,
+    depositedXp:account.role==='invader'?0:account.depositedXp,tempLoot:account.tempLoot,
+    used:account.used,skillMastery:account.skillMastery,invasionToken:account.token});
+  delete result.save.activeInvasion;
+  result.save.invasionReceiptId=account.token;
+  return result;
 }

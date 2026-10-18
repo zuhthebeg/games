@@ -10,7 +10,7 @@ export class CoopLobby {
   open() {
     const query = new URLSearchParams(location.search);
     if (query.get('dev') === '1' && query.has('coopTest')) return this.openTest(query);
-    this.lobby = new window.MultiplayerLobby({ gameType: 'arpg', gameName: 'ARPG · 같이 사냥', minPlayers: 2, maxPlayers: 4,
+    this.lobby = new window.MultiplayerLobby({ gameType: this.config.invasion ? 'arpg-invasion' : 'arpg', gameName: this.config.invasion ? 'ARPG · 침입 동의방' : 'ARPG · 같이 사냥', minPlayers: 2, maxPlayers: 4,
       workerBase: query.get('dev') === '1' && query.get('coopRelayTest') === '1' ? 'ws://127.0.0.1:8792' : undefined,
       nickname: this.profile.name, startConfig: () => ({ ...this.config }),
       onLeave: () => { this.close(); this.onLeave(); },
@@ -62,6 +62,11 @@ export class CoopLobby {
       refresh(); controls.append(stage, threat); card.insertBefore(controls, document.querySelector('#mpl-ready'));
     }
     controls.hidden = !amHost;
+    if (!card.querySelector('#arpg-room-mode')) {
+      const note = document.createElement('p'); note.id = 'arpg-room-mode';
+      note.textContent = this.config.invasion ? `침입 동의방 · 내 역할: ${this.profile.role === 'invader' ? '해골 / 몬스터 편' : '인간 / 사냥꾼 편'} · 인간·해골 각 1명 이상 필요` : '일반 협동방 · 적대 참가 불가';
+      card.prepend(note);
+    }
   }
   started(config) {
     if (this.session) return;

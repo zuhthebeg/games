@@ -150,6 +150,7 @@ export function itemDetailsHtml(item) {
     ...(def.kind === 'offhand' ? [row('guard','막기','누르는 동안 정면 120° · 피해 70% 감소 · 타이밍 막기 피해 0 + 방패 돌진')] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
+    ...(def.boneSet ? [row('bone-set', '뼈 5세트', '무기·머리·몸·손·발 착용 시 출정당 1회 HP 30%로 해골 부활 · 방패 제외 · +0부터 모든 강화석 파괴 위험')] : []),
     ...(def.silverWeapon ? [row('silver', '은 무기', `제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% (기본타·무기 기술) · 일반 생물 보너스 없음 · 힐·턴 언데드·지속피해·마법 스킬 제외`)] : []),
     ...(def.silverWeapon ? [row('silver-source', '은 주괴', ITEMS.silver_ingot.description)] : []),
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),

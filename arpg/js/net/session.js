@@ -1,3 +1,7 @@
+import { currentLoad, usedConsumables } from '../meta/run.js';
+import { InvasionLoot } from './invasion-loot.js';
+import { validParty, invasionProfile } from './invasion.js';
+import { TEAM_MONSTER } from '../sim/core.js';
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
@@ -38,7 +42,8 @@ export class CoopSession {
   }
   decorate(view) {
     if (!view) return null;
-    return { ...view, entities: view.entities.map(p => p.kind === 'player' ? { ...p,
+    return { ...view, ...(this.config.invasion ? { invasionAccount: this.isHost ? this.lootLedger?.state(this.uid) : this.invasionAccount,
+      lootDrops: this.isHost ? this.lootLedger?.dropsView() : this.lootDrops || [] } : {}), entities: view.entities.map(p => p.kind === 'player' ? { ...p,
       equipmentVisual: this.profiles[p.pid]?.equipmentVisual, name: this.profiles[p.pid]?.name,
       skillMasteryLevels: this.isHost ? this.profiles[p.pid]?.skillMasteryLevels : p.skillMasteryLevels ?? this.profiles[p.pid]?.skillMasteryLevels } : p) };
   }
@@ -50,7 +55,15 @@ export class CoopSession {
   }
   begin(data) {
     if (this.phase !== 'prepare' || !data?.profiles || !data.profiles[this.uid]) return;
-    this.config = data.config; this.profiles = data.profiles; this.seed = data.seed;
+    if (!!data.config?.invasion !== !!this.config.invasion || !validParty(data.config, data.profiles)
+      || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
+      || data.config.invasion && (this.profile.invasionConsent !== true || data.profiles[this.uid].role !== this.profile.role
+        || JSON.stringify(data.profiles[this.uid].rewardSave) !== JSON.stringify(this.profile.rewardSave)
+        || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
+      this.onStatus('침입 동의·계보·역할·지역을 확인하세요. 일반 협동방은 적대 해골을 받지 않습니다.'); return;
+    }
+    this.config = data.config; this.profiles = data.config.invasion
+      ? Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,invasionProfile(p)])) : data.profiles; this.seed = data.seed;
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
       const levels = Object.values(this.profiles).map(p => p.level || 1);
@@ -59,13 +72,21 @@ export class CoopSession {
         partyHpMult: partyHpScale(this.players.size, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        addPlayer(this.world, { pid, weapon: p.weapon, y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
+        if (data.config.invasion) {
+          player.invasionRole = p.role;
+          if (p.role === 'invader') { player.team = TEAM_MONSTER; player.skeletal = true; player.x = this.world.arena.w * .78; player.facing = Math.PI; }
+        }
         setLoad(this.world, pid, p.load ?? 0);
         // Host's own input has no latency: newest value. Guests: ordered per-tick commands.
         this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
         if (pid !== this.uid) enableGuestDodgeLag(this.world, pid);
       }
       startStage(this.world, data.config.stageId);
+      if (data.config.invasion) {
+        this.world.round.invasion = true;
+        this.lootLedger = new InvasionLoot(this.profiles, data.seed, data.runId, data.config.stageId, data.config.threat);
+      }
     }
     this.startData = data; this.phase = 'running'; this.lastHostAt = this.now;
     this.onBegin(this.config, this.isHost ? this.decorate(localView(this.world, this.uid)) : null);
@@ -78,23 +99,28 @@ export class CoopSession {
       this.onStatus('동료의 위협도가 잠겨 있습니다. 나가서 낮은 위협도를 선택하세요.'); return;
     }
     const profiles = Object.fromEntries([...this.players].map(id => [id, this.profiles[id]]));
-    const data = { config: this.config, profiles, seed: this.config.seed ?? crypto.getRandomValues(new Uint32Array(1))[0] };
+    if (!validParty(this.config, profiles)) { this.onStatus('침입 동의·계보·역할·지역을 확인하세요.'); return; }
+    const data = { ...(this.config.invasion ? { runId: crypto.randomUUID() } : {}), config: this.config, profiles, seed: this.config.seed ?? crypto.getRandomValues(new Uint32Array(1))[0] };
     this.sendAction({ type: 'ARPG_START', payload: data, __snapshot: data }); this.begin(data);
   }
   action(a) {
+    // Invasion starts only through authenticated-from-host RT snapshots; relay actions are not sender-bound.
+    if (this.isHost || this.config.invasion) return;
     if (a?.type === 'ARPG_START') this.begin(a.payload);
     else if (a?.type === '__resync') this.begin(a.__snapshot);
   }
   rt(from, data, now = this.now) {
     if (!data || !this.players.has(from) || this.lost) return;
-    if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
+    if (data.t === 'claim' && this.isHost && this.lootLedger) {
+      this.lootLedger.claim(this.world, from, {id:data.id});
+    } else if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
       this.profiles[from] = data.profile; this.tryStart();
     } else if (data.t === 'input' && this.isHost && this.world && from !== this.uid) {
       if (this.latches[from]?.receive(data, now)) {
         this.acks[from] = Math.max(this.acks[from] || 0, Math.min(this.eventSeq, data.ack || 0));
-        setLoad(this.world, from, Math.max(0, Number.isFinite(data.load) ? data.load : 0));
+        if (!this.lootLedger) setLoad(this.world, from, Math.max(0, Number.isFinite(data.load) ? data.load : 0));
       }
     } else if (data.t === 'snapshot' && !this.isHost && from === this.host) {
       this.lastHostAt = now;
@@ -102,7 +128,8 @@ export class CoopSession {
       if (this.phase === 'prepare') return;
       const fresh = this.buffer.push(data, now);
       // A retransmitted final objective packet can repair a journal gap at the same tick.
-      if (!fresh && !(data.objective && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
+      if (!fresh && !((data.objective || this.config.invasion) && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
+      if (this.config.invasion) { this.invasionAccount = data.invasionAccounts?.[this.uid]; this.lootDrops = data.lootDrops || []; }
       if (fresh) this.prediction.reconcile(this.buffer.frames.at(-1).world);
       const events = [];
       for (const row of data.events || []) if (row.seq > this.eventAck) {
@@ -140,7 +167,7 @@ export class CoopSession {
     // Only recent corpses are render-relevant; never grow packets with the whole kill history.
     const visible = this.world.entities.filter(e => e.kind === 'player' || !e.dead || this.world.tick - (this.deathTicks.get(e.id) ?? 0) < 30);
     const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs, this.profiles), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
-      events: this.journal, eventSeq: this.eventSeq };
+      events: this.journal, eventSeq: this.eventSeq, ...(this.lootLedger ? { invasionAccounts: Object.fromEntries([...this.players].map(pid=>[pid,this.lootLedger.state(pid)])), lootDrops:this.lootLedger.dropsView() } : {}) };
     this.bytes += new TextEncoder().encode(JSON.stringify(packet)).length; this.snapshots++;
     this.sendRt(packet);
     const guests = [...this.players].filter(id => id !== this.uid);
@@ -155,7 +182,7 @@ export class CoopSession {
       if (this.helloLeft <= 0) { this.helloLeft = 500; this.sendRt({ t: 'profile', profile: this.profile }); this.tryStart(); }
       return;
     }
-    if (this.isHost) { this.latches[this.uid]?.receive(this.sender.packet(input, load, this.eventAck), this.now); setLoad(this.world, this.uid, load); }
+    if (this.isHost) { this.latches[this.uid]?.receive(this.sender.packet(input, load, this.eventAck), this.now); if (!this.lootLedger) setLoad(this.world, this.uid, load); }
     else {
       // One command per 30Hz sim tick, predicted with the host's exact tick step.
       this.tickInput = mergeInput(this.tickInput, { ...input, viewTick: this.renderTick ?? this.buffer.currentTick?.(this.now, this.rtt) });
@@ -176,7 +203,7 @@ export class CoopSession {
       }
       return;
     }
-    if (this.phase === 'ended' && this.world.round.objective && this.journal.length) {
+    if (this.phase === 'ended' && (this.config.invasion || this.world.round.objective && this.journal.length)) {
       // Objective rounds freeze their tick at success. Repeat final snapshot until guests ack.
       this.helloLeft -= dt;
       if (this.helloLeft <= 0) { this.helloLeft = 250; this.broadcast(); }
@@ -185,10 +212,18 @@ export class CoopSession {
     this.tickLeft = Math.min(this.tickLeft + dt, 5 * 1000 / 30);
     while (this.phase === 'running' && this.tickLeft >= 1000 / 30) {
       const inputs = Object.fromEntries([...this.players].map(pid => [pid, this.latches[pid]?.consume(this.now)]));
-      const participants = this.world.entities.filter(e => e.kind === 'player' && !e.terminal).map(p => p.pid);
+      const participants = this.world.entities.filter(e => e.kind === 'player' && !e.terminal && e.invasionRole !== 'invader').map(p => p.pid);
       this.onBeforeTick(this.decorate(localView(this.world, this.uid)));
       const owners = new Map(this.world.projectiles.map(p => [p.id, p.ownerId]));
       const events = presentSkillEvents(step(this.world, inputs), this.world, owners);
+      this.lootLedger?.tick(this.world, events, participants);
+      if (this.lootLedger) {
+        for (const pid of this.players) {
+          const a=this.lootLedger.accounts[pid],p=this.world.entities.find(e=>e.pid===pid&&e.kind==='player');
+          if (a && p) setLoad(this.world,pid,currentLoad(a.save,a.tracker,usedConsumables(a.save,p)).ratio);
+        }
+        events.push(...this.world.events.filter(e=>e.type==='lootClaimed'));
+      }
       // Acknowledgements describe consumed sim inputs, never merely received packets.
       for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);

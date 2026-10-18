@@ -172,7 +172,7 @@ export class ArenaRenderer {
   ensure(entity) {
     let view = this.views.get(entity.id);
     if (view && !!view.skeletal !== !!entity.skeletal) {
-      view.visual.destroy?.(); view.visual.container.destroy({ children: true });
+      view.visual.destroy();
       view.visual = this.provider.createVisual(entity);
       this.layers.entities.addChild(view.visual.container);
       view.skeletal = !!entity.skeletal;
@@ -456,6 +456,7 @@ export class ArenaRenderer {
       this.questLabels[0].text = '반납: 입구';
       this.questLabels[1].text = objective.carrier !== null ? '운반: 장부' : '회수: 장부';
     }
+    for (const drop of world.lootDrops || []) this.questRing.circle(drop.x, drop.y, 12).fill({color:0xf5df9b,alpha:.8}).circle(drop.x,drop.y,48).stroke({color:0xf5df9b,width:1,alpha:.5});
     for (const entity of world.entities) {
       const view = this.ensure(entity);
       const frozen = view.stopLeft > 0 && !this.reduced;

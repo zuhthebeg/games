@@ -123,6 +123,8 @@ export class HUD {
 
   events(events) {
     const messages = {
+      revive: '뼈 세트 부활 · HP 30% · 이번 출정 부활 소진',
+      lootClaimed: '사망 전리품 획득 · 귀환해야 확보됩니다',
       channelStart: '귀환 중',
       channelBroken: '귀환 중단',
       channelCancel: '귀환 취소',

@@ -1,6 +1,6 @@
 // Host-only quest state machine. Tokens never enter inventory, save or loot tables.
 import { ticks } from './core.js';
-const eligible = p => p.kind === 'player' && !p.dead && p.hp > 0 && !p.terminal;
+const eligible = p => p.invasionRole !== 'invader' && p.kind === 'player' && !p.dead && p.hp > 0 && !p.terminal;
 const inside = (p, pos, radius) => (p.x-pos.x)**2 + (p.y-pos.y)**2 <= radius**2;
 const position = (world, p) => ({ x: Math.max(0, Math.min(world.arena.w, p.x)), y: Math.max(0, Math.min(world.arena.h, p.y)) });
 export function createObjective(def, arena) {
