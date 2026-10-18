@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "targetUse": "in-game web ARPG UI supporting art, decorative; all Korean labels remain DOM text",
+  "model": {
+    "name": "LuminarQMix SDXL v7",
+    "repository": "John6666/luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl",
+    "cachedRevision": "0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+    "modelIndexSha256": "5488341d01c8e9e3f1beaea12c24e217e74f42ddee08a8001331daefadc456d0",
+    "gpu": "NVIDIA GeForce RTX 3080 Ti",
+    "scheduler": "EulerAncestralDiscreteScheduler",
+    "runtime": "Windows native diffusion-win Python, invoked through Windows PowerShell",
+    "offline": true,
+    "paidApiUsed": false,
+    "installs": false,
+    "pipelineSourceSha256": "269f5999952d09f40a9b59271d7f2f931addd8ecd82a056da57bdb99245dff6d",
+    "batSourceSha256": "5ebcd3cfaf52daa450ccc33addcb83dcf05340bed234d9178e683a055d0061cf",
+    "clipContextTokens": 77,
+    "promptNote": "Full submitted prompts are recorded. First-pass selected room/merchant/hearth used CLIP-truncated trailing style tokens, visible in generation log. Compact prop retries avoid relying on the discarded tail."
+  },
+  "style": "Weathered medieval fantasy; oak, limestone and iron, umber/olive neutrals, warm amber light. Stylized game illustration, not photorealism.",
+  "encoding": {
+    "format": "WebP",
+    "quality": 82,
+    "method": 6,
+    "facilityMaxSize": [
+      320,
+      320
+    ],
+    "backgroundMaxSize": [
+      960,
+      660
+    ],
+    "postprocessing": "RGB conversion and Lanczos downscale only. No text or final shapes painted over model output."
+  },
+  "totalWebPBytes": 189482,
+  "review": {
+    "method": "Private direct image/contact-sheet inspection; no browser screenshots",
+    "rawLocation": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018 (outside served repository)",
+    "attempts": 21,
+    "rejected": 12,
+    "rejectedReasons": [
+      "Wrong scenery/throne/person instead of anvil",
+      "Closed/distant chest instead of prominent open storage chest",
+      "People or generated writing in initial book/bag/map artwork",
+      "Malformed anvil silhouettes in unguided retries"
+    ],
+    "selectedAssets": 9,
+    "finalContactSheet": "/home/cocy/.openclaw/workspace/tmp/arpg-inn-art-final-contact.jpg"
+  },
+  "assets": [
+    {
+      "id": "inn-room",
+      "prompt": "cozy old medieval inn interior, wide frontal view, timber beams and stone walls, wooden floor, empty center floor for a hero, large stone fireplace centered on rear wall, soft light from glowing coals, painterly medieval dark fantasy game environment illustration, aged oak and weathered limestone, tarnished brass, warm amber firelight, muted umber and olive palette, richly textured hand painted game art, clear readable silhouette, no people, no lettering, no interface",
+      "negative": "text, writing, letters, words, watermark, signature, logo, people, human, character, hands, neon, modern, glossy plastic, low quality, blurry, cropped subject, duplicate objects",
+      "width": 1216,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610180,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\inn-room.png",
+      "sourceSha256": "ae750db70e2fd1a7be55f29179799740a691594bd3849f760e6d173ef25ece9e",
+      "sourceBytes": 1553571,
+      "output": "inn-room.webp",
+      "outputSha256": "e2892acda901e39ec096685f989c3d88eb7e3ca1cf82fde0de8cfd8e84377c04",
+      "outputBytes": 92174,
+      "outputSize": [
+        960,
+        657
+      ],
+      "reviewNote": "Weathered timber/stone interior, amber hearths, empty floor; subject reviewed directly.",
+      "generationPass": 1,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "merchant",
+      "prompt": "medieval equipment merchant display, armor breastplate on wooden mannequin beside two upright swords in an oak weapon rack, full display centered, no people, no potion bottles, painterly medieval dark fantasy game environment illustration, aged oak and weathered limestone, tarnished brass, warm amber firelight, muted umber and olive palette, richly textured hand painted game art, clear readable silhouette, no people, no lettering, no interface",
+      "negative": "text, writing, letters, words, watermark, signature, logo, people, human, character, hands, neon, modern, glossy plastic, low quality, blurry, cropped subject, duplicate objects",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610182,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\merchant.png",
+      "sourceSha256": "3d5a8d264f76f7e35c422da2f39343bbd47bd6bd2fc2001dc0498113937db04c",
+      "sourceBytes": 984487,
+      "output": "merchant.webp",
+      "outputSha256": "b8e1f84142401e2d2bc6160ca0fc1aa57aeab8c9a5895925ce31a344dba895c8",
+      "outputBytes": 24232,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Unoccupied armor display mannequins and upright swords; unmistakable equipment stand, not a generic weapon glyph.",
+      "generationPass": 1,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "hearth",
+      "prompt": "a single rustic stone fireplace, frontal view, dark arched firebox filled with low glowing embers and charred logs, broad stone hearth, warm amber light, full fireplace centered, painterly medieval dark fantasy game environment illustration, aged oak and weathered limestone, tarnished brass, warm amber firelight, muted umber and olive palette, richly textured hand painted game art, clear readable silhouette, no people, no lettering, no interface",
+      "negative": "text, writing, letters, words, watermark, signature, logo, people, human, character, hands, neon, modern, glossy plastic, low quality, blurry, cropped subject, duplicate objects",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610188,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\hearth.png",
+      "sourceSha256": "36d1ea160e2e066b30b547c412ab32556922bf1328ac33e2a6034dc30ec0522b",
+      "sourceBytes": 1004144,
+      "output": "hearth.webp",
+      "outputSha256": "abbba22d24ee6f2d935b685e21bdf95adb385be5e74c9b3f5223f1280a9e71ba",
+      "outputBytes": 19976,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Stone fireplace and visible burning logs; fire is an independent three-layer CSS overlay.",
+      "generationPass": 1,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "storage",
+      "prompt": "large OPEN wooden treasure chest with raised hinged lid, dark empty interior, iron bands and brass lock, single chest fills frame, three quarter closeup, isolated object on dark brown background, painterly medieval fantasy game item icon, weathered oak, tarnished brass, warm amber light, muted umber olive colors",
+      "negative": "people, person, character, human, man, woman, face, hands, body, architecture, building, room, scenery, text, letters, writing, words, watermark, logo, modern, white background, distant tiny object, cropped",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610281,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\storage.png",
+      "sourceSha256": "4a65a9fd194db99e737dd7404855c76038079cbfb6c9cfff13d3ca1564c3ea85",
+      "sourceBytes": 729628,
+      "output": "storage.webp",
+      "outputSha256": "4317fa324f9645a7689b7dffffb503d7dfc69474ddbf2714fb706fcf5fe5aebe",
+      "outputBytes": 14880,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Open rectangular iron-bound wooden chest with raised lid and coins; distinct from the soft backpack.",
+      "generationPass": 2,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "supplies",
+      "prompt": "three large corked red blue green glass potion bottles, simple small wooden crate, closeup still life, objects fill frame, isolated objects on dark brown background, painterly medieval fantasy game item icon, weathered oak, tarnished brass, warm amber light, muted umber olive colors",
+      "negative": "people, person, character, human, man, woman, face, hands, body, architecture, building, room, scenery, text, letters, writing, words, watermark, logo, modern, white background, distant tiny object, cropped",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610284,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\supplies.png",
+      "sourceSha256": "190ba25cddb0d90069a59694298504a273fa5aab752b2fb208f0742d1f95f896",
+      "sourceBytes": 662193,
+      "output": "supplies.webp",
+      "outputSha256": "7c3d34e77518a496e1d2f616d8e9512fc576bcb1259b9a12a5b05983ce1d14df",
+      "outputBytes": 12060,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Corked colored potion bottles on a small wooden supply crate.",
+      "generationPass": 2,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "bag",
+      "prompt": "BACKPACK, single brown leather travel backpack with shoulder straps and brass buckles, closed round canvas rucksack, closeup, full bag fills frame, isolated object on dark brown background, painterly medieval fantasy game item icon, weathered oak, tarnished brass, warm amber light, muted umber olive colors",
+      "negative": "people, person, character, human, man, woman, face, hands, body, architecture, building, room, scenery, text, letters, writing, words, watermark, logo, modern, white background, distant tiny object, cropped",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610285,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\bag.png",
+      "sourceSha256": "c025493c5e7d3bbcd87adc3144082c3001c811b4aa4f13adec18cce41a39ef9a",
+      "sourceBytes": 283160,
+      "output": "bag.webp",
+      "outputSha256": "ca1b8f56659704879b20eef56878003d05890b5fc52517c0ca8808328d494403",
+      "outputBytes": 7456,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Brown leather backpack, straps and buckles; small travel utensil is ancillary, not a second storage chest.",
+      "generationPass": 2,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "academy",
+      "prompt": "open blank book, single large ancient book with blank parchment pages beside one rolled scroll, closeup still life, objects fill frame, isolated objects on dark brown background, painterly medieval fantasy game item icon, weathered oak, tarnished brass, warm amber light, muted umber olive colors",
+      "negative": "people, person, character, human, man, woman, face, hands, body, architecture, building, room, scenery, text, letters, writing, words, watermark, logo, modern, white background, distant tiny object, cropped",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610286,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\academy.png",
+      "sourceSha256": "58f08dab7498b20cccd2825a18c78abaaac600f3e25ef395647ffbcf33ab43c2",
+      "sourceBytes": 285820,
+      "output": "academy.webp",
+      "outputSha256": "6f85bd51baab547a5cc74680b812e5857e193b4e239cf0443e593fc1aedbdc5f",
+      "outputBytes": 4880,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Open blank book; no generated writing.",
+      "generationPass": 2,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "map",
+      "prompt": "top down cartography, parchment map showing winding blue river and forest trees and tiny mountain symbols, paper pinned to plain rectangular wooden bulletin board, closeup, hand painted medieval fantasy game icon, warm amber light, umber olive palette, no text",
+      "negative": "text, writing, letters, words, typography, label, plaque, logo, watermark, human, person, character, face, body, fireplace, furnace, bell, throne, tower, picture frame, landscape painting, white background",
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7.0,
+      "seed": 202610387,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\map.png",
+      "sourceSha256": "219959074f1854564f21f8a21023eca3931e9e094f4acf6bc9fb939ef33c1560",
+      "sourceBytes": 530254,
+      "output": "map.webp",
+      "outputSha256": "b2988f8bee8cc564d145a1415bc2e67772aa26802cdb22571267548514208593",
+      "outputBytes": 10698,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Letter-free parchment cartography with river, forest and mountain symbols on a wooden board. Brighter paper remains decorative beside the DOM label.",
+      "generationPass": 3,
+      "reviewedDirectly": true
+    },
+    {
+      "id": "smith",
+      "prompt": "blacksmith anvil and hammer, heavy steel anvil on oak stump, traditional side view, painted medieval fantasy game tool illustration, aged iron highlights, warm amber light, umber backdrop, no people",
+      "negative": "person, human, character, face, body, text, letters, writing, words, logo, watermark, throne, furnace, stove, bell, cylinder, horns pointing upward",
+      "seed": 202610580,
+      "width": 832,
+      "height": 832,
+      "steps": 30,
+      "guidance": 7,
+      "strength": 0.42,
+      "referenceImage": "anvil-composition-guide.png",
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\arpg-art\\inn-20261018\\smith.png",
+      "sourceSha256": "2f6ce59c08c935983243234d278346fc2b60acf2fbead017c6095ed4bbb4a91e",
+      "sourceBytes": 204280,
+      "output": "smith.webp",
+      "outputSha256": "ebdf5ac14612343a2734f8608dfd12ead2c1f419122e1f8e60f73800c3b79695",
+      "outputBytes": 3126,
+      "outputSize": [
+        320,
+        320
+      ],
+      "reviewNote": "Recognizable flat-top, horned anvil on oak stump plus hammer. Flat stylized treatment; guided SDXL img2img after malformed text-only attempts were rejected.",
+      "generationPass": 5,
+      "reviewedDirectly": true,
+      "referenceSha256": "27f2d9acbac4053aa2994292552066364899d1286376dccdd72bbae0b6b71320",
+      "effectiveDenoisingSteps": 12,
+      "referenceNote": "Original PIL composition sketch, outside webroot, used only as input to actual local SDXL img2img; delivered art is the model output, not the sketch."
+    }
+  ]
+}

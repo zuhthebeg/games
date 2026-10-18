@@ -31,11 +31,11 @@ test('B dropped enhanced gear provenance appears in receipt and detail; enhanced
  assert.doesNotMatch(itemDetailsHtml(save.items[0]),/누군가 떨군/);
  const before=save.stacks.enhance_stone_1||0,next=dismantle(save,drop.uid);assert.equal(next.stacks.enhance_stone_1-before,ENCHANT.dismantleStones[drop.enhance]);
 });
-test('B craft entry is visible from hub and incomplete recipes state exact shortages',()=>{
+test('B crafting stays under smith and incomplete recipes state exact shortages',()=>{
  const hub=Object.create(HubUI.prototype);hub.save=noteMaterials({...fresh(),gold:2,stacks:{...fresh().stacks,scrap:1}});hub.forgeTab='salvage';hub.showInnPanel=(_t,html)=>hub.html=html;hub.showForge();
  assert.match(hub.html,/고철 7개 부족/);assert.match(hub.html,/58 G 부족/);assert.match(hub.html,/aria-describedby="craft-reason-iron_sword"/);
- hub.recoverVitals=()=>{};hub.show=html=>hub.html=html;hub.showInn();assert.match(hub.html,/data-action="craft-hub"/);assert.match(hub.html,/장비 제작/);
- hub.showForge=()=>hub.forgeTab;assert.equal(hub.action('craft-hub',{}),'salvage');
+ hub.recoverVitals=()=>{};hub.show=html=>hub.html=html;hub.showInn();assert.doesNotMatch(hub.html,/data-action="craft-hub"/);assert.match(hub.html,/data-action="forge"/);
+ hub.showForge=()=>hub.forgeTab;assert.equal(hub.action('forge',{}),'enhance');assert.equal(hub.action('forge-tab',{tab:'salvage'}),'salvage');
 });
 test('B native craft action commits once, selects result and announces success',()=>{
  const hub=Object.create(HubUI.prototype);hub.save=rich();hub.commit=s=>hub.save=s;hub.showInnPanel=(_t,html)=>hub.html=html;

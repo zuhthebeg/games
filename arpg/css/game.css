@@ -996,3 +996,34 @@ body[data-theme="graveyard"] .xp-line i { background:var(--brass); }
 
 /* Craft-first economy: durable text labels as well as a premium color accent. */
 .loot-highlight{color:#f3d68c}.reward.loot-highlight{padding:6px 8px;border:1px solid #aa8950;border-radius:4px;background:#302b20}.drop-origin{font-size:12px;line-height:1.6;color:#c4baa5;margin:8px 0}.drop-origin strong{font-weight:700}.recipe-shortage{display:block;margin-top:5px;line-height:1.6;overflow-wrap:anywhere}.recipe b{overflow-wrap:anywhere}
+
+
+/* Inn art: weathered oak, stone and amber. Only transform/opacity move. */
+.p2-room .room-art{object-fit:cover;object-position:center 55%;opacity:.83;pointer-events:none}
+.npc-grid .hotspot{padding:0 0 9px;gap:7px;overflow:hidden;background:#25291f;border-color:#686044;min-height:112px}
+.npc-grid .facility-art{display:block;width:100%;height:82px;object-fit:contain;background:#2c2117;object-position:center 48%;pointer-events:none;user-select:none}
+.npc-grid .hotspot strong{padding:0 4px;max-width:100%;line-height:1.35;overflow-wrap:anywhere;color:#ead9b6}
+.npc-grid .hotspot:hover,.npc-grid .hotspot:focus-visible{border-color:#d5b57c;background:#343326}
+.action-footer .board-art{width:42px;height:38px;object-fit:cover;border:1px solid #716044;pointer-events:none;flex-shrink:0}
+.inn-hearth{position:absolute;left:calc(50% - 65px);top:61px;width:130px;height:130px;pointer-events:none;isolation:isolate}
+.hearth-art{width:100%;height:100%;object-fit:cover;mask-image:radial-gradient(ellipse 65% 65% at 50% 55%,#000 50%,transparent 83%)}
+.inn-fire{position:absolute;left:27%;bottom:23%;width:46%;height:43%;pointer-events:none;isolation:isolate}
+.inn-fire i{position:absolute;display:block;pointer-events:none}
+.inn-fire-halo{inset:-30% -50% -35%;background:radial-gradient(ellipse at 50% 75%,#ec9a365c 4%,#ba522727 38%,transparent 68%);animation:inn-glow 2.37s ease-in-out infinite;opacity:.8}
+.inn-flame{bottom:0;transform-origin:50% 100%;mix-blend-mode:screen;clip-path:polygon(8% 100%,0 77%,11% 51%,19% 68%,30% 28%,39% 46%,53% 0,58% 39%,68% 24%,74% 61%,86% 42%,100% 77%,92% 100%)}
+.inn-flame-outer{inset:0 0 0;background:linear-gradient(0deg,#e35116e0,#ec871ace 43%,#e8a84418);animation:inn-flare 1.73s ease-in-out infinite;opacity:.85}
+.inn-flame-middle{left:12%;width:76%;height:79%;background:linear-gradient(0deg,#ffba48ee,#ffac34d9 56%,#f8c76c18);animation:inn-flare 1.13s -.43s ease-in-out infinite reverse;opacity:.87}
+.inn-flame-core{left:28%;width:47%;height:49%;background:linear-gradient(0deg,#fff1b8ed,#ffdc7ce0 60%,#ffbb4218);animation:inn-core .89s -.21s ease-in-out infinite;opacity:.9}
+.inn-ember{bottom:9%;width:2px;height:3px;border-radius:50%;background:#f3bd65;opacity:0;animation:inn-ember 3.7s linear infinite}
+.inn-ember-one{left:28%}.inn-ember-two{left:60%;animation-delay:-1.6s;animation-duration:4.3s}.inn-ember-three{left:46%;animation-delay:-2.9s;animation-duration:5.1s}
+@keyframes inn-flare{0%,100%{transform:scale(.94,1.02) skewX(-3deg);opacity:.78}19%{transform:scale(1.05,.89) skewX(4deg);opacity:.86}43%{transform:scale(.89,1.13) skewX(-5deg);opacity:.73}67%{transform:scale(1.04,.96) skewX(2deg);opacity:.88}83%{transform:scale(.96,1.08) skewX(-1deg);opacity:.8}}
+@keyframes inn-core{0%,100%{transform:scale(.9,1);opacity:.88}31%{transform:scale(1.1,.83) rotate(3deg);opacity:.94}58%{transform:scale(.91,1.16) rotate(-4deg);opacity:.82}79%{transform:scale(1.04,.95);opacity:.91}}
+@keyframes inn-glow{0%,100%{transform:scale(.96);opacity:.72}29%{transform:scale(1.07,.98);opacity:.86}53%{transform:scale(.98,1.04);opacity:.78}81%{transform:scale(1.03);opacity:.82}}
+@keyframes inn-ember{0%,12%{transform:translate(0,0) scale(.7);opacity:0}22%{opacity:.65}66%{opacity:.42}100%{transform:translate(8px,-57px) scale(.25);opacity:0}}
+[data-inn-fire-paused="true"] .inn-fire i{animation-play-state:paused}
+body[data-theme="graveyard"] .p2-room .room-art{filter:saturate(.48) brightness(.72)}
+body[data-theme="graveyard"] .inn-hearth{filter:saturate(.6)}
+body[data-theme="graveyard"] .npc-grid .hotspot{background:#1c241e;border-color:var(--edge)}
+body[data-theme="graveyard"] .facility-art{filter:saturate(.6) brightness(.85)}
+body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
+@media(prefers-reduced-motion:reduce){.inn-fire i{animation:none!important}.inn-fire-halo{opacity:.8}.inn-flame-outer{transform:scale(.96,1.03);opacity:.85}.inn-flame-middle{transform:scale(1,.94);opacity:.87}.inn-flame-core{transform:scale(.94,1.02);opacity:.9}.inn-ember{display:none}}

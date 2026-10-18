@@ -38,13 +38,13 @@ try{
     return{seed,drop,plainRefund:ENCHANT.dismantleStones[drop.enhance],premium:Object.keys(s.lastReceipt.lootKept.stacks).filter(id=>['rune_shard','frost_shard'].includes(id))};
    }throw new Error('no actual enhanced + premium seed');
   });
-  await page.goto(base+'/arpg/');await press('[data-action="choose-human"]');await page.waitForSelector('[data-action="craft-hub"]');
-  assert.match(await page.locator('[data-action="craft-hub"]').innerText(),/장비 제작/);assert.ok(!new URL(page.url()).searchParams.has('dev')&&!new URL(page.url()).searchParams.has('debug'));
+  await page.goto(base+'/arpg/');await press('[data-action="choose-human"]');await page.waitForSelector('[data-action="forge"]');
+  assert.match(await page.locator('[data-action="forge"]').innerText(),/대장장이/);assert.equal(await page.locator('[data-action="craft-hub"]').count(),0);assert.ok(!new URL(page.url()).searchParams.has('dev')&&!new URL(page.url()).searchParams.has('debug'));
   await press('[data-action="character"]');
   const receiptText=await page.locator('.receipt').innerText();assert.match(receiptText,/누군가 떨군 장비를 몬스터가 쓰고 있었다/);assert.match(receiptText,/득템 · 강화 장비/);assert.match(receiptText,new RegExp(`\\+${fixture.drop.enhance}`));
   for(const id of fixture.premium){const material=page.locator(`.receipt [data-premium="${id}"]`);assert.match(await material.innerText(),/득템/);assert.ok(await material.evaluate(n=>getComputedStyle(n).borderTopStyle!=='none'));}
   await clean();await press('[data-action="inn"]');await press('[data-action="inventory"]');await press(`[data-action="open-item"][data-uid="${fixture.drop.uid}"]`);assert.match(await page.locator('.item-details').innerText(),/누군가 떨군 장비를 몬스터가 쓰고 있었다/);await press('[data-action="close-sheet"]');await press('[data-action="inn"]');
-  await press('[data-action="craft-hub"]');await page.waitForSelector('[data-forge-tab="salvage"]');await press(`[data-action="select-gear"][data-uid="${fixture.drop.uid}"]`);
+  await press('[data-action="forge"]');await press('[data-action="forge-tab"][data-tab="salvage"]');await page.waitForSelector('[data-forge-tab="salvage"]');await press(`[data-action="select-gear"][data-uid="${fixture.drop.uid}"]`);
   assert.match(await page.locator('.forge-salvage').innerText(),new RegExp(`강화석: ${fixture.plainRefund}`));
   const beforeDrop=await state();await press('.forge-salvage [data-action="dismantle"]');await press('[data-action="confirm-dismantle"]');const afterDrop=await state();assert.ok(!afterDrop.items.some(i=>i.uid===fixture.drop.uid));assert.equal(afterDrop.stacks.enhance_stone_1-beforeDrop.stacks.enhance_stone_1,fixture.plainRefund);
   // A newly covered T3 recipe is actually produced, enhanced, then dismantled via native input.
@@ -52,9 +52,9 @@ try{
   await press('[data-action="enhance"]');await page.locator('dialog.enchant-fx[open]').waitFor();await press('dialog.enchant-fx[open] button');if(await page.locator('dialog.enchant-fx[open]').count())await press('dialog.enchant-fx[open] button');await page.locator('dialog.enchant-fx[open]').waitFor({state:'detached'});
   const enhanced=await state();assert.equal(enhanced.items.find(i=>i.uid===crafted.uid).enhance,1);assert.equal(enhanced.stacks.enhance_stone_1,made.stacks.enhance_stone_1-5);
   await press('[data-action="forge-tab"][data-tab="salvage"]');assert.match(await page.locator('.forge-salvage').innerText(),/강화석: 1/);await press('.forge-salvage [data-action="dismantle"]');await press('[data-action="confirm-dismantle"]');const salvaged=await state();assert.equal(salvaged.stacks.enhance_stone_1,enhanced.stacks.enhance_stone_1+1);assert.equal(salvaged.stacks.scrap,enhanced.stacks.scrap+6);assert.ok(!salvaged.items.some(i=>i.uid===crafted.uid));await clean();
-  await page.reload();await page.waitForSelector('[data-action="craft-hub"]');assert.deepEqual(await state(),salvaged);
+  await page.reload();await page.waitForSelector('[data-action="forge"]');assert.deepEqual(await state(),salvaged);
   const shortage=await page.evaluate(async()=>{const {createSave,SaveStore,validateSave}=await import('./js/meta/save.js');const {noteMaterials}=await import('./js/meta/recipe-discovery.js');const s=noteMaterials({...createSave({name:'부족 확인',answers:[0,0,0,0,0],createdAt:1}),gold:2,stacks:{scrap:1}});if(!validateSave(s))throw new Error('invalid shortage fixture');new SaveStore(localStorage).save(s);return s;});
-  await page.reload();await page.waitForSelector('[data-action="craft-hub"]');await press('[data-action="craft-hub"]');const why=await page.locator('#craft-reason-iron_sword').innerText();assert.match(why,/고철 7개 부족/);assert.match(why,/58 G 부족/);assert.equal(await page.locator('[data-action="craft"][data-id="iron_sword"]').isDisabled(),true);assert.deepEqual(await state(),shortage);await clean();
+  await page.reload();await page.waitForSelector('[data-action="forge"]');await press('[data-action="forge"]');await press('[data-action="forge-tab"][data-tab="salvage"]');const why=await page.locator('#craft-reason-iron_sword').innerText();assert.match(why,/고철 7개 부족/);assert.match(why,/58 G 부족/);assert.equal(await page.locator('[data-action="craft"][data-id="iron_sword"]').isDisabled(),true);assert.deepEqual(await state(),shortage);await clean();
   report.rows.push({width,nativeInput:mobile?'touch':'keyboard Enter',seed:fixture.seed,enhancedDrop:fixture.drop,premium:fixture.premium,receiptText,dropStoneRefund:fixture.plainRefund,crafted:crafted.id,craftGold:240,craftPrimary:24,craftDismantlePrimary:6,craftEnhanceStoneRefund:1,shortage:why,reload:true});await context.close();
  }
  assert.deepEqual(report.errors,[]);report.status='PASS';console.log(JSON.stringify(report));

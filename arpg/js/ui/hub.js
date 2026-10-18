@@ -48,23 +48,16 @@ const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
 const pct = (value) => `${Math.round(value * 100)}%`;
 
-// Static inn interior (ui-mock "잿빛 여관"); the hero portrait and five sockets sit on top of it.
-const ROOM_ART = `<svg class="room-art" viewBox="0 0 358 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-  <defs><pattern id="inn-floor" width="80" height="30" patternUnits="userSpaceOnUse" patternTransform="skewX(-25)">
-    <rect width="80" height="30" fill="#292822"/><path d="M0 0h80v30H0z" stroke="#403d32" stroke-width="1"/></pattern></defs>
-  <path d="M0 0h358v172L180 239 0 174z" fill="#20231e"/>
-  <path d="M0 174 178 118 358 172v78H0z" fill="url(#inn-floor)"/>
-  <path d="M0 19 179 0l179 19M40 0v153M312 0v153M0 105l178-28 180 28" stroke="#4c493a" fill="none" stroke-width="10"/>
-  <path d="M149 29h69v110h-69z" fill="#413e33" stroke="#6c6450" stroke-width="3"/>
-  <path d="M160 83q24-33 47 0v48h-47z" fill="#141712"/>
-  <path class="hearth-flame" d="M173 125q-8-18 4-32-2 17 8 15 9-9 6-21 22 22 8 39z" fill="#c18a4f"/>
-  <path d="M181 125q-5-12 6-22 10 11 5 22z" fill="#efcc88"/>
-  <path d="M148 139h74M141 145h88" stroke="#78705b" stroke-width="6"/>
-  <path d="M20 119 92 113l21 25-72 8z" fill="#4a4030" stroke="#8a7250"/>
-  <path d="m40 147 2 28m60-35 1 29" stroke="#4a4030" stroke-width="8"/>
-  <path d="M268 117h55v43h-55z" fill="#3a3226" stroke="#8a7250"/>
-  <path d="M274 126h42m-42 9h28m-28 9h34" stroke="#beaa7e"/>
-  <path d="m115 217 58-24 64 20-59 27z" fill="#574936" stroke="#7c674b"/></svg>`;
+// Actual local SDXL art; labels and all actions remain native DOM elements.
+const innImage = (subject, className = 'facility-art', size = 160) =>
+  `<img class="${className}" src="assets/inn/${subject}.webp" width="${size}" height="${size}" alt="" decoding="async" draggable="false">`;
+const ROOM_ART = `${innImage('inn-room', 'room-art', 960)}
+  <div class="inn-hearth" aria-hidden="true">${innImage('hearth', 'hearth-art')}
+    <div class="inn-fire" aria-hidden="true"><i class="inn-fire-halo"></i>
+      <i class="inn-flame inn-flame-outer"></i><i class="inn-flame inn-flame-middle"></i><i class="inn-flame inn-flame-core"></i>
+      <i class="inn-ember inn-ember-one"></i><i class="inn-ember inn-ember-two"></i><i class="inn-ember inn-ember-three"></i>
+    </div>
+  </div>`;
 
 // The save schema intentionally has no transient HP/MP fields.
 export function restoreInnVitals(player) {
@@ -97,6 +90,10 @@ export class HubUI {
     this.selectedUid = null;
     this.portraitDirection = 'SW';
     this.root = document.querySelector('#meta-screen');
+    // CSS animations stop in background tabs, with no per-frame JS or save writes.
+    const fireVisibility = () => { this.root.dataset.innFirePaused = String(document.hidden); };
+    document.addEventListener('visibilitychange', fireVisibility);
+    fireVisibility();
     this.dev = new URLSearchParams(location.search).get('dev') === '1';
     this.answers = [];
     this.name = '';
@@ -356,9 +353,9 @@ export class HubUI {
       `class="character-portrait" aria-label="${this.hubCopy('캐릭터', '영혼의 제단')}${this.save.statPoints ? ` · 미분배 ${this.save.statPoints}점` : ''}"`);
     const room = `<div class="p2-room">${ROOM_ART}${portrait}<div class="body-sockets" aria-hidden="true">${pins}</div>${socketsHtml(this.save)}</div>`;
     const npcs = [
-      ['shop', '만물상', 'potion'], ['merchant', this.hubCopy('장비상', '도굴꾼'), 'weapon'], ['forge', this.hubCopy('대장장이', '저주받은 대장장이'), 'forge'],
-      ['craft-hub', '장비 제작', 'forge'], ['trainer', '아카데미', 'trainer'], ['inventory', this.hubCopy('창고', '묘실의 유품함'), 'load'], ['bag', '가방', 'load'],
-    ].map(([action, name, glyph]) => button(`${icon(glyph)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
+      ['shop', '만물상', 'supplies'], ['merchant', this.hubCopy('장비상', '도굴꾼'), 'merchant'], ['forge', this.hubCopy('대장장이', '저주받은 대장장이'), 'smith'],
+      ['trainer', '아카데미', 'academy'], ['inventory', this.hubCopy('창고', '묘실의 유품함'), 'storage'], ['bag', '가방', 'bag'],
+    ].map(([action, name, subject]) => button(`${innImage(subject)}<strong>${name}</strong>`, action, `class="hotspot hotspot-${action}"`)).join('');
     const devMenu = this.dev ? `<details class="dev-menu"><summary>M0 개발 메뉴</summary>
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
@@ -367,7 +364,7 @@ export class HubUI {
       <p class="recovery inn-recovery">${icon('clear')}<strong>${this.hubCopy('HP·MP 회복', '관에서 안식')}</strong>
         <span>HP <b>${amount(mods.maxHp)}</b> · 공격 <b>×${amount(mods.dmgMult[mods.family] * weaponAttackMultiplier(false, WEAPONS[mods.family].basic, null, mods.handedness))}</b></span></p>
       ${this.weightHtml()}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
-    this.show(this.shellHtml(this.topBar(), content, button(`<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
+    this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
   characterHtml() {
