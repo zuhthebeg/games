@@ -736,3 +736,670 @@ export class HubUI {
         return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
       });
       const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+        + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
+    }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : '');
+    this.forgeTab ||= 'enhance';
+    const { html, footer } = this.forgeDetail();
+    const tabs = `<nav class="forge-tabs" aria-label="${this.hubCopy('대장장이 작업', '저주받은 대장장이 작업')}">${[['enhance', '강화'], ['stones', '강화석'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
+    // Plain result line; the enchant animation layer replaces this presentation, not the outcome.
+    // forgeNotice is one-shot; lastEnchant/lastCrack stay readable for the FX layer and debugging.
+    const notice = this.forgeNotice;
+    this.forgeNotice = null;
+    const last = notice && !Number.isInteger(notice.count) ? notice : null, crack = notice && Number.isInteger(notice.count) ? notice : null;
+    const noticeHtml = last ? (last.outcome === 'destroyed'
+      ? `<p class="enchant-notice destroyed" role="status">${escape(ITEMS[last.id].name)} +${last.from} · 산산조각 · 강화석 ${last.refund[STONE]}개</p>`
+      : `<p class="enchant-notice success" role="status">${escape(ITEMS[last.id].name)} +${last.from} → <b>+${last.to}</b> ${last.to < last.from ? '약화' : last.to === last.from ? '변화 없음' : '강화 성공'}</p>`)
+      : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name}  · ${crack.count}개</p>` : '';
+    const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 · 보관</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
+    const content = this.forgeTab === 'stones' ? this.stoneWorkshopHtml()
+      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
+        : `${html}${picker}`;
+    this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
+      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험` });
+  }
+
+  forgeSalvageHtml() {
+    const item = this.save.items.find(candidate => candidate.uid === this.selectedUid);
+    if (!item) return '';
+    const uid = `data-uid="${escape(item.uid)}"`, worn = isWorn(this.save, item.uid);
+    return `<section class="forge-salvage"><div class="p2-item-heading">${emblem(item)}<h3>${escape(itemLabel(item))}</h3></div><div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
+  }
+
+  stoneWorkshopHtml() {
+    const stones = this.save.stacks[STONE] || 0, greater = this.save.stacks[GREATER_STONE] || 0;
+    const range = ENCHANT.greaterYield.map(count => count * ENCHANT.stonesPerAttempt).join('~');
+    return `<section class="stone-workshop"><h3 class="section-title">강화석</h3>
+      <p class="minor">${icon(STONE)}강화석 ${stones}개 · ${icon(GREATER_STONE)}상급 강화석 ${greater}개</p>
+      <p class="minor">일반 강화 1회 · 강화석 ${ENCHANT.stonesPerAttempt}개. 축복·저주 강화는 각각 1개.</p>
+      <article class="recipe"><span class="item-emblem">${itemIcon(GREATER_STONE, ITEMS[GREATER_STONE])}</span>
+        <div><b>상급 강화석 개봉</b><small>상급 1개 → 강화석 ${range}개</small></div>
+        ${button('상급 강화석 1개 개봉', 'crack-greater', '', greater < 1)}</article></section>`;
+  }
+
+  forgeDetail() {
+    const item = this.save.items.find(candidate => candidate.uid === this.selectedUid);
+    if (!item) return { html: '', footer: '' };
+    const uid = `data-uid="${escape(item.uid)}"`;
+    const worn = isWorn(this.save, item.uid);
+    if (!ENCHANT_STONES.includes(this.forgeStone)) this.forgeStone = STONE;
+    const preview = enchantPreview(this.save, item.uid, this.forgeStone);
+    const projected = { ...item, enhance: preview.maxed ? item.enhance : preview.outcomes[0] };
+    const picker = ENCHANT_STONES.map(id => `<button type="button" data-action="pick-stone" data-id="${id}" aria-pressed="${id === this.forgeStone}">`
+      + `${itemIcon(id, ITEMS[id])}<span>${ITEMS[id].name}<small>보유 ${this.save.stacks[id] || 0}개 · 1회 ${id === STONE ? ENCHANT.stonesPerAttempt : 1}개</small></span></button>`).join('');
+    const target = preview.outcomes.map(level => `+${level}`).join(' / ');
+    const danger = preview.risky && !preview.blessed && !preview.cursed;
+    const odds = preview.maxed ? '최대 강화' : danger ? `성공 ${pct(preview.chance)} · 실패 시 파괴` : '파괴 없음';
+    const html = `<section class="forge-work ${danger ? 'risky' : ''} ${preview.blessed ? 'blessed' : ''} ${preview.cursed ? 'cursed' : ''}" aria-label="강화 의식">
+      <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3>${ITEMS[item.id].handedness === 2 ? '<small>양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}</div>
+      <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
+      <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target}</strong></div>
+      ${preview.blessed ? `<p class="forge-blessing">축복 · +1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
+      ${preview.cursed ? '<p class="forge-blessing">저주 · -1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>' : ''}
+      <strong class="forge-odds">${odds}</strong>
+      <div class="p2-stones stone-picker" role="group" aria-label="사용할 강화석">${picker}</div>
+      ${!preview.maxed && preview.have < preview.cost ? '<p class="p2-hint">강화석 부족</p>' : ''}
+      ${preview.maxed ? '' : `<details class="forge-preview"><summary>강화 후 능력치${preview.cursed ? ' · 최저 결과 기준' : ''}</summary>${linesHtml(compareItems(item, projected, this.save))}</details>`}</section>`;
+    const label = preview.maxed ? '최대 강화' : preview.have < preview.cost ? '강화 불가 · 강화석 부족'
+      : `강화 · ${ITEMS[this.forgeStone].name} ${preview.cost}개${danger ? ` · 성공 ${pct(preview.chance)} · 파괴 위험` : ''}`;
+    return { html, footer: button(label, 'enhance', `${uid} data-stone="${this.forgeStone}" class="primary ${danger ? 'danger' : ''}"`, preview.maxed || preview.have < preview.cost) };
+  }
+
+  returnToPanel() {
+    this.closeSheet();
+    if (this.root.dataset.page === 'receipt') return this.showReceipt();
+    if (this.panel === 'forge') return this.showForge();
+    if (this.panel === 'merchant') return this.showMerchant();
+    if (this.panel === 'inventory') return this.showInventory();
+    if (this.panel === 'bag') return this.showBag();
+    if (this.panel === 'character') return this.showAllocation(false);
+    if (this.panel === 'shop') return this.showShop();
+    return this.showInn();
+  }
+
+  // --- Skill books / character allocation ---
+
+  characterTabs(tab) {
+    return `<div class="p2-two" role="group" aria-label="캐릭터 탭">${[['stats','능력치'],['skills','기술']].map(([id,label]) => button(label, 'character-tab', `data-tab="${id}" aria-pressed="${tab === id}"`)).join('')}</div>`;
+  }
+
+  showCharacterSkills({ keepScroll = false } = {}) {
+    this.panel = 'character-skills';
+    const known = characterSkills(this.save);
+    this.skillFamily ||= weaponFamily(this.save);
+    const family = this.skillFamily;
+    const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${FAMILY_LABELS[id]} ${known.filter(k => ABILITIES[k].family === id).length}</span>`, 'skill-family-tab',
+      `data-family="${id}" id="skill-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="skill-panel"`)).join('');
+    const rows = known.filter(id => ABILITIES[id].family === family).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
+    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}${loadoutHtml(this.save)}<div class="academy-tabs skill-tabs" role="tablist" aria-label="기술 계열">${tabs}</div>`
+      + `<section id="skill-panel" class="character-skills faculty-${family}" role="tabpanel" aria-labelledby="skill-tab-${family}">${rows || '<p class="muted">배운 기술 없음</p>'}</section>`, 'character-skills', '', { keepScroll });
+  }
+
+  openSkill(id) {
+    if (!SKILL_DISPLAY[id] || !hasSkill(this.save,id)) throw new Error('아직 배우지 않은 기술입니다.');
+    const a = ABILITIES[id], p = a.projectile, shape = a.shape;
+    const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
+      : a.executeUndead ? `대상 반경 ${a.executeUndead.radius} px · 가장 가까운 적 언데드 1체`
+      : a.shield ? `보호 범위 반경 ${a.shield.radius} px · 자신과 범위 안 살아 있는 아군`
+      : a.heal ? `회복 범위 반경 ${a.heal.radius} px · 자신과 범위 안 살아 있는 아군`
+      : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
+      : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
+    const effects = a.executeUndead ? '확률 즉사 · 실패 시 쿨타임 없음 · 언데드 보스도 1% 미만의 확률로 즉사' : a.shield ? '8초 동안 적 피해 1회 방어 · 피격 후 보호막 파괴 · 중복 없이 갱신' : a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 언데드에게 마법 피해' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.sunder ? ' · 받는 피해 +15% · 파쇄 5초' : ''}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
+    const slot = slotOf(this.save,id);
+    const slotButtons = `<div class="p2-three" role="group" aria-label="슬롯">${[0, 1, 2].map(i => button(`슬롯 ${i + 1}`, 'skill-slot', `id="skill-slot-${i + 1}" data-id="${id}" data-slot="${i}" aria-pressed="${slot === i}"`)).join('')}</div>`;
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.executeUndead ? '<dt>효과</dt><dd>확률 즉사</dd>' : a.shield ? '<dt>효과</dt><dd>8초 · 피해 1회 방어</dd>' : a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save), ITEMS[equippedItem(this.save,'weapon')?.id]?.form) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
+  }
+
+  showTrainer({ keepScroll = false } = {}) {
+    this.academyFamily ||= ITEMS[equippedItem(this.save,'weapon')?.id]?.family || 'blade';
+    const family = this.academyFamily, school = ACADEMY[family];
+    const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
+    const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => BOOKS[id].family === family)].sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
+    const ladder = [0,1,2].map(grade => `<section class="academy-stage" data-grade="${grade}"><h3><span>${grade+1}</span>${['입문','숙련','상급'][grade]}</h3><div class="academy-stage-cards">${ids.filter(id => SKILL_DISPLAY[id].grade === grade).map(id => skillCardHtml(id,this.save)).join('')}</div></section>`).join('');
+    this.showInnPanel('아카데미', `${loadoutHtml(this.save, { interactive: false })}<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법', keepScroll});
+  }
+
+  showAllocation(required = false, initialize = true) {
+    if (initialize) this.draft = Object.fromEntries(STAT_KEYS.map((key) => [key, 0]));
+    this.allocationRequired = required;
+    const spent = Object.values(this.draft).reduce((sum, value) => sum + value, 0);
+    const remaining = this.save.statPoints - spent;
+    const gearStats = effectiveStats(this.save);
+    const rows = STAT_KEYS.map((key) => {
+      const full = remaining === 0 || this.save.stats[key] + this.draft[key] >= cap(this.save.level);
+      const gear = gearStats[key] - this.save.stats[key];
+      return `<div class="allocation-row ${this.draft[key] ? 'changed' : ''}"><span>${STAT_NAMES[key]}</span>
+      ${button('−', 'stat-minus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 줄이기"`, this.draft[key] === 0)}
+      <b>${this.save.stats[key] + this.draft[key]}${gear ? `<small class="gain">+${gear}</small>` : ''}</b>
+      ${button('+', 'stat-plus', `data-key="${key}" aria-label="${STAT_NAMES[key]} 올리기"`, full)}
+      ${button('+5', 'stat-plus', `data-key="${key}" data-step="5" aria-label="${STAT_NAMES[key]} 5 올리기"`, full)}</div>`;
+    }).join('');
+    const before = deriveMods(this.save);
+    const after = deriveMods(allocateStats(this.save, this.draft));
+    const pct = (v) => v * 100;
+    const preview = [['HP', before.maxHp, after.maxHp], ['MP', before.maxMp, after.maxMp],
+      ['MP/s', before.mpRegen, after.mpRegen], ['HP/s', before.hpRegen, after.hpRegen],
+      ['치명 %', pct(before.critChance), pct(after.critChance)], ['소지 kg', before.capacity, after.capacity]]
+      .map(([label, from, to]) => `<span>${label} <b>${amount(to)}</b>${to !== from ? `<small class="gain">▲+${amount(to - from)}</small>` : ''}</span>`).join('');
+    const tabs = required ? '' : this.characterTabs('stats');
+    const content = `${tabs}${required ? '' : this.characterHtml()}<p id="allocation-left" class="points-left"><b>${remaining}</b> 점 남음 <small>상한 ${cap(this.save.level)}</small></p>
+      <div class="allocation">${rows}</div><p class="muted">지능: 마법 위력 · 지혜: 최대 MP · 마나 재생 · 물약 효율</p><p class="p2-stat-summary">${preview}</p>${required ? '' : `<h3 class="section-title">지난 여정</h3>${this.receipt ? this.receiptHtml(this.receipt) : '<p class="muted">아직 다녀온 여정이 없다.</p>'}`}`;
+    const footer = button(required ? '분배 완료' : '확인', 'allocate', 'id="allocation-confirm" class="primary"', required ? remaining !== 0 : spent === 0);
+    this.panel = required ? null : 'character';
+    this.show(this.shellHtml(this.panelHeader(required ? this.hubCopy('레벨이 올랐다', '영혼의 제단 · 레벨이 올랐다') : this.hubCopy('캐릭터', '영혼의 제단'), required ? `Lv.${this.save.level} · 능력치 ${this.save.statPoints}점` : '인장의 기록', required ? '' : 'inn'), content, footer),
+      required ? 'level-up' : 'character', { shell: true, keepScroll: !initialize });
+  }
+
+  // --- Contract board and departure check ---
+
+  showBoard() {
+    const current = availableStages(this.save).find(id => !this.save.cleared[id]);
+    const selected = REGIONS.find(r => r.id === this.mapRegion) || regionFor(current) || REGIONS[0];
+    this.mapRegion = selected.id;
+    const paths = REGION_EDGES.map(([a,b]) => {
+      const from = REGIONS.find(r => r.id === a).pos, to = REGIONS.find(r => r.id === b).pos;
+      return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" />`;
+    }).join('');
+    const nodes = REGIONS.map(r => {
+      const open = r.maps.some(id => mapUnlocked(this.save,id)), done = open && r.maps.filter(id => !MAPS[id].questId).every(id => this.save.cleared[id]);
+      return button(`${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${r.name}</span><small>${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
+        `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" style="left:${r.pos[0]}%;top:${r.pos[1]}%" aria-pressed="${this.mapRegion === r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
+    }).join('');
+    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${r.maps.some(silverSourceStage) ? SILVER_SOURCE : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
+      const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
+      const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
+      return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
+        `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
+    }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
+  }
+
+  sideQuestsHtml(regionId) {
+    return Object.values(SIDE_QUESTS).filter(q => q.regions.includes(regionId) && questOffered(this.save, q.id)).map(q => {
+      const state = questState(this.save, q.id), progress = state?.progress || 0;
+      const label = `${icon(state?.state === 'done' ? 'clear' : 'depart')}<span><strong>의뢰 · ${escape(q.name)}</strong><small>${escape(ITEMS[q.item].name)} ${progress} / ${q.target} · ${q.maps.join(' · ')}</small><small>보상 XP ${q.rewardXp}</small></span>`;
+      if (!state) return button(`${label}<small>수락</small>`, 'quest-accept', `data-quest="${q.id}" class="contract side-contract depart"`);
+      return `<div class="contract side-contract ${state.state === 'done' ? 'clear' : 'active'}" data-quest="${q.id}">${label}<small>${state.state === 'done' ? '완료' : '진행 중'}</small></div>`;
+    }).join('');
+  }
+
+  sideQuestLine(stage) {
+    return Object.values(SIDE_QUESTS).filter(q => q.maps.includes(stage) && questState(this.save, q.id)?.state === 'active')
+      .map(q => `<p class="quest-level-comparison side-quest-line" data-quest="${q.id}">${escape(q.name)} <b>${questState(this.save, q.id).progress} / ${q.target}</b></p>`).join('');
+  }
+
+  showSortie(stage, devWeapon = null) {
+    if (!devWeapon && !mapUnlocked(this.save, stage)) throw new Error('아직 잠긴 맵입니다.');
+    if (this.sortieStage !== stage) this.sortieThreat = 1;
+    this.sortieStage = stage;
+    this.devWeapon = devWeapon;
+    const threat = this.sortieThreat || 1;
+    const weight = carriedWeight(this.save);
+    const supplies = SUPPLIES.map((id) =>
+      `<span class="icon-count ${this.save.stacks[id] ? '' : 'loss'}" aria-label="${ITEMS[id].name} ${this.save.stacks[id] || 0}">${itemIcon(id, ITEMS[id])}${this.save.stacks[id] || 0}</span>`).join('');
+    const threats = [1, 2, 3].map(level => {
+      const locked = stage === 'S1' ? level > 1 : level > unlockedThreat(this.save, stage);
+      const mult = BALANCE.threats[level - 1];
+      return button(`<strong>위협 ${level}</strong><small>${locked ? '잠김' : level === 1 ? '기본' : `HP ×${mult.hp} · 골드 ×${mult.gold}`}</small>`,
+        'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
+    }).join('');
+    this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
+      <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
+      <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
+      <button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      <details class="help"><summary>설정</summary>
+        <label class="check"><input id="sortie-reduced" type="checkbox"
+          ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
+    'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: '출정 확인', back: 'board' });
+  }
+
+  launch(stage, reduced = false, weapon = null) {
+    if (this.canInteract?.() === false) return;
+    if (!weapon && !mapUnlocked(this.save, stage)) throw new Error('아직 잠긴 맵입니다.');
+    this.commit(selectThreat(this.save, stage, stage === 'S1' ? 1 : this.sortieThreat || 1));
+    this.root.hidden = true;
+    this.startRound(stage, reduced, weapon);
+  }
+
+  // --- Settlement: stamp → ledger → one-by-one gear reveal → inn. ---
+
+  receiptHtml(receipt, includeGear = true) {
+    const loot = receipt.lootKept;
+    const materials = Object.entries(loot.stacks).filter(([, count]) => count > 0).map(([id, count]) =>
+      `<span class="reward ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? 'loot-highlight' : ''}" ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `data-premium="${id}"` : ''} title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `득템 · ${ITEMS[id].name} ` : ''}×${count}</span>`).join('');
+    const gear = loot.items.map(item => `<article class="gear-card ${item.enhance > 0 ? 'loot-highlight' : ''}">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${dropOriginHtml(item)}${linesHtml(comparisonFor(item, this.save))}</div></article>`).join('');
+    return `<div class="receipt"><div class="reward-pair">
+      <div><small>경험치</small><strong class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</strong>
+        ${receipt.xpLost ? `<small class="loss" aria-label="손실 경험치">−${amount(receipt.xpLost)}</small>` : ''}</div>
+      <div><small>골드</small><strong class="reward" aria-label="획득 골드">${icon('gold')}+${loot.gold}</strong></div></div>
+      ${(receipt.masteryRises || []).map(({ id, level }) => `<p class="mastery-rise">숙련 상승: ${escape(ABILITIES[id].name)} Lv${level}</p>`).join('')}
+      ${materials ? `<div class="reward-row">${materials}</div>` : ''}${includeGear && gear ? `<div class="receipt-gear">${gear}</div>` : ''}
+      <details class="help"><summary>상세 정산</summary>${this.receiptDetails(receipt)}</details></div>`;
+  }
+
+  receiptDetails(receipt) {
+    const listLoot = (loot) => {
+      const parts = Object.entries(loot.stacks).filter(([, count]) => count > 0)
+        .map(([id, count]) => `${ITEMS[id].name} ×${count}`);
+      parts.push(...loot.items.map(itemLabel));
+      if (loot.gold) parts.unshift(`${loot.gold} G`);
+      return parts.length ? parts.map(escape).join(' · ') : '없음';
+    };
+    const used = Object.entries(receipt.used).filter(([, count]) => count > 0)
+      .map(([id, count]) => `${ITEMS[id].name} ${count}`).join(' · ') || '없음';
+    const restored = Object.entries(receipt.restored).filter(([, count]) => count > 0)
+      .map(([id, count]) => `${ITEMS[id].name} ${count}`).join(' · ');
+    return `<div class="receipt-details"><p>XP +${receipt.xpGained} / −${amount(receipt.xpLost)}
+      · 예치 포기 ${receipt.xpForfeited}</p><p>레벨 +${receipt.levelsGained} · 능력치 +${receipt.statPointsGained}</p>
+      <p>확보: ${listLoot(receipt.lootKept)}</p><p>상실: ${listLoot(receipt.lootLost)}</p>
+      <p>사용: ${used}</p>${restored ? `<p>첫 S2 구조 보급: ${restored}</p>` : ''}
+      ${receipt.xpDiscarded ? `<p>Lv30 상한으로 받지 못한 XP: ${amount(receipt.xpDiscarded)}</p>` : ''}
+      ${receipt.pityGranted ? `<p>첫 대장 격파 보증: 대장의 망치를 ${this.hubCopy('창고에', '유품함에')} 맡겼다.</p>` : ''}</div>`;
+  }
+
+  finish(save, receipt, cause) {
+    this.save = save;
+    this.receipt = receipt;
+    this.pendingReceipt = { receipt, cause };
+    this.revealed = 0;
+    this.lootState = {};
+    if (receipt.levelsGained > 0) this.showAllocation(true);
+    else this.showReceipt();
+  }
+
+  revealHtml(receipt) {
+    const items = receipt.lootKept.items;
+    if (!items.length) return '';
+    const cards = items.slice(0, this.revealed).map(drop => {
+      const item = this.save.items.find(candidate => candidate.uid === drop.uid);
+      const state = item ? (isWorn(this.save, item.uid) ? '착용 중' : this.lootState[drop.uid] || '') : this.lootState[drop.uid] || '보유하지 않음';
+      const rare = drop.enhance > 0 || ['rare', 'epic'].includes(ITEMS[drop.id].rarity);
+      const uid = `data-uid="${escape(drop.uid)}"`;
+      const actions = item && !state
+        ? `<div class="p2-three">${button('장착', 'loot-equip', uid, comparisonFor(item, this.save).locked)}${button(`판매 ${sellPrice(item)} G`, 'loot-sell', uid, isWorn(this.save, item.uid))}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`)}</div>`
+        : `<small class="p2-loot-status" role="status">${state || '보관함'}</small>`;
+      return `<article class="p2-loot-card ${rare ? 'sheen' : ''} ${drop.enhance > 0 ? 'loot-highlight' : ''}">${dropOriginHtml(drop)}${cardHtml(item || drop, this.save, { action: item ? 'open-item' : 'noop', disabled: !item })}${actions}</article>`;
+    }).join('');
+    const left = items.length - this.revealed;
+    return `<section class="reveal"><p class="minor">${this.hubCopy('마을로 돌아가면 자동 보관', '묘지로 돌아가면 유품함에 자동 보관')}</p><h3>획득 장비 <span class="muted">${this.revealed} / ${items.length}</span></h3><div class="p2-loot">${cards}</div>
+      ${left ? button(`${this.revealed ? '다음 장비' : '장비'} 공개 · ${left}개 남음`, 'reveal', 'class="reveal-button"') : ''}</section>`;
+  }
+
+  questReceiptHtml(receipt) {
+    return (receipt.quests || []).filter(q => SIDE_QUESTS[q.id]).map(q => `<p class="side-quest-receipt" data-quest="${q.id}">${icon(q.done ? 'clear' : 'depart')}${escape(SIDE_QUESTS[q.id].name)} · ${escape(ITEMS[SIDE_QUESTS[q.id].item].name)} +${q.gained} · <b>${q.progress} / ${q.target}</b>${q.done ? ` · 완료 · XP +${q.rewardXp}` : ''}</p>`).join('');
+  }
+
+  showReceipt() {
+    const { receipt, cause } = this.pendingReceipt;
+    const title = { clear: '완료', return_scroll: '귀환', death: '사망' }[receipt.terminal];
+    const glyph = { clear: 'clear', return_scroll: 'return_scroll', death: 'death' }[receipt.terminal];
+    const lost = receipt.terminal === 'death' && (receipt.lootLost.items.length || receipt.lootLost.gold)
+      ? `<p class="loss">잃은 전리품: ${receipt.lootLost.gold} G${receipt.lootLost.items.length ? ` · 장비 ${receipt.lootLost.items.length}개` : ''}</p>` : '';
+    const content = `<div class="result-intro" data-terminal="${receipt.terminal}"><span class="result-stamp">${icon(glyph)}</span>
+      <div><small>${receipt.stageId} · 위협 ${receipt.threat}</small><h1>${title}</h1>${receipt.terminal === 'death' ? `<p id="cause">${escape(cause)}</p>` : ''}</div></div>
+      ${this.receiptHtml(receipt, false)}${this.questReceiptHtml(receipt)}${lost}${this.revealHtml(receipt)}`;
+    this.panel = null;
+    this.show(this.shellHtml('', content, button(`<span>${this.hubCopy('여관으로', '잊힌 묘지로')}</span>` + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
+  }
+
+  autoUseHtml() {
+    const auto = autoUseSettings(this.save);
+    const group = (key, label, options) => `<div class="quantity-row"><span>${label}</span></div><div class="${options.length === 3 ? 'p2-three' : 'p2-two'}" role="group" aria-label="${label}">${
+      options.map(([value, text]) => button(text, 'auto-use', `id="auto-use-${key}-${value}" data-key="${key}" data-value="${value}" aria-pressed="${auto[key] === value}"`)).join('')}</div>`;
+    const onOff = [[true, '켜짐'], [false, '꺼짐']];
+    const levels = AUTO_USE_LEVELS.map(level => [level, `${level}%`]);
+    return `<section class="auto-use" aria-label="자동 사용">${group('potion', '자동 물약', onOff)}${auto.potion
+      ? group('hp', 'HP 기준', levels) + group('mp', 'MP 기준', levels) : ''}${group('recall', '자동 귀환', onOff)}</section>`;
+  }
+
+  presentationHtml() {
+    const probe = {};
+    document.dispatchEvent(new CustomEvent('arpg:sound', { detail: probe }));
+    const group = (label, action, options) => `<div class="quantity-row"><span>${label}</span></div><div class="p2-two" role="group" aria-label="${label}">${
+      options.map(([value, text, pressed]) => button(text, action, `id="${action}-${value}" data-value="${value}" aria-pressed="${pressed}"`)).join('')}</div>`;
+    return `<section class="auto-use" aria-label="화면·소리">${group('사운드', 'set-sound', [['on', '켜짐', probe.muted === false], ['off', '꺼짐', probe.muted === true]])
+      }</section>`;
+  }
+
+  showSettings() {
+    this.showInnPanel('설정', `${this.presentationHtml()}${this.autoUseHtml()}
+      <p class="minor">캐릭터는 이 브라우저에 저장된다. 전투 중 새로고침하면 마지막 ${this.hubCopy('여관으로', '묘지로')} 돌아온다.</p>
+      <p class="p2-lock">${icon('lock')}초기화하면 캐릭터·보급·장비·진척을 모두 잃는다.</p>
+      ${this.resetStep === 0 ? button('저장 초기화', 'reset-first') : this.resetStep === 1
+    ? button('캐릭터를 지울까? 한 번 더 확인', 'reset-second')
+    : button('최종 확인 · 전부 지우기', 'reset-final', 'class="danger"')}`, 'settings');
+  }
+
+  action(action, data) {
+    if (this.canInteract?.() === false) return;
+    if (this.enchantFx?.active) return;
+    if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
+    switch (action) {
+      case 'character-choice': return this.showCharacterChoice();
+      case 'choose-human':
+        this.creationLineage = null;
+        this.save = this.initialCharacters.human();
+        this.receipt = this.save?.lastReceipt ?? null;
+        return this.save ? this.showInn() : this.showIntro();
+      case 'choose-skeleton':
+      case 'choose-knight': {
+        const save = this.initialCharacters.read();
+        this.save = save; this.receipt = save?.lastReceipt ?? null;
+        if (save) return this.showInn();
+        this.creationLineage = 'skeleton_knight'; this.answers = []; this.chosenWeapon = undefined;
+        return this.showName();
+      }
+      case 'answer-skeleton': {
+        if (!this.initialCharacters || this.answers.length !== 0 || this.creationLineage === 'skeleton_knight') return;
+        const save = this.initialCharacters.read(true); // Acquire the real slot owner before any creation.
+        if (save) {
+          return this.show(this.panelHtml('이미 깨어난 해골이 있다', `
+            <p>${escape(save.name)}의 모험을 이어갈 수 있습니다. 새 캐릭터로 덮어쓰지 않습니다.</p>
+            ${button('기존 해골 이어하기', 'skeleton-resume')}
+            ${button('취소 · 문답으로', 'skeleton-resume-cancel')}`), 'skeleton-resume');
+        }
+        this.save = null; this.receipt = null;
+        this.creationLineage = 'skeleton_knight'; this.chosenWeapon = undefined;
+        this.answers.push(0); // Narrative action, not a fifth answer value in the save schema.
+        return this.showQuiz();
+      }
+      case 'skeleton-resume-cancel':
+        this.initialCharacters.cancel(); // Restore original draft owner; never reload/quarantine human bytes.
+        return this.showQuiz();
+      case 'skeleton-resume': {
+        const save = this.initialCharacters.read(); // Recheck an occupied slot after the prompt.
+        if (!save) throw new Error('해골 저장 슬롯이 변경되었습니다. 취소 후 다시 선택하세요.');
+        this.save = save; this.receipt = save.lastReceipt ?? null;
+        this.creationLineage = null;
+        return this.showInn();
+      }
+      case 'weapon-confirm': return this.confirmEquipment(data);
+      case 'weapon-cancel': return this.cancelEquipment();
+      case 'name': return this.showName();
+      case 'answer':
+        this.answers.push(Number(data.choice));
+        return this.answers.length === 5 ? this.showQuizResult() : this.showQuiz();
+      case 'override':
+        if (this.creationLineage === 'skeleton_knight') return;
+        this.chosenWeapon = data.family;
+        return this.showQuizResult();
+      case 'create':
+        if (this.creationLineage === 'skeleton_knight') {
+          this.save = this.initialCharacters.create({lineage: 'skeleton_knight', name: this.name, answers: this.answers, createdAt: Date.now()});
+          this.receipt = null; this.creationLineage = null;
+          return this.showInn();
+        }
+        this.commit(createSave({
+          name: this.name, answers: this.answers, weapon: this.chosenWeapon, createdAt: Date.now(),
+        }));
+        return this.launch('S1');
+      case 'inn':
+      case 'result-inn': return this.showInn();
+      case 'character-tab':
+        if (data.tab !== 'skills') return this.showAllocation(false);
+        this.skillFamily = null;
+        return this.showCharacterSkills();
+      case 'skill-family-tab':
+        if (!FAMILIES.includes(data.family)) return;
+        this.skillFamily = data.family;
+        this.showCharacterSkills({ keepScroll: true });
+        this.root?.querySelector(`[data-action="skill-family-tab"][data-family="${data.family}"]`)?.focus({preventScroll:true});
+        return;
+      case 'skill-detail': return this.openSkill(data.id);
+      case 'skill-warn':
+        if (!ABILITIES[data.id] || !hasSkill(this.save, data.id)) return;
+        return this.mountSheet(this.dialogHtml(`${ABILITIES[data.id].name} · 무기 경고`, weaponWarnHtml(data.id, this.save)));
+      case 'skill-slot': {
+        const slot = Number(data.slot);
+        // Tapping the slot a skill already occupies takes it out.
+        this.commit(setSlot(this.save, weaponFamily(this.save), slot, slotOf(this.save, data.id) === slot ? null : data.id));
+        if (data.context === 'academy') return this.showTrainer({ keepScroll: true });
+        this.showCharacterSkills({ keepScroll: true });
+        return data.context === 'character' ? undefined : this.openSkill(data.id);
+      }
+      case 'character': return this.showAllocation(false);
+      case 'close-sheet': return this.closeSheet();
+      case 'noop': return undefined;
+      // Supplies
+      case 'shop': return this.showShop();
+      case 'auto-buy-settings': return this.openAutoBuySettings();
+      case 'auto-buy-target': {
+        if (!SUPPLIES.includes(data.id) || ![-1, 1].includes(Number(data.step))) return;
+        const autoBuy = { ...DEFAULT_AUTO_BUY, ...this.save.autoBuy };
+        autoBuy[data.id] = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, autoBuy[data.id] + Number(data.step)));
+        this.commit({ ...this.save, autoBuy });
+        return this.openAutoBuySettings();
+      }
+      case 'auto-buy': {
+        const result = autoBuySupplies(this.save);
+        this.commit(result.save);
+        this.autoBuyResult = result.message;
+        return this.showShop();
+      }
+      case 'shop-tab':
+        this.shopTab = data.tab;
+        return this.showShop();
+      case 'sell-stack':
+        this.commit(sellStack(this.save, data.id, Number(data.count), data.source));
+        return this.showShop();
+      case 'shop-select':
+        this.shopId = data.id;
+        this.shopCount = 1;
+        return this.openSupply();
+      case 'shop-count':
+        this.shopCount = Math.max(1, Math.min(99, this.shopCount + Number(data.step)));
+        return this.openSupply();
+      case 'shop-max':
+        this.shopCount = Math.max(1,supplyQuote(this.save,this.shopId,this.shopCount).maxCount);
+        return this.openSupply();
+      case 'buy':
+        this.commit(buy(this.save, this.shopId, this.shopCount));
+        this.showShop();
+        return this.openSupply();
+      // Bag, sockets and comparison
+      case 'inventory': return this.showInventory();
+      case 'bag': return this.showBag();
+      case 'stash-tab':
+        this.stashTab = data.tab;
+        return this.showInventory();
+      case 'move-stack':
+        this.commit(moveConsumable(this.save, data.id, Number(data.count), data.destination));
+        return this.panel === 'bag' ? this.showBag() : this.showInventory();
+      case 'filter':
+        this.filter = data.slot;
+        return this.showInventory();
+      case 'sort':
+        this.sort = { grade: 'recent', recent: 'weight', weight: 'grade' }[this.sort || 'grade'];
+        return this.showInventory();
+      case 'socket': return this.showSocket(data.slot);
+      case 'open-item': return this.openItem(data.uid, data.mode || 'equip');
+      case 'equip': return this.beginEquipment(action, data.uid);
+      case 'unequip': {
+        // Actual skeleton armor only; no item deletion, costs, gate or permanent-form change.
+        if (!(data.slot === 'offhand' || this.save.lineage === 'skeleton_knight' && ['hands','feet','body','head'].includes(data.slot))
+          || this.save.equipped[data.slot] !== data.uid) throw new Error('해제할 장비가 변경되었습니다.');
+        this.commit({ ...this.save, equipped: { ...this.save.equipped, [data.slot]: null } });
+        return this.returnToPanel();
+      }
+      case 'sell':
+        this.commit(sellItem(this.save, data.uid));
+        if (this.selectedUid === data.uid) this.selectedUid = null;
+        return this.returnToPanel();
+      case 'dismantle': return this.confirmDismantle(data.uid);
+      case 'confirm-dismantle':
+        this.commit(dismantle(this.save, data.uid));
+        if (this.lootState) this.lootState[data.uid] = '분해함';
+        if (this.selectedUid === data.uid) this.selectedUid = null;
+        return this.returnToPanel();
+      // Merchant
+      case 'merchant':
+        if (data.tab) this.merchantTab = data.tab;
+        return this.showMerchant();
+      case 'merchant-tab':
+        this.merchantTab = data.tab;
+        return this.showMerchant();
+      case 'buy-gear':
+        this.commit(buyGear(this.save, data.uid));
+        return this.showMerchant();
+      case 'buy-equip': return this.beginEquipment(action, data.uid);
+      case 'sell-shop':
+        this.commit(sellItem(this.save, data.uid));
+        return this.showMerchant();
+      case 'refresh-shop':
+        this.commit(refreshShop(this.save));
+        return this.showMerchant();
+      // Forge
+      case 'socket-forge': {
+        const item = this.save.items.find(candidate => candidate.uid === data.uid);
+        if (!item || item.enhance >= ENCHANT.max) return;
+        this.forgeTab = 'enhance';
+        this.selectedUid = item.uid;
+        this.forgeStone = STONE;
+        return this.showForge();
+      }
+      case 'craft-hub':
+        this.forgeTab = 'salvage';
+        this.selectedUid = null;
+        return this.showForge();
+      case 'forge':
+        this.forgeTab = 'enhance';
+        this.selectedUid = null;
+        return this.showForge();
+      case 'forge-tab':
+        if (!['enhance', 'stones', 'salvage'].includes(data.tab)) return;
+        this.forgeTab = data.tab;
+        return this.showForge();
+      case 'select-gear':
+        this.selectedUid = data.uid;
+        return this.showForge();
+      case 'pick-stone':
+        this.forgeStone = data.id;
+        return this.showForge();
+      case 'enhance': {
+        // Commit first: the outcome is saved before any animation, so reload cannot reroll it.
+        const stoneId = data.stone || this.forgeStone;
+        const { save, result } = enchant(this.save, data.uid, stoneId);
+        this.commit(save);
+        this.lastEnchant = this.forgeNotice = result;
+        if (result.outcome === 'destroyed') this.selectedUid = null;
+        this.showForge();
+        this.enchantFx = playEnchantFx(this.root, result, stoneId);
+        return;
+      }
+      case 'crack-greater': {
+        const { save, result } = crackGreaterStone(this.save);
+        this.commit(save);
+        this.lastCrack = this.forgeNotice = result;
+        this.showForge();
+        this.enchantFx = playEnchantFx(this.root, result);
+        return;
+      }
+      case 'craft':
+        this.commit(craft(this.save, data.id));
+        this.selectedUid = this.save.items.at(-1).uid;
+        this.craftNotice = `${ITEMS[data.id].name} 제작 완료 · +0`;
+        this.forgeTab = 'enhance';
+        return this.showForge();
+      // Settlement reveal
+      case 'reveal':
+        this.revealed = Math.min(this.revealed + 1, this.pendingReceipt.receipt.lootKept.items.length);
+        return this.showReceipt();
+      case 'loot-equip': return this.beginEquipment(action, data.uid);
+      case 'loot-sell':
+        this.commit(sellItem(this.save, data.uid));
+        this.lootState[data.uid] = '판매함';
+        return this.showReceipt();
+      // Trainer
+      case 'trainer': return this.showTrainer();
+      case 'academy-tab':
+        if (!ACADEMY[data.family]) return;
+        this.academyFamily = data.family;
+        this.showTrainer();
+        this.root?.querySelector(`[data-action="academy-tab"][data-family="${data.family}"]`)?.focus({preventScroll:true});
+        return;
+      case 'learn-skill':
+        this.commit(learnSkill(this.save, data.id));
+        if (loadoutOf(this.save).includes(null)) this.commit(equipSkill(this.save, data.family || ABILITIES[data.id].family, data.id));
+        return this.showTrainer({ keepScroll: true });
+      case 'equip-skill':
+        this.commit(equipSkill(this.save, data.family, data.id));
+        return this.showTrainer({ keepScroll: true });
+      case 'stat-plus':
+      case 'stat-minus':
+        if (action === 'stat-minus') this.draft[data.key] -= 1;
+        else {
+          // +5 stops at whatever is left of the points or the cap.
+          const left = this.save.statPoints - Object.values(this.draft).reduce((sum, value) => sum + value, 0);
+          const room = cap(this.save.level) - this.save.stats[data.key] - this.draft[data.key];
+          this.draft[data.key] += Math.max(0, Math.min(Number(data.step) || 1, left, room));
+        }
+        return this.showAllocation(this.allocationRequired, false);
+      case 'allocate':
+        this.commit(allocateStats(this.save, this.draft));
+        return this.allocationRequired ? this.showReceipt() : this.showAllocation(false);
+      // Board
+      case 'coop': {
+        const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
+        return this.startCoop?.(stage, this.sortieThreat || 1);
+      }
+      case 'map-region':
+        this.mapRegion = data.region;
+        return this.showBoard();
+      case 'board': return this.showBoard();
+      case 'quest-accept':
+        this.commit(acceptQuest(this.save, data.quest));
+        return this.showBoard();
+      case 'sortie': return this.showSortie(data.stage);
+      case 'threat':
+        selectThreat(this.save, this.sortieStage, Number(data.threat));
+        this.sortieThreat = Number(data.threat);
+        return this.showSortie(this.sortieStage, this.devWeapon);
+      case 'launch':
+        if (!(this.save.stacks.potion || 0)) {
+          return this.mountSheet(this.dialogHtml('물약 없음', '',
+            button('그냥 출정', 'launch-without-potion', 'class="primary"') + button('상점', 'departure-shop')));
+        }
+        return this.launch(this.sortieStage, this.root.querySelector('#sortie-reduced').checked, this.devWeapon);
+      case 'departure-shop':
+        this.shopTab = 'buy';
+        return this.showShop();
+      case 'launch-without-potion':
+        this.closeSheet();
+        return this.launch(this.sortieStage, this.root.querySelector('#sortie-reduced').checked, this.devWeapon);
+      // Settings
+      case 'settings':
+        this.resetStep = 0;
+        return this.showSettings();
+      case 'auto-use': {
+        const value = data.value === 'true' ? true : data.value === 'false' ? false : Number(data.value);
+        const autoUse = { ...autoUseSettings(this.save), [data.key]: value };
+        if (!validAutoUse(autoUse)) return undefined;
+        this.commit({ ...this.save, autoUse });
+        return this.showSettings();
+      }
+      case 'set-sound':
+        document.dispatchEvent(new CustomEvent('arpg:sound', { detail: { set: data.value === 'off' } }));
+        return this.showSettings();
+      case 'reset-first':
+      case 'reset-second':
+        this.resetStep++;
+        return this.showSettings();
+      case 'reset-final': {
+        const knight = this.save?.lineage === 'skeleton_knight';
+        if (this.resetStep !== 2) throw new Error('초기화 확인이 필요합니다.');
+        this.resetSave();
+        this.save = null;
+        this.answers = [];
+        this.chosenWeapon = null;
+        this.receipt = null;
+        return knight && this.initialCharacters ? this.showCharacterChoice() : this.showIntro();
+      }
+      case 'dev-start':
+        if (!this.dev) return undefined;
+        return this.showSortie(
+          this.root.querySelector('#dev-stage').value, this.root.querySelector('#dev-weapon').value,
+        );
+    }
+    return undefined;
+  }
+}
