@@ -30,7 +30,7 @@ for(const f of ['arpg/js/net/invasion.js','arpg/js/net/lobby.js','arpg/js/main.j
  assert.ok(src,'actual served entry URL for '+f);const url=new URL(src,base+'/arpg/').href;
  const local=await readFile(root+'/'+f),served=Buffer.from(await(await fetch(url,{cache:'no-store'})).arrayBuffer());assert.deepEqual(served,local,f);report.sourceBinding[f]={url,sha256:createHash('sha256').update(local).digest('hex')};
 }
-const cases=[{mode:'coop',width:1280,hostLineage:'human',count:2},...((process.env.ARPG_RELAY_WIDTHS||'1280,390').split(',').map(Number).flatMap(width=>['human','skeleton_knight'].map(hostLineage=>({mode:'mixed',width,hostLineage,count:2})))),...[3,4].map(count=>({mode:'mixed',width:1280,hostLineage:'human',count}))];
+const cases=[...(process.env.ARPG_RELAY_WIDTHS||'1280,390').split(',').map(Number).map(width=>({mode:'coop',width,hostLineage:'human',count:2})),...((process.env.ARPG_RELAY_WIDTHS||'1280,390').split(',').map(Number).flatMap(width=>['human','skeleton_knight'].map(hostLineage=>({mode:'mixed',width,hostLineage,count:2})))),...[3,4].map(count=>({mode:'mixed',width:1280,hostLineage:'human',count}))];
 for(const {mode,width,hostLineage,count} of cases){
  if(process.env.ARPG_RELAY_MODES&&!process.env.ARPG_RELAY_MODES.split(',').includes(mode))continue;
  const invasion=mode==='mixed',host=await client(hostLineage,width),guest=await client(invasion?(hostLineage==='human'?'skeleton_knight':'human'):'human',width),row={mode,width,hostLineage,count,hostWire:host.wire,guestWire:guest.wire};report.rows.push(row);
@@ -52,6 +52,9 @@ for(const {mode,width,hostLineage,count} of cases){
  row.lobbyRoles=await host.page.locator('#arpg-room-mode').innerText();assert.match(row.lobbyRoles,new RegExp(`총 ${count}/4명`));assert.ok(!row.lobbyRoles.includes('캐릭터 확인 중'));if(invasion)assert.ok(row.lobbyRoles.split('해골 / 몬스터 편').length>=2);await host.page.locator('#arpg-party-stage').selectOption('S2');await host.press('#mpl-start');
  try{await host.page.waitForFunction(()=>__arpg.multi?.phase==='running',null,{timeout:10000});await guest.page.waitForFunction(()=>__arpg.multi?.phase==='running',null,{timeout:10000});row.started=true;}catch{row.started=false;row.hostStatus=await host.page.locator('#mpl-status').innerText().catch(()=>null);row.guestStatus=await guest.page.locator('#mpl-status').innerText().catch(()=>null);if(!process.env.ARPG_RELAY_EXPECT_BLOCKED)throw Error('real relay did not start: '+JSON.stringify({mode,width,hostLineage}));}
  if(row.started){
+  const hostRt=host.wire.flatMap(w=>w.sent).map(p=>p.rt),guestRt=guest.wire.flatMap(w=>w.received).map(p=>p.rt);
+  for(const rt of [hostRt,guestRt])assert.ok(rt.indexOf('party')>=0&&rt.indexOf('party')<rt.indexOf('snapshot'),'host negotiation precedes first snapshot');
+  row.negotiationBeforeSnapshot=true;
   await guest.page.waitForFunction(n=>__arpg.world?.entities.filter(p=>p.kind==='player').length===n,count);
   row.session=await host.page.evaluate(()=>__arpg.multi);
   assert.equal(await host.page.evaluate(()=>__arpg.world.round.stageId),'S2');

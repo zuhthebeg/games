@@ -55,9 +55,23 @@ export class CoopSession {
     if (this.isHost && this.world) { const pawn = this.world.entities.find(e => e.pid === this.uid); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(levels); }
     if (!this.isHost) this.sendRt({ t: 'mastery', levels: { ...levels } });
   }
+  negotiate(profiles) {
+    if (this.phase !== 'prepare' || !profiles?.[this.uid]
+      || Object.values(profiles).some(p => !p || typeof p !== 'object')) return false;
+    const config = partyConfig(this.config, profiles);
+    if (!validParty(config, profiles)
+      || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
+      || (profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
+      || (profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
+      || config.invasion && JSON.stringify(profiles[this.uid].rewardSave) !== JSON.stringify(this.profile.rewardSave)) return false;
+    this.config = config; this.negotiatedProfiles = JSON.stringify(profiles);
+    return true;
+  }
   begin(data) {
     if (this.phase !== 'prepare' || !data?.profiles || !data.profiles[this.uid]) return;
-    if (!validParty(data.config, data.profiles)
+    if (!!data.config?.invasion !== !!this.config.invasion
+      || this.negotiatedProfiles && JSON.stringify(data.profiles) !== this.negotiatedProfiles
+      || !validParty(data.config, data.profiles)
       || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
       || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
@@ -104,9 +118,9 @@ export class CoopSession {
       this.onStatus('동료의 위협도가 잠겨 있습니다. 나가서 낮은 위협도를 선택하세요.'); return;
     }
     const profiles = Object.fromEntries([...this.players].map(id => [id, this.profiles[id]]));
-    this.config = partyConfig(this.config, profiles);
-    if (!validParty(this.config, profiles)) { this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return; }
+    if (!this.negotiate(profiles)) { this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return; }
     const data = { ...(this.config.invasion ? { runId: crypto.randomUUID() } : {}), config: this.config, profiles, seed: this.config.seed ?? crypto.getRandomValues(new Uint32Array(1))[0] };
+    this.sendRt({ t: 'party', profiles });
     this.sendAction({ type: 'ARPG_START', payload: data, __snapshot: data }); this.begin(data);
   }
   action(a) {
@@ -115,7 +129,10 @@ export class CoopSession {
 
   rt(from, data, now = this.now) {
     if (!data || !this.players.has(from) || this.lost) return;
-    if (data.t === 'claim' && this.isHost && this.lootLedger) {
+    if (data.t === 'party' && !this.isHost && from === this.host && this.phase === 'prepare') {
+      // Sender-bound roster negotiation derives mode; a snapshot bit cannot switch it.
+      this.negotiate(data.profiles);
+    } else if (data.t === 'claim' && this.isHost && this.lootLedger) {
       this.lootLedger.claim(this.world, from, {id:data.id});
     } else if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
@@ -132,7 +149,7 @@ export class CoopSession {
       }
     } else if (data.t === 'snapshot' && !this.isHost && from === this.host) {
       this.lastHostAt = now;
-      if (this.phase === 'prepare' && data.start) this.begin(data.start);
+      if (this.phase === 'prepare' && this.negotiatedProfiles && data.start) this.begin(data.start);
       if (this.phase === 'prepare') return;
       const fresh = this.buffer.push(data, now);
       // A retransmitted final objective packet can repair a journal gap at the same tick.
@@ -177,6 +194,8 @@ export class CoopSession {
     const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs, this.profiles), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
       events: this.journal, eventSeq: this.eventSeq, ...(this.lootLedger ? { invasionAccounts: Object.fromEntries([...this.players].map(pid=>[pid,this.lootLedger.state(pid)])), lootDrops:this.lootLedger.dropsView() } : {}) };
     this.bytes += new TextEncoder().encode(JSON.stringify(packet)).length; this.snapshots++;
+    // Repeat negotiation before early snapshots to recover from packet loss/reordering.
+    if (packet.start) this.sendRt({ t: 'party', profiles: this.startData.profiles });
     this.sendRt(packet);
     const guests = [...this.players].filter(id => id !== this.uid);
     const ack = guests.length ? Math.min(...guests.map(id => this.acks[id] || 0)) : this.eventSeq;
