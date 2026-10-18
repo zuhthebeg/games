@@ -1,5 +1,5 @@
 import { skeletonAppearance } from './skeleton-equipment-state.js';
-import { ITEMS, equippedItem } from '../meta/items.js';
+import { ITEMS, equippedItem, permitsShield } from '../meta/items.js';
 
 // B only: fixed clothed Knight; hats/weapons are geometry, other slots colour only.
 export function paperdollEnabled(search = globalThis.location?.search || '') {
@@ -31,7 +31,7 @@ export function equipmentVisual(save, overrideKit) {
   const alternate = kit === 'blade' ? weapon?.form === 'blunt'
     : kit === 'bow' ? base === 'short_bow' : weapon?.form === 'wand';
   const descriptor = {
-    ...(kit === 'blade' && def('offhand')?.form === 'shield' ? {offhand:'shield'} : {}),
+    ...(weapon?.family === kit && permitsShield(weapon) && def('offhand')?.form === 'shield' ? {offhand:'shield'} : {}),
     kit, head: !head ? 'none' : { light: 'mage', medium: 'barbarian', heavy: 'knight' }[head.armorClass],
     weapon: alternate ? 'alternate' : 'standard',
     weaponColour: weapon?.family === kit ? WEAPON_COLOURS[base] || [255,255,255] : [255,255,255],

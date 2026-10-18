@@ -58,12 +58,14 @@ test('content audit: no hitscan/beam/long ranged instant shapes; projectile tele
  for(const [id,a] of Object.entries(ABILITIES)) {
   if (a.delivery === 'execution') { assert.equal(id, 'turn_undead'); assert.equal(a.executeUndead.radius,160); continue; }
   if (a.delivery === 'zone') {
-    assert.ok(['meteor','firewall','rain_arrow'].includes(id));assert.equal(a.family,id==='rain_arrow'?'bow':'focus');if(id!=='rain_arrow')assert.equal(a.requiresFocus,true);assert.ok(a.zone.range<=360);
+    assert.ok(['meteor','firewall','rain_arrow','poison_field'].includes(id));assert.equal(a.family,id==='rain_arrow'?'bow':id==='poison_field'?'blade':'focus');if(!['rain_arrow','poison_field'].includes(id))assert.equal(a.requiresFocus,true);assert.ok(a.zone.range<=360);
     if(id==='meteor'){assert.ok(a.zone.delayMs>=700);assert.ok(a.zone.radius<=125);}
     else if(id==='rain_arrow'){assert.equal(a.zone.physical,true);assert.ok(a.zone.durationMs<=1200);assert.ok(a.zone.intervalMs>=300);assert.ok(a.zone.radius<=90);}
+    else if(id==='poison_field'){assert.equal(a.requiresSkeleton,true);assert.ok(a.zone.radius<=80);assert.ok(a.zone.durationMs<=3000);assert.ok(a.zone.intervalMs>=500);}
     else{assert.ok(a.zone.durationMs<=4000);assert.ok(a.zone.intervalMs>=500);assert.ok(a.zone.length<=220);}
     continue;
   }
+  if(a.delivery==='status'){assert.ok(['curse','invisibility','berserk'].includes(id));assert.ok(a.requiresSkeleton || a.requiresTwohand);continue;}
   assert.ok(['shape','projectile','dash'].includes(a.delivery),id);
   if(a.delivery==='shape')assert.ok(['circle','cone'].includes(a.shape.type),id);
  }

@@ -79,7 +79,7 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
     undoContact(world,p,row,state);
     world.events.push({ type: 'dodgeRewind', id: p.id, pid: p.pid, srcId: row.hit.srcId,
       hitTick: row.tick, dodgeTick: start, heal: row.dmg });
-    if(p.weapon === 'focus') focusRewards.push([row.hit,since]);
+    if(p.weapon === 'focus' && p.offhand !== 'shield') focusRewards.push([row.hit,since]);
     else awardPerfect(world, p, row.hit, since);
   }
   for(const [hit,since] of focusRewards) awardPerfect(world,p,hit,since);
@@ -89,7 +89,7 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
 function undoContact(world,p,row,state) {
     p.kx -= row.kx; p.ky -= row.ky;
     p.x -= row.movedX; p.y -= row.movedY;
-    if(p.weapon === 'focus') {p.dodge.originX-=row.movedX;p.dodge.originY-=row.movedY;}
+    if(p.weapon === 'focus' && p.offhand !== 'shield') {p.dodge.originX-=row.movedX;p.dodge.originY-=row.movedY;}
     if (Math.abs(p.kx) < .05) p.kx = 0;
     if (Math.abs(p.ky) < .05) p.ky = 0;
     if (state.lastDirect === row) p.hurtInvuln = Math.max(0, row.hurtInvuln - (world.tick - row.tick));

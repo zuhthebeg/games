@@ -219,7 +219,7 @@ export class HUD {
   }
 
   updateParty(world, local) {
-    const members = world.entities.filter(p => p.kind === 'player' && p.id !== local.id && p.team === local.team);
+    const members = world.entities.filter(p => p.kind === 'player' && p.id !== local.id && p.team === local.team && !(p.invisibleUntil>world.tick));
     const ids = new Set(members.map(p => p.id));
     for (const [id, row] of this.partyRows) if (!ids.has(id)) {
       row.remove();

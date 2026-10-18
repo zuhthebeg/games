@@ -29,3 +29,24 @@ Files net/session.js, protocol.js, prediction/presentation, render/hud/status/UI
 Create arpg/test/monster-knight.native.mjs supporting ARPG_BASE_URL and evidence override. Preboot valid fixtures only, actual learning/equip/cast PC1280touch390 solo + actual deployedrelay bothcasterroles, growth1/30 and restrictions/wandguard/invisibility victimview. Source hash binding, no screenshots/world writes. Compare full node --test arpg/test/*.test.js arpg/test/*.test.mjs to /tmp/arpg-handshake-parent-full.log (1548/1484pass64oldfail); stamp failure expected parent-only. Report exact failures and all local commits.
 ### Task6 Parent release ONLY
 Parent independent diff + tests + actualrelay verification, main/lab stamps, commit then mainFF/push, exactSHA CI success and moduleCSS exactdelivery, repeat production native, finalreport. No child push/deploy/stamp.
+
+## Implemented defaults and paths (stage, not release)
+All numbers below are conservative implementation defaults, not exact user-specified balance. Milestones remain **1/5/10/15/20/25/30**, mastery XP anchors unchanged. Every five-skill cast freezes its growth at start; MP once at start, cooldown once at act end, mastery once at successful release (not per target/pulse).
+
+| Skill | Lv1 → Lv30, seven milestones | Access / cost |
+| --- | --- | --- |
+| `poison_field` | radius 80/90/100/110/120/130/140 px; duration 3/3.5/4/4.5/5/5.5/6 s; 6..12 real 500ms pulses, damage 8 × held weapon power | skeletal lineage, any lineage-legal held weapon; STR30, 280G, 20MP, 8s CD |
+| `curse` | duration 4..7s (+0.5s); outgoing reduction 10/12/14/16/18/20/22%; armor reduction 15/18/21/24/27/30/33% | skeletal lineage, STR30, 280G, 18MP, 9s CD |
+| `invisibility` | duration 2/2.5/3/3.5/4/4.5/5s | skeletal lineage, STR30, 300G, 18MP, 12s CD |
+| `sword_wave` | real projectile range 300/350/400/450/500/550/600 px; 2..8 unique targets; damage 36 | one/two-handed sword only, both human/skeletal; STR45, 300G, 20MP, 6s CD |
+| `berserk` | duration 4..7s (+0.5s); damage/attack-rate multipliers 1.15/1.175/1.20/1.225/1.25/1.275/1.30; incoming damage ×1.20 throughout | two-handed blade sword/blunt only, both human/skeletal; STR45, 300G, 24MP, 15s CD |
+
+Curse uses actual player AC in the armor mitigation equation; monsters have no authored AC, so their defense weakening is an explicit +15..33% damage vulnerability. Same curse slot uses strongest magnitude and refreshed finite expiry, never multiplicative stacking or permanent stat mutation. Berserk does not heal and drops on incompatible equipment/death/return/round reset.
+
+Runtime additions stay in existing `world.js` status/zone/projectile pipelines. `spell-zones.js` validates poison's finite geometry/pulse bounds and shared cap32. Optional status/lineage fields live in existing snapshots with bounded decode checks. Verified local-save profiles rebuild held weapon/mods, never granting skeletal access from team or transient bone revival. Existing strict sender/mode negotiation is preserved.
+
+`render/visibility.js` filters non-owner invisible pawns out of the renderer's entity/telegraph inputs (names/markers/shadows/attached VFX included), without removing them from simulation/collision snapshots. Owner visual alpha is 0.32. Autoaim/basic-autoattack and monster sticky selection exclude invisible targets; owner autoattack pauses; explicit attack, other successful skill, real damage, expiry clear stealth. Already-fired/projectile/area collisions still hit.
+
+Existing one-handed wand item IDs/stats/handedness and staff metadata are unchanged. Shield eligibility now recognizes actual `focus:wand`; equip, reload, compare, derived mods, host/prediction, physical graphics and perfect-guard rush use existing shield pipeline. A shielded wand receives shield rush, not unshielded focus blink/reset. Gear captions label one-handed wand/shield access.
+
+Focused RED evidence: `/tmp/arpg-monster-knight-red.log`, `/tmp/arpg-monster-presentation-red.log`, `/tmp/arpg-wand-shield-red.log`, `/tmp/arpg-wand-perfect-red.log`, `/tmp/arpg-monster-status-red.log`. Final verification/native/regression numbers are recorded in the stage report.

@@ -14,6 +14,16 @@ import { MASTERY_SKILLS, MASTERY_MAX } from '../meta/skill-mastery.js';
 const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
   && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= MASTERY_MAX);
 
+const NEW_GEAR_SKILLS = new Set(['poison_field','curse','invisibility','sword_wave','berserk']);
+function hostMods(profile) {
+  if (validLobbyProfile(profile)) return {...profile.mods,lineage:profile.rewardSave.lineage || 'human'};
+  // Legacy simulation fixtures may omit a save; they cannot claim new lineage/form skills.
+  const mods={...profile.mods,lineage:'human'};
+  if (Array.isArray(mods.skills)) mods.skills=mods.skills.map(id=>NEW_GEAR_SKILLS.has(id)?null:id);
+  if (NEW_GEAR_SKILLS.has(mods.skill)) mods.skill=null;
+  return mods;
+}
+
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
 const TICK_MS = 1000 / 30;
 // Frame inputs merged into the next whole tick: newest axes/held buttons, any edge pressed in between.
@@ -79,8 +89,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
-    this.config = data.config; this.profiles = data.config.invasion
-      ? Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,invasionProfile(p)])) : data.profiles; this.seed = data.seed;
+    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? invasionProfile(p) : p])); this.seed = data.seed;
     this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
@@ -91,7 +100,7 @@ export class CoopSession {
         partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels), y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
         if (data.config.invasion) {
           player.invasionRole = p.role;
           if (p.role === 'invader') { player.team = TEAM_MONSTER; player.skeletal = true; player.x = this.world.arena.w * .78; player.facing = Math.PI; }

@@ -69,7 +69,7 @@ test('trainer shows all three families, exact ability numbers and learned/defaul
   const h=renderHub(s);h.action('trainer',{});assert.equal(h.page,'trainer');
   assert.equal((h.html.match(/data-action="academy-tab"/g)||[]).length,3);
   assert.ok(!h.html.includes('allocation-row'));
-  for(const id of Object.keys(BOOKS)) {
+  for(const id of Object.keys(BOOKS).filter(id=>!ABILITIES[id].requiresSkeleton)) {
     const a=ABILITIES[id];h.academyFamily=a.family;h.showTrainer();assert.ok(h.html.includes(a.name));
     for(const chip of [a.executeUndead?'즉사 10%':a.shield?'파티 보호막 8초':a.heal?`회복 최대 HP ${Math.round(a.heal.maxHpFrac*100)}%`:`피해 ${a.damage}`,`재사용 ${amount(a.cooldownMs/1000)}초`,`${a.manaCost||0} MP`]) assert.ok(h.html.includes(chip));
   }

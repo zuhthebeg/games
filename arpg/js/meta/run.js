@@ -25,7 +25,7 @@ export function selectThreat(save, stageId, threat) {
 export function buildRoundMods(save) {
   const { capacity: ignoredCapacity, shopDiscount, family, ...mods } = deriveMods(save);
   return {
-    ...mods, threat: save.threat ?? 1,
+    ...mods, ...(save.lineage && save.lineage !== 'human' ? {lineage:save.lineage} : {}), threat: save.threat ?? 1,
     skills: loadoutOf(save, family), // sim drops weapon-forbidden ids; empty slot 1 = kit default
     potions: save.stacks.potion || 0,
     manaPotions: save.stacks.mana_potion || 0,

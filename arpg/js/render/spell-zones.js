@@ -1,6 +1,6 @@
 import { ABILITIES } from '../content/combat.js';
 import { MAX_ZONES } from '../sim/spell-zones.js';
-export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone });
+export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone, poison_field: ABILITIES.poison_field.zone });
 // One reusable Graphics context, bounded geometry. Presentation only, including reduced motion.
 export function paintSpellZones(g, world, reduced = false) {
   g.clear();
@@ -10,7 +10,14 @@ export function paintSpellZones(g, world, reduced = false) {
     const def=SPELL_ZONE_VFX[zone.abilityId];
     if (!def) continue;
     const x=zone.x,y=zone.y;
-    if (zone.abilityId === 'rain_arrow') {
+    if (zone.abilityId === 'poison_field') {
+      const radius=zone.radius || pending.find(e=>e.act.id==='poison_field')?.act.growth?.radius || def.radius;
+      g.circle(x,y,radius).fill({color:0x7fbc52,alpha:.2}).stroke({color:0xb4df6e,width:3});
+      for(let i=0;i<7;i++){const a=i*2.4,r=radius*.55,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;
+        const h=reduced?12:12+(world.tick+i*7)%20;
+        g.circle(px,py-h,4).stroke({color:0xc9ee91,width:2,alpha:.75});}
+      if(!zone.pending){const remaining=Math.max(0,(zone.endTick-world.tick)/(zone.endTick-zone.startTick));g.arc(x,y,radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xe0f6b4,width:4});}
+    } else if (zone.abilityId === 'rain_arrow') {
       g.circle(x,y,def.radius).fill({color:0xc8ba7d,alpha:.12}).stroke({color:0xe7d69d,width:3});
       const age=zone.pending ? 0 : Math.max(0,world.tick-zone.activeTick);
       const progress=zone.pending || reduced ? .65 : (age%9)/9;

@@ -40,8 +40,8 @@ export const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 // stays empty so a blocked button cannot silently cast the weapon kit instead.
 export function playerSkills(mods, weapon) {
   const ids = Array.isArray(mods.skills) ? mods.skills : [mods.skill];
-  const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon, mods.weaponForm) ? ids[i] : null));
-  if (!slots[0] && !ABILITIES[ids[0]]?.requiresFocus) slots[0] = WEAPONS[weapon].skill;
+  const slots = Array.from({ length: SKILL_SLOTS }, (_, i) => (canUseSkill(ids[i], weapon, mods.weaponForm, mods.lineage, mods.handedness) ? ids[i] : null));
+  if (!slots[0] && !ABILITIES[ids[0]]?.requiresFocus && !ABILITIES[ids[0]]?.requiresSkeleton && !ABILITIES[ids[0]]?.requiresTwohand && ids[0] !== 'sword_wave') slots[0] = WEAPONS[weapon].skill;
   return slots;
 }
 
@@ -73,6 +73,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
   const maxMp = mods.maxMp ?? PB.mp;
   const ent = {
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
+    ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
     ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
     kx: 0, ky: 0, moving: false,
@@ -88,7 +89,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
     ...(mods.armorWeight ? { armorWeight: mods.armorWeight } : {}),
-    ...(weapon === 'blade' && mods.handedness !== 2 && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
+    ...((weapon === 'blade' || weapon === 'focus' && mods.weaponForm === 'wand') && mods.handedness !== 2 && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
@@ -137,7 +138,7 @@ export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   if (world.zones) world.zones = [];
   for (const p of world.entities) if (p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
   if (world.projectiles.some(pr => ABILITIES[pr.abilityId]?.spin)) world.projectiles = world.projectiles.filter(pr => !ABILITIES[pr.abilityId]?.spin);
-  for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;}
+  for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;}
   if (st.arena) {
     for (const p of world.entities.filter(e => e.kind === 'player')) {
       p.x *= st.arena.w / world.arena.w; p.y *= st.arena.h / world.arena.h;
@@ -183,8 +184,10 @@ export function step(world, inputs = {}) {
   world.events = [];
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
-  if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) if(p.shieldGuard) p.shieldGuard.left=0; return world.events; }
+  if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) {if(p.shieldGuard) p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;} return world.events; }
   for (const ent of world.entities) {
+    for (const key of ['curse','berserk']) if (ent[key] && (world.tick >= ent[key].expiresTick || !alive(ent) || world.round && world.round.state !== 'running' || key === 'berserk' && !canUseSkill('berserk',ent.weapon,ent.weaponForm,ent.lineage,ent.handedness))) delete ent[key];
+    if (ent.invisibleUntil && (world.tick >= ent.invisibleUntil || !alive(ent) || world.round && world.round.state !== 'running')) delete ent.invisibleUntil;
     if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) delete ent.shieldUntil;
     if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
     if (ent.burn) stepBurn(world, ent);
@@ -200,6 +203,7 @@ export function step(world, inputs = {}) {
   stepRound(world, inputs);
   for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
+  if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;}
   world.tick++;
   return world.events;
 }
@@ -212,6 +216,7 @@ function canCancel(act) {
 
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
+  if (inp.attack) delete p.invisibleUntil;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
   const guarding=updateShieldGuard(p,inp);
@@ -274,7 +279,7 @@ function stepPlayer(world, p, inp) {
   if (p.pendingCounter?.kind === 'shield' && !p.act) {
     const pending=p.pendingCounter,target=world.entities.find(e=>e.id===pending.attackerId);
     p.pendingCounter=null;
-    const liveTarget=target && isTargetable(target) && target.team!==p.team ? target : null;
+    const liveTarget=target && isTargetable(target) && !(target.invisibleUntil>world.tick) && target.team!==p.team ? target : null;
     const x=liveTarget?.x ?? pending.fromX,y=liveTarget?.y ?? pending.fromY;
     startAct(world,p,'shield_bash',Number.isFinite(x)&&Number.isFinite(y)?Math.atan2(y-p.y,x-p.x):p.facing,true);
     p.act.counter=true;p.act.counterTarget=pending.attackerId;
@@ -292,7 +297,7 @@ function stepPlayer(world, p, inp) {
   const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
   const dodgeSkillId = p.skills[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
-  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
+  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm, p.lineage, p.handedness)
     && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
     && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
     const facing = resolveAim(world, p, inp, mlen);
@@ -343,9 +348,9 @@ function stepPlayer(world, p, inp) {
   // First pressed slot wins this tick; an empty slot is a no-op.
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
-  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
+  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
@@ -361,7 +366,7 @@ function stepPlayer(world, p, inp) {
     const counterAbility = pending.kind === 'shield' ? 'shield_bash' : w.basic;
     const def = ABILITIES[counterAbility];
     const facing = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
-    const inRange = target && isTargetable(target) && target.team !== p.team
+    const inRange = target && isTargetable(target) && !(target.invisibleUntil>world.tick) && target.team !== p.team
       && (def.delivery === 'shape'
         ? shapeHitsCircle(def.shape, p.x, p.y, facing, target.x, target.y, target.r)
         : dist2(p.x, p.y, target.x, target.y) <= def.projectile.rangePx ** 2);
@@ -379,7 +384,7 @@ function stepPlayer(world, p, inp) {
 
   // Auto attack (cocy 10-11 option): the basic attack is held for the player only while a
   // hostile is inside its real reach, aimed at that hostile. Dodge and skills stay manual.
-  const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
+  const autoTarget = !p.invisibleUntil && !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
     ? basicReachTarget(world, p, comboDef(w.basic, nextComboStep(p), p.weaponForm)) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
@@ -396,7 +401,7 @@ function stepPlayer(world, p, inp) {
 function basicReachTarget(world, p, def) {
   let best = null, bestD = Infinity;
   for (const e of world.entities) {
-    if (e.team === p.team || !isTargetable(e)) continue;
+    if (e.team === p.team || !isTargetable(e) || e.invisibleUntil > world.tick) continue;
     const d2 = dist2(p.x, p.y, e.x, e.y);
     if (d2 >= bestD) continue;
     const reach = def.delivery === 'shape'
@@ -411,7 +416,7 @@ function resolveAim(world, p, inp, mlen) {
   if (inp.aimX || inp.aimY) return Math.atan2(inp.aimY, inp.aimX);
   let best = null, bestD = AUTO_AIM_RANGE * AUTO_AIM_RANGE;
   for (const e of world.entities) {
-    if (e.team === p.team || !isTargetable(e)) continue;
+    if (e.team === p.team || !isTargetable(e) || e.invisibleUntil > world.tick) continue;
     const d2 = dist2(p.x, p.y, e.x, e.y);
     if (d2 < bestD) { bestD = d2; best = e; }
   }
@@ -471,7 +476,7 @@ function stepMonster(world, m) {
 }
 
 function pickTarget(world, m) {
-  const eligible = e => e.kind === 'player' && alive(e) && e.team !== m.team
+  const eligible = e => e.kind === 'player' && alive(e) && e.team !== m.team && !(e.invisibleUntil > world.tick)
     && !(e.skeletal && MONSTERS[m.type]?.lifeState === 'undead' && !isBoss(m) && !m.provokedBy?.includes(e.id));
   let cur = world.entities.find((e) => e.id === m.targetId && eligible(e));
   let best = null, bestD = Infinity;
@@ -510,18 +515,19 @@ function moveMonster(world, m, def, target, dist) {
 const PHASES = ['windup', 'lock', 'active', 'recovery'];
 
 function startAct(world, ent, abilityId, facing, counter = false) {
+  if (abilityId !== 'invisibility') delete ent.invisibleUntil;
   const comboStep = ent.kind === 'player' ? beginCombo(ent, abilityId, counter) : 0;
   const step = counter && ABILITIES[abilityId].combo ? 1 : comboStep;
   const def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
   const rate = ent.kind === 'player' && (abilityId === WEAPONS[ent.weapon].basic || ent.skills.includes(abilityId))
-    ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) : 1;
+    ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) * (ent.berserk?.speedMult ?? 1) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
-    ...(growth && growth.count !== skillGrowth(abilityId).count ? { growth } : {}),
+    ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
     rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -595,13 +601,26 @@ function advanceAct(world, ent, target) {
 
 function doActive(world, ent, act) {
   const def = act.def;
-  if (def.zone) {
+  if (def.status) {
+    if (act.fired) return;
+    act.fired=true;
+    const growth=act.growth, expiresTick=world.tick+ticks(growth.durationMs);
+    if (def.status === 'invisibility') {
+      ent.invisibleUntil=expiresTick; ent.pendingCounter=null;
+      for (const foe of world.entities) if (foe.team !== ent.team && foe.targetId === ent.id) foe.targetId=0;
+    } else if (def.status === 'berserk') ent.berserk={...growth,expiresTick};
+    else for (const target of world.entities) if (target.team !== ent.team && isTargetable(target) && shapeHitsCircle(def.shape,ent.x,ent.y,act.facing,target.x,target.y,target.r)) {
+      const old=target.curse;
+      target.curse={expiresTick:Math.max(expiresTick,old?.expiresTick||0),damageMult:Math.min(growth.damageMult,old?.damageMult??1),armorMult:Math.min(growth.armorMult,old?.armorMult??1)};
+    }
+    world.events.push({type:'statusCast',id:ent.id,ability:act.id});
+  } else if (def.zone) {
     if (act.fired) return;
     act.fired = true;
     if ((world.zones?.length || 0) >= MAX_ZONES) return;
     const point = act.zonePoint;
     const growth = act.growth;
-    const zone = { ...(growth ? { pulsesLeft: growth.count, intervalTicks: ticks(growth.intervalMs) } : {}), id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
+    const zone = { ...(growth?.radius ? {radius:growth.radius} : {}), ...(growth ? { pulsesLeft: growth.count, intervalTicks: ticks(growth.intervalMs) } : {}), id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
       x: point.x, y: point.y, facing: act.facing, startTick: world.tick,
       activeTick: world.tick + ticks(def.zone.delayMs || 0),
       endTick: world.tick + ticks((def.zone.delayMs || 0) + (growth?.durationMs ?? (act.id === 'meteor' && growth ? (growth.count - 1) * growth.intervalMs : def.zone.durationMs || 0))),
@@ -665,7 +684,7 @@ function doActive(world, ent, act) {
       act.shotsFired = (act.shotsFired || 0) + 1;
     } else if (act.fired) return;
     act.fired = true;
-    const pr = def.projectile;
+    const pr = act.id === 'sword_wave' ? {...def.projectile,rangePx:act.growth.range,pierce:act.growth.targets-1} : def.projectile;
     for (let i = 0; i < pr.count; i++) {
       const spread = pr.count > 1 ? ((i / (pr.count - 1)) - 0.5) * pr.spreadDeg * Math.PI / 180 : 0;
       const a = act.facing + spread + (def.spin ? Math.PI * 2 * (act.growth ? (act.shotsFired - 1) / act.growth.count : activeTick / act.phaseTicks.active) : 0);
@@ -694,9 +713,9 @@ export function turnUndeadChance(value, boss = false, holy = false) {
 }
 
 function sourceMult(ent, def) {
-  if (ent.kind === 'player') return (ent.dmgMult[def.family] ?? 1)
+  if (ent.kind === 'player') return (ent.dmgMult[def.family] ?? 1) * (ent.curse?.damageMult ?? 1) * (ent.berserk?.damageMult ?? 1)
     * (def.family === 'focus' && def.element && def.element === ent.staffAffinity ? 1.25 : 1);
-  return ent.dmgMult ?? 1;
+  return (ent.dmgMult ?? 1) * (ent.curse?.damageMult ?? 1);
 }
 
 function hitShape(world, ent, act, shape, ox, oy) {
@@ -744,7 +763,7 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
   if (hit.counter || !hostile || t.dodge.perfectPaid || sinceDodge < 0
     || sinceDodge > dodgeTiming(t, multiplayerDodge(world)).perfectTicks) return false;
   t.dodge.perfectPaid = true;
-  if (t.weapon === 'focus') {
+  if (t.weapon === 'focus' && t.offhand !== 'shield') {
     const length=Math.hypot(t.dodge.dx,t.dodge.dy)||1;
     t.x=(t.dodge.originX ?? t.x)+t.dodge.dx/length*PB.dodge.distance*1.6;
     t.y=(t.dodge.originY ?? t.y)+t.dodge.dy/length*PB.dodge.distance*1.6;
@@ -788,7 +807,9 @@ function applyHit(world, t, hit) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
-  if (t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
+  if (t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac * (t.curse?.armorMult ?? 1));
+  if (mdef && t.curse && hit.fixedDamage === undefined) dmg *= 2 - t.curse.armorMult;
+  if (t.berserk) dmg *= t.berserk.incomingMult;
   if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
   let crit = false;
@@ -819,6 +840,7 @@ function applyHit(world, t, hit) {
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
 
+  if (dmg > 0) delete t.invisibleUntil;
   const kbResist = mdef ? mdef.kbResist : 0;
   const ang = Math.atan2(t.y - hit.fromY, t.x - hit.fromX);
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
@@ -857,7 +879,7 @@ function applyHit(world, t, hit) {
       t.skeletal = true;
       t.hp = Math.max(1, Math.round(t.maxHp * 0.3));
       t.poison = null;
-      delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil;
+      delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil;
       t.pendingCounter = null; t.channel = 0; t.kx = 0; t.ky = 0;
       if (t.shieldGuard) t.shieldGuard.left = 0;
       if (t.act) endAct(world, t, true);
@@ -867,7 +889,7 @@ function applyHit(world, t, hit) {
     if (t.hp <= 0) {
       t.hp = 0;
       t.dead = true;
-      delete t.shieldUntil;
+      delete t.shieldUntil; delete t.invisibleUntil; delete t.berserk; delete t.curse;
       t.pendingCounter = null;
       t.terminal = 'death';
       if (t.act) endAct(world, t, true);
@@ -918,7 +940,7 @@ function applyHit(world, t, hit) {
   if (t.hp <= 0) {
     t.hp = 0;
     t.dead = true;
-    delete t.burn; delete t.frozenUntil;
+    delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil;
     if (t.act) endAct(world, t, true);
     world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
@@ -949,9 +971,9 @@ function stepZones(world) {
       zone.nextTick += zone.intervalTicks ?? ticks(def.zone.intervalMs || 10000);
       if (zone.pulsesLeft !== undefined) zone.pulsesLeft--;
       world.events.push({ type: pulse ? 'zonePulse' : 'explode', id: zone.id, ability: zone.abilityId,
-        x: zone.x, y: zone.y, radius: def.zone.radius || 0 });
+        x: zone.x, y: zone.y, radius: zone.radius || def.zone.radius || 0 });
       for (const target of world.entities) {
-        if (target.team === zone.team || !isTargetable(target) || !zoneContains(zone, def.zone, target)) continue;
+        if (target.team === zone.team || !isTargetable(target) || !zoneContains(zone, zone.radius ? {...def.zone,radius:zone.radius} : def.zone, target)) continue;
         applyHit(world, target, { srcId: owner.id, srcKind: owner.kind, srcType: owner.weapon,
           abilityId: zone.abilityId, def, mult: zone.dmgMult, poiseMult: 1, castId: zone.id,
           ...(def.zone.physical ? { weaponZone: true } : {}),

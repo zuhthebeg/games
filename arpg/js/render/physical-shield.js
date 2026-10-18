@@ -1,6 +1,6 @@
 // Lightweight shaded attached equipment: no new atlas lease or character rebake.
 export function physicalShieldPose(e, age=0) {
-  if(e.kind !== 'player' || e.weapon !== 'blade' || e.offhand !== 'shield' || e.handedness === 2 || e.dead || e.terminal) return null;
+  if(e.kind !== 'player' || !(e.weapon === 'blade' || e.weapon === 'focus' && e.weaponForm === 'wand') || e.offhand !== 'shield' || e.handedness === 2 || e.dead || e.terminal) return null;
   const bashing=e.act?.id === 'shield_bash',blocking=e.shieldGuard?.left>0 || bashing;
   const facing=bashing ? e.act.facing ?? e.facing : e.shieldGuard?.left>0 ? e.shieldGuard.facing : e.facing;
   const reach=bashing && e.act.phase === 'active' ? 27 : blocking ? 20 : 4;

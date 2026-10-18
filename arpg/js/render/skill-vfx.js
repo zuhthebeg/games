@@ -12,6 +12,10 @@ export const effekseerEnabled = (search = globalThis.location?.search || '', sto
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
 // drawProjectile hooks. Hooks receive this fixed-pool presenter, never a sim writer.
 export const SKILL_VFX = Object.freeze({
+  curse: Object.freeze({style:'heal',radius:ABILITIES.curse.shape.radius,color:0xbc85e3,accent:0xe4b7ff,windup:'runes',impact:'rise',activeLife:.3,residueLife:.4,particles:8,reducedParticles:2}),
+  invisibility: Object.freeze({style:'heal',radius:28,color:0x8cb2bb,accent:0xd1edf2,windup:'runes',impact:'rise',activeLife:.2,residueLife:.2,particles:4,reducedParticles:1}),
+  berserk: Object.freeze({style:'heal',radius:32,color:0xf17b60,accent:0xffc08d,windup:'runes',impact:'rise',activeLife:.3,residueLife:.4,particles:8,reducedParticles:2}),
+  sword_wave: Object.freeze({style:'heal',radius:24,color:0x8cddd0,accent:0xd8fff6,windup:'runes',impact:'spark',activeLife:.2,residueLife:.3,particles:8,reducedParticles:2}),
   lunge: Object.freeze({ style: 'dash', dash: ABILITIES.lunge.dash,
     color: 0xa8dce4, accent: 0xe3f5ef, windup: 'blade', impact: 'spark',
     activeLife: .2, residueLife: .26, particles: 16, reducedParticles: 2 }),

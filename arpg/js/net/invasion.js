@@ -24,7 +24,7 @@ export function validParty(config, profiles) {
 export function invasionProfile(profile) {
   const save=structuredClone(profile.rewardSave);
   return {...profile, rewardSave:save, level:save.level, name:save.name,
-    mods:buildRoundMods(save),load:carriedWeight(save)/capacity(save)};
+    weapon:ITEMS[equippedItem(save,'weapon')?.id]?.family || 'blade',mods:buildRoundMods(save),load:carriedWeight(save)/capacity(save)};
 }
 
 // Only a validated local character save supplies lineage; team is never guest authority.

@@ -65,7 +65,7 @@ export function compareItems(equipped, candidate, save, { ignoreEnhancement = fa
   line('manaRegen', '마나 재생', before.mpRegen, after.mpRegen, false, { unit:'MP/초', section:'derived' });
   line('goldBonus', '골드 획득', before.goldBonus, after.goldBonus, false, { unit:'%', section:'derived' });
   line('materialBonus', '재료 드랍', before.materialBonus, after.materialBonus, false, { unit:'%', section:'derived' });
-  const lockReason = definition.kind === 'offhand' && !permitsShield(ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]) ? '방패는 한손 검·한손 둔기와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
+  const lockReason = definition.kind === 'offhand' && !permitsShield(ITEMS[save.items.find(i => i.uid === save.equipped.weapon)?.id]) ? '방패는 한손 검·한손 둔기·한손 완드와 함께 장착합니다.' : !knightEquipmentAllowed(save, definition) ? `해골 방어구 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]} 필요` : !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
   return { lines, removesOffhand, weightAfter, weightLimit, locked: !!lockReason, lockReason };
 }

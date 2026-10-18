@@ -12,6 +12,11 @@ export function skillGrowth(id, level = 1) {
   level = Number.isSafeInteger(level) ? Math.max(1, Math.min(30, level)) : 1;
   const tier = GROWTH_LEVELS.filter(n => n <= level).length - 1;
   switch (id) {
+    case 'poison_field': return { radius:80+10*tier, durationMs:3000+500*tier, count:6+tier, intervalMs:500 };
+    case 'curse': return { durationMs:4000+500*tier, damageMult:1-(10+2*tier)/100, armorMult:1-(15+3*tier)/100 };
+    case 'invisibility': return { durationMs:2000+500*tier };
+    case 'sword_wave': return { range:300+50*tier, targets:2+tier };
+    case 'berserk': return { durationMs:4000+500*tier, damageMult:1+(15+2.5*tier)/100, speedMult:1+(15+2.5*tier)/100, incomingMult:1.2 };
     case 'meteor': return { count: 1 + tier, intervalMs: 300 };
     case 'rain_arrow': return { count: 4 + tier, durationMs: (4 + tier) * 300, intervalMs: 300 };
     case 'spinning_shot': return { count: 12 + 2 * tier, durationMs: 1200 };
@@ -20,7 +25,7 @@ export function skillGrowth(id, level = 1) {
   }
 }
 export function growthLabel(id, level = 1) {
-  const describe = g => id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
+  const describe = g => id === 'poison_field' ? `반경 ${g.radius} · ${g.durationMs/1000}초 · ${g.count}회` : id === 'curse' ? `${g.durationMs/1000}초 · 공격 -${Math.round((1-g.damageMult)*100)}% · 방어 -${Math.round((1-g.armorMult)*100)}%` : id === 'invisibility' ? `${g.durationMs/1000}초` : id === 'sword_wave' ? `${g.range}px · ${g.targets}대상` : id === 'berserk' ? `${g.durationMs/1000}초 · 위력/공속 +${Math.round((g.damageMult-1)*1000)/10}% · 받는 피해 +20%` : id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
   const current = skillGrowth(id, level);
   if (!current) return '';
   const next = GROWTH_LEVELS.find(n => n > level);

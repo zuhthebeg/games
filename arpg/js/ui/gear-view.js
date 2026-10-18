@@ -17,7 +17,7 @@ export const amount = value => Number.isInteger(value) ? String(value) : String(
 export const SLOT_NAMES = { offhand:'방패', weapon:'무기', head:'머리', body:'몸', hands:'손', feet:'발' };
 export const GRADES = { common:'일반', fine:'양질', rare:'희귀', epic:'영웅' };
 export const GRADE_ORDER = ['common', 'fine', 'rare', 'epic'];
-export const itemLabel = item => `${ITEMS[item.id].name}${ITEMS[item.id].handedness === 2 ? ' [양손 · 피해 ×2 · 방패 불가]' : ''} +${item.enhance}`;
+export const itemLabel = item => `${ITEMS[item.id].name}${ITEMS[item.id].handedness === 2 ? ' [양손 · 피해 ×2 · 방패 불가]' : ITEMS[item.id].form === 'wand' ? ' [한손 완드 · 방패 가능]' : ''} +${item.enhance}`;
 export const dropOriginHtml = item => item.uid.startsWith('drop:')
   ? `<p class="drop-origin">${item.enhance > 0 ? '<strong class="loot-highlight">득템 · 강화 장비</strong> · ' : ''}누군가 떨군 장비를 몬스터가 쓰고 있었다</p>` : '';
 export const isWorn = (save, uid) => Object.values(save.equipped).includes(uid);
@@ -96,7 +96,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
   const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${amount(effectiveWeight(item))} kg`}`;
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
-    + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>${def.handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}`
+    + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>${def.handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : def.form === 'wand' ? '<small>한손 완드 · 방패 장착 가능</small>' : ''}`
     + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
     + `${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : `해골 Lv.${KNIGHT_ARMOR_LEVELS[def.kind]} 해금`}</small>` : ''}</span></button>`;
 }

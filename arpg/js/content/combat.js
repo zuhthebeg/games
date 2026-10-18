@@ -12,6 +12,19 @@ import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 export const ABILITIES = {
   shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:200, recoveryMs:180, cooldownMs:0,
     delivery:'dash', dash:{distance:85,bodyPad:8}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
+  poison_field: { name:'맹독 지대', windupMs:260, lockMs:0, activeMs:34, recoveryMs:220, cooldownMs:8000, manaCost:20,
+    delivery:'zone', zone:{range:360,reach:220,durationMs:3000,intervalMs:500,radius:80},
+    damage:8, poise:0, knockback:0, family:'blade', requiresSkeleton:true, cancelInto:['recovery'] },
+  curse: { name:'쇠약의 저주', windupMs:240, lockMs:0, activeMs:34, recoveryMs:220, cooldownMs:9000, manaCost:18,
+    delivery:'status', status:'curse', shape:{type:'circle',radius:180,offset:0},
+    damage:0, poise:0, knockback:0, family:'blade', requiresSkeleton:true, cancelInto:['recovery'] },
+  invisibility: { name:'은신', windupMs:180, lockMs:0, activeMs:34, recoveryMs:180, cooldownMs:12000, manaCost:18,
+    delivery:'status', status:'invisibility', damage:0, poise:0, knockback:0, family:'blade', requiresSkeleton:true, cancelInto:['recovery'] },
+  sword_wave: { name:'검기', windupMs:220, lockMs:0, activeMs:34, recoveryMs:240, cooldownMs:6000, manaCost:20,
+    delivery:'projectile', projectile:{speed:620,radius:18,rangePx:300,count:1,spreadDeg:0,pierce:1},
+    damage:36, poise:18, knockback:60, family:'blade', requiresForm:'sword', cancelInto:['recovery'] },
+  berserk: { name:'광전사', windupMs:220, lockMs:0, activeMs:34, recoveryMs:200, cooldownMs:15000, manaCost:24,
+    delivery:'status', status:'berserk', damage:0, poise:0, knockback:0, family:'blade', requiresTwohand:true, cancelInto:['recovery'] },
   // ---------- player: blade (Vanguard)
   slash: {
     windupMs: 110, lockMs: 0, activeMs: 70, recoveryMs: 190, cooldownMs: 0,
@@ -287,14 +300,17 @@ export const SKILL_USE = {
   focus: { focus: 1, blade: 0.6, bow: 0.6 },
 };
 export const SKILL_SLOTS = 3;
-export function skillDamageShare(abilityId, weapon, form) {
+export function skillDamageShare(abilityId, weapon, form, lineage = 'human', handedness = 1) {
   const def = ABILITIES[abilityId];
+  if (!form && weapon === 'blade') form='sword';
+  if (def?.requiresSkeleton) return ['skeleton_knight','skeleton_mage','skeleton_archer'].includes(lineage) ? 1 : undefined;
+  if (def?.requiresTwohand && (weapon !== 'blade' || !['sword','blunt'].includes(form) || handedness !== 2)) return undefined;
   if (def?.requiresFocus && weapon !== 'focus') return undefined;
   if (def?.shield) return SKILL_USE.focus[weapon] === undefined ? undefined : 1;
   if (def?.requiresForm && (weapon !== def.family || form !== def.requiresForm)) return undefined;
   return SKILL_USE[def?.family]?.[weapon];
 }
-export const canUseSkill = (abilityId, weapon, form) => skillDamageShare(abilityId, weapon, form) !== undefined;
+export const canUseSkill = (abilityId, weapon, form, lineage, handedness) => skillDamageShare(abilityId, weapon, form, lineage, handedness) !== undefined;
 
 // Monster archetypes. Palette/equipment variants layer on top later (design §11) and never change these rules silently.
 export const MONSTERS = {

@@ -6,6 +6,11 @@ export const DEFAULT_SKILLS = Object.fromEntries(Object.entries(WEAPONS).map(([f
 // skills-v2 §3 (100-point scale): 숙련 30 / 상급 45 of the family stat, counted with gear
 // at the moment of learning. Learned books stay learned.
 export const BOOKS = {
+  poison_field:{family:'blade',type:'해골 교본',price:280,req:{stat:'str',value:30}},
+  curse:{family:'blade',type:'해골 교본',price:280,req:{stat:'str',value:30}},
+  invisibility:{family:'blade',type:'해골 교본',price:300,req:{stat:'str',value:30}},
+  sword_wave:{family:'blade',type:'기술교본',price:300,req:{stat:'str',value:45}},
+  berserk:{family:'blade',type:'기술교본',price:300,req:{stat:'str',value:45}},
   whirl: { family: 'blade', type: '기술교본', price: 150, req: { stat: 'str', value: 30 } },
   heavy_cleave: { family: 'blade', type: '기술교본', price: 250, req: { stat: 'str', value: 45 } },
   ground_slam: { family: 'blade', type: '기술교본', price: 180, req: { stat: 'str', value: 30 } },
@@ -30,12 +35,14 @@ export function bookRequirement(save, id) {
   const have = effectiveStats(save)[req.stat];
   return { ...req, have, ok: have >= req.value, label: `${STAT_NAMES[req.stat]} ${have}/${req.value}` };
 }
-export const hasSkill = (save, id) => Object.values(DEFAULT_SKILLS).includes(id)
-  || (Object.hasOwn(BOOKS, id) && (save.learned || []).includes(id));
+export const skillLineageAllowed = (save,id) => !ABILITIES[id]?.requiresSkeleton || ['skeleton_knight','skeleton_mage','skeleton_archer'].includes(save.lineage);
+export const hasSkill = (save, id) => skillLineageAllowed(save,id) && (Object.values(DEFAULT_SKILLS).includes(id)
+  || (Object.hasOwn(BOOKS, id) && (save.learned || []).includes(id)));
 export const equippedSkill = (save, family) => save.skills?.[family] || DEFAULT_SKILLS[family];
 
 export function learnSkill(save, id) {
   if (!Object.hasOwn(BOOKS, id)) throw new Error('없는 교본입니다.');
+  if (!skillLineageAllowed(save,id)) throw new Error('해골 계보 전용 기술입니다.');
   if (hasSkill(save, id)) throw new Error('이미 배운 기술입니다.');
   const book = BOOKS[id];
   if (save.gold < book.price) throw new Error('골드가 부족합니다.');
@@ -98,7 +105,7 @@ export function weaponLoadoutCandidate(prev, next, { keepCurrent = false } = {})
   const from = weaponLoadoutKey(prev), to = weaponLoadoutKey(next);
   const history = prev.weaponLoadouts || {}, remembered = history[to];
   // Staff-locked selections remain remembered/visible; only runtime casting is blocked.
-  const filtered = remembered?.map(id => id !== null && (ABILITIES[id]?.requiresFocus || canUseSkill(id, weaponFamily(next), weaponForm(next))) ? id : null);
+  const filtered = remembered?.map(id => id !== null && (ABILITIES[id]?.requiresFocus || canUseSkill(id, weaponFamily(next), weaponForm(next), next.lineage, ITEMS[equippedItem(next, 'weapon')?.id]?.handedness)) ? id : null);
   const reason = keepCurrent ? 'current' : from === to ? 'same-form' : !remembered ? 'unseen'
     : filtered.some(Boolean) ? 'remembered' : 'unusable';
   const after = reason === 'remembered' ? filtered : before;
@@ -133,6 +140,7 @@ export function equipSkill(save, family, id) {
 
 // Display-only grades. No combat, book-price or learning requirement changes.
 export const SKILL_DISPLAY = {
+  poison_field:{grade:2,label:'해골'}, curse:{grade:2,label:'해골'}, invisibility:{grade:2,label:'해골'}, sword_wave:{grade:2,label:'상급'}, berserk:{grade:2,label:'상급'},
   rain_arrow:{ grade:2, label:'상급' }, spinning_shot:{ grade:2, label:'상급' },
   meteor:{ grade:2, label:'상급' }, firewall:{ grade:2, label:'상급' },
   lunge:{ grade:0, label:'입문' }, volley:{ grade:0, label:'입문' }, ember_bolt:{ grade:0, label:'입문' },

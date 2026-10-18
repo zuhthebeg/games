@@ -6,6 +6,7 @@ import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
 import { DANGER_COLORS, MONSTER_VARIANTS } from '../content/monsters.js';
 import { ABILITIES, MONSTERS } from '../content/combat.js';
+import { presentationWorld } from './visibility.js';
 import { paintSpellZones } from './spell-zones.js';
 import { healingFeedback } from './healing-feedback.js';
 import { SKILL_VFX } from './skill-vfx.js';
@@ -230,6 +231,7 @@ export class ArenaRenderer {
   }
 
   snapshot(world) {
+    world=presentationWorld(world);
     this.skillVfx.snapshot(world);
     for (const entity of world.entities) {
       const view = this.ensure(entity);
@@ -345,6 +347,9 @@ export class ArenaRenderer {
   }
 
   events(world, events) {
+    const hidden=new Set(world.entities.filter(e=>e.id!==world.entities[0]?.id && e.invisibleUntil>world.tick).map(e=>e.id));
+    events=events.filter(e=>!hidden.has(e.dst ?? e.id));
+    world=presentationWorld(world);
     events = this.skillVfx.events(events, world);
     const areaTiers = this.areaImpact.tiers(events, world);
     this.telegraphs = world.telegraphs ?? getTelegraphs(world);
@@ -415,6 +420,7 @@ export class ArenaRenderer {
   }
 
   render(world, alpha, deltaTime) {
+    world=presentationWorld(world);
     this.local = world.entities[0];
     this.time += deltaTime;
     const visualDelta = deltaTime * (this.slowLeft > 0 && !this.reduced ? FEEL.perfect.scale : 1);
@@ -504,7 +510,10 @@ export class ArenaRenderer {
       view.anim.frozen = frozen || entity.frozenUntil > world.tick;
       view.anim.flash = this.reduced || view.flashLeft <= 0 ? 0 : view.flashAlpha;
       view.flashLeft = Math.max(0, view.flashLeft - deltaTime);
+      if (view.stealthAlpha) {view.visual.container.alpha=1;view.stealthAlpha=false;}
       view.visual.update(entity, view.anim, view.anim.frozen ? 0 : visualDelta);
+      if (entity.invisibleUntil>world.tick) {view.visual.container.alpha*=.32;view.stealthAlpha=true;}
+      if (entity.invisibleUntil>world.tick) view.shadow.alpha=.18;
       if (!frozen) view.anim.hurt = Math.max(0, view.anim.hurt - visualDelta);
       view.portal.position.set(entity.x, entity.y);
       view.portal.visible = entity.spawnLeft > 0;
@@ -515,9 +524,11 @@ export class ArenaRenderer {
         this.effect(view.x, view.y, entity.r, 0x9dd4cd, FEEL.trail.life, 'trail');
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
-      const ice = entity.frozenUntil > world.tick, fire = entity.burn?.expiresTick > world.tick, shield = entity.shieldUntil > world.tick;
+      const ice = entity.frozenUntil > world.tick, fire = entity.burn?.expiresTick > world.tick, shield = entity.shieldUntil > world.tick, cursed=entity.curse?.expiresTick>world.tick, rage=entity.berserk?.expiresTick>world.tick;
       view.statusRing.clear(); view.statusRing.position.set(view.x, view.y);
-      view.statusRing.visible = !entity.dead && (ice || fire || shield);
+      view.statusRing.visible = !entity.dead && (ice || fire || shield || cursed || rage);
+      if (cursed) view.statusRing.moveTo(-9,-entity.r-19).lineTo(9,-entity.r-1).moveTo(9,-entity.r-19).lineTo(-9,-entity.r-1).stroke({color:0xbc85e3,width:4});
+      if (rage) view.statusRing.ellipse(0,0,entity.r+7,(entity.r+7)*.55).stroke({color:0xf17b60,width:4}).moveTo(-8,-entity.r-6).lineTo(0,-entity.r-18).lineTo(8,-entity.r-6).stroke({color:0xf17b60,width:3});
       if (shield) view.statusRing.ellipse(0, -entity.r * .6, entity.r + 9, entity.r * 1.6).fill({color:0x73baf0,alpha:.12}).stroke({color:0xa8dafa,width:2,alpha:.8});
       if (ice) view.statusRing.poly([-entity.r-6,0,-entity.r,-entity.r*2,0,-entity.r*2-8,entity.r,-entity.r*2,entity.r+6,0,0,6]).fill({color:0x8cddf0,alpha:.28}).stroke({color:0xb5f0ff,width:2});
       if (fire) for (const offset of [-10,0,10]) view.statusRing.moveTo(offset-4,-2).quadraticCurveTo(offset-8,-12,offset,-20).quadraticCurveTo(offset+8,-9,offset+4,-2).fill({color:0xf8a75e,alpha:.8});
@@ -615,6 +626,7 @@ export class ArenaRenderer {
               .stroke({ color: 0xe5d4a0, width: 2 })
               .poly([7, 0, 1, -4, 1, 4])
               .fill(0xe6e5ce);
+          else if (abilityId === 'sword_wave') graphic.arc(-9,0,particle.r*1.6,-1.2,1.2).stroke({color:0xc1f7ed,width:6}).arc(-16,0,particle.r*1.6,-1.1,1.1).stroke({color:0x72c9bf,width:3,alpha:.6});
           else if (abilityId === 'sling_stone')
             graphic.circle(0, 0, particle.r).fill(0xa29c86).circle(-2, -2, 2).fill(0xc9c5b3);
           else {

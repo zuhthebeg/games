@@ -16,10 +16,11 @@ test('physical shield normal merchant purchase/equip and legacy v5 missing-offha
  const mem=new Map(),store=new SaveStore({getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v),removeItem:k=>mem.delete(k)});store.save(s);assert.deepEqual(store.load(),s);assert.equal(original.equipped.offhand,undefined);
  assert.equal(ITEMS[item.id].ac,0);assert.match(itemDetailsHtml(item),/막기/);assert.match(socketsHtml(s),/방패/);assert.match(portraitHtml(s),/offhand/);
 });
-test('shield only equips with blade, switching bow/focus unequips atomically, keeps inventory and weight truthfully compares',()=>{
+test('shield equips with one-handed blade/wand, switching bow/staff unequips atomically, keeps inventory and weight truthfully compares',()=>{
  let s=trained();const item=instance('shield','round_shield');s.items.push(item);s=equip(s,'shield');const weight=carriedWeight(s);
  assert.equal(equipmentVisual(s).offhand,'shield');
- for(const uid of ['bow','wand','staff']) {
+ const wand=equip(s,'wand');assert.equal(wand.equipped.offhand,'shield');assert.equal(deriveMods(wand).offhand,'shield');assert.ok(validateSave(wand));
+ for(const uid of ['bow','staff']) {
   const preview=compareItems(equippedItem(s,'weapon'),s.items.find(i=>i.uid===uid),s);assert.equal(preview.removesOffhand,true);
   const next=equip(s,uid);assert.equal(next.equipped.offhand,null);assert.equal(deriveMods(next).offhand,undefined);assert.equal(next.items.some(i=>i.uid==='shield'),true);assert.ok(carriedWeight(next)<weight);assert.ok(validateSave(next));
   assert.throws(()=>equip(next,'shield'),/방패/);assert.equal(compareItems(null,item,next).locked,true);

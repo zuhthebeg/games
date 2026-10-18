@@ -79,7 +79,7 @@ for(const [id,base,name] of [
   ['rune_warhammer','rune_maul','룬철 양손망치'],
   ['ossuary_warhammer','ossuary_maul','납골당 양손망치'],
 ]) ITEMS[id]={...ITEMS[base],name,handedness:2,craftOnly:false};
-export const permitsShield = def => def?.family === 'blade' && def.handedness !== 2;
+export const permitsShield = def => (def?.family === 'blade' || def?.family === 'focus' && def.form === 'wand') && def.handedness !== 2;
 // Authored focus affinities propagate through the existing rarity-variant generator.
 for (const [id, affinity] of Object.entries({ember_wand:'fire', soulfire_wand:'fire', seal_staff:'frost', altar_staff:'holy', gravekeeper_staff:'holy'})) ITEMS[id].affinity = affinity;
 // Craft-only silver counterparts inherit exactly the authored T4 weapon stats.
@@ -236,7 +236,7 @@ export function equip(save, uid) {
   if (!knightEquipmentAllowed(save, definition)) throw new Error(`해골 방어구는 Lv.${KNIGHT_ARMOR_LEVELS[definition.kind]}부터 장착할 수 있습니다.`);
   if (!meetsRequirement(save, definition)) throw new Error(`힘 ${definition.requiredStr} 이상이어야 장착할 수 있습니다.`);
   const next = cloneSave(save);
-  if (definition.kind === 'offhand' && !permitsShield(ITEMS[equippedItem(save, 'weapon')?.id])) throw new Error('방패는 한손 검·한손 둔기와 함께 장착합니다.');
+  if (definition.kind === 'offhand' && !permitsShield(ITEMS[equippedItem(save, 'weapon')?.id])) throw new Error('방패는 한손 검·한손 둔기·한손 완드와 함께 장착합니다.');
   next.equipped[definition.kind] = uid;
   if (definition.kind === 'weapon' && !permitsShield(definition) && next.equipped.offhand) next.equipped.offhand = null;
   if (carriedWeight(next) > capacity(next) * 1.2) throw new Error('장착 후 무게가 120%를 넘습니다.');

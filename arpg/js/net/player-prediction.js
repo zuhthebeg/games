@@ -47,16 +47,17 @@ function skipEmptyPhases(p) {
   }
 }
 function startAct(p, abilityId, facing) {
+  if (abilityId !== 'invisibility') delete p.invisibleUntil;
   const step = beginCombo(p, abilityId);
   const def = comboDef(abilityId, step, p.weaponForm);
   const rate = abilityId === WEAPONS[p.weapon].basic || p.skills.includes(abilityId)
-    ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) : 1;
+    ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) * (p.berserk?.speedMult ?? 1) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map(phase => {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(growth && growth.count !== skillGrowth(abilityId).count ? { growth } : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -64,7 +65,7 @@ function resolveAim(p, inp, mlen, others) {
   if (inp.aimX || inp.aimY) return Math.atan2(inp.aimY, inp.aimX);
   let best = null, bestD = AUTO_AIM_RANGE * AUTO_AIM_RANGE;
   for (const e of others) {
-    if (e.team === p.team || !targetable(e)) continue;
+    if (e.team === p.team || !targetable(e) || e.invisibleUntil) continue;
     const d2 = dist2(p.x, p.y, e.x, e.y);
     if (d2 < bestD) { bestD = d2; best = e; }
   }
@@ -75,7 +76,7 @@ function resolveAim(p, inp, mlen, others) {
 function basicReachTarget(p, def, others) {
   let best = null, bestD = Infinity;
   for (const e of others) {
-    if (e.team === p.team || !targetable(e)) continue;
+    if (e.team === p.team || !targetable(e) || e.invisibleUntil) continue;
     const d2 = dist2(p.x, p.y, e.x, e.y);
     if (d2 >= bestD) continue;
     const reach = def.delivery === 'shape'
@@ -90,8 +91,11 @@ function basicReachTarget(p, def, others) {
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
   if (predictionBlocked(state)) return state;
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
+  if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
+  if (p.berserk && (p.berserk.expiresTick <= tick || !canUseSkill('berserk',p.weapon,p.weaponForm,p.lineage,p.handedness))) delete p.berserk;
   tickCombo(p);
   const d = p.dodge;
+  if (inp.attack) delete p.invisibleUntil;
   const guarding=updateShieldGuard(p,inp);
   if (d.cdLeft > 0) d.cdLeft--;
   if (d.iframeLeft > 0) d.iframeLeft--;
@@ -129,7 +133,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const dodgeSkillEdge = SKILL_EDGES.find(k => inp[k]);
   const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
-  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm)
+  if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm, p.lineage, p.handedness)
     && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
     && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
     const facing = resolveAim(p, inp, mlen, others);
@@ -166,16 +170,16 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const w = WEAPONS[p.weapon];
   const skillPressed = SKILL_EDGES.some(k => inp[k]);
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
-  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
+  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.zone) && p.act?.id === skillId)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));
       if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
     }
   }
-  const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
+  const autoTarget = !p.invisibleUntil && !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
     ? basicReachTarget(p, comboDef(w.basic, nextComboStep(p), p.weaponForm), others) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
@@ -184,6 +188,11 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   if (p.act) {
     const act = p.act;
     p.facing = act.facing;
+    if (act.phase === 'active' && act.def.status && !act.fired) {
+      act.fired=true;
+      if (act.def.status === 'invisibility') {p.invisibleUntil=tick+ticks(act.growth.durationMs);p.pendingCounter=null;}
+      if (act.def.status === 'berserk') p.berserk={...act.growth,expiresTick:tick+ticks(act.growth.durationMs)};
+    }
     if (act.phase === 'active' && act.def.spin) p.facing += Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
     if (act.phase === 'active' && act.def.delivery === 'dash') {
       if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
