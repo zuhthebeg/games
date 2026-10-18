@@ -6,6 +6,7 @@ import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES, MONSTERS } from '../content/combat.js';
+import { paintSpellZones } from './spell-zones.js';
 import { healingFeedback } from './healing-feedback.js';
 import { SKILL_VFX } from './skill-vfx.js';
 import { MasterySkillVfx as SkillVfx } from './mastery-vfx.js';
@@ -49,6 +50,8 @@ export class ArenaRenderer {
     // Friendly skill graphics stay below authoritative danger outlines/fills.
     this.skillVfx = new SkillVfx(Graphics, this.layers.skillFx);
     // Snapshot-owned ground marks; text distinguishes pickup and return without color.
+    this.spellZones = new Graphics();
+    this.layers.skillFx.addChild(this.spellZones);
     this.questRing = new Graphics();
     this.layers.skillFx.addChild(this.questRing);
     this.questLabels = ['반납: 입구', '회수: 장부', ''].map(text => {
@@ -93,6 +96,7 @@ export class ArenaRenderer {
 
   reset(world, reduced = false, equipmentSave) {
     this.skillVfx.reset();
+    this.spellZones.clear();
     if (equipmentSave) {
       this.skillVfx.setMastery(world.entities[0].pid, masteryLevels(equipmentSave));
       this.skillVfx.setEquipment(world.entities[0].pid, equipmentVisual(equipmentSave));
@@ -374,8 +378,13 @@ export class ArenaRenderer {
         this.burst(event.x, event.y, FEEL.impact.kill, FEEL.colors.weak);
         this.effect(event.x, event.y, 28, 0xd3b878);
       }
-      else if (event.type === 'explode')
+      else if (event.type === 'explode') {
         this.effect(event.x, event.y, event.radius, 0xffaf56, .4);
+        if (event.ability === 'meteor') {
+          this.effect(event.x, event.y, event.radius * .65, 0xffe2a2, .6);
+          this.burst(event.x, event.y, FEEL.impact.kill, 0xd8aa78);
+        }
+      }
       else if (event.type === 'counter' && entity) {
         this.number(event.ability === 'shield_bash' ? '방패 강타!' : '반격!', entity.x, entity.y - 22, FEEL.colors.counter, FEEL.counter.scale);
         this.effect(entity.x, entity.y, FEEL.perfect.radius * 1.4, FEEL.colors.counter, FEEL.perfect.ringLife);
@@ -538,6 +547,7 @@ export class ArenaRenderer {
     for (const [id, view] of this.views) if (!liveIds.has(id)) {
       view.visual.destroy(); view.shadow.destroy(); view.portal.destroy(); view.bluntCharge.destroy(); view.sunder.destroy(); view.statusRing.destroy(); view.footHp?.container.destroy({ children: true }); this.views.delete(id);
     }
+    paintSpellZones(this.spellZones, world, this.reduced);
     // Telegraph origin remains authoritative (no camera/animation lunge baked into geometry).
     const telegraphViews = this.telegraphs;
     this.warning.clear();

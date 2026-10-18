@@ -12,6 +12,8 @@ import { updateShieldGuard, shieldRushPosition, movementInput, dodgeStart, walki
 
 import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep } from '../sim/basic-combo.js';
 
+import { lockSpellPoint } from '../sim/spell-zones.js';
+
 const PHASES = ['windup', 'lock', 'active', 'recovery'];
 const SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 const AUTO_AIM_RANGE = 560, AUTO_SHOT_REACH = 0.85;
@@ -163,10 +165,11 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.zone) && p.act?.id === skillId)) {
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));
+      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, !!(inp.aimX || inp.aimY), def.zone);
     }
   }
   const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)

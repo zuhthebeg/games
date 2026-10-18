@@ -124,6 +124,19 @@ export const ABILITIES = {
     damage: 68, poise: 40, knockback: 240, family: 'focus', element: 'fire', cancelInto: ['recovery'],
   },
 
+  meteor: {
+    requiresFocus: true, name: '메테오', windupMs: 400, lockMs: 0, activeMs: 34, recoveryMs: 300,
+    cooldownMs: 10000, manaCost: 32, delivery: 'zone',
+    zone: { range: 360, reach: 280, delayMs: 700, radius: 125 },
+    damage: 100, poise: 45, knockback: 160, family: 'focus', element: 'fire', cancelInto: ['recovery'],
+  },
+  firewall: {
+    requiresFocus: true, name: '파이어월', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 250,
+    cooldownMs: 8000, manaCost: 24, delivery: 'zone',
+    zone: { range: 360, reach: 280, durationMs: 4000, intervalMs: 500, length: 220, width: 18 },
+    damage: 12, poise: 0, knockback: 0, family: 'focus', element: 'fire', cancelInto: ['recovery'],
+  },
+
   healing_light: {
     name: '회복의 빛', windupMs: 500, lockMs: 100, activeMs: 100, recoveryMs: 300,
     cooldownMs: 10000, manaCost: 28, delivery: 'shape',

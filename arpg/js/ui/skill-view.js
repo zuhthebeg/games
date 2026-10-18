@@ -25,13 +25,15 @@ const SILHOUETTES = {
   blast_arrow:'<path d="m12 50 21-21m-10 0h10v10m7-28 3 10 11-2-7 9 8 8-12-1-2 12-6-9m-21 5-5 7"/>',
   ember_bolt:'<path d="M24 45C8 26 37 23 34 10c19 18 19 28 7 37-8 6-16 0-12-8 3-7 7-8 7-14M12 48l9-5m-5 11 9-6"/>',
   frost_lance:'<path d="m14 51 28-37 8-3-1 10-32 33M32 25l-11-4m17-3-2-9m3 25 12 1m-26 6-8-2"/>',
+  meteor:'<path d="m48 8-9 23M35 9l-8 17m24-2-8 13"/><circle cx="27" cy="39" r="12"/><path d="M10 54h43M23 35l9 8"/>',
+  firewall:'<path d="M8 51h48M12 48c-9-13 8-17 4-30 13 12 10 18 7 28m3 2c-8-17 10-21 5-36 14 15 12 25 8 34m4 2c-5-12 8-16 7-26 10 13 9 18 4 25"/>',
   flame_ring:'<path d="M13 40c-5-14 12-19 9-31 11 8 9 15 14 17 2-9 9-9 10-16 14 18 10 34-2 41M20 43a12 8 0 1 0 24 0 12 8 0 1 0-24 0"/>',
   protective_shield:'<path d="M32 8 50 16v16c0 12-10 20-18 24-8-4-18-12-18-24V16zM22 32l7 7 14-16"/>',
   turn_undead:'<path d="M18 28a14 14 0 1 1 28 0v12l-7 5v7H25v-7l-7-5zM25 31h2m10 0h2M32 36v5M11 12l42 42M45 6v12m-6-6h12"/>',
   healing_light:'<circle cx="32" cy="32" r="19"/><path d="M32 21v22M21 32h22M32 6v5m0 42v5M6 32h5m42 0h5M14 14l4 4m28 28 4 4m0-36-4 4M18 46l-4 4"/>',
 };
 export const SKILL_TYPES = {
-  lunge:'근접 · 돌진', whirl:'범위', heavy_cleave:'근접 · 범위', volley:'원거리',
+  meteor:'지연 · 광역 화염', firewall:'지속 · 화염 장벽', lunge:'근접 · 돌진', whirl:'범위', heavy_cleave:'근접 · 범위', volley:'원거리',
   ground_slam:'둔기 · 범위', armor_break:'둔기 · 파쇄',
   triple_arrow:'원거리 · 3연사', evasion_shot:'회피 · 사격',
   pierce_shot:'원거리 · 관통', blast_arrow:'원거리 · 폭발', ember_bolt:'원거리 · 화염',
@@ -75,7 +77,7 @@ export function loadoutHtml(save, { interactive = true } = {}) {
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id);
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
-  const stats = [a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? '반경 160 · 파티 보호막 8초 · 적 피해 1회 막고 파괴' : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresFocus ? ['지팡이 필수'] : []), ...(a.heal ? ['지능에 비례해 회복량 증가'] : []), ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['방어 약화 · 받는 피해 +15%', '파쇄 5초'] : []), ...(a.slow ? ['이동 속도 35% 감소 · 3초'] : []), ...(a.burst ? ['조준 방향 빠른 3연사 · 0.1초 간격'] : []), ...(a.dodgeShot ? ['회피 이동·무적 중 조준 사격', '회피 재사용 대기 중 사용 불가'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
+  const stats = [a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? '반경 160 · 파티 보호막 8초 · 적 피해 1회 막고 파괴' : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' && id !== 'firewall' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), ...(a.zone ? [`시전 지점 고정 · 사거리 ${a.zone.range} px`, ...(id === 'meteor' ? ['낙하 대기 0.7초 · 폭발 반경 125 px'] : ['지속 4초 · 길이 220 px · 폭 36 px', '0.5초마다 피해 12 × 마법 위력 · 최대 8회', '이동 차단 없음 · 치명타·화상·경직 없음', '화염 지팡이: 피해 +25%'])] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresFocus ? ['지팡이 필수'] : []), ...(a.heal ? ['지능에 비례해 회복량 증가'] : []), ...(a.requiresForm ? ['무기 둔기'] : []), ...(a.sunder ? ['방어 약화 · 받는 피해 +15%', '파쇄 5초'] : []), ...(a.slow ? ['이동 속도 35% 감소 · 3초'] : []), ...(a.burst ? ['조준 방향 빠른 3연사 · 0.1초 간격'] : []), ...(a.dodgeShot ? ['회피 이동·무적 중 조준 사격', '회피 재사용 대기 중 사용 불가'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small><small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
   if (context === 'character') {
     const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form), mark = useClass(id, weapon, form);
