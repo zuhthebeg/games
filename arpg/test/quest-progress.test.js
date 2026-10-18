@@ -135,5 +135,5 @@ test('map shows offer → progress → done, sortie and receipt show the counter
   assert.match(h.html, /side-contract clear" data-quest="QF1"/);
   h.mapRegion = 'pass';
   h.showBoard();
-  assert.match(h.html, /data-region="pass"><h3>[^<]+<\/h3>(?:(?!<\/section>).)*<\/section>/s);
+  assert.match(h.html, /<section class="map-quests" data-region="pass"[^>]*>(?:(?!<\/section>).)*<h3 id="map-heading-pass">잿빛 고개<\/h3>(?:(?!<\/section>).)*<\/section>/s);
 });

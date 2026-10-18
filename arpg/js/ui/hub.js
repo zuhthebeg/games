@@ -1,5 +1,5 @@
 import { knightFormName } from '../content/player-lineages.js';
-import { REGIONS, REGION_EDGES, MAPS, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
+import { REGIONS, MAPS, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
 import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
 import { acceptQuest, questOffered, questState } from '../meta/quest-progress.js';
 import { BALANCE, attackRate } from '../content/balance.js';
@@ -45,6 +45,13 @@ const SILVER_SOURCE = `<p class="silver-source">은 주괴 · ${escape(ITEMS.sil
 const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
   && STAGES[id]?.spawns.some(s => MONSTER_VARIANTS[s.monster]?.lifeState === 'construct'
     && !MONSTER_VARIANTS[s.monster].speciesTags.includes('trainingDummy'));
+// Decorative environment art keeps all names, state labels and actions on solid surfaces.
+const regionArt = id => `<span class="region-art" aria-hidden="true" style="background-image:url('/arpg/assets/world-map/${id}.webp')"></span>`;
+const mapPartyActions = (save, label) => `<div class="map-party-actions" role="group" aria-label="다른 모험가와 출정">
+  ${save.lineage === 'skeleton_knight' ? '' : button(label, 'coop')}
+  ${button('침입 동의방 · 인간 대 해골', 'invasion')}
+  <p>침입은 일반 협동과 별개이며, 위험에 동의한 뒤 참가합니다.</p>
+</div>`;
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
 const FORGE_RECIPE_MODES = [['craftable', '제작 가능'], ['owned', '보유 재료 관련'], ['all', '전체 공개']];
 const FORGE_RECIPE_KINDS = [['all', '전체 종류'], ['weapon', '무기'], ['armor', '방어구'], ['offhand', '방패'], ['material', '재료']];
@@ -939,22 +946,19 @@ export class HubUI {
     const current = availableStages(this.save).find(id => !this.save.cleared[id]);
     const selected = REGIONS.find(r => r.id === this.mapRegion) || regionFor(current) || REGIONS[0];
     this.mapRegion = selected.id;
-    const paths = REGION_EDGES.map(([a,b]) => {
-      const from = REGIONS.find(r => r.id === a).pos, to = REGIONS.find(r => r.id === b).pos;
-      return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" />`;
-    }).join('');
     const nodes = REGIONS.map(r => {
       const open = r.maps.some(id => mapUnlocked(this.save,id)), done = open && r.maps.filter(id => !MAPS[id].questId).every(id => this.save.cleared[id]);
-      return button(`${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${r.name}</span><small>${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
-        `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" style="left:${r.pos[0]}%;top:${r.pos[1]}%" aria-pressed="${this.mapRegion === r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
+      const active = this.mapRegion === r.id;
+      return button(`${regionArt(r.id)}<span class="region-name">${icon(done ? 'clear' : open ? 'depart' : 'lock')}<span>${escape(r.name)}</span></span><small>${active ? '선택 · ' : ''}${done ? '완료' : r.maps.includes(current) ? '현재' : open ? '열림' : '잠김'}</small>`, 'map-region',
+        `data-region="${r.id}" class="region-node ${done ? 'clear' : open ? 'depart' : 'lock'}" aria-pressed="${active}" aria-controls="map-region-${r.id}"${r.maps.includes(current) ? ' aria-current="location"' : ''}`);
     }).join('');
-    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}"${r.id === selected.id ? '' : ' hidden'}><h3>${r.name}</h3>${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${r.maps.some(silverSourceStage) ? SILVER_SOURCE : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
+    const regions = REGIONS.map(r => `<section class="map-quests" data-region="${r.id}" id="map-region-${r.id}" aria-labelledby="map-heading-${r.id}"${r.id === selected.id ? '' : ' hidden'}>${regionArt(r.id)}<header class="map-region-heading"><small>선택한 지역 · ${r.maps.some(id => mapUnlocked(this.save,id)) ? '퀘스트 선택' : '아직 잠긴 지역'}</small><h3 id="map-heading-${r.id}">${escape(r.name)}</h3><p>${r.maps.filter(id => !MAPS[id].questId && this.save.cleared[id]).length} / ${r.maps.filter(id => !MAPS[id].questId).length} 완료 · 아래 퀘스트에서 출정 준비</p></header><div class="map-contracts">${r.maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${r.maps.some(silverSourceStage) ? SILVER_SOURCE : ''}${[...r.maps, ...Object.values(OBJECTIVE_QUESTS).filter(q => q.regionId === r.id && !r.maps.includes(q.mapId)).map(q => q.mapId)].map(id => {
       const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
       const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
       return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : state === 'lock' ? '잠김' : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
         `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`, state === 'lock');
-    }).join('')}${this.sideQuestsHtml(r.id)}</section>`).join('');
-    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `${this.save.lineage === 'skeleton_knight' ? '' : '<button type="button" data-action="coop" class="primary">같이 사냥 · 2~4인</button>'}<button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><div class="world-map" aria-label="지역 지도"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes}</div>${regions}`, 'board', '', { eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
+    }).join('')}${this.sideQuestsHtml(r.id)}</div></section>`).join('');
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<div class="map-board"><section class="map-atlas" aria-labelledby="map-atlas-heading"><header class="map-atlas-heading"><small class="eyebrow">여정의 기록</small><h3 id="map-atlas-heading">지역 선택</h3><p>지역을 고르면 퀘스트를 확인할 수 있습니다.<br>잠긴 지역도 둘러볼 수 있지만 출정할 수 없습니다.</p></header><nav class="world-map" aria-label="지역 지도">${nodes}</nav></section><div class="map-details">${regions}</div></div>${mapPartyActions(this.save, '같이 사냥 · 2~4인')}`, 'board', '', { keepScroll:true, eyebrow:`내 레벨 ${this.save.level} · ${Object.entries(this.save.cleared).filter(([id,done]) => done && /^S\d+$/.test(id) && Number(id.slice(1)) <= 20).length} / 20 완료 · 묘지 ${['S21','S22','S23'].filter(id => this.save.cleared[id]).length} / 3 · 지하묘역 ${['S24','S25','S26','S27'].filter(id => this.save.cleared[id]).length} / 4` });
   }
 
   sideQuestsHtml(regionId) {
@@ -986,13 +990,13 @@ export class HubUI {
       return button(`<strong>위협 ${level}</strong><small>${locked ? '잠김' : level === 1 ? '기본' : `HP ×${mult.hp} · 골드 ×${mult.gold}`}</small>`,
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
-    this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `
+    this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `<div class="map-sortie">${regionFor(stage) ? regionArt(regionFor(stage).id) : ''}
       <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      ${this.save.lineage === 'skeleton_knight' ? '' : '<button type="button" data-action="coop" class="primary">같이 사냥 · 이 퀘스트로</button>'}<button type="button" data-action="invasion">침입 동의방 · 인간 대 해골</button><p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      ${mapPartyActions(this.save, '같이 사냥 · 이 퀘스트로')}<p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
-          ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
+          ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details></div>`,
     'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: '출정 확인', back: 'board' });
   }
 

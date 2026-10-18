@@ -55,7 +55,7 @@ test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded g
  }
  assert.ok(zeroGear>0);
 });
-test('map keeps parchment, connects castle to throne in separate final columns from necropolis',()=>{
+test('responsive map ledger preserves authored castle/throne graph and independent necropolis gate',()=>{
  assert.equal(REGIONS.find(r=>r.id==='throne').name,'왕좌 앞뜰');
  assert.deepEqual(REGIONS.find(r=>r.id==='throne').pos,[24,92]);
  assert.deepEqual(REGIONS.find(r=>r.id==='necropolis').pos,[76,92]);
@@ -64,7 +64,7 @@ test('map keeps parchment, connects castle to throne in separate final columns f
  h.showBoard();assert.doesNotMatch(h.html,/시험: 도전|시험 도전|균형:|잠정/);assert.match(h.html,/data-stage="TD1" class="contract lock" disabled/);
  s.cleared.TD1=true;h.showBoard();assert.match(h.html,/data-region="throne" class="region-node lock"/);
  s.cleared.S20=true;h.showBoard();assert.match(h.opts.eyebrow,/1 \/ 20 완료/);
- const css=readFileSync(new URL('../css/game.css',import.meta.url),'utf8');assert.match(css,/#d9c69f/);
+ const css=readFileSync(new URL('../css/game.css',import.meta.url),'utf8');assert.match(css,/\.world-map\{display:grid/);assert.doesNotMatch(h.html,/style="left:/);assert.match(h.html,/aria-controls="map-region-throne"/);
 });
 
 test('repeat TD1 does not outfarm S20 XP/gold/gear in the same late solo policy (3 seeds); legacy reload never regrants first clear',async()=>{
