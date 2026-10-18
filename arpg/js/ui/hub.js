@@ -874,6 +874,7 @@ export class HubUI {
     if (!SKILL_DISPLAY[id] || !hasSkill(this.save,id)) throw new Error('아직 배우지 않은 기술입니다.');
     const a = ABILITIES[id], p = a.projectile, shape = a.shape;
     const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
+      : a.zone ? `고정 지점 사거리 ${a.zone.range} px · ${a.zone.radius ? `반경 ${a.zone.radius} px` : `길이 ${a.zone.length} px · 폭 ${a.zone.width * 2} px`} · ${a.zone.delayMs ? `낙하 대기 ${amount(a.zone.delayMs / 1000)}초` : `지속 ${amount(a.zone.durationMs / 1000)}초`}`
       : a.executeUndead ? `대상 반경 ${a.executeUndead.radius} px · 가장 가까운 적 언데드 1체`
       : a.shield ? `보호 범위 반경 ${a.shield.radius} px · 자신과 범위 안 살아 있는 아군`
       : a.heal ? `회복 범위 반경 ${a.heal.radius} px · 자신과 범위 안 살아 있는 아군`

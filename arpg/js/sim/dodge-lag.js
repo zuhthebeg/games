@@ -22,7 +22,8 @@ export function pruneGuestHits(p, now) {
 }
 export function recordGuestHit(world, p, hit, dmg, kx, ky) {
   const state = guests.get(p);
-  if (!state || hit.periodic) return;
+  // Zone pulses are dodgeable contacts; poison/burn remain unrewindable DoT.
+  if (!state || hit.periodic && !hit.zonePulse) return;
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const row = { x:p.x,y:p.y,tick: world.tick, hit, dmg, kx, ky, movedX: 0, movedY: 0,
     arena: world.arena, hurtInvuln: p.hurtInvuln, poison: p.poison ? structuredClone(p.poison) : null };

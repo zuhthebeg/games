@@ -45,7 +45,7 @@ async function casts(p,host=p){
 try{
  for(let i=0;i<60;i++){try{if((await fetch(base+'/arpg/')).ok)break;}catch{}await pause(100);}
  const files=[...new Set([...execFileSync('git',['diff','817eada','--name-only'],{cwd:root,encoding:'utf8'}).trim().split('\n'), 'arpg/js/sim/spell-zones.js','arpg/js/render/spell-zones.js'])].filter(f=>f.startsWith('arpg/js/')&&f.endsWith('.js'));
- for(const f of files){const local=await readFile(root+'/'+f),served=Buffer.from(await(await fetch(base+'/'+f,{cache:'no-store'})).arrayBuffer());assert.deepEqual(served,local,f);report.sourceBinding[f]=createHash('sha256').update(local).digest('hex');}
+ for(const f of files){const local=await readFile(root+'/'+f),served=Buffer.from(await(await fetch(base+'/'+f+'?v='+createHash('sha256').update(local).digest('hex').slice(0,10),{cache:'no-store'})).arrayBuffer());assert.deepEqual(served,local,f);report.sourceBinding[f]=createHash('sha256').update(local).digest('hex');}
  for(const width of [1280,390]){
   const{ctx,pages:[p]}=await setup(width);await learn(p);await board(p);await p.press('#sortie-confirm');await p.page.waitForSelector(`#skill [data-skill-icon="${pairs[0][0]}"]`);await casts(p);assert.equal(await p.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await ctx.close();console.log('native solo learn/equip/cast PASS',width);
  }
