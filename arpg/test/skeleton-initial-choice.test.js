@@ -35,17 +35,17 @@ test('normal selection has no saved-character encounter session or trial launche
  assert.match(source,/startStage\(world, stageId/);assert.match(source,/characters\.persist\(nextSave, roundOwner\)/);
 });
 test('explicit debug=0 and skeleton room links do not bypass chooser or load human store',async()=>{
- const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const {readFileSync}=await import('node:fs');const {roomEntry}=await import('../js/net/lobby.js');const source=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  const boot=source.slice(source.indexOf('  const bootQuery ='),source.indexOf('  const app ='));
  for(const search of ['?debug=0','?character=skeleton_knight&room=unsupported']){
-  let reads=0;const run=new Function('location','store',`${boot};return {legacyEntry,saved};`);const result=run({search},{load(){reads++;return 'HUMAN';}});
+  let reads=0;const run=new Function('location','store','roomEntry',`${boot};return {legacyEntry,saved};`);const result=run({search},{load(){reads++;return 'HUMAN';}},roomEntry);
   assert.equal(result.legacyEntry,false);assert.equal(result.saved,null);assert.equal(reads,0);
  }
 });
 test('main co-op entry rejects a skeleton profile before constructing a lobby',async()=>{
  const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  const fn=source.slice(source.indexOf('  function startCoop('),source.indexOf('  hub.startCoop ='));
- const start=new Function('hub','closeCoop',`let undead=null,undeadStarting=false;${fn};return startCoop;`)({save:createSkeletonSave(options)},()=>{});
+ const start=new Function('hub','closeCoop','location',`let undead=null,undeadStarting=false;${fn};return startCoop;`)({save:createSkeletonSave(options)},()=>{},{search:''});
  assert.throws(()=>start('S2',1),/침입 동의방/);
 });
 test('choosing existing human restores last journey UI state without writing the human save',()=>{
