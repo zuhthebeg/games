@@ -141,7 +141,7 @@ test('lobby keeps startConfig callable and catches started-before-hook without o
       options = opts; this._roster = { hostUser: 'host', started: false, players: [{ user: 'host' }, { user: 'guest' }] };
       this._ws = { _started: true, getMyUserId: () => 'host', sendRt() {}, sendAction() {}, leave() {} };
     }
-    _renderLobby() {} _hideModeSelect() {} _hideLobby() {} _hideResult() {}
+    _syncLobby() {} _renderLobby() {} _hideModeSelect() {} _hideLobby() {} _hideResult() {}
   }
   try {
     Object.defineProperty(globalThis, 'window', { configurable: true, value: { MultiplayerLobby: FakeLobby } });
@@ -151,7 +151,7 @@ test('lobby keeps startConfig callable and catches started-before-hook without o
     const ready = new Promise((resolve, reject) => { resolveReady = resolve; timer = setTimeout(() => reject(new Error('hook did not catch ws._started')), 1000); });
     attached = new CoopLobby({ profile: { level: 1 }, config: { stageId: 'S2', threat: 1 }, onLeave() {}, onSession: resolveReady });
     attached.open();
-    assert.equal(typeof options.startConfig, 'function'); assert.deepEqual(options.startConfig(), { stageId: 'S2', threat: 1 });
+    assert.equal(typeof options.startConfig, 'function'); assert.deepEqual(options.startConfig(), { stageId: 'S2', threat: 1, invasion: false });
     const session = await ready;
     assert.equal(session.host, 'host'); assert.equal(session.uid, 'host'); assert.equal(session.phase, 'prepare');
   } finally {

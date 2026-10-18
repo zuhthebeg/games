@@ -1,6 +1,6 @@
 import { currentLoad, usedConsumables } from '../meta/run.js';
 import { InvasionLoot } from './invasion-loot.js';
-import { validParty, invasionProfile } from './invasion.js';
+import { validParty, invasionProfile, partyConfig, validLobbyProfile } from './invasion.js';
 import { TEAM_MONSTER } from '../sim/core.js';
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
@@ -57,12 +57,13 @@ export class CoopSession {
   }
   begin(data) {
     if (this.phase !== 'prepare' || !data?.profiles || !data.profiles[this.uid]) return;
-    if (!!data.config?.invasion !== !!this.config.invasion || !validParty(data.config, data.profiles)
+    if (!validParty(data.config, data.profiles)
+      || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
+      || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
-      || data.config.invasion && (this.profile.invasionConsent !== true || data.profiles[this.uid].role !== this.profile.role
-        || JSON.stringify(data.profiles[this.uid].rewardSave) !== JSON.stringify(this.profile.rewardSave)
+      || data.config.invasion && (JSON.stringify(data.profiles[this.uid].rewardSave) !== JSON.stringify(this.profile.rewardSave)
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
-      this.onStatus('침입 동의·계보·역할·지역을 확인하세요. 일반 협동방은 적대 해골을 받지 않습니다.'); return;
+      this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
     this.config = data.config; this.profiles = data.config.invasion
       ? Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,invasionProfile(p)])) : data.profiles; this.seed = data.seed;
@@ -103,16 +104,15 @@ export class CoopSession {
       this.onStatus('동료의 위협도가 잠겨 있습니다. 나가서 낮은 위협도를 선택하세요.'); return;
     }
     const profiles = Object.fromEntries([...this.players].map(id => [id, this.profiles[id]]));
-    if (!validParty(this.config, profiles)) { this.onStatus('침입 동의·계보·역할·지역을 확인하세요.'); return; }
+    this.config = partyConfig(this.config, profiles);
+    if (!validParty(this.config, profiles)) { this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return; }
     const data = { ...(this.config.invasion ? { runId: crypto.randomUUID() } : {}), config: this.config, profiles, seed: this.config.seed ?? crypto.getRandomValues(new Uint32Array(1))[0] };
     this.sendAction({ type: 'ARPG_START', payload: data, __snapshot: data }); this.begin(data);
   }
   action(a) {
-    // Invasion starts only through authenticated-from-host RT snapshots; relay actions are not sender-bound.
-    if (this.isHost || this.config.invasion) return;
-    if (a?.type === 'ARPG_START') this.begin(a.payload);
-    else if (a?.type === '__resync') this.begin(a.__snapshot);
+    // Relay actions have no authenticated sender: only from-host RT may start any party.
   }
+
   rt(from, data, now = this.now) {
     if (!data || !this.players.has(from) || this.lost) return;
     if (data.t === 'claim' && this.isHost && this.lootLedger) {
@@ -121,6 +121,9 @@ export class CoopSession {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
       const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
+      if (!data.profile || Object.hasOwn(data.profile, 'team')
+        || data.profile.rewardSave && !validLobbyProfile(data.profile)
+        || data.profile.lineage === 'skeleton_knight' && !validLobbyProfile(data.profile)) return;
       this.profiles[from] = data.profile; this.tryStart();
     } else if (data.t === 'input' && this.isHost && this.world && from !== this.uid) {
       if (this.latches[from]?.receive(data, now)) {

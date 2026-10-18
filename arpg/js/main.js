@@ -72,7 +72,7 @@ try {
   const characters = new CharacterStores(localStorage);
   const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
-  const { soloSelected, invasionInvite, legacyEntry } = roomEntry(bootQuery);
+  const { soloSelected, legacyEntry } = roomEntry(bootQuery);
   // Human loading may quarantine old/corrupt bytes: defer until human is selected.
   const saved = legacyEntry ? store.load() : null;
   const app = new Application();
@@ -331,26 +331,19 @@ try {
     hud.nodes.notice.textContent = arrivalNotice(seen ? { cleared: { [stageId]: true } } : save, stageId);
     hud.noticeLeft = 4;
   }
-  function startCoop(stageId, threat, invasion = false) {
+  function startCoop(stageId, threat) {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
     closeCoop();
     if (!hub.save) return;
-    const entryQuery = new URLSearchParams(location.search);
-    if (entryQuery.has('room') && (entryQuery.get('invasion') === '1') !== invasion) throw new Error('초대 링크의 방 모드가 다릅니다. 침입 동의방과 일반 협동방은 분리됩니다.');
-    if (!invasion && hub.save.lineage && hub.save.lineage !== 'human') throw new Error('해골은 침입 동의방에서 몬스터 편으로 참가하세요.');
     characters.assertOwner();
     roundOwner = characters.active;
     // The host chooses on the existing departure panel; guests retain their own build/save.
     const localSave = structuredClone(hub.save);
-    if (invasion) {
-      localSave.activeInvasion = crypto.randomUUID();
-      characters.persist(localSave, roundOwner);
-      hub.save = localSave;
-    }
+    localSave.activeInvasion = crypto.randomUUID();
     const weapon = ITEMS[equippedItem(localSave, 'weapon').id].family;
     const load = currentLoad(localSave, createTracker(0));
     const boneParts = ['weapon','head','body','hands','feet'].map(slot => equippedItem(localSave, slot)?.id);
-    const profile = { ...(boneParts.every(id=>ITEMS[id]?.boneSet) ? { boneParts } : {}), lineage: localSave.lineage || 'human', ...(invasion ? { invasionConsent: true, role: localSave.lineage === 'skeleton_knight' ? 'invader' : 'hunter', rewardSave: localSave } : {}), name: localSave.name, level: localSave.level, weapon,
+    const profile = { ...(boneParts.every(id=>ITEMS[id]?.boneSet) ? { boneParts } : {}), lineage: localSave.lineage || 'human', role: localSave.lineage === 'skeleton_knight' ? 'invader' : 'hunter', rewardSave: localSave, name: localSave.name, level: localSave.level, weapon,
       mods: buildRoundMods(localSave), skillMasteryLevels: masteryLevels(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
       threats: Object.fromEntries(Object.keys(STAGES).map(id => [id, unlockedThreat(localSave, id)])),
       stages: availableStages(localSave) };
@@ -360,7 +353,7 @@ try {
     const profileOwner = characters.active;
     let lobby;
     const ownsLobby = () => characters.active === profileOwner && coop === lobby;
-    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat, ...(invasion ? { invasion: true } : {}) },
+    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
       onSession: session => {
         if (!ownsLobby()) return;
         coopSession = session; guestTime = performance.now();
@@ -374,6 +367,8 @@ try {
       onLeave: () => { if (!ownsLobby()) return; closeCoop(); hub.showBoard(); },
       onBegin: config => {
         if (!ownsLobby()) return;
+        if (config.invasion) { characters.persist(localSave, roundOwner); hub.save = localSave; }
+        else delete localSave.activeInvasion;
         roundSave = selectThreat(localSave, config.stageId, config.threat);
         tracker = createTracker(crypto.getRandomValues(new Uint32Array(1))[0]);
         coopLoad = currentLoad(roundSave, tracker).ratio;
@@ -479,7 +474,7 @@ try {
     }),
   });
   document.querySelector('#boot').hidden = true;
-  hub.invasionInvite = invasionInvite;
+  hub.roomInvite = bootQuery.has('room');
   if (!legacyEntry) {
     const chooseUrl = character => {
       const url = new URL(location.href); url.searchParams.set('character', character);
@@ -510,12 +505,11 @@ try {
       create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
     hub.ready();
-    if (soloSelected && bootQuery.has('room') && !invasionInvite) hub.error('일반 협동방에는 해골로 들어갈 수 없습니다. 침입 동의방 초대 링크를 사용하세요.');
-    else if (soloSelected) {
+    if (soloSelected) {
       try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
     } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
   } else hub.ready();
-  if (saved && bootQuery.has('room') && !invasionInvite) startCoop('S2', 1);
+
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';
   try {

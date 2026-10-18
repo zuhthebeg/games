@@ -47,10 +47,9 @@ const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
     && !MONSTER_VARIANTS[s.monster].speciesTags.includes('trainingDummy'));
 // Decorative environment art keeps all names, state labels and actions on solid surfaces.
 const regionArt = id => `<span class="region-art" aria-hidden="true" style="background-image:url('/arpg/assets/world-map/${id}.webp')"></span>`;
-const mapPartyActions = (save, label) => `<div class="map-party-actions" role="group" aria-label="다른 모험가와 출정">
-  ${save.lineage === 'skeleton_knight' ? '' : button(label, 'coop')}
-  ${button('침입 동의방 · 인간 대 해골', 'invasion')}
-  <p>침입은 일반 협동과 별개이며, 위험에 동의한 뒤 참가합니다.</p>
+const mapPartyActions = label => `<div class="map-party-actions" role="group" aria-label="다른 모험가와 출정">
+  ${button(label, 'coop')}
+  <p>총 2~4명 · 인간은 사냥꾼 편, 해골은 몬스터 편으로 참가합니다.</p>
 </div>`;
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
 const FORGE_RECIPE_MODES = [['craftable', '제작 가능'], ['owned', '보유 재료 관련'], ['all', '전체 공개']];
@@ -315,7 +314,7 @@ export class HubUI {
       <p>${escape(this.name)}, ${knight ? '해골 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
       ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기존 근접 무기 규칙을 사용합니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
-      ${button(this.invasionInvite ? '캐릭터 생성 · 침입 동의 확인' : knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
+      ${button(this.roomInvite ? '캐릭터 생성 · 같은 방 입장' : knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
 
   // --- Brass-ledger shell: header → scrolling content → one primary action. ---
@@ -365,7 +364,7 @@ export class HubUI {
   // --- Inn: the room shows the hero with five equipment sockets; NPCs sit below. ---
 
   showInn() {
-    if (this.invasionInvite) { this.invasionInvite = false; return this.showInvasionConsent(); }
+    if (this.roomInvite) { this.roomInvite = false; return this.action('coop', {}); }
     this.panel = null;
     this.recoverVitals();
     const pins = SLOTS.map(slot => `<i class="pin-${slot} ${equippedItem(this.save, slot) ? 'worn' : ''}"></i>`).join('');
@@ -972,7 +971,7 @@ export class HubUI {
           `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`);
       }).join('')}${sideQuests}</div></section>`;
     }).join('');
-    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<div class="map-board"><section class="map-atlas" aria-labelledby="map-atlas-heading"><header class="map-atlas-heading"><small class="eyebrow">여정의 기록</small><h3 id="map-atlas-heading">걸어온 길</h3><p>완료한 길과 지금 갈 수 있는 지역입니다.<br>퀘스트를 완료하면 다음 길이 이어집니다.</p></header><nav class="world-map" aria-label="발견한 지역 지도"><svg class="map-routes" viewBox="0 0 200 ${routeHeight}" preserveAspectRatio="none" aria-hidden="true">${routes}</svg>${nodes}</nav></section><div class="map-details">${regions}</div></div>${mapPartyActions(this.save, '같이 사냥 · 2~4인')}`, 'board', '', { keepScroll:true, eyebrow:`내 레벨 ${this.save.level} · 발견한 지역 ${visibleRegions.length}곳 · ${visibleMaps.filter(id => this.save.cleared[id]).length} 완료 · ${visibleMaps.filter(id => !this.save.cleared[id]).length} 도전 가능` });
+    this.showInnPanel(this.hubCopy('월드맵', '묘지 밖으로 출정'), `<div class="map-board"><section class="map-atlas" aria-labelledby="map-atlas-heading"><header class="map-atlas-heading"><small class="eyebrow">여정의 기록</small><h3 id="map-atlas-heading">걸어온 길</h3><p>완료한 길과 지금 갈 수 있는 지역입니다.<br>퀘스트를 완료하면 다음 길이 이어집니다.</p></header><nav class="world-map" aria-label="발견한 지역 지도"><svg class="map-routes" viewBox="0 0 200 ${routeHeight}" preserveAspectRatio="none" aria-hidden="true">${routes}</svg>${nodes}</nav></section><div class="map-details">${regions}</div></div>${mapPartyActions('같이 사냥 · 2~4인')}`, 'board', '', { keepScroll:true, eyebrow:`내 레벨 ${this.save.level} · 발견한 지역 ${visibleRegions.length}곳 · ${visibleMaps.filter(id => this.save.cleared[id]).length} 완료 · ${visibleMaps.filter(id => !this.save.cleared[id]).length} 도전 가능` });
   }
 
   sideQuestsHtml(regionId) {
@@ -1007,7 +1006,7 @@ export class HubUI {
     this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `<div class="map-sortie">${regionFor(stage) ? regionArt(regionFor(stage).id) : ''}
       <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
-      ${mapPartyActions(this.save, '같이 사냥 · 이 퀘스트로')}<p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
+      ${mapPartyActions('같이 사냥 · 이 퀘스트로')}<p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
       <details class="help"><summary>설정</summary>
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details></div>`,
@@ -1017,15 +1016,6 @@ export class HubUI {
   setEffectsHtml() {
     return `<section aria-label="장비 세트 효과"><h3 class="section-title">세트 효과 · 착용 부위만 적용</h3>${equippedSets(this.save).map(set=>
       `<p data-set="${set.id}"><b>${set.name} ${set.count}/${set.parts}</b> · ${set.bonuses.map(b=>`<span class="${b.active?'gain':'muted'}">${b.count}부위 ${b.active?'활성':'비활성'}: ${b.label}</span>`).join(' · ')}</p>`).join('')}</section>`;
-  }
-
-  showInvasionConsent() {
-    const invader = this.save.lineage === 'skeleton_knight';
-    this.showInnPanel('침입 동의방', `<p>일반 협동과 분리된 적대 전투입니다. 모두 동의한 방에서만 시작합니다.</p>
-      <p>내 역할: <b>${invader ? '해골 · 몬스터 편' : '인간 · 사냥꾼 편'}</b></p>
-      <p>사망하면 이번 출정에서 얻고 아직 확보하지 않은 전리품만 바닥에 남습니다. 적이 가까이 오면 가져갑니다. 원래 소지품·착용 장비·창고는 잃지 않습니다.</p>
-      <p>해골은 인간의 퀘스트 클리어 보상을 받지 않습니다. 인간 전원 퇴장 뒤 10초간 전리품을 줍고 자동 귀환합니다. 방장 연결이 끊기면 미확정 전리품은 확보하지 못합니다.</p>`,
-      'invasion-consent', button('위험에 동의하고 방 입장', 'invasion-accept', 'class="primary danger"'), { eyebrow: '명시적 참가 동의', back: 'board' });
   }
 
   launch(stage, reduced = false, weapon = null) {
@@ -1207,7 +1197,7 @@ export class HubUI {
         this.commit(createSave({
           name: this.name, answers: this.answers, weapon: this.chosenWeapon, createdAt: Date.now(),
         }));
-        return this.invasionInvite ? this.showInn() : this.launch('S1');
+        return this.roomInvite ? this.showInn() : this.launch('S1');
       case 'inn':
       case 'result-inn': return this.showInn();
       case 'character-tab':
@@ -1448,12 +1438,8 @@ export class HubUI {
         this.commit(allocateStats(this.save, this.draft));
         return this.allocationRequired ? this.showReceipt() : this.showAllocation(false);
       // Board
-      case 'invasion':
-        return this.showInvasionConsent();
-      case 'invasion-accept': {
-        const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
-        return this.startCoop?.(stage, this.sortieThreat || 1, true);
-      }
+      case 'invasion': // Legacy actions route into the same ordinary party.
+      case 'invasion-accept':
       case 'coop': {
         const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
         return this.startCoop?.(stage, this.sortieThreat || 1);

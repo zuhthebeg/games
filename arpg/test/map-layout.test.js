@@ -55,16 +55,16 @@ test('current highlight also follows an outstanding objective after the main cam
   assert.match(h.html,/data-region="mine"[^>]*aria-current="location"/);
   assert.match(h.html,/data-stage="M_MINE_CART"[^>]*aria-current="step"/);
 });
-test('sortie keeps threat/launch confirmation, undead/silver advice and separate opt-in modes for each lineage', () => {
+test('sortie keeps threat/launch confirmation, undead/silver advice and one ordinary party entry for either lineage', () => {
   const previous=globalThis.matchMedia;globalThis.matchMedia=()=>({matches:false});
   try {for(const lineage of [undefined,'skeleton_knight']) {
     const s=fresh();s.lineage=lineage;s.cleared.S20=true;
     const h=hub(s);h.showSortie('S21');
     assert.match(h.html,/class="map-sortie"/);assert.match(h.html,/world-map\/graveyard.webp/);
     assert.match(h.html,/언데드 다수 출현/);assert.match(h.html,/class="map-party-actions"/);
-    assert.equal(h.html.includes('data-action="coop"'),!lineage);
-    assert.match(h.html,/data-action="invasion"/);assert.doesNotMatch(h.html,/data-action="invasion-accept"/);
+    assert.equal(h.html.includes('data-action="coop"'),true);
+    assert.doesNotMatch(h.html,/data-action="invasion"/);assert.doesNotMatch(h.html,/data-action="invasion-accept"/);
     assert.match(h.html,/data-threat="2"[^>]*disabled/);assert.match(h.footer,/data-action="launch"/);
-    h.showBoard();assert.equal(h.html.includes('data-action="coop"'),!lineage);
+    h.showBoard();assert.equal(h.html.includes('data-action="coop"'),true);
   }}finally{globalThis.matchMedia=previous;}
 });

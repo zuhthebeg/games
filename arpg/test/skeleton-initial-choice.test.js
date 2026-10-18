@@ -42,11 +42,11 @@ test('explicit debug=0 and skeleton room links do not bypass chooser or load hum
   assert.equal(result.legacyEntry,false);assert.equal(result.saved,null);assert.equal(reads,0);
  }
 });
-test('main co-op entry rejects a skeleton profile before constructing a lobby',async()=>{
+test('main co-op entry accepts skeleton lineage and reaches normal ownership checks',async()=>{
  const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  const fn=source.slice(source.indexOf('  function startCoop('),source.indexOf('  hub.startCoop ='));
- const start=new Function('hub','closeCoop','location',`let undead=null,undeadStarting=false;${fn};return startCoop;`)({save:createSkeletonSave(options)},()=>{},{search:''});
- assert.throws(()=>start('S2',1),/침입 동의방/);
+ let owned=false;const start=new Function('hub','closeCoop','location','characters',`let undead=null,undeadStarting=false;${fn};return startCoop;`)({save:createSkeletonSave(options)},()=>{},{search:''},{assertOwner(){owned=true;throw Error('ownership reached');}});
+ assert.throws(()=>start('S2',1),/ownership reached/);assert.equal(owned,true);
 });
 test('choosing existing human restores last journey UI state without writing the human save',()=>{
  const h=hub(),human=createSave({name:'SENTINEL',answers:[0,1,2,3,0],createdAt:1});

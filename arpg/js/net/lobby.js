@@ -1,55 +1,67 @@
 import { CoopSession } from './session.js';
 import { STAGES } from '../content/combat.js';
+import { validLobbyProfile, partyConfig } from './invasion.js';
 import { connectBroadcast } from './loopback.js';
 
-// Invitations carry room mode, not the host's character slot or test identity.
-export function invitationUrl(href, room, invasion) {
+// Invitations identify the ordinary room, never the host's slot or test identity.
+export function invitationUrl(href, room) {
   const url = new URL(href);
   url.searchParams.set('room', room); url.searchParams.set('relay', 'do');
   for (const key of ['u', 'coopTest', 'coopRelayTest']) url.searchParams.delete(key);
-  if (invasion) { url.searchParams.set('invasion', '1'); url.searchParams.delete('character'); }
-  else { url.searchParams.delete('invasion'); url.searchParams.set('character', 'human'); }
+  for (const key of ['character', 'invasion']) url.searchParams.delete(key);
   return url.toString();
 }
 export function roomEntry(query) {
   const soloSelected = query.get('character') === 'skeleton_knight';
-  const invasionInvite = query.has('room') && query.get('invasion') === '1';
+  const invasionInvite = false;
   return { soloSelected, invasionInvite,
-    legacyEntry: !invasionInvite && !soloSelected && (query.get('debug') === '1' || query.get('dev') === '1' || query.has('room')) };
+    legacyEntry: !query.has('room') && !soloSelected && (query.get('debug') === '1' || query.get('dev') === '1') };
 }
 
 export class CoopLobby {
   constructor({ profile, config, onSession, onLeave, ...callbacks }) {
     Object.assign(this, { profile, config, onSession, onLeave, callbacks });
-    this.session = null; this.pending = [];
+    this.session = null; this.pending = []; this.partyProfiles = {};
   }
   open() {
     const query = new URLSearchParams(location.search);
     if (query.get('dev') === '1' && query.has('coopTest')) return this.openTest(query);
-    this.lobby = new window.MultiplayerLobby({ gameType: this.config.invasion ? 'arpg-invasion' : 'arpg', gameName: this.config.invasion ? 'ARPG · 침입 동의방' : 'ARPG · 같이 사냥', minPlayers: 2, maxPlayers: 4,
+    this.lobby = new window.MultiplayerLobby({ gameType: 'arpg', gameName: 'ARPG · 같이 사냥', minPlayers: 2, maxPlayers: 4,
       workerBase: query.get('dev') === '1' && query.get('coopRelayTest') === '1' ? 'ws://127.0.0.1:8792' : undefined,
-      nickname: this.profile.name, startConfig: () => ({ ...this.config }),
+      nickname: this.profile.name, startConfig: () => partyConfig(this.config, this.partyProfiles),
       onLeave: () => { this.close(); this.onLeave(); },
       onGameEvent: (type, event) => {
         if (type === 'event') this.action(event?.data);
       },
     });
-    this.lobby._inviteUrl = () => invitationUrl(location.href, this.lobby.room, !!this.config.invasion);
+    this.lobby._inviteUrl = () => invitationUrl(location.href, this.lobby.room);
+    const syncLobby = this.lobby._syncLobby.bind(this.lobby);
+    this.lobby._syncLobby = () => { syncLobby(); this.renderConfig(); };
     const renderLobby = this.lobby._renderLobby.bind(this.lobby);
     this.lobby._renderLobby = () => { renderLobby(); this.renderConfig(); };
     // Same started + roster.started fallback as spudsquad: relay has no initial state callback.
     this.hookTimer = setInterval(() => {
       const ws = this.lobby?._ws;
       if (!ws || ws._arpgHook) return;
-      ws._arpgHook = true; this.uid = ws.getMyUserId(); this.transport = ws;
+      ws._arpgHook = true; this.uid = ws.getMyUserId(); this.transport = ws; this.partyProfiles[this.uid] = this.profile;
       const started = ws.onStarted, roster = ws.onRoster, closed = ws.onRoomClosed;
       ws.onStarted = data => { started?.(data); this.started(data.config); };
       ws.onRoster = data => {
-        roster?.(data); this.renderConfig();
+        roster?.(data);
+        const ids = new Set(data.players.map(p => p.user || p.uid));
+        for (const id of Object.keys(this.partyProfiles)) if (!ids.has(id)) delete this.partyProfiles[id];
+        ws.sendRt({ t: 'party-profile', profile: this.profile }); this.renderConfig();
         if (data.started && !this.session) this.started();
         this.session?.roster(data);
       };
-      ws.onRt = (from, data) => this.session?.rt(from, data);
+      ws.onRt = (from, data) => {
+        if (data?.t === 'party-profile' && this.lobby._roster.players.some(p => (p.user || p.uid) === from) && validLobbyProfile(data.profile)) {
+          this.partyProfiles[from] = data.profile; this.renderConfig();
+        }
+        this.session?.rt(from, data);
+      };
+      ws.sendRt({ t: 'party-profile', profile: this.profile });
+      this.profileTimer = setInterval(() => { if (!this.session) ws.sendRt({ t: 'party-profile', profile: this.profile }); }, 500);
       ws.onRoomClosed = data => { closed?.(data); if (this.session) this.callbacks.onLost('방장이 나갔다. 진행분은 귀환 처리됩니다.'); };
       this.renderConfig();
       if (this.lobby._roster?.started || ws._started) this.started();
@@ -79,12 +91,20 @@ export class CoopLobby {
       refresh(); controls.append(stage, threat); card.insertBefore(controls, document.querySelector('#mpl-ready'));
     }
     controls.hidden = !amHost;
-    if (!card.querySelector('#arpg-room-mode')) {
-      const note = document.createElement('p'); note.id = 'arpg-room-mode';
-      note.textContent = this.config.invasion ? `침입 동의방 · 내 역할: ${this.profile.role === 'invader' ? '해골 / 몬스터 편' : '인간 / 사냥꾼 편'} · 인간·해골 각 1명 이상 필요` : '일반 협동방 · 적대 참가 불가';
-      card.prepend(note);
+    let note = card.querySelector('#arpg-room-mode');
+    if (!note) { note = document.createElement('p'); note.id = 'arpg-room-mode'; card.prepend(note); }
+    const players = this.lobby._roster.players;
+    note.textContent = `같이 사냥 · 총 ${players.length}/4명 · 인간은 사냥꾼 편, 해골은 몬스터 편`;
+    for (const p of players) {
+      const id = p.user || p.uid, profile = this.partyProfiles[id];
+      const role = profile?.lineage === 'skeleton_knight' ? '해골 / 몬스터 편' : profile ? '인간 / 사냥꾼 편' : '캐릭터 확인 중';
+      note.textContent += ` · ${p.nick || profile?.name || id}: ${role}`;
     }
+    const start = card.querySelector('#mpl-start');
+    if (start) start.disabled = !amHost || players.length < 2 || players.length > 4
+      || players.some(p => !this.partyProfiles[p.user || p.uid] || (p.user || p.uid) !== this.lobby._roster.hostUser && !p.ready);
   }
+
   started(config) {
     if (this.session) return;
     const roster = this.lobby._roster;
@@ -107,7 +127,7 @@ export class CoopLobby {
       onRt: (from, data) => this.session?.rt(from, data), onAction: a => this.action(a) });
   }
   close() {
-    clearInterval(this.hookTimer); this.hookTimer = null;
+    clearInterval(this.hookTimer); this.hookTimer = null; clearInterval(this.profileTimer);
     if (this.lobby) {
       this.lobby._inGame = false; this.lobby._hideModeSelect(); this.lobby._hideLobby(); this.lobby._hideResult();
     }
