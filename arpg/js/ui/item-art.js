@@ -6,9 +6,9 @@ const artwork = {
   sword: 'sword.webp', 'sword-t2': 'sword-t2.webp', 'sword-t3': 'sword-t3.webp',
   bow: 'bow.webp', 'bow-t2': 'bow-t2.webp', 'bow-t3': 'bow-t3.webp', cleaver: 'cleaver.webp', maul: 'maul.webp',
   wand: 'wand.webp', 'staff-t2': 'staff-t2.webp', 'staff-t3': 'staff-t3.webp',
-  head: 'head.webp', 'head-light': 'head-light.webp', body: 'body.webp',
+  head: 'head-armor-v2.webp', 'head-light': 'head-light-armor-v2.webp', body: 'body.webp',
   'body-cloth': 'body-cloth.webp', 'body-plate': 'body-plate.webp',
-  hands: 'hands.webp', 'hands-heavy': 'hands-heavy.webp', feet: 'feet.webp', 'feet-heavy': 'feet-heavy.webp',
+  hands: 'hands.webp', 'hands-heavy': 'hands-heavy.webp', feet: 'feet-armor-v2.webp', 'feet-heavy': 'feet-heavy-armor-v2.webp', shield: 'shield-armor-v2.webp',
   'stone-low': 'stone-low.webp', 'stone-mid': 'stone-mid.webp', 'stone-high': 'stone-high.webp',
   potion: 'potion.webp', mana_potion: 'mana-potion.webp', return_scroll: 'scroll.webp',
   wood: 'wood.webp', scrap: 'scrap.webp', hide: 'leather.webp', fang: 'fang.webp', web: 'web.webp',
@@ -36,7 +36,8 @@ export function itemArtKey(id, definition = {}) {
     if ((definition.baseId || id) === 'warden_plate') return 'body-plate';
     return 'body';
   }
-  if (definition.slot === 'head' && definition.armorClass === 'light') return 'head-light';
+  if (definition.slot === 'offhand' && definition.form === 'shield') return 'shield';
+  if (definition.slot === 'head' && (definition.armorClass === 'light' || definition.material === 'leather')) return 'head-light';
   if (['hands', 'feet'].includes(definition.slot) && definition.armorClass === 'heavy') return `${definition.slot}-heavy`;
   if (definition.slot) return Object.hasOwn(artwork, definition.slot) ? definition.slot : null;
   return { enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high', enhance_stone_blessed:'stone-high', enhance_stone_cursed:'stone-mid' }[id]
