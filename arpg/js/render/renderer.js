@@ -626,7 +626,6 @@ export class ArenaRenderer {
               .stroke({ color: 0xe5d4a0, width: 2 })
               .poly([7, 0, 1, -4, 1, 4])
               .fill(0xe6e5ce);
-          else if (abilityId === 'sword_wave') graphic.arc(-9,0,particle.r*1.6,-1.2,1.2).stroke({color:0xc1f7ed,width:6}).arc(-16,0,particle.r*1.6,-1.1,1.1).stroke({color:0x72c9bf,width:3,alpha:.6});
           else if (abilityId === 'sling_stone')
             graphic.circle(0, 0, particle.r).fill(0xa29c86).circle(-2, -2, 2).fill(0xc9c5b3);
           else {

@@ -14,7 +14,11 @@ const freeze = obj => { if (obj && typeof obj === 'object') { Object.values(obj)
 
 for (const [ability, profile] of Object.entries(SKILL_VFX)) {
   test(`${ability}: profile dimensions use authoritative combat content`, () => {
-    if (profile.style === 'dash') {
+    if (profile.statusCue) {
+      assert.ok(ABILITIES[ability].status);
+      if (ABILITIES[ability].shape) assert.equal(profile.radius,ABILITIES[ability].shape.radius);
+      else assert.ok(profile.radius>=17 && profile.radius<=32,'bounded self-only cue, not a damage radius');
+    } else if (profile.style === 'dash') {
       assert.equal(profile.dash, ABILITIES[ability].dash);
     } else if (profile.projectile) {
       assert.equal(profile.projectile, ABILITIES[ability].projectile);
@@ -43,7 +47,7 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
     const radius = profile.radius ?? profile.projectileRadius ?? (profile.dash ? 18 + profile.dash.bodyPad : 0);
     for (let i = 0; i < VFX_CAPS.effects; i++) assert.equal(vfx.effect(profile, 'active', 0, 0, 0, radius, profile.shape, false), true);
     assert.equal(vfx.effect(profile, 'active', 0, 0, 0, radius, profile.shape, false), false);
-    for (let i = 0; i < 20; i++) vfx.emit(profile, profile.impact, 0, 0);
+    for (let i = 0; i < Math.ceil(VFX_CAPS.particles/profile.particles); i++) vfx.emit(profile, profile.impact, 0, 0);
     assert.equal(vfx.particles.filter(p => p.left > 0).length, VFX_CAPS.particles);
     assert.equal(vfx.emit(profile, profile.impact, 0, 0), 0);
     vfx.update({ tick: 0, entities: [], projectiles: [] }, 1, 2, false);
