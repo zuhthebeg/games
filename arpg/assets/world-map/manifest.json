@@ -1,0 +1,388 @@
+{
+  "model": "C:\\Users\\user\\.cache\\huggingface\\models--John6666--luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl\\snapshots\\0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "modelName": "LuminarQMix v7 SDXL",
+  "modelSnapshot": "0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "gpu": "NVIDIA GeForce RTX 3080 Ti",
+  "platform": "win32",
+  "pipelineSourceSha256": "269f5999952d09f40a9b59271d7f2f931addd8ecd82a056da57bdb99245dff6d",
+  "generatorSourceSha256": "a090fe4be5d2360628018d604ea9927086235f056232b5065f51dab5cf0bf404",
+  "modelFiles": [
+    {
+      "path": "model_index.json",
+      "sha256": "5488341d01c8e9e3f1beaea12c24e217e74f42ddee08a8001331daefadc456d0",
+      "bytes": 721
+    },
+    {
+      "path": "scheduler/scheduler_config.json",
+      "sha256": "cd9c82007e4e2a7fc89082b117b75246f6c8c41c9cc6238634f82379fa9d6cd8",
+      "bytes": 541
+    },
+    {
+      "path": "text_encoder/config.json",
+      "sha256": "b0a7d8982d92510637ec592b841ba2af0ecad8772866e54705935b78bf807fc3",
+      "bytes": 589
+    },
+    {
+      "path": "text_encoder/model.safetensors",
+      "sha256": "a3840dde14c8573aa980d0c36a900457371a95511c85d8077cd8784682862e52",
+      "bytes": 246144152
+    },
+    {
+      "path": "text_encoder_2/config.json",
+      "sha256": "6bcc6464f91996c4d336e3aa8be65d6894532e748991de791503a4b69220d73f",
+      "bytes": 599
+    },
+    {
+      "path": "text_encoder_2/model.safetensors",
+      "sha256": "63141a2627726f0d38852f7725fb89ec24a5813722ade896a321345c208a44aa",
+      "bytes": 1389382176
+    },
+    {
+      "path": "tokenizer/special_tokens_map.json",
+      "sha256": "c8227988aadac941e93b5ffef08b4add8ccbdb26404a62b3e41f61eef119b252",
+      "bytes": 496
+    },
+    {
+      "path": "tokenizer/tokenizer_config.json",
+      "sha256": "c7e11899688476b062e81b4023b4eae2abe4fbda66754de16ced3aac723d6f56",
+      "bytes": 765
+    },
+    {
+      "path": "tokenizer/vocab.json",
+      "sha256": "fd67774a869730a6b27bf53d3e434e72054f2a825873c7af3bece183bb1f791e",
+      "bytes": 1109372
+    },
+    {
+      "path": "tokenizer_2/special_tokens_map.json",
+      "sha256": "a83f5831a70d1d21c057186d35aaa504894103d24ee905baa99bc7e83ceb70ee",
+      "bytes": 484
+    },
+    {
+      "path": "tokenizer_2/tokenizer_config.json",
+      "sha256": "2df0f9c6bb36676e2fc29ab6b0ba06fd0111b434d3df897b692631bca8585350",
+      "bytes": 924
+    },
+    {
+      "path": "tokenizer_2/vocab.json",
+      "sha256": "fd67774a869730a6b27bf53d3e434e72054f2a825873c7af3bece183bb1f791e",
+      "bytes": 1109372
+    },
+    {
+      "path": "unet/config.json",
+      "sha256": "e62ab2939fa256bf92b2084746beb0e519c7ffe3799415fbf8b8e7482161fc53",
+      "bytes": 1844
+    },
+    {
+      "path": "unet/diffusion_pytorch_model.safetensors",
+      "sha256": "1e57d489b113d8e655a29ddb335a59f5c5297e90a2a54c6b3d23b66711f8032d",
+      "bytes": 5135149760
+    },
+    {
+      "path": "vae/config.json",
+      "sha256": "2f0366f63c6091f784330f9754becec8c9eb5b0cc1e8b5b78b9b0e2ff9ef505b",
+      "bytes": 855
+    },
+    {
+      "path": "vae/diffusion_pytorch_model.safetensors",
+      "sha256": "6353737672c94b96174cb590f711eac6edf2fcce5b6e91aa9d73c5adc589ee48",
+      "bytes": 167335342
+    }
+  ],
+  "modelSha256": "32dac6942e57f628dc32949259d8c8c3ad50669bdf11a563d301dffc42bb9f07",
+  "assets": [
+    {
+      "id": "outskirts",
+      "prompt": "abandoned medieval village outskirts, broken wooden village gate as central focal point, empty winding dirt road between old thatched farm cottages and neglected wheat fields, ochre autumn grass, muted golden evening sky, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101800,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\outskirts.png",
+      "sourceSha256": "9cc96d015df6340a3ce78b9680f47d67f60f7faf8a4ddbedd29ba50a171b8eac",
+      "sourceBytes": 697918,
+      "seconds": 18.16,
+      "outputFile": "outskirts.webp",
+      "outputSha256": "c8f64deb793527e2d70d041499a37e8b9e42f209d5177da4a25acc855243b49f",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 57442,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Ochre farm cottage and dirt approach; gate not prominent, village-outskirts identity readable."
+    },
+    {
+      "id": "forest",
+      "prompt": "ancient whispering forest, enormous gnarled ancient tree arch as central focal point, narrow mossy trail disappearing between dense towering trees, lush moss and ferns, deep emerald canopy, green shafts of light and soft forest mist, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101801,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\forest.png",
+      "sourceSha256": "a398b2512b0b8540f69e57d44c92e694899f9f2d9d3d0590f584a9aeb512e11d",
+      "sourceBytes": 804002,
+      "seconds": 8.62,
+      "outputFile": "forest.webp",
+      "outputSha256": "89acdbdd486f31b5d18a6d7f5fa1c61d6dc19f79a7b3ec1225b94a81ccd8c470",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 58154,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Ancient moss arch and dense green trunks; strong environmental focal point."
+    },
+    {
+      "id": "pass",
+      "prompt": "ashen mountain pass, ruined stone watchtower perched above a narrow rocky mountain trail as central focal point, jagged grey cliffs, ash grey rock, distant amber haze, windswept highland, dramatic overcast sky, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101802,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\pass.png",
+      "sourceSha256": "ecac4926db5dea7351f83a149522400550b95b76453e0cb37e17d450b672fbe5",
+      "sourceBytes": 648861,
+      "seconds": 8.45,
+      "outputFile": "pass.webp",
+      "outputSha256": "b1e2c0d92b1f5553436ef37dbb962fa775ec309688a69c42c9c3158e56b261aa",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 26814,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Grey cliff pass and isolated watchtower clearly visible."
+    },
+    {
+      "id": "mine",
+      "prompt": "abandoned underground mineshaft entrance carved into a rocky cliff, rusty iron railway tracks leading into a dark timber braced mining tunnel, old wooden minecart, one copper lantern, dark ochre rocks, hand painted dark fantasy landscape concept art, wide shot, empty environment",
+      "negative": "person, human, character, creature, animal, text, letters, watermark, logo, frame, border, UI, house, village, city, bright sunlight, blue sky, neon colors, photograph, low quality, blurry, gore, nudity",
+      "seed": 2026101900,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\mine.png",
+      "sourceSha256": "c8e0bdfcf0a1f2efa2f0b7115b5b80830eec76d365de5ec3d5b31276197397d6",
+      "sourceBytes": 653567,
+      "seconds": 8.67,
+      "previousAttempt": {
+        "seed": 2026101803,
+        "sourceSha256": "589025f0dc76bb311f0ebaa2a4fa1c1c1b2a16a3e5b2e781518a6eadd5df2005",
+        "reason": "Visual subject mismatch: mine lacked mining rails; swamp read as bright lake."
+      },
+      "generationScript": "arpg-map-art-refine.py",
+      "generationScriptSha256": "725f868c7ccf76042b6d3ad29cd10b05efc1d6e1064e613f4176a4ecabb3774a",
+      "attempt": 2,
+      "outputFile": "mine.webp",
+      "outputSha256": "ddb302922b86b3cbe1e3af8e5f31e3d3277a1de467901a4dcac68b922c0a8638",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 33102,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Second attempt: rusty rails converge into dark lantern-lit mine shaft; fixed first attempt village-like doorway."
+    },
+    {
+      "id": "swamp",
+      "prompt": "misty green marshland, gigantic drooping willow tree beside stagnant muddy pools, flooded stepping stones and dense reeds, low grassy hills beyond, olive green fog, grey overcast sky, hand painted dark fantasy landscape concept art, wide shot, empty environment",
+      "negative": "person, human, character, creature, animal, text, letters, watermark, logo, frame, border, UI, house, village, city, bright sunlight, blue sky, neon colors, photograph, low quality, blurry, gore, nudity",
+      "seed": 2026101901,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\swamp.png",
+      "sourceSha256": "aa2d7bcf727c4e12627592f78fdbe2b435e2ec23730b8363d68a0cb1b15e8d74",
+      "sourceBytes": 655348,
+      "seconds": 8.71,
+      "previousAttempt": {
+        "seed": 2026101804,
+        "sourceSha256": "5494171bf37c946baf5e8ff46906bb24e466e9c88b0ff4b2658999a32d01977a",
+        "reason": "Visual subject mismatch: mine lacked mining rails; swamp read as bright lake."
+      },
+      "generationScript": "arpg-map-art-refine.py",
+      "generationScriptSha256": "725f868c7ccf76042b6d3ad29cd10b05efc1d6e1064e613f4176a4ecabb3774a",
+      "attempt": 2,
+      "outputFile": "swamp.webp",
+      "outputSha256": "1cdd7f12649d4a70debaaad77521b4bb3e32f150abf04819e806eb6b287b0107",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 50026,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        132,
+        66,
+        892,
+        446
+      ],
+      "cropReason": "Remove generated black letterbox; keep central willow and marsh; maintain 2:1 aspect",
+      "reviewNotes": "Second attempt: hanging willow, still marsh water and muted hills; focal crop removes generated letterbox."
+    },
+    {
+      "id": "throne",
+      "prompt": "dragon throne courtyard of an obsidian palace, monumental empty black stone throne atop broad stairs as central focal point, huge carved dragon relief behind throne, cracked dark paving, ember braziers, ominous crimson red sky, glowing embers, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101805,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\throne.png",
+      "sourceSha256": "7cd38f13e39ced24324fd19f16a8163b354c87bcd2bb4907ac30ced52bba59fa",
+      "sourceBytes": 762765,
+      "seconds": 11.81,
+      "outputFile": "throne.webp",
+      "outputSha256": "ff247cc0baa5685c9252bafab9c06bb7084d19cdb12e246fdbbb60b5d5e635b4",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 41858,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Empty monumental dark throne and ember courtyard, no actual dragon or character."
+    },
+    {
+      "id": "graveyard",
+      "prompt": "abandoned medieval cemetery, crooked weathered tombstones around a small ruined stone mausoleum as central focal point, bare dead trees, pale moon above, rolling blue silver ground fog, quiet empty cemetery, cold moonlit palette, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101806,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\graveyard.png",
+      "sourceSha256": "160ea82e1800236c9b51392ea32882c721a259867b4966a528b31769c0950be6",
+      "sourceBytes": 807254,
+      "seconds": 10.55,
+      "outputFile": "graveyard.webp",
+      "outputSha256": "c2fdc72c293e81e0617f5fc30a6b81aff8ae864179b7e57a5eebbf04bd12d0ab",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 57280,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        48,
+        24,
+        976,
+        488
+      ],
+      "cropReason": "Remove generated white rounded border",
+      "reviewNotes": "Crooked graves and small mausoleum under moon; documented crop removes generated white rounded border."
+    },
+    {
+      "id": "necropolis",
+      "prompt": "vast underground catacomb ossuary, ancient stone crypt doorway framed by carved skull niches as central focal point, symmetrical vaulted stone corridor, burial alcoves, violet cold lanterns, pale purple light, deep underground darkness, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101807,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\necropolis.png",
+      "sourceSha256": "57d834001527d101ba21240974c8b41cd78bb957def71a04702e9cc9a18c5204",
+      "sourceBytes": 620662,
+      "seconds": 9.05,
+      "outputFile": "necropolis.webp",
+      "outputSha256": "6e38d20e419ce9bb469db24f2376f476c4a575cb77b3562de0069dd017545e69",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 30944,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Underground vaulted crypt, violet lamps, small decorative ossuary skull at floor; no living character or gore."
+    },
+    {
+      "id": "castle",
+      "prompt": "ruined frozen stone fortress, shattered towers behind a frost covered stone altar as central focal point, broken ramparts and icy courtyard, jagged fallen masonry, frost blue and pale cyan palette, cold wintry sky, hand painted dark fantasy ARPG environment concept art, painterly brushwork, detailed stone and natural textures, wide landscape establishing shot, eye level camera, strong readable composition, single environmental focal point, atmospheric depth, empty scenery, restrained cinematic lighting",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 2026101808,
+      "steps": 30,
+      "guidance": 7,
+      "scheduler": "EulerAncestralDiscreteScheduler",
+      "width": 1024,
+      "height": 512,
+      "sourceWindowsPath": "C:\\Users\\user\\ai-tools\\outputs\\arpg-world-map-20261018\\castle.png",
+      "sourceSha256": "5d90a82f4f1e28412df02c5cc06d21bafa25e028eb7e315758f635e4886bf63b",
+      "sourceBytes": 876215,
+      "seconds": 8.48,
+      "outputFile": "castle.webp",
+      "outputSha256": "1326161175ff36e6bf3026de41feadb42ca9c67a86bc1d9c01c4a3f0baec66b1",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 71084,
+      "conversion": "Pillow RGB, Lanczos resize, WebP quality=82 method=6",
+      "sourceCrop": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "cropReason": null,
+      "reviewNotes": "Frozen altar and broken fortress arches, distinct blue icy environment."
+    }
+  ],
+  "schemaVersion": 1,
+  "targetUse": "Public in-game region landscape cards, web and app-safe",
+  "safety": "Empty environments; no people, living creatures, gore, nudity, typography, logos or UI",
+  "sourceResolution": [
+    1024,
+    512
+  ],
+  "outputResolution": [
+    768,
+    384
+  ],
+  "outputTotalBytes": 426704,
+  "pipelineSkill": "cocy-game-image-pipeline",
+  "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
+  "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",
+  "reviewStatus": "passed visual asset inspection",
+  "refinementCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-refine.py'\""
+}
