@@ -816,7 +816,7 @@ select, input:not([type="checkbox"]) {
 #coop-status { position: absolute; top: 114px; left: 12px; right: 12px; font-size: 11px; color: #c5ddd0; pointer-events: none; text-shadow: 0 1px 3px #000; }
 
 /* W2 parchment route: actual buttons remain native touch and keyboard targets. */
-/* World-map ledger: document-flow navigation, then selected region and quests. */
+/* Discovered route: flow-grid touch targets joined by non-interactive paths. */
 #meta-screen[data-page="board"] .inn-shell{width:min(1080px,100%)}
 #meta-screen[data-page="board"] .content{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #meta-screen[data-page="board"] .panel-header small{overflow-wrap:anywhere}
@@ -825,16 +825,16 @@ select, input:not([type="checkbox"]) {
 .map-atlas-heading{margin-bottom:12px}
 .map-atlas-heading h3,.map-region-heading h3{font-family:"AppleMyungjo","Batang",Georgia,serif;font-size:24px;color:var(--ink);line-height:1.35}
 .map-atlas-heading p,.map-region-heading p{font-size:12px;line-height:1.7;color:var(--muted);margin-top:6px}
-.world-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:10px;background:#211f19;border:1px solid #6e6047}
-.world-map .region-node{position:static;min-width:0;min-height:92px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:6px;padding:0 0 8px;border:1px solid #6e6047;border-radius:2px;background:#302e25;color:#e3d3b0;text-align:left;overflow-wrap:anywhere}
+.world-map{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:128px;column-gap:16px;row-gap:32px;padding:12px;background:#211f19;border:1px solid #6e6047}
+.map-routes{position:absolute;inset:12px;width:calc(100% - 24px);height:calc(100% - 24px);pointer-events:none;overflow:visible}
+.map-routes path{fill:none;stroke:#ab9265;stroke-width:2;vector-effect:non-scaling-stroke}
+.world-map .region-node{position:relative;min-width:0;width:100%;height:128px;min-height:128px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:6px;padding:0 0 8px;border:1px solid #6e6047;border-radius:2px;background:#302e25;color:#e3d3b0;text-align:left;overflow-wrap:anywhere}
 .region-art{display:block;aspect-ratio:2/1;background-color:#292c23;background-size:cover;background-position:center;border-bottom:1px solid #6e6047}
-.region-node .region-art{width:100%;min-height:32px}
+.region-node .region-art{width:100%;height:46px;min-height:46px;aspect-ratio:auto;flex-shrink:0}
 .region-name{display:flex;gap:4px;align-items:flex-start;padding-inline:6px;font-size:12px;line-height:1.45}
 .region-name>span{min-width:0;flex:1}
 .region-name svg{width:14px;height:18px;flex:0 0 14px;color:var(--brass)}
 .region-node small{padding-inline:6px;font-size:11px;line-height:1.5;margin-top:auto;color:#c6bda9}
-.world-map .region-node.lock{background:#23251f;color:#b8b39f;border-style:dashed}
-.region-node.lock .region-art{filter:grayscale(1);opacity:.5}
 .world-map .region-node.clear{border-color:#8b9a76}
 .region-node.clear .region-name svg{color:var(--gain)}
 .world-map .region-node[aria-current="location"] small{color:#ebc88b;font-weight:700}
@@ -859,11 +859,9 @@ select, input:not([type="checkbox"]) {
 .map-sortie .departure-check{margin-top:16px}
 @media(min-width:760px){
   .map-board{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px}
-  .map-atlas{position:sticky;top:0}
   .region-name{font-size:14px}
   #meta-screen[data-page="board"] .map-party-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:359px){.world-map{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .character-skills { display:flex; flex-direction:column; gap:8px; }
 .loadout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}.loadout-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:96px;padding:8px 4px;border:1px solid var(--brass);border-radius:8px;background:var(--surface);font-size:12px;text-align:center;overflow-wrap:anywhere}.loadout-slot>b{position:absolute;top:4px;left:6px;font-size:11px;color:var(--brass)}.loadout-slot .skill-icon{width:44px;height:44px}.loadout-slot.empty{border-style:dashed;border-color:var(--hairline);color:var(--muted)}.loadout-slot.blocked .skill-icon{filter:grayscale(1);opacity:.45}.slot-blocked{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-style:normal;font-size:30px;line-height:1;color:var(--loss);pointer-events:none}

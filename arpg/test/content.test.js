@@ -117,19 +117,19 @@ test('static old v1 save resets with backup; current course save unlocks S5 and 
   }
 });
 
-test('real board renders S4 → S5 → S6 → S7 locks and recommended levels', () => {
+test('real board discovers S4 → S5 → S6 → S7 frontier and recommended levels', () => {
   const hub = Object.create(HubUI.prototype);
   hub.save = oldSave();
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   const buttonFor = (id) => hub.html.match(new RegExp(`<button[^>]*data-stage="${id}"[^>]*>`))[0];
   hub.showBoard();
   assert.doesNotMatch(buttonFor('S5'), /disabled/);
-  assert.match(buttonFor('S6'), /disabled/);
-  assert.match(buttonFor('S7'), /disabled/);
+  assert.doesNotMatch(hub.html, /data-stage="S6"/);
+  assert.doesNotMatch(hub.html, /data-stage="S7"/);
   hub.save.cleared.S5 = true;
   hub.showBoard();
   assert.doesNotMatch(buttonFor('S6'), /disabled/);
-  assert.match(buttonFor('S7'), /disabled/);
+  assert.doesNotMatch(hub.html, /data-stage="S7"/);
   hub.save.cleared.S6 = true;
   hub.showBoard();
   assert.doesNotMatch(buttonFor('S7'), /disabled/);

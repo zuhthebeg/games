@@ -60,10 +60,10 @@ test('first XP2020 repeat0, S19 death policy, persistent receipt and existing pe
 test('snapshot contains deep-copy target slot, bound ID and complete state',()=>{
  const w=setup(),packet=encodeSnapshot(w),g=decodeSnapshot(packet,'0');assert.deepEqual(g.round.objective,w.round.objective);g.round.objective.targetId=999;assert.notEqual(w.round.objective.targetId,999);defeat(w,target(w));assert.equal(decodeSnapshot(encodeSnapshot(w),'0').round.objective.state,'complete');
 });
-test('normal low-level UI exposes QC1 once with S20 gate, no new TD1 dependency or /20 progress',()=>{
+test('normal low-level UI discovers QC1 once at S20 without a new TD1 dependency',()=>{
  const s=fresh(),h=Object.assign(Object.create(HubUI.prototype),{save:s,lootState:{},persist:()=>{},closeSheet:()=>{}});h.show=(html)=>{h.html=html};h.showInnPanel=(title,html,page,extra,options)=>{h.html=html;h.options=options};
  const oldMatchMedia=globalThis.matchMedia;globalThis.matchMedia=()=>({matches:false});
- h.showBoard();assert.match(h.html,/data-stage="M_THRONE_GARGOYLE" class="contract lock" disabled/);s.cleared.S20=true;h.showBoard();assert.equal((h.html.match(/data-stage="M_THRONE_GARGOYLE"/g)||[]).length,1);assert.match(h.options.eyebrow,/1 \/ 20/);h.showSortie(id);assert.match(h.html,/가고일 처치: 0\/1/);assert.match(h.html,/추천 레벨 <b>20<\/b>/);assert.match(h.html,/data-action="coop"/);assert.equal(mapUnlocked(s,'TD1'),true);globalThis.matchMedia=oldMatchMedia;
+ h.showBoard();assert.doesNotMatch(h.html,/data-stage="M_THRONE_GARGOYLE"/);s.cleared.S20=true;h.showBoard();assert.equal((h.html.match(/data-stage="M_THRONE_GARGOYLE"/g)||[]).length,1);assert.match(h.options.eyebrow,/1 완료/);h.showSortie(id);assert.match(h.html,/가고일 처치: 0\/1/);assert.match(h.html,/추천 레벨 <b>20<\/b>/);assert.match(h.html,/data-action="coop"/);assert.equal(mapUnlocked(s,'TD1'),true);globalThis.matchMedia=oldMatchMedia;
 });
 test('all gargoyle pixels byte-match archive; frames uniquely renamed, complete eight-direction clips',()=>{
  const base=new URL('../assets/sprites/gargoyle/',import.meta.url),archive=new URL('../tools/art/legacy-gargoyle/',import.meta.url);const entry=JSON.parse(readFileSync(new URL('../assets/sprites/manifest.json',import.meta.url))).find(e=>e.id==='gargoyle');const frames=new Set(),animations={};let bytes=0;

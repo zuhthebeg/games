@@ -119,7 +119,7 @@ test('map shows offer → progress → done, sortie and receipt show the counter
   h.mapRegion = 'forest';
   h.showBoard();
   assert.match(h.html, /data-action="quest-accept" data-quest="QF1"/);
-  assert.equal((h.html.match(/data-stage="(?:S(?:[1-9]|1\d|20)|TD1)"/g) || []).length, 21, 'main contracts unchanged');
+  assert.equal((h.html.match(/data-stage="(?:S(?:[1-9]|1\d|20)|TD1)"/g) || []).length, 5, 'only completed S1-S4 and frontier S5 disclosed');
   h.action('quest-accept', { quest: 'QF1' });
   assert.equal(h.save.quests.QF1.state, 'active');
   assert.match(h.html, /side-contract active" data-quest="QF1"/);
@@ -133,6 +133,10 @@ test('map shows offer → progress → done, sortie and receipt show the counter
   h.save = { ...h.save, quests: { QF1: { state: 'done', progress: QF1.target } } };
   h.showBoard();
   assert.match(h.html, /side-contract clear" data-quest="QF1"/);
+  h.mapRegion = 'pass';
+  h.showBoard();
+  assert.equal(h.mapRegion, 'forest', 'undiscovered selection falls back to current frontier');
+  h.save.cleared.S7 = true;
   h.mapRegion = 'pass';
   h.showBoard();
   assert.match(h.html, /<section class="map-quests" data-region="pass"[^>]*>(?:(?!<\/section>).)*<h3 id="map-heading-pass">잿빛 고개<\/h3>(?:(?!<\/section>).)*<\/section>/s);

@@ -100,8 +100,8 @@ test('new boss deterministic ordinary T4 drops preserve gear budget and existing
  for(let seed=0;seed<200;seed++)for(const threat of [1,2,3]){const ctx={stageId:'S27',huntTier:4,threat};const drop=rollDrops(boss,seed,ctx);assert.deepEqual(drop,rollDrops(boss,seed,ctx));assert.ok(Number.isSafeInteger(drop.gold)&&drop.gold>0);for(const id of Object.keys(drop.stacks))assert.ok(ITEMS[id]);for(const item of drop.items)assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?1:['weapon','body'].includes(ITEMS[item.id].slot)?4:3);}
 });
 
-test('normal board exposes four gated maps and separate completion counter without changing /20 or graveyard /3',()=>{
- const s=fresh(),h=Object.assign(Object.create(HubUI.prototype),{save:s,showInnPanel:(_t,html,_p,_f,opts)=>{h.html=html;h.opts=opts;}});h.showBoard();assert.match(h.html,/망자의 지하묘역/);for(const id of ids)assert.match(h.html,new RegExp(`data-stage="${id}" class="contract lock" disabled`));s.cleared.S20=s.cleared.S23=true;h.showBoard();assert.match(h.html,/data-stage="S24" class="contract depart"/);assert.match(h.opts.eyebrow,/1 \/ 20 완료 · 묘지 1 \/ 3 · 지하묘역 0 \/ 4/);
+test('normal board hides the necropolis until both gates and reveals only its frontier',()=>{
+ const s=fresh(),h=Object.assign(Object.create(HubUI.prototype),{save:s,showInnPanel:(_t,html,_p,_f,opts)=>{h.html=html;h.opts=opts;}});h.showBoard();assert.doesNotMatch(h.html,/망자의 지하묘역/);for(const id of ids)assert.ok(!h.html.includes(`data-stage="${id}"`));s.cleared.S20=s.cleared.S23=true;h.showBoard();assert.match(h.html,/data-stage="S24" class="contract depart"/);assert.match(h.opts.eyebrow,/2 완료/);for(const id of ids.slice(1))assert.ok(!h.html.includes(`data-stage="${id}"`));
 });
 
 

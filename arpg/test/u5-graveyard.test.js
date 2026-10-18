@@ -104,9 +104,9 @@ for(const id of stages)test(`U5 ${id} real T3 epic+4 Lv22 bot enters, kills, dep
  }
 });
 
-test('U5 missing keys in old saves stay missing/locked, schema/items/stats unchanged; main counter remains /20',()=>{
+test('U5 missing keys in old saves stay missing/locked, schema/items/stats unchanged; future names stay undisclosed',()=>{
  const s=fresh();for(const id of stages){delete s.cleared[id];delete s.stageThreat[id];}const before=structuredClone(s);const m=new Map(),store=new SaveStore({getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)});store.save(s);assert.deepEqual(store.load(),before);assert.equal(store.load().version,SAVE_VERSION);
  for(const id of stages)assert.equal(mapUnlocked(store.load(),id),false);
- const h=Object.assign(Object.create(HubUI.prototype),{save:s,showInnPanel:(_t,html,_p,_f,opts)=>{h.html=html;h.opts=opts;}});h.showBoard();assert.match(h.html,/버려진 묘지/);assert.match(h.html,/data-stage="S21" class="contract lock" disabled/);
- s.cleared.S20=true;s.cleared.S21=true;h.showBoard();assert.match(h.opts.eyebrow,/1 \/ 20 완료 · 묘지 1 \/ 3/);assert.match(h.html,/data-stage="S22" class="contract depart"/);assert.match(h.html,/data-stage="S23" class="contract lock" disabled/);
+ const h=Object.assign(Object.create(HubUI.prototype),{save:s,showInnPanel:(_t,html,_p,_f,opts)=>{h.html=html;h.opts=opts;}});h.showBoard();assert.doesNotMatch(h.html,/버려진 묘지|data-stage="S21"/);
+ s.cleared.S20=true;s.cleared.S21=true;h.showBoard();assert.match(h.opts.eyebrow,/2 완료/);assert.match(h.html,/data-stage="S22" class="contract depart"/);assert.doesNotMatch(h.html,/data-stage="S23"/);
 });

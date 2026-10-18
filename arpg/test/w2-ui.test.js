@@ -40,9 +40,9 @@ test('locked sortie and launch reject action dispatch; coop fallback uses the sa
   const h=hubFor(fresh());assert.throws(()=>h.showSortie('S14'),/잠긴/);assert.throws(()=>h.launch('S14'),/잠긴/);
   h.save.cleared.S17=true;h.sortieStage='S14';h.startCoop=(stage)=>assert.equal(stage,'S14');h.action('coop',{});
 });
-test('board retains all 27 prior hooks plus four necropolis hooks and marks locked/completed/current independently', () => {
+test('board reveals only discovered hooks and marks completed/current independently', () => {
   const h=hubFor(fresh());h.showInnPanel=(title,html)=>h.html=html;h.showBoard();
-  assert.equal((h.html.match(/data-stage=/g)||[]).length,31);assert.match(h.html,/data-stage="S1" class="contract depart" aria-current="step"/);assert.match(h.html,/data-stage="S14" class="contract lock" disabled/);
+  assert.equal((h.html.match(/data-stage=/g)||[]).length,1);assert.match(h.html,/data-stage="S1" class="contract depart" aria-current="step"/);assert.doesNotMatch(h.html,/data-stage="S14"/);
   h.save.cleared.S17=true;h.mapRegion='castle';h.showBoard();assert.match(h.html,/data-stage="S14" class="contract depart"/);
 });
 test('arrival notice contains actual region and quest, cleared maps are not called new', () => {
@@ -99,9 +99,9 @@ test('QS1 normal swamp card, S11-only gate, low-level sortie/coop and side-clear
  const previous=globalThis.matchMedia;globalThis.matchMedia=()=>({matches:false});
  try {
   const h=hubFor(fresh());h.mapRegion='swamp';h.showInnPanel=(title,html,panel,footer,options)=>{h.html=html;h.footer=footer;h.options=options;};h.showBoard();
-  assert.match(h.html,/data-stage="M_MARSH_MARKERS" class="contract lock" disabled/);assert.throws(()=>h.showSortie('M_MARSH_MARKERS'),/잠긴/);
-  h.save.cleared.S11=true;h.showBoard();assert.match(h.html,/곁가지 · QS1/);assert.match(h.html,/맵: 늪 우회길/);assert.match(h.options.eyebrow,/1 \/ 20 완료/);
+  assert.doesNotMatch(h.html,/data-stage="M_MARSH_MARKERS"/);assert.throws(()=>h.showSortie('M_MARSH_MARKERS'),/잠긴/);
+  h.save.cleared.S11=true;h.showBoard();assert.match(h.html,/곁가지 · QS1/);assert.match(h.html,/맵: 늪 우회길/);assert.match(h.options.eyebrow,/1 완료/);
   h.showSortie('M_MARSH_MARKERS');assert.match(h.html,/목표: 길 표식 0\/3/);assert.match(h.html,/추천: Lv12 \/ T3/);assert.match(h.footer,/data-action="launch"/);h.startCoop=stage=>assert.equal(stage,'M_MARSH_MARKERS');h.action('coop',{});
-  h.save.cleared.M_MARSH_MARKERS=true;h.showBoard();assert.match(h.options.eyebrow,/1 \/ 20 완료/);assert.equal(mapUnlocked(h.save,'S16'),false);
+  h.save.cleared.M_MARSH_MARKERS=true;h.showBoard();assert.match(h.options.eyebrow,/2 완료/);assert.equal(mapUnlocked(h.save,'S16'),false);
  } finally {globalThis.matchMedia=previous;}
 });

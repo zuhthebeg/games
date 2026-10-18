@@ -29,6 +29,17 @@ export function mapUnlocked(save, id) {
   if (id === 'TD1' || id === 'M_THRONE_GARGOYLE') return !!save.cleared?.S20;
   return !!map && (!!save.cleared?.[id] || !map.requires.length || map.requires.some(prior => !!save.cleared?.[prior]));
 }
+// Discovery is the playable frontier, not the entire authored catalogue. Keep late gates authoritative.
+export const discoveredMaps = save => Object.keys(MAPS).filter(id => mapUnlocked(save, id));
+export const discoveredRegions = save => {
+  const maps = discoveredMaps(save);
+  return REGIONS.filter(region => maps.some(id => MAPS[id].regionId === region.id));
+};
+// Flow-grid slots preserve the fork/rejoin route without absolute-positioned touch targets.
+export const REGION_ROUTE = {
+  outskirts:[1,0], forest:[2,0], pass:[3,0], mine:[4,1], swamp:[4,2],
+  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2],
+};
 export const availableStages = save => Object.keys(STAGES).filter(id => mapUnlocked(save, id));
 export const regionFor = id => REGIONS.find(region => region.id === MAPS[id]?.regionId);
 export function mapState(save, id) {
