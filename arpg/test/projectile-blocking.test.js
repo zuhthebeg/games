@@ -58,8 +58,9 @@ test('content audit: no hitscan/beam/long ranged instant shapes; projectile tele
  for(const [id,a] of Object.entries(ABILITIES)) {
   if (a.delivery === 'execution') { assert.equal(id, 'turn_undead'); assert.equal(a.executeUndead.radius,160); continue; }
   if (a.delivery === 'zone') {
-    assert.ok(['meteor','firewall'].includes(id));assert.equal(a.requiresFocus,true);assert.ok(a.zone.range<=360);
+    assert.ok(['meteor','firewall','rain_arrow'].includes(id));assert.equal(a.family,id==='rain_arrow'?'bow':'focus');if(id!=='rain_arrow')assert.equal(a.requiresFocus,true);assert.ok(a.zone.range<=360);
     if(id==='meteor'){assert.ok(a.zone.delayMs>=700);assert.ok(a.zone.radius<=125);}
+    else if(id==='rain_arrow'){assert.equal(a.zone.physical,true);assert.ok(a.zone.durationMs<=1200);assert.ok(a.zone.intervalMs>=300);assert.ok(a.zone.radius<=90);}
     else{assert.ok(a.zone.durationMs<=4000);assert.ok(a.zone.intervalMs>=500);assert.ok(a.zone.length<=220);}
     continue;
   }

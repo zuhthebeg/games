@@ -111,6 +111,18 @@ export const ABILITIES = {
     projectile: { speed: 640, radius: 9, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 108 } },
     damage: 54, poise: 26, knockback: 160, family: 'bow', element: 'fire', cancelInto: ['recovery'],
   },
+  rain_arrow: {
+    name: '레인 애로우', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 250,
+    cooldownMs: 8000, manaCost: 24, delivery: 'zone',
+    zone: { range: 360, reach: 280, delayMs: 300, durationMs: 1200, intervalMs: 300, radius: 90, physical: true },
+    damage: 16, poise: 0, knockback: 0, family: 'bow', cancelInto: ['recovery'],
+  },
+  spinning_shot: {
+    name: '회전 사격', windupMs: 200, lockMs: 0, activeMs: 1200, recoveryMs: 250,
+    cooldownMs: 7000, manaCost: 22, delivery: 'projectile', spin: true, burst: { count: 12, intervalMs: 100 },
+    projectile: { speed: 650, radius: 6, rangePx: 420, count: 1, spreadDeg: 0, pierce: 0 },
+    damage: 14, poise: 5, knockback: 35, family: 'bow', cancelInto: ['recovery'],
+  },
   frost_lance: {
     name: '서리 창', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 220, cooldownMs: 2400, manaCost: 12,
     delivery: 'projectile',

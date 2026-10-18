@@ -1,6 +1,6 @@
 import { ABILITIES } from '../content/combat.js';
 import { MAX_ZONES } from '../sim/spell-zones.js';
-export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone });
+export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone });
 // One reusable Graphics context, bounded geometry. Presentation only, including reduced motion.
 export function paintSpellZones(g, world, reduced = false) {
   g.clear();
@@ -10,7 +10,21 @@ export function paintSpellZones(g, world, reduced = false) {
     const def=SPELL_ZONE_VFX[zone.abilityId];
     if (!def) continue;
     const x=zone.x,y=zone.y;
-    if (def.radius) {
+    if (zone.abilityId === 'rain_arrow') {
+      g.circle(x,y,def.radius).fill({color:0xc8ba7d,alpha:.12}).stroke({color:0xe7d69d,width:3});
+      const age=zone.pending ? 0 : Math.max(0,world.tick-zone.activeTick);
+      const progress=zone.pending || reduced ? .65 : (age%9)/9;
+      for(let i=0;i<8;i++) {
+        const a=i*Math.PI*.75, r=25+(i%3)*18, px=x+Math.cos(a)*r, py=y+Math.sin(a)*r;
+        const height=(1-progress)*95;
+        g.moveTo(px+13,py-height-30).lineTo(px,py-height).stroke({color:0xe8d3a0,width:2});
+        g.poly([px,py-height,px-2,py-height-10,px+8,py-height-6]).fill(0xf2ebcd);
+      }
+      if (!zone.pending) {
+        const remaining=Math.max(0,(zone.endTick-world.tick)/(zone.endTick-zone.startTick));
+        g.arc(x,y,def.radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xf4e4bc,width:4});
+      }
+    } else if (def.radius) {
       const remaining=zone.pending ? 1 : Math.max(0,(zone.activeTick-world.tick)/Math.max(1,zone.activeTick-zone.startTick));
       g.circle(x,y,def.radius).fill({color:0xf06d28,alpha:.12}).stroke({color:0xffb34b,width:3,alpha:.9});
       g.moveTo(x-12,y).lineTo(x+12,y).moveTo(x,y-12).lineTo(x,y+12).stroke({color:0xffe3aa,width:2});

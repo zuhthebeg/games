@@ -1,8 +1,8 @@
 // Shared geometry only: guests can display a locked target but never own a zone.
 export const MAX_ZONES = 32;
-export function lockSpellPoint(p, facing, entities, arena, manual, def) {
-  let reach = def.reach;
-  if (!manual) {
+export function lockSpellPoint(p, facing, entities, arena, manualReach, def) {
+  let reach = manualReach > 0 ? manualReach : def.reach;
+  if (!(manualReach > 0)) {
     const nearest = entities.filter(e => e.team !== p.team && !e.dead && !e.terminal && !(e.spawnLeft > 0))
       .map(e => Math.hypot(e.x - p.x, e.y - p.y)).filter(d => d <= def.range).sort((a,b) => a-b)[0];
     if (nearest !== undefined) reach = nearest;
@@ -18,7 +18,7 @@ export function zoneContains(zone, def, target) {
   return across*across + Math.max(0,Math.abs(along)-def.length/2)**2 <= (def.width+target.r)**2;
 }
 export function validZones(zones) {
-  return zones === undefined || Array.isArray(zones) && zones.length <= MAX_ZONES && zones.every(z => z && ['meteor','firewall'].includes(z.abilityId)
+  return zones === undefined || Array.isArray(zones) && zones.length <= MAX_ZONES && zones.every(z => z && ['meteor','firewall','rain_arrow'].includes(z.abilityId)
     && ['id','ownerId','team','startTick','activeTick','endTick'].every(k=>Number.isSafeInteger(z[k]) && z[k]>=0)
     && ['x','y','facing'].every(k=>Number.isFinite(z[k]) && Math.abs(z[k])<=100000)
     && z.activeTick>=z.startTick && z.endTick>=z.activeTick && z.endTick-z.startTick<=120);

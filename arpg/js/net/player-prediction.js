@@ -169,7 +169,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));
-      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, !!(inp.aimX || inp.aimY), def.zone);
+      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
     }
   }
   const autoTarget = !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
@@ -181,6 +181,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   if (p.act) {
     const act = p.act;
     p.facing = act.facing;
+    if (act.phase === 'active' && act.def.spin) p.facing += Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
     if (act.phase === 'active' && act.def.delivery === 'dash') {
       if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
       else {p.x += Math.cos(act.facing) * act.dashStep; p.y += Math.sin(act.facing) * act.dashStep;} p.moving = true;

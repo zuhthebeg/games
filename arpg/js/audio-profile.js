@@ -40,7 +40,7 @@ const cue = (name, fallback, pitch = 1, gain = 1, key = name, cooldown = .025) =
   ({ name, fallback, pitch, gain, key, cooldown });
 const SKILLS = Object.freeze({ slash: 'blade', lunge: 'blade', whirl: 'blade', heavy_cleave: 'blade',
   ground_slam: 'blunt', armor_break: 'blunt', arrow: 'bow', volley: 'bow', pierce_shot: 'bow', triple_arrow: 'bow', evasion_shot: 'bow',
-  meteor: 'fire', firewall: 'fire', blast_arrow: 'fire', ember_bolt: 'fire', flame_ring: 'fire', frost_lance: 'ice',
+  rain_arrow: 'bow', spinning_shot: 'bow', meteor: 'fire', firewall: 'fire', blast_arrow: 'fire', ember_bolt: 'fire', flame_ring: 'fire', frost_lance: 'ice',
   focus_pulse: 'arcane', healing_light: 'heal' });
 const SKILL_PITCH = Object.freeze({ lunge: 1.12, whirl: .94, heavy_cleave: .84,
   ground_slam: .8, armor_break: 1.08, volley: .94, pierce_shot: 1.16,

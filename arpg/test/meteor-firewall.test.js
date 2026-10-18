@@ -84,3 +84,10 @@ test('remote cast through two real CoopSessions produces host-only damage and co
 test('zone capacity and hostile team changes bound active state without charge on full capacity',()=>{
  const {w,p}=fixture('firewall');const z={id:99,ownerId:p.id,team:p.team,abilityId:'firewall',x:500,y:400,facing:0,startTick:0,activeTick:0,endTick:120,nextTick:0,dmgMult:1};w.zones=Array.from({length:32},(_,i)=>({...z,id:99+i}));cast(w);assert.equal(p.mp,100);assert.equal(p.act,null);assert.ok(w.zones.length<=32);p.team=3;step(w);assert.equal(w.zones.length,0);
 });
+test('restart during meteor windup cannot release a stale zone into new round',()=>{
+ const{w,p}=fixture('meteor');cast(w);startStage(w,'S1');run(w,15);assert.equal(w.zones?.length||0,0);assert.notEqual(p.act?.id,'meteor');
+});
+test('manual cast point uses existing cursor distance, clamps range/arena and stays locked after movement',()=>{
+ const{w,p}=fixture('meteor');step(w,{p:{...emptyInput(),skillEdge:true,aimX:80,aimY:0}});assert.deepEqual(p.act.zonePoint,{x:380,y:400});step(w,{p:{...emptyInput(),mx:1,aimX:600,aimY:0}});assert.deepEqual(p.act.zonePoint,{x:380,y:400});
+ const f=fixture('firewall');f.p.x=1300;step(f.w,{p:{...emptyInput(),skillEdge:true,aimX:1000,aimY:0}});assert.deepEqual(f.p.act.zonePoint,{x:1400,y:400});
+});
