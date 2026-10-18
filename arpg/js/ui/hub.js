@@ -53,7 +53,7 @@ export function forgeRecipeSet(id, definition = ITEMS[id]) {
   const base = definition.baseId || id;
   const setId = definition.setId || (base === 'boar_hide_armor' ? 'boar'
     : ['warden_blade', 'warden_maul', 'warden_plate'].includes(base) ? 'warden' : null);
-  return typeof setId === 'string' && setId ? { id: setId, name: definition.setName || ({ boar: '멧돼지', warden: '수호자', bone: '뼈' }[setId] || setId) } : null;
+  return typeof setId === 'string' && setId ? { id: setId, name: definition.setName || ({ boar: '멧돼지', warden: '파수꾼', bone: '뼈' }[setId] || setId) } : null;
 }
 const recipeKind = id => ITEMS[id].slot ? (['weapon', 'offhand'].includes(ITEMS[id].slot) ? ITEMS[id].slot : 'armor') : 'material';
 const recipeHeld = (save, key) => key === 'gold' ? save.gold : save.stacks[key] || 0;
