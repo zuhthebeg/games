@@ -27,3 +27,4 @@ test('role/config/profile mutation is rejected and running profile/rejoin never 
  s.host.roster({players:['host'],hostUser:'host'});s.host.roster({players:['host','guest'],hostUser:'host'});assert.ok(!s.host.world.entities.some(e=>e.pid==='guest'));
  const blocked=pair({guestConsent:false}).s;blocked.host.profiles.guest={...blocked.guest.profile,invasionConsent:true,team:0};blocked.host.tryStart();assert.equal(blocked.host.world,null);
 });
+test('one hunter does not scale monsters as two cooperative players; healing light harms only opposing skeleton',()=>{const{s}=pair();assert.equal(s.host.world.partyHpMult,1);const w=s.host.world,[h,g]=w.entities;w.round.pending=[];h.weapon='focus';h.skills=['healing_light',null,null];h.maxMp=h.mp=1000;g.x=h.x+40;g.y=h.y;g.hp=40;for(let i=0;i<40;i++)step(w,{host:{...emptyInput(),skillEdge:i===0}});assert.ok(g.hp<40);assert.equal(h.hp,h.maxHp);});

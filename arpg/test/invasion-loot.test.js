@@ -14,7 +14,7 @@ test('host alone owns current sortie drops, death removes victim before hostile 
  assert.equal(ledger.claim(w,'guest',{id:drop.id,loot:{gold:9999}}),false);g.x=h.x;g.y=h.y;g.dead=true;assert.equal(ledger.claim(w,'guest',{id:drop.id}),false);g.dead=false;
  assert.equal(ledger.claim(w,'guest',{id:drop.id,owner:'fake',gold:9999}),true);assert.equal(ledger.claim(w,'guest',{id:drop.id}),false);assert.deepEqual(ledger.accounts.guest.tracker.tempLoot,earned);
  ledger.tick(w,[{type:'death',pid:'host',id:h.id}],['host','guest']);assert.equal(ledger.drops.length,1);
- const victim=settleInvasion(saves.host,ledger.state('host'));assert.equal(victim.save.gold,original.gold);assert.deepEqual(victim.save.items,original.items);assert.deepEqual(victim.save.stacks,original.stacks);
+ const victim=settleInvasion(saves.host,ledger.state('host'));assert.deepEqual(victim.receipt.lootLost,earned);assert.equal(victim.save.gold,original.gold);assert.deepEqual(victim.save.items,original.items);assert.deepEqual(victim.save.stacks,original.stacks);
  g.terminal='return_scroll';w.tick++;ledger.tick(w,[],[]);const account=ledger.state('guest'),got=settleInvasion(saves.guest,account);assert.equal(got.save.gold,saves.guest.gold+17);assert.equal(got.save.items.length,saves.guest.items.length+3);assert.equal(got.save.stacks.undead_bone,3);assert.ok(validateSave(got.save));
  assert.deepEqual(settleInvasion(JSON.parse(JSON.stringify(got.save)),account).save,got.save);assert.deepEqual(settleInvasion(victim.save,ledger.state('host')).save,victim.save);assert.deepEqual(saves.host,original);
 });

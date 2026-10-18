@@ -66,10 +66,11 @@ export class CoopSession {
       ? Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,invasionProfile(p)])) : data.profiles; this.seed = data.seed;
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
-      const levels = Object.values(this.profiles).map(p => p.level || 1);
+      const party = Object.values(this.profiles).filter(p => !data.config.invasion || p.role === 'hunter');
+      const levels = party.map(p => p.level || 1);
       const partyLevel = Math.round(levels.reduce((a, b) => a + b, 0) / levels.length);
       this.world = createWorld({ seed: data.seed, threat: data.config.threat, multiplayerDodge: true,
-        partyHpMult: partyHpScale(this.players.size, partyLevel, data.config.stageId) });
+        partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
         const player = addPlayer(this.world, { pid, weapon: p.weapon, y: 380 + i++ * 35, mods: { ...p.mods, threat: data.config.threat } });
@@ -239,7 +240,7 @@ export class CoopSession {
     }
   }
   view(now = this.now) {
-    if (this.isHost) return this.decorate(localView(this.world, this.uid));
+    if (this.isHost) return this.world ? this.decorate(localView(this.world, this.uid)) : null;
     const sampled = this.buffer.sample(now, this.rtt);
     if (sampled) this.renderTick = sampled.viewTick;
     return this.decorate(this.prediction.view(sampled));

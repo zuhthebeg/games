@@ -605,8 +605,8 @@ function doActive(world, ent, act) {
     world.events.push({ type: 'healCast', id: ent.id, ability: act.id,
       x: ent.x, y: ent.y, radius: def.heal.radius });
     for (const target of world.entities) {
-      if (target.kind === 'monster' && target.team !== ent.team && isTargetable(target) && target.hp > 0
-        && MONSTERS[target.type]?.lifeState === 'undead' && dist2(ent.x, ent.y, target.x, target.y) <= def.heal.radius ** 2) {
+      if ((target.kind === 'monster' && MONSTERS[target.type]?.lifeState === 'undead' || target.kind === 'player' && target.skeletal)
+        && target.team !== ent.team && isTargetable(target) && target.hp > 0 && dist2(ent.x, ent.y, target.x, target.y) <= def.heal.radius ** 2) {
         applyHit(world, target, { srcId: ent.id, srcKind: ent.kind, srcType: ent.weapon, abilityId: act.id,
           def: { ...def, damage: 48 }, mult: sourceMult(ent, def), poiseMult: 1, fromX: ent.x, fromY: ent.y });
       }
@@ -748,7 +748,7 @@ function applyHit(world, t, hit) {
   // execution bypass specialization. No RNG or timing change for ordinary weapons.
   if (hit.srcKind === 'player' && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
     const source=world.entities.find(e=>e.id===hit.srcId);
-    dmg *= weaponAttackMultiplier(source?.silverWeapon, hit.abilityId, mdef?.lifeState, source?.handedness);
+    dmg *= weaponAttackMultiplier(source?.silverWeapon, hit.abilityId, t.skeletal ? 'undead' : mdef?.lifeState, source?.handedness);
   }
   if (hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
   if (hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
@@ -784,7 +784,7 @@ function applyHit(world, t, hit) {
   if (blocked) {
     world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg});
   }
-  if (mdef && attacker?.kind === 'player' && hostile && attacker.skeletal) t.provokedBy = [...new Set([...(t.provokedBy || []), attacker.id])];
+  if (mdef && attacker?.kind === 'player' && hostile && (attacker.skeletal || attacker.boneRevival)) t.provokedBy = [...new Set([...(t.provokedBy || []), attacker.id])];
   if (mdef && mdef.invulnerable) t.hp = Math.max(1, t.hp); // scarecrow: takes hits, never dies
   else t.hp -= dmg;
 

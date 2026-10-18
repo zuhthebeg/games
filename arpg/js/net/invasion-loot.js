@@ -28,6 +28,7 @@ export class InvasionLoot {
       for(const item of a.tracker.tempLoot.items)if(!before.has(item.uid))item.uid=`loot:${this.runId}:${pid}:${item.uid}`;
       if(p.terminal==='death') {
         const loot=a.tracker.tempLoot;
+        a.lostLoot=structuredClone(loot);
         a.tracker.tempLoot=emptyLoot(); // Remove from victim BEFORE publishing a claimable drop or receipt.
         if(loot.gold||loot.items.length||Object.values(loot.stacks).some(Boolean))this.drops.push({id:`${this.runId}:drop:${++this.dropSeq}`,owner:pid,team:p.team,x:p.x,y:p.y,
           loot:{gold:loot.gold,items:loot.items,stacks:loot.stacks},claimedBy:null});
@@ -35,7 +36,7 @@ export class InvasionLoot {
       a.revision++;
       if(p.terminal) {
         a.terminal=p.terminal;
-        a.receipt={...this.state(pid),terminal:p.terminal,used:usedConsumables(a.save,p)};
+        a.receipt={...this.state(pid),terminal:p.terminal,...(a.lostLoot ? {lostLoot:a.lostLoot} : {}),used:usedConsumables(a.save,p)};
       }
     }
     // Deterministic proximity pickup; guests never submit item/value/owner authority.

@@ -253,7 +253,7 @@ export function settleInvasion(save, account) {
   if (save.activeInvasion !== account.token || !['clear','return_scroll','death'].includes(account.terminal)
     || !['hunter','invader'].includes(account.role) || account.role === 'invader' && account.terminal === 'clear') throw new Error('Invalid invasion receipt');
   const result=settleRound(save,{stageId:account.stageId,terminal:account.terminal,
-    depositedXp:account.role==='invader'?0:account.depositedXp,tempLoot:account.tempLoot,
+    depositedXp:account.role==='invader'?0:account.depositedXp,tempLoot:account.terminal==='death' ? account.lostLoot || emptyLoot() : account.tempLoot,
     used:account.used,skillMastery:account.skillMastery,invasionToken:account.token});
   delete result.save.activeInvasion;
   result.save.invasionReceiptId=account.token;
