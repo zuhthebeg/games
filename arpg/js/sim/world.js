@@ -24,6 +24,8 @@ import { tickCombo, resetCombo, beginCombo, finishCombo, comboDef, nextComboStep
 
 import { enableMultiplayerDodge, multiplayerDodge, dodgeTiming } from './dodge-policy.js';
 
+import { lockSpellPoint, zoneContains, MAX_ZONES } from './spell-zones.js';
+
 const PB = PLAYER_BASE;
 const AUTO_AIM_RANGE = 560;
 const AUTO_SHOT_REACH = 0.85; // auto attack fires shots only inside 85% of their range
@@ -129,6 +131,9 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
 export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
+  if (world.zones) world.zones = [];
+  for (const p of world.entities) if (p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
+  if (world.projectiles.some(pr => ABILITIES[pr.abilityId]?.spin)) world.projectiles = world.projectiles.filter(pr => !ABILITIES[pr.abilityId]?.spin);
   for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;}
   if (st.arena) {
     for (const p of world.entities.filter(e => e.kind === 'player')) {
@@ -173,6 +178,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
 export function step(world, inputs = {}) {
   world.events = [];
+  if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
   if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) if(p.shieldGuard) p.shieldGuard.left=0; return world.events; }
   for (const ent of world.entities) {
@@ -185,10 +191,12 @@ export function step(world, inputs = {}) {
     else stepMonster(world, ent);
   }
   stepProjectiles(world);
+  stepZones(world);
   separate(world);
   for (const ent of world.entities) clampToArena(world, ent);
   stepRound(world, inputs);
   for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
+  if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   world.tick++;
   return world.events;
 }
@@ -334,10 +342,11 @@ function stepPlayer(world, p, inp) {
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !(def.burst && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
+      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
     }
   }
   // Explicit controls win; a pending counter reserves the next basic slot,
@@ -569,7 +578,10 @@ function advanceAct(world, ent, target) {
   // Bash movement is phase-owned, like prediction: no stale walking flag in
   // windup or stale active-rush flag in recovery/final frames.
   if (act.id === 'shield_bash') ent.moving = act.phase === 'active';
-  if (act.phase === 'active') doActive(world, ent, act);
+  if (act.phase === 'active') {
+    if (def.spin) ent.facing = act.facing + Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
+    doActive(world, ent, act);
+  }
   if (!ent.act) return;
   act.elapsed++;
   act.left--;
@@ -578,7 +590,19 @@ function advanceAct(world, ent, target) {
 
 function doActive(world, ent, act) {
   const def = act.def;
-  if (def.executeUndead) {
+  if (def.zone) {
+    if (act.fired) return;
+    act.fired = true;
+    if ((world.zones?.length || 0) >= MAX_ZONES) return;
+    const point = act.zonePoint;
+    const zone = { id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
+      x: point.x, y: point.y, facing: act.facing, startTick: world.tick,
+      activeTick: world.tick + ticks(def.zone.delayMs || 0),
+      endTick: world.tick + ticks((def.zone.delayMs || 0) + (def.zone.durationMs || 0)),
+      nextTick: world.tick + ticks(def.zone.delayMs || 0), dmgMult: sourceMult(ent, def) };
+    (world.zones ||= []).push(zone);
+    world.events.push({ type: 'zoneCast', id: ent.id, castId: zone.id, ability: act.id, x: zone.x, y: zone.y });
+  } else if (def.executeUndead) {
     if (act.fired) return;
     act.fired = true;
     const target = world.entities.filter(t => t.kind === 'monster' && t.team !== ent.team && isTargetable(t)
@@ -637,7 +661,7 @@ function doActive(world, ent, act) {
     const pr = def.projectile;
     for (let i = 0; i < pr.count; i++) {
       const spread = pr.count > 1 ? ((i / (pr.count - 1)) - 0.5) * pr.spreadDeg * Math.PI / 180 : 0;
-      const a = act.facing + spread;
+      const a = act.facing + spread + (def.spin ? Math.PI * 2 * activeTick / act.phaseTicks.active : 0);
       world.projectiles.push({
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
@@ -734,19 +758,19 @@ function applyHit(world, t, hit) {
   if (!alive(t) || t.hp <= 0) return;
   const def = hit.def;
   if (t.kind === 'player') {
-    if (!hit.periodic && t.dodge.iframeLeft > 0) {
+    if ((!hit.periodic || hit.zonePulse) && t.dodge.iframeLeft > 0) {
       if (!awardPerfectDodge(world, t, hit, world.tick - t.dodge.startedTick)) {
         world.events.push({ type: 'miss', id: t.id, ability: hit.abilityId });
       }
       return;
     }
-    if (!hit.periodic && t.hurtInvuln > 0) return;
+    if ((!hit.periodic || hit.zonePulse) && t.hurtInvuln > 0) return;
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
   let dmg = hit.fixedDamage ?? def.damage * hit.mult;
   // Fixed follow-up counters already include the first hit's silver bonus; DOT and
   // execution bypass specialization. No RNG or timing change for ordinary weapons.
-  if (hit.srcKind === 'player' && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
+  if (hit.srcKind === 'player' && (!hit.periodic || hit.weaponZone) && !hit.execute && hit.fixedDamage === undefined) {
     const source=world.entities.find(e=>e.id===hit.srcId);
     dmg *= weaponAttackMultiplier(source?.silverWeapon, hit.abilityId, t.skeletal ? 'undead' : mdef?.lifeState, source?.handedness);
   }
@@ -757,7 +781,7 @@ function applyHit(world, t, hit) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
-  if (t.kind === 'player' && t.ac > 0 && !hit.periodic) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
+  if (t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac);
   if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
   let crit = false;
@@ -794,7 +818,7 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player') recordGuestHit(world, t, blocked ? {...hit,shieldBlocked:true} : hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.step ? { step: hit.step } : {}) });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.zonePulse ? { zonePulse: true } : {}), ...(hit.castId ? { castId: hit.castId } : {}), ...(hit.step ? { step: hit.step } : {}) });
 
   if (t.kind === 'player') {
     if(!hit.periodic && t.pendingCounter?.kind === 'shield')t.pendingCounter=null;
@@ -905,12 +929,40 @@ function stepBurn(world, target) {
   if (target.burn && world.tick >= burn.expiresTick) delete target.burn;
 }
 
+// Host-owned finite hazards. No collision bodies; no client prediction side effects.
+function stepZones(world) {
+  if (!world.zones?.length) return;
+  const keep = [];
+  for (const zone of world.zones) {
+    const owner = world.entities.find(e => e.id === zone.ownerId);
+    if (!owner || !alive(owner) || owner.team !== zone.team || world.round && world.round.state !== 'running') continue;
+    const def = ABILITIES[zone.abilityId];
+    if (world.tick >= zone.nextTick && world.tick >= zone.activeTick && (zone.abilityId === 'meteor' || world.tick < zone.endTick)) {
+      const pulse = !!def.zone.intervalMs;
+      zone.nextTick += ticks(def.zone.intervalMs || 10000);
+      world.events.push({ type: pulse ? 'zonePulse' : 'explode', id: zone.id, ability: zone.abilityId,
+        x: zone.x, y: zone.y, radius: def.zone.radius || 0 });
+      for (const target of world.entities) {
+        if (target.team === zone.team || !isTargetable(target) || !zoneContains(zone, def.zone, target)) continue;
+        applyHit(world, target, { srcId: owner.id, srcKind: owner.kind, srcType: owner.weapon,
+          abilityId: zone.abilityId, def, mult: zone.dmgMult, poiseMult: 1, castId: zone.id,
+          ...(def.zone.physical ? { weaponZone: true } : {}),
+          ...(pulse ? { periodic: true, zonePulse: true, castId: zone.id } : {}), fromX: zone.x, fromY: zone.y,
+          cause: { shape: { type: 'circle', radius: def.zone.radius || def.zone.width, offset: 0 }, ox: zone.x, oy: zone.y, facing: zone.facing } });
+      }
+    }
+    if (world.tick < zone.endTick && (zone.abilityId !== 'meteor' || world.tick < zone.activeTick)) keep.push(zone);
+  }
+  world.zones = keep;
+}
+
 // ---------------------------------------------------------------- projectiles
 
 function stepProjectiles(world) {
   const keep = [];
   for (const pr of world.projectiles) {
     const def = pr.def || ABILITIES[pr.abilityId];
+    if (def.spin && !world.entities.some(e => e.id === pr.ownerId && alive(e))) continue;
     const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
     const distance = Math.hypot(dx, dy);
     // Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.

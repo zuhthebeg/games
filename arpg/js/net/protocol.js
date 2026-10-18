@@ -3,6 +3,7 @@ import { currentTelegraphs } from '../render/telegraph-time.js';
 import { emptyInput, getTelegraphs } from '../sim/world.js';
 import { ABILITIES } from '../content/combat.js';
 import { comboDef } from '../sim/basic-combo.js';
+import { validZones } from '../sim/spell-zones.js';
 import { BALANCE } from '../content/balance.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
@@ -161,14 +162,17 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
+    ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }
 export function decodeSnapshot(packet, uid) {
   if (packet?.t !== 'snapshot' || !Number.isSafeInteger(packet.tick) || !Array.isArray(packet.entities)) return null;
+  if (!validZones(packet.zones)) return null;
   const copy = structuredClone(packet);
+  copy.zones ||= [];
   for (const e of copy.entities) if (e.act) e.act.def = e.act.counter ? ABILITIES[e.act.id] : comboDef(e.act.id, e.act.step, e.weaponForm);
   const index = copy.entities.findIndex(e => e.pid === uid && e.kind === 'player');
   if (index > 0) copy.entities.unshift(...copy.entities.splice(index, 1));

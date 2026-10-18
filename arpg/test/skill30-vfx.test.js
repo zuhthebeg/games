@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Graphics, Container } from '../vendor/pixi-8.22.0.min.mjs';
 import { MasterySkillVfx, masteryVisual } from '../js/render/mastery-vfx.js';
 import { SKILL_VFX, VFX_CAPS } from '../js/render/skill-vfx.js';
+import { SPELL_ZONE_VFX } from '../js/render/spell-zones.js';
 import { MASTERY_SKILLS } from '../js/meta/skill-mastery.js';
 import { ABILITIES } from '../js/content/combat.js';
 const freeze=o=>{for(const v of Object.values(o))if(v&&typeof v==='object')freeze(v);return Object.freeze(o);};
@@ -11,9 +12,9 @@ test('real 1..30 map to stages1..7; legacy stage3/4/5 core parameters retained; 
  for(const level of [10,15]){assert.equal(masteryVisual(level).scale,1);assert.equal(masteryVisual(level).brightness,1.25);assert.equal(masteryVisual(level).extraParticles,4);}
  assert.equal(masteryVisual(20).scale,1.15);assert.equal(masteryVisual(20).brightness,1.5);assert.equal(masteryVisual(20).extraParticles,8);
 });
-test('all 14 known skills / 30 levels finite with frozen active+hit+projectile snapshots; pools fixed',()=>{
+test('all known skills / 30 levels finite with frozen active+hit+projectile snapshots; pools fixed',()=>{
  const v=new MasterySkillVfx(Graphics,new Container());v.requestSkill=()=>null;
- assert.deepEqual(Object.keys(SKILL_VFX).sort(),[...MASTERY_SKILLS].sort());
+ assert.deepEqual([...Object.keys(SKILL_VFX),...Object.keys(SPELL_ZONE_VFX)].sort(),[...MASTERY_SKILLS].sort());
  for(const id of MASTERY_SKILLS)for(let level=1;level<=30;level++){
   v.reset();v.setMastery('a',{[id]:level});const def=ABILITIES[id];const e={id:1,pid:'a',kind:'player',x:100,y:100,r:18,act:{id,def,phase:'active',elapsed:16,total:20,facing:0}};
   const w=freeze({tick:50,entities:[e,{id:2,pid:'b',kind:'player',x:160,y:100,r:18,skillMasteryLevels:{[id]:30}}],projectiles:def.projectile?[{id:10,ownerId:1,abilityId:id,x:100,y:100,r:def.projectile.radius,vx:100,vy:0}]:[]});const before=JSON.stringify(w);

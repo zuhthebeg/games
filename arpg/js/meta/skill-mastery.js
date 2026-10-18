@@ -37,7 +37,7 @@ export function trackMastery(tracker, events, world, pid) {
   tracker.skillMastery ??= {};
   for (const event of events) {
     // An earlier cast's lingering burn must not credit a newly started cast.
-    if (event.periodic) continue;
+    if (event.periodic && !event.zonePulse) continue;
     const source = world.entities.find(e => e.id === (event.type === 'act' ? event.id : event.src));
     const caster = event.masteryPid ?? (source?.kind === 'player' ? source.pid : null);
     if (caster !== pid || !MASTERY_SKILLS.includes(event.ability)) continue;

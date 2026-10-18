@@ -40,7 +40,7 @@ const cue = (name, fallback, pitch = 1, gain = 1, key = name, cooldown = .025) =
   ({ name, fallback, pitch, gain, key, cooldown });
 const SKILLS = Object.freeze({ slash: 'blade', lunge: 'blade', whirl: 'blade', heavy_cleave: 'blade',
   ground_slam: 'blunt', armor_break: 'blunt', arrow: 'bow', volley: 'bow', pierce_shot: 'bow', triple_arrow: 'bow', evasion_shot: 'bow',
-  blast_arrow: 'fire', ember_bolt: 'fire', flame_ring: 'fire', frost_lance: 'ice',
+  rain_arrow: 'bow', spinning_shot: 'bow', meteor: 'fire', firewall: 'fire', blast_arrow: 'fire', ember_bolt: 'fire', flame_ring: 'fire', frost_lance: 'ice',
   focus_pulse: 'arcane', healing_light: 'heal' });
 const SKILL_PITCH = Object.freeze({ lunge: 1.12, whirl: .94, heavy_cleave: .84,
   ground_slam: .8, armor_break: 1.08, volley: .94, pierce_shot: 1.16,
@@ -51,6 +51,8 @@ export function skillAudio(ability, source) {
 }
 export function eventCues(event, localId, entities = []) {
   const source = entity(entities, event.src ?? event.id);
+  if (event.zonePulse || event.type === 'zonePulse') return [];
+  if (event.type === 'explode' && event.ability === 'meteor') return [cue('fire-impact', 'hit', .8, .75, 'meteor-impact', .1)];
   if (event.type === 'act' && event.id === localId) {
     // Healing confirms only at healCast; windup/act phases must not repeat its bell.
     if (event.ability === 'healing_light') return [];
@@ -79,7 +81,7 @@ export function eventCues(event, localId, entities = []) {
     // Actual hit, separate from launch. Unknown remote source remains generic.
     const family = source?.kind === 'player' ? skillAudio(event.ability, source) : null;
     if (profile && fallback === 'critical') cues.push(cue('critical', 'critical', 1, .45));
-    else if (family && event.src === localId) cues.push(cue(`${family}-impact`, null, SKILL_PITCH[event.ability] ?? 1, .5,
+    else if (family && event.src === localId && event.ability !== 'meteor') cues.push(cue(`${family}-impact`, null, SKILL_PITCH[event.ability] ?? 1, .5,
       `impact:${event.src}:${event.ability}`, .08));
     return cues;
   }
