@@ -23,14 +23,15 @@ export function enchantPreview(save, uid, stoneId) {
   if (!ENCHANT_STONES.includes(stoneId)) throw new Error('쓸 수 없는 강화석입니다.');
   const level = item.enhance;
   const maxed = level >= ENCHANT.max;
-  const risky = isRisky(level);
+  const bone = ITEMS[item.id].boneSet === true;
+  const risky = bone || isRisky(level);
   const steps = stone.cursed ? ENCHANT.cursedSteps : stone.blessed ? ENCHANT.blessedSteps : [1];
   const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
   return {
-    item, level, maxed, risky, blessed: !!stone.blessed, cursed: !!stone.cursed,
+    item, level, maxed, risky, bone, blessed: !!stone.blessed, cursed: !!stone.cursed,
     cost: stoneId === STONE ? ENCHANT.stonesPerAttempt : 1,
     // LUK adds up to +8 points on risky steps (cocy 10-12).
-    chance: maxed ? 0 : stone.blessed || stone.cursed ? 1 : risky ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck) : 1,
+    chance: maxed ? 0 : bone ? (level < 6 ? 0.8 - level * 0.05 : ENCHANT.rates[level]) : stone.blessed || stone.cursed ? 1 : risky ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck) : 1,
     outcomes: [...new Set(steps.map((step) => Math.max(0, Math.min(level + step, ENCHANT.max))))],
     refund: { [STONE]: refund },
     have: save.stacks[stoneId] || 0,

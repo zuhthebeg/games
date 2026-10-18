@@ -106,13 +106,24 @@ for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3,
     }
   }
 }
+// Craft-only five-part set. No shield or rarity variants: every part is a deliberate investment.
+ITEMS.undead_bone = { name: '언데드의 뼈', kind: 'material', material: 'bone', weight: 0.2, sell: 2 };
+for (const [slot, base, bones, gold] of [
+  ['weapon', 'rune_blade', 24, 180], ['head', 'head_light_fine_t2', 12, 90],
+  ['body', 'woven_armor', 20, 150], ['hands', 'hands_light_fine_t2', 10, 75], ['feet', 'feet_light_fine_t2', 10, 75],
+]) {
+  const id = `bone_set_${slot}`;
+  ITEMS[id] = { ...ITEMS[base], name: `뼈 ${ {weapon:'검',head:'투구',body:'갑옷',hands:'장갑',feet:'장화'}[slot] }`,
+    material: 'bone', ...(slot === 'weapon' ? { weight: 8 } : {}), boneSet: true, craftOnly: true };
+  RECIPES[id] = { undead_bone: bones, gold };
+}
 // Add rarity variants for every existing base, retaining original IDs and original stats.
 for (const [id, base] of Object.entries(ITEMS)) {
   if (!SLOTS.includes(base.kind)) continue;
   base.baseId = id;
   base.basePrice = ECONOMY.slotPrice[base.slot] * base.huntTier;
   for (const rarity of ['common', 'fine', 'rare', 'epic']) {
-    if (rarity === base.rarity) continue;
+    if (rarity === base.rarity || base.boneSet) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
       ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.kind === 'offhand' ? 0 : base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
@@ -453,6 +464,12 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   if (tier >= 2) for (const id of ['rune_shard', 'frost_shard']) {
     if (boss) loot.stacks[id] = 1 + Math.floor(premiumRandom() * 2);
     else if (premiumRandom() < (elite ? 0.08 : 0.01) * threat.drop) loot.stacks[id] = 1;
+  }
+  // Independent stream: ordinary loot remains unchanged.
+  if (MONSTER_VARIANTS[monsterType]?.lifeState === 'undead') {
+    const boneRandom = rng(seed ^ 0xb0ae2026);
+    if (boss) loot.stacks.undead_bone = 2 + Math.floor(boneRandom() * 2);
+    else if (boneRandom() < (elite ? 0.6 : 0.25)) loot.stacks.undead_bone = 1;
   }
   // Silver is a construct-only T2+ reward; this stream never advances any old roll.
   const silverRandom = rng(seed ^ 0x5117e201);

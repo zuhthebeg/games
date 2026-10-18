@@ -26,7 +26,7 @@ export const GREATER_STONE = 'enhance_stone_3';
 export const BLESSED_STONE = 'enhance_stone_blessed';
 export const CURSED_STONE = 'enhance_stone_cursed';
 export const ENCHANT_STONES = [STONE, BLESSED_STONE, CURSED_STONE];
-export const MATERIAL_STACK = { metal: 'scrap', leather: 'hide', wood: 'wood', cloth: 'web', rune: 'rune_shard' };
+export const MATERIAL_STACK = { bone: 'undead_bone', metal: 'scrap', leather: 'hide', wood: 'wood', cloth: 'web', rune: 'rune_shard' };
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
   questExtraGearChance: 0.1, // Per-player quest budget: 90% one slot, 10% two; never scales with threat.

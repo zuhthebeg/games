@@ -56,6 +56,7 @@ export function deriveMods(save) {
     return share === undefined ? 1 : weaponDamage * share * (skillFamily === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
   };
   return {
+    ...( ['weapon','head','body','hands','feet'].every(slot => ITEMS[equippedItem(save, slot)?.id]?.boneSet) ? { boneRevival: true } : {}),
     maxHp: 100 + 8 * save.level + affixes.hp_flat,
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
     effectiveInt: stats.int,

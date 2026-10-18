@@ -753,7 +753,7 @@ export class HubUI {
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
         : `${html}${picker}`;
     this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
-      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험` });
+      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험 · 뼈 세트는 +0부터 모든 강화석 파괴 위험` });
   }
 
   forgeSalvageHtml() {
@@ -785,7 +785,7 @@ export class HubUI {
     const picker = ENCHANT_STONES.map(id => `<button type="button" data-action="pick-stone" data-id="${id}" aria-pressed="${id === this.forgeStone}">`
       + `${itemIcon(id, ITEMS[id])}<span>${ITEMS[id].name}<small>보유 ${this.save.stacks[id] || 0}개 · 1회 ${id === STONE ? ENCHANT.stonesPerAttempt : 1}개</small></span></button>`).join('');
     const target = preview.outcomes.map(level => `+${level}`).join(' / ');
-    const danger = preview.risky && !preview.blessed && !preview.cursed;
+    const danger = preview.bone || preview.risky && !preview.blessed && !preview.cursed;
     const odds = preview.maxed ? '최대 강화' : danger ? `성공 ${pct(preview.chance)} · 실패 시 파괴` : '파괴 없음';
     const html = `<section class="forge-work ${danger ? 'risky' : ''} ${preview.blessed ? 'blessed' : ''} ${preview.cursed ? 'cursed' : ''}" aria-label="강화 의식">
       <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3>${ITEMS[item.id].handedness === 2 ? '<small>양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}</div>
