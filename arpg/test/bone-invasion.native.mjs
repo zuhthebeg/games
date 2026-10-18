@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {createSave,validateSave} from '../js/meta/save.js';
 import {createSkeletonSave} from '../js/meta/character-creation.js';
-import {ITEMS,instance,craft,equip} from '../js/meta/items.js';
+import {ITEMS,instance} from '../js/meta/items.js';
 import {REGIONS} from '../js/content/world-map.js';
 const root=fileURLToPath(new URL('../..',import.meta.url)),port=8974;
 const base=(process.env.ARPG_BASE_URL||`http://127.0.0.1:${port}`).replace(/\/$/,'');

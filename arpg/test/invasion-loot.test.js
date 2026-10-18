@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {pair} from './invasion-session.test.js';
+import {pair} from './fixtures/invasion-party.js';
 import {settleInvasion} from '../js/meta/run.js';
 import {validateSave} from '../js/meta/save.js';
 import {instance} from '../js/meta/items.js';
