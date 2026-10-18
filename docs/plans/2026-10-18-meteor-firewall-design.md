@@ -12,3 +12,11 @@ Host-owned finite zones, not long actor acts (would immobilize casting) or fake 
 
 ## Verification plan
 Commit design, add failing tests for learning/save/mastery and locked/delayed/pulsed host lifecycle, implement minimal content/world/network/render/audio/UI, run targeted and full regression with immutable baseline comparison. Native PC1280/touch390 academy learn/equip/cast and host/guest transport checks, source binding via ARPG_BASE_URL. Report any native/relay limits explicitly; no deployment.
+
+## Authorized dependent bow extension (msg30584)
+Same owner/tree; no new writers. Add `rain_arrow` (레인 애로우) and `spinning_shot` (회전 사격), AGI45 books, three-slot/save/mastery lifecycle.
+
+- Rain arrow: 300G, MP24, cooldown8s; windup300ms/recovery250ms; locked/clamped existing aim (range360/fallback280), radius90; release delay300ms, four 16-damage pulses at .3/.6/.9/1.2s after release, lifetime1.5s from release. No crit/poise/knockback; physical bow scaling/silver specialization and armor apply, no blade twohand bonus. Dodgeable contact each pulse, allies safe. Finite falling-arrow geometry, not mapwide.
+- Spinning shot: 280G, MP22, cooldown7s; windup200ms/active1200ms/recovery250ms; twelve single physical arrows at 100ms intervals, headings 0/30/…/330deg relative to initial facing, actual actor turns through 360deg over active. Damage14/poise5/knockback35, speed650/range420/radius6. Normal projectile collision and hostile-only damage. Interrupt stops unreleased arrows; caster departure/death/extraction clears these projectiles. No extra charge per arrow.
+
+Extend tests first, then scheduler/prediction/presentation/registries/native PC+touch cases. Shared `ui/hub.js:openSkill` currently assumes every skill has shape/projectile/etc and crashes for new zone delivery; reserved owner/parent must add a zone range branch before release. No shared hub/main/lobby/session writes from this owner.
