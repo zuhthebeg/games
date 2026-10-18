@@ -16,6 +16,11 @@ import { validSeenMaterials } from './recipe-discovery.js';
 import { playerLineage, lineageAllowsWeapon } from '../content/player-lineages.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
+// Retired goods stay out of ITEMS/the economy. Knight recovery keeps their exact counts here.
+export const RETIRED_SCROLLS = Object.freeze({
+  scroll_enchant_weapon: '무기 강화 주문서', scroll_enchant_armor: '방어구 강화 주문서',
+  scroll_blessed_weapon: '축복받은 무기 강화 주문서', scroll_blessed_armor: '축복받은 방어구 강화 주문서',
+});
 export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
 
 export function createSave({ name, answers, weapon, createdAt }) {
@@ -159,6 +164,11 @@ export function validateSave(save) {
     }
     const quiz = resolve(save.quiz.answers);
     if (save.quiz.overridden !== (save.quiz.weapon !== quiz.weapon)) return false;
+    if (save.retiredScrolls !== undefined && (!Array.isArray(save.retiredScrolls)
+      || !save.retiredScrolls.every(entry => record(entry) && Object.keys(entry).length === 3
+        && ['stacks', 'lootKept', 'lootLost'].includes(entry.source)
+        && Object.hasOwn(RETIRED_SCROLLS, entry.id) && integer(entry.count))
+      || new Set(save.retiredScrolls.map(entry => `${entry.source}:${entry.id}`)).size !== save.retiredScrolls.length)) return false;
     if (save.lastReceipt !== undefined && !validReceipt(save.lastReceipt)) return false;
     // Optional side-contract ledger; absent on every older save means no contract taken.
     if (save.quests !== undefined && !validQuests(save.quests)) return false;

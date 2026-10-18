@@ -1,0 +1,15 @@
+# Hidden skeleton entry — implementation/verification plan
+
+Base: `c72182e`, isolated branch `fix/arpg-hidden-skeleton`. Local only; parent owns review/release. Approved design: `/home/cocy/.openclaw/workspace/docs/plans/2026-10-18-hidden-skeleton-design.md`.
+
+1. Reproduce ordinary fresh/valid/legacy selection at `choose-skeleton → CharacterStores.selectKnight → readKnight → validateSave`. Do not infer the user's private save. RED tests cover owner selection, occupied/corrupt slots, original bytes, and known legacy compatibility.
+2. Add first-question narrative action **인간을 증오한다.** separately from the four normal scoring answers. Acquire the existing knight store owner, append regular answer `0`, retain name and four remaining answers. Occupied slot offers resume/cancel; cancel restores the original human draft owner without loading/quarantining a changed human slot.
+3. Recover only deterministic known legacy changes, after complete validation and exact original-byte backup. Removed scroll IDs are archived by source/count, not exchanged at an invented rate or discarded. Active item catalogue/economy stays unchanged. Old stat-scale conversion and twohand/shield repair reuse existing functions. Malformed counts, conflicting archives, foreign identity, and other corruption remain occupied/blocked with concrete errors; never reset or human-fallback.
+4. GREEN unit regressions and isolated ordinary `/arpg/` replay: keyboard PC1280 / native touch390 → hidden choice → creation → graveyard hub → actual S1 timer victory → S2 sortie → native return → reload → human return. Replay occupied/corrupt/legacy and explicit-human-URL negatives. No screenshots, user profiles, live-world mutations, dependency/auth/config changes, stamp, push, or deploy.
+5. Classify focused pre-existing failures against exact base runtime using a read-only Node module loader. Commit only scoped source/tests/this plan; run full base diff-check. Parent replay uses `ARPG_BASE_URL` and `ARPG_HIDDEN_EVIDENCE` on `arpg/test/hidden-skeleton.native.mjs`.
+
+## Verified outcome
+
+- Historical `e722904^`: each of the four old scroll IDs is valid. Exact base `c72182e`: the same IDs block `selectKnight`, whereas fresh/valid and twohand/shield controls enter. No private user save was inspected; this demonstrates a reproducible compatibility cause, not the user's exact private cause.
+- New tests: 23/23. Expanded requested regression set: 247 tests, 242 pass; all five failures independently reproduced on base (old socket-forge expectation, pre-archer book-price snapshot, missing optional-offhand snapshot, two historical U1 byte snapshots). No introduced regression.
+- Native replay: 21 scenarios PASS, PC1280 and touch390, real skeleton paperdoll loaded, actual S1 victory/S2 sortie/reload/human return, legacy scroll sortie and exact backup, read-only occupied preview/cancel, corrupt preservation, stale-human cancellation and explicit-human-URL protection; pageerrors 0. Evidence is outside the checkout at `tmp/arpg-hidden-skeleton-native.json` in the parent workspace.
