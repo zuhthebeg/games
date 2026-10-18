@@ -22,7 +22,7 @@ test('C silver source descriptions appear in items, recipes and construct region
  const save=createSave({name:'은 출처',answers:[0,0,0,0,0],createdAt:1});for(const id of Object.keys(save.cleared)){save.cleared[id]=true;save.stageThreat[id]=1;}save.stacks.silver_ingot=6;
  const hub=Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'salvage',showInnPanel(_title,html){this.html=html;}});globalThis.matchMedia=()=>({matches:false});
  assert.match(hub.stackRowsHtml(save.stacks,{kind:'material'}),/은 주괴.*T2.*구조물/);
- hub.showForge();assert.match(hub.html,/은 주괴.*T2.*구조물/);assert.match(hub.html,/제작 전용.*언데드.*\+50%/);
+ hub.showForge();hub.action('forge-recipe-mode',{mode:'all'});assert.match(hub.html,/은 주괴.*T2.*구조물/);assert.match(hub.html,/제작 전용.*언데드.*\+50%/);
  for(const stage of ['S9','S12','S14','S17','S19','M_THRONE_GARGOYLE']){hub.showSortie(stage);assert.match(hub.html,/silver-source/);assert.match(hub.html,/은 주괴.*T2.*구조물/);}
  for(const stage of ['S2','S6','S21','S27']){hub.showSortie(stage);assert.doesNotMatch(hub.html,/silver-source/);}
  hub.showBoard();assert.equal((hub.html.match(/class="silver-source"/g)||[]).length,4);

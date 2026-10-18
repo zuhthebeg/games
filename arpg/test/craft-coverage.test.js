@@ -33,6 +33,7 @@ test('B dropped enhanced gear provenance appears in receipt and detail; enhanced
 });
 test('B crafting stays under smith and incomplete recipes state exact shortages',()=>{
  const hub=Object.create(HubUI.prototype);hub.save=noteMaterials({...fresh(),gold:2,stacks:{...fresh().stacks,scrap:1}});hub.forgeTab='salvage';hub.showInnPanel=(_t,html)=>hub.html=html;hub.showForge();
+ hub.action('forge-recipe-mode',{mode:'all'}); // Shortages are intentionally hidden by the craftable-only default.
  assert.match(hub.html,/고철 7개 부족/);assert.match(hub.html,/58 G 부족/);assert.match(hub.html,/aria-describedby="craft-reason-iron_sword"/);
  hub.recoverVitals=()=>{};hub.show=html=>hub.html=html;hub.showInn();assert.doesNotMatch(hub.html,/data-action="craft-hub"/);assert.match(hub.html,/data-action="forge"/);
  hub.showForge=()=>hub.forgeTab;assert.equal(hub.action('forge',{}),'enhance');assert.equal(hub.action('forge-tab',{tab:'salvage'}),'salvage');
