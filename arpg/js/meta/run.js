@@ -192,7 +192,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     if (stageId === 'S4' && !save.flags.chiefPity) {
       if (!tempLoot.chiefAwarded && !tempLoot.items.some((item) => item.id === 'chief_maul')) {
         const item = instance(uniqueUid(next, 'pity:chief_maul'), 'chief_maul', save.createdAt >>> 0);
-        if (receipt.lootKept.items.length === 2) {
+        if (!invasion && receipt.lootKept.items.length === 2) {
           // Legacy/direct callers may provide two items. Replace the weaker one within the cap.
           const ranks = { common: 0, fine: 1, rare: 2, epic: 3 };
           const weakest = receipt.lootKept.items.reduce((best, candidate, i, items) =>

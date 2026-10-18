@@ -107,7 +107,7 @@ test('C1 existing uncrafted and craft-UID saves need no schema migration and kee
 
 test('C1 UI recipes/refunds use actual labels and values, worn disabled, no undefined quantities', () => {
   const hub=Object.create(HubUI.prototype);hub.save=rich();hub.forgeTab='salvage';hub.showInnPanel=(_title,html)=>hub.html=html;
-  hub.showForge();assert.match(hub.html,/목재: 8/);assert.match(hub.html,/룬 조각: 16/);assert.match(hub.html,/거미줄: 16/);
+  hub.forgeRecipeMode='all';hub.showForge();assert.match(hub.html,/목재: 100 \/ 8/);assert.match(hub.html,/룬 조각: 100 \/ 16/);assert.match(hub.html,/거미줄: 100 \/ 16/);
   assert.doesNotMatch(hub.html,/제작 · 고철과 재료|undefined|NaN/);
   for(const id of ['short_bow','leather_vest','cloth_tunic','rune_blade','iron_sword']) {
     const item=instance('ui',id);assert.equal(hub.dismantleText(item),`${ITEMS[dismantleMaterial(item)].name}: ${SALVAGE[ITEMS[id].rarity]}`);

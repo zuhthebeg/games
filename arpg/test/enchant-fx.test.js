@@ -108,7 +108,7 @@ test('forge separates all legacy actions, defaults to ritual, and keeps selected
   for (const tab of ['stones','salvage','enhance']) {
     hub.action('forge-tab',{tab});assert.equal(hub.selectedUid,'starter:armor');
     if(tab==='stones') {assert.doesNotMatch(hub.html,/craft-scroll|주문서/);assert.match(hub.html,/crack-greater/);assert.equal(hub.footer,'');}
-    if(tab==='salvage') {for(const action of ['equip','dismantle','sell','craft'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.equal(hub.footer,'');}
+    if(tab==='salvage') {assert.doesNotMatch(hub.html,/data-action="craft"/);hub.action('forge-recipe-mode',{mode:'all'});for(const action of ['equip','dismantle','sell','craft'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.equal(hub.footer,'');}
   }
   hub.action('forge-tab',{tab:'bad'});assert.equal(hub.forgeTab,'enhance');
   hub.save.items[0].enhance=12;hub.selectedUid='starter:weapon';hub.showForge();
