@@ -266,6 +266,7 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
     for (const id of Object.keys(RECIPES)) {
       let made = craft(before, id); const item = made.items.at(-1);
       const sellBefore = gearPrice(item);
+      if (ITEMS[item.id].boneSet) continue; // Bone +0 is intentionally unsafe.
       const stone = 'enhance_stone_1';
       for (let level = 0; level < 5; level++) made = enchant(made, item.uid, stone).save;
       assert.equal(gearPrice(made.items.at(-1)), sellBefore);

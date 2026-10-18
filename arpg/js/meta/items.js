@@ -1,4 +1,4 @@
-import { eff, effectiveStats } from './stats.js';
+import { eff, effectiveStats, setBonuses } from './stats.js';
 import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, BLESSED_STONE, CURSED_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
@@ -117,13 +117,24 @@ for (const [slot, base, bones, gold] of [
     material: 'bone', ...(slot === 'weapon' ? { weight: 8 } : {}), boneSet: true, craftOnly: true };
   RECIPES[id] = { undead_bone: bones, gold };
 }
+// Attainable three-slot boar set; warden uses its existing weapon/body pair.
+for (const [slot,base,bones,gold] of [['head','head_medium_fine_t1',6,50],['feet','feet_medium_fine_t1',8,60]]) {
+  const id = `boar_${slot === 'head' ? 'cap' : 'boots'}`;
+  ITEMS[id] = {...ITEMS[base],name:slot === 'head' ? '멧돼지 가죽 모자' : '멧돼지 가죽 장화',material:'leather',craftOnly:true};
+  RECIPES[id] = {hide:bones,fang:2,gold};
+}
+for (const [id,def] of Object.entries(ITEMS)) {
+  const setId=def.boneSet ? 'bone' : ['boar_hide_armor','boar_cap','boar_boots'].includes(id) ? 'boar'
+    : ['warden_blade','warden_maul','warden_plate'].includes(id) ? 'warden' : null;
+  if(setId)Object.assign(def,{setId,setName:{bone:'뼈',boar:'멧돼지',warden:'파수꾼'}[setId]});
+}
 // Add rarity variants for every existing base, retaining original IDs and original stats.
 for (const [id, base] of Object.entries(ITEMS)) {
   if (!SLOTS.includes(base.kind)) continue;
   base.baseId = id;
   base.basePrice = ECONOMY.slotPrice[base.slot] * base.huntTier;
   for (const rarity of ['common', 'fine', 'rare', 'epic']) {
-    if (rarity === base.rarity || base.boneSet) continue;
+    if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
       ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.kind === 'offhand' ? 0 : base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
@@ -192,7 +203,7 @@ export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
 export function capacity(save) {
-  return 100 + BALANCE.stats.capacity * eff(effectiveStats(save).str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
+  return 100 + BALANCE.stats.capacity * eff(effectiveStats(save).str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat + (setBonuses(save).capacity || 0);
 }
 
 export function lootWeight(loot) {
@@ -235,9 +246,14 @@ export function equip(save, uid) {
 
 export const dismantleMaterial = (item) => MATERIAL_STACK[ITEMS[item.id].material];
 
+// Craft UID records the recipe actually paid, even when LUK upgrades the output rarity.
+export function craftRecipeId(item) {
+  const paid=item.uid?.split(':')[1];
+  return RECIPES[paid] && ITEMS[paid]?.baseId === ITEMS[item.id]?.baseId ? paid : null;
+}
 export function dismantleRefund(item) {
   // Craft provenance stays in the UID; affixes never increase salvage.
-  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id][dismantleMaterial(item)] * ECONOMY.craftRefundFraction);
+  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[craftRecipeId(item) || item.id][dismantleMaterial(item)] * ECONOMY.craftRefundFraction);
   return SALVAGE[ITEMS[item.id].rarity];
 }
 
@@ -278,10 +294,29 @@ function spend(save, cost) {
   return next;
 }
 
-export function craft(save, id) {
+const CRAFT_GRADES = ['common','fine','rare','epic'];
+const CRAFT_VARIANTS = new Map(Object.entries(ITEMS).filter(([,d])=>d.slot).map(([id,d])=>[`${d.baseId}:${d.rarity}`,id]));
+export function craftOdds(save, id) {
   if (!RECIPES[id]) throw new Error('없는 제작법입니다.');
+  const def=ITEMS[id],rank=CRAFT_GRADES.indexOf(def.rarity),luck=Math.max(0,Math.min(1,(effectiveStats(save).luk-10)/90));
+  const upgrades=[.1+.15*luck,.01+.04*luck,.001+.009*luck],odds=new Map([[id,1-upgrades.reduce((a,b)=>a+b,0)]]);
+  for(let step=1;step<=3;step++) {
+    const rarity=CRAFT_GRADES[Math.min(3,rank+step)];
+    const output=CRAFT_VARIANTS.get(`${def.baseId}:${rarity}`)||id;
+    odds.set(output,(odds.get(output)||0)+upgrades[step-1]);
+  }
+  return [...odds].map(([id,chance])=>({id,rarity:ITEMS[id].rarity,chance}));
+}
+export function craft(save, id) {
+  if(save.craftCount !== undefined && (!Number.isSafeInteger(save.craftCount) || save.craftCount < 0))throw new Error('제작 순번을 확인하세요.');
+  const odds=craftOdds(save,id),count=(save.craftCount||0)+1;
+  if(!Number.isSafeInteger(count)||count>0xffffffff)throw new Error('제작 순번을 확인하세요.');
   const next = spend(save, RECIPES[id]);
-  next.items.push(instance(uniqueUid(save, `craft:${id}`), id, save.createdAt ^ save.items.length));
+  let hash=0x811c9dc5;for(const c of id)hash=Math.imul(hash^c.charCodeAt(0),0x01000193);
+  const seed=(save.createdAt^hash^Math.imul(count,0x9e3779b9))>>>0;
+  const output=weighted(odds.map(o=>[o.id,o.chance]),rng(seed));
+  next.items.push(instance(uniqueUid(save, `craft:${id}:${count}`), output, seed));
+  next.craftCount=count;
   return next;
 }
 

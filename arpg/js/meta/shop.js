@@ -1,11 +1,13 @@
-import { ITEMS, instance, cloneSave, uniqueUid } from './items.js';
+import { ITEMS, RECIPES, craftRecipeId, instance, cloneSave, uniqueUid } from './items.js';
 import { ECONOMY, rng } from './economy.js';
 import { affixRange } from './affixes.js';
 
 export function gearPrice(item) {
   const base = ITEMS[item.id];
   const value = (item.affixes || []).reduce((sum, { k, v }) => sum + v / affixRange(k, base.huntTier)[1] * ECONOMY.optionPriceFactor, 0);
-  return Math.ceil(base.basePrice * ECONOMY.rarityPrice[base.rarity] * (1 + value));
+  const price = Math.ceil(base.basePrice * ECONOMY.rarityPrice[base.rarity] * (1 + value));
+  const paid = item.uid?.startsWith('craft:') && RECIPES[craftRecipeId(item)]?.gold;
+  return paid ? Math.min(price, Math.floor(paid * .9 / ECONOMY.sellFraction)) : price;
 }
 export function shopStock(accountSeed, refreshIndex) {
   const seed = (accountSeed ^ Math.imul(refreshIndex + 1, 0x9e3779b9)) >>> 0;

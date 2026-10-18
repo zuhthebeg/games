@@ -32,7 +32,7 @@ test('B tuned loot fingerprints include safe random enhancement and crafting mat
  ['goblin_grunt',{},'893640cd4dc9da6b9342b93cb5f9fd4c39d9ad66b7a3bd7bfceb170a58197984'],
  ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'7e6b65907ad709ef65cc5f972d78c917fd88824decd2a669d2b4394e287f7661'],
  ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'064aca3d8411cd5223349614ecca856e44d89f4bdc4af35636d188610197ff3f']]) {
-  const out=[];for(let seed=1;seed<=500;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks[blessed];delete loot.stacks[cursed];delete loot.stacks.silver_ingot;out.push(loot);}
+  const out=[];for(let seed=1;seed<=500;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks[blessed];delete loot.stacks[cursed];delete loot.stacks.silver_ingot;delete loot.stacks.undead_bone;out.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(out)).digest('hex'),expected);
  }
 });

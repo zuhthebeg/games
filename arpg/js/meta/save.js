@@ -3,7 +3,7 @@ export const SAVE_VERSION = 5;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, cap, statBudget } from './stats.js';
-import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity, permitsShield } from './items.js';
+import { ITEMS, craftRecipeId, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity, permitsShield } from './items.js';
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
@@ -112,7 +112,7 @@ export function validateSave(save) {
       if (!record(item) || typeof item.uid !== 'string' || !item.uid || uids.has(item.uid)) return false;
       if (!Object.hasOwn(ITEMS, item.id) || !SLOTS.includes(ITEMS[item.id].kind)) return false;
       if (!validAffixes(item, ITEMS[item.id]) || !integer(item.rolledAt, 0, 0xffffffff)) return false;
-      if (!integer(item.enhance, 0, ENCHANT.max) || (item.uid.startsWith('craft:') && !RECIPES[item.id])) return false;
+      if (!integer(item.enhance, 0, ENCHANT.max) || (item.uid.startsWith('craft:') && !craftRecipeId(item))) return false;
       uids.add(item.uid);
     }
     // A weapon is still mandatory to launch main.js; newly added armor slots may be empty.
@@ -170,6 +170,7 @@ export function validateSave(save) {
         && Object.hasOwn(RETIRED_SCROLLS, entry.id) && integer(entry.count))
       || new Set(save.retiredScrolls.map(entry => `${entry.source}:${entry.id}`)).size !== save.retiredScrolls.length)) return false;
     for (const key of ['activeInvasion', 'invasionReceiptId']) if (save[key] !== undefined && (typeof save[key] !== 'string' || !/^[a-zA-Z0-9:_-]{1,160}$/.test(save[key]))) return false;
+    if (save.craftCount !== undefined && !integer(save.craftCount, 0, 0xffffffff)) return false;
     if (save.lastReceipt !== undefined && !validReceipt(save.lastReceipt)) return false;
     // Optional side-contract ledger; absent on every older save means no contract taken.
     if (save.quests !== undefined && !validQuests(save.quests)) return false;

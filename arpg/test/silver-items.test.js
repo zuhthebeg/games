@@ -48,7 +48,7 @@ test('C silver ingots drop only combat constructs T2+, with exact normal/elite/b
 // i1-tier4-items still differentially checks 22,000 exact old gold/consumable/all-stone projections.
 test('C silver rolls retain approved catalog loot fingerprint (gold/gear/material/stones projection)',()=>{
  const rows=[];for(const [monster,ctx]of [['goblin_grunt',{}],['ghoul',{huntTier:3,elite:true,stageId:'S21',threat:2}],['necropolis_lord',{huntTier:4,boss:true,stageId:'S27',threat:3}]]){
-  const output=[];for(let seed=1;seed<=1000;seed++){const l=rollDrops(monster,seed,ctx);delete l.stacks.silver_ingot;output.push(l);}rows.push(createHash('sha256').update(JSON.stringify(output)).digest('hex'));
+  const output=[];for(let seed=1;seed<=1000;seed++){const l=rollDrops(monster,seed,ctx);delete l.stacks.silver_ingot;delete l.stacks.undead_bone;output.push(l);}rows.push(createHash('sha256').update(JSON.stringify(output)).digest('hex'));
  }console.log('C historical loot hashes',JSON.stringify(rows));
  assert.deepEqual(rows,HISTORICAL);
 });

@@ -46,7 +46,7 @@ test('main co-op entry rejects a skeleton profile before constructing a lobby',a
  const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  const fn=source.slice(source.indexOf('  function startCoop('),source.indexOf('  hub.startCoop ='));
  const start=new Function('hub','closeCoop',`let undead=null,undeadStarting=false;${fn};return startCoop;`)({save:createSkeletonSave(options)},()=>{});
- assert.throws(()=>start('S2',1),/솔로만/);
+ assert.throws(()=>start('S2',1),/침입 동의방/);
 });
 test('choosing existing human restores last journey UI state without writing the human save',()=>{
  const h=hub(),human=createSave({name:'SENTINEL',answers:[0,1,2,3,0],createdAt:1});

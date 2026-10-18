@@ -12,11 +12,11 @@ import { STAGES, ABILITIES, canUseSkill, WEAPONS, weaponAttackMultiplier, SILVER
 import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
-import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
+import { equippedSets, STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
   ITEMS, RECIPES, equippedItem, carriedWeight, capacity, effectiveWeight,
-  buy, equip, craft, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
+  buy, equip, craft, craftOdds, dismantle, dismantleMaterial, dismantleRefund, dismantleStones, shopPrice, moveConsumable,
 } from '../meta/items.js';
 import { enchant, enchantPreview, crackGreaterStone } from '../meta/enchant.js';
 import { noteMaterials, seenMaterials, recipeRevealed } from '../meta/recipe-discovery.js';
@@ -361,7 +361,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 협동 미지원<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
+    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 침입 동의방에서 몬스터 편 참가<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
       ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
@@ -397,7 +397,7 @@ export class HubUI {
       const item = equippedItem(this.save, slot);
       return button(`<span>${SLOT_NAMES[slot]}</span><strong>${item ? escape(itemLabel(item)) : '비어 있음'}</strong>`, 'socket', `data-slot="${slot}" class="bag-equipped"`);
     }).join('');
-    this.showInnPanel('가방', `${this.weightHtml()}<h3 class="section-title">착용 장비</h3><div class="bag-equipment">${worn}</div>
+    this.showInnPanel('가방', `${this.weightHtml()}<h3 class="section-title">착용 장비</h3><div class="bag-equipment">${worn}</div>${this.setEffectsHtml()}
       <h3 class="section-title">소지 소모품</h3>
       ${this.stackRowsHtml(this.save.stacks, { destination: 'stash', kind: 'consumable' })}`, 'bag', '', { eyebrow: '출정 시 가져가는 물품' });
   }
@@ -554,7 +554,7 @@ export class HubUI {
     return `<label class="compare-toggle"><input id="compare-ignore-enhancement" type="checkbox" ${this.ignoreEnhancement ? 'checked' : ''}>강화 제외하고 비교</label>${splitComparisonHtml(item, this.save, { ignoreEnhancement: this.ignoreEnhancement })}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">실제 장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
       + `<small class="compare-actual">실제 장착 조건 · 실제 무게 적용 / 필요 힘은 기본 장비 기준</small>`
-      + `${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
+      + `${this.setEffectsHtml()}${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
   }
 
   refreshComparison() {
@@ -732,8 +732,9 @@ export class HubUI {
         const held = key === 'gold' ? this.save.gold : this.save.stacks[key] || 0;
         return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
       });
+      const odds = craftOdds(this.save, id).map(o => `${GRADES[o.rarity]} ${Number((o.chance * 100).toFixed(3))}%`).join(' · ');
       const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small><small class="craft-odds">행운 반영 결과: ${odds} · 기본 등급 이하 없음</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
     }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : '');
     this.forgeTab ||= 'enhance';
@@ -791,8 +792,8 @@ export class HubUI {
       <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3>${ITEMS[item.id].handedness === 2 ? '<small>양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}</div>
       <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
       <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target}</strong></div>
-      ${preview.blessed ? `<p class="forge-blessing">축복 · +1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
-      ${preview.cursed ? '<p class="forge-blessing">저주 · -1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>' : ''}
+      ${preview.blessed ? `<p class="forge-blessing">축복 · ${preview.bone ? '성공 시 ' : ''}+1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
+      ${preview.cursed ? `<p class="forge-blessing">저주 · ${preview.bone ? '성공 시 ' : ''}-1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>` : ''}
       <strong class="forge-odds">${odds}</strong>
       <div class="p2-stones stone-picker" role="group" aria-label="사용할 강화석">${picker}</div>
       ${!preview.maxed && preview.have < preview.cost ? '<p class="p2-hint">강화석 부족</p>' : ''}
@@ -948,6 +949,11 @@ export class HubUI {
         <label class="check"><input id="sortie-reduced" type="checkbox"
           ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`,
     'sortie', button(`<span>출정</span>${icon('depart')}`, 'launch', 'id="sortie-confirm" class="primary"'), { eyebrow: '출정 확인', back: 'board' });
+  }
+
+  setEffectsHtml() {
+    return `<section aria-label="장비 세트 효과"><h3 class="section-title">세트 효과 · 착용 부위만 적용</h3>${equippedSets(this.save).map(set=>
+      `<p data-set="${set.id}"><b>${set.name} ${set.count}/${set.parts}</b> · ${set.bonuses.map(b=>`<span class="${b.active?'gain':'muted'}">${b.count}부위 ${b.active?'활성':'비활성'}: ${b.label}</span>`).join(' · ')}</p>`).join('')}</section>`;
   }
 
   showInvasionConsent() {
@@ -1303,7 +1309,7 @@ export class HubUI {
       case 'craft':
         this.commit(craft(this.save, data.id));
         this.selectedUid = this.save.items.at(-1).uid;
-        this.craftNotice = `${ITEMS[data.id].name} 제작 완료 · +0`;
+        this.craftNotice = `${itemLabel(this.save.items.at(-1))} · ${GRADES[ITEMS[this.save.items.at(-1).id].rarity]} 제작 완료`;
         this.forgeTab = 'enhance';
         return this.showForge();
       // Settlement reveal

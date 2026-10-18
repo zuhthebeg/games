@@ -174,6 +174,7 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
       assert.ok(cycle.stacks[material] <= base.stacks[material]);
     }
     assert.throws(() => dismantle(cycle, item.uid));
+    if (ITEMS[item.id].boneSet) continue; // Bone enhancement can destroy even the first attempt; covered in bone-equipment.
     let upgraded = crafted;
     const stone = 'enhance_stone_1';
     for (let level = 0; level < 5; level++) upgraded = enchant(upgraded, item.uid, stone).save;

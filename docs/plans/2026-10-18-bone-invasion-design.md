@@ -11,3 +11,29 @@ User 6290148363 approved reply 30537 in message 30551 (2026-10-18): all recommen
 - Preserve previous hidden skeleton entry, archive migration, compact inn, critical-only hurt, shield/twohand, input queue30, deterministic 30Hz host sim, 400ms iframe/300ms rewind.
 
 Boundary: isolated fixtures and fresh contexts only. No user saves/private profiles/screenshots, no server/config/auth/deps/paid changes. Parent owns integration/push/deploy.
+
+
+## Implemented local tuning and newly approved extension (user 30560)
+
+- Bone recipes (+0 fine base): weapon 24 bones/180g; head 12/90g; body 20/150g; hands and feet each 10/75g. Generated rarity recipes follow the existing rarity material/gold scales. Bone sword weighs 8kg and uses the existing T2 power. Undead independent material stream: normal 25% ×1, elite 60% ×1, boss guaranteed 2–3; no living/construct bone source and no change to previous draws.
+- All bone stones, including blessed/cursed, first roll survival at levels +0..+11: 80/75/70/65/60/55/50/40/30/20/15/10%. No LUK/blessing bypass. Specials retain conditional step distributions only after survival. Five actual equipped bone slots arm revival in a freshly created sortie world. Consumption lives on that host pawn, never in current gear/UI or permanent lineage.
+- Rooms use separate existing relay gameType arpg-invasion; no relay modifications. Both sides explicitly enter the consent panel before constructing profiles; host validates selected save, unlock, lineage, weapon, consent, role and roster before creation. Human=hunter, the supported hidden skeleton knight=invader. Host recomputes mods from validated selected save (these are still client-authored saves, not authenticated accounts). Start actions are ignored in invasion; only from-host RT starts/snapshots accepted by guests.
+- Host owns per-player run trackers and death-drop ledger. Hunters retain the ordinary per-participant monster reward policy; invaders never roll monster loot/XP or human stage rewards. True death clears ONLY host-tracked temporary loot before publishing a unique pile. Enemy live pawns auto-pick up a whole pile within48px if weight/scroll limits allow; requests contain only pile ID. Quest-credit metadata is not stolen. Full piles remain if they do not fit. No reward cap strips transferred gear, including S1.
+- After the last hunter leaves/dies, surviving invaders have10seconds for pickup before automatic extraction (no scroll consumed). An active invader blocks monster-count or objective stage victory. A returned/dead hunter settles once while others continue. Normal coop default and timings unchanged.
+- Each local invasion departure persists a fresh token. Terminal host receipts are bound to that token, and clearing the token + inventory banking happens in a single save write; old/repeated receipts cannot grant again even after a new departure. Host loss discards unconfirmed loot, not cached fallback banking. Rejoin does not recreate removed pawns. Lost/disconnected unbanked ownership may be lost safely, never recreated. No cross-device/auth/server anti-cheat guarantee.
+
+### Craft luck
+
+Effective LUK is normalized as t=clamp((LUK-10)/90,0,1). Upgrade steps +1/+2/+3 rarity have probabilities10+15t%,1+4t%,0.1+0.9t%; remaining probability retains the requested grade. Steps cap at epic and coalesce there; never downgrade, change family/tier/silver/set identity. Thus a fine recipe at LUK10 has fine88.9%,rare10%,epic1.1%; at LUK100: fine69%,rare25%,epic6%. Epic recipes remain epic100%. Every recipe displays its exact current effective-LUK odds before spending.
+
+`craftCount` is an optional backwards-compatible persisted unsigned32-bit sequence. A successful craft increments it once; recipe + account createdAt + sequence seed an independent deterministic rarity/affix stream. Insufficient resources/invalid recipes do not mutate it; removing/selling output does not reset it. Refuse sequence exhaustion instead of wrapping RNG seeds. Craft UID records the actual paid recipe, so upgraded quality cannot inflate dismantle refunds. Crafted sale proceeds cap at90% of paid recipe gold to prevent deterministic gold loops; otherwise ordinary pricing is unchanged.
+
+### Attainable existing-theme sets
+
+Stable set IDs and display names are on base definitions before rarity generation, so legacy gear and all variants count without rewriting saves. Only distinct actually equipped slots count; bag/stash never activate effects.
+
+- `boar` / 멧돼지: existing boar_hide_armor plus new T1 boar_cap (hide6,fang2,gold50) and boar_boots (hide8,fang2,gold60). Two pieces: maxHP+12. All3: carry capacity+8kg (shared by actual weight validation and derived HUD stats).
+- `warden` / 파수꾼: existing warden_blade OR warden_maul + warden_plate; two simultaneous slots total. Two pieces: AC+8 and HP regeneration+0.15/sec. No unreachable3/5 threshold and no doublecounting the two weapons.
+- `bone` / 뼈: exactly five slots; existing one-use30% revival only. No extra passive bonus or permanent evolution.
+
+Bag and equipment comparison show counts plus active/inactive threshold text; item details identify the set. No arbitrary extra thematic sets or new art is introduced.

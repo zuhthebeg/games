@@ -1,3 +1,4 @@
+import { EQUIPMENT_SETS } from '../content/equipment-sets.js';
 import { BALANCE, statEffect } from '../content/balance.js';
 import { SKILL_USE } from '../content/combat.js';
 const S = BALANCE.stats;
@@ -41,8 +42,20 @@ export function allocateStats(save, allocation) {
   return next;
 }
 
+export function equippedSets(save) {
+  return Object.entries(EQUIPMENT_SETS).map(([id,def])=>{
+    const slots=new Set(SLOTS.filter(slot=>ITEMS[equippedItem(save,slot)?.id]?.setId===id));
+    return {id,...def,count:slots.size,bonuses:def.bonuses.map(b=>({...b,active:slots.size>=b.count}))};
+  });
+}
+export function setBonuses(save) {
+  const totals={};
+  for(const set of equippedSets(save))for(const b of set.bonuses)if(b.active)for(const key of ['maxHp','capacity','ac','hpRegen'])if(b[key])totals[key]=(totals[key]||0)+b[key];
+  return totals;
+}
 export function deriveMods(save) {
   const stats = effectiveStats(save);
+  const sets = setBonuses(save);
   const weapon = equippedItem(save, 'weapon');
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
@@ -57,8 +70,8 @@ export function deriveMods(save) {
   };
   return {
     ...( ['weapon','head','body','hands','feet'].every(slot => ITEMS[equippedItem(save, slot)?.id]?.boneSet) ? { boneRevival: true } : {}),
-    maxHp: 100 + 8 * save.level + affixes.hp_flat,
-    ac: gear.reduce((sum, item) => sum + armorAc(item), 0),
+    maxHp: 100 + 8 * save.level + affixes.hp_flat + (sets.maxHp || 0),
+    ac: gear.reduce((sum, item) => sum + armorAc(item), 0) + (sets.ac || 0),
     effectiveInt: stats.int,
     ...(ITEMS[weapon?.id]?.handedness === 2 ? {handedness:2} : {}),
     ...(ITEMS[weapon?.id]?.silverWeapon ? { silverWeapon: true } : {}),
@@ -66,7 +79,7 @@ export function deriveMods(save) {
     ...(ITEMS[weapon?.id]?.affinity ? { staffAffinity: ITEMS[weapon.id].affinity } : {}),
     maxMp: S.mpBase + S.mpPerLevel * (save.level - 1) + S.mpPerWis * manaWis,
     mpRegen: (S.mpRegenBase + S.mpRegenPerLevel * (save.level - 1) + S.mpRegenPerWis * manaWis) * (1 + affixes.mana_pct / 100),
-    hpRegen: S.hpRegenAt100 * stats.con / 100,
+    hpRegen: S.hpRegenAt100 * stats.con / 100 + (sets.hpRegen || 0),
     critChance: S.luckCrit * norm(stats.luk), critMult: S.critMult,
     dropLuck: S.luckDrop * norm(stats.luk), enchantLuck: S.luckEnchant * norm(stats.luk),
     speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
@@ -80,7 +93,7 @@ export function deriveMods(save) {
     ...(ITEMS[weapon?.id]?.form ? { weaponForm: ITEMS[weapon.id].form } : {}),
     weaponWeight: weapon ? effectiveWeight(weapon) : BALANCE.attackSpeed.weightReference,
     cdMult: 1,
-    capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat,
+    capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat + (sets.capacity || 0),
     goldBonus: affixes.gold_pct, materialBonus: affixes.material_pct,
     shopDiscount: Math.min(S.discountCap, S.discount * eff(stats.cha)),
     family,

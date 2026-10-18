@@ -2,6 +2,7 @@ import { itemArtKey, itemArtPath } from './item-art.js';
 
 // Local art with SVG fallback; labels stay on the containing controls.
 const paths = {
+  undead_bone: '<path d="M7 4a3 3 0 1 0-4 4l10 10a3 3 0 1 0 4 3 3 3 0 1 0 4-4L11 7a3 3 0 1 0-4-3z"/>',
   offhand: '<path d="M4 4l8-2 8 2v8c0 5-8 10-8 10S4 17 4 12zM12 5v13M7 10h10"/>',
   sound: '<path d="M3 9h4l5-5v16l-5-5H3zM16 8q6 4 0 8"/>',
   owner: '<path d="M8 20v-5a4 4 0 0 1 8 0v5M5 20h14"/><circle cx="12" cy="7" r="3"/>',

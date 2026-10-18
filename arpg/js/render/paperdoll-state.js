@@ -9,7 +9,7 @@ const PALETTES = {
   light: [155, 170, 183], medium: [164, 127, 91], heavy: [127, 150, 170],
 };
 const WEAPON_COLOURS = {
-  training_sword:[201,155,105], iron_sword:[218,234,244], goblin_cleaver:[190,209,155],
+  bone_set_weapon:[219,210,179], training_sword:[201,155,105], iron_sword:[218,234,244], goblin_cleaver:[190,209,155],
   rune_blade:[135,212,232], warden_blade:[174,184,244], chief_maul:[216,205,178],
   rune_maul:[154,209,204], warden_maul:[194,149,112],
   short_bow:[219,176,119], hunter_bow:[179,216,148], pack_bow:[229,205,146], frost_bow:[149,209,244],
