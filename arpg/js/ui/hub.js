@@ -46,6 +46,17 @@ const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
   && STAGES[id]?.spawns.some(s => MONSTER_VARIANTS[s.monster]?.lifeState === 'construct'
     && !MONSTER_VARIANTS[s.monster].speciesTags.includes('trainingDummy'));
 const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
+const FORGE_RECIPE_MODES = [['craftable', '제작 가능'], ['owned', '보유 재료 관련'], ['all', '전체 공개']];
+const FORGE_RECIPE_KINDS = [['all', '전체 종류'], ['weapon', '무기'], ['armor', '방어구'], ['offhand', '방패'], ['material', '재료']];
+// Metadata is shared with authored equipment sets; fallbacks bridge pre-set catalogue saves/content.
+export function forgeRecipeSet(id, definition = ITEMS[id]) {
+  const base = definition.baseId || id;
+  const setId = definition.setId || (base === 'boar_hide_armor' ? 'boar'
+    : ['warden_blade', 'warden_maul', 'warden_plate'].includes(base) ? 'warden' : null);
+  return typeof setId === 'string' && setId ? { id: setId, name: definition.setName || ({ boar: '멧돼지', warden: '수호자', bone: '뼈' }[setId] || setId) } : null;
+}
+const recipeKind = id => ITEMS[id].slot ? (['weapon', 'offhand'].includes(ITEMS[id].slot) ? ITEMS[id].slot : 'armor') : 'material';
+const recipeHeld = (save, key) => key === 'gold' ? save.gold : save.stacks[key] || 0;
 const pct = (value) => `${Math.round(value * 100)}%`;
 
 // Actual local SDXL art; labels and all actions remain native DOM elements.
@@ -724,18 +735,6 @@ export class HubUI {
       note: isWorn(this.save, item.uid) ? '착용 중' : '',
       extra: `aria-pressed="${item.uid === this.selectedUid}"`,
     })).join('');
-    const seen = seenMaterials(this.save);
-    const shown = Object.entries(RECIPES).filter(([id]) => recipeRevealed(this.save, id, seen));
-    const hiddenCount = Object.keys(RECIPES).length - shown.length;
-    const recipes = shown.map(([id, recipe]) => {
-      const shortages = Object.entries(recipe).flatMap(([key, count]) => {
-        const held = key === 'gold' ? this.save.gold : this.save.stacks[key] || 0;
-        return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
-      });
-      const parts = Object.entries(recipe).map(([key, count]) => `${key === 'gold' ? 'G' : ITEMS[key].name}: ${count}`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b><small>${parts}</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
-        + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
-    }).join('') + (hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : '');
     this.forgeTab ||= 'enhance';
     const { html, footer } = this.forgeDetail();
     const tabs = `<nav class="forge-tabs" aria-label="${this.hubCopy('대장장이 작업', '저주받은 대장장이 작업')}">${[['enhance', '강화'], ['stones', '강화석'], ['salvage', '제작·분해']].map(([tab, label]) => button(label, 'forge-tab', `data-tab="${tab}" aria-pressed="${this.forgeTab === tab}"`)).join('')}</nav>`;
@@ -750,10 +749,47 @@ export class HubUI {
       : crack ? `<p class="enchant-notice success" role="status">${ITEMS[crack.id].name}  · ${crack.count}개</p>` : '';
     const picker = `<div class="forge-selection"><div class="section-caption"><span>장비 선택</span><span>착용 · 보관</span></div><div class="forge-picker" role="group" aria-label="강화할 장비">${cards}</div></div>`;
     const content = this.forgeTab === 'stones' ? this.stoneWorkshopHtml()
-      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}<section class="craft-list"><h3 class="section-title">제작 · 재료</h3><div class="recipe-grid">${recipes}</div></section>`
+      : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}${this.forgeRecipesHtml()}`
         : `${html}${picker}`;
     this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftNotice ? `<p class="craft-notice gain" role="status">${escape(this.craftNotice)}</p>` : ''}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
       'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험` });
+  }
+
+  forgeRecipesHtml() {
+    this.forgeRecipeMode ||= 'craftable';
+    this.forgeRecipeKind ||= 'all';
+    this.forgeRecipeSet ||= 'all';
+    const seen = seenMaterials(this.save);
+    const revealed = Object.entries(RECIPES).filter(([id]) => recipeRevealed(this.save, id, seen));
+    const sets = new Map(revealed.flatMap(([id]) => { const set = forgeRecipeSet(id); return set ? [[`set:${set.id}`, set.name]] : []; }));
+    const shown = revealed.filter(([id, recipe]) => (this.forgeRecipeKind === 'all' || recipeKind(id) === this.forgeRecipeKind)
+      && (this.forgeRecipeSet === 'all' || (this.forgeRecipeSet === 'none' ? !forgeRecipeSet(id) : `set:${forgeRecipeSet(id)?.id}` === this.forgeRecipeSet))
+      && (this.forgeRecipeMode === 'all' || (this.forgeRecipeMode === 'owned'
+        ? Object.keys(recipe).some(key => key !== 'gold' && recipeHeld(this.save, key) > 0)
+        : Object.entries(recipe).every(([key, count]) => recipeHeld(this.save, key) >= count))));
+    const modes = FORGE_RECIPE_MODES.map(([mode, label]) => button(label, 'forge-recipe-mode', `data-mode="${mode}" aria-pressed="${this.forgeRecipeMode === mode}"`)).join('');
+    const kinds = FORGE_RECIPE_KINDS.filter(([kind]) => kind === 'all' || Object.keys(RECIPES).some(id => recipeKind(id) === kind))
+      .map(([kind, label]) => button(label, 'forge-recipe-kind', `data-kind="${kind}" aria-pressed="${this.forgeRecipeKind === kind}"`)).join('');
+    const setFilters = [['all', '전체 세트'], ['none', '세트 없음'], ...sets].map(([set, label]) => button(escape(label), 'forge-recipe-set', `data-set="${escape(set)}" aria-pressed="${this.forgeRecipeSet === set}"`)).join('');
+    const recipes = shown.map(([id, recipe]) => {
+      const shortages = Object.entries(recipe).flatMap(([key, count]) => {
+        const held = recipeHeld(this.save, key);
+        return held >= count ? [] : [key === 'gold' ? `${count - held} G 부족` : `${ITEMS[key].name} ${count - held}개 부족`];
+      });
+      const set = forgeRecipeSet(id);
+      const parts = Object.entries(recipe).map(([key, count]) => `<span class="${recipeHeld(this.save, key) < count ? 'loss' : ''}">${key === 'gold' ? 'G' : ITEMS[key].name}: ${recipeHeld(this.save, key)} / ${count}</span>`).join(' · ');
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name} · T${ITEMS[id].huntTier} ${GRADES[ITEMS[id].rarity]}</b>${set ? `<small class="recipe-set">세트 · ${escape(set.name)}</small>` : ''}<small class="recipe-parts">${parts}</small>${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+        + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
+    }).join('');
+    const hiddenCount = Object.keys(RECIPES).length - revealed.length;
+    const empty = shown.length ? '' : `<div class="recipe-empty"><p>${revealed.length ? '조건에 맞는 레시피가 없습니다. 재료·골드 또는 종류·세트 필터를 확인하세요.' : '아직 공개된 레시피가 없습니다. 제작 재료를 얻으면 공개됩니다.'}</p>${button('전체 공개 레시피 보기', 'forge-show-all')}</div>`;
+    return `<section class="craft-list" aria-label="제작 레시피"><h3 class="section-title">제작 · 재료</h3>
+      <div class="recipe-filters" role="group" aria-label="제작 조건">${modes}</div>
+      <div class="recipe-filters recipe-kinds" role="group" aria-label="장비 종류">${kinds}</div>
+      <div class="recipe-filters recipe-sets" role="group" aria-label="장비 세트">${setFilters}</div>
+      <p class="minor recipe-count" role="status">표시 ${shown.length} / 공개 ${revealed.length} · 보유 / 필요</p>
+      <div class="recipe-grid">${recipes}${empty}</div>
+      ${hiddenCount ? `<p class="minor recipe-hidden">미공개 레시피: ${hiddenCount} · 재료를 하나라도 얻으면 공개됩니다.</p>` : ''}</section>`;
   }
 
   forgeSalvageHtml() {
@@ -1247,6 +1283,9 @@ export class HubUI {
         return this.showMerchant();
       // Forge
       case 'socket-forge': {
+        this.forgeRecipeMode = 'craftable';
+        this.forgeRecipeKind = 'all';
+        this.forgeRecipeSet = 'all';
         const item = this.save.items.find(candidate => candidate.uid === data.uid);
         if (!item || item.enhance >= ENCHANT.max) return;
         this.forgeTab = 'enhance';
@@ -1255,13 +1294,46 @@ export class HubUI {
         return this.showForge();
       }
       case 'craft-hub':
+        this.forgeRecipeMode = 'craftable';
+        this.forgeRecipeKind = 'all';
+        this.forgeRecipeSet = 'all';
         this.forgeTab = 'salvage';
         this.selectedUid = null;
         return this.showForge();
       case 'forge':
+        this.forgeRecipeMode = 'craftable';
+        this.forgeRecipeKind = 'all';
+        this.forgeRecipeSet = 'all';
         this.forgeTab = 'enhance';
         this.selectedUid = null;
         return this.showForge();
+      case 'forge-recipe-mode':
+        if (!FORGE_RECIPE_MODES.some(([mode]) => mode === data.mode)) return;
+        this.forgeRecipeMode = data.mode;
+        this.showForge();
+        this.root?.querySelector(`[data-action="forge-recipe-mode"][data-mode="${data.mode}"]`)?.focus({ preventScroll: true });
+        return;
+      case 'forge-recipe-kind':
+        if (!FORGE_RECIPE_KINDS.some(([kind]) => kind === data.kind)) return;
+        this.forgeRecipeKind = data.kind;
+        this.showForge();
+        this.root?.querySelector(`[data-action="forge-recipe-kind"][data-kind="${data.kind}"]`)?.focus({ preventScroll: true });
+        return;
+      case 'forge-recipe-set': {
+        const seen = seenMaterials(this.save);
+        if (!['all', 'none'].includes(data.set) && !Object.keys(RECIPES).some(id => recipeRevealed(this.save, id, seen) && forgeRecipeSet(id) && `set:${forgeRecipeSet(id).id}` === data.set)) return;
+        this.forgeRecipeSet = data.set;
+        this.showForge();
+        [...(this.root?.querySelectorAll('[data-action="forge-recipe-set"]') || [])].find(node => node.dataset.set === data.set)?.focus({ preventScroll: true });
+        return;
+      }
+      case 'forge-show-all':
+        this.forgeRecipeMode = 'all';
+        this.forgeRecipeKind = 'all';
+        this.forgeRecipeSet = 'all';
+        this.showForge();
+        this.root?.querySelector('[data-action="forge-recipe-mode"][data-mode="all"]')?.focus({ preventScroll: true });
+        return;
       case 'forge-tab':
         if (!['enhance', 'stones', 'salvage'].includes(data.tab)) return;
         this.forgeTab = data.tab;

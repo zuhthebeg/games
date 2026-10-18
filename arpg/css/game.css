@@ -1034,3 +1034,15 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
  #meta-screen[data-page="inn"] .npc-grid .hotspot{min-height:72px;gap:3px;padding-bottom:5px}
  #meta-screen[data-page="inn"] .npc-grid .facility-art{height:44px}
 }
+
+/* Forge recipe controls wrap independently of the recipe list on narrow screens. */
+.recipe-filters{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.recipe-filters button{min-height:44px;padding:8px 10px;font-size:12px;flex:1 1 auto}
+.recipe-filters button[aria-pressed="true"]{border-color:#d3ad6d;background:#57462e;color:#f0d9a3}
+.recipe-kinds button,.recipe-sets button{flex:0 1 auto}
+.recipe-count{margin:10px 0}
+.recipe-parts{display:block;line-height:1.7;overflow-wrap:anywhere}
+.recipe-parts span{display:inline-block}
+.recipe-empty{padding:12px 0;font-size:13px;line-height:1.7}
+.recipe-empty button{min-height:44px}
+.recipe-set{display:block;color:#d3ad6d;margin-top:3px}
