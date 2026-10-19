@@ -988,21 +988,75 @@ function stepZones(world) {
 
 // ---------------------------------------------------------------- projectiles
 
+// Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.
+function projectileSweep(world, pr) {
+  const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
+  const distance = Math.hypot(dx, dy);
+  let limit = distance ? Math.min(1, Math.max(0, pr.range - pr.travelled) / distance) : 1;
+  if (dx > 0) limit = Math.min(limit, (world.arena.w - ax) / dx);
+  else if (dx < 0) limit = Math.min(limit, -ax / dx);
+  if (dy > 0) limit = Math.min(limit, (world.arena.h - ay) / dy);
+  else if (dy < 0) limit = Math.min(limit, -ay / dy);
+  limit = Math.max(0, limit);
+  return { ax, ay, dx, dy, distance, limit, bx: ax + dx * limit, by: ay + dy * limit };
+}
+
+// Earliest tick fraction at which two moving circles touch (relative motion), null on a miss.
+function movingCircleContact(a, b, radius) {
+  const px = b.ax - a.ax, py = b.ay - a.ay, vx = b.dx - a.dx, vy = b.dy - a.dy;
+  const c = px * px + py * py - radius * radius;
+  if (c <= 0) return 0;
+  const A = vx * vx + vy * vy, B = px * vx + py * vy;
+  if (A === 0 || B >= 0) return null;
+  const disc = B * B - A * c;
+  return disc < 0 ? null : (-B - Math.sqrt(disc)) / A;
+}
+
+// Opposing player shots (human vs skeleton) cancel each other. Monster shots never clash,
+// so PvE stays unchanged. A shot that reaches any body first takes that hit instead.
+function projectileClashes(world, live, sweeps) {
+  const first = live.map((pr, i) => {
+    const s = sweeps[i];
+    let t = s.limit;
+    for (const target of world.entities) {
+      if (target.id === pr.ownerId || !isTargetable(target) || pr.hit.includes(target.id)) continue;
+      const entry = segmentCircleEntry(s.ax, s.ay, s.bx, s.by, target.x, target.y, target.r + pr.r);
+      if (entry !== null) t = Math.min(t, entry * s.limit);
+    }
+    return t;
+  });
+  const pairs = [];
+  for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+    const a = live[i], b = live[j];
+    if (a.ownerKind !== 'player' || b.ownerKind !== 'player' || a.team === b.team) continue;
+    const t = movingCircleContact(sweeps[i], sweeps[j], a.r + b.r);
+    if (t !== null && t <= first[i] && t <= first[j]) pairs.push({ i, j, t });
+  }
+  pairs.sort((p, q) => p.t - q.t || live[p.i].id - live[q.i].id || live[p.j].id - live[q.j].id);
+  const clashed = new Map();
+  for (const p of pairs) if (!clashed.has(p.i) && !clashed.has(p.j)) { clashed.set(p.i, p); clashed.set(p.j, p); }
+  return clashed;
+}
+
 function stepProjectiles(world) {
   const keep = [];
-  for (const pr of world.projectiles) {
+  const live = world.projectiles.filter(pr => !((pr.def || ABILITIES[pr.abilityId]).spin && !world.entities.some(e => e.id === pr.ownerId && alive(e))));
+  const sweeps = live.map(pr => projectileSweep(world, pr));
+  const clashed = projectileClashes(world, live, sweeps);
+  for (const [i, pr] of live.entries()) {
     const def = pr.def || ABILITIES[pr.abilityId];
-    if (def.spin && !world.entities.some(e => e.id === pr.ownerId && alive(e))) continue;
-    const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
-    const distance = Math.hypot(dx, dy);
-    // Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.
-    let limit = distance ? Math.min(1, Math.max(0, pr.range - pr.travelled) / distance) : 1;
-    if (dx > 0) limit = Math.min(limit, (world.arena.w - ax) / dx);
-    else if (dx < 0) limit = Math.min(limit, -ax / dx);
-    if (dy > 0) limit = Math.min(limit, (world.arena.h - ay) / dy);
-    else if (dy < 0) limit = Math.min(limit, -ay / dy);
-    limit = Math.max(0, limit);
-    const bx = ax + dx * limit, by = ay + dy * limit;
+    const { ax, ay, dx, dy, distance, limit, bx, by } = sweeps[i];
+    const clash = clashed.get(i);
+    if (clash) {
+      pr.x = ax + dx * clash.t; pr.y = ay + dy * clash.t;
+      if (clash.i === i) {
+        const o = sweeps[clash.j];
+        world.events.push({ type: 'projectileClash', a: pr.id, b: live[clash.j].id,
+          x: (pr.x + o.ax + o.dx * clash.t) / 2, y: (pr.y + o.ay + o.dy * clash.t) / 2 });
+      }
+      world.events.push({ type: 'projectileEnd', id: pr.id, x: pr.x, y: pr.y, ability: pr.abilityId });
+      continue;
+    }
     const contacts = [];
     for (const target of world.entities) {
       if (target.id === pr.ownerId || !isTargetable(target) || pr.hit.includes(target.id)) continue;
