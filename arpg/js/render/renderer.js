@@ -1,3 +1,4 @@
+import {BOSS_TUNING} from '../content/boss-tuning.js';
 import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { getTelegraphs } from '../sim/world.js';
 import { paintDragonVfx } from './dragon-presentation.js';
@@ -497,9 +498,9 @@ export class ArenaRenderer {
       if (!frozen) view.kickAge = Math.min(FEEL.kick.life, view.kickAge + visualDelta);
       view.visual.container.position.set(view.x + view.kickX * kick, view.y + view.kickY * kick);
       // Match authored sim boss identity; scale the outer visual once, including lazy atlas swaps.
-      // Ground anchors, shadows and authoritative attack/collision geometry stay unchanged.
-      const bossScale = entity.kind === 'monster' && (entity.boss || MONSTERS[entity.type]?.boss
-        || entity.type === 'goblin_chief' || MONSTER_VARIANTS[entity.type]?.speciesTags.includes('boss')) ? 2 : 1;
+      // Apply the current-size tuning exactly once; collision radius is tuned at spawn.
+      const bossScale = (entity.kind === 'monster' && (entity.boss || MONSTERS[entity.type]?.boss
+        || entity.type === 'goblin_chief' || MONSTER_VARIANTS[entity.type]?.speciesTags.includes('boss')) ? 2 : 1) * (entity.kind === 'monster' ? BOSS_TUNING[entity.type]?.size || 1 : 1);
       view.visual.container.scale.set(bossScale * (1 + kick * FEEL.kick.squash), bossScale * (1 - kick * FEEL.kick.squash));
       view.visual.container.zIndex = view.y;
       view.shadow.position.set(view.x, view.y);

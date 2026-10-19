@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {BOSS_TUNING} from '../js/content/boss-tuning.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Container } from '../vendor/pixi-8.22.0.min.mjs';
@@ -23,7 +25,7 @@ function fixture(width, reduced = false) {
 }
 const bosses = Object.keys(MONSTERS).filter(type => MONSTERS[type].boss || type === 'goblin_chief' || MONSTER_VARIANTS[type]?.speciesTags.includes('boss'));
 
-test('all authored bosses alone are visual 2x, including S15 chief; frozen world is unchanged over repeated renders', () => {
+test('bosses preserve their prior visual scale then shrink exactly 0.7x, including S15 chief; frozen world is unchanged over repeated renders', () => {
   assert.deepEqual(bosses.sort(), ['goblin_chief','necropolis_lord','throne_dragon']);
   assert.ok(STAGES.S15.spawns.some(s => s.monster === 'goblin_chief'));
   for (const width of [1280,390]) for (const reduced of [false,true]) {
@@ -37,7 +39,7 @@ test('all authored bosses alone are visual 2x, including S15 chief; frozen world
     const before = JSON.stringify(world); freeze(world);
     for (let frame=0;frame<90;frame++) renderer.render(world,1,1/60);
     for (const entity of world.entities) {
-      const view = renderer.views.get(entity.id), expected = entity.kind === 'monster' && (entity.boss || bosses.includes(entity.type)) ? 2 : 1;
+      const view = renderer.views.get(entity.id), expected = (entity.kind === 'monster' && (entity.boss || bosses.includes(entity.type)) ? 2 : 1) * (entity.kind === 'monster' ? BOSS_TUNING[entity.type]?.size || 1 : 1);
       assert.equal(view.visual.container.scale.x,expected,`${width}/${reduced}/${entity.kind}/${entity.type}`);
       assert.equal(view.visual.container.scale.y,expected);
       assert.equal(view.visual.container.x,entity.x); assert.equal(view.visual.container.y,entity.y);
@@ -48,7 +50,7 @@ test('all authored bosses alone are visual 2x, including S15 chief; frozen world
   }
 });
 
-test('S15 actual spawn keeps its authored radius/size and kick squash composes with 2x through hit stop and reduced motion', () => {
+test('S15 actual spawn keeps its authored radius/size and kick squash composes with current 1.4x through hit stop and reduced motion', () => {
   const {world,renderer} = fixture(390);
   startStage(world,'S15'); step(world,{local:{}});
   const chief = world.entities.find(e=>e.type==='goblin_chief'); assert.ok(chief);
@@ -57,10 +59,15 @@ test('S15 actual spawn keeps its authored radius/size and kick squash composes w
   const before = JSON.stringify(world), kick = kickEnvelope(view.kickAge); freeze(world);
   for (let frame=0;frame<3;frame++) {
     renderer.render(world,1,1/60);
-    assert.equal(view.visual.container.scale.x,2*(1+kick*FEEL.kick.squash));
-    assert.equal(view.visual.container.scale.y,2*(1-kick*FEEL.kick.squash));
+    assert.equal(view.visual.container.scale.x,1.4*(1+kick*FEEL.kick.squash));
+    assert.equal(view.visual.container.scale.y,1.4*(1-kick*FEEL.kick.squash));
   }
   renderer.reduced=true; renderer.render(world,1,1/60);
-  assert.equal(view.visual.container.scale.x,2); assert.equal(view.visual.container.scale.y,2);
+  assert.equal(view.visual.container.scale.x,1.4); assert.equal(view.visual.container.scale.y,1.4);
   assert.equal(JSON.stringify(world),before);
+});
+test('procedural bounds are 0.7 of shipped boss bounds, not radius shrink multiplied twice',()=>{
+ const baseline=JSON.parse(readFileSync(new URL('./fixtures/boss-vector-before-20261020.json',import.meta.url),'utf8'));
+ const {world,renderer}=fixture(1280);for(const type of Object.keys(baseline))spawnMonster(world,type,600,400,{stageId:'S15'});renderer.snapshot(world);renderer.render(world,1,1/60);
+ for(const e of world.entities.filter(e=>e.kind==='monster')){const n=renderer.views.get(e.id).visual.container,b=n.getBounds(),origin=n.toGlobal({x:0,y:0}),old=baseline[e.type];for(const key of ['width','height'])assert.ok(Math.abs(b[key]-old[key]*.7)<1e-8,e.type+'/'+key);assert.ok(Math.abs(b.x-origin.x-old.x*.7)<1e-8,e.type+'/anchorX');assert.ok(Math.abs(b.y-origin.y-old.y*.7)<1e-8,e.type+'/anchorY');}
 });

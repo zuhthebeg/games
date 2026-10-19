@@ -27,11 +27,12 @@ test('special stones use exact tier chances, threat multiplier and independent s
 // craft-loot.test and C1 separately retain exact PRE-B gold/consumable/all-stone bytes.
 // Approved twohand T4 bases extend the gear pool fingerprint; non-gear projection remains exact.
 // C adds silver on its own stream; exclude only that new field from this historical B projection.
+// Necropolis fingerprint alone changes for the approved rare boss floor.
 test('B tuned loot fingerprints include safe random enhancement and crafting materials',()=>{
  for(const [monster,ctx,expected] of [
  ['goblin_grunt',{},'893640cd4dc9da6b9342b93cb5f9fd4c39d9ad66b7a3bd7bfceb170a58197984'],
  ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'7e6b65907ad709ef65cc5f972d78c917fd88824decd2a669d2b4394e287f7661'],
- ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'064aca3d8411cd5223349614ecca856e44d89f4bdc4af35636d188610197ff3f']]) {
+ ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'27bd7919b90e9b2540900e70751f28fd6429e5f5fafece43423f2c88e18529c3']]) {
   const out=[];for(let seed=1;seed<=500;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks[blessed];delete loot.stacks[cursed];delete loot.stacks.silver_ingot;delete loot.stacks.undead_bone;out.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(out)).digest('hex'),expected);
  }

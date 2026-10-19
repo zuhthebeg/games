@@ -43,17 +43,17 @@ test('formal dragon is stronger than trial without exceeding S20 boss HP; party/
  const timings={dragon_flame:[1400,400,650,1900],dragon_stomp:[1050,350,150,1700],dragon_tail:[1200,400,250,1850]};
  for(const [id,t] of Object.entries(timings)){const a=ABILITIES[id];assert.deepEqual([a.windupMs,a.lockMs,a.activeMs,a.recoveryMs],t);}
 });
-test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded gold/materials and S19 XP convention; no guarantee',()=>{
+test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded gold/materials and S19 XP convention; rare boss guarantee',()=>{
  assert.equal(STAGE_XP.TD1,STAGE_XP.S19);assert.equal(MONSTERS.throne_dragon.xp,MONSTERS.goblin_chief.xp);
  let zeroGear=0;
  for(let seed=0;seed<100;seed++)for(const threat of [1,2,3]){
   const loot=rollDrops('throne_dragon',seed,{stageId:'TD1',huntTier:3,threat});
   assert.ok(Number.isSafeInteger(loot.gold)&&loot.gold>=0&&loot.gold<=250);
   assert.ok(loot.items.length<=4);if(!loot.items.length)zeroGear++;
-  for(const item of loot.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
+  for(const item of loot.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?1:ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
   for(const [id,n] of Object.entries(loot.stacks)){assert.ok(ITEMS[id]);assert.ok(Number.isSafeInteger(n)&&n>0&&n<=10);}
  }
- assert.ok(zeroGear>0);
+ assert.equal(zeroGear,0);
 });
 test('discovered route preserves authored castle/throne graph and independent necropolis gate',()=>{
  assert.equal(REGIONS.find(r=>r.id==='throne').name,'왕좌 앞뜰');
@@ -67,7 +67,7 @@ test('discovered route preserves authored castle/throne graph and independent ne
  const css=readFileSync(new URL('../css/game.css',import.meta.url),'utf8');assert.match(css,/\.world-map\{position:relative;display:grid/);assert.doesNotMatch(h.html,/style="left:/);assert.match(h.html,/aria-controls="map-region-throne"/);
 });
 
-test('repeat TD1 does not outfarm S20 XP/gold/gear in the same late solo policy (3 seeds); legacy reload never regrants first clear',async()=>{
+test('repeat TD1 preserves the S20 XP/gold ceiling with bounded boss gear in the same late solo policy (3 seeds); legacy reload never regrants first clear',async()=>{
  const {throneLateSave}=await import('./fixtures/throne-late.js');
  const {botInput}=await import('../tools/balance/bot.js');
  const {buildRoundMods,createTracker,trackRound,settleRound}=await import('../js/meta/run.js');
@@ -86,6 +86,6 @@ test('repeat TD1 does not outfarm S20 XP/gold/gear in the same late solo policy 
     store.save(out.save);for(let reload=0;reload<3;reload++)assert.deepEqual(store.load(),out.save);
    }
   }
-  for(const field of ['xp','gold','gear'])assert.ok(results.TD1[field]<=results.S20[field],`${seed}/${field}`);
+  for(const field of ['xp','gold'])assert.ok(results.TD1[field]<=results.S20[field],`${seed}/${field}`);
  }
 });

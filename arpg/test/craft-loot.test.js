@@ -26,7 +26,7 @@ test('B rare/epic weights are discounted for normal and boss while keeping pity'
   const ctx={boss,huntTier:3,threat:3},r=rng(seed^0xa521d937),chance=boss?1:.04*.7*1.9;
   if(r()>=chance)continue;if(boss)r();
   const base=boss?BALANCE.threats[2].bossRarity:BALANCE.threats[2].rarity;
-  const rarity=weighted(Object.entries(base).map(([k,w])=>[k,w*(k==='rare'?.7:k==='epic'?.5:1)]),r);
+  const rarity=weighted(Object.entries(base).filter(([k])=>!boss||['rare','epic'].includes(k)).map(([k,w])=>[k,w*(k==='rare'?.7:k==='epic'?.5:1)]),r);
   assert.equal(ITEMS[rolled(rollDrops('skeleton_minion',seed,ctx))[0].id].rarity,rarity);
  }
  for(let seed=1;seed<=1000;seed++)assert.notEqual(ITEMS[rolled(rollDrops('goblin_chief',seed,{rarelessRounds:6}))[0].id].rarity,'fine');
@@ -36,7 +36,7 @@ test('B every dropped gear uses exact independent safe enhancement weights, incl
  const rows=[];
  for(const [rank,flags] of [['normal',{}],['elite',{elite:true}],['boss',{boss:true}]]){
   const bins=Array(7).fill(0);
-  for(let seed=1;seed<=n;seed++)for(const item of rollDrops('throne_dragon',seed,{...flags,huntTier:4}).items){
+  for(let seed=1;seed<=n;seed++)for(const item of rollDrops(rank==='boss'?'throne_dragon':'ghost',seed,{...flags,huntTier:4}).items){
    const expected=Number(weighted(weights[rank].map((w,i)=>[i,w]),rng(item.rolledAt^0xd09e6a31)));
    assert.equal(item.enhance,expected);assert.ok(item.enhance>=0&&item.enhance<=6);bins[item.enhance]++;
   }

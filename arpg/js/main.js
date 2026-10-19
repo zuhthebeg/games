@@ -468,7 +468,10 @@ try {
       get art() {
         return readonly({
           ...renderer.provider.atlases.status(),
-          visuals: [...renderer.views].map(([id, view]) => ({ id, ...view.visual.debug })),
+          visuals: [...renderer.views].map(([id, view]) => ({ id, ...view.visual.debug, entityId:id,
+            outerScale: {x:view.visual.container.scale.x,y:view.visual.container.scale.y},
+            displayBounds: (()=>{const b=view.visual.container.getBounds();return {x:b.x,y:b.y,width:b.width,height:b.height};})(),
+          })),
         });
       },
     }),

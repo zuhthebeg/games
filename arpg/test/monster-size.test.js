@@ -1,3 +1,4 @@
+import {BOSS_TUNING} from '../js/content/boss-tuning.js';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createWorld,spawnMonster} from '../js/sim/world.js';
 import {MONSTERS,ABILITIES} from '../js/content/combat.js';
@@ -27,7 +28,7 @@ test('boss/elite absolute visual scale is capped at 1.35; HP is weakly coupled w
    assert.ok(size.hp>.9&&size.hp<1.1);
   }
   const m=spawnMonster(createWorld({seed:42}),type,500,400,{stageId,elite});
-  assert.ok(atlasScale(m)<=1.35+1e-12);assert.equal(m.r,MONSTERS[type].r*m.sizeScale);
+  assert.ok(atlasScale(m)<=1.35+1e-12);assert.equal(m.r,MONSTERS[type].r*m.sizeScale*(BOSS_TUNING[type]?.size||1));
  }
 });
 test('procedural geometry is scaled exactly once, with the same physics ratio; ability ranges unchanged',()=>{

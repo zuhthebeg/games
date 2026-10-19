@@ -82,7 +82,7 @@ test('AV1 third-step plain basics never wear heavy boss poise; crit exception an
   assert.ok(paid);
   const crit=fixture('blade','sword','goblin_chief');crit.p.critChance=1;let critHit=false;
   for(let t=0;t<20;t++) if(step(crit.w,{p:input({attack:t===0,aimX:1})}).some(e=>e.type==='hit'&&e.crit)) {
-    assert.ok(crit.m.poise<MONSTERS.goblin_chief.poise);critHit=true;break;
+    assert.ok(crit.m.poise<crit.m.maxPoise);critHit=true;break;
   }
   assert.ok(critHit);
 });

@@ -1,3 +1,4 @@
+import {isBossType} from '../content/boss-tuning.js';
 import { eff, effectiveStats, setBonuses } from './stats.js';
 import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, BLESSED_STONE, CURSED_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
@@ -431,7 +432,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const materialBonus = Math.max(0, ctx.materialBonus || 0) * capScale;
   const threat = threatMultipliers(ctx.threat ?? 1);
   const tier = Math.max(1, Math.min(4, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
-  const boss = monsterType === 'goblin_chief' || ctx.boss === true;
+  const boss = isBossType(monsterType) || ctx.boss === true;
   const elite = ctx.elite ?? false;
   const rank = boss ? 'boss' : elite ? 'elite' : 'normal';
   const tierMultiplier = ECONOMY.gearTierMultiplier[tier];
@@ -445,7 +446,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       const rarityPool = (ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity);
-      let rarity = weighted(Object.entries(rarityPool).map(([key, weight]) => [key, weight * ECONOMY.gearRarityMultiplier[key]]), random);
+      let rarity = weighted(Object.entries(rarityPool).filter(([key]) => !boss || ['rare','epic'].includes(key)).map(([key, weight]) => [key, weight * ECONOMY.gearRarityMultiplier[key]]), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       // I1 authored no T4 head/hands/feet. Retain slot odds, falling back to existing T3 gear.
@@ -453,6 +454,9 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
         && item.huntTier === slotTier && !item.craftOnly && !item.dropOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
+      // Sparse authored tiers can lack a slot/grade. Boss floor never falls to fine.
+      if (!pool.length && boss) pool = Object.entries(ITEMS).filter(([,item]) => item.slot && ['rare','epic'].includes(item.rarity) && !item.craftOnly && !item.dropOnly);
+      if (!pool.length) continue;
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;
       loot.items.push(instance(`drop:${seed >>> 0}:rolled:${i}:${id}`, id, rollSeed));
@@ -494,6 +498,12 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       loot.items.push(instance(`drop:${seed >>> 0}:${entry.id}`, entry.id, seed));
     }
   }
+  // Legacy and exclusive side rolls obey the same floor without advancing a stream.
+  if (boss) loot.items = loot.items.map(item => {
+    if (['rare','epic'].includes(ITEMS[item.id].rarity)) return item;
+    const def = ITEMS[item.id], base = def.baseId || item.id, id = `${base}_rare`;
+    return ITEMS[id] ? instance(item.uid, id, item.rolledAt) : item;
+  });
   // Monsters were using gear lost by earlier adventurers. One independent roll per
   // instance (not the loot-order index), shared by ordinary, legacy and exclusive gear.
   for (const item of loot.items) item.enhance = Number(weighted(

@@ -1,3 +1,4 @@
+import {BOSS_TUNING} from '../content/boss-tuning.js';
 import { skeletonAppearance } from './skeleton-equipment-state.js';
 import { withPhysicalShield } from './physical-shield.js';
 import { BALANCE } from '../content/balance.js';
@@ -50,7 +51,7 @@ function procedural(entity, { color }) {
   const bar = new Graphics();
   const health = new Graphics();
   const flash = new Graphics();
-  const radius = entity.r / (entity.sizeScale || 1), visualKey = entity.kind === 'player' ? entity.weapon : entity.type;
+  const radius = entity.r / (entity.sizeScale || 1) / (entity.kind === 'monster' ? BOSS_TUNING[entity.type]?.size || 1 : 1), visualKey = entity.kind === 'player' ? entity.weapon : entity.type;
   silhouette.ellipse(-6, -2, 6, 4).ellipse(7, -2, 6, 4).fill(0x242722);
   if (visualKey === 'iron_boar') {
     silhouette.ellipse(0, -16, radius + 7, radius * .7).fill(color).ellipse(18, -15, 12, 10).fill(0x3a3027);

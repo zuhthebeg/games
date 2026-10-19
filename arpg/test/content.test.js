@@ -1,3 +1,4 @@
+import {isBossType} from '../js/content/boss-tuning.js';
 import { BALANCE } from '../js/content/balance.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -144,10 +145,10 @@ test('craft-first seeded tables raise basic quantities, make premium materials r
     for (let seed = 0; seed < 100; seed++) {
       const result = rollDrops(id, seed);
       assert.deepEqual(result, rollDrops(id, seed));
-      assert.ok(result.gold >= Math.floor(table.gold[0] * BALANCE.normalGold) && result.gold <= Math.ceil(table.gold[1] * BALANCE.normalGold));
+      assert.ok(result.gold >= Math.floor(table.gold[0] * (isBossType(id)?1:BALANCE.normalGold)) && result.gold <= Math.ceil(table.gold[1] * (isBossType(id)?1:BALANCE.normalGold)));
       for (const stack of table.stacks.filter((entry) => entry.chance === undefined)) {
         if (['scrap','hide','wood','web','fang'].includes(stack.id)) assert.ok(result.stacks[stack.id] >= Math.floor(stack.count * 1.5) && result.stacks[stack.id] <= Math.ceil(stack.count * 1.5));
-        else if (['rune_shard','frost_shard'].includes(stack.id)) assert.ok(!result.stacks[stack.id] || result.stacks[stack.id] === 1);
+        else if (['rune_shard','frost_shard'].includes(stack.id)) assert.ok(!result.stacks[stack.id] || result.stacks[stack.id] === 1 || isBossType(id) && result.stacks[stack.id] === 2);
         else assert.equal(result.stacks[stack.id], stack.count);
       }
       assert.ok(result.items.every((item) => Object.hasOwn(ITEMS, item.id)));

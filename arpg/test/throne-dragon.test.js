@@ -55,7 +55,7 @@ for(const id of ids){
    if(phase==='active')active=true;
    if(lockFacing!==undefined&&m.act===act)assert.equal(m.act.facing,lockFacing);
   }
-  assert.equal(active,true);assert.equal(hits,1);assert.ok(p.hp<p.maxHp);assert.equal(m.cds[id],ticks(def.cooldownMs));
+  assert.equal(active,true);assert.equal(hits,1);assert.ok(p.hp<p.maxHp);assert.equal(m.cds[id],ticks(def.cooldownMs*.8));
   assert.ok(def.recoveryMs>=1500);assert.ok(def.windupMs>=900);assert.ok(def.lockMs>=300);
   assert.ok(ids.filter(x=>x!==id).every(x=>m.cds[x]>0));
  });

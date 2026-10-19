@@ -1,0 +1,141 @@
+{
+  "bosses": [
+    {
+      "id": "throne_dragon",
+      "r": 48,
+      "hp": 1100,
+      "poise": 280,
+      "dmgMult": 1,
+      "thinkLeft": 16,
+      "speed": 48,
+      "sizeScale": 1,
+      "visualScale": 2
+    },
+    {
+      "id": "gargoyle",
+      "r": 48.6,
+      "hp": 420,
+      "poise": 108,
+      "dmgMult": 1,
+      "thinkLeft": 16,
+      "speed": 68,
+      "sizeScale": 1.35,
+      "visualScale": 1
+    },
+    {
+      "id": "rune_guardian",
+      "r": 40.5,
+      "hp": 280,
+      "poise": 90,
+      "dmgMult": 1,
+      "thinkLeft": 16,
+      "speed": 68,
+      "sizeScale": 1.35,
+      "visualScale": 1
+    },
+    {
+      "id": "goblin_chief",
+      "r": 29.07692307692308,
+      "hp": 320,
+      "poise": 120,
+      "dmgMult": 1,
+      "thinkLeft": 16,
+      "speed": 104,
+      "sizeScale": 1.0384615384615385,
+      "visualScale": 2
+    },
+    {
+      "id": "necropolis_lord",
+      "r": 32.400000000000006,
+      "hp": 560,
+      "poise": 120,
+      "dmgMult": 1,
+      "thinkLeft": 16,
+      "speed": 100,
+      "sizeScale": 1.35,
+      "visualScale": 2
+    }
+  ],
+  "normal": {
+    "scarecrow": {
+      "loot": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821",
+      "world": "1c076aa1a52d622f7399b386dfa92d3816f3ad1b1b803d91a010564de2ba028b"
+    },
+    "training_dragon": {
+      "loot": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821",
+      "world": "7708239786990049ab2404b6ad4e3b5b5912186638baeb4e86ddf01aaa800dc2"
+    },
+    "goblin_grunt": {
+      "loot": "8c0a2544042fb272382ae076a9deb5e9fdd0c16504c148f41f33a1a05cd7204e",
+      "world": "4b3fce66910506aeccaa51d9faf44ea36098b1dc2e364122b554f3249655365c"
+    },
+    "goblin_slinger": {
+      "loot": "ea0669c4d6f54ef078a29088731e567677b8962ad075b5a3585e95548611e9f2",
+      "world": "2c6d95ee5d47ed9ddad61808a4a8a1b80813ceb5b804ba6a9bcfb8e268e8cb7c"
+    },
+    "iron_boar": {
+      "loot": "241bdf55f8ce78a55ca1fe709d7007f27d02ac760be6fcfba2a024ed6f86f7ed",
+      "world": "6757dd92a246b5732efb454c7e848cc09340455f9ad2855641efb67d83c0ed7c"
+    },
+    "wolf": {
+      "loot": "df5a026aeaabed8e3f43687662e920fa6eb90b0af34afcf7fdb77306bff48bec",
+      "world": "63fd0c84a3914b8ae9099ad523b3e4452c008b655fe2b5345cb63d5dd2a6ea51"
+    },
+    "spirit": {
+      "loot": "5337ffeed4b36eb5aaefce34146c8a797cfc6b490c7067a8dd158fa8cc7313b8",
+      "world": "80c40dd697c654f6c5ea793e5fa81bf7a9582067b36f6e592b0833290dbb0e26"
+    },
+    "poison_spider": {
+      "loot": "b688078f821d38bbd3acae248ab1cc6a4d4e09528551addea9af14df727227a4",
+      "world": "0f86c410ea0a78c6d636645bc13d46ca83ce4d187177b6f0bec4ea1032e44072"
+    },
+    "skeleton_minion": {
+      "loot": "a94cc9980434966957c00c466330d9c1e31f1d53e0f37d92ade1ae1b91c2fb74",
+      "world": "a793f73bff603b690ea080d58069b6a5871690da8d1105b669243d40be31aeb6"
+    },
+    "skeleton_warrior": {
+      "loot": "9e5206b5be2df99ba4373a08a1cc9d1662fa0071c7b4dca1f8d6bb7c6f080498",
+      "world": "5fe3758b669e34c95bd88b315bb16f146cea9c8077712da0aba8eaba3e86c860"
+    },
+    "skeleton_rogue": {
+      "loot": "3c0a9523bcf5ae4819dc9a157b3d9c4bb00a030e9c61a7e319202e9576e254e4",
+      "world": "43cf48c6b80b4a873c349ef5049e14ca57c35383621470ad889ae7758a77ba34"
+    },
+    "skeleton_mage": {
+      "loot": "176889c5288f81a379e4bdd709f89b7cd0f28626416adc38d8258febec1f47c2",
+      "world": "8bb493492af03908c47ef4259e04026ce6f1e959c343400924643fede3762110"
+    },
+    "ghoul": {
+      "loot": "8257bf6ed9f3844aebd46f02d8d408f36674e9fe2f4e7fc1429b080ebffa54dc",
+      "world": "eb46e42403437a6c99b4904e9f90a5fa166c11e7a73c905ac38975c0e0acbd88"
+    },
+    "ghost": {
+      "loot": "9213b630e5cac48b313c678f39a128d57c1afb1ed0556b68d8941e8a13b38216",
+      "world": "5c393eb2df719b66b690e380f9181e9c68c888bae87d2a77de1c0566e6035c1a"
+    },
+    "bat": {
+      "loot": "a569e32f223d4bf0ae8236b831bb11cc3a59344a817918543016d6d3cd70abac",
+      "world": "5c1e23e8a44d62cdf8632fa8092d42232278b735fa81b6811d7ca02685e94f56"
+    },
+    "demon": {
+      "loot": "8c0a2544042fb272382ae076a9deb5e9fdd0c16504c148f41f33a1a05cd7204e",
+      "world": "72cf0ce3c721ccdb67e5a128397c43e089ee553782033f7276f9fc1c66bb7df3"
+    },
+    "goleling": {
+      "loot": "ca47029cb733726252f6fb6d6aa6518b9226c1b96635f6f9f7b2536430044a61",
+      "world": "db473386fe2e3359044bc0ca5c450bfd1dadb87a1a926ac5bb8602e4ab2946ee"
+    },
+    "slime": {
+      "loot": "8c0a2544042fb272382ae076a9deb5e9fdd0c16504c148f41f33a1a05cd7204e",
+      "world": "6e7c52fd7d20bc20641d2522569880f180f0e5340092268b4e199e38013e001f"
+    },
+    "succubus": {
+      "loot": "ea0669c4d6f54ef078a29088731e567677b8962ad075b5a3585e95548611e9f2",
+      "world": "7d2389f353a726bb68c112032b874e708dc5f2450b8afcf068f142a44261984f"
+    },
+    "undead_lab_human_melee": {
+      "loot": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821",
+      "world": "c291d0d550adceaf9bac3ce12ef7c01afcd0386f9bed303b1cffb678c59b1f7b"
+    }
+  }
+}

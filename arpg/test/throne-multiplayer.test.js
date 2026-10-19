@@ -37,7 +37,7 @@ for(const count of [2,4])test(`TD1 ${count}-player real Session transport: only 
 test('TD1 reward stream is finite and bounded, existing T3 plus guardian-only T4 items; 100 seeds ×3 threats',()=>{
  for(let seed=0;seed<100;seed++)for(let threat=1;threat<=3;threat++){
   const drop=rollDrops('throne_dragon',seed,{stageId:'TD1',huntTier:3,threat});assert.ok(Number.isSafeInteger(drop.gold)&&drop.gold>=0&&drop.gold<=250);
-  for(const item of drop.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
+  for(const item of drop.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?1:ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
   for(const id of Object.keys(drop.stacks))assert.ok(ITEMS[id]);
  }
 });

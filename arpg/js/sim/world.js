@@ -1,3 +1,4 @@
+import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { separateBodyPair } from './body-contact.js';
 // Deterministic round simulation. Host-authoritative in multiplayer (design §7.5, §15.2):
 // the host calls step() at 30Hz with every player's input; guests render snapshots.
@@ -117,14 +118,18 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
 export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null, facing = Math.PI } = {}) {
   const def = MONSTERS[type];
   if (!def) throw new Error(`unknown monster ${type}`);
+  const tuning = BOSS_TUNING[type];
+  hpMult *= tuning?.hp || 1;
+  dmgMult *= tuning?.damage || 1;
   const size = stageId ? monsterSizeProfile(stageId, elite, type === 'goblin_chief', rand(world))
     : { scale: 1, mean: 1, hp: 1 };
   const ent = {
     id: world.nextId++, kind: 'monster', type, team: TEAM_MONSTER,
-    x, y, r: def.r * size.scale, sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing, kx: 0, ky: 0, moving: false,
+    x, y, r: def.r * size.scale * (tuning?.size || 1), sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing, kx: 0, ky: 0, moving: false,
     hp: Math.max(1, Math.round(def.hp * hpMult * size.hp)), maxHp: Math.max(1, Math.round(def.hp * hpMult * size.hp)),
-    dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise, maxPoise: def.poise,
-    act: null, cds: {}, lastActs: [], thinkLeft: ticks(400 + rand(world) * 400),
+    dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise * (tuning?.poise || 1), maxPoise: def.poise * (tuning?.poise || 1),
+    ...(tuning ? {speedMult:tuning.speed, cdMult:tuning.cooldown, thinkMult:tuning.think} : {}),
+    act: null, cds: {}, lastActs: [], thinkLeft: ticks((400 + rand(world) * 400) * (tuning?.think || 1)),
     targetId: 0, strafe: rand(world) < 0.5 ? -1 : 1, staggerLeft: 0,
     spawnLeft: ticks(SPAWN_IN_MS), dead: false,
   };
@@ -504,7 +509,7 @@ function moveMonster(world, m, def, target, dist) {
     if (rand(world) < 0.01) m.strafe = -m.strafe;
     dir = ang + (m.strafe * Math.PI) / 2;
   }
-  const sp = (dist >= lo && dist <= hi ? def.speed * 0.45 : def.speed) * (m.slow?.speedMult ?? 1);
+  const sp = (dist >= lo && dist <= hi ? def.speed * 0.45 : def.speed) * (m.slow?.speedMult ?? 1) * (m.speedMult || 1);
   m.x += Math.cos(dir) * sp * DT;
   m.y += Math.sin(dir) * sp * DT;
   m.facing = turnToward(m.facing, ang, (540 * Math.PI / 180) * DT);
@@ -566,7 +571,7 @@ function endAct(world, ent, interrupted) {
   if (cd) ent.cds[act.id] = cd;
   if (ent.kind === 'monster') {
     ent.lastActs = [act.id, ...ent.lastActs].slice(0, 2);
-    ent.thinkLeft = ticks(220 + rand(world) * 380);
+    ent.thinkLeft = ticks((220 + rand(world) * 380) * (ent.thinkMult || 1));
   }
   if (ent.kind === 'player') {
     finishCombo(ent, act, interrupted);
@@ -705,7 +710,7 @@ function doActive(world, ent, act) {
 }
 
 // Boss identity is authored, not inferred from durability or random elite stats.
-const isBoss = t => !!(t.boss || MONSTERS[t.type]?.boss || t.type === 'goblin_chief'
+const isBoss = t => !!(isBossType(t.type) || t.boss || MONSTERS[t.type]?.boss || t.type === 'goblin_chief'
   || MONSTER_VARIANTS[t.type]?.speciesTags.includes('boss'));
 export function turnUndeadChance(value, boss = false, holy = false) {
   const intelligence = Number.isFinite(value) ? Math.max(0, value) : 0;

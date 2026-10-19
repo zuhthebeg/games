@@ -149,7 +149,7 @@ test('10,000 seeded kills: craft-first equipment rates, discounted rarity, uncha
     sigma(gearKills, 10000, gearP, `${monster} gear`); sigma(stoneKills, 10000, stoneP, `${monster} stones`);
     if (gearP === 1) sigma(bossExtra, 10000, 0.25, 'boss 2 gear');
     const total = Object.values(rarities).reduce((a, b) => a + b, 0);
-    const weights = Object.entries(gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity).map(([rarity,weight])=>[rarity,weight*ECONOMY.gearRarityMultiplier[rarity]]);
+    const weights = Object.entries(gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity).filter(([rarity])=>gearP!==1||['rare','epic'].includes(rarity)).map(([rarity,weight])=>[rarity,weight*ECONOMY.gearRarityMultiplier[rarity]]);
     const weightSum = weights.reduce((sum,[,weight])=>sum+weight,0);
     for (const [rarity, weight] of weights) sigma(rarities[rarity], total, weight / weightSum, `${monster} ${rarity}`);
     const stoneTotal = stoneTypes.reduce((a, b) => a + b, 0);

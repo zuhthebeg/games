@@ -1,3 +1,4 @@
+import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { ECONOMY, rng } from './economy.js';
 import { STAGES } from '../content/combat.js';
 import { threatMultipliers, BALANCE } from '../content/balance.js';
@@ -88,8 +89,11 @@ export function trackRound(save, tracker, events, used = {}, world = null, pid =
     }
     // Filter only equipment AFTER the original roll: every non-gear RNG stream stays intact.
     // Spend on award, not bag acceptance; overflow, sale/stash and reload cannot reroll a slot.
-    const boss = event.monster === 'goblin_chief';
-    const reservedBoss = STAGES[event.stageId]?.spawns.some(s => s.monster === 'goblin_chief');
+    const boss = isBossType(event.monster);
+    const spawns = STAGES[event.stageId]?.spawns || [];
+    // Guardians share boss loot, but must not spend the final authored boss's reserved award.
+    const primary = spawns.find(s => BOSS_TUNING[s.monster]?.primary)?.monster || spawns.find(s => isBossType(s.monster))?.monster;
+    const reservedBoss = !!primary, reservedAward = boss && (!primary || event.monster === primary);
     let gear = drop.items;
     if (boss) {
       // Keep the original first rolled boss item (including rareless pity), not the best of N.
@@ -99,11 +103,11 @@ export function trackRound(save, tracker, events, used = {}, world = null, pid =
           || instance(`drop:${seed}:chief-pity`, 'chief_maul', save.createdAt >>> 0)];
       }
     }
-    const limit = next.gearBudget - (reservedBoss && !boss && !next.bossGearAwarded ? 1 : 0);
+    const limit = next.gearBudget - (reservedBoss && !reservedAward && !next.bossGearAwarded ? 1 : 0);
     gear = event.stageId === 'S1' ? [] : gear.slice(0, Math.max(0, limit - next.gearAwarded));
     for (const item of gear) {
       next.gearAwarded++;
-      if (boss) next.bossGearAwarded = true;
+      if (reservedAward) next.bossGearAwarded = true;
       if (pickup(item.id, 1, item)) {
         picked.push(item.id);
         // Main settles tempLoot, not the whole tracker. Keep this earned guarantee marker

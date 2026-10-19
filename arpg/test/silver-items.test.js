@@ -1,3 +1,4 @@
+import {isBossType} from '../js/content/boss-tuning.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -29,12 +30,12 @@ test('C silver ingots drop only combat constructs T2+, with exact normal/elite/b
  for(const monster of constructs)for(const [rank,flags,chance]of [['normal',{},.03],['elite',{elite:true},.12],['boss',{boss:true},1]]){
   let total=0;for(let seed=1;seed<=24000;seed++){
    const loot=rollDrops(monster,seed,{huntTier:2,...flags}),r=rng(seed^0x5117e201),count=loot.stacks.silver_ingot||0;
-   const expected=rank==='boss'?1+Math.floor(r()*2):r()<chance?1:0;assert.equal(count,expected,`${monster} ${rank} ${seed}`);if(count)total++;
+   const expected=rank==='boss'||isBossType(monster)?1+Math.floor(r()*2):r()<chance?1:0;assert.equal(count,expected,`${monster} ${rank} ${seed}`);if(count)total++;
    assert.ok(loot.items.every(i=>!ITEMS[i.id].silverWeapon));
-  }assert.ok(Math.abs(total/24000-chance)<.008);rows.push({monster,rank,total,n:24000});
+  }assert.ok(Math.abs(total/24000-(isBossType(monster)?1:chance))<.008);rows.push({monster,rank,total,n:24000});
  }
  for(const monster of constructs)for(const huntTier of [2,3,4])for(const threat of [1,2,3])for(const elite of [false,true])for(let seed=1;seed<=300;seed++){
-  const expected=rng(seed^0x5117e201)()<(elite?.12:.03)*threatMultipliers(threat).drop?1:0;
+  const expected=isBossType(monster)?1+Math.floor(rng(seed^0x5117e201)()*2):rng(seed^0x5117e201)()<(elite?.12:.03)*threatMultipliers(threat).drop?1:0;
   assert.equal(rollDrops(monster,seed,{huntTier,threat,elite}).stacks.silver_ingot||0,expected);
  }
  // Life-state, not region, is authoritative: no undead boss, living, spirit or training dummy path.
@@ -52,7 +53,8 @@ test('C silver rolls retain approved catalog loot fingerprint (gold/gear/materia
  }console.log('C historical loot hashes',JSON.stringify(rows));
  assert.deepEqual(rows,HISTORICAL);
 });
-const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','a973114d4e44465ba1a56fdc4e9ea2d535b44134c76ef036f6e3ed7f1666635a'];
+// Boss entries reflect the approved rare floor; both nonboss historical hashes remain unchanged.
+const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','c7c421eafa5278126de8e74b07a42c7cbc2cd12917b6d1f1aaaca484ef9a02d7'];
 
 test('C real T2/T3 construct stages award ingots through tracker/settlement; necropolis boss never does',async()=>{
  const {createTracker,trackRound,settleRound}=await import('../js/meta/run.js');
@@ -86,8 +88,8 @@ test('C authored construct boss identity guarantees 1-2 without ctx.boss; non-bo
 test('C construct non-silver loot retains approved catalog fingerprint, including all special stones',()=>{
  for(const[monster,ctx,hash]of[
   ['goleling',{huntTier:3,stageId:'S12'},'f3401799d5b56e16a012304ceea9feed8267e70f3374affbceed7d9d18cbb233'],
-  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'dffda049258742edf0715497718259c497b97207080a76930ec8417857e3bc2d'],
-  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'059a55f8e95d95853e43e60f7a6aea0f4d0d641be4300e83f029a070d43bae0e'],
+  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'2de7cd396e4f1944c2af672e6d2a3c562b886adb7fa79cc3d89a53a87c9d6348'],
+  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'961c048cfa97ca311eeadf5c7acc41b83b17b28fbd4cee6cc55d2e0fae577572'],
   ['scarecrow',{huntTier:4,boss:true},'ff461329715346518d112f0b0180ba61d46671d9a5363dca3ff8f58d90208e6e']]){
   const rows=[];for(let seed=1;seed<=1000;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks.silver_ingot;rows.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(rows)).digest('hex'),hash,monster);
