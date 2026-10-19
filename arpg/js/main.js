@@ -475,7 +475,8 @@ try {
   });
   document.querySelector('#boot').hidden = true;
   hub.roomInvite = bootQuery.has('room');
-  if (!legacyEntry) {
+  {
+    // Debug legacy entry uses the same human slot; expose the real slot flow in every mode.
     const chooseUrl = character => {
       const url = new URL(location.href); url.searchParams.set('character', character);
       history.replaceState(null, '', url);
@@ -504,11 +505,16 @@ try {
       },
       create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
     };
-    hub.ready();
-    if (soloSelected) {
-      try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
-    } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
-  } else hub.ready();
+    // Keep debug's direct human/intro startup, without hiding real character selection.
+    if (legacyEntry) {
+      if (hub.save) hub.showInn(); else hub.showIntro();
+    } else {
+      hub.ready();
+      if (soloSelected) {
+        try { hub.action('choose-knight', {}); } catch (error) { hub.error(error.message); }
+      } else if (bootQuery.get('character') === 'human') hub.action('choose-human', {});
+    }
+  }
 
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
   let debugEnabled = debugQuery === '1';
@@ -533,6 +539,7 @@ try {
         if (!running) hub.showInn();
       },
       get world() { return world; }, get save() { return hub.save; },
+      get coop() { return !!coop; },
       get running() { return running; }, get tracker() { return tracker; } });
   }
   const inputs = { local: null };

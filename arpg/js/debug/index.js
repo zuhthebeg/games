@@ -13,6 +13,16 @@ export const DROP_PREVIEW_MONSTERS = Object.keys(MONSTERS).filter(id =>
   Object.hasOwn(NEW_MONSTER_DROPS, id)
   || ['scarecrow', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief'].includes(id));
 
+// Delegate to the normal chooser: strict real-slot ownership and creation stay in one place.
+export function switchRealCharacter(context, slot) {
+  if (context.running) throw new Error('전투 중 캐릭터 전환 불가. 정산 후 여관에서 사용.');
+  if (context.coop) throw new Error('같이 사냥 로비에서 나간 뒤 캐릭터를 전환하세요.');
+  if (context.undead) throw new Error('저장 안 되는 해골 데모를 종료한 뒤 전환하세요.');
+  if (!['human', 'skeleton_knight'].includes(slot)) throw new Error('지원하지 않는 캐릭터');
+  context.input.reset();
+  context.hub.action(slot === 'human' ? 'choose-human' : 'choose-skeleton', {});
+}
+
 export function mountDebug(context) {
   const { hub, store, renderer } = context;
   const combat = createCombatController();
@@ -35,7 +45,8 @@ export function mountDebug(context) {
   const options = values => values.map(value => `<option value="${value}">${value}</option>`).join('');
   const btn = (action, label) => `<button type="button" data-debug="${action}">${label}</button>`;
   panel.innerHTML = `<h2>개발자 디버그 ${btn('close', '닫기')}</h2><output id="arpg-debug-status" aria-live="polite">로컬 테스트 전용 · 결정론 보장 안 함</output>
-    <h3>언데드 디버그 · 해골 기사만 · 저장 안 됨</h3>${btn('undead-start', '언데드로 시작')}${btn('undead-return', '인간으로 돌아가기')}<small>고정 프리셋 · 솔로 1전투 · 회피 미지원 · 3직업/진화 아님</small><h3>여관 (전투 중 저장 금지)</h3>${btn('gold:1000', '골드 +1,000')}${btn('gold:10000', '골드 +10,000')}${btn('stones', '강화석 각 +10')}${btn('materials', '모든 재료 각 +20')}${btn('potions', '물약류 +5')}
+    <h3>실제 캐릭터 · 독립 슬롯 저장</h3>${btn('real-skeleton', '해골 실제 캐릭터 · 생성/이어하기 (저장됨)')}${btn('real-human', '인간 실제 캐릭터로')}<small>여관·묘지에서 전환 · 기존 캐릭터는 덮어쓰지 않음</small>
+    <h3>언데드 디버그 · 해골 기사만 · 저장 안 됨</h3>${btn('undead-start', '해골 데모 · 저장 안 됨')}${btn('undead-return', '데모 종료 · 원래 캐릭터로')}<small>고정 프리셋 · 솔로 1전투 · 회피 미지원 · 3직업/진화 아님</small><h3>여관 (전투 중 저장 금지)</h3>${btn('gold:1000', '골드 +1,000')}${btn('gold:10000', '골드 +10,000')}${btn('stones', '강화석 각 +10')}${btn('materials', '모든 재료 각 +20')}${btn('potions', '물약류 +5')}
     <label>부위<select id="dbg-slot">${options([...SLOTS, 'random'])}</select></label><label>등급<select id="dbg-rarity">${options(RARITIES)}</select></label><label>Tier<select id="dbg-tier">${options([1, 2, 3])}</select></label>
     <small>T3 템플릿 없음: 현재 T2로 지급. affix는 템플릿 Tier 기준.</small><div>${btn('gear', '장비 지급')}${btn('set', '등급별 전 부위 세트 (20개)')}</div>
     <label>레벨<input id="dbg-level" type="number" min="1" max="${MAX_LEVEL}" value="${MAX_LEVEL}"></label>${btn('level', '레벨·포인트 설정')}${btn('points', '포인트 회수 (스탯 초기화)')}
@@ -79,8 +90,13 @@ export function mountDebug(context) {
   const requireSave = () => { requireInn(); if (!hub.save) throw new Error('먼저 캐릭터를 생성하세요.'); return hub.save; };
   const execute = async action => {
     if (action === 'close') { togglePanel(); return; }
+    if (action === 'real-skeleton' || action === 'real-human') {
+      switchRealCharacter(context, action === 'real-human' ? 'human' : 'skeleton_knight');
+      panel.hidden = true; toggle.setAttribute('aria-expanded', 'false');
+      status('실제 캐릭터 선택 · 독립 슬롯 저장'); return;
+    }
     if (action === 'undead-start') { if (await context.startUndead() === false) return; panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); return; }
-    if (action === 'undead-return') { context.leaveUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); status('인간 세션 복귀 · 세이브 변경 없음'); return; }
+    if (action === 'undead-return') { context.leaveUndead(); panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); status('원래 캐릭터 복귀 · 세이브 변경 없음'); return; }
     if (action === 'reset' && context.undeadStarting) { context.leaveUndead(); status('준비 취소 · 세이브 변경 없음'); return; }
     if (context.undead) throw new Error('언데드 디버그에서는 다시 시작/인간 복귀만 사용하세요. 저장·치트·즉시 정산 불가');
     if (['god', 'oneHit', 'mana'].includes(action)) {
