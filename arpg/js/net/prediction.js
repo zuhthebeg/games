@@ -126,12 +126,12 @@ export class LocalPrediction {
   // The pawn is drawn ahead (replayed input) while other bodies are drawn at the
   // buffered past, and replay has no body contacts. Draw the pawn outside the bodies
   // the guest actually sees; prediction state, authority and reconciliation are untouched.
-  displayContact(pawn, world) {
+  displayContact(pawn, world, dodge = pawn.dodge) {
     if (bodyWeight(pawn, world.tick) === 0) { this.lastContactView = null; return pawn; }
     let { x, y } = pawn;
-    const ref = this.lastContactView;
+    const ref = this.lastContactView, contactPawn = dodge === pawn.dodge ? pawn : { ...pawn, dodge };
     for (const e of world.entities) {
-      if (e.kind === 'player' || !bodyContactEligible(pawn, e)) continue;
+      if (e.kind === 'player' || !bodyContactEligible(contactPawn, e)) continue;
       const min = pawn.r + e.r, dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy);
       // Keep the side the pawn was drawn on last frame, so deep replay never pops through.
       const rx = ref ? ref.x - e.x : 0, ry = ref ? ref.y - e.y : 0, rd = Math.hypot(rx, ry);
@@ -141,6 +141,28 @@ export class LocalPrediction {
       else if (rd > 1e-6) { nx = rx / rd; ny = ry / rd; }
       else { nx = Math.cos(pawn.facing || 0); ny = Math.sin(pawn.facing || 0); }
       x = e.x + nx * min; y = e.y + ny * min;
+      const a = world.arena;
+      if (a) {
+        const lo = pawn.r, hiX = a.w - lo, hiY = a.h - lo;
+        x = Math.max(lo, Math.min(hiX, x)); y = Math.max(lo, Math.min(hiY, y));
+        if (Math.hypot(x - e.x, y - e.y) < min - 1e-9) {
+          // A wall can erase the radial exit. Choose the nearest feasible circle/
+          // arena-edge intersection instead of clamping back into the body.
+          const candidates = [];
+          for (const edge of [lo, hiX]) {
+            const q = min * min - (edge - e.x) ** 2;
+            if (q >= 0) for (const sign of [-1, 1]) candidates.push({ x: edge, y: e.y + sign * Math.sqrt(q) });
+          }
+          for (const edge of [lo, hiY]) {
+            const q = min * min - (edge - e.y) ** 2;
+            if (q >= 0) for (const sign of [-1, 1]) candidates.push({ x: e.x + sign * Math.sqrt(q), y: edge });
+          }
+          const origin = ref || pawn;
+          const exit = candidates.filter(c => c.x >= lo && c.x <= hiX && c.y >= lo && c.y <= hiY)
+            .sort((a, b) => Math.hypot(a.x-origin.x, a.y-origin.y) - Math.hypot(b.x-origin.x, b.y-origin.y))[0];
+          if (exit) { x = exit.x; y = exit.y; }
+        }
+      }
     }
     const a = world.arena;
     if (a) { x = Math.max(pawn.r, Math.min(a.w - pawn.r, x)); y = Math.max(pawn.r, Math.min(a.h - pawn.r, y)); }
@@ -152,7 +174,7 @@ export class LocalPrediction {
     const p = this.displayPawn(this.state);
     return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
       ? this.displayContact({ ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
-        dodge: p.dodge, x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world) : e) };
+        x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world, p.dodge) : e) };
   }
   diagnostics() {
     return { ...this.stats, averageDistance: this.stats.corrections ? this.stats.totalDistance / this.stats.corrections : 0,

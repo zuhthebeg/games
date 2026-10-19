@@ -47,3 +47,22 @@ test('display contact: result stays inside the arena', () => {
   const out = lp.displayContact(pawn(20, 400), world(mob(30, 400)));
   assert.ok(out.x >= 17 && out.x <= arena.w - 17);
 });
+
+
+test('display contact: arena clamp must not push the pawn back into the body', () => {
+  const lp = new LocalPrediction('g'), m = mob(30, 30), p = pawn(20, 20);
+  const out = lp.displayContact(p, world(m));
+  assert.ok(Math.hypot(out.x-m.x, out.y-m.y) >= p.r+m.r-1e-9);
+  assert.ok(out.x >= p.r && out.y >= p.r);
+});
+
+test('view keeps sampled authoritative dodge state while contact uses predicted dash', () => {
+  const lp = new LocalPrediction('g');
+  const sampled = pawn(430,400,{dodge:{dashLeft:0,cooldown:10}});
+  lp.enabled=true; lp.state={...sampled,dodge:{dashLeft:3,cooldown:9}};
+  const w={...world(sampled,mob(435,400)),projectiles:[]};
+  const before=JSON.stringify(w), out=lp.view(w).entities[0];
+  assert.deepEqual(out.dodge,sampled.dodge);
+  assert.equal(out.x,430,'predicted dash still bypasses display contact');
+  assert.equal(JSON.stringify(w),before);
+});
