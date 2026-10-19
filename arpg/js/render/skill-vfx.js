@@ -1,3 +1,4 @@
+import { HolyVfx } from './holy-vfx.js';
 import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
 import { Assets, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
@@ -93,6 +94,7 @@ export function windupProgress(act) {
 export class SkillVfx {
   constructor(Graphics, layer, options = {}) {
     this.layer = layer;
+    this.holy = new HolyVfx(Graphics, layer);
     // Additive light on the dark arena for shapes; particles stay one normal batch.
     const graphic = (add = true) => { const node = new Graphics(); node.visible = false; if (add) node.blendMode = 'add'; layer.addChild(node); return node; };
     this.effects = Array.from({ length: VFX_CAPS.effects }, () => ({ node: graphic(), wave: graphic(), left: 0 }));
@@ -194,6 +196,7 @@ export class SkillVfx {
     }
   }
   reset() {
+    this.holy.reset();
     for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) { if (slot.baked) slot.baked.visible = false; slot.bakedActive = false; }
     for (const slot of this.projectiles) { if (slot.baked) slot.baked.visible = false; slot.bakedAge = 0; }
     for (const item of [...this.effects, ...this.particles]) { item.left = 0; item.node.visible = false; if (item.wave) item.wave.visible = false; }
@@ -351,6 +354,7 @@ export class SkillVfx {
     return spawned;
   }
   event(event, world, reduced = false) {
+    if (event.type === 'turnUndead') { this.holy.event(event, world, reduced); return false; }
     const profile = this.profile(event.ability);
     if (!profile) return false;
     this.requestSkill(event.ability, reduced);
@@ -558,6 +562,7 @@ export class SkillVfx {
     }
   }
   update(world, alpha, dt, reduced) {
+    this.holy.update(dt);
     for (const slot of this.actors) slot.seen = false;
     for (const entity of world.entities) this.actor(entity, world.tick, reduced);
     for (const slot of this.actors) if (!slot.seen) {

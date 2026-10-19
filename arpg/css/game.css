@@ -1082,3 +1082,11 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 .recipe-empty{padding:12px 0;font-size:13px;line-height:1.7}
 .recipe-empty button{min-height:44px}
 .recipe-set{display:block;color:#d3ad6d;margin-top:3px}
+
+/* Set disclosure shares the stats read model, including on compact cards. */
+.item-set{display:block;min-width:0;max-width:100%;margin-top:8px;padding:8px;border:1px solid #6c623b;border-radius:7px;text-align:left;font-size:11px;line-height:1.55;white-space:normal;overflow-wrap:anywhere}
+.item-set>strong,.set-tier,.set-member{display:block}
+.set-members{display:flex;flex-wrap:wrap;gap:2px 9px;margin:3px 0}
+.set-member.equipped{color:#e9dca2}.set-member.owned{color:#a7aca0}.set-member.missing,.set-tier.muted{color:#7e8581}.set-tier.gain{color:#a7e5b4;font-weight:700}
+.active-sets{font-size:12px;line-height:1.5;margin:8px 0;overflow-wrap:anywhere}
+.p2-card-copy{min-width:0}

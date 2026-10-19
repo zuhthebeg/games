@@ -4,7 +4,7 @@ import { skeletonAppearance } from '../render/skeleton-equipment-state.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from '../meta/knight-equipment.js';
 import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier, effectiveWeight } from '../meta/items.js';
-import { STAT_NAMES } from '../meta/stats.js';
+import { STAT_NAMES, setStatus, equippedSets } from '../meta/stats.js';
 import { AFFIX_LABELS, AFFIX_UNITS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
@@ -71,7 +71,7 @@ export function splitComparisonHtml(item, save, { ignoreEnhancement = false } = 
       + (changedOrSet(ITEMS[current?.id]?.requiredStr || 0, ITEMS[item.id].requiredStr || 0) ? extraRow('requiredStr','필요 힘',ITEMS[current?.id]?.requiredStr || 0,ITEMS[item.id].requiredStr || 0) : '')
       + affixes.slice(0,2).map(rowHtml).join(''))
     + `${more.length ? `<details class="compare-more" data-comparison-group="affixes"><summary>옵션 ${more.length}개 더</summary>${table(more.map(rowHtml).join(''))}</details>` : ''}`
-    + `${derived.length ? `<details class="compare-more" data-comparison-group="derived"><summary>세부 변화 ${derived.length}</summary>${table(derived.map(rowHtml).join(''))}</details>` : ''}</section>`;
+    + `${derived.length ? `<details class="compare-more" data-comparison-group="derived"><summary>세부 변화 ${derived.length}</summary>${table(derived.map(rowHtml).join(''))}</details>` : ''}${current ? itemSetHtml(current, save) : ''}${itemSetHtml(item, save)}</section>`;
 }
 
 // Cards are deliberately brief, but explicitly disclose every changed/lost affix count.
@@ -89,6 +89,19 @@ export function summaryHtml(item, save) {
   return lines.map(line => `<span class="${line.good ? 'gain' : 'loss'}">${escape(line.label)} ${line.delta > 0 ? '▲' : '▼'}${amount(Math.abs(line.delta))}${line.unit ? ` ${line.unit}` : ''}</span>`).join(' ') + optionHintHtml(comparison);
 }
 
+// Span-only markup is valid inside a card button as well as a detail sheet.
+export function itemSetHtml(item, save) {
+  const set = setStatus(save, ITEMS[item?.id]?.setId);
+  if (!set) return '';
+  return `<span class="item-set" data-set="${set.id}" aria-label="${escape(set.name)} 세트"><strong>${escape(set.name)} 세트 · 착용 ${set.count}/${set.parts}</strong>`
+    + `<span class="set-members">${set.members.map(m => `<span class="set-member ${m.equipped ? 'equipped' : m.owned ? 'owned' : 'missing'}">${m.equipped ? '✓' : m.owned ? '◇' : '·'} ${escape(m.name)}${m.equipped ? ' (착용)' : m.owned ? ' (보유)' : ''}</span>`).join('')}</span>`
+    + set.bonuses.map(b => `<span class="set-tier ${b.active ? 'gain' : 'muted'}" data-active="${b.active}" data-count="${b.count}">(${b.count}세트) ${escape(b.label)}${b.active ? ' · 활성' : ' · 비활성'}</span>`).join('') + '</span>';
+}
+export function activeSetsHtml(save) {
+  const active = equippedSets(save).filter(set => set.bonuses.some(b => b.active));
+  return `<section class="active-sets" aria-label="활성 세트"><strong>활성 세트</strong> · ${active.length ? active.map(set => `${escape(set.name)} ${set.count}/${set.parts} · ${set.bonuses.filter(b => b.active).map(b => `(${b.count}세트) ${escape(b.label)} · 활성`).join(' · ')}`).join('<br>') : '없음'}</section>`;
+}
+
 export function cardHtml(item, save, { action = 'open-item', compact = false, extra = '', note = '', disabled = false } = {}) {
   const def = ITEMS[item.id];
   const locked = !meetsRequirement(save, def);
@@ -98,7 +111,7 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
     + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>${def.handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : def.form === 'wand' ? '<small>한손 완드 · 방패 장착 가능</small>' : ''}`
     + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
-    + `${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : `해골 Lv.${KNIGHT_ARMOR_LEVELS[def.kind]} 해금`}</small>` : ''}</span></button>`;
+    + `${itemSetHtml(item, save)}${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : `해골 Lv.${KNIGHT_ARMOR_LEVELS[def.kind]} 해금`}</small>` : ''}</span></button>`;
 }
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
@@ -140,7 +153,7 @@ export function socketsHtml(save) {
 }
 
 // Actual model contributions, including zeros: own-item details must not disappear into deltas.
-export function itemDetailsHtml(item) {
+export function itemDetailsHtml(item, save) {
   const def = ITEMS[item.id], mult = enhanceMultiplier(item.enhance);
   const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
   const rows = [row('family', '종류', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경갑',medium:'중갑',heavy:'판금'}[def.armorClass] || SLOT_NAMES[def.slot]),
@@ -157,5 +170,5 @@ export function itemDetailsHtml(item) {
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),
     ...(def.requiredStr ? [row('str', '필요 힘', def.requiredStr)] : [])];
   const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${AFFIX_UNITS[k] ? `${AFFIX_UNITS[k] === '%' ? '' : ' '}${AFFIX_UNITS[k]}` : ''}`));
-  return `<section class="item-details">${dropOriginHtml(item)}<dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl></section>`;
+  return `<section class="item-details">${dropOriginHtml(item)}<dl class="p2-lines">${rows.join('')}${affixes.join('')}</dl>${itemSetHtml(item, save)}</section>`;
 }

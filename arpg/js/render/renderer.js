@@ -512,10 +512,14 @@ export class ArenaRenderer {
       }
       view.shadow.alpha = entity.dead ? Math.max(0, 1 - view.anim.deadAge / .7) : 1;
       view.anim.frozen = frozen || entity.frozenUntil > world.tick;
+      view.holyLeft = Math.max(0, (view.holyLeft || 0) - deltaTime);
       view.anim.flash = this.reduced || view.flashLeft <= 0 ? 0 : view.flashAlpha;
+      if (view.holyLeft > 1 && !this.reduced) view.anim.flash = 1;
       view.flashLeft = Math.max(0, view.flashLeft - deltaTime);
       if (view.stealthAlpha) {view.visual.container.alpha=1;view.stealthAlpha=false;}
+      if (view.holyFade) { view.visual.container.alpha = 1; view.holyFade = false; }
       view.visual.update(entity, view.anim, view.anim.frozen ? 0 : visualDelta);
+      if (view.holyLeft > 0 && entity.dead) { view.visual.container.alpha *= Math.min(1, view.holyLeft / .9); view.holyFade = true; }
       if (entity.invisibleUntil>world.tick) {view.visual.container.alpha*=.32;view.stealthAlpha=true;}
       if (entity.invisibleUntil>world.tick) view.shadow.alpha=.18;
       if (!frozen) view.anim.hurt = Math.max(0, view.anim.hurt - visualDelta);

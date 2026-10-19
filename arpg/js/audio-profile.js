@@ -53,6 +53,9 @@ export function eventCues(event, localId, entities = []) {
   const source = entity(entities, event.src ?? event.id);
   if (event.zonePulse || event.type === 'zonePulse') return [];
   if (event.type === 'explode' && event.ability === 'meteor') return [cue('fire-impact', 'hit', .8, .75, 'meteor-impact', .1)];
+  if (event.type === 'turnUndead') return [event.success
+    ? cue('heal-cast', 'level-up', 1.35, .8, 'holy-success', .12)
+    : cue('blunt-impact', 'hit', .65, .55, 'holy-resist', .12)];
   if (event.type === 'act' && event.id === localId) {
     // Healing confirms only at healCast; windup/act phases must not repeat its bell.
     if (event.ability === 'healing_light') return [];

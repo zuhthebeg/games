@@ -7,7 +7,9 @@ export function healingFeedback(renderer, event) {
     return true;
   }
   if (event.type === 'turnUndead') {
-    renderer.effect(event.x, event.y, 45, event.success ? 0xf5df9b : 0x9ca6b0, .4);
+    // Pillar/runes/motes are owned by the fixed HolyVfx pool.
+    const target = renderer.views?.get(event.dst);
+    if (target && event.success) target.holyLeft = 1.2;
     renderer.number(event.success ? '정화' : '저항', event.x, event.y, event.success ? 0xf5df9b : 0x9ca6b0);
     return true;
   }

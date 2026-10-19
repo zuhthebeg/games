@@ -43,11 +43,22 @@ export function allocateStats(save, allocation) {
   return next;
 }
 
+// One read model for both derived stats and every set-item presentation.
+export function setStatus(save, id) {
+  const def = EQUIPMENT_SETS[id];
+  if (!def) return null;
+  save ||= {items:[],equipped:{}};
+  const equipped = SLOTS.map(slot => { const item = equippedItem(save, slot); return ITEMS[item?.id]?.slot === slot ? item : null; }).filter(Boolean);
+  const count = new Set(equipped.filter(item => ITEMS[item.id].setId === id).map(item => ITEMS[item.id].slot)).size;
+  const members = Object.entries(ITEMS).filter(([key, item]) => item.setId === id && (item.baseId || key) === key).map(([key, item]) => ({
+    id:key, name:item.name, slot:item.slot,
+    equipped:equipped.some(worn => (ITEMS[worn.id].baseId || worn.id) === key),
+    owned:(save?.items || []).some(owned => (ITEMS[owned.id]?.baseId || owned.id) === key),
+  }));
+  return {id,...def,count,members,bonuses:def.bonuses.map(b => ({...b,active:count >= b.count}))};
+}
 export function equippedSets(save) {
-  return Object.entries(EQUIPMENT_SETS).map(([id,def])=>{
-    const slots=new Set(SLOTS.filter(slot=>ITEMS[equippedItem(save,slot)?.id]?.setId===id && ITEMS[equippedItem(save,slot)?.id]?.slot===slot));
-    return {id,...def,count:slots.size,bonuses:def.bonuses.map(b=>({...b,active:slots.size>=b.count}))};
-  });
+  return Object.keys(EQUIPMENT_SETS).map(id => setStatus(save, id));
 }
 export function setBonuses(save) {
   const totals={};

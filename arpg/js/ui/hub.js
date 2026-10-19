@@ -29,7 +29,7 @@ import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
 import {
   escape, amount, itemLabel, dropOriginHtml, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
-  linesHtml, splitComparisonHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml,
+  linesHtml, splitComparisonHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml, itemDetailsHtml, itemSetHtml, activeSetsHtml,
 } from './gear-view.js';
 
 import { setPortraitDirection, PORTRAIT_DIRECTIONS } from '../render/paperdoll-portrait.js';
@@ -379,7 +379,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 침입 동의방에서 몬스터 편 참가<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}
+    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 침입 동의방에서 몬스터 편 참가<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}${activeSetsHtml(this.save)}
       ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
@@ -598,7 +598,7 @@ export class HubUI {
       : `<p class="minor">${SLOT_NAMES[slot]} · 비어 있음</p>`;
     const list = items.map(item => cardHtml(item, this.save)).join('')
       || `<p class="muted">교체할 ${SLOT_NAMES[slot]} 장비 없음</p>`;
-    this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
+    this.mountSheet(this.dialogHtml(`${SLOT_NAMES[slot]} 장비`, `${head}${current ? itemDetailsHtml(current, this.save) : ''}<h3>교체 후보</h3><div class="p2-stock">${list}</div>`,
       `<div class="socket-actions">${button(`${icon('weapon')}${this.hubCopy('장비상 둘러보기', '도굴꾼 둘러보기')}`, 'merchant', `data-tab="${slot === 'weapon' ? 'weapon' : 'armor'}"`)}${current && (slot === 'offhand' || this.save.lineage === 'skeleton_knight' && slot !== 'weapon') ? button('장착 해제', 'unequip', `data-slot="${slot}" data-uid="${escape(current.uid)}"`) : ''}</div>${current ? this.enhanceAction(current) : ''}`));
   }
 
@@ -643,7 +643,7 @@ export class HubUI {
     const buyQuote = { total:item.price, remaining:this.save.gold-item.price, weightAfter:carriedWeight(this.save), limit:capacity(this.save), reasons:this.save.shopBought.includes(uid) ? ['품절'] : this.save.gold < item.price ? ['골드 부족'] : [] };
     // Compare only when actually choosing against a worn piece (cocy 10-11: no compare while just viewing).
     const choosing = mode !== 'sell' && !worn && !!current;
-    const body = (choosing ? `${this.comparisonHtml(item)}${otherFamily ? '<p class="p2-hint">다른 무기 계열</p>' : ''}<details class="compare-more own-details"><summary>상세</summary>${itemDetailsHtml(item)}</details>` : itemDetailsHtml(item))
+    const body = (choosing ? `${this.comparisonHtml(item)}${otherFamily ? '<p class="p2-hint">다른 무기 계열</p>' : ''}<details class="compare-more own-details"><summary>상세</summary>${itemDetailsHtml(item, this.save)}</details>` : itemDetailsHtml(item, this.save))
       + `${mode === 'buy' ? purchaseLedgerHtml(buyQuote) : ''}`;
     this.mountSheet(this.dialogHtml(mode === 'sell' ? '매입' : mode === 'buy' ? '구매' : choosing ? '장비 비교' : '장비 정보', body, footer));
   }
@@ -652,7 +652,7 @@ export class HubUI {
     const item = this.save.items.find(candidate => candidate.uid === uid);
     if (!item || isWorn(this.save, uid)) throw new Error('착용 장비는 분해할 수 없습니다.');
     this.mountSheet(this.dialogHtml('분해', `<div class="p2-item-heading">${emblem(item)}<div><h3>${escape(itemLabel(item))}</h3>`
-      + `<small>${this.dismantleText(item)} · 되돌릴 수 없음</small></div></div>`,
+      + `<small>${this.dismantleText(item)} · 되돌릴 수 없음</small></div></div>${itemSetHtml(item, this.save)}`,
     `<div class="p2-two">${button('취소', 'close-sheet')}${button(`분해 · ${this.dismantleText(item)}`, 'confirm-dismantle', `data-uid="${escape(uid)}" class="quiet-danger"`)}</div>`));
   }
 
@@ -793,7 +793,7 @@ export class HubUI {
       const preview = craftPreview(id);
       const odds = craftOdds(this.save, id).map(o => `${GRADES[o.rarity]} ${Number((o.chance * 100).toFixed(3))}%`).join(" · ");
       const parts = Object.entries(recipe).map(([key, count]) => `<span class="${recipeHeld(this.save, key) < count ? 'loss' : ''}">${key === 'gold' ? 'G' : ITEMS[key].name}: ${recipeHeld(this.save, key)} / ${count}</span>`).join(' · ');
-      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}${preview ? ` · T${ITEMS[id].huntTier} 양질 이상 · 무작위 등급` : ''}</b>${set ? `<small class="recipe-set">세트 · ${escape(set.name)}</small>` : ''}<small class="recipe-parts">${parts}</small>${preview ? `<small class="craft-odds">행운 반영 결과: ${odds} · 양질 이상 보장</small>` : ''}${preview ? `<details class="recipe-comparison" data-preview-id="${preview.id}"><summary>양질 +0 기준 · 현재 착용과 비교</summary><p class="minor">무작위 옵션 제외 · 실제 결과는 제작 후 확정</p>${splitComparisonHtml(preview, this.save)}</details>` : ''}${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
+      return `<article class="recipe"><span class="item-emblem">${itemIcon(id, ITEMS[id])}</span><div><b>${ITEMS[id].name}${preview ? ` · T${ITEMS[id].huntTier} 양질 이상 · 무작위 등급` : ''}</b>${set ? `<small class="recipe-set">세트 · ${escape(set.name)}</small>` : ''}<small class="recipe-parts">${parts}</small>${itemSetHtml({id}, this.save)}${preview ? `<small class="craft-odds">행운 반영 결과: ${odds} · 양질 이상 보장</small>` : ''}${preview ? `<details class="recipe-comparison" data-preview-id="${preview.id}"><summary>양질 +0 기준 · 현재 착용과 비교</summary><p class="minor">무작위 옵션 제외 · 실제 결과는 제작 후 확정</p>${splitComparisonHtml(preview, this.save)}</details>` : ''}${ITEMS[id].handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}${ITEMS[id].silverWeapon ? `<small>제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% · 은 주괴: ${escape(ITEMS.silver_ingot.description)}</small>` : ''}<small id="craft-reason-${id}" class="recipe-shortage ${shortages.length ? 'loss' : 'gain'}">${shortages.length ? shortages.join(' · ') : '제작 가능'}</small></div>`
         + `${button('제작', 'craft', `data-id="${id}" aria-describedby="craft-reason-${id}"`, shortages.length > 0)}</article>`;
     }).join('');
     const hiddenCount = craftingRecipes().length - revealed.length;
@@ -811,7 +811,7 @@ export class HubUI {
     const item = this.save.items.find(candidate => candidate.uid === this.selectedUid);
     if (!item) return '';
     const uid = `data-uid="${escape(item.uid)}"`, worn = isWorn(this.save, item.uid);
-    return `<section class="forge-salvage"><div class="p2-item-heading">${emblem(item)}<h3>${escape(itemLabel(item))}</h3></div><div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
+    return `<section class="forge-salvage"><div class="p2-item-heading">${emblem(item)}<h3>${escape(itemLabel(item))}</h3></div>${itemSetHtml(item, this.save)}<div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}${button(`분해 · ${this.dismantleText(item)}`, 'dismantle', `${uid} class="quiet-danger"`, worn)}${button(`판매 ${sellPrice(item)} G`, 'sell', uid, worn)}</div></section>`;
   }
 
   stoneWorkshopHtml() {
@@ -1033,7 +1033,7 @@ export class HubUI {
     const loot = receipt.lootKept;
     const materials = Object.entries(loot.stacks).filter(([, count]) => count > 0).map(([id, count]) =>
       `<span class="reward ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? 'loot-highlight' : ''}" ${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `data-premium="${id}"` : ''} title="${ITEMS[id].name}" aria-label="${ITEMS[id].name} ${count}">${itemIcon(id, ITEMS[id])}${['rune_shard','frost_shard','dragon_scale','silver_ingot'].includes(id) ? `득템 · ${ITEMS[id].name} ` : ''}×${count}</span>`).join('');
-    const gear = loot.items.map(item => `<article class="gear-card ${item.enhance > 0 ? 'loot-highlight' : ''}">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${dropOriginHtml(item)}${linesHtml(comparisonFor(item, this.save))}</div></article>`).join('');
+    const gear = loot.items.map(item => `<article class="gear-card ${item.enhance > 0 ? 'loot-highlight' : ''}">${emblem(item)}<div><b>${escape(itemLabel(item))}</b>${dropOriginHtml(item)}${linesHtml(comparisonFor(item, this.save))}${itemSetHtml(item, this.save)}</div></article>`).join('');
     return `<div class="receipt"><div class="reward-pair">
       <div><small>경험치</small><strong class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</strong>
         ${receipt.xpLost ? `<small class="loss" aria-label="손실 경험치">−${amount(receipt.xpLost)}</small>` : ''}</div>
