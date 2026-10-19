@@ -1,6 +1,7 @@
 import { WEAPONS } from '../content/combat.js';
 import { AttackPresentation } from './attack-presentation.js';
 import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
+import { bodyContactEligible, bodyWeight } from '../sim/body-contact.js';
 
 const TICK_MS = 1000 / 30;
 // Two command ticks are the shortest tested whole-tick window with <24px
@@ -8,6 +9,12 @@ const TICK_MS = 1000 / 30;
 // Keep normal drift's 24px cutoff; only evidenced hits may use up to twice that budget.
 const HIT_WINDOW_MS = 2 * TICK_MS, HIT_LIMIT_PX = 48;
 const lerp = (a, b, t) => a + (b - a) * t;
+// Does the segment from the last drawn pawn to (x,y) pass through a body?
+function crossesBody(from, x, y, e, min) {
+  const sx = x - from.x, sy = y - from.y, len2 = sx * sx + sy * sy;
+  const t = len2 > 0 ? Math.max(0, Math.min(1, ((e.x - from.x) * sx + (e.y - from.y) * sy) / len2)) : 0;
+  return Math.hypot(from.x + sx * t - e.x, from.y + sy * t - e.y) < min;
+}
 
 // A display-only local pawn. Never owns a sim world or exposes predicted HUD/combat.
 export class LocalPrediction {
@@ -116,12 +123,36 @@ export class LocalPrediction {
     }
     return p;
   }
+  // The pawn is drawn ahead (replayed input) while other bodies are drawn at the
+  // buffered past, and replay has no body contacts. Draw the pawn outside the bodies
+  // the guest actually sees; prediction state, authority and reconciliation are untouched.
+  displayContact(pawn, world) {
+    if (bodyWeight(pawn, world.tick) === 0) { this.lastContactView = null; return pawn; }
+    let { x, y } = pawn;
+    const ref = this.lastContactView;
+    for (const e of world.entities) {
+      if (e.kind === 'player' || !bodyContactEligible(pawn, e)) continue;
+      const min = pawn.r + e.r, dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy);
+      // Keep the side the pawn was drawn on last frame, so deep replay never pops through.
+      const rx = ref ? ref.x - e.x : 0, ry = ref ? ref.y - e.y : 0, rd = Math.hypot(rx, ry);
+      if (d >= min && !(rd > 1e-6 && dx * rx + dy * ry < 0 && crossesBody(ref, x, y, e, min))) continue;
+      let nx, ny;
+      if (d > 1e-6 && (rd < 1e-6 || dx * rx + dy * ry > 0)) { nx = dx / d; ny = dy / d; }
+      else if (rd > 1e-6) { nx = rx / rd; ny = ry / rd; }
+      else { nx = Math.cos(pawn.facing || 0); ny = Math.sin(pawn.facing || 0); }
+      x = e.x + nx * min; y = e.y + ny * min;
+    }
+    const a = world.arena;
+    if (a) { x = Math.max(pawn.r, Math.min(a.w - pawn.r, x)); y = Math.max(pawn.r, Math.min(a.h - pawn.r, y)); }
+    this.lastContactView = { x, y };
+    return x === pawn.x && y === pawn.y ? pawn : { ...pawn, x, y };
+  }
   view(world) {
-    if (!world || !this.enabled || !this.state) return world;
+    if (!world || !this.enabled || !this.state) { this.lastContactView = null; return world; }
     const p = this.displayPawn(this.state);
     return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? { ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
-        x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
+      ? this.displayContact({ ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
+        dodge: p.dodge, x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world) : e) };
   }
   diagnostics() {
     return { ...this.stats, averageDistance: this.stats.corrections ? this.stats.totalDistance / this.stats.corrections : 0,
