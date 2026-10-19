@@ -72,12 +72,13 @@ test('display contact: walking around the side of a body slides, never pops acro
   const m = mob(435, 400);
   let last = lp.displayContact(pawn(400, 400), world(m));
   // Replayed pawn drifts around and ends past the body on its left-up side.
-  const path = [[402, 395], [404, 380], [406, 372], [430, 360]];
-  for (const [x, y] of path) {
+  let prev = { x: 400, y: 400 };
+  for (const [x, y] of [[430, 400], [428, 385], [425, 368], [422, 364]]) {
     const out = lp.displayContact(pawn(x, y), world(m));
     assert.ok(Math.hypot(out.x - m.x, out.y - m.y) >= 35 - 1e-6, 'never inside');
-    assert.ok(Math.hypot(out.x - last.x, out.y - last.y) <= 40, 'no pop across the body');
-    last = out;
+    const moved = Math.hypot(x - prev.x, y - prev.y);
+    assert.ok(Math.hypot(out.x - last.x, out.y - last.y) <= moved * 1.5 + 2 + 1e-6, 'slides no faster than the pawn moves');
+    last = out; prev = { x, y };
   }
 });
 
