@@ -53,6 +53,9 @@ export class ArenaRenderer {
     // Snapshot-owned ground marks; text distinguishes pickup and return without color.
     this.spellZones = new Graphics();
     this.layers.skillFx.addChild(this.spellZones);
+    this.holyWash = new Graphics();
+    this.holyWash.visible = false; this.holyWashLeft = 0;
+    this.layers.fx.addChild(this.holyWash);
     this.questRing = new Graphics();
     this.layers.skillFx.addChild(this.questRing);
     this.questLabels = ['반납: 입구', '회수: 장부', ''].map(text => {
@@ -97,6 +100,7 @@ export class ArenaRenderer {
 
   reset(world, reduced = false, equipmentSave) {
     this.skillVfx.reset();
+    this.holyWash.clear(); this.holyWash.visible = false; this.holyWashLeft = 0;
     this.spellZones.clear();
     if (equipmentSave) {
       this.skillVfx.setMastery(world.entities[0].pid, masteryLevels(equipmentSave));
@@ -449,6 +453,11 @@ export class ArenaRenderer {
       screenWidth / 2 - this.camera.x * this.scale + Math.sin(this.time * FEEL.shake.frequencyX) * shake * FEEL.shake.maxX,
       screenHeight / 2 - this.camera.y * this.scale + Math.sin(this.time * FEEL.shake.frequencyY) * shake * FEEL.shake.maxY,
     );
+    this.holyWashLeft = Math.max(0, this.holyWashLeft - deltaTime);
+    this.holyWash.clear();
+    this.holyWash.visible = !this.reduced && this.holyWashLeft > 0;
+    if (this.holyWash.visible) this.holyWash.rect(this.camera.x-halfWidth, this.camera.y-halfHeight, halfWidth*2, halfHeight*2)
+      .fill({color:0xffedbb,alpha:.045*this.holyWashLeft/.16});
     const objective = world.round?.objective;
     this.questRing.clear();
     this.questLabels.forEach(label => { label.visible = false; });

@@ -8,6 +8,7 @@ import { ITEMS } from '../js/meta/items.js';
 import { EQUIPMENT_SETS } from '../js/content/equipment-sets.js';
 import { itemDetailsHtml, itemSetHtml, cardHtml, activeSetsHtml } from '../js/ui/gear-view.js';
 import { createSave } from '../js/meta/save.js';
+import { healingFeedback } from '../js/render/healing-feedback.js';
 import { eventCues } from '../js/audio-profile.js';
 const save = () => createSave({name:'Test',answers:[0,0,0,0,0],weapon:'blade',createdAt:1});
 const numeric = ['maxHp','capacity','ac','hpRegen','speed_pct','mpRegen','atk_pct'];
@@ -44,4 +45,13 @@ for(const success of [false,true])for(const reduced of [false,true])test(`holy $
 test('authoritative event integrates through SkillVfx and sound differs on resistance',()=>{
  const fx=new SkillVfx(Graphics,new Container());fx.event({type:'turnUndead',ability:'turn_undead',x:1,y:2,success:true},{entities:[]});assert.equal(fx.holy.slots[0].left,1.2);fx.reset();assert.equal(fx.holy.slots[0].left,0);
  assert.equal(eventCues({type:'turnUndead',success:true})[0].name,'heal-cast');assert.equal(eventCues({type:'turnUndead',success:false})[0].name,'blunt-impact');
+});
+
+test('holy screen wash and corpse flash are success-only and reduced motion omits wash',()=>{
+ for(const reduced of [false,true])for(const success of [false,true]){
+  const target={},r={reduced,views:new Map([[2,target]]),number(){}};
+  healingFeedback(r,{type:'turnUndead',success,dst:2,x:0,y:0});
+  assert.equal(r.holyWashLeft,success&&!reduced?.16:undefined);
+  assert.equal(target.holyLeft,success?1.2:undefined);
+ }
 });

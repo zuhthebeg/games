@@ -41,7 +41,7 @@ export class HolyVfx {
     const radius=(s.success?36:19)*s.size, height=s.reduced?70:Math.max(420,s.y+80), tip=s.y-height*(1-Math.min(1,age/.12));
     const color=s.success?white:0x999ba5;
     if(s.success || age<.2){
-      for(let i=s.reduced?1:3;i>=0;i--)b.rect(s.x-radius*(.12+i*.25),s.y-height,radius*(.24+i*.5),Math.max(0,height-(s.y-tip))).fill({color:i?gold:color,alpha:i?.055:.8});
+      for(let i=s.reduced?1:3;i>=0;i--)b.rect(s.x-radius*(.12+i*.25),s.y-height,radius*(.24+i*.5),Math.max(0,height-(s.y-tip))).fill({color:i?(s.success?gold:0x858b99):color,alpha:i?.055:.8});
       b.ellipse(s.x,s.y,radius*(.5+t*2),radius*(.25+t)).stroke({color:s.success?gold:color,width:s.reduced?1:3,alpha:fade});
       if(s.success){
         b.moveTo(s.x,s.y-69*s.size).lineTo(s.x,s.y-11).moveTo(s.x-18*s.size,s.y-48*s.size).lineTo(s.x+18*s.size,s.y-48*s.size).stroke({color:white,width:5,alpha:Math.max(0,1-age*1.2)});
