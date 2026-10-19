@@ -1,4 +1,5 @@
 import { WEAPONS } from '../content/combat.js';
+import { AttackPresentation } from './attack-presentation.js';
 import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
 
 const TICK_MS = 1000 / 30;
@@ -12,6 +13,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 export class LocalPrediction {
   constructor(uid, { multiplayerDodge = false } = {}) {
     this.multiplayerDodge = multiplayerDodge;
+    this.attacks = new AttackPresentation();
     this.uid = uid; this.pending = []; this.state = null; this.arena = null; this.others = [];
     this.enabled = false; this.offset = { x: 0, y: 0 }; this.smoothLeft = 0; this.preview = null;
     this.authority = null; this.hitSmoothing = false; this.roundEnded = false;
@@ -21,7 +23,7 @@ export class LocalPrediction {
     const displayed = this.state ? this.displayPawn(this.state) : null;
     const p = world.entities.find(e => e.kind === 'player' && e.pid === this.uid);
     if (!p || !Number.isSafeInteger(p.lastInputSeq) || !Number.isFinite(p.speed) || !p.dodge) {
-      this.enabled = false; this.state = null; this.pending = []; this.authority = null; this.clearOffset(); return;
+      this.enabled = false; this.state = null; this.pending = []; this.authority = null; this.attacks.clear(); this.clearOffset(); return;
     }
     // Compare fresh authority with previous authority, not replayed HP/impulse decay.
     const previous = this.authority, fresh = previous && world.tick > previous.tick;
@@ -32,13 +34,15 @@ export class LocalPrediction {
     const hit = hpDrop || newHurt || newImpulse;
     this.authority = { tick: world.tick, hp: p.hp, hurtInvuln: p.hurtInvuln || 0, impulse };
     this.enabled = true; this.arena = world.arena; this.tick = world.tick;
+    this.attacks.reconcile(p, world);
     this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
     let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null, ...(p.combo ? { combo: { ...p.combo } } : {}) };
+    next.act = this.attacks.bind(next.act, p.lastInputSeq);
     this.roundEnded = !!(world.round?.state && world.round.state !== 'running');
     const blocked = predictionBlocked(p) || this.roundEnded;
-    if (blocked) this.pending = [];
-    else for (const row of this.pending) { next = predictPlayerTick(next, row.input, this); this.tick++; }
+    if (blocked) { this.pending = []; this.attacks.clear(); }
+    else for (const row of this.pending) { next = this.attacks.track(next, predictPlayerTick(next, row.input, this), row.seq); this.tick++; }
     if (this.state) {
       const target = this.displayPawn(next);
       const dx = displayed.x + this.offset.x - target.x, dy = displayed.y + this.offset.y - target.y;
@@ -93,7 +97,9 @@ export class LocalPrediction {
       this.pending.push({ seq: packet.seq, input: command, dt });
       // Bound memory through an outage. Stop predicting rather than invent lost history.
       if (this.pending.length > 256) { this.enabled = false; this.pending = []; this.clearOffset(); return; }
-      this.state = predictPlayerTick(this.state, command, this); this.tick++;
+      this.attacks.timeout = this.presentationTimeout ?? 100;
+      this.attacks.advance(this.state, dt);
+      this.state = this.attacks.track(this.state, predictPlayerTick(this.state, command, this), packet.seq); this.tick++;
     }
   }
   // Display-only partial tick: the not-yet-committed fraction of the current tick,
@@ -106,16 +112,16 @@ export class LocalPrediction {
     if (this.preview && !this.roundEnded && !predictionBlocked(p)) {
       // Blend toward the tick the current input will produce; continuous at tick boundaries.
       const next = predictPlayerTick(p, this.preview.input, this), t = Math.min(1, this.preview.ms / TICK_MS);
-      p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving, ...(next.shieldGuard ? {shieldGuard:{...next.shieldGuard}} : {}) };
+      p = { ...p, x: lerp(p.x, next.x, t), y: lerp(p.y, next.y, t), facing: next.facing, moving: next.moving, ...(!p.act && next.act && next.act.id !== WEAPONS[p.weapon]?.basic ? { act: next.act } : {}), ...(next.shieldGuard ? {shieldGuard:{...next.shieldGuard}} : {}) };
     }
     return p;
   }
   view(world) {
     if (!world || !this.enabled || !this.state) return world;
     const p = this.displayPawn(this.state);
-    return { ...world, entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? { ...e, ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo },
-          ...((p.act?.id === WEAPONS[p.weapon].basic || e.act?.id === WEAPONS[p.weapon].basic) ? { act: p.act } : {}) } : {}), x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
+    return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
+      ? { ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
+        x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving } : e) };
   }
   diagnostics() {
     return { ...this.stats, averageDistance: this.stats.corrections ? this.stats.totalDistance / this.stats.corrections : 0,

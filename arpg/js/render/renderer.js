@@ -656,6 +656,7 @@ export class ArenaRenderer {
         this.projectiles.set(particle.id, graphic);
       }
       graphic.visible = true;
+      graphic.alpha = particle.presentationAlpha ?? 1;
       graphic.position.set(
         graphic.prevX + (particle.x - graphic.prevX) * alpha,
         graphic.prevY + (particle.y - graphic.prevY) * alpha,

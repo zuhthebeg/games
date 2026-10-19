@@ -520,6 +520,7 @@ export class SkillVfx {
     slot.seen = true;
     const x = slot.prevX + (particle.x - slot.prevX) * alpha, y = slot.prevY + (particle.y - slot.prevY) * alpha;
     slot.node.visible = true; slot.node.position.set(x, y);
+    slot.node.alpha = particle.presentationAlpha ?? 1;
     slot.node.rotation = Math.atan2(particle.vy, particle.vx);
     slot.clock += dt;
     if (slot.clock >= .025 || !slot.count) {
@@ -535,7 +536,7 @@ export class SkillVfx {
       node.position.set(lastX, lastY); node.rotation = Math.atan2(hy - lastY, hx - lastX);
       node.scale.set(Math.hypot(hx - lastX, hy - lastY), 1);
       node.tint = profile.color;
-      node.alpha = (reduced ? .1 : .7) * (1 - i / VFX_CAPS.trail);
+      node.alpha = (reduced ? .1 : .7) * (1 - i / VFX_CAPS.trail) * (particle.presentationAlpha ?? 1);
       lastX = hx; lastY = hy;
     }
     if (slot.baked) slot.baked.visible = false;
@@ -546,6 +547,7 @@ export class SkillVfx {
       // body and trail instead of replacing them, or the shot reads as invisible in flight.
       if (clip) this.baked(slot, particle.abilityId, 'projectile', x, y, slot.node.rotation,
         particle.r, (slot.bakedAge * clip.fps % clip.textures.length) / clip.textures.length);
+      if (slot.baked?.visible) slot.baked.alpha = particle.presentationAlpha ?? 1;
     }
   }
 

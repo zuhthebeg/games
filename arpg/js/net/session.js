@@ -221,6 +221,7 @@ export class CoopSession {
     if (this.isHost) { this.latches[this.uid]?.receive(this.sender.packet(input, load, this.eventAck), this.now); if (!this.lootLedger) setLoad(this.world, this.uid, load); }
     else {
       // One command per 30Hz sim tick, predicted with the host's exact tick step.
+      this.prediction.presentationTimeout = Math.max(100, (this.rtt ?? 500) + 100);
       this.tickInput = mergeInput(this.tickInput, { ...input, viewTick: this.renderTick ?? this.buffer.currentTick?.(this.now, this.rtt) });
       this.inputLeft = Math.min(this.inputLeft + dt, 8 * TICK_MS);
       while (this.inputLeft >= TICK_MS) {
