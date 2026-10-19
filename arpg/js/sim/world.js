@@ -1,3 +1,4 @@
+import { separateBodyPair } from './body-contact.js';
 // Deterministic round simulation. Host-authoritative in multiplayer (design §7.5, §15.2):
 // the host calls step() at 30Hz with every player's input; guests render snapshots.
 // Inputs are per-tick: booleans named *Edge are true only on the tick the button went down
@@ -1125,25 +1126,10 @@ function separate(world) {
       const b = ents[j];
       if (!alive(b) || b.spawnLeft > 0) continue;
       if (a.kind === 'player' && b.kind === 'player') continue;
-      // dodging players pass through monsters
-      if ((a.kind === 'player' && a.dodge.dashLeft > 0) || (b.kind === 'player' && b.dodge.dashLeft > 0)) continue;
-      const min = a.r + b.r;
-      const d2 = dist2(a.x, a.y, b.x, b.y);
-      if (d2 >= min * min || d2 === 0) continue;
-      const d = Math.sqrt(d2);
-      const push = (min - d) / 2;
-      const nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
-      const aw = isDashing(a) || a.frozenUntil > world.tick ? 0 : 1, bw = isDashing(b) || b.frozenUntil > world.tick ? 0 : 1;
-      const tot = aw + bw || 1;
-      a.x -= nx * push * 2 * (aw / tot);
-      a.y -= ny * push * 2 * (aw / tot);
-      b.x += nx * push * 2 * (bw / tot);
-      b.y += ny * push * 2 * (bw / tot);
+      separateBodyPair(a, b, world.arena, world.tick);
     }
   }
 }
-
-const isDashing = (e) => e.act && e.act.phase === 'active' && e.act.def.delivery === 'dash';
 
 function clampToArena(world, e) {
   Object.assign(e, arenaPosition(e, world.arena));
