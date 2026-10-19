@@ -44,25 +44,25 @@ export function allocateStats(save, allocation) {
 }
 
 // One read model for both derived stats and every set-item presentation.
-export function setStatus(save, id) {
+export function setStatus(save, id, includeMembers = true) {
   const def = EQUIPMENT_SETS[id];
   if (!def) return null;
   save ||= {items:[],equipped:{}};
   const equipped = SLOTS.map(slot => { const item = equippedItem(save, slot); return ITEMS[item?.id]?.slot === slot ? item : null; }).filter(Boolean);
   const count = new Set(equipped.filter(item => ITEMS[item.id].setId === id).map(item => ITEMS[item.id].slot)).size;
-  const members = Object.entries(ITEMS).filter(([key, item]) => item.setId === id && (item.baseId || key) === key).map(([key, item]) => ({
+  const members = !includeMembers ? [] : Object.entries(ITEMS).filter(([key, item]) => item.setId === id && (item.baseId || key) === key).map(([key, item]) => ({
     id:key, name:item.name, slot:item.slot,
     equipped:equipped.some(worn => (ITEMS[worn.id].baseId || worn.id) === key),
     owned:(save?.items || []).some(owned => (ITEMS[owned.id]?.baseId || owned.id) === key),
   }));
   return {id,...def,count,members,bonuses:def.bonuses.map(b => ({...b,active:count >= b.count}))};
 }
-export function equippedSets(save) {
-  return Object.keys(EQUIPMENT_SETS).map(id => setStatus(save, id));
+export function equippedSets(save, includeMembers = true) {
+  return Object.keys(EQUIPMENT_SETS).map(id => setStatus(save, id, includeMembers));
 }
 export function setBonuses(save) {
   const totals={};
-  for(const set of equippedSets(save))for(const b of set.bonuses)if(b.active)for(const key of ['maxHp','capacity','ac','hpRegen','speed_pct','mpRegen','atk_pct'])if(b[key])totals[key]=(totals[key]||0)+b[key];
+  for(const set of equippedSets(save, false))for(const b of set.bonuses)if(b.active)for(const key of ['maxHp','capacity','ac','hpRegen','speed_pct','mpRegen','atk_pct'])if(b[key])totals[key]=(totals[key]||0)+b[key];
   return totals;
 }
 export function deriveMods(save) {
