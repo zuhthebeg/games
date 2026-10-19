@@ -66,3 +66,39 @@ test('view keeps sampled authoritative dodge state while contact uses predicted 
   assert.equal(out.x,430,'predicted dash still bypasses display contact');
   assert.equal(JSON.stringify(w),before);
 });
+
+test('display contact: walking around the side of a body slides, never pops across it', () => {
+  const lp = new LocalPrediction('g');
+  const m = mob(435, 400);
+  let last = lp.displayContact(pawn(400, 400), world(m));
+  // Replayed pawn drifts around and ends past the body on its left-up side.
+  const path = [[402, 395], [404, 380], [406, 372], [430, 360]];
+  for (const [x, y] of path) {
+    const out = lp.displayContact(pawn(x, y), world(m));
+    assert.ok(Math.hypot(out.x - m.x, out.y - m.y) >= 35 - 1e-6, 'never inside');
+    assert.ok(Math.hypot(out.x - last.x, out.y - last.y) <= 40, 'no pop across the body');
+    last = out;
+  }
+});
+
+test('display contact: leaving a held contact eases out instead of jumping to the replay', () => {
+  const lp = new LocalPrediction('g');
+  const m = mob(435, 400);
+  lp.displayContact(pawn(400, 400), world(m));
+  const held = lp.displayContact(pawn(430, 400), world(m));
+  assert.ok(held.x <= 400 + 1e-6);
+  // The body vanishes (dies/moves off); the replayed pawn is 30px ahead.
+  const a = lp.displayContact(pawn(430, 400), world());
+  assert.ok(a.x > held.x && a.x < 430, 'moves toward the replay, not a 30px jump');
+  let x = a.x;
+  for (let i = 0; i < 12; i++) x = lp.displayContact(pawn(430, 400), world()).x;
+  assert.ok(Math.abs(x - 430) < .1, 'converges to the replay');
+});
+
+test('display contact: free movement far from bodies is unchanged frame by frame', () => {
+  const lp = new LocalPrediction('g');
+  for (let i = 0; i < 20; i++) {
+    const p = pawn(100 + i * 8, 600);
+    assert.equal(lp.displayContact(p, world(mob(900, 200))), p);
+  }
+});
