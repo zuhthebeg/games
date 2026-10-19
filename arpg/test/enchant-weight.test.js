@@ -70,20 +70,20 @@ test('all compare builders hide equal affixes, primary values, enhancement and s
 test('forge blessed lists capped +1/+2 targets with guaranteed survival at safe and risky starts', () => {
   const h=Object.create(HubUI.prototype);h.save=fresh();h.selectedUid='starter:weapon';h.forgeStone='enhance_stone_blessed';
   h.save.stacks.enhance_stone_blessed=10;
-  for(const [level,target] of [[5,'+6 / +7'],[9,'+10 / +11'],[10,'+11 / +12'],[11,'+12']]) {
+  for(const [level,target] of [[5,'+6 / +7'],[9,'+10 / +11'],[10,'+11 / +12'],[11,'+12 / +13']]) {
     h.save.items[0].enhance=level;const {html,footer}=h.forgeDetail();
     assert.ok(html.includes(target));assert.equal((html.match(/축복 · \+1~2/g)||[]).length,1);
     assert.match(html,/파괴 없음/);assert.doesNotMatch(html+footer,/파괴 위험|주문서|성공 (?!100%)\d+%|undefined|NaN/);
     assert.doesNotMatch(footer,/disabled/);assert.match(footer,/1개/);
   }
-  h.save.items[0].enhance=12;assert.match(h.forgeDetail().footer,/disabled/);
+  h.save.items[0].enhance=20;assert.match(h.forgeDetail().footer,/disabled/);
   for(const level of [11,12]) assert.equal(enchantPresentation({id:'training_sword',outcome:'success',from:9,to:level,risky:true}).title,`+${level} 강화 성공!`);
 });
 
 test('forge cursed explains exact weights and non-positive results truthfully without normal danger odds', () => {
  const h=Object.create(HubUI.prototype);h.save=fresh();h.selectedUid='starter:weapon';h.forgeStone='enhance_stone_cursed';h.save.stacks.enhance_stone_cursed=3;h.save.items[0].enhance=7;
- const {html,footer}=h.forgeDetail();assert.match(html,/저주 · -1~\+3/);assert.match(html,/15%.*20%.*30%.*25%.*10%/);assert.match(html,/파괴 없음/);
- assert.doesNotMatch(html+footer,/성공 40%|파괴 위험|주문서/);assert.match(html,/보유 3개/);assert.match(footer,/1개/);
+ const {html,footer}=h.forgeDetail();assert.match(html,/저주 · 생존 시 -1~\+3/);assert.match(html,/15%.*20%.*30%.*25%.*10%/);assert.match(html,/생존 78% · 파괴 22%/);
+ assert.doesNotMatch(html+footer,/성공 40%|주문서/);assert.match(html,/보유 3개/);assert.match(footer,/1개/);
  assert.match(enchantPresentation({id:'training_sword',outcome:'success',from:7,to:6,risky:true}).title,/약화/);
  assert.match(enchantPresentation({id:'training_sword',outcome:'success',from:7,to:7,risky:true}).title,/변화 없음/);
 });

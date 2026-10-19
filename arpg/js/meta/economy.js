@@ -5,16 +5,20 @@ export const SLOTS = [...LEGACY_SLOTS, 'offhand'];
 // Plain stones cost five per attempt; specials are shared by every equipment slot.
 // Normal failures above the safe line destroy gear; rates use the CURRENT level.
 export const ENCHANT = {
-  safe: 6, max: 12,
-  rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2, 10: 0.15, 11: 0.10 },
+  safe: 6, max: 20,
+  rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2, 10: 0.15, 11: 0.10, 12: 0.09, 13: 0.08, 14: 0.07, 15: 0.06, 16: 0.05, 17: 0.04, 18: 0.03, 19: 0.02 },
   stonesPerAttempt: 5, greaterYield: [5, 10],
-  // Dismantle refund by enhance level (+0..+12); the greater stone is the "cash out" at +7 and above.
+  // Dismantle refund by enhance level (+0..+20); the greater stone is the "cash out" at +7 and above.
   // cocy 10-14: every enhanced item returns stones on dismantle (+1 was 0).
-  dismantleStones: [0, 1, 2, 3, 4, 5, 7, 10, 14, 18, 24, 30, 38],
-  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5],
+  dismantleStones: [0, 1, 2, 3, 4, 5, 7, 10, 14, 18, 24, 30, 38, 46, 56, 68, 82, 98, 116, 136, 158],
+  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
   // A destroyed item leaves this fraction of its dismantle stones, never the greater stone.
   failRefund: 0.5,
-  // Blessed always succeeds; cursed never destroys gear.
+  // Non-bone blessed keeps legacy protection through +11; beyond +12 every stone risks destruction.
+  // Cursed trades conditional -1..+3 jumps for destruction even before its step is drawn.
+  cursedDestroy: { 6: .20, 7: .22, 8: .24, 9: .26, 10: .28, 11: .30 },
+  blessedHighDestroy: [.08, .12, .16, .20, .24, .28, .32, .36],
+  cursedHighDestroy: [.35, .40, .45, .50, .55, .60, .65, .70],
   blessedSteps: [1, 2], blessedRiskWeights: [85, 15],
   cursedSteps: [-1, 0, 1, 2, 3], cursedWeights: [15, 20, 30, 25, 10],
   stoneCount: { normal: [1, 2], elite: [2, 3], boss: [3, 5] },

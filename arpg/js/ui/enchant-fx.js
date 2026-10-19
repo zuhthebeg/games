@@ -18,7 +18,7 @@ export function enchantPresentation(result, reduced = false) {
     holdMs: reduced ? 700 : crack ? 700 : destroyed ? 1050 : result.risky ? 900 : 420,
     title: crack ? `강화석 ${result.count}개` : destroyed ? '장비가 산산조각 났다' : result.to < result.from ? `+${result.to} 약화` : result.to === result.from ? `+${result.to} 변화 없음` : `+${result.to}${result.risky ? ' 강화 성공!' : ''}`,
     detail: crack ? ITEMS[result.id].name : destroyed ? `남은 강화석 ${result.refund?.enhance_stone_1 || 0}개` : ITEMS[result.id].name,
-    sound: destroyed ? 'kill' : 'level-up',
+    sound: destroyed ? 'kill' : !crack && result.to < result.from ? 'enchant-down' : !crack && result.to === result.from ? 'hurt' : 'level-up',
   };
 }
 

@@ -97,3 +97,12 @@ test('ritual presentation accepts only existing charge/success/fracture/destruct
   assert.deepEqual(played,['dodge','critical','hurt','level-up','kill']);
   assert.ok(played.every(clip=>SFX.includes(clip)));
 });
+
+test('downgrade synthesis falls 220→55Hz, uses master, obeys mute/cooldown/voice cap and releases nodes', async()=>{
+ const {audio}=fixture();await audio.unlock();const ctx=audio.context,oscillators=[],gains=[];
+ ctx.createOscillator=()=>{const o={type:null,frequency:{setValueAtTime:(v,t)=>o.first=[v,t],exponentialRampToValueAtTime:(v,t)=>o.last=[v,t]},connect:n=>o.connected=n,disconnect:()=>o.disconnected=true,start:t=>o.started=t,stop:t=>{o.stopped=t;if(t===undefined)o.onended?.();}};oscillators.push(o);return o;};
+ ctx.createGain=()=>{const g={gain:{setValueAtTime:(v,t)=>g.first=[v,t],exponentialRampToValueAtTime:(v,t)=>g.last=[v,t]},connect:n=>g.connected=n,disconnect:()=>g.disconnected=true};gains.push(g);return g;};
+ assert.equal(audio.play('enchant-down'),true);const o=oscillators[0],g=gains[0];assert.equal(o.type,'triangle');assert.deepEqual(o.first,[220,0]);assert.deepEqual(o.last,[55,.42]);assert.equal(o.stopped,.46);assert.equal(o.connected,g);assert.equal(g.connected,audio.master);assert.equal(audio.play('enchant-down'),false);o.onended();assert.ok(o.disconnected&&g.disconnected);assert.equal(audio.voices.size,0);
+ ctx.currentTime=1;assert.equal(audio.play('enchant-down'),true);audio.setMuted(true);assert.equal(audio.voices.size,0);assert.equal(audio.play('enchant-down'),false);assert.equal(audio.master.gain.value,0);
+ audio.setMuted(false);ctx.currentTime=2;for(let i=0;i<FEEL.audio.voices;i++)assert.equal(audio.play('enchant-down',{key:'down'+i}),true);assert.equal(audio.play('enchant-down',{key:'overflow'}),false);audio.stop();assert.equal(audio.voices.size,0);
+});

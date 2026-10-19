@@ -760,7 +760,7 @@ export class HubUI {
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}${this.forgeRecipesHtml()}`
         : `${html}${picker}`;
     this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftResultHtml()}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
-      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반 강화석 파괴 위험 · 뼈 세트는 +0부터 모든 강화석 파괴 위험` });
+      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반·저주 파괴 위험 · +12부터 축복도 위험·비용 증가 · 뼈 세트는 +0부터 모든 강화석 파괴 위험` });
   }
 
   craftResultHtml() {
@@ -870,22 +870,22 @@ export class HubUI {
     const preview = enchantPreview(this.save, item.uid, this.forgeStone);
     const projected = { ...item, enhance: preview.maxed ? item.enhance : preview.outcomes[0] };
     const picker = ENCHANT_STONES.map(id => `<button type="button" data-action="pick-stone" data-id="${id}" aria-pressed="${id === this.forgeStone}">`
-      + `${itemIcon(id, ITEMS[id])}<span>${ITEMS[id].name}<small>보유 ${this.save.stacks[id] || 0}개 · 1회 ${id === STONE ? ENCHANT.stonesPerAttempt : 1}개</small></span></button>`).join('');
+      + `${itemIcon(id, ITEMS[id])}<span>${ITEMS[id].name}<small>보유 ${this.save.stacks[id] || 0}개 · 1회 ${enchantPreview(this.save, item.uid, id).cost}개</small></span></button>`).join('');
     const target = preview.outcomes.map(level => `+${level}`).join(' / ');
-    const danger = preview.bone || preview.risky && !preview.blessed && !preview.cursed;
-    const odds = preview.maxed ? '최대 강화' : danger ? `성공 ${pct(preview.chance)} · 실패 시 파괴` : '파괴 없음';
+    const danger = preview.destroyChance > 0;
+    const odds = preview.maxed ? '최대 강화' : danger ? `${preview.cursed || preview.blessed ? '생존' : '성공'} ${pct(preview.chance)} · 파괴 ${pct(preview.destroyChance)}` : '파괴 없음';
     const html = `<section class="forge-work ${danger ? 'risky' : ''} ${preview.blessed ? 'blessed' : ''} ${preview.cursed ? 'cursed' : ''}" aria-label="강화 의식">
       <div class="forge-item-title"><small>${worn ? '착용 중' : '보관 장비'} · ${GRADES[ITEMS[item.id].rarity]}</small><h3>${escape(ITEMS[item.id].name)}</h3>${ITEMS[item.id].handedness === 2 ? '<small>양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : ''}</div>
       <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
       <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target}</strong></div>
-      ${preview.blessed ? `<p class="forge-blessing">축복 · ${preview.bone ? '성공 시 ' : ''}+1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
-      ${preview.cursed ? `<p class="forge-blessing">저주 · ${preview.bone ? '성공 시 ' : ''}-1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>` : ''}
+      ${preview.blessed ? `<p class="forge-blessing">축복 · ${danger ? '생존 시 ' : ''}+1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
+      ${preview.cursed ? `<p class="forge-blessing">저주 · ${danger ? '생존 시 ' : ''}-1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>` : ''}
       <strong class="forge-odds">${odds}</strong>
       <div class="p2-stones stone-picker" role="group" aria-label="사용할 강화석">${picker}</div>
       ${!preview.maxed && preview.have < preview.cost ? '<p class="p2-hint">강화석 부족</p>' : ''}
-      ${preview.maxed ? '' : `<details class="forge-preview"><summary>강화 후 능력치${preview.cursed ? ' · 최저 결과 기준' : ''}</summary>${linesHtml(compareItems(item, projected, this.save))}</details>`}</section>`;
+      ${preview.maxed ? '' : `<details class="forge-preview"><summary>강화 후 능력치${preview.cursed ? ' · 최저 결과 기준' : ''}</summary>${linesHtml(compareItems(item, projected, this.save))}<p class="p2-hint">${preview.probabilities.map(row => `${row.to === null ? '파괴' : `+${row.to}`} ${Number((row.chance * 100).toFixed(3))}%`).join(' · ')}</p></details>`}</section>`;
     const label = preview.maxed ? '최대 강화' : preview.have < preview.cost ? '강화 불가 · 강화석 부족'
-      : `강화 · ${ITEMS[this.forgeStone].name} ${preview.cost}개${danger ? ` · 성공 ${pct(preview.chance)} · 파괴 위험` : ''}`;
+      : `강화 · ${ITEMS[this.forgeStone].name} ${preview.cost}개${danger ? ` · ${preview.cursed || preview.blessed ? '생존' : '성공'} ${pct(preview.chance)} · 파괴 위험` : ''}`;
     return { html, footer: button(label, 'enhance', `${uid} data-stone="${this.forgeStone}" class="primary ${danger ? 'danger' : ''}"`, preview.maxed || preview.have < preview.cost) };
   }
 

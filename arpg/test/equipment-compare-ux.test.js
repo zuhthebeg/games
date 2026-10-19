@@ -85,7 +85,7 @@ test('owned detail entry points share last-footer enhance route even without scr
     assert.match(h.sheet,/<\/div><\/footer><\/dialog>$/);assert.doesNotMatch(h.sheet,/data-action="socket-forge"[^>]*disabled/);
   }
   h.showSocket('weapon');assert.match(h.sheet,/class="item-enhance-action"/);
-  h.save.items.find(i=>i.uid==='bow').enhance=12;h.openItem('bow');assert.match(h.sheet,/data-action="socket-forge"[^>]*disabled/);assert.match(h.sheet,/최대 강화 \+12/);
+  h.save.items.find(i=>i.uid==='bow').enhance=20;h.openItem('bow');assert.match(h.sheet,/data-action="socket-forge"[^>]*disabled/);assert.match(h.sheet,/최대 강화 \+20/);
   const offer=shopStock(h.save.createdAt,h.save.shopRefresh)[0];h.openItem(offer.uid,'buy');assert.doesNotMatch(h.sheet,/data-action="socket-forge"/);
   const before=structuredClone(h.save);h.openEnhancement=()=>{h.forgeOpened=true};h.action('socket-forge',{uid:'wand'});
   assert.equal(h.selectedUid,'wand');assert.equal(h.forgeTab,'enhance');assert.equal(h.forgeOpened,true);assert.deepEqual(h.save,before);assert.equal(h.persisted.length,0);

@@ -45,7 +45,7 @@ test('risky rates over 4,000 accounts match 50/40/30/20/15/10 within ±3σ; fail
       if (result.outcome === 'success') { kept++; assert.equal(result.to, level + 1); continue; }
       assert.equal(next.items.some((item) => item.uid === 'starter:weapon'), false);
       const refund = Math.floor(ENCHANT.dismantleStones[level] * ENCHANT.failRefund);
-      assert.equal(next.stacks.enhance_stone_1 || 0, save.stacks[W] - 5 + refund);
+      assert.equal(next.stacks.enhance_stone_1 || 0, save.stacks[W] - enchantPreview(save, 'starter:weapon', W).cost + refund);
       assert.equal(next.stacks.enhance_stone_3 || 0, 0);
       assert.equal(next.equipped.weapon, 'spare');
     }
@@ -96,43 +96,43 @@ test('blessed guarantees safe uniform +1/+2 and risky 85/15, never destroys or s
   }
 });
 
-test('cursed -1/0/+1/+2/+3 uses 15/20/30/25/10 with no destruction, floor 0 and cap 12', () => {
-  const n=10000,counts=[0,0,0,0,0];
+test('cursed conditional -1/0/+1/+2/+3 retains weights with real destruction, floor0 and cap20', () => {
+  const n=10000,counts=[0,0,0,0,0];let survived=0;
   for(let seed=1;seed<=n;seed++) {
     const base=weaponAt(withStones(fresh(seed)),7),attempt=enchant(base,'starter:weapon',CW);
-    assert.equal(attempt.result.outcome,'success'); counts[attempt.result.to-6]++;
-    assert.equal(attempt.save.stacks[CW],99);assert.equal(attempt.save.stacks[W],100);
+    if(attempt.result.outcome==='success'){survived++;counts[attempt.result.to-6]++;}
+    assert.equal(attempt.save.stacks[CW],99);if(attempt.result.outcome==='success')assert.equal(attempt.save.stacks[W],100);
     assert.ok(validateSave(attempt.save));assert.deepEqual(enchant(base,'starter:weapon',CW),attempt);
   }
-  for(const [i,p] of [.15,.20,.30,.25,.10].entries()) assert.ok(Math.abs(counts[i]-n*p)<4*Math.sqrt(n*p*(1-p)),`${counts}`);
-  for(const [level,targets] of [[0,[0,1,2,3]],[11,[10,11,12]]]) {
+  for(const [i,p] of [.15,.20,.30,.25,.10].entries()) assert.ok(Math.abs(counts[i]-survived*p)<4*Math.sqrt(survived*p*(1-p)),`${counts}`);
+  for(const [level,targets] of [[0,[0,1,2,3]],[19,[18,19,20]]]) {
     assert.deepEqual(enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',CW).outcomes,targets);
-    const seen=new Set();for(let seed=1;seed<400;seed++) {const {save,result}=enchant(weaponAt(withStones(fresh(seed)),level),'starter:weapon',CW);seen.add(result.to);assert.ok(validateSave(save));}
+    const seen=new Set();for(let seed=1;seed<400;seed++) {const {save,result}=enchant(weaponAt(withStones(fresh(seed)),level),'starter:weapon',CW);if(result.outcome==='success')seen.add(result.to);assert.ok(validateSave(save));}
     assert.deepEqual([...seen].sort((a,b)=>a-b),targets);
   }
 });
 
-test('+12 caps all jumps and save validation while +10 and older saves still roundtrip', () => {
-  assert.equal(ENCHANT.max, 12);
-  for (const level of [10, 11]) {
+test('+20 caps all jumps and save validation while +12 and older saves still roundtrip', () => {
+  assert.equal(ENCHANT.max, 20);
+  for (const level of [18, 19]) {
     const base = weaponAt(withStones(fresh()), level);
-    assert.deepEqual(enchantPreview(base, 'starter:weapon', BW).outcomes, level === 10 ? [11,12] : [12]);
+    assert.deepEqual(enchantPreview(base, 'starter:weapon', BW).outcomes, level === 18 ? [19,20] : [20]);
     const seen = new Set();
     for (let seed = 1; seed <= 1000; seed++) {
       const { save, result } = enchant(weaponAt(withStones(fresh(seed)), level), 'starter:weapon', BW);
       assert.ok(validateSave(save));
-      if (result.outcome === 'success') {assert.ok(result.to <= 12);seen.add(result.to);}
+      if (result.outcome === 'success') {assert.ok(result.to <= 20);seen.add(result.to);}
     }
-    assert.deepEqual([...seen].sort(), level === 10 ? [11,12] : [12]);
+    assert.deepEqual([...seen].sort(), level === 18 ? [19,20] : [20]);
   }
   const storage = new Map();
   const store = new SaveStore({getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)});
-  for (let level = 0; level <= 12; level++) {
+  for (let level = 0; level <= 20; level++) {
     const save = weaponAt(withStones(fresh()), level);
     store.save(save);assert.deepEqual(store.load(),save);
   }
-  for (const scroll of [W,BW]) assert.throws(()=>enchant(weaponAt(withStones(fresh()),12),'starter:weapon',scroll), /최대/);
-  assert.equal(validateSave(weaponAt(withStones(fresh()),13)),false);
+  for (const scroll of [W,BW]) assert.throws(()=>enchant(weaponAt(withStones(fresh()),20),'starter:weapon',scroll), /최대/);
+  assert.equal(validateSave(weaponAt(withStones(fresh()),21)),false);
 });
 
 test('greater stone keeps 5~10 attempts of value as 25~50 plain stones, seeded and replayable', () => {

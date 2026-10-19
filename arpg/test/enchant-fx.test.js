@@ -113,7 +113,7 @@ test('forge separates all legacy actions, defaults to ritual, and keeps selected
     if(tab==='salvage') {assert.doesNotMatch(hub.html,/data-action="craft"/);hub.action('forge-recipe-mode',{mode:'all'});for(const action of ['equip','dismantle','sell','craft'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.equal(hub.footer,'');}
   }
   hub.action('forge-tab',{tab:'bad'});assert.equal(hub.forgeTab,'enhance');
-  hub.save.items[0].enhance=12;hub.selectedUid='starter:weapon';hub.showForge();
+  hub.save.items[0].enhance=20;hub.selectedUid='starter:weapon';hub.showForge();
   assert.match(hub.footer,/disabled/);assert.doesNotMatch(hub.html,/undefined|NaN/);
 });
 

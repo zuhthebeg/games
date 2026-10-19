@@ -27,11 +27,26 @@ export function enchantPreview(save, uid, stoneId) {
   const risky = bone || isRisky(level);
   const steps = stone.cursed ? ENCHANT.cursedSteps : stone.blessed ? ENCHANT.blessedSteps : [1];
   const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
+  const high = Math.max(0, level - 11);
+  const ordinaryChance = isRisky(level) ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck * (high ? ENCHANT.rates[level] / ENCHANT.rates[11] : 1)) : 1;
+  const stoneChance = stone.cursed ? 1 - (level >= 12 ? ENCHANT.cursedHighDestroy[level - 12] : ENCHANT.cursedDestroy[level] || 0)
+    : stone.blessed ? 1 - (level >= 12 ? ENCHANT.blessedHighDestroy[level - 12] : 0) : ordinaryChance;
+  // Bone gear retains its stricter all-stone risk; no blessed/cursed branch bypasses it.
+  const boneChance = level < 6 ? .8 - level * .05 : ENCHANT.rates[level];
+  const chance = maxed ? 0 : bone ? Math.min(stoneChance, boneChance) : stoneChance;
+  const weights = stone.cursed ? ENCHANT.cursedWeights : stone.blessed ? risky ? ENCHANT.blessedRiskWeights : [50, 50] : [100];
+  const probabilities = [];
+  for (const [i, step] of steps.entries()) {
+    const to = Math.max(0, Math.min(level + step, ENCHANT.max));
+    const row = probabilities.find(row => row.to === to);
+    const p = maxed ? 0 : chance * weights[i] / 100;
+    if (row) row.chance += p; else probabilities.push({to, chance: p});
+  }
+  if (!maxed && chance < 1) probabilities.push({to: null, chance: 1 - chance});
   return {
     item, level, maxed, risky, bone, blessed: !!stone.blessed, cursed: !!stone.cursed,
-    cost: stoneId === STONE ? ENCHANT.stonesPerAttempt : 1,
-    // LUK adds up to +8 points on risky steps (cocy 10-12).
-    chance: maxed ? 0 : bone ? (level < 6 ? 0.8 - level * 0.05 : ENCHANT.rates[level]) : stone.blessed || stone.cursed ? 1 : risky ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck) : 1,
+    cost: (stoneId === STONE ? ENCHANT.stonesPerAttempt : 1) * (1 + high),
+    chance, destroyChance: maxed ? 0 : 1 - chance, probabilities,
     outcomes: [...new Set(steps.map((step) => Math.max(0, Math.min(level + step, ENCHANT.max))))],
     refund: { [STONE]: refund },
     have: save.stacks[stoneId] || 0,

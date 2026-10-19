@@ -26,7 +26,7 @@ export const emblem = item => {
   const rarity = ITEMS[item.id].rarity;
   return `<span class="p2-emblem ${rarity}" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}`
     + `<span class="grade-mark">${GRADES[rarity]}</span>`
-    + `${item.enhance ? `<b class="enhance-badge" data-enhance="${Math.min(10, item.enhance)}">+${item.enhance}</b>` : ''}</span>`;
+    + `${item.enhance ? `<b class="enhance-badge" data-enchant-level="${item.enhance}" data-enhance="${Math.min(10, item.enhance)}">+${item.enhance}</b>` : ''}</span>`;
 };
 
 export const comparisonFor = (item, save, options) => compareItems(equippedItem(save, ITEMS[item.id].slot), item, save, options);
@@ -148,7 +148,7 @@ export function socketsHtml(save) {
     const face = item ? emblem(item) : `<span class="p2-emblem empty">${icon(slot === 'weapon' ? 'weapon' : slot)}</span>`;
     return `<button type="button" class="p2-socket socket-${slot} ${item ? '' : 'empty'}" data-action="socket" data-slot="${slot}"`
       + ` aria-label="${SLOT_NAMES[slot]} · ${item ? escape(itemLabel(item)) : '비어 있음'}">${face}`
-      + `<span>${item ? escape(ITEMS[item.id].name) : `${SLOT_NAMES[slot]} · 비어 있음`}</span></button>`;
+      + `<span>${item ? escape(itemLabel(item)) : `${SLOT_NAMES[slot]} · 비어 있음`}</span></button>`;
   }).join('');
 }
 

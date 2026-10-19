@@ -74,6 +74,7 @@ export class CombatAudio {
   }
 
   play(name, { fallback = null, pitch = 1, gain = 1, key = name, cooldown = FEEL.audio.cooldown } = {}) {
+    if (name === 'enchant-down') return this.playDowngrade({gain, key, cooldown});
     const context = this.context, buffer = this.buffers.get(name) ?? this.buffers.get(fallback);
     if (this.muted || !buffer || context?.state !== 'running') return false;
     const now = context.currentTime;
@@ -96,6 +97,25 @@ export class CombatAudio {
     return true;
   }
 
+  // A low descending triangle, never the rising level-up clip; same master/mute/voice lifecycle.
+  playDowngrade({gain = 1, key = 'enchant-down', cooldown = FEEL.audio.cooldown} = {}) {
+    const context = this.context;
+    if (this.muted || context?.state !== 'running' || !context.createOscillator) return false;
+    const now = context.currentTime;
+    if (now - (this.lastPlayed.get(key) ?? -Infinity) < Math.max(FEEL.audio.cooldown, cooldown) || this.voices.size >= FEEL.audio.voices) return false;
+    const voice = context.createOscillator(), level = context.createGain();
+    voice.type = 'triangle';
+    voice.frequency.setValueAtTime(220, now);
+    voice.frequency.exponentialRampToValueAtTime(55, now + .42);
+    level.gain.setValueAtTime(Math.max(0, Math.min(1, gain)) * .35, now);
+    level.gain.exponentialRampToValueAtTime(.001, now + .45);
+    voice.connect(level); level.connect(this.master);
+    voice.onended = () => { this.voices.delete(voice); voice.disconnect(); level.disconnect(); };
+    this.voices.add(voice); this.lastPlayed.set(key, now);
+    voice.start(now); voice.stop(now + .46);
+    return true;
+  }
+
   events(events, localId, entities = []) {
     for (const event of events) {
       for (const cue of eventCues(event, localId, entities)) this.play(cue.name, cue);
@@ -106,7 +126,7 @@ export class CombatAudio {
 // The icon sits next to existing settings; a second copy stays available during battle.
 export function bindAudioControls(audio, document) {
   document.addEventListener('arpg:presentation-sound', event => {
-    if (['level-up', 'kill', 'dodge', 'critical', 'hurt'].includes(event.detail)) audio.play(event.detail);
+    if (['level-up', 'kill', 'dodge', 'critical', 'hurt', 'enchant-down'].includes(event.detail)) audio.play(event.detail);
   });
   const refresh = () => {
     for (const button of document.querySelectorAll('[data-sound-toggle]')) {
