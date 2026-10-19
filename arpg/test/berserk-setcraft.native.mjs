@@ -9,15 +9,18 @@ import {noteMaterials} from '../js/meta/recipe-discovery.js';
 import {statBudget,setStatus} from '../js/meta/stats.js';
 const base=process.env.ARPG_BASE_URL||'http://127.0.0.1:8981';
 const server=process.env.ARPG_BASE_URL?null:spawn('python3',['-m','http.server','8981','--bind','127.0.0.1'],{cwd:new URL('../..',import.meta.url).pathname,stdio:'ignore'});
-const report={base,rows:[],errors:[],screenshots:[]};
+const report={base,rows:[],errors:[],screenshots:[],sourceBinding:{}};
 const fixture=()=>{const s=trained();s.stats.str=100;s.statPoints=statBudget(s.level)-Object.values(s.stats).reduce((n,v)=>n+v-10,0);s.gold=100000;s.stacks=Object.fromEntries([...new Set(Object.values(RECIPES).flatMap(r=>Object.keys(r)))].filter(k=>k!=='gold').map(k=>[k,100]));s.loadout=['berserk',null,null];return noteMaterials(s)};
 let browser;
 try{
  for(let i=0;i<40;i++){try{if((await fetch(base+'/arpg/')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
+ const html=await(await fetch(base+'/arpg/')).text(),map=JSON.parse(html.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports;
+ for(const path of ['js/ui/hub.js','js/ui/craft-fx.js']){const url=new URL(map['./'+path],base+'/arpg/').href,bytes=Buffer.from(await(await fetch(url)).arrayBuffer());assert.deepEqual(bytes,await readFile(new URL('../'+path,import.meta.url)));report.sourceBinding[path]={url};}
+ const cssUrl=new URL(html.match(/href="(css\/game\.css[^"]*)"/)[1],base+'/arpg/').href;assert.deepEqual(Buffer.from(await(await fetch(cssUrl)).arrayBuffer()),await readFile(new URL('../css/game.css',import.meta.url)));report.sourceBinding.css={url:cssUrl};
  browser=await chromium.launch({executablePath:'/home/cocy/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader']});
  async function open(seed,width=390,lineage='human'){
  assert.equal(validateSave(seed),true,`${lineage} valid synthetic seed`);
- const context=await browser.newContext({viewport:{width,height:844},hasTouch:width===390,isMobile:width===390});
+ const context=await browser.newContext({viewport:{width,height:844},hasTouch:width===390,isMobile:width===390,reducedMotion:width===390?'reduce':'no-preference'});
  const key=lineage==='human'?SAVE_KEY:'arpg.save.v1.slots.skeleton_knight';
  await context.addInitScript(({key,seed})=>localStorage.setItem(key,JSON.stringify(seed)),{key,seed});
  await context.route('**/*',r=>new URL(r.request().url()).origin===new URL(base).origin&&['GET','HEAD'].includes(r.request().method())?r.continue():r.abort());
@@ -55,14 +58,15 @@ try{
  assert.match(await page.locator('.craft-reveal').innerText(),/제작 완료/);
  const after=await page.evaluate(()=>({gold:JSON.parse(localStorage.getItem("arpg.save.v1")).gold,count:(JSON.parse(localStorage.getItem("arpg.save.v1")).craftCount||0),items:JSON.parse(localStorage.getItem("arpg.save.v1")).items.length}));
  assert.equal(after.count,before.count+1);assert.equal(after.items,before.items+1);assert.equal(before.gold-after.gold,RECIPES.warden_blade.gold);
+ if(width===390){assert.equal(await page.locator('.craft-reveal>.icon').evaluate(n=>getComputedStyle(n).animationName),'none');await page.keyboard.press('Escape');}
  await page.waitForSelector('.craft-fx',{state:'detached'});
  await press('.craft-result [data-action="craft-compare"]');assert.equal(await page.locator('dialog[open] .compare-sheet').count(),1);
  await page.locator('#compare-ignore-enhancement').check();assert.equal(await page.locator('#compare-ignore-enhancement').isChecked(),true);await press('[data-action="close-sheet"]');
  await press('[data-action="forge-tab"][data-tab="enhance"]');
  await press('.forge-picker [data-action="select-gear"]');
  assert.equal(await page.locator('.forge-sheet[open]').count(),1);
- const layout=await page.evaluate(()=>{const d=document.querySelector('.forge-sheet'),n=d.querySelector('[data-action="enhance"]'),t=d.querySelector('.forge-item-title'),r=n.getBoundingClientRect(),h=t.getBoundingClientRect();return {buttonBottom:r.bottom,titleTop:h.top,height:innerHeight,bodyScroll:d.querySelector('.p2-sheet-body').scrollTop,overflow:d.scrollWidth>d.clientWidth}});
- assert.ok(layout.buttonBottom<=layout.height&&layout.titleTop>=0&&!layout.overflow&&layout.bodyScroll===0,JSON.stringify(layout));
+ const layout=await page.evaluate(()=>{const d=document.querySelector('.forge-sheet'),art=d.querySelector('.forge-hero-art').getBoundingClientRect(),ritual=d.querySelector('.forge-ritual').getBoundingClientRect(),stone=d.querySelector('.stone-picker [aria-pressed=true]').getBoundingClientRect(),n=d.querySelector('[data-action="enhance"]'),t=d.querySelector('.forge-item-title'),r=n.getBoundingClientRect(),h=t.getBoundingClientRect();return {buttonBottom:r.bottom,titleTop:h.top,height:innerHeight,bodyScroll:d.querySelector('.p2-sheet-body').scrollTop,overflow:d.scrollWidth>d.clientWidth,costBottom:stone.bottom,footerTop:d.querySelector('footer').getBoundingClientRect().top,artCenter:art.x+art.width/2,ritualCenter:ritual.x+ritual.width/2}});
+ assert.ok(layout.buttonBottom<=layout.height&&layout.titleTop>=0&&!layout.overflow&&layout.bodyScroll===0&&layout.costBottom<=layout.footerTop&&Math.abs(layout.artCenter-layout.ritualCenter)<1,JSON.stringify(layout));
  await press('[data-action="close-sheet"]');
  }
  report.rows.push({width,count,counts:true,tiers:true,singleCraft:true,fit,realCraft:count===0});await context.close();
