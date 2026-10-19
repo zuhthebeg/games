@@ -6,7 +6,7 @@ import {ITEMS,RECIPES,craft,craftingRecipes} from '../js/meta/items.js';
 import {noteMaterials,recipeRevealed} from '../js/meta/recipe-discovery.js';
 const fresh=()=>createSave({name:'Filters',answers:[0,0,0,0,0],createdAt:1});
 const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'salvage',showInnPanel(_title,html){this.html=html;},commit(next){this.save=next;}});
-const ids=html=>[...html.matchAll(/data-action="craft" data-id="([^"]+)"/g)].map(m=>m[1]);
+const ids=html=>[...html.matchAll(/data-recipe-id="([^"]+)"/g)].map(m=>m[1]).sort((a,b)=>craftingRecipes().findIndex(([id])=>id===a)-craftingRecipes().findIndex(([id])=>id===b));
 const rich=()=>noteMaterials({...fresh(),gold:1000000,stacks:Object.fromEntries(Object.keys(ITEMS).filter(k=>ITEMS[k].kind==='material').map(k=>[k,10000]))});
 const affordable=(s,id)=>Object.entries(RECIPES[id]).every(([k,n])=>(k==='gold'?s.gold:s.stacks[k]||0)>=n);
 
@@ -38,13 +38,13 @@ test('rich data-driven categories combine in both modes; entry resets, tab switc
 });
 
 test('exact craft cost and enhancement route remain; unaffordable crafting still rejects',()=>{
- const save=rich(),hub=hubFor(save);hub.action('craft',{id:'iron_sword'});assert.deepEqual(hub.save,craft(save,'iron_sword'));assert.equal(hub.forgeTab,'enhance');assert.equal(hub.selectedUid,hub.save.items.at(-1).uid);
+ const save=rich(),hub=hubFor(save);hub.action('craft',{id:'iron_sword'});assert.deepEqual(hub.save,craft(save,'iron_sword'));assert.equal(hub.forgeTab,'salvage');assert.equal(hub.selectedUid,hub.save.items.at(-1).uid);
  const poor=hubFor({...fresh(),gold:0,stacks:{}});assert.throws(()=>poor.action('craft',{id:'iron_sword'}));
 });
 
 test('set filter intersects availability/kind; options only revealed sets; reset clears all three',()=>{
  const save=rich(),before=structuredClone(save),hub=hubFor(save);hub.showForge();
- hub.action('forge-recipe-set',{set:'set:warden'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id).filter(id=>['warden_blade','warden_maul','warden_plate'].includes(ITEMS[id].baseId||id)));assert.match(hub.html,/recipe-set/);
+ hub.action('forge-recipe-set',{set:'set:warden'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id).filter(id=>['warden_blade','warden_maul','warden_plate'].includes(ITEMS[id].baseId||id)));assert.match(hub.html,/forge-set/);
  hub.action('forge-recipe-kind',{kind:'armor'});assert.ok(ids(hub.html).length>0);assert.ok(ids(hub.html).every(id=>(ITEMS[id].baseId||id)==='warden_plate'));
  const prior=hub.html;for(const set of ['set:unknown','set:undefined','set:hidden'])hub.action('forge-recipe-set',{set});assert.equal(hub.html,prior);
  hub.action('forge-show-all',{});assert.equal(hub.forgeRecipeSet,'all');assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id));

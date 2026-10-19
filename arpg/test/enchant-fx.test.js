@@ -104,7 +104,9 @@ test('forge separates all legacy actions, defaults to ritual, and keeps selected
   assert.match(hub.html,/forge-ritual/);assert.match(hub.html,/forge-hero-art/);
   assert.match(hub.footer,/data-action="enhance"/);
   assert.doesNotMatch(hub.html,/data-action="(?:craft-scroll|crack-greater|dismantle|sell|craft|equip)"/);
+  hub.openEnhancement=()=>{hub.sheet=hub.forgeDetail();};
   hub.action('select-gear',{uid:'starter:armor'});
+  assert.match(hub.sheet.html,/강화 의식/);assert.match(hub.sheet.footer,/starter:armor/);
   for (const tab of ['stones','salvage','enhance']) {
     hub.action('forge-tab',{tab});assert.equal(hub.selectedUid,'starter:armor');
     if(tab==='stones') {assert.doesNotMatch(hub.html,/craft-scroll|주문서/);assert.match(hub.html,/crack-greater/);assert.equal(hub.footer,'');}
