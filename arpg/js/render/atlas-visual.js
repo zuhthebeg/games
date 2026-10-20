@@ -38,7 +38,9 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   // Never flash the generic human helmet/armor while the bare skeleton kit loads.
   if (options.equipment?.id === 'player-skeleton-equipment') current.container.visible = false;
   container.addChild(current.container);
-  const load = entity.kind === 'player' && options.equipment && (options.equipment.id === 'player-skeleton-equipment' || paperdollEnabled())
+  // Evolved knights use the combat atlas, not the portrait compositor (which has no playback metadata).
+  const atlasKey = options.equipment?.id === 'player-death-knight' ? 'death_knight' : visualKey(entity);
+  const load = atlasKey === 'death_knight' ? library.load(atlasKey) : entity.kind === 'player' && options.equipment && (options.equipment.id === 'player-skeleton-equipment' || paperdollEnabled())
     ? (async () => {
       try {
         lease = await paperdolls.acquire(options.equipment, controller.signal);
@@ -46,8 +48,8 @@ function lazyVisual(entity, options, library, fallbackFactory) {
         return paperdollTextures(lease.asset);
       } catch (error) { lease?.release(); lease = null; if (destroyed) return null;
         if(options.equipment.id === 'player-skeleton-equipment') { transitionFailure=error.message; return null; } }
-      return library.load(visualKey(entity));
-    })() : library.load(visualKey(entity));
+      return library.load(atlasKey);
+    })() : library.load(atlasKey);
   load.then((asset) => {
     if (destroyed || !asset) return;
     const next = spriteVisual(entity, options, asset);
@@ -62,7 +64,7 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   });
   return {
     container,
-    get debug() { return { mode, key: visualKey(entity), loadFailure: transitionFailure || library.failed.get(visualKey(entity)) || null, ...current.debug }; },
+    get debug() { return { mode, key: atlasKey, loadFailure: transitionFailure || library.failed.get(atlasKey) || null, ...current.debug }; },
     weaponPose() { return current.weaponPose?.() || null; },
     offhandPose() { return current.offhandPose?.() || null; },
     update(state, animation, deltaTime) {
