@@ -1,3 +1,4 @@
+import { QuarksVfx } from './quarks-vfx.js';
 import { drawHandsBurst, drawBloodLance, drawBloodBurst } from './skeleton-vfx.js';
 import { HolyVfx } from './holy-vfx.js';
 import { ABILITIES } from '../content/combat.js';
@@ -126,6 +127,8 @@ export class SkillVfx {
         const node = graphic(); node.moveTo(0, 0).lineTo(1, 0).stroke({ color: 0xffffff, width: 11 - i * 1.5 }); return node;
       }) }));
     this.fxRequested = options.effekseer ?? effekseerEnabled();
+    this.quarksRequested = this.fxRequested;
+    this.quarks = new QuarksVfx(Graphics, layer);
     this.atlases = options.atlases || VFX_ATLASES; // tools/vfx probes pass VFX_BAKED
     this.fxAssets = new Map(); this.fxLoads = new Map(); this.fxErrors = new Map();
     this.fxLoad = null; // No eager network/decode, including in the default-on mode.
@@ -133,6 +136,8 @@ export class SkillVfx {
   profile(ability) { return SKILL_VFX[ability]; }
   setEffekseer(enabled) {
     this.fxRequested = Boolean(enabled);
+    this.quarksRequested = this.fxRequested;
+    if (!enabled) this.quarks.reset();
     if (!this.fxRequested) for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) {
       if (slot.baked) slot.baked.visible = false; slot.bakedActive = false;
     }
@@ -209,6 +214,7 @@ export class SkillVfx {
     }
   }
   reset() {
+    this.quarks.reset();
     this.holy.reset();
     for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) { if (slot.baked) slot.baked.visible = false; slot.bakedActive = false; }
     for (const slot of this.projectiles) { if (slot.baked) slot.baked.visible = false; slot.bakedAge = 0; }
@@ -369,6 +375,7 @@ export class SkillVfx {
     return spawned;
   }
   event(event, world, reduced = false) {
+    if(this.quarksRequested && !reduced)this.quarks.event(event,world);
     if (event.type === 'turnUndead') { this.holy.event(event, world, reduced); return false; }
     const profile = this.profile(event.ability);
     if (!profile) return false;
@@ -587,6 +594,7 @@ export class SkillVfx {
     }
   }
   update(world, alpha, dt, reduced) {
+    this.quarks.update(world,dt,this.quarksRequested && !reduced);
     if(world.round?.state && world.round.state!=='running'){this.reset();return;}
     this.holy.update(dt);
     for (const slot of this.actors) slot.seen = false;
