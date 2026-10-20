@@ -381,7 +381,10 @@ try {
         audio.events(events, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
         hud.events(events.filter(e => e.id === view.entities[0].id));
       },
-      onFrame: (view, events) => {
+      onResync: view => {
+        if (ownsLobby() && coopRenderReady) renderer.reset(view, matchMedia('(prefers-reduced-motion: reduce)').matches);
+      },
+      onFrame: (view, events, { silent = false } = {}) => {
         if (!ownsLobby()) return;
         if (coopFinished) return;
         world = view;
@@ -399,9 +402,9 @@ try {
         } else progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]), view, coopSession.uid);
         tracker = progress.tracker; coopLoad = progress.load.ratio;
         if (coopSession.isHost) setLoad(coopSession.world, coopSession.uid, coopLoad);
-        renderer.events(view, [...events, ...progress.fx]);
-        audio.events(events, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
-        hud.events([...events.filter(e => e.id === view.entities[0].id || e.type === 'drop'), ...progress.fx]);
+        if (!silent && !hidden) renderer.events(view, [...events, ...progress.fx]);
+        if (!silent && !hidden) audio.events(events, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
+        if (!silent && !hidden) hud.events([...events.filter(e => e.id === view.entities[0].id || e.type === 'drop'), ...progress.fx]);
         hud.meta(progress.load, tracker, roundSave);
         settleCoopPlayer();
         if (view.round.state !== 'running') finishCoop();
@@ -429,8 +432,8 @@ try {
   }
   hub.startCoop = startCoop;
   let coopPageHidden = false;
-  window.addEventListener('pagehide', () => { if (coop) { coopPageHidden = true; running = false; closeCoop(); } });
-  window.addEventListener('pageshow', event => { if (event.persisted && coopPageHidden) { coopPageHidden = false; hub.showInn(); } });
+  window.addEventListener('pagehide', event => { if (coop) { if (event.persisted) coopSession?.suspend(); else { coopPageHidden = true; running = false; closeCoop(); } } });
+  window.addEventListener('pageshow', event => { if (event.persisted && coopSession) resumeCoop(); else if (event.persisted && coopPageHidden) { coopPageHidden = false; hub.showInn(); } });
   const coopStatus = document.createElement('div'); coopStatus.id = 'coop-status'; coopStatus.hidden = true;
   document.querySelector('#hud').append(coopStatus);
   // Network ticks continue while a phone/tab is backgrounded. Single-player pause remains unchanged.
@@ -442,6 +445,10 @@ try {
       coopSession.update(now - guestTime, emptyInput(), coopLoad); guestTime = now;
     }
   }, TICK_MS);
+  function resumeCoop() {
+    const now = performance.now(); netTime = guestTime = lastTime = now;
+    accumulator = 0; input.reset(); audio.stop(); coop?.resume();
+  }
   document.addEventListener('click', event => {
     if (event.target.closest('[data-action="result-inn"]') && coop) closeCoop();
   });
@@ -453,7 +460,7 @@ try {
       get multi() { return readonly(coopSession ? {
         uid: coopSession.uid, host: coopSession.host, isHost: coopSession.isHost,
         phase: coopSession.phase, ownsSim: !!coopSession.world, rtt: coopSession.rtt,
-        bytes: coopSession.bytes, snapshots: coopSession.snapshots,
+        bytes: coopSession.bytes, snapshots: coopSession.snapshots, resync: coopSession.resumeStats, awaitingResync: coopSession.awaitingResync,
         telegraphs: renderer.telegraphs.length, views: renderer.views.size,
         prediction: coopSession.prediction.diagnostics(), delay: coopSession.buffer.delay,
         displayed: coopSession.view()?.entities.map(e => ({ id: e.id, pid: e.pid, kind: e.kind, x: e.x, y: e.y })),
@@ -557,7 +564,8 @@ try {
     accumulator = 0;
     lastTime = performance.now();
     input.reset();
-    if (hidden) audio.stop();
+    if (hidden) { audio.stop(); coopSession?.suspend(); }
+    else if (coopSession) resumeCoop();
     hud.pause(hidden && running && !coopSession);
   });
 
@@ -584,6 +592,7 @@ try {
   }
 
   function frame(now) {
+    if (coopSession && !hidden && now - lastTime > 1000) resumeCoop();
     const elapsed = Math.min(250, Math.max(0, now - lastTime));
     lastTime = now;
     if (undead) {

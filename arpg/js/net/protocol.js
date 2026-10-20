@@ -86,6 +86,15 @@ export class InputQueue {
       }
     }
   }
+  discard(packet, now = this.at) {
+    if (packet && !this.receive(packet, now)) return false;
+    for (const cmd of this.queue) this.apply(cmd);
+    this.queue = []; this.primed = false;
+    this.pending = Object.fromEntries(EDGES.map(k => [k, 0]));
+    this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
+    this.value = emptyInput(); this.newestDodgeHeld = false;
+    return true;
+  }
   consume(now = this.at) {
     if (now - this.at > 1000) {
       // A hidden/disconnected tab cannot leave movement or auto-attack held indefinitely.
@@ -127,6 +136,11 @@ export class InputLatch {
         this.pending[k] = Math.min(MAX_PENDING_EDGES, this.pending[k] + (n - this.seen[k])); this.seen[k] = n;
       }
     }
+    return true;
+  }
+  discard(packet, now = this.at) {
+    if (packet && !this.receive(packet, now)) return false;
+    this.pending = Object.fromEntries(EDGES.map(k => [k, 0])); this.value = emptyInput();
     return true;
   }
   consume(now = this.at) {

@@ -43,15 +43,46 @@ const mergeInput = (held, input) => {
 // Pure transport adapter: no DOM/storage. Only the host ever owns or steps a sim world.
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
-    onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onLost, onStatus });
+    onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onResync = () => {}, onTransportStale = () => {}, onLost = () => {}, onStatus = () => {} }) {
+    Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
     this.shownEvents = new Set();
+    this.suspended = false; this.awaitingResync = false; this.resyncNonce = 0; this.resyncLeft = 0;
+    this.healthAt = null; this.reconnectRequested = false;
+    this.resumeStats = { count: 0, staleEvents: 0, timeMs: 0, maxCorrection: 0 };
     this.bytes = 0; this.snapshots = 0; this.lost = false;
+  }
+  suspend() {
+    this.suspended = true;
+    this.tickInput = null; this.inputLeft = 0;
+    this.sender.history = [];
+  }
+  resume() {
+    if (this.lost || this.phase === 'prepare') return;
+    this.resumeStats.count++;
+    this.resyncStarted = clock();
+    const previous = this.prediction.lastContactView || this.prediction.state;
+    this.resumeFrom = previous ? { x: previous.x, y: previous.y } : null;
+    this.suspended = false; this.tickLeft = 0; this.tickInput = null; this.inputLeft = 0;
+    this.sender.history = [];
+    this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true });
+    this.renderTick = undefined; this.shownEvents.clear();
+    this.healthAt = this.now; this.reconnectRequested = false; this.lastHostAt = this.now;
+    if (this.isHost) {
+      for (const latch of Object.values(this.latches)) latch.discard();
+      this.sendRt({ t: 'host-resume' }); this.broadcast();
+    } else {
+      this.awaitingResync = true; this.resyncNonce++; this.requestResync();
+    }
+    this.sendRt({ t: 'ping', at: clock() });
+  }
+  requestResync() {
+    this.resyncLeft = 500;
+    this.sendRt({ t: 'resync', nonce: this.resyncNonce, input: this.sender.packet({}, 0, this.eventAck) });
   }
   decorate(view) {
     if (!view) return null;
@@ -153,6 +184,13 @@ export class CoopSession {
         || data.profile.rewardSave && !validLobbyProfile(data.profile)
         || data.profile.lineage === 'skeleton_knight' && !validLobbyProfile(data.profile)) return;
       this.profiles[from] = data.profile; this.tryStart();
+    } else if (data.t === 'host-resume' && !this.isHost && from === this.host) {
+      this.resume();
+    } else if (data.t === 'resync' && this.isHost && this.world && from !== this.uid) {
+      if (!Number.isSafeInteger(data.nonce) || data.nonce < 1 || !data.input
+        || !this.latches[from]?.discard(data.input, now)) return;
+      this.appliedInputSeqs[from] = this.latches[from].seq;
+      this.broadcast({ to: from, nonce: data.nonce });
     } else if (data.t === 'input' && this.isHost && this.world && from !== this.uid) {
       if (this.latches[from]?.receive(data, now)) {
         this.acks[from] = Math.max(this.acks[from] || 0, Math.min(this.eventSeq, data.ack || 0));
@@ -160,7 +198,7 @@ export class CoopSession {
       }
     } else if (data.t === 'events' && !this.isHost && from === this.host && this.phase === 'running') {
       const view = this.buffer.frames.at(-1)?.world;
-      if (!view || !this.onEvents) return;
+      if (!view || !this.onEvents || this.suspended || this.awaitingResync) return;
       const events = [];
       for (const row of data.events || []) if (Number.isSafeInteger(row.seq) && row.seq > this.eventAck
         && row.seq <= this.eventAck + 512 && !this.shownEvents.has(row.seq) && FAST_EVENTS.has(row.event?.type)) {
@@ -171,11 +209,15 @@ export class CoopSession {
       this.lastHostAt = now;
       if (this.phase === 'prepare' && this.negotiatedProfiles && data.start) this.begin(data.start);
       if (this.phase === 'prepare') return;
+      const resumed = this.awaitingResync && data.resync?.to === this.uid && data.resync.nonce === this.resyncNonce;
+      const silent = this.suspended || this.awaitingResync;
+      // A fresh host reply is the barrier: earlier queued packets cannot seed playback.
+      if (resumed) { this.buffer = new SnapshotBuffer(this.uid); this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true }); }
       const fresh = this.buffer.push(data, now);
       // A retransmitted final objective packet can repair a journal gap at the same tick.
       if (!fresh && !((data.objective || this.config.invasion) && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
       if (this.config.invasion) { this.invasionAccount = data.invasionAccounts?.[this.uid]; this.lootDrops = data.lootDrops || []; }
-      if (fresh) this.prediction.reconcile(this.buffer.frames.at(-1).world);
+      if (fresh && (!this.awaitingResync || resumed)) this.prediction.reconcile(this.buffer.frames.at(-1).world);
       const events = [];
       for (const row of data.events || []) if (row.seq > this.eventAck) {
         // Host repeats unacknowledged events. Consume in order, exactly once.
@@ -186,10 +228,21 @@ export class CoopSession {
       }
       // Do not settle a final snapshot before its event journal has arrived.
       if (this.eventAck < data.eventSeq) return;
-      this.onFrame(this.decorate(this.buffer.frames.at(-1).world), events);
+      if (silent) this.resumeStats.staleEvents += events.length;
+      if (resumed) {
+        const pawn = this.buffer.frames.at(-1).world.entities.find(e => e.pid === this.uid);
+        this.resumeStats.timeMs = clock() - this.resyncStarted;
+        if (pawn && this.resumeFrom) this.resumeStats.maxCorrection = Math.max(this.resumeStats.maxCorrection, Math.hypot(pawn.x-this.resumeFrom.x, pawn.y-this.resumeFrom.y));
+        this.awaitingResync = false; this.healthAt = null;
+        this.onResync(this.decorate(this.buffer.frames.at(-1).world));
+      }
+      this.onFrame(this.decorate(this.buffer.frames.at(-1).world), events, { silent });
       this.phase = data.round.state === 'running' ? 'running' : 'ended';
-    } else if (data.t === 'ping' && this.isHost) this.sendRt({ t: 'pong', to: from, at: data.at });
-    else if (data.t === 'pong' && from === this.host && data.to === this.uid) this.rtt = Math.max(0, clock() - data.at);
+    } else if (data.t === 'ping') this.sendRt({ t: 'pong', to: from, at: data.at });
+    else if (data.t === 'pong' && data.to === this.uid) {
+      this.healthAt = null;
+      if (from === this.host) this.rtt = Math.max(0, clock() - data.at);
+    }
   }
   roster({ players, hostUser }) {
     const next = new Set(players.map(p => typeof p === 'string' ? p : p.user || p.uid));
@@ -209,10 +262,10 @@ export class CoopSession {
     if (this.phase === 'prepare') this.players = next;
     this.tryStart();
   }
-  broadcast() {
+  broadcast(resync) {
     // Only recent corpses are render-relevant; never grow packets with the whole kill history.
     const visible = this.world.entities.filter(e => e.kind === 'player' || !e.dead || this.world.tick - (this.deathTicks.get(e.id) ?? 0) < 30);
-    const packet = { ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs, this.profiles), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
+    const packet = { ...(resync ? { resync } : {}), ...encodeSnapshot({ ...this.world, entities: visible }, this.appliedInputSeqs, this.profiles), start: this.phase === 'running' && this.world.tick < 30 ? this.startData : undefined,
       events: this.journal, eventSeq: this.eventSeq, ...(this.lootLedger ? { invasionAccounts: Object.fromEntries([...this.players].map(pid=>[pid,this.lootLedger.state(pid)])), lootDrops:this.lootLedger.dropsView() } : {}) };
     this.bytes += new TextEncoder().encode(JSON.stringify(packet)).length; this.snapshots++;
     // Repeat negotiation before early snapshots to recover from packet loss/reordering.
@@ -225,6 +278,14 @@ export class CoopSession {
   update(dt, input, load = 0) {
     if (this.lost) return;
     dt = Math.max(0, Math.min(250, dt)); this.now += dt;
+    if (this.healthAt !== null && this.now - this.healthAt > 2000 && !this.reconnectRequested) {
+      this.reconnectRequested = true; this.onTransportStale();
+    }
+    if (this.awaitingResync) {
+      this.resyncLeft -= dt;
+      if (this.resyncLeft <= 0) this.requestResync();
+      return;
+    }
     if (this.phase === 'prepare') {
       this.helloLeft -= dt;
       if (this.helloLeft <= 0) { this.helloLeft = 500; this.sendRt({ t: 'profile', profile: this.profile }); this.tryStart(); }
@@ -239,7 +300,7 @@ export class CoopSession {
       while (this.inputLeft >= TICK_MS) {
         this.inputLeft -= TICK_MS;
         const packet = this.sender.packet(this.tickInput, load, this.eventAck);
-        if (this.phase === 'running') this.prediction.advance(packet, this.tickInput, TICK_MS);
+        if (this.phase === 'running' && !this.suspended) this.prediction.advance(packet, this.tickInput, TICK_MS);
         this.sendRt(packet);
         this.tickInput = mergeInput(null, this.tickInput);
         for (const k of EDGES) this.tickInput[k] = false;
@@ -292,6 +353,7 @@ export class CoopSession {
   }
   view(now = this.now) {
     if (this.isHost) return this.world ? this.decorate(localView(this.world, this.uid)) : null;
+    if (this.awaitingResync) return null;
     const sampled = this.buffer.sample(now, this.rtt);
     if (sampled) this.renderTick = sampled.viewTick;
     return this.decorate(this.prediction.view(sampled));

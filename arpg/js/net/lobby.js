@@ -44,7 +44,8 @@ export class CoopLobby {
       const ws = this.lobby?._ws;
       if (!ws || ws._arpgHook) return;
       ws._arpgHook = true; this.uid = ws.getMyUserId(); this.transport = ws; this.partyProfiles[this.uid] = this.profile;
-      const started = ws.onStarted, roster = ws.onRoster, closed = ws.onRoomClosed;
+      const started = ws.onStarted, roster = ws.onRoster, closed = ws.onRoomClosed, reconnected = ws.onReconnected;
+      ws.onReconnected = () => { reconnected?.(); this.session?.resume(); };
       ws.onStarted = data => { started?.(data); this.started(data.config); };
       ws.onRoster = data => {
         roster?.(data);
@@ -113,7 +114,7 @@ export class CoopLobby {
   makeSession(roster, config) {
     this.session = new CoopSession({ uid: this.uid, host: roster.hostUser,
       players: roster.players.map(p => p.user || p.uid), profile: this.profile, config,
-      sendRt: p => this.transport.sendRt(p), sendAction: a => this.transport.sendAction(a), ...this.callbacks });
+      sendRt: p => this.transport.sendRt(p), sendAction: a => this.transport.sendAction(a), onTransportStale: () => this.reconnect(), ...this.callbacks });
     this.onSession(this.session);
     for (const action of this.pending.splice(0)) this.session.action(action);
   }
@@ -125,6 +126,17 @@ export class CoopLobby {
       onReady: roster => this.makeSession(roster, this.config),
       onRoster: roster => this.session?.roster(roster),
       onRt: (from, data) => this.session?.rt(from, data), onAction: a => this.action(a) });
+  }
+  resume() {
+    this.session?.resume();
+    const ws = this.transport;
+    if (ws?._ws && ws._ws.readyState >= 2) ws._scheduleReconnect?.();
+  }
+  reconnect() {
+    const ws = this.transport;
+    if (!ws || ws._manualClose) return;
+    if (ws._ws?.readyState === 1) ws._ws.close();
+    else ws._scheduleReconnect?.();
   }
   close() {
     clearInterval(this.hookTimer); this.hookTimer = null; clearInterval(this.profileTimer);
