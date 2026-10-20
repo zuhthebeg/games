@@ -1,4 +1,5 @@
 import { ABILITIES, SKILL_USE, canUseSkill, skillDamageShare } from '../content/combat.js';
+import { lineageAllowsWeapon, normalizedWeaponForm } from '../content/player-lineages.js';
 import { skillGrowth, growthLabel } from '../content/skill-growth.js';
 import { masteryLevel, masteryLabel } from '../meta/skill-mastery.js';
 import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf, bookRequirement, loadoutOf, weaponFamily, weaponForm, skillLineageAllowed } from '../meta/skills.js';
@@ -47,7 +48,7 @@ const SILHOUETTES = {
 };
 export const SKILL_TYPES = {
   poison_arrow:'궁수 · 중독 화살', cursed_hands:'마법 · 지면 속박', blood_spear:'마법 · 피의 관통창', dead_explosion:'물리 · 생명 희생 폭발',
-  poison_field:'해골 · 지속 독 지대', curse:'해골 · 공격/방어 저주', invisibility:'해골 · 적 자동 조준 차단', sword_wave:'검 · 관통 검기', berserk:'양손 근접 · 광전사',
+  poison_field:'해골 · 지속 독 지대', curse:'해골 · 공격/방어 저주', invisibility:'해골 · 적 자동 조준 차단', sword_wave:'검 · 관통 검기', berserk:'강화 · 광전사',
   rain_arrow:'지연 · 연속 화살비', spinning_shot:'회전 · 전방위 사격', meteor:'지연 · 광역 화염', firewall:'지속 · 화염 장벽', lunge:'근접 · 돌진', whirl:'범위', heavy_cleave:'근접 · 범위', volley:'원거리',
   ground_slam:'둔기 · 범위', armor_break:'둔기 · 파쇄',
   triple_arrow:'원거리 · 3연사', evasion_shot:'회피 · 사격',
@@ -73,6 +74,22 @@ export function weaponWarnHtml(id, save) {
     + `<div><dt>${use === undefined ? '사냥 중 사용' : '위력'}</dt><dd>${use === undefined ? '불가' : `${Math.round(use * 100)}%`}</dd></div>`
     + `<div><dt>사용 가능 무기</dt><dd>${allowed}</dd></div></dl>`;
 }
+// Display the real weapon forms accepted by the same predicate as combat.
+export function skillWeaponNames(id, save) {
+  const forms = [['sword','검'],['blunt','둔기'],['bow','활'],['wand','완드'],['staff','스태프']];
+  const weapons = Object.values(ITEMS).filter(def => def.kind === 'weapon' && lineageAllowsWeapon(save,def));
+  const usable = def => canUseSkill(id,def.family,normalizedWeaponForm(def),save.lineage,def.handedness);
+  if (weapons.length && weapons.every(usable)) return '모든 무기';
+  return forms.flatMap(([form,name]) => {
+    const candidates = weapons.filter(def => normalizedWeaponForm(def) === form), allowed = candidates.filter(usable);
+    if (!allowed.length) return [];
+    return [candidates.every(usable) ? name : `${allowed.every(def => def.handedness === 2) ? '양손' : '한손'} ${name}`];
+  }).join(' · ');
+}
+const skillWeaponsHtml = (id,save) => {
+  const names = skillWeaponNames(id,save);
+  return `<small class="skill-weapons" aria-label="사용 가능 무기: ${names}">${names}</small>`;
+};
 // Direct slot choice on every learned card: tap a number to put the skill there, tap the lit number to take it out.
 export function slotPickHtml(id, save, context) {
   const slot = slotOf(save,id), name = escape(ABILITIES[id].name);
@@ -91,6 +108,7 @@ export function loadoutHtml(save, { interactive = true } = {}) {
   }).join('')}</div>`;
 }
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
+  if (!skillLineageAllowed(save,id)) return '';
   const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id);
   const level = masteryLevel(save.skillMastery?.[id]), growth = skillGrowth(id, level);
   if (['poison_arrow','cursed_hands','blood_spear','dead_explosion'].includes(id)) {
@@ -99,7 +117,7 @@ export function skillCardHtml(id, save, { context = 'academy' } = {}) {
     const usable = canUseSkill(id,weaponFamily(save),weaponForm(save),save.lineage,hands(save));
     const cost = `${a.manaCost} MP · ${amount(a.cooldownMs/1000)}s${a.hpCostFrac ? ` · HP −${a.hpCostFrac*100}% · ≥${a.minHp}` : ''}`;
     const detail = context === 'detail' ? `<span class="skill-type">${SKILL_TYPES[id]}</span><small class="skill-growth" data-growth="${id}">${growthLabel(id,level)}</small>` : '';
-    const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong>${detail}<span class="skill-chips"><span>${cost}</span></span><small class="skill-mastery" data-mastery="${id}">Lv${level}</small>${!known ? `<small class="skill-state">${book.price} G · ${STAT_NAMES[req.stat]} ${req.have}/${req.value}</small>` : ''}</span>${usable ? '' : '<i class="slot-blocked" aria-label="필수 무기">✕</i>'}`;
+    const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong>${skillWeaponsHtml(id,save)}${detail}<span class="skill-chips"><span>${cost}</span></span><small class="skill-mastery" data-mastery="${id}">Lv${level}</small>${!known ? `<small class="skill-state">${book.price} G · ${STAT_NAMES[req.stat]} ${req.have}/${req.value}</small>` : ''}</span>${usable ? '' : '<i class="slot-blocked" aria-label="필수 무기">✕</i>'}`;
     const action = context === 'character' ? 'skill-detail' : 'skill-book-info';
     const face = context === 'detail' ? `<div class="skill-card-main">${copy}</div>` : `<button type="button" class="skill-card-main" data-action="${action}" data-id="${id}" aria-label="${escape(a.name)}">${copy}</button>`;
     const control = context === 'detail' ? '' : known ? slotPickHtml(id,save,context) : `<button type="button" data-action="learn-skill" data-id="${id}" ${blocked ? 'disabled' : ''}>배우기</button>`;
@@ -108,7 +126,7 @@ export function skillCardHtml(id, save, { context = 'academy' } = {}) {
   const state = known ? '' : ` · 미습득 · ${book.price} G`;
   const special = id === 'poison_field' ? [`반경 ${growth.radius} px · ${growth.durationMs/1000}초 · 0.5초마다 피해 8 × 무기 위력`, '적에게만 피해 · 시전 지점 고정'] : id === 'curse' ? ['적 공격 위력 감소 · 방어 약화', '인간 방어력 감소 · 몬스터 받는 피해 증가', '중첩 없음 · 강한 효과 유지/시간 갱신'] : id === 'invisibility' ? ['적에게 모습을 숨김', '공격·다른 기술 사용·피격 시 해제', '이미 발사된 공격·범위 공격에 피격 가능', '자동 공격은 은신 중 일시 정지'] : id === 'sword_wave' ? [`진행형 검기 · 사거리 ${growth.range} px · 최대 ${growth.targets}대상 1회 관통`, '한손 검·양손 검 전용'] : id === 'berserk' ? [save.lineage?.startsWith('skeleton_') ? '해골 · 모든 무기' : '양손 검·양손 둔기 전용', '위력/공격 속도 증가 · 받는 피해 +20%', ...(save.lineage?.startsWith('skeleton_') ? [] : ['무기 교체 시 해제 · 체력 회복 없음'])] : [];
   const stats = [...special, a.executeUndead ? '즉사 10% + 지능×0.5%p (최대 70%) · 보스 0.1% + 지능×0.002%p (최대 0.8%, 신성 포함 0.9%) · 실패 시 쿨타임 없음' : a.shield ? `반경 160 · ${growth.charges}회 방어 · ${Math.round(growth.durationMs / 100) / 10}초` : a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, ...(a.heal ? ['적 언데드 피해 48 × 마법 위력', '신성 지팡이: 회복 +20%'] : []), ...(id === 'frost_lance' ? ['빙결 30% · 1.5초 (보스 10% · 0.5초)', '강한 직접 타격에 빙결 해제', '서리 지팡이: 피해 +25%'] : []), ...(a.family === 'focus' && a.element === 'fire' && id !== 'firewall' ? ['화상 3초 · 0.5초마다 피해 4 × 마법 위력', '화상 중 받는 피해 +10%', '화염 지팡이: 피해 +25%'] : []), ...(a.executeUndead ? ['신성 지팡이: 일반 +5%p · 보스 +0.1%p (상한 유지)'] : []), ...(a.zone && id !== 'poison_field' ? [`시전 지점 고정 · 사거리 ${a.zone.range} px`, ...(id === 'rain_arrow' ? ['낙하 대기 0.3초 · 반경 90 px', `0.3초마다 피해 16 × 활 위력 · 최대 ${growth.count}회`, '물리 피해 · 치명타·경직 없음'] : id === 'meteor' ? [`낙하 대기 0.7초 · 폭발 반경 125 px`, `고정 지점 ${growth.count}회 낙하 · 0.3초 간격`] : [`지속 ${growth.durationMs / 1000}초 · 길이 220 px · 폭 36 px`, `0.5초마다 피해 12 × 마법 위력 · 최대 ${growth.count}회`, '이동 차단 없음 · 치명타·화상·경직 없음', '화염 지팡이: 피해 +25%'])] : []), `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`, ...(a.requiresFocus ? ['지팡이 필수'] : []), ...(a.heal ? ['지능에 비례해 회복량 증가'] : []), ...(a.requiresForm ? [a.requiresForm === 'sword' ? '무기 검' : '무기 둔기'] : []), ...(a.sunder ? ['방어 약화 · 받는 피해 +15%', '파쇄 5초'] : []), ...(a.slow ? ['이동 속도 35% 감소 · 3초'] : []), ...(a.spin ? [`360° 회전 · 1.2초 동안 ${growth.count}발`, '균등 분산 · 사거리 420 px · 물리 화살'] : a.burst ? ['조준 방향 빠른 3연사 · 0.1초 간격'] : []), ...(a.dodgeShot ? ['회피 이동·무적 중 조준 사격', '회피 재사용 대기 중 사용 불가'] : []), ...(book?.req && !known ? [`요구 ${STAT_NAMES[book.req.stat]} ${book.req.value}`] : [])];
-  const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small>${growth ? `<small class="skill-growth" data-growth="${id}">${growthLabel(id, level)}</small>` : ''}<small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
+  const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong>${skillWeaponsHtml(id,save)}<span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-mastery" data-mastery="${id}">${masteryLabel(save, id)}</small>${growth ? `<small class="skill-growth" data-growth="${id}">${growthLabel(id, level)}</small>` : ''}<small class="skill-state">${SKILL_DISPLAY[id].label}${state}</small></span>`;
   if (context === 'character') {
     const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form, save.lineage, hands(save)), mark = useClass(id, weapon, form, save);
     const warn = mark ? `<button type="button" class="skill-warn" data-action="skill-warn" data-id="${id}" aria-label="무기 경고 · ${use === undefined ? '사용 불가' : `위력 ${Math.round(use * 100)}%`}">${use === undefined ? '✕' : `${Math.round(use * 100)}%`}</button>` : '';
