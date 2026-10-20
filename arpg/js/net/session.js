@@ -289,8 +289,9 @@ export class CoopSession {
   }
   update(dt, input, load = 0) {
     if (this.lost) return;
-    this.lastUpdateWall = clock();
-    if (!this.suspended && dt > 1000 && this.phase !== 'prepare') { this.resume(); return; }
+    const wall = clock(), stalled = wall - this.lastUpdateWall > 1000;
+    this.lastUpdateWall = wall;
+    if (!this.suspended && (dt > 1000 || stalled) && this.phase !== 'prepare') { this.resume(); return; }
     dt = Math.max(0, Math.min(250, dt)); this.now += dt;
     if (this.healthAt !== null && this.now - this.healthAt > 2000 && !this.reconnectRequested) {
       this.reconnectRequested = true; this.onTransportStale();

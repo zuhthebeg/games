@@ -50,3 +50,7 @@ test('a third guest pong cannot hide an unresponsive authoritative host during r
  const {s}=pair(),g=s.guest;g.players.add('other');g.sendRt=()=>{};g.resume();g.rt('other',{t:'pong',to:g.uid,at:0});
  assert.notEqual(g.healthAt,null);
 });
+test('a queued rAF may carry an old frame timestamp: wall-clock gap still resyncs before input/socket replay',()=>{
+ const {s}=pair(),g=s.guest;g.lastUpdateWall=-10000;g.update(16,emptyInput());
+ assert.equal(g.resumeStats.count,1);assert.equal(g.prediction.pending.length,0);
+});
