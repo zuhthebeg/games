@@ -38,7 +38,7 @@ export class VisualProvider {
     const equipment = entity.skeletal && entity.invasionRole !== 'invader' ? skeletonAppearance({ lineage: 'skeleton_knight', level: 1 }) : entity.kind === 'player' ? entity.equipmentVisual || (this.equipmentSave ? equipmentVisual(this.equipmentSave, entity.weapon) : null) : null;
     const visual = this.factories.has(key) ? this.factories.get(key)(entity, { color, equipment }) : procedural(entity, { color });
     const dressed=equipment ? withWeaponGlow(visual, equipment.enhance, entity.weapon) : visual;
-    return entity.kind === 'player' ? withPhysicalShield(dressed,Graphics) : dressed;
+    return entity.kind === 'player' ? withPhysicalShield(dressed,Graphics,Container) : dressed;
   }
 }
 function procedural(entity, { color }) {

@@ -2,8 +2,7 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#202923;color:#eee;font:14px system-ui}canvas{display:block;touch-action:none}header{position:fixed;z-index:2;inset:0 0 auto;padding:10px 12px;background:#17201ee8;pointer-events:none}h1{font-size:16px;margin:0 0 4px}p{margin:3px 0;font-size:12px}#status{font-variant-numeric:tabular-nums}#actions{position:fixed;right:12px;bottom:20px;display:flex;gap:8px;z-index:3}button{min-width:62px;min-height:52px;border:1px solid #a9bba9;background:#253d36;color:white;border-radius:10px;font:inherit;touch-action:none}button.held{background:#617962}button:disabled{opacity:.55}#restart{position:fixed;top:126px;right:12px;z-index:3}#joystick{position:fixed;width:84px;height:84px;margin:-42px;border:1px solid #bdd6bd;border-radius:50%;pointer-events:none;z-index:4}#joystick i{display:block;width:28px;height:28px;margin:27px;background:#afcbb9;border-radius:50%}#movepad{position:fixed;left:18px;bottom:24px;width:100px;height:100px;border:1px solid #9aad9a;border-radius:50%;touch-action:none;z-index:3}#movepad i{display:block;width:26px;height:26px;margin:36px;background:#aac0ac;border-radius:50%}#movepad[hidden]{display:none}
 </style>
-<body><header><h1>테스트 · 저장 안 됨</h1><p>우측 해골 기사 · 좌측 인간 모험가 AI · 단일 격리 전투</p><p>WASD/방향키 이동 · J 공격 · K 돌진 베기 · 터치: 좌측 드래그 + 우측 버튼</p><p>회피 미지원: 해골 전사 아틀라스에 dodge 클립 없음. Space/Shift는 이 전투에서 발동하지 않음.</p><p>보상·해금·원본 스테이지·세이브 연결 없음 · T 자동공격은 이 탭에서만</p><p id="status" role="status">준비 중…</p></header><button id="restart">다시 시작</button><div id="joystick" hidden><i></i></div><div id="movepad" hidden><i></i></div><div id="actions"><button id="attack" data-input="attack">공격 J</button><button data-input="skillEdge">돌진 베기 K</button><button disabled title="실제 dodge 클립 없음">회피 없음</button></div><script type="importmap">
-{
+<body><header><h1>테스트 · 저장 안 됨</h1><p>우측 해골 기사 · 좌측 인간 모험가 AI · 단일 격리 전투</p><p>WASD/방향키 이동 · J 공격 · K 돌진 베기 · 터치: 좌측 드래그 + 우측 버튼</p><p>회피 미지원: 해골 전사 아틀라스에 dodge 클립 없음. Space/Shift는 이 전투에서 발동하지 않음.</p><p>보상·해금·원본 스테이지·세이브 연결 없음 · T 자동공격은 이 탭에서만</p><p id="status" role="status">준비 중…</p></header><button id="restart">다시 시작</button><div id="joystick" hidden><i></i></div><div id="movepad" hidden><i></i></div><div id="actions"><button id="attack" data-input="attack">공격 J</button><button data-input="skillEdge">돌진 베기 K</button><button disabled title="실제 dodge 클립 없음">회피 없음</button></div><script type="importmap">{
   "imports": {
     "/arpg/js/audio-profile.js": "/arpg/js/audio-profile.js?v=d624f5c424",
     "/arpg/js/audio.js": "/arpg/js/audio.js?v=97b7907732",
@@ -60,7 +59,7 @@
     "/arpg/js/prefs.js": "/arpg/js/prefs.js?v=b2ece37297",
     "/arpg/js/render/atlas-library.js": "/arpg/js/render/atlas-library.js?v=6888e556f0",
     "/arpg/js/render/atlas-state.js": "/arpg/js/render/atlas-state.js?v=917425fb29",
-    "/arpg/js/render/atlas-visual.js": "/arpg/js/render/atlas-visual.js?v=c8723db6eb",
+    "/arpg/js/render/atlas-visual.js": "/arpg/js/render/atlas-visual.js?v=1482fbc97b",
     "/arpg/js/render/biome-layout.js": "/arpg/js/render/biome-layout.js?v=32e69b6be2",
     "/arpg/js/render/biome-map.js": "/arpg/js/render/biome-map.js?v=590e5ee4eb",
     "/arpg/js/render/composition-load.js": "/arpg/js/render/composition-load.js?v=7c0185e0b0",
@@ -73,7 +72,7 @@
     "/arpg/js/render/paperdoll-library.js": "/arpg/js/render/paperdoll-library.js?v=555531e246",
     "/arpg/js/render/paperdoll-portrait.js": "/arpg/js/render/paperdoll-portrait.js?v=823657b993",
     "/arpg/js/render/paperdoll-state.js": "/arpg/js/render/paperdoll-state.js?v=967132d1f0",
-    "/arpg/js/render/physical-shield.js": "/arpg/js/render/physical-shield.js?v=8afeaa047e",
+    "/arpg/js/render/physical-shield.js": "/arpg/js/render/physical-shield.js?v=50d9471ded",
     "/arpg/js/render/renderer.js": "/arpg/js/render/renderer.js?v=0fe8a32a96",
     "/arpg/js/render/shapes.js": "/arpg/js/render/shapes.js?v=1f3d9c4a35",
     "/arpg/js/render/skeleton-equipment-compose.js": "/arpg/js/render/skeleton-equipment-compose.js?v=63a204c0ef",
@@ -83,8 +82,8 @@
     "/arpg/js/render/spell-zones.js": "/arpg/js/render/spell-zones.js?v=a2f7dccd1f",
     "/arpg/js/render/telegraph-time.js": "/arpg/js/render/telegraph-time.js?v=14c958fd40",
     "/arpg/js/render/visibility.js": "/arpg/js/render/visibility.js?v=530eca0712",
-    "/arpg/js/render/visual-provider.js": "/arpg/js/render/visual-provider.js?v=386d851c47",
-    "/arpg/js/render/weapon-glow.js": "/arpg/js/render/weapon-glow.js?v=326e3fd844",
+    "/arpg/js/render/visual-provider.js": "/arpg/js/render/visual-provider.js?v=ea40e93bfc",
+    "/arpg/js/render/weapon-glow.js": "/arpg/js/render/weapon-glow.js?v=82c91266d3",
     "/arpg/js/sim/attack-lag.js": "/arpg/js/sim/attack-lag.js?v=4581612278",
     "/arpg/js/sim/basic-combo.js": "/arpg/js/sim/basic-combo.js?v=3a13273d04",
     "/arpg/js/sim/body-contact.js": "/arpg/js/sim/body-contact.js?v=8d4810ad62",
@@ -112,7 +111,7 @@
     "/arpg/tools/undead-encounter-lab/encounter.js": "/arpg/tools/undead-encounter-lab/encounter.js?v=7be78a71fa",
     "/arpg/tools/undead-encounter-lab/lab.js": "/arpg/tools/undead-encounter-lab/lab.js?v=d38963567e",
     "/arpg/tools/undead-encounter-lab/presentation.js": "/arpg/tools/undead-encounter-lab/presentation.js?v=54dbf9dbfa",
-    "/arpg/vendor/pixi-8.22.0.min.mjs": "/arpg/vendor/pixi-8.22.0.min.mjs?v=66257bc467"
+    "/arpg/vendor/pixi-8.22.0.min.mjs": "/arpg/vendor/pixi-8.22.0.min.mjs?v=66257bc467",
+    "/arpg/js/render/shield-hand-anchors.js": "/arpg/js/render/shield-hand-anchors.js?v=ec32d0a786"
   }
-}
-</script><script type="module" src="./lab.js?v=d38963567e"></script></body></html>
+}</script><script type="module" src="./lab.js?v=d38963567e"></script></body></html>

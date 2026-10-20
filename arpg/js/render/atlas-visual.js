@@ -1,3 +1,4 @@
+import { SHIELD_HAND_ANCHORS } from './shield-hand-anchors.js';
 import { advanceDeathKnightPlayback, deathKnightAnimation } from './death-knight-playback.js';
 import { BALANCE } from '../content/balance.js';
 import { Assets, Container, Graphics, Sprite, Text, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
@@ -5,7 +6,7 @@ import { paperdolls } from './paperdoll-library.js';
 import { paperdollEnabled } from './paperdoll-state.js';
 import { AtlasLibrary } from './atlas-library.js';
 import { MONSTER_NAMES } from '../content/monsters.js';
-import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
+import { DIRECTIONS, ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
 
 export function registerAtlasFactories(provider, fallbackFactory) {
   const library = new AtlasLibrary({
@@ -63,6 +64,7 @@ function lazyVisual(entity, options, library, fallbackFactory) {
     container,
     get debug() { return { mode, key: visualKey(entity), loadFailure: transitionFailure || library.failed.get(visualKey(entity)) || null, ...current.debug }; },
     weaponPose() { return current.weaponPose?.() || null; },
+    offhandPose() { return current.offhandPose?.() || null; },
     update(state, animation, deltaTime) {
       if (!destroyed) current.update(state, animation, deltaTime);
     },
@@ -144,9 +146,20 @@ function spriteVisual(entity, { color }, asset) {
   if (dragon) { bar.y=health.y=-164; } // Boss bar above wings; training atlas is untouched.
   container.addChild(sprite, flash, stars, bar, health);
   const deathKnightPlayback = {};
+  const handPose = {x:0,y:0,facing:0,behind:false,scale:1};
+  const handFrames = SHIELD_HAND_ANCHORS[asset.id === 'player-skeleton-equipment' ? 'skeleton' : asset.id === 'hero-sword' ? 'atlas-blade' : asset.id === 'hero-focus' ? 'atlas-focus' : asset.id === 'paperdoll-focus' ? 'focus' : 'blade'];
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {
     container,
+    offhandPose() {
+      if(entity.kind !== 'player')return null;
+      const hand=handFrames?.[`${stateName}_${direction}`]?.[frame];
+      if(!hand)return null;
+      handPose.scale=sprite.scale.x;handPose.x=hand[0]*sprite.scale.x;handPose.y=hand[1]*sprite.scale.x;
+      handPose.facing=DIRECTIONS.indexOf(direction)*Math.PI/4;
+      handPose.behind=direction === 'E' || direction === 'NE' || direction === 'N' || direction === 'NW';
+      return handPose;
+    },
     // Current drawn-weapon pose in this container's local space, for presentation overlays.
     weaponPose() {
       const pose = asset.weaponAnimations?.[`${stateName}_${direction}`]?.[frame];

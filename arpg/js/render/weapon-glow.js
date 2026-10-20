@@ -63,6 +63,7 @@ export function withWeaponGlow(visual, enhance, kit) {
     get debug() { return {...visual.debug, weaponGlow:{level:spec.level, particles:motes.filter(n=>n.visible).length,
       staticGeometry:true, visible:aura.visible, reduced:motionReduced, anchored}}; },
     weaponPose() { return visual.weaponPose?.() || null; },
+    offhandPose() { return visual.offhandPose?.() || null; },
     update(state, animation, dt) {
       visual.update(state, animation, dt);
       aura.visible = !state.dead;
