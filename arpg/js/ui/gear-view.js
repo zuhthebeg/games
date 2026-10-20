@@ -1,3 +1,4 @@
+import {portraitShieldDescriptor,portraitShieldHtml} from '../render/portrait-shield.js';
 import { shieldSpec } from '../content/shields.js';
 import { SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
 import { BALANCE } from '../content/balance.js';
@@ -144,8 +145,9 @@ export function portraitHtml(save, direction = 'SW') {
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   // With paperdoll art the glow is drawn from the weapon silhouette once composed (pending until then).
   const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}"${enabled ? ' data-pending' : ''} aria-hidden="true">${enabled ? '<canvas width="128" height="128"></canvas>' : ''}<i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
-  const physicalShield = ITEMS[equippedItem(save,'offhand')?.id]?.form === 'shield' ? '<svg class="portrait-shield" viewBox="0 0 32 40" aria-label="장착 방패"><ellipse cx="18" cy="21" rx="13" ry="16" fill="#26343c"/><ellipse cx="15" cy="19" rx="13" ry="16" fill="#708995" stroke="#c9cfca" stroke-width="3"/><ellipse cx="13" cy="16" rx="9" ry="11" fill="#8ba0a8"/><circle cx="15" cy="19" r="5" fill="#c4cfcf" stroke="#415866" stroke-width="2"/></svg>' : '';
-  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)}` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}${physicalShield}</div>`;
+  const shield=portraitShieldDescriptor(save,p,enabled);
+  const physicalShield=portraitShieldHtml(shield,p.frame.split('_')[1]);
+  return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts}${shield ? ` data-portrait-shield="${escape(JSON.stringify(shield))}"` : ''} role="img" aria-label="${save.lineage === 'skeleton_knight' ? `${knightFormName(save)}` : '현재 장비의 기사'}" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}${physicalShield}</div>`;
 }
 
 export function socketsHtml(save) {

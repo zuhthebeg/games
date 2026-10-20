@@ -1,3 +1,4 @@
+import {rotatePortraitShield} from './portrait-shield.js';
 import { paperdolls } from './paperdoll-library.js';
 
 export const PORTRAIT_DIRECTIONS = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
@@ -7,6 +8,7 @@ export function setPortraitDirection(node, direction) {
   const index = PORTRAIT_DIRECTIONS.indexOf(direction);
   if (!node || index < 0) return;
   node.dataset.direction = direction;
+  rotatePortraitShield(node,direction);
   const [x,y] = PORTRAIT_FRAMES[index];
   node.style.backgroundPosition = `-${x}px -${y}px`;
   const asset = portraits.get(node)?.lease?.asset;

@@ -25,6 +25,7 @@ try{
   const page=await ctx.newPage();page.on('pageerror',e=>report.errors.push(e.message));page.setDefaultTimeout(15000);
   const press=async selector=>{const el=page.locator(selector).first();await el.scrollIntoViewIfNeeded();if(width===390)await el.tap();else{await el.focus();await page.keyboard.press('Enter');}};
   await page.goto(base+'/arpg/?character='+(bone?'skeleton_knight':'human'));await page.locator('#inn-name').waitFor();await press('[data-action="trainer"]');
+  const rejected=await page.evaluate(async wrong=>{const{learnSkill}=await import('/arpg/js/meta/skills.js');return wrong.map(id=>{const copy=JSON.parse(JSON.stringify(__arpg.save)),before=JSON.stringify(copy);let rejected=false;try{learnSkill(copy,id);}catch{rejected=true;}return{id,rejected,unchanged:JSON.stringify(copy)===before};});},wrong);assert.ok(rejected.every(x=>x.rejected&&x.unchanged));
   const row={width,kind,schools:[],status:'RUNNING'};report.rows.push(row);
   for(const family of ['blade','focus','bow']){
    await press(`[data-action="academy-tab"][data-family="${family}"]`);
