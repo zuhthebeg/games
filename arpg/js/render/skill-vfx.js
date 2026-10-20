@@ -1,4 +1,4 @@
-import { drawHandsBurst } from './skeleton-vfx.js';
+import { drawHandsBurst, drawBloodLance, drawBloodBurst } from './skeleton-vfx.js';
 import { HolyVfx } from './holy-vfx.js';
 import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
@@ -16,9 +16,14 @@ export const effekseerEnabled = (search = globalThis.location?.search || '', sto
 export const SKILL_VFX = Object.freeze({
   poison_arrow: Object.freeze({style:'arrow',projectile:ABILITIES.poison_arrow.projectile,projectileRadius:8,color:0x78c547,accent:0xd6ffa2,windup:'bow',impact:'spark',activeLife:.2,residueLife:.35,particles:12,reducedParticles:2}),
   cursed_hands: Object.freeze({statusCue:true,style:'heal',radius:ABILITIES.cursed_hands.shape.radius,color:0xbc85e3,accent:0xead3fa,windup:'runes',impact:'rise',activeLife:.65,residueLife:.5,particles:12,reducedParticles:2,drawEffect:drawHandsBurst,
-    onEvent(v,e,w,reduced){if(e.type==='handsBurst'){v.effect(this,'active',e.x,e.y,0,e.radius,null,reduced);v.emit(this,'rise',e.x,e.y,0,e.radius,reduced);return true;}return false;} }),
+    onEvent(v,e,w,reduced){if(e.type==='handsBurst'){v.effect(this,'active',e.x,e.y,0,e.radius,null,reduced,e.id);v.emit(this,'curseSmoke',e.x,e.y,0,e.radius,reduced);!reduced&&v.emit(this,'dust',e.x,e.y,0,e.radius,reduced);return true;}return false;} }),
   blood_spear: Object.freeze({style:'pierce',projectile:ABILITIES.blood_spear.projectile,projectileRadius:11,color:0xc82d4f,accent:0xffadb9,windup:'crystal',impact:'spark',activeLife:.25,residueLife:.4,particles:14,reducedParticles:2,
-    drawProjectile(g,p){g.poly([-30,-3,12,-5,28,0,12,5,-30,3]).fill({color:0xbb2448,alpha:.95}).stroke({color:0xffb0bf,width:1.5}).moveTo(-40,0).lineTo(19,0).stroke({color:0xffdce1,width:2});} }),
+    drawProjectile:drawBloodLance,drawEffect:drawBloodBurst,
+    onEvent(v,e,w,reduced){
+      if(e.type==='act'){const caster=w.entities?.find(p=>p.id===e.id);if(caster){v.effect(this,'sacrifice',caster.x,caster.y-12,0,18,null,reduced,e.id);v.emit(this,'blood',caster.x,caster.y-12,0,12,reduced);}}
+      if(e.type==='hit'){v.effect(this,'residue',e.x,e.y,0,11,null,reduced,e.src);v.emit(this,'blood',e.x,e.y,0,20,reduced);}
+      return false;
+    } }),
   dead_explosion: Object.freeze({style:'ember',radius:ABILITIES.dead_explosion.shape.radius,color:0xae356e,accent:0xe7c7f1,windup:'converge',impact:'smoke',motif:'blast',activeLife:.6,residueLife:.7,particles:30,reducedParticles:3}),
   curse: Object.freeze({statusCue:true,style:'heal',radius:ABILITIES.curse.shape.radius,color:0xbc85e3,accent:0xe4b7ff,windup:'runes',impact:'rise',activeLife:.3,residueLife:.4,particles:8,reducedParticles:2}),
   invisibility: Object.freeze({statusCue:true,style:'heal',radius:28,color:0x8cb2bb,accent:0xd1edf2,windup:'runes',impact:'rise',activeLife:.2,residueLife:.2,particles:4,reducedParticles:1}),
@@ -109,13 +114,14 @@ export class SkillVfx {
       const node = graphic(false); node.circle(0, 0, 1).fill(0xffffff);
       return { node, left: 0 };
     });
-    this.actors = Array.from({ length: VFX_CAPS.actors }, () => ({ id: null, node: graphic(),
+    this.actors = Array.from({ length: VFX_CAPS.actors }, () => ({ id: null, node: graphic(), guide: graphic(false),
       motes: Array.from({ length: 8 }, () => { const node = graphic(); node.circle(0, 0, 1.8).fill(0xffffff); return node; }) }));
     this.fxReady = false;
     this.fxError = null;
     this.fxImpacts = [];
     this.projectiles = Array.from({ length: VFX_CAPS.projectiles }, () => ({ id: null, node: graphic(),
       history: new Float64Array(VFX_CAPS.trail * 2), count: 0, clock: 0,
+      drops: Array.from({ length: VFX_CAPS.trail }, () => {const n=graphic(false);n.ellipse(0,0,3,4).fill(0xcc1b42);return n;}),
       tail: Array.from({ length: VFX_CAPS.trail }, (_, i) => {
         const node = graphic(); node.moveTo(0, 0).lineTo(1, 0).stroke({ color: 0xffffff, width: 11 - i * 1.5 }); return node;
       }) }));
@@ -207,17 +213,18 @@ export class SkillVfx {
     for (const slot of [...this.effects, ...this.actors, ...this.projectiles]) { if (slot.baked) slot.baked.visible = false; slot.bakedActive = false; }
     for (const slot of this.projectiles) { if (slot.baked) slot.baked.visible = false; slot.bakedAge = 0; }
     for (const item of [...this.effects, ...this.particles]) { item.left = 0; item.node.visible = false; if (item.wave) item.wave.visible = false; }
-    for (const slot of this.actors) { slot.id = null; slot.node.visible = false; for (const node of slot.motes) node.visible = false; }
-    for (const slot of this.projectiles) { slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false; }
+    for (const slot of this.actors) { slot.id = null; slot.node.visible = false; slot.guide.visible = false; for (const node of slot.motes) node.visible = false; }
+    for (const slot of this.projectiles) { slot.id = null; slot.node.visible = false; for (const node of slot.drops) node.visible=false; for (const node of slot.tail) node.visible = false; }
   }
-  effect(profile, kind, x, y, facing, radius, shape, reduced) {
+  effect(profile, kind, x, y, facing, radius, shape, reduced, ownerId = null) {
     this.requestSkill((PROFILE_IDS.get(profile) ?? profile.abilityId), reduced);
     const slot = this.effects.find(item => item.left <= 0);
     if (!slot) return false;
-    Object.assign(slot, { kind, radius, reduced, left: kind === 'residue' ? (reduced ? .2 : profile.residueLife) : profile.activeLife });
+    Object.assign(slot, { kind, radius, reduced, ownerId, left: kind === 'residue' ? (reduced ? .2 : profile.residueLife) : profile.activeLife });
     slot.total = slot.left;
     const g = slot.node, wave = slot.wave;
     wave.clear(); wave.position.set(x, y); wave.rotation = facing || 0; wave.scale.set(.3); wave.visible = false;
+    g.blendMode = wave.blendMode = 'add';
     g.clear(); g.position.set(x, y); g.rotation = facing || 0; g.scale.set(1); g.visible = true;
     if (profile.drawEffect) {
       profile.drawEffect(this, slot, { kind, x, y, facing, radius, shape, reduced });
@@ -342,17 +349,18 @@ export class SkillVfx {
       const i = remaining--, angle = facing + i * 2.399963;
       // Explosion smoke carries a hot ember in every other slot (same slot count).
       const ember = kind === 'smoke' && !reduced && i % 2 === 0;
-      const smoke = (kind === 'smoke' || kind === 'dust') && !ember;
+      const cursed = kind === 'curseSmoke', blood = kind === 'blood';
+      const smoke = (kind === 'smoke' || kind === 'dust' || cursed) && !ember;
       const rise = kind === 'rise';
-      const dist = smoke ? radius * .35 : rise ? 6 + (i % 4) * 6 : ember ? radius * .15 : 0;
+      const dist = smoke ? radius * (cursed ? .65 : .35) : rise ? 6 + (i % 4) * 6 : ember ? radius * .15 : 0;
       const motion = reduced ? .25 : 1, speed = ember ? radius * 3.2 : 120 + (i % 3) * 45;
       Object.assign(slot, { kind: ember ? 'ember' : kind, reduced, x: x + Math.cos(angle) * dist, y: y + Math.sin(angle) * dist,
         vx: (rise ? Math.cos(angle) * 6 : smoke ? Math.cos(angle) * 12 : Math.cos(angle) * speed) * motion,
         vy: (rise ? -60 - i * 3 : smoke ? -12 : Math.sin(angle) * speed) * motion,
-        total: smoke || rise ? profile.residueLife : ember ? .36 : .24, size: smoke ? 5 : rise ? 2 : 2.6 + (i % 2) * .6 });
+        total: smoke || rise || blood ? profile.residueLife : ember ? .36 : .24, size: smoke ? (cursed ? 10 : 5) : rise ? 2 : 2.6 + (i % 2) * .6 });
       slot.left = slot.total;
       slot.node.position.set(slot.x, slot.y); slot.node.rotation = rise ? 0 : angle;
-      slot.node.tint = smoke ? (kind === 'dust' ? 0x8a9b88 : 0x6e7370) : i % 2 ? profile.accent : profile.color;
+      slot.node.tint = cursed ? (i%2?0x633c7a:0x6c915a) : blood ? (i%2?0xd81b42:0x7e102d) : smoke ? (kind === 'dust' ? 0x8a9b88 : 0x6e7370) : i % 2 ? profile.accent : profile.color;
       slot.node.scale.set(kind === 'shard' ? slot.size * 1.8 : slot.size * (ember ? 1.4 : 1),
         smoke ? slot.size : slot.size * (rise ? 2.4 : kind === 'shard' ? .35 : .5));
       slot.node.alpha = smoke ? .25 : reduced ? .35 : .95; slot.node.visible = true;
@@ -399,8 +407,14 @@ export class SkillVfx {
     const key = `${act.id}:${worldTick - act.elapsed}`;
     if (slot.id !== entity.id || slot.key !== key) {
       Object.assign(slot, { id: entity.id, key, fired: false, trailX: entity.x, trailY: entity.y });
-      const g = slot.node; g.clear(); g.rotation = 0; g.scale.set(1);
-      if (profile.windup === 'blade') {
+      const g = slot.node; g.clear(); g.rotation = 0; g.scale.set(1);g.blendMode=act.id==='blood_spear'?'normal':'add';
+      slot.guide.clear(); slot.guide.visible = false;
+      if (act.id === 'blood_spear') {
+        drawBloodLance(g, null, reduced);
+        const offset=entity.r+4, range=act.growth?.range??profile.projectile.rangePx, width=profile.projectile.radius*2;
+        slot.guide.rect(offset,-width/2,range,width).fill({color:0x650e2c,alpha:.2}).stroke({color:0xd84665,width:1,alpha:.65})
+          .moveTo(offset,0).lineTo(offset+range,0).stroke({color:0xff7d99,width:1.5,alpha:.8});
+      } else if (profile.windup === 'blade') {
         g.moveTo(-14, 0).lineTo(20, 0).stroke({ color: profile.color, width: 10, alpha: .22 })
           .moveTo(-12, 0).lineTo(18, 0).stroke({ color: profile.accent, width: 3, alpha: .95 })
           .poly([18, -4, 26, 0, 18, 4]).fill({ color: profile.accent, alpha: .9 });
@@ -435,6 +449,8 @@ export class SkillVfx {
       }
     }
     slot.seen = true;
+    slot.guide.visible=act.id==='blood_spear' && act.phase==='windup';
+    if(slot.guide.visible){slot.guide.position.set(entity.x,entity.y);slot.guide.rotation=act.facing;}
     const charging = act.phase === 'windup' || act.phase === 'lock', p = windupProgress(act);
     const x = entity.x + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
     const y = entity.y + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
@@ -513,7 +529,7 @@ export class SkillVfx {
     if (!slot) return;
     if (slot.id !== particle.id) {
       Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0, bakedAge: 0 });
-      const g = slot.node; g.clear();
+      const g = slot.node; g.clear();g.blendMode=particle.abilityId==='blood_spear'?'normal':'add';
       if (profile.drawProjectile) profile.drawProjectile(g, particle, reduced);
       else if (profile.projectile && profile.style !== 'ember') {
         const r = particle.r;
@@ -541,6 +557,7 @@ export class SkillVfx {
     }
     let lastX = x, lastY = y;
     for (let i = 0; i < slot.tail.length; i++) {
+      const drop=slot.drops[i];drop.visible=false;
       const node = slot.tail[i], hx = slot.history[i * 2], hy = slot.history[i * 2 + 1];
       node.visible = i < slot.count && i < (reduced ? 1 : VFX_CAPS.trail);
       if (!node.visible) continue;
@@ -548,6 +565,7 @@ export class SkillVfx {
       node.scale.set(Math.hypot(hx - lastX, hy - lastY), 1);
       node.tint = profile.color;
       node.alpha = (reduced ? .1 : .7) * (1 - i / VFX_CAPS.trail) * (particle.presentationAlpha ?? 1);
+      if(particle.abilityId==='blood_spear' && !reduced && i>0){drop.visible=true;drop.position.set(hx,hy+2+i*1.5);drop.alpha=(1-i/VFX_CAPS.trail)*.8;drop.scale.set(1-i*.08);}
       lastX = hx; lastY = hy;
     }
     if (slot.baked) slot.baked.visible = false;
@@ -569,29 +587,36 @@ export class SkillVfx {
     }
   }
   update(world, alpha, dt, reduced) {
+    if(world.round?.state && world.round.state!=='running'){this.reset();return;}
     this.holy.update(dt);
     for (const slot of this.actors) slot.seen = false;
     for (const entity of world.entities) this.actor(entity, world.tick, reduced);
     for (const slot of this.actors) if (!slot.seen) {
-      slot.id = null; slot.node.visible = false; for (const node of slot.motes) node.visible = false;
+      slot.id = null; slot.node.visible = false; slot.guide.visible = false; for (const node of slot.motes) node.visible = false;
       if (slot.baked) slot.baked.visible = false;
     }
     for (const slot of this.projectiles) slot.seen = false;
     for (const particle of world.projectiles) if (SKILL_VFX[particle.abilityId]?.projectileRadius) this.projectile(particle, alpha, reduced, dt);
     for (const slot of this.projectiles) if (!slot.seen) {
-      slot.id = null; slot.node.visible = false; for (const node of slot.tail) node.visible = false;
+      slot.id = null; slot.node.visible = false; for (const node of slot.drops) node.visible=false; for (const node of slot.tail) node.visible = false;
       if (slot.baked) slot.baked.visible = false;
     }
     for (const slot of this.effects) {
       if (slot.left <= 0) continue;
+      if (slot.ownerId != null) {
+        let owner;
+        for (const entity of world.entities) if (entity.id === slot.ownerId) { owner = entity; break; }
+        if (!owner || owner.dead) { slot.left = 0; slot.node.visible = slot.wave.visible = false; continue; }
+      }
       slot.left = Math.max(0, slot.left - dt); slot.node.visible = slot.left > 0;
       const age = 1 - slot.left / slot.total;
       // Full-size boundary stays exact; only the interior wave grows up to it.
       slot.node.scale.set(1);
       slot.node.alpha = reduced ? .35 * (1 - age) : Math.pow(1 - age, .6);
-      slot.wave.visible = slot.left > 0 && slot.kind === 'wave' && !reduced;
+      slot.wave.visible = slot.left > 0 && (slot.kind === 'hands' || slot.kind === 'wave' && !reduced);
       slot.wave.scale.set(.3 + .7 * Math.min(1, age * 5));
       slot.wave.alpha = slot.node.alpha;
+      if(slot.kind==='hands'){const rise=reduced||slot.reduced?1:1-Math.pow(1-Math.min(1,age*4),3);slot.wave.y=slot.originY+(1-rise)*28;slot.wave.scale.set(1,.18+.82*rise);}
       if (slot.baked) {
         slot.baked.visible = slot.left > 0 && slot.bakedActive && !reduced;
         if (slot.baked.visible) {
@@ -609,8 +634,8 @@ export class SkillVfx {
       slot.x += slot.vx * dt; slot.y += slot.vy * dt;
       slot.node.position.set(slot.x, slot.y);
       const fade = slot.left / slot.total;
-      slot.node.alpha = fade * (slot.kind === 'smoke' || slot.kind === 'dust' ? .25 : reduced ? .35 : .95);
-      if (slot.kind === 'smoke' || slot.kind === 'dust') slot.node.scale.set(slot.size * (1 + (1 - fade) * .6));
+      slot.node.alpha = fade * (slot.kind === 'smoke' || slot.kind === 'dust' || slot.kind === 'curseSmoke' ? .25 : reduced ? .35 : .95);
+      if (slot.kind === 'smoke' || slot.kind === 'dust' || slot.kind === 'curseSmoke') slot.node.scale.set(slot.size * (1 + (1 - fade) * .6));
       // Sparks and embers decelerate so the burst snaps out, then hangs.
       else if (!slot.reduced && slot.kind !== 'rise') { const damp = Math.exp(-5 * dt); slot.vx *= damp; slot.vy *= damp; }
     }

@@ -1,6 +1,6 @@
 import {BOSS_TUNING} from '../content/boss-tuning.js';
 import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
-import { drawGraspingHands } from './skeleton-vfx.js';
+import { drawCursedGround, paintRootGrip } from './skeleton-vfx.js';
 import { getTelegraphs } from '../sim/world.js';
 import { paintDragonVfx } from './dragon-presentation.js';
 import { shapePath, pattern } from './shapes.js';
@@ -549,7 +549,7 @@ export class ArenaRenderer {
       view.statusRing.clear(); view.statusRing.position.set(view.x, view.y);
       view.statusRing.visible = !entity.dead && (ice || fire || shield || cursed || rage || poison || rooted);
       if (poison) {view.statusRing.ellipse(0,1,entity.r+5,(entity.r+5)*.45).stroke({color:0x81d74a,width:3,alpha:.85});for(const x of [-9,0,9])view.statusRing.circle(x,-entity.r*1.7-5-Math.abs(x)*.3,3).fill({color:0xa6ec67,alpha:.9});}
-      if (rooted) drawGraspingHands(view.statusRing,entity.r);
+      if (paintRootGrip(view.statusRing,view,entity,world.tick,this.reduced,world.round?.state && world.round.state!=='running')) view.statusRing.visible=true;
       if (cursed) view.statusRing.moveTo(-9,-entity.r-19).lineTo(9,-entity.r-1).moveTo(9,-entity.r-19).lineTo(-9,-entity.r-1).stroke({color:0xbc85e3,width:4});
       if (rage) view.statusRing.ellipse(0,0,entity.r+7,(entity.r+7)*.55).stroke({color:0xf17b60,width:4}).moveTo(-8,-entity.r-6).lineTo(0,-entity.r-18).lineTo(8,-entity.r-6).stroke({color:0xf17b60,width:3});
       if (shield) view.statusRing.ellipse(0, -entity.r * .6, entity.r + 9, entity.r * 1.6).fill({color:0x73baf0,alpha:.12}).stroke({color:0xa8dafa,width:2,alpha:.8});
@@ -609,12 +609,16 @@ export class ArenaRenderer {
       // Geometry changes at sim snapshots, not at 60Hz interpolated sprite frames.
       if (graphic.telegraph !== telegraph) {
         graphic.clear();
+        if(telegraph.ability==='cursed_hands'){
+          drawCursedGround(graphic,telegraph.shape.radius,telegraph.progress,this.reduced);
+        } else {
         shapePath(graphic, telegraph.shape).fill({ color, alpha: locked ? .27 : .07 })
           .stroke({ color, width: telegraph.major ? 4 : 2, alpha: 1 });
         if (!locked && telegraph.progress > 0)
           shapePath(graphic, telegraph.shape, telegraph.progress).fill({ color, alpha: .24 });
         pattern(graphic, telegraph.shape, color, locked);
         paintDragonVfx(graphic, telegraph, world.tick, this.reduced);
+        }
         graphic.telegraph = telegraph;
       }
       const x = telegraph.ox * this.scale + this.root.x, y = telegraph.oy * this.scale + this.root.y;

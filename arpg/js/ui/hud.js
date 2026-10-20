@@ -123,15 +123,10 @@ export class HUD {
 
   events(events) {
     const messages = {
-      revive: '뼈 세트 부활 · HP 30% · 이번 출정 부활 소진',
-      lootClaimed: '사망 전리품 획득 · 귀환해야 확보됩니다',
+      lootClaimed: '전리품 획득',
       channelStart: '귀환 중',
       channelBroken: '귀환 중단',
       channelCancel: '귀환 취소',
-      perfectDodge: '완벽 회피 · 반격 준비',
-      counter: '반격!',
-      poison: '중독 · 장판을 벗어나면 독은 잠시 후 끝난다',
-      poisonEnd: '중독 종료',
     };
     for (const event of events) {
       const message = event.type === 'drop' && event.rejected ? '무게 초과' : messages[event.type];
