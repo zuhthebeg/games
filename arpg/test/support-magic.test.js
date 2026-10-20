@@ -55,9 +55,9 @@ test('fire refreshes single burn, DOT credits kill, vulnerability applies and DO
  t.frozenUntil=w.tick+100;for(let i=0;i<16;i++)step(w);assert.ok(t.frozenUntil>w.tick);assert.ok(t.hp<hp-22);
  t.hp=1;const events=[];for(let i=0;i<100;i++)events.push(...step(w));assert.equal(t.dead,true);assert.equal(t.burn,undefined);assert.equal(t.frozenUntil,undefined);assert.equal(events.filter(e=>e.type==='kill'&&e.id===t.id&&e.by===p.id).length,1);
 });
-test('shield party radius, mana/cooldown, dodge and iframes preserve it, one damaging hostile hit breaks',()=>{
+test('shield party radius, mana/cooldown, dodge and iframes preserve it, Lv1 one damaging hostile hit breaks',()=>{
  const {w,p}=fixture('protective_shield');const ally=addPlayer(w,{pid:'a',x:540,y:400}),far=addPlayer(w,{pid:'far',x:900,y:400});const t=mob(w,'goblin_grunt',560);
- cast(w,p);assert.equal(p.mp,78);assert.ok(p.cds.protective_shield>0);assert.ok(p.shieldUntil>w.tick);assert.ok(ally.shieldUntil>w.tick);assert.equal(far.shieldUntil,undefined);
+ cast(w,p);assert.equal(p.mp,78);assert.ok(p.cds.protective_shield>0);assert.ok(p.shieldUntil>w.tick);assert.ok(ally.shieldUntil>w.tick);assert.equal(ally.shieldCharges,1);assert.equal(far.shieldUntil,undefined);
  ally.dodge.iframeLeft=4;shot(w,t,ally,'sling_stone',10);assert.ok(ally.shieldUntil>w.tick);ally.dodge.iframeLeft=0;ally.hurtInvuln=3;shot(w,t,ally,'sling_stone',10);assert.ok(ally.shieldUntil>w.tick);
  ally.hurtInvuln=0;const hp=ally.hp;const events=shot(w,t,ally,'sling_stone',10);assert.equal(ally.hp,hp);assert.equal(ally.shieldUntil,undefined);assert.ok(events.some(e=>e.type==='shieldBreak'));shot(w,t,ally,'sling_stone',10);assert.ok(ally.hp<hp);
  for(let i=0;i<250;i++)step(w);assert.equal(p.shieldUntil,undefined);

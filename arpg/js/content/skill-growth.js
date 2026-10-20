@@ -12,6 +12,7 @@ export function skillGrowth(id, level = 1) {
   level = Number.isSafeInteger(level) ? Math.max(1, Math.min(30, level)) : 1;
   const tier = GROWTH_LEVELS.filter(n => n <= level).length - 1;
   switch (id) {
+    case 'protective_shield': return { charges: level >= 20 ? 3 : level >= 10 ? 2 : 1, durationMs: 8000 + Math.floor((level - 1) * 4000 / 29) };
     case 'poison_field': return { radius:80+10*tier, durationMs:3000+500*tier, count:6+tier, intervalMs:500 };
     case 'curse': return { durationMs:4000+500*tier, damageMult:1-(10+2*tier)/100, armorMult:1-(15+3*tier)/100 };
     case 'invisibility': return { durationMs:2000+500*tier };
@@ -25,7 +26,7 @@ export function skillGrowth(id, level = 1) {
   }
 }
 export function growthLabel(id, level = 1) {
-  const describe = g => id === 'poison_field' ? `반경 ${g.radius} · ${g.durationMs/1000}초 · ${g.count}회` : id === 'curse' ? `${g.durationMs/1000}초 · 공격 -${Math.round((1-g.damageMult)*100)}% · 방어 -${Math.round((1-g.armorMult)*100)}%` : id === 'invisibility' ? `${g.durationMs/1000}초` : id === 'sword_wave' ? `${g.range}px · ${g.targets}대상` : id === 'berserk' ? `${g.durationMs/1000}초 · 위력/공속 +${Math.round((g.damageMult-1)*1000)/10}% · 받는 피해 +20%` : id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
+  const describe = g => id === 'protective_shield' ? `${g.charges}회 · ${Math.round(g.durationMs / 100) / 10}초` : id === 'poison_field' ? `반경 ${g.radius} · ${g.durationMs/1000}초 · ${g.count}회` : id === 'curse' ? `${g.durationMs/1000}초 · 공격 -${Math.round((1-g.damageMult)*100)}% · 방어 -${Math.round((1-g.armorMult)*100)}%` : id === 'invisibility' ? `${g.durationMs/1000}초` : id === 'sword_wave' ? `${g.range}px · ${g.targets}대상` : id === 'berserk' ? `${g.durationMs/1000}초 · 위력/공속 +${Math.round((g.damageMult-1)*1000)/10}% · 받는 피해 +20%` : id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
   const current = skillGrowth(id, level);
   if (!current) return '';
   const next = GROWTH_LEVELS.find(n => n > level);

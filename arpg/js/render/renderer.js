@@ -548,6 +548,11 @@ export class ArenaRenderer {
       if (cursed) view.statusRing.moveTo(-9,-entity.r-19).lineTo(9,-entity.r-1).moveTo(9,-entity.r-19).lineTo(-9,-entity.r-1).stroke({color:0xbc85e3,width:4});
       if (rage) view.statusRing.ellipse(0,0,entity.r+7,(entity.r+7)*.55).stroke({color:0xf17b60,width:4}).moveTo(-8,-entity.r-6).lineTo(0,-entity.r-18).lineTo(8,-entity.r-6).stroke({color:0xf17b60,width:3});
       if (shield) view.statusRing.ellipse(0, -entity.r * .6, entity.r + 9, entity.r * 1.6).fill({color:0x73baf0,alpha:.12}).stroke({color:0xa8dafa,width:2,alpha:.8});
+      // Static shield-shaped pips: no motion, shared host/snapshot state, at most three.
+      if (shield) for (let i = 0, n = Math.min(3, entity.shieldCharges ?? 1); i < n; i++) {
+        const x = (i - (n - 1) / 2) * 10, y = -entity.r * 2.3 - 6;
+        view.statusRing.poly([x-3,y-4,x+3,y-4,x+3,y+1,x,y+4,x-3,y+1]).fill({color:0xc9e9fa}).stroke({color:0x38556c,width:1});
+      }
       if (ice) view.statusRing.poly([-entity.r-6,0,-entity.r,-entity.r*2,0,-entity.r*2-8,entity.r,-entity.r*2,entity.r+6,0,0,6]).fill({color:0x8cddf0,alpha:.28}).stroke({color:0xb5f0ff,width:2});
       if (fire) for (const offset of [-10,0,10]) view.statusRing.moveTo(offset-4,-2).quadraticCurveTo(offset-8,-12,offset,-20).quadraticCurveTo(offset+8,-9,offset+4,-2).fill({color:0xf8a75e,alpha:.8});
       view.sunder.visible = !entity.dead && entity.sunder?.expiresTick > world.tick;

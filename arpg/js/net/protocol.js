@@ -165,7 +165,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 const COMMON = ['skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
-  'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+  'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
   'mpRegen', 'hpRegen', 'effectiveInt', 'silverWeapon', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'armorWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
@@ -191,6 +191,7 @@ export function decodeSnapshot(packet, uid) {
   if (!validZones(packet.zones)) return null;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
+    if (e.shieldCharges !== undefined && (!Number.isSafeInteger(e.shieldCharges) || e.shieldCharges < 1 || e.shieldCharges > 3 || !expires(e.shieldUntil,360))) return null;
     if (e.invisibleUntil !== undefined && !expires(e.invisibleUntil,150)) return null;
     if (e.curse && (!expires(e.curse.expiresTick,210) || !(e.curse.damageMult>=.7 && e.curse.damageMult<=1) || !(e.curse.armorMult>=.5 && e.curse.armorMult<=1))) return null;
     if (e.berserk && (!expires(e.berserk.expiresTick,210) || !(e.berserk.damageMult>=1.15 && e.berserk.damageMult<=1.3) || !(e.berserk.speedMult>=1.15 && e.berserk.speedMult<=1.3) || e.berserk.incomingMult!==1.2)) return null;

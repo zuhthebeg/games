@@ -87,12 +87,12 @@ test('real healing scales by effective INT only (not weapon power/share), holy o
   p.cds={};ally.hp=999.5;cast(w,p);assert.equal(ally.hp,1000);
  }
 });
-test('INT and weapon family never amplify or weaken shield radius, duration, MP or block count',()=>{
- for(const weapon of ['blade','bow','focus']) for(const effectiveInt of [10,100]) {
-  const w=createWorld(),p=addPlayer(w,{pid:'p',weapon,x:500,y:400,mods:{skills:['protective_shield'],effectiveInt,mpRegen:0}});
+test('INT and weapon family do not alter mastery-scaled shield radius, duration, MP or charges',()=>{
+ for(const weapon of ['blade','bow','focus']) for(const effectiveInt of [10,100]) for(const level of [1,10,20,30]) {
+  const w=createWorld(),p=addPlayer(w,{pid:'p',weapon,x:500,y:400,skillMasteryLevels:{protective_shield:level},mods:{skills:['protective_shield'],effectiveInt,mpRegen:0}});
   const near=addPlayer(w,{pid:'a',x:659,y:400}),far=addPlayer(w,{pid:'b',x:661,y:400});
   const events=cast(w,p),shield=events.find(e=>e.type==='shield'&&e.dst===near.id);assert.ok(shield);assert.equal(far.shieldUntil,undefined);assert.equal(p.mp,78);
-  assert.ok(near.shieldUntil>w.tick);assert.equal(ABILITIES.protective_shield.shield.durationMs,8000);
+  assert.ok(near.shieldUntil>w.tick);assert.equal(near.shieldCharges,level>=20?3:level>=10?2:1);assert.equal(ABILITIES.protective_shield.shield.durationMs,8000);
  }
 });
 

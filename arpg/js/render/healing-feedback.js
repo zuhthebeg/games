@@ -3,7 +3,7 @@ export function healingFeedback(renderer, event) {
   if (['shield', 'shieldBreak', 'freeze', 'freezeBreak', 'burn'].includes(event.type)) {
     const color = event.type === 'burn' ? 0xf8a75e : event.type.startsWith('freeze') ? 0xb5f0ff : 0xa8dafa;
     renderer.effect(event.x, event.y, 28, color, .3);
-    renderer.number({shield:'보호막',shieldBreak:'보호막 파괴',freeze:'빙결',freezeBreak:'빙결 파괴',burn:'화상'}[event.type], event.x, event.y, color);
+    renderer.number({shield:'보호막',shieldBreak:event.remaining > 0 ? '방어' : '보호막 파괴',freeze:'빙결',freezeBreak:'빙결 파괴',burn:'화상'}[event.type], event.x, event.y, color);
     return true;
   }
   if (event.type === 'turnUndead') {

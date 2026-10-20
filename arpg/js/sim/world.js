@@ -196,7 +196,7 @@ export function step(world, inputs = {}) {
   for (const ent of world.entities) {
     for (const key of ['curse','berserk']) if (ent[key] && (world.tick >= ent[key].expiresTick || !alive(ent) || world.round && world.round.state !== 'running' || key === 'berserk' && !canUseSkill('berserk',ent.weapon,ent.weaponForm,ent.lineage,ent.handedness))) delete ent[key];
     if (ent.invisibleUntil && (world.tick >= ent.invisibleUntil || !alive(ent) || world.round && world.round.state !== 'running')) delete ent.invisibleUntil;
-    if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) delete ent.shieldUntil;
+    if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) { delete ent.shieldUntil; delete ent.shieldCharges; }
     if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
     if (ent.burn) stepBurn(world, ent);
     if (ent.slow && (world.tick >= ent.slow.expiresTick || !alive(ent))) delete ent.slow;
@@ -537,7 +537,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   }));
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
-    ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
+    ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
     rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -655,7 +655,8 @@ function doActive(world, ent, act) {
     for (const target of world.entities) {
       if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
         || dist2(ent.x, ent.y, target.x, target.y) > def.shield.radius ** 2) continue;
-      target.shieldUntil = world.tick + ticks(def.shield.durationMs);
+      target.shieldUntil = world.tick + ticks(act.growth.durationMs);
+      target.shieldCharges = act.growth.charges;
       world.events.push({ type: 'shield', src: ent.id, dst: target.id, ability: act.id, x: target.x, y: target.y });
     }
   } else if (def.heal) {
@@ -839,8 +840,9 @@ function applyHit(world, t, hit) {
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
   if (t.kind === 'player' && dmg > 0 && hostile && t.shieldUntil > world.tick) {
-    delete t.shieldUntil;
-    world.events.push({ type: 'shieldBreak', id: t.id, src: hit.srcId, ability: hit.abilityId, x: t.x, y: t.y });
+    t.shieldCharges = Math.max(0, (t.shieldCharges ?? 1) - 1);
+    if (!t.shieldCharges) { delete t.shieldUntil; delete t.shieldCharges; }
+    world.events.push({ type: 'shieldBreak', remaining: t.shieldCharges ?? 0, id: t.id, src: hit.srcId, ability: hit.abilityId, x: t.x, y: t.y });
     return;
   }
   if (blocked) {
@@ -889,7 +891,7 @@ function applyHit(world, t, hit) {
       t.skeletal = true;
       t.hp = Math.max(1, Math.round(t.maxHp * 0.3));
       t.poison = null;
-      delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil;
+      delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil; delete t.shieldCharges;
       t.pendingCounter = null; t.channel = 0; t.kx = 0; t.ky = 0;
       if (t.shieldGuard) t.shieldGuard.left = 0;
       if (t.act) endAct(world, t, true);
@@ -899,7 +901,7 @@ function applyHit(world, t, hit) {
     if (t.hp <= 0) {
       t.hp = 0;
       t.dead = true;
-      delete t.shieldUntil; delete t.invisibleUntil; delete t.berserk; delete t.curse;
+      delete t.shieldUntil; delete t.shieldCharges; delete t.invisibleUntil; delete t.berserk; delete t.curse;
       t.pendingCounter = null;
       t.terminal = 'death';
       if (t.act) endAct(world, t, true);

@@ -1,3 +1,5 @@
+import { skillGrowth } from '../content/skill-growth.js';
+import { masteryLevel } from '../meta/skill-mastery.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { REGION_EDGES, REGION_ROUTE, MAPS, discoveredMaps, discoveredRegions, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
 import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
@@ -930,10 +932,12 @@ export class HubUI {
       : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
       : a.status ? (a.status === 'curse' ? '주변 적에게 유한 저주 · 중첩 없음' : '자신에게 유한 효과')
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
-    const effects = a.executeUndead ? '확률 즉사 · 실패 시 쿨타임 없음 · 언데드 보스도 1% 미만의 확률로 즉사' : a.shield ? '8초 동안 적 피해 1회 방어 · 피격 후 보호막 파괴 · 중복 없이 갱신' : a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 언데드에게 마법 피해' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.sunder ? ' · 받는 피해 +15% · 파쇄 5초' : ''}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
+    const shieldGrowth = a.shield && skillGrowth(id, masteryLevel(this.save.skillMastery?.[id]));
+    const shieldEffect = shieldGrowth && `${shieldGrowth.charges}회 방어 · ${Math.round(shieldGrowth.durationMs / 100) / 10}초`;
+    const effects = a.executeUndead ? '확률 즉사 · 실패 시 쿨타임 없음 · 언데드 보스도 1% 미만의 확률로 즉사' : a.shield ? `${shieldEffect} · 중복 없이 횟수·시간 갱신` : a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 언데드에게 마법 피해' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.sunder ? ' · 받는 피해 +15% · 파쇄 5초' : ''}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
     const slot = slotOf(this.save,id);
     const slotButtons = `<div class="p2-three" role="group" aria-label="슬롯">${[0, 1, 2].map(i => button(`슬롯 ${i + 1}`, 'skill-slot', `id="skill-slot-${i + 1}" data-id="${id}" data-slot="${i}" aria-pressed="${slot === i}"`)).join('')}</div>`;
-    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.executeUndead ? '<dt>효과</dt><dd>확률 즉사</dd>' : a.shield ? '<dt>효과</dt><dd>8초 · 피해 1회 방어</dd>' : a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save), weaponForm(this.save), this.save.lineage, ITEMS[equippedItem(this.save,'weapon')?.id]?.handedness) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.executeUndead ? '<dt>효과</dt><dd>확률 즉사</dd>' : a.shield ? `<dt>효과</dt><dd>${shieldEffect}</dd>` : a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>${skillUse(id, weaponFamily(this.save), weaponForm(this.save), this.save.lineage, ITEMS[equippedItem(this.save,'weapon')?.id]?.handedness) === 1 ? '' : weaponWarnHtml(id, this.save)}`, slotButtons));
   }
 
   showTrainer({ keepScroll = false } = {}) {
