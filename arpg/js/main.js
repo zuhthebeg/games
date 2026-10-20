@@ -375,6 +375,12 @@ try {
         hub.root.hidden = true; audio.stop(); input.reset(); running = true;
       },
       onBeforeTick: view => { if (ownsLobby()) renderer.snapshot(view); },
+      onEvents: (view, events) => {
+        if (!ownsLobby() || coopFinished || hidden || !coopRenderReady) return;
+        renderer.events(view, events);
+        audio.events(events, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
+        hud.events(events.filter(e => e.id === view.entities[0].id));
+      },
       onFrame: (view, events) => {
         if (!ownsLobby()) return;
         if (coopFinished) return;

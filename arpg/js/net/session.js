@@ -26,6 +26,7 @@ function hostMods(profile) {
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
 const TICK_MS = 1000 / 30;
+const FAST_EVENTS = new Set(['hit', 'miss', 'shieldBlock', 'shieldBreak', 'perfectDodge']);
 // Frame inputs merged into the next whole tick: newest axes/held buttons, any edge pressed in between.
 const mergeInput = (held, input) => {
   const next = { ...input };
@@ -42,13 +43,14 @@ const mergeInput = (held, input) => {
 // Pure transport adapter: no DOM/storage. Only the host ever owns or steps a sim world.
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
-    onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onLost, onStatus });
+    onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onLost = () => {}, onStatus = () => {} }) {
+    Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
+    this.shownEvents = new Set();
     this.bytes = 0; this.snapshots = 0; this.lost = false;
   }
   decorate(view) {
@@ -156,6 +158,15 @@ export class CoopSession {
         this.acks[from] = Math.max(this.acks[from] || 0, Math.min(this.eventSeq, data.ack || 0));
         if (!this.lootLedger) setLoad(this.world, from, Math.max(0, Number.isFinite(data.load) ? data.load : 0));
       }
+    } else if (data.t === 'events' && !this.isHost && from === this.host && this.phase === 'running') {
+      const view = this.buffer.frames.at(-1)?.world;
+      if (!view || !this.onEvents) return;
+      const events = [];
+      for (const row of data.events || []) if (Number.isSafeInteger(row.seq) && row.seq > this.eventAck
+        && row.seq <= this.eventAck + 512 && !this.shownEvents.has(row.seq) && FAST_EVENTS.has(row.event?.type)) {
+        this.shownEvents.add(row.seq); events.push(row.event);
+      }
+      if (events.length) this.onEvents(this.decorate(view), events);
     } else if (data.t === 'snapshot' && !this.isHost && from === this.host) {
       this.lastHostAt = now;
       if (this.phase === 'prepare' && this.negotiatedProfiles && data.start) this.begin(data.start);
@@ -170,7 +181,8 @@ export class CoopSession {
         // Host repeats unacknowledged events. Consume in order, exactly once.
         if (row.seq !== this.eventAck + 1) break;
         this.eventAck = row.seq;
-        if (!['kill','objectiveComplete'].includes(row.event.type) || row.participants.includes(this.uid)) events.push(row.event);
+        const shown = this.shownEvents.delete(row.seq);
+        if (!shown && (!['kill','objectiveComplete'].includes(row.event.type) || row.participants.includes(this.uid))) events.push(row.event);
       }
       // Do not settle a final snapshot before its event journal has arrived.
       if (this.eventAck < data.eventSeq) return;
@@ -265,6 +277,9 @@ export class CoopSession {
       for (const pid of this.players) this.appliedInputSeqs[pid] = this.latches[pid]?.seq ?? 0;
       for (const event of events) if (event.type === 'kill') this.deathTicks.set(event.id, this.world.tick);
       for (const event of events) this.journal.push({ seq: ++this.eventSeq, event, participants: event.type === 'kill' ? participants : event.participants || [] });
+      // Presentation is prompt; snapshots still own HP/rewards and retry the journal.
+      if (events.some(event => FAST_EVENTS.has(event.type))) this.sendRt({ t: 'events', tick: this.world.tick,
+        events: this.journal.filter(row => FAST_EVENTS.has(row.event.type)) });
       // Even 15Hz on the tick clock (was ~12Hz alternating 66/100ms from the timer).
       if (this.world.round.state === 'running' && this.world.tick % 2 === 0) this.broadcast();
       this.onFrame(this.decorate(localView(this.world, this.uid)), events.filter(e => e.type === 'objectiveComplete' ? e.participants.includes(this.uid) : e.type !== 'kill' || participants.includes(this.uid)));
