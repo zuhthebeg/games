@@ -251,7 +251,7 @@ export class CoopSession {
       this.onFrame(this.decorate(this.buffer.frames.at(-1).world), events, { silent, presentation });
       this.phase = data.round.state === 'running' ? 'running' : 'ended';
     } else if (data.t === 'ping') this.sendRt({ t: 'pong', to: from, at: data.at });
-    else if (data.t === 'pong' && data.to === this.uid) {
+    else if (data.t === 'pong' && data.to === this.uid && (this.isHost || from === this.host)) {
       this.healthAt = null;
       if (from === this.host) this.rtt = Math.max(0, clock() - data.at);
     }

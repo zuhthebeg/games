@@ -46,3 +46,7 @@ test('duplicate visibility/frame resume signals retain the original correction m
  const {s}=pair(),g=s.guest;const before=g.prediction.state.x;g.sendRt=()=>{};g.resume();g.resume();
  assert.equal(g.resumeFrom.x,before);
 });
+test('a third guest pong cannot hide an unresponsive authoritative host during resume',()=>{
+ const {s}=pair(),g=s.guest;g.players.add('other');g.sendRt=()=>{};g.resume();g.rt('other',{t:'pong',to:g.uid,at:0});
+ assert.notEqual(g.healthAt,null);
+});
