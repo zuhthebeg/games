@@ -69,7 +69,7 @@ export function rewindGuestDodge(world, p, inp, awardPerfect, edge = 'dodgeEdge'
       // can still earn the edge's one perfect reward, but has already paid ×0.3:
       // refund its recorded applied damage on perfect, never mitigate it twice.
       if (row.hit.shieldBlocked && !perfect) {keep.push(row);continue;}
-      const refund=perfect?row.dmg:row.dmg-shieldDamage(row.dmg);
+      const refund=perfect?row.dmg:row.dmg-shieldDamage(row.dmg,p.shieldModel);
       p.hp=Math.min(p.maxHp,p.hp+refund);
       if(perfect)undoContact(world,p,row,state);
       world.events.push({type:'dodgeRewind',id:p.id,pid:p.pid,srcId:row.hit.srcId,hitTick:row.tick,dodgeTick:start,heal:refund,kind:'block'});

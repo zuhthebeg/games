@@ -78,6 +78,10 @@ export function weighted(entries, random) {
 }
 
 export const RECIPES = {
+  buckler: {scrap:4,hide:1,gold:30},
+  kite_shield: {scrap:10,wood:4,hide:2,rune_shard:2,gold:95},
+  tower_shield: {scrap:16,wood:8,hide:2,rune_shard:5,frost_shard:3,gold:160},
+  bone_shield: {undead_bone:18,hide:3,rune_shard:4,frost_shard:3,gold:160},
   iron_sword: { scrap: 8, fang: 2, gold: 60 },
   hunter_bow: { wood: 8, hide: 2, gold: 60 },
   ember_wand: { wood: 8, fang: 3, gold: 60 },

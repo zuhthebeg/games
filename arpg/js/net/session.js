@@ -17,9 +17,10 @@ const validLevels = levels => levels && typeof levels === 'object' && !Array.isA
 
 const NEW_GEAR_SKILLS = new Set(['poison_field','curse','invisibility','sword_wave','berserk']);
 function hostMods(profile) {
-  if (validLobbyProfile(profile)) return {...profile.mods,lineage:profile.rewardSave.lineage || 'human'};
+  if (validLobbyProfile(profile)) return {...invasionProfile(profile).mods,lineage:profile.rewardSave.lineage || 'human'};
   // Legacy simulation fixtures may omit a save; they cannot claim new lineage/form skills.
   const mods={...profile.mods,lineage:'human'};
+  delete mods.shieldModel; // New equipment identity requires a validated save, never a bare capability.
   if (Array.isArray(mods.skills)) mods.skills=mods.skills.map(id=>NEW_GEAR_SKILLS.has(id)?null:id);
   if (NEW_GEAR_SKILLS.has(mods.skill)) mods.skill=null;
   return mods;

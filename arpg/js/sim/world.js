@@ -16,6 +16,7 @@ import { MONSTER_VARIANTS } from '../content/monsters.js';
 
 import { BALANCE, statEffect, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
+import { validShieldModel, shieldSpec } from '../content/shields.js';
 import { updateShieldGuard, shieldRushPosition, shieldBlocks, shieldDamage, loadEffects, movementInput, dodgeStart, walkingPosition, dashPosition, knockPosition, arenaPosition } from './movement.js';
 export { loadEffects } from './movement.js';
 
@@ -92,7 +93,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
     // Keep legacy no-armor serialized traces byte-identical.
     ...(mods.armorWeight ? { armorWeight: mods.armorWeight } : {}),
-    ...((weapon === 'blade' || weapon === 'focus' && mods.weaponForm === 'wand') && mods.handedness !== 2 && mods.offhand === 'shield' ? {offhand:'shield'} : {}),
+    ...((weapon === 'blade' || weapon === 'focus' && mods.weaponForm === 'wand') && mods.handedness !== 2 && mods.offhand === 'shield' ? {offhand:'shield',...(validShieldModel(mods.shieldModel) ? {shieldModel:{v:1,type:mods.shieldModel.type}} : {})} : {}),
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
@@ -820,6 +821,10 @@ function applyHit(world, t, hit) {
   }
   if (t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac * (t.curse?.armorMult ?? 1));
   if (mdef && t.curse && hit.fixedDamage === undefined) dmg *= 2 - t.curse.armorMult;
+  if (t.kind === 'player' && shieldSpec(t.shieldModel)?.undeadWard && !hit.execute) {
+    const source=world.entities.find(e=>e.id===hit.srcId);
+    if(source?.skeletal || MONSTERS[source?.type]?.lifeState === 'undead') dmg *= 1-shieldSpec(t.shieldModel).undeadWard;
+  }
   if (t.berserk) dmg *= t.berserk.incomingMult;
   if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
@@ -835,7 +840,7 @@ function applyHit(world, t, hit) {
     if (awardPerfectDodge(world,t,hit,world.tick-t.dodge.startedTick)) {
       world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg:0});return;
     }
-    dmg=shieldDamage(dmg);
+    dmg=shieldDamage(dmg,t.shieldModel);
   }
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';

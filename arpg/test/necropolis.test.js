@@ -97,7 +97,7 @@ test('new content deterministic world and guest snapshot type/AI/HP survive with
 });
 
 test('new boss deterministic ordinary T4 drops preserve gear budget and existing materials only',()=>{
- for(let seed=0;seed<200;seed++)for(const threat of [1,2,3]){const ctx={stageId:'S27',huntTier:4,threat};const drop=rollDrops(boss,seed,ctx);assert.deepEqual(drop,rollDrops(boss,seed,ctx));assert.ok(Number.isSafeInteger(drop.gold)&&drop.gold>0);for(const id of Object.keys(drop.stacks))assert.ok(ITEMS[id]);for(const item of drop.items)assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?1:['weapon','body'].includes(ITEMS[item.id].slot)?4:3);}
+ for(let seed=0;seed<200;seed++)for(const threat of [1,2,3]){const ctx={stageId:'S27',huntTier:4,threat};const drop=rollDrops(boss,seed,ctx);assert.deepEqual(drop,rollDrops(boss,seed,ctx));assert.ok(Number.isSafeInteger(drop.gold)&&drop.gold>0);for(const id of Object.keys(drop.stacks))assert.ok(ITEMS[id]);for(const item of drop.items)assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?3:['weapon','body'].includes(ITEMS[item.id].slot)?4:3);}
 });
 
 test('normal board hides the necropolis until both gates and reveals only its frontier',()=>{

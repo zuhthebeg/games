@@ -50,7 +50,7 @@ test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded g
   const loot=rollDrops('throne_dragon',seed,{stageId:'TD1',huntTier:3,threat});
   assert.ok(Number.isSafeInteger(loot.gold)&&loot.gold>=0&&loot.gold<=250);
   assert.ok(loot.items.length<=4);if(!loot.items.length)zeroGear++;
-  for(const item of loot.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?1:ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
+  for(const item of loot.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?3:ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
   for(const [id,n] of Object.entries(loot.stacks)){assert.ok(ITEMS[id]);assert.ok(Number.isSafeInteger(n)&&n>0&&n<=10);}
  }
  assert.equal(zeroGear,0);

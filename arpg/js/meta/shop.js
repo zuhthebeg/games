@@ -30,6 +30,12 @@ export function shopStock(accountSeed, refreshIndex) {
   }
   const shield = instance(`stock:${seed}:offhand:0`, 'round_shield');
   stock.push({ ...shield, price: gearPrice(shield) });
+  // One rotating affordable offhand offer; legacy round-shield offer/UID is stable.
+  const shieldPool=Object.entries(ITEMS).filter(([,d])=>d.shieldType && ['common','fine'].includes(d.rarity));
+  const [shieldId]=shieldPool[Math.floor(rng(seed ^ 0x5a1e1d)()*shieldPool.length)];
+  const alternative=instance(`stock:${seed}:offhand:1`,shieldId,seed ^ 0x5a1e1d);
+  alternative.affixes=alternative.affixes.map(({k,v})=>{const [min,max]=affixRange(k,ITEMS[shieldId].huntTier);return {k,v:Math.min(v,Math.floor((min+max)/2))};});
+  stock.push({...alternative,price:gearPrice(alternative)});
   return stock;
 }
 export function buyGear(save, uid) {

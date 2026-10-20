@@ -1,0 +1,26 @@
+{
+  "baseline": "127a17e",
+  "reason": "Four approved shield families replace only offhand gear identities. Gold/stacks/count/nonshield instances verified independently over all monsters,4tiers,3threats,normal+elite.",
+  "normal": {
+    "scarecrow": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821",
+    "training_dragon": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821",
+    "goblin_grunt": "08fbb9d4a82b49ddc16e47f801babe5a541f1af70177492724deb3ac1a4891a9",
+    "goblin_slinger": "8e4e4bed367b088f42c085162231a789dfa71376b993eb3c530321f51757764c",
+    "iron_boar": "6752134baf7d25db656d1e7631ed36c7a7005e23bcff2a83ecb009889a5c231f",
+    "wolf": "7f9ccb78c83907f9d7eaf77905578870af80abf75afd2efeb84e8e913384d1bb",
+    "spirit": "0a85b24cf92f6a5b8915a61dfc5a54299fbc6efc6223be61087f1971621a04e4",
+    "poison_spider": "9f73aa3f414221998d4dc11fc87ce657067fa19afc1292ecd0cf637bb77d32e6",
+    "skeleton_minion": "5b2d462f3b78fa8f83e41c44a1bb2d135d8ddf8bc14e70d0de0053010020eda9",
+    "skeleton_warrior": "3a0cb502a2bcbd0fd80ab97baa6d8ce1665fe1b17ff29c978737d86edc4c2dc5",
+    "skeleton_rogue": "6af03dc2e82c075e8b15bd3d3ec4409adc3f80811b2b2cebf650f55d148f5bb8",
+    "skeleton_mage": "877784e774883f2e9bc2e3a8dc1a4553e6ad0ff93124e0bd88bf43ef281ff0ee",
+    "ghoul": "df989bbf67d6a7b3dcce8f51a1dd9f65f016d6283e987e1d7ce7b1ffbabc7bca",
+    "ghost": "c8e642f599568627d537c02db70747fbb019fb2a27e9d6efbc57a2a0b2a920a3",
+    "bat": "4e51662cfeaaf44a949602c12fc751f73e00b11690708b86cf5cdabfb21fb2d3",
+    "demon": "08fbb9d4a82b49ddc16e47f801babe5a541f1af70177492724deb3ac1a4891a9",
+    "goleling": "4da4633dbe2537b524c6e834bf8115878bd6c01edecfa62c276632b3282ad6bc",
+    "slime": "08fbb9d4a82b49ddc16e47f801babe5a541f1af70177492724deb3ac1a4891a9",
+    "succubus": "8e4e4bed367b088f42c085162231a789dfa71376b993eb3c530321f51757764c",
+    "undead_lab_human_melee": "5cf30fb85d4eefb16a253530e50718826acf7e64d3362104a8cbf05b21767821"
+  }
+}

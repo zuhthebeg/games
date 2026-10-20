@@ -1,4 +1,5 @@
 // Pure position-only helpers. No world stepping, combat, events or persistence.
+import { shieldSpec } from '../content/shields.js';
 import { DT, ticks } from './core.js';
 import { dodgeTiming } from './dodge-policy.js';
 import { PLAYER_BASE as PB } from '../content/combat.js';
@@ -28,7 +29,7 @@ export function shieldBlocks(p, hit, guard = p.shieldGuard) {
   const angle = Math.atan2(hit.fromY-p.y,hit.fromX-p.x)-guard.facing;
   return Math.cos(angle) >= .5-1e-10;
 }
-export const shieldDamage = damage => Math.max(1,Math.round(damage*.3));
+export const shieldDamage = (damage,model=null) => { const spec=shieldSpec(model);return Math.max(1,Math.round(damage*(spec ? 1-spec.block : .3))); };
 // Held is a level, perfect eligibility belongs only to an accepted press edge.
 export function updateShieldGuard(p, inp) {
   const held = p.offhand === 'shield' && !p.dead && !p.terminal && !p.dodgeDisabled && !!inp.dodgeHeld;

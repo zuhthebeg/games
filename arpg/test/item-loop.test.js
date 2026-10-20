@@ -216,14 +216,14 @@ test('reward affixes apply only through meta, shared cap prevents inflation and 
   assert.ok(extraMaterials > 0);
 });
 
-test('shop determinism, unique 6~8 legacy gear stock plus one shield, fine maximum/midpoint, sold-out state and 3-clear/paid refresh persistence', () => {
+test('shop determinism, unique 6~8 legacy gear stock plus two shields, fine maximum/midpoint, sold-out state and 3-clear/paid refresh persistence', () => {
   for (let seed = 0; seed < 1000; seed++) {
     const stock = shopStock(seed, 2);
-    assert.deepEqual(stock, shopStock(seed, 2)); assert.ok(stock.length >= 7 && stock.length <= 9);
+    assert.deepEqual(stock, shopStock(seed, 2)); assert.ok(stock.length >= 8 && stock.length <= 10);
     assert.equal(new Set(stock.map(({ id }) => id)).size, stock.length);
     const weapons = stock.filter((item) => ITEMS[item.id].slot === 'weapon').length;
     assert.ok(weapons >= 3 && weapons <= 4);
-    assert.ok(stock.length - weapons - 1 >= 3 && stock.length - weapons - 1 <= 4);
+    assert.ok(stock.length - weapons - 2 >= 3 && stock.length - weapons - 2 <= 4);
     for (const item of stock) {
       assert.ok(['common', 'fine'].includes(ITEMS[item.id].rarity)); assert.ok(item.affixes.length <= 1);
       for (const { k, v } of item.affixes) {

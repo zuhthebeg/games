@@ -1,7 +1,9 @@
 // Presentation only. No inferred stats, rarity, or equipment metadata from pictures.
 // These paths are filled only by reviewed, local art; unknown items keep the SVG.
 const tier4 = ['revenant_blade','bone_bow','soulfire_wand','gravekeeper_staff','ossuary_maul','shroud_robe','shadow_leather','ossuary_plate','dragonfang_blade','dragon_scale_armor','dragon_scale'];
+const shieldArt=['buckler','kite_shield','tower_shield','bone_shield'];
 const artwork = {
+  ...Object.fromEntries(shieldArt.map(id=>[id,id.replaceAll('_','-')+'.webp'])),
   ...Object.fromEntries(tier4.map(id => [id, id.replaceAll('_', '-') + '.webp'])),
   sword: 'sword.webp', 'sword-t2': 'sword-t2.webp', 'sword-t3': 'sword-t3.webp',
   bow: 'bow.webp', 'bow-t2': 'bow-t2.webp', 'bow-t3': 'bow-t3.webp', cleaver: 'cleaver.webp', maul: 'maul.webp',
@@ -16,6 +18,7 @@ const artwork = {
 };
 
 export function itemArtKey(id, definition = {}) {
+  if (shieldArt.includes(definition.baseId || id)) return definition.baseId || id;
   if (tier4.includes(definition.baseId || id)) return definition.baseId || id;
   if (definition.slot === 'weapon') {
     const base = definition.baseId || id;

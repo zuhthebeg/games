@@ -1,3 +1,4 @@
+import { shieldSpec } from '../content/shields.js';
 import { EQUIPMENT_SETS } from '../content/equipment-sets.js';
 import { BALANCE, statEffect } from '../content/balance.js';
 import { SKILL_USE } from '../content/combat.js';
@@ -69,6 +70,9 @@ export function deriveMods(save) {
   const stats = effectiveStats(save);
   const sets = setBonuses(save);
   const weapon = equippedItem(save, 'weapon');
+  const offhand=permitsShield(ITEMS[weapon?.id]) ? ITEMS[equippedItem(save,'offhand')?.id] : null;
+  const shieldModel=offhand?.shieldType ? {v:1,type:offhand.shieldType} : null;
+  const shield=shieldSpec(shieldModel);
   const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
   const affixes = affixTotals(gear);
   const family = ITEMS[weapon?.id]?.family || 'blade';
@@ -82,6 +86,7 @@ export function deriveMods(save) {
   };
   return {
     ...( ['weapon','head','body','hands','feet'].every(slot => ITEMS[equippedItem(save, slot)?.id]?.boneSet && ITEMS[equippedItem(save, slot)?.id]?.slot === slot) ? { boneRevival: true } : {}),
+    ...(shieldModel ? {shieldModel} : {}),
     maxHp: 100 + 8 * save.level + affixes.hp_flat + (sets.maxHp || 0),
     ac: gear.reduce((sum, item) => sum + armorAc(item), 0) + (sets.ac || 0),
     effectiveInt: stats.int,
@@ -94,13 +99,13 @@ export function deriveMods(save) {
     hpRegen: S.hpRegenAt100 * stats.con / 100 + (sets.hpRegen || 0),
     critChance: S.luckCrit * norm(stats.luk), critMult: S.critMult,
     dropLuck: S.luckDrop * norm(stats.luk), enchantLuck: S.luckEnchant * norm(stats.luk),
-    speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100) * (1 + (sets.speed_pct || 0) / 100),
+    speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100) * (1 + (sets.speed_pct || 0) / 100) * (1 + (shield?.speed || 0)),
     dodgeCdMult: Math.max(S.dodgeFloor, 1 - S.dodge * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
     iframeBonusMs: Math.min(S.iframeCap, S.iframe * eff(stats.agi)),
     potionHealMult: (1 + Math.min(S.potionCap, S.potion * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
     poiseMult: 1 + S.poise * eff(stats.str),
     dmgMult: Object.fromEntries(Object.keys(SKILL_USE).map((f) => [f, familyDamage(f)])),
-    attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)),
+    attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)) + (shield?.attack || 0),
     armorWeight: effectiveWeight(equippedItem(save, 'body')),
     ...(ITEMS[weapon?.id]?.form ? { weaponForm: ITEMS[weapon.id].form } : {}),
     weaponWeight: weapon ? effectiveWeight(weapon) : BALANCE.attackSpeed.weightReference,

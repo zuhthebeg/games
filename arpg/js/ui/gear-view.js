@@ -1,3 +1,4 @@
+import { shieldSpec } from '../content/shields.js';
 import { SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
 import { BALANCE } from '../content/balance.js';
 import { SKELETON_PORTRAITS } from '../render/skeleton-portrait-frames.js';
@@ -166,7 +167,7 @@ export function itemDetailsHtml(item, save) {
     ...(def.setId ? [row('set', '세트', def.setName)] : []),
     ...(def.handedness === 2 ? [row('hands','양손 무기','무기 공격 피해 ×2 · 방패 장착 불가 · 힐·주문·지속피해 제외')] : []),
     def.power !== undefined ? row('attack', '공격 배율', `×${amount(def.power * mult)}`) : row('ac', '방어력', item.enhance && def.kind !== 'offhand' ? `${def.ac || 0} +${item.enhance}` : `${def.ac || 0}`),
-    ...(def.kind === 'offhand' ? [row('guard','막기','누르는 동안 정면 120° · 피해 70% 감소 · 타이밍 막기 피해 0 + 방패 돌진')] : []),
+    ...(def.kind === 'offhand' ? [row('guard','막기',`정면 120° · 피해 ${Math.round((shieldSpec({v:1,type:def.shieldType})?.block ?? .7)*100)}% 감소 · 타이밍 막기 피해 0`), ...(def.shieldType === 'buckler' ? [row('agile','경량','이동 +3% · 공격속도 +2%')] : []), ...(def.shieldType === 'tower_shield' ? [row('heavy','중량','이동 −8%')] : []), ...(def.shieldType === 'bone_shield' ? [row('ward','망자 수호','언데드에게 받는 피해 −8%')] : [])] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
     ...(def.boneSet ? [row('bone-set', '뼈 5세트', '5부위 착용 시 출정당 1회 해골 부활')] : []),

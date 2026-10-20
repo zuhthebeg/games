@@ -56,6 +56,6 @@ test('frame socket output is reusable without per-update pose allocation and sna
 
 test('all existing shield rarity variants use the same reviewed wood/gold item artwork',async()=>{
  const{ITEMS}=await import('../js/meta/items.js');const{itemArtKey,itemArtPath}=await import('../js/ui/item-art.js');
- const shields=Object.entries(ITEMS).filter(([,d])=>d.form==='shield');assert.equal(shields.length,4);
+ const shields=Object.entries(ITEMS).filter(([,d])=>d.baseId === 'round_shield');assert.equal(shields.length,4);
  for(const[id,d]of shields){assert.equal(itemArtKey(id,d),'shield');assert.equal(itemArtPath('shield'),'assets/items/shield-armor-v2.webp');}
 });

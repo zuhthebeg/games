@@ -28,7 +28,7 @@ test('shield equips with one-handed blade/wand, switching bow/staff unequips ato
  const blunt=equip(s,'blunt');assert.equal(deriveMods(blunt).offhand,'shield');
 });
 test('shield rarity variants never accidentally grant passive AC and fresh saves have optional empty socket',()=>{
- for(const def of Object.values(ITEMS).filter(d=>d.kind==='offhand'))assert.equal(def.ac,0);
+ for(const def of Object.values(ITEMS).filter(d=>d.kind==='offhand' && d.baseId === 'round_shield'))assert.equal(def.ac,0);
  assert.equal(createSave({name:'a',weapon:'blade',answers:[0,0,0,0,0],createdAt:1}).equipped.offhand,null);
  const invalid=trained();invalid.items.push(instance('shield','round_shield'));invalid.equipped.offhand='shield';invalid.equipped.weapon='bow';assert.equal(validateSave(invalid),false);
 });

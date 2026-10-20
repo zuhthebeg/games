@@ -23,6 +23,10 @@ const armor = (name, rarity, hp, weight, material = 'leather') => ({
 
 export const ITEMS = {
   round_shield: { name: '원형 방패', kind: 'offhand', slot: 'offhand', form: 'shield', material: 'metal', rarity: 'common', huntTier: 1, ac: 0, weight: 4, requiredLevel: 1 },
+  buckler: { name:'버클러',kind:'offhand',slot:'offhand',form:'shield',material:'metal',rarity:'common',huntTier:1,ac:0,weight:2,requiredLevel:1,shieldType:'buckler' },
+  kite_shield: { name:'카이트 실드',kind:'offhand',slot:'offhand',form:'shield',material:'metal',rarity:'fine',huntTier:2,ac:2,weight:5,requiredLevel:5,shieldType:'kite_shield' },
+  tower_shield: { name:'타워 실드',kind:'offhand',slot:'offhand',form:'shield',material:'metal',rarity:'fine',huntTier:3,ac:5,weight:10,requiredLevel:10,shieldType:'tower_shield' },
+  bone_shield: { name:'해골 뼈방패',kind:'offhand',slot:'offhand',form:'shield',material:'bone',rarity:'fine',huntTier:3,ac:3,weight:5,requiredLevel:10,shieldType:'bone_shield' },
   training_sword: weapon('수련용 검', 'blade', 'common', 1, 8),
   short_bow: weapon('짧은 활', 'bow', 'common', 1, 6),
   apprentice_wand: weapon('견습 지팡이', 'focus', 'common', 1, 4, 'wand'),
@@ -147,7 +151,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
-      ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.kind === 'offhand' ? 0 : base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
+      ...(base.power !== undefined ? { power: base.power * ratio } : { ac: base.kind === 'offhand' ? Math.round((base.ac || 0) * ratio) : base.ac ? Math.round(base.ac * ratio) : toAc(ECONOMY.starterBodyHp[rarity]) }),
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
@@ -165,7 +169,7 @@ for (const [id, def] of Object.entries(ITEMS)) {
   RECIPES[id].frost_shard = Math.ceil(budget.frost * slotScale);
 }
 for (const [id, def] of Object.entries(ITEMS)) {
-  if (!def.slot || def.huntTier < 2 || def.dropOnly || RECIPES[id]) continue;
+  if (!def.slot || def.huntTier < 2 && def.baseId !== 'buckler' || def.dropOnly || RECIPES[id]) continue;
   const base = ITEMS[def.baseId], recipe = RECIPES[def.baseId];
   const materialScale = ECONOMY.rarityPower[def.rarity] / ECONOMY.rarityPower[base.rarity];
   const goldScale = ECONOMY.rarityPrice[def.rarity] / ECONOMY.rarityPrice[base.rarity];
@@ -455,7 +459,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       // I1 authored no T4 head/hands/feet. Retain slot odds, falling back to existing T3 gear.
-      const slotTier = slot === 'offhand' ? 1 : tier === 4 && !['weapon', 'body'].includes(slot) ? 3 : tier;
+      const slotTier = tier === 4 && !['weapon', 'body'].includes(slot) ? 3 : tier;
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
         && item.huntTier === slotTier && !item.craftOnly && !item.dropOnly);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');

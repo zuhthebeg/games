@@ -1,3 +1,4 @@
+import { shieldSpec } from '../content/shields.js';
 import { knightEquipmentAllowed, KNIGHT_ARMOR_LEVELS } from './knight-equipment.js';
 import { ITEMS, carriedWeight, capacity, meetsRequirement, enhanceMultiplier, armorAc, effectiveWeight, uniqueUid, permitsShield } from './items.js';
 import { deriveMods } from './stats.js';
@@ -55,6 +56,11 @@ export function compareItems(equipped, candidate, save, { ignoreEnhancement = fa
     line('enhancePower', '강화 공격 기여', (oldDefinition?.power || 0) * (oldEnhance - 1), definition.power * (newEnhance - 1), false, { unit:'배율', section:'base' });
   } else {
     line('ac', '방어력', armorAc(equipped), armorAc(candidate), false, { unit:'', section:'base' });
+  }
+  if(definition.slot === 'offhand') {
+    const spec=d=>d?.form === 'shield' ? shieldSpec({v:1,type:d.shieldType}) : null;
+    line('block','막기 피해 감소',oldDefinition?.form === 'shield' ? (spec(oldDefinition)?.block ?? .7)*100 : 0,(spec(definition)?.block ?? .7)*100,false,{unit:'%',section:'base'});
+    line('undeadWard','언데드 피해 감소',(spec(oldDefinition)?.undeadWard || 0)*100,(spec(definition)?.undeadWard || 0)*100,false,{unit:'%',section:'base'});
   }
   line('capacity', '최대 휴대 무게', before.capacity, after.capacity, false, { unit:'kg', section:'derived' });
   const beforeRatio = carriedWeight(beforeSave) / capacity(beforeSave), afterRatio = carriedWeight(afterSave) / capacity(afterSave);

@@ -9,6 +9,7 @@ const root=new URL('../',import.meta.url);
 test('all head/feet/shield families and rarity variants use new art without losing semantic SVG',()=>{
  const seen=new Set(),rarities=new Set();let count=0;
  for(const [id,d] of Object.entries(ITEMS)){
+  if(d.shieldType)continue; // Distinct new families have their own provenance + coverage.
   if(!['head','feet'].includes(d.slot)&&!(d.slot==='offhand'&&d.form==='shield'))continue;
   const expected=d.slot==='offhand'?'shield':d.slot==='head'?(d.armorClass==='light'||d.material==='leather'?'head-light':'head'):(d.armorClass==='heavy'?'feet-heavy':'feet');
   assert.equal(itemArtKey(id,d),expected,id);assert.equal(itemArtPath(expected),`assets/items/${expected}-armor-v2.webp`);

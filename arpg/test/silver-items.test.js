@@ -1,3 +1,5 @@
+// Shield catalogue extension: offhand identity hashes updated; nonshield gear, gold,
+// all material/stone streams independently byte-compared with 127a17e (new-shields report).
 import {isBossType} from '../js/content/boss-tuning.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -54,7 +56,7 @@ test('C silver rolls retain approved catalog loot fingerprint (gold/gear/materia
  assert.deepEqual(rows,HISTORICAL);
 });
 // Boss entries reflect the approved rare floor; both nonboss historical hashes remain unchanged.
-const HISTORICAL=['e1f25c8c7aca729ffa644ad0fa0b2e29eee241fb1bdcf1c0499b97af469c9c15','4c2cd60c134d00be58c7caffab536ba4dd937102977d3f39bfe37a56f86f8ceb','c7c421eafa5278126de8e74b07a42c7cbc2cd12917b6d1f1aaaca484ef9a02d7'];
+const HISTORICAL=['5cd9340d242000598d6a51c899d61498ca35396349294ef32341b62df715f369','17ce9ecc0a8ec7d0c7fff323b88a2c4d20da7132b43500951fd719a73d2bdc55','66d29250620abec5f3c81c05fddbe36b2f9024a8e26c816720f48f47d69c1902'];
 
 test('C real T2/T3 construct stages award ingots through tracker/settlement; necropolis boss never does',async()=>{
  const {createTracker,trackRound,settleRound}=await import('../js/meta/run.js');
@@ -87,9 +89,9 @@ test('C authored construct boss identity guarantees 1-2 without ctx.boss; non-bo
 });
 test('C construct non-silver loot retains approved catalog fingerprint, including all special stones',()=>{
  for(const[monster,ctx,hash]of[
-  ['goleling',{huntTier:3,stageId:'S12'},'f3401799d5b56e16a012304ceea9feed8267e70f3374affbceed7d9d18cbb233'],
-  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'2de7cd396e4f1944c2af672e6d2a3c562b886adb7fa79cc3d89a53a87c9d6348'],
-  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'961c048cfa97ca311eeadf5c7acc41b83b17b28fbd4cee6cc55d2e0fae577572'],
+  ['goleling',{huntTier:3,stageId:'S12'},'12f7a223ccf88513c5e4f9e45648f83f22a47040724ae6458744545fae93e53d'],
+  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'6d0683298b0d8f43a3d676f9b377ecc0c6291681400d9feba60bac59799e599e'],
+  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'5b9b75e8ea5ef7fadf414de76d4c39b174c29ef22abd16d6cb6184dd457019fd'],
   ['scarecrow',{huntTier:4,boss:true},'ff461329715346518d112f0b0180ba61d46671d9a5363dca3ff8f58d90208e6e']]){
   const rows=[];for(let seed=1;seed<=1000;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks.silver_ingot;rows.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(rows)).digest('hex'),hash,monster);
