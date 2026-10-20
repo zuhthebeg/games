@@ -271,7 +271,7 @@ export class HubUI {
     this.creationLineage = null; this.answers = []; this.name = ''; this.chosenWeapon = undefined;
     this.show(this.panelHtml('어떤 모습으로 깨어날까', `
       <p>캐릭터는 이 브라우저의 독립 슬롯에 보관됩니다.</p>
-      ${button('인간 · 기존 모험 / 이어하기', 'choose-human')}
+      ${button('인간 · 이어하기', 'choose-human')}
       ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}`), 'character-choice');
   }
 
@@ -315,7 +315,7 @@ export class HubUI {
       `data-family="${family}" aria-pressed="${family === this.chosenWeapon}"`)).join('');
     this.show(this.panelHtml('인장이 응답했다', `
       <p>${escape(this.name)}, ${knight ? '해골 · 무기: <b>검</b>' : `당신에게 이끌린 무기는 <b>${WEAPON_NAMES[result.weapon]}</b>`}.</p>
-      ${bars}<p class="muted">${knight ? '문답 능력치 그대로 · 기존 근접 무기 규칙을 사용합니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
+      ${bars}<p class="muted">${knight ? '문답 결과에 따라 능력치가 정해집니다.</p>' : `초기 능력치 ${BALANCE.stats.startPoints}점은 그대로 유지된다. 무기만 바꿀 수 있다.</p>
       <div class="weapon-choices">${choices}</div>`}
       ${button(this.roomInvite ? '캐릭터 생성 · 같은 방 입장' : knight ? '해골 생성 · 잊힌 묘지로' : '소환 시험으로 · 30초', 'create', 'id="quiz-start"')}${this.initialCharacters ? button('생성 취소 · 캐릭터 선택', 'character-choice') : ''}`), 'quiz-result');
   }
@@ -382,7 +382,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${this.save.lineage === 'skeleton_knight' ? `<p class="minor">${knightFormName(this.save)} · 무기 Lv1 / 손 Lv8 / 발 Lv15 / 몸 Lv22 / 머리 Lv30 · 침입 동의방에서 몬스터 편 참가<br>${this.save.permanentDeathKnight ? '데스나이트 영구 진화 완료 · 장비 해제 후에도 유지' : '다섯 부위 모두 장착하면 데스나이트 영구 진화'}<br>${this.save.permanentDeathKnight ? '데스나이트 전투 아틀라스 로드 · 실패 시 대체 외형/오류 표시' : '맨뼈 기본 외형 · 실제 장착 부위만 표시 · 전용 회피 동작'}<br>인간 AI 외형 · 기존 공격/전투 속성/드랍 유지</p>` : ''}${room}${activeSetsHtml(this.save)}
+    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${room}${activeSetsHtml(this.save)}
       ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
@@ -572,9 +572,9 @@ export class HubUI {
 
   comparisonHtml(item) {
     const comparison = comparisonFor(item, this.save);
-    return `<label class="compare-toggle"><input id="compare-ignore-enhancement" type="checkbox" ${this.ignoreEnhancement ? 'checked' : ''}>강화 제외하고 비교</label>${splitComparisonHtml(item, this.save, { ignoreEnhancement: this.ignoreEnhancement })}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">실제 장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
+    return `<label class="compare-toggle"><input id="compare-ignore-enhancement" type="checkbox" ${this.ignoreEnhancement ? 'checked' : ''}>강화 제외하고 비교</label>${splitComparisonHtml(item, this.save, { ignoreEnhancement: this.ignoreEnhancement })}<div class="p2-weight-after" data-weight-after="${comparison.weightAfter}">장착 후 소지 <b>${amount(comparison.weightAfter)} / ${amount(comparison.weightLimit)} kg</b>`
       + `<small>${weightDescription(comparison.weightAfter, comparison.weightLimit).text}</small></div>`
-      + `<small class="compare-actual">실제 장착 조건 · 실제 무게 적용 / 필요 힘은 기본 장비 기준</small>`
+      + `<small class="compare-actual">필요 힘은 기본 장비 기준</small>`
       + `${this.setEffectsHtml()}${comparison.locked ? `<p class="p2-lock">${icon('lock')}장착 불가 · ${escape(comparison.lockReason)}</p>` : ''}`;
   }
 
@@ -929,8 +929,8 @@ export class HubUI {
       : a.executeUndead ? `대상 반경 ${a.executeUndead.radius} px · 가장 가까운 적 언데드 1체`
       : a.shield ? `보호 범위 반경 ${a.shield.radius} px · 자신과 범위 안 살아 있는 아군`
       : a.heal ? `회복 범위 반경 ${a.heal.radius} px · 자신과 범위 안 살아 있는 아군`
-      : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
-      : a.status ? (a.status === 'curse' ? '주변 적에게 유한 저주 · 중첩 없음' : '자신에게 유한 효과')
+      : a.dash ? `돌진 거리 ${a.dash.distance} px`
+      : a.status ? (a.status === 'curse' ? '주변 적에게 저주 · 중첩 없음' : '자신에게 효과 적용')
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
     const shieldGrowth = a.shield && skillGrowth(id, masteryLevel(this.save.skillMastery?.[id]));
     const shieldEffect = shieldGrowth && `${shieldGrowth.charges}회 방어 · ${Math.round(shieldGrowth.durationMs / 100) / 10}초`;
@@ -1008,7 +1008,7 @@ export class HubUI {
       return `<section class="map-quests" data-region="${r.id}" id="map-region-${r.id}" aria-labelledby="map-heading-${r.id}"${r.id === selected.id ? '' : ' hidden'}>${regionArt(r.id)}<header class="map-region-heading"><small>선택한 지역 · 퀘스트 선택</small><h3 id="map-heading-${r.id}">${escape(r.name)}</h3><p>${maps.filter(id => this.save.cleared[id]).length} 완료 · ${maps.filter(id => !this.save.cleared[id]).length} 도전 가능</p></header><div class="map-contracts">${maps.some(id => /^S2[1-7]$/.test(id)) ? UNDEAD_RECOMMENDATION : ''}${maps.some(silverSourceStage) ? SILVER_SOURCE : ''}${maps.map(id => {
         const state = mapState(this.save,id), rec = BALANCE.stages[id]?.rec?.[0] || 1;
         const side = Object.values(OBJECTIVE_QUESTS).find(q => q.mapId === id);
-        return button(`${icon(state)}<span><strong>${side ? `곁가지 · ${side.id}` : id} · ${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
+        return button(`${icon(state)}<span><strong>${side ? '곁가지 · ' : ''}${escape(STAGES[id].name)}</strong>${side ? `<small>맵: ${escape(side.mapName)}</small>` : ''}<small>내 Lv.${this.save.level} · 추천 Lv.${rec}</small>${this.save.level < rec ? `<small class="loss">추천보다 ${rec - this.save.level}레벨 낮음</small>` : ''}</span><small>${state === 'clear' ? `위협 ${clearedThreat(this.save,id)}/3 완료` : id === current ? '현재 · 도전 가능' : '도전 가능'}</small>`, 'sortie',
           `data-stage="${id}" class="contract ${state}"${id === current ? ' aria-current="step"' : ''}`);
       }).join('')}${sideQuests}</div></section>`;
     }).join('');
@@ -1018,7 +1018,7 @@ export class HubUI {
   sideQuestsHtml(regionId) {
     return Object.values(SIDE_QUESTS).filter(q => q.regions.includes(regionId) && questOffered(this.save, q.id)).map(q => {
       const state = questState(this.save, q.id), progress = state?.progress || 0;
-      const label = `${icon(state?.state === 'done' ? 'clear' : 'depart')}<span><strong>의뢰 · ${escape(q.name)}</strong><small>${escape(ITEMS[q.item].name)} ${progress} / ${q.target} · ${q.maps.join(' · ')}</small><small>보상 XP ${q.rewardXp}</small></span>`;
+      const label = `${icon(state?.state === 'done' ? 'clear' : 'depart')}<span><strong>의뢰 · ${escape(q.name)}</strong><small>${escape(ITEMS[q.item].name)} ${progress} / ${q.target} · ${q.maps.map(id => escape(STAGES[id].name)).join(' · ')}</small><small>보상 XP ${q.rewardXp}</small></span>`;
       if (!state) return button(`${label}<small>수락</small>`, 'quest-accept', `data-quest="${q.id}" class="contract side-contract depart"`);
       return `<div class="contract side-contract ${state.state === 'done' ? 'clear' : 'active'}" data-quest="${q.id}">${label}<small>${state.state === 'done' ? '완료' : '진행 중'}</small></div>`;
     }).join('');
@@ -1044,7 +1044,7 @@ export class HubUI {
       return button(`<strong>위협 ${level}</strong><small>${locked ? '잠김' : level === 1 ? '기본' : `HP ×${mult.hp} · 골드 ×${mult.gold}`}</small>`,
         'threat', `data-threat="${level}" aria-pressed="${threat === level}"`, locked);
     }).join('');
-    this.showInnPanel(`${stage} · ${STAGES[stage].name}`, `<div class="map-sortie">${regionFor(stage) ? regionArt(regionFor(stage).id) : ''}
+    this.showInnPanel(STAGES[stage].name, `<div class="map-sortie">${regionFor(stage) ? regionArt(regionFor(stage).id) : ''}
       <div class="departure-check"><p class="quest-level-comparison">내 레벨 <b>${this.save.level}</b> · 추천 레벨 <b>${BALANCE.stages[stage]?.rec?.[0] || 1}</b></p>${/^S2[1-7]$/.test(stage) ? UNDEAD_RECOMMENDATION : ''}${silverSourceStage(stage) ? SILVER_SOURCE : ''}${this.sideQuestLine(stage)}${STAGES[stage].objective?.kind === 'kill-target' ? '<p>가고일 처치: 0/1 · 몬스터: 가고일·투석병·정령 · 추천: Lv20 / T3</p>' : STAGES[stage].objective?.kind === 'visit-markers' ? '<p>목표: 길 표식 0/3 · 몬스터: 독거미·정령·늑대 · 추천: Lv12 / T3</p>' : STAGES[stage].objective ? '<p>목표: 장부 회수→입구 · 몬스터: 멧돼지·투석병·고블린 · 추천: Lv11 / T3</p>' : ''}<h3>보급</h3><div class="sortie-supplies">${supplies}</div>${this.weightHtml(weight)}</div>
       <div class="threat-choices" role="group" aria-label="위협도">${threats}</div>
       ${mapPartyActions('같이 사냥 · 이 퀘스트로')}<p class="risk-note">${icon('clear')}완료 · 귀환하면 전리품 확보<br>${icon('death')}사망하면 이번 전리품과 경험치 일부를 잃는다</p>
@@ -1142,7 +1142,7 @@ export class HubUI {
     const lost = receipt.terminal === 'death' && (receipt.lootLost.items.length || receipt.lootLost.gold)
       ? `<p class="loss">잃은 전리품: ${receipt.lootLost.gold} G${receipt.lootLost.items.length ? ` · 장비 ${receipt.lootLost.items.length}개` : ''}</p>` : '';
     const content = `<div class="result-intro" data-terminal="${receipt.terminal}"><span class="result-stamp">${icon(glyph)}</span>
-      <div><small>${receipt.stageId} · 위협 ${receipt.threat}</small><h1>${title}</h1>${receipt.terminal === 'death' ? `<p id="cause">${escape(cause)}</p>` : ''}</div></div>
+      <div><small>${escape(STAGES[receipt.stageId]?.name || '여정')} · 위협 ${receipt.threat}</small><h1>${title}</h1>${receipt.terminal === 'death' ? `<p id="cause">${escape(cause)}</p>` : ''}</div></div>
       ${this.receiptHtml(receipt, false)}${this.questReceiptHtml(receipt)}${lost}${this.revealHtml(receipt)}`;
     this.panel = null;
     this.show(this.shellHtml('', content, button(`<span>${this.hubCopy('여관으로', '잊힌 묘지로')}</span>` + icon('depart'), 'result-inn', 'id="result-back" class="primary"')), 'receipt', { shell: true });
@@ -1201,7 +1201,7 @@ export class HubUI {
         if (save) {
           return this.show(this.panelHtml('이미 깨어난 해골이 있다', `
             <p>${escape(save.name)}의 모험을 이어갈 수 있습니다. 새 캐릭터로 덮어쓰지 않습니다.</p>
-            ${button('기존 해골 이어하기', 'skeleton-resume')}
+            ${button('해골 이어하기', 'skeleton-resume')}
             ${button('취소 · 문답으로', 'skeleton-resume-cancel')}`), 'skeleton-resume');
         }
         this.save = null; this.receipt = null;

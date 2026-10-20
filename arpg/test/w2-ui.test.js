@@ -100,7 +100,7 @@ test('QS1 normal swamp card, S11-only gate, low-level sortie/coop and side-clear
  try {
   const h=hubFor(fresh());h.mapRegion='swamp';h.showInnPanel=(title,html,panel,footer,options)=>{h.html=html;h.footer=footer;h.options=options;};h.showBoard();
   assert.doesNotMatch(h.html,/data-stage="M_MARSH_MARKERS"/);assert.throws(()=>h.showSortie('M_MARSH_MARKERS'),/잠긴/);
-  h.save.cleared.S11=true;h.showBoard();assert.match(h.html,/곁가지 · QS1/);assert.match(h.html,/맵: 늪 우회길/);assert.match(h.options.eyebrow,/1 완료/);
+  h.save.cleared.S11=true;h.showBoard();assert.match(h.html,new RegExp(`곁가지 · ${STAGES.M_MARSH_MARKERS.name}`));assert.doesNotMatch(h.html,/>[^<]*QS1/);assert.match(h.html,/맵: 늪 우회길/);assert.match(h.options.eyebrow,/1 완료/);
   h.showSortie('M_MARSH_MARKERS');assert.match(h.html,/목표: 길 표식 0\/3/);assert.match(h.html,/추천: Lv12 \/ T3/);assert.match(h.footer,/data-action="launch"/);h.startCoop=stage=>assert.equal(stage,'M_MARSH_MARKERS');h.action('coop',{});
   h.save.cleared.M_MARSH_MARKERS=true;h.showBoard();assert.match(h.options.eyebrow,/2 완료/);assert.equal(mapUnlocked(h.save,'S16'),false);
  } finally {globalThis.matchMedia=previous;}

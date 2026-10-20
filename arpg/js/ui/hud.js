@@ -1,4 +1,4 @@
-import { WEAPONS, ABILITIES, PLAYER_BASE } from '../content/combat.js';
+import { WEAPONS, ABILITIES, PLAYER_BASE, STAGES } from '../content/combat.js';
 import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
 import { MAX_LEVEL, xpSpan } from '../meta/progression.js';
@@ -46,7 +46,7 @@ export class HUD {
     this.graveyard = world.round?.presentation?.lineage === 'skeleton_knight';
     if (this.graveyard) document.body.dataset.theme = 'graveyard';
     else delete document.body.dataset.theme;
-    this.stage = world.round?.stageId || '언데드 · 해골 · 저장 안 됨';
+    this.stage = STAGES[world.round?.stageId]?.name || '언데드 · 해골 · 저장 안 됨';
     if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += world.round.presentation.form === 'death_knight' ? ' · 데스나이트' : ' · 해골';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
@@ -83,7 +83,7 @@ export class HUD {
     title.textContent = state === 'victory' ? '해골 승리' : state === 'death' ? '전투 종료 · 쓰러졌습니다' : '전투 종료 · 귀환';
     title.setAttribute('role', 'status');
     const detail = document.createElement('p');
-    detail.textContent = '같은 해골 vs 인간 AI 전투를 새로 시작합니다. 캠페인 진행·보상·저장 없음. 회피 미지원.';
+    detail.textContent = '같은 상대와 다시 전투합니다. 캠페인 진행·보상·저장 없음. 회피 불가.';
     panel.append(title, detail);
     const actions = state === 'victory' ? [['next', '다음 전투', next], ['restart', '다시 시작', restart]]
       : [['restart', '다시 시작', restart]];
@@ -173,7 +173,7 @@ export class HUD {
     this.text(nodes['mp-text'], `${this.graveyard ? 'MP ' : ''}${Math.floor(player.mp)}/${Math.ceil(player.maxMp)}`);
     const alive = world.entities.filter((entity) => entity.kind === 'monster' && !entity.dead).length;
     const objective = world.round?.objective;
-    this.text(nodes.objective, !world.round ? `인간 AI: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
+    this.text(nodes.objective, !world.round ? `상대: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
       : `◇ ${alive + world.round.pending.length}`);
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
@@ -202,7 +202,7 @@ export class HUD {
     let guardLabel=nodes.dodge.querySelector('.guard-label');
     if(block && !guardLabel){nodes.dodge.querySelector('small').insertAdjacentHTML('beforebegin','<span class="guard-label">막기</span>');}
     else if(!block)guardLabel?.remove();
-    nodes.dodge.title = player.dodgeDisabled ? '해골 디버그: 회피 애니메이션 미지원' : `${label} · ⇧`;
+    nodes.dodge.title = player.dodgeDisabled ? '회피 불가' : `${label} · ⇧`;
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;
@@ -235,7 +235,7 @@ export class HUD {
         this.partyRows.set(p.id, row);
         this.party.append(row);
       }
-      const name = p.name || p.pid;
+      const name = p.name || '모험가';
       const max = Math.max(1, Math.ceil(p.maxHp));
       const hp = Math.max(0, Math.min(max, Math.ceil(p.hp)));
       const state = p.dead || p.terminal === 'death' ? '쓰러짐' : p.terminal === 'return_scroll' ? '귀환' : p.terminal ? '전투 완료' : '';
@@ -258,8 +258,8 @@ export class HUD {
     const cause = player.deathCause;
     if (player.terminal === 'death' && cause) {
       const humanRole = world.round?.presentation?.humans?.[cause.by];
-      const name = humanRole ? `인간 모험가 · ${{blade:'근접',bow:'원거리',focus:'마법'}[humanRole]} (원형: ${MONSTER_NAMES[cause.by] || cause.by})` : MONSTER_NAMES[cause.by] || cause.by;
-      return `${name} · ${PATTERN_NAMES[cause.ability] || cause.ability}`;
+      const name = humanRole ? `인간 모험가 · ${{blade:'근접',bow:'원거리',focus:'마법'}[humanRole] || '전투'}` : MONSTER_NAMES[cause.by] || '적';
+      return `${name} · ${PATTERN_NAMES[cause.ability] || ABILITIES[cause.ability]?.name || '공격'}`;
     }
     if (world.round?.presentation?.lineage === 'skeleton_knight') {
       return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 잊힌 묘지로 이끌었습니다.'

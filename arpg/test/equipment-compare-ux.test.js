@@ -54,7 +54,7 @@ test('comparison UI defaults actual, explicitly labels base mode and real after-
   assert.doesNotMatch(h.sheet,/id="compare-ignore-enhancement"[^>]*checked/);assert.match(h.sheet,/강화 포함 · 실제 능력치/);
   h.ignoreEnhancement=true;h.openItem(candidate.uid);
   assert.match(h.sheet,/id="compare-ignore-enhancement"[^>]*checked/);assert.match(h.sheet,/강화 제외 · 선택한 두 장비 \+0 기준/);
-  assert.match(h.sheet,/실제 장착 후 소지/);assert.match(h.sheet,/실제 장착 조건/);
+  assert.match(h.sheet,/장착 후 소지/);assert.match(h.sheet,/필요 힘은 기본 장비 기준/);assert.doesNotMatch(h.sheet,/실제 장착 조건/);
   const html=splitComparisonHtml(candidate,s,{ignoreEnhancement:true});assert.doesNotMatch(html,/data-line="enhance"/);
   assert.deepEqual(h.save,before);assert.equal(h.persisted.length,0);
 });

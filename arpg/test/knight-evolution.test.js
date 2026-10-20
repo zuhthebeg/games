@@ -53,10 +53,10 @@ test('normal hub equip/loot-equip/buy-equip commit final gear and latch once; fa
   const removed={...h.save,equipped:{...h.save.equipped,head:null}};h.commit(removed);assert.equal(new CharacterStores(f).selectKnight().permanentDeathKnight,true);assert.equal(f.getItem(SAVE_KEY),'HUMAN SENTINEL');
  }}finally{globalThis.document=doc;}
 });
-test('public inn/name/portrait distinguish real permanent state and honestly disclose runtime loading',()=>{
+test('public inn/name/portrait distinguish real permanent state without implementation notes',()=>{
  const s=fixture(),h=Object.assign(Object.create(HubUI.prototype),{save:s,show(html){this.html=html;},recoverVitals(){}});
  assert.match(h.topBar(),/해골/);assert.doesNotMatch(h.topBar(),/데스나이트/);
- h.save={...s,permanentDeathKnight:true};assert.match(h.topBar(),/데스나이트/);h.showInn();assert.match(h.html,/영구/);assert.match(h.html,/전투 아틀라스 로드/);assert.doesNotMatch(h.html,/전환 미연결/);assert.match(portraitHtml(h.save),/데스나이트/);
+ h.save={...s,permanentDeathKnight:true};assert.match(h.topBar(),/데스나이트/);h.showInn();assert.doesNotMatch(h.html,/영구 진화|전투 아틀라스 로드/);assert.doesNotMatch(h.html,/전환 미연결/);assert.match(portraitHtml(h.save),/데스나이트/);
 });
 
 test('latch is an identity flag only: no extra stats, bonuses, costs or automatic level-30 migration',()=>{
