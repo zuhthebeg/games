@@ -384,7 +384,7 @@ try {
       onResync: view => {
         if (ownsLobby() && coopRenderReady) renderer.reset(view, matchMedia('(prefers-reduced-motion: reduce)').matches);
       },
-      onFrame: (view, events, { silent = false } = {}) => {
+      onFrame: (view, events, { silent = false, presentation = events } = {}) => {
         if (!ownsLobby()) return;
         if (coopFinished) return;
         world = view;
@@ -402,9 +402,9 @@ try {
         } else progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]), view, coopSession.uid);
         tracker = progress.tracker; coopLoad = progress.load.ratio;
         if (coopSession.isHost) setLoad(coopSession.world, coopSession.uid, coopLoad);
-        if (!silent && !hidden) renderer.events(view, [...events, ...progress.fx]);
-        if (!silent && !hidden) audio.events(events, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
-        if (!silent && !hidden) hud.events([...events.filter(e => e.id === view.entities[0].id || e.type === 'drop'), ...progress.fx]);
+        if (!silent && !hidden) renderer.events(view, [...presentation, ...progress.fx]);
+        if (!silent && !hidden) audio.events(presentation, view.entities[0].id, Object.freeze(view.entities.map(e => Object.freeze({ id: e.id, kind: e.kind, type: e.type, weaponForm: e.weaponForm }))));
+        if (!silent && !hidden) hud.events([...presentation.filter(e => e.id === view.entities[0].id || e.type === 'drop'), ...progress.fx]);
         hud.meta(progress.load, tracker, roundSave);
         settleCoopPlayer();
         if (view.round.state !== 'running') finishCoop();

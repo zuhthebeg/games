@@ -2,6 +2,7 @@ import { currentLoad, usedConsumables } from '../meta/run.js';
 import { InvasionLoot } from './invasion-loot.js';
 import { validParty, invasionProfile, partyConfig, validLobbyProfile } from './invasion.js';
 import { TEAM_MONSTER } from '../sim/core.js';
+import { enableGuestAttackLag } from '../sim/attack-lag.js';
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
@@ -31,8 +32,10 @@ const FAST_EVENTS = new Set(['hit', 'miss', 'shieldBlock', 'shieldBreak', 'perfe
 const mergeInput = (held, input) => {
   const next = { ...input };
   if (held) for (const k of EDGES) next[k] = !!(held[k] || input[k]);
-  next.skillViewTicks = {};
+  next.skillViewTicks = {}; next.skillPoseTicks = {};
   for (const k of TIMED_SKILL_EDGES) if (next[k]) {
+    next.skillPoseTicks[k] = held?.[k] ? held.skillPoseTicks?.[k]
+      : Object.hasOwn(input.skillPoseTicks || {}, k) ? input.skillPoseTicks[k] : input.poseTick;
     next.skillViewTicks[k] = held?.[k] ? held.skillViewTicks?.[k]
       : Object.hasOwn(input.skillViewTicks || {}, k) ? input.skillViewTicks[k] : input.viewTick;
   }
@@ -51,6 +54,7 @@ export class CoopSession {
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
     this.shownEvents = new Set();
+    this.lastUpdateWall = clock();
     this.suspended = false; this.awaitingResync = false; this.resyncNonce = 0; this.resyncLeft = 0;
     this.healthAt = null; this.reconnectRequested = false;
     this.resumeStats = { count: 0, staleEvents: 0, timeMs: 0, maxCorrection: 0 };
@@ -64,17 +68,19 @@ export class CoopSession {
   resume() {
     if (this.lost || this.phase === 'prepare') return;
     this.resumeStats.count++;
-    this.resyncStarted = clock();
-    const previous = this.prediction.lastContactView || this.prediction.state;
-    this.resumeFrom = previous ? { x: previous.x, y: previous.y } : null;
+    if (!this.awaitingResync) {
+      this.resyncStarted = clock();
+      const previous = this.prediction.lastContactView || this.prediction.state;
+      this.resumeFrom = previous ? { x: previous.x, y: previous.y } : null;
+    }
     this.suspended = false; this.tickLeft = 0; this.tickInput = null; this.inputLeft = 0;
     this.sender.history = [];
     this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true });
-    this.renderTick = undefined; this.shownEvents.clear();
+    this.renderTick = this.renderPoseTick = undefined; this.shownEvents.clear();
     this.healthAt = this.now; this.reconnectRequested = false; this.lastHostAt = this.now;
     if (this.isHost) {
       for (const latch of Object.values(this.latches)) latch.discard();
-      this.sendRt({ t: 'host-resume' }); this.broadcast();
+      this.sendRt({ t: 'host-resume' }); this.broadcast(); this.onResync(this.decorate(localView(this.world, this.uid)));
     } else {
       this.awaitingResync = true; this.resyncNonce++; this.requestResync();
     }
@@ -141,7 +147,7 @@ export class CoopSession {
         setLoad(this.world, pid, p.load ?? 0);
         // Host's own input has no latency: newest value. Guests: ordered per-tick commands.
         this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
-        if (pid !== this.uid) enableGuestDodgeLag(this.world, pid);
+        if (pid !== this.uid) { enableGuestDodgeLag(this.world, pid); enableGuestAttackLag(this.world, pid); }
       }
       startStage(this.world, data.config.stageId);
       if (data.config.invasion) {
@@ -171,6 +177,10 @@ export class CoopSession {
 
   rt(from, data, now = this.now) {
     if (!data || !this.players.has(from) || this.lost) return;
+    // Socket callbacks can run before the first rAF after a frozen tab resumes.
+    if (!this.suspended && !this.awaitingResync && this.phase !== 'prepare' && clock()-this.lastUpdateWall > 1000) {
+      this.lastUpdateWall = clock(); this.resume(); return;
+    }
     if (data.t === 'party' && !this.isHost && from === this.host && this.phase === 'prepare') {
       // Sender-bound roster negotiation derives mode; a snapshot bit cannot switch it.
       this.negotiate(data.profiles);
@@ -218,13 +228,15 @@ export class CoopSession {
       if (!fresh && !((data.objective || this.config.invasion) && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
       if (this.config.invasion) { this.invasionAccount = data.invasionAccounts?.[this.uid]; this.lootDrops = data.lootDrops || []; }
       if (fresh && (!this.awaitingResync || resumed)) this.prediction.reconcile(this.buffer.frames.at(-1).world);
-      const events = [];
+      const events = [], presentation = [];
       for (const row of data.events || []) if (row.seq > this.eventAck) {
         // Host repeats unacknowledged events. Consume in order, exactly once.
         if (row.seq !== this.eventAck + 1) break;
         this.eventAck = row.seq;
         const shown = this.shownEvents.delete(row.seq);
-        if (!shown && (!['kill','objectiveComplete'].includes(row.event.type) || row.participants.includes(this.uid))) events.push(row.event);
+        if (!['kill','objectiveComplete'].includes(row.event.type) || row.participants.includes(this.uid)) {
+          events.push(row.event); if (!shown) presentation.push(row.event);
+        }
       }
       // Do not settle a final snapshot before its event journal has arrived.
       if (this.eventAck < data.eventSeq) return;
@@ -236,7 +248,7 @@ export class CoopSession {
         this.awaitingResync = false; this.healthAt = null;
         this.onResync(this.decorate(this.buffer.frames.at(-1).world));
       }
-      this.onFrame(this.decorate(this.buffer.frames.at(-1).world), events, { silent });
+      this.onFrame(this.decorate(this.buffer.frames.at(-1).world), events, { silent, presentation });
       this.phase = data.round.state === 'running' ? 'running' : 'ended';
     } else if (data.t === 'ping') this.sendRt({ t: 'pong', to: from, at: data.at });
     else if (data.t === 'pong' && data.to === this.uid) {
@@ -277,6 +289,8 @@ export class CoopSession {
   }
   update(dt, input, load = 0) {
     if (this.lost) return;
+    this.lastUpdateWall = clock();
+    if (!this.suspended && dt > 1000 && this.phase !== 'prepare') { this.resume(); return; }
     dt = Math.max(0, Math.min(250, dt)); this.now += dt;
     if (this.healthAt !== null && this.now - this.healthAt > 2000 && !this.reconnectRequested) {
       this.reconnectRequested = true; this.onTransportStale();
@@ -295,7 +309,7 @@ export class CoopSession {
     else {
       // One command per 30Hz sim tick, predicted with the host's exact tick step.
       this.prediction.presentationTimeout = Math.max(100, (this.rtt ?? 500) + 100);
-      this.tickInput = mergeInput(this.tickInput, { ...input, viewTick: this.renderTick ?? this.buffer.currentTick?.(this.now, this.rtt) });
+      this.tickInput = mergeInput(this.tickInput, { ...input, poseTick: this.renderPoseTick, viewTick: this.renderTick ?? this.buffer.currentTick?.(this.now, this.rtt) });
       this.inputLeft = Math.min(this.inputLeft + dt, 8 * TICK_MS);
       while (this.inputLeft >= TICK_MS) {
         this.inputLeft -= TICK_MS;
@@ -355,7 +369,7 @@ export class CoopSession {
     if (this.isHost) return this.world ? this.decorate(localView(this.world, this.uid)) : null;
     if (this.awaitingResync) return null;
     const sampled = this.buffer.sample(now, this.rtt);
-    if (sampled) this.renderTick = sampled.viewTick;
+    if (sampled) { this.renderTick = sampled.viewTick; this.renderPoseTick = sampled.positionTick; }
     return this.decorate(this.prediction.view(sampled));
   }
 }

@@ -18,18 +18,19 @@ export class InputSender {
   constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; this.skillViews = {}; }
   packet(input = {}, load = 0, ack = 0) {
     for (const k of EDGES) if (input[k]) this.edges[k]++;
+    const poseTick = Number.isFinite(input.poseTick) && input.poseTick >= 0 ? input.poseTick : undefined;
     const viewTick = Number.isSafeInteger(input.viewTick) && input.viewTick >= 0 ? input.viewTick : undefined;
     if (input.dodgeEdge) this.dodgeViews = [...this.dodgeViews, [this.edges.dodgeEdge, viewTick]].slice(-4);
     for (const k of TIMED_SKILL_EDGES) if (input[k]) {
       const tick = dodgeInputViewTick(input, k);
-      this.skillViews[k] = [...(this.skillViews[k] || []), [this.edges[k], Number.isSafeInteger(tick) && tick >= 0 ? tick : undefined]].slice(-4);
+      this.skillViews[k] = [...(this.skillViews[k] || []), [this.edges[k], Number.isSafeInteger(tick) && tick >= 0 ? tick : undefined, Object.hasOwn(input.skillPoseTicks || {}, k) ? input.skillPoseTicks[k] : poseTick]].slice(-4);
     }
     const v = ['mx', 'my', 'aimX', 'aimY'].map(k => q(input[k]));
     const packet = { t: 'input', seq: ++this.seq, v, prev: this.history.slice(),
-      attack: !!input.attack, autoAttack: !!input.autoAttack, dodgeHeld:!!input.dodgeHeld, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
+      ...(poseTick !== undefined ? { poseTick } : {}), attack: !!input.attack, autoAttack: !!input.autoAttack, dodgeHeld:!!input.dodgeHeld, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
       ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}),
       ...(Object.keys(this.skillViews).length ? { skillViews: Object.fromEntries(Object.entries(this.skillViews).map(([k, rows]) => [k, rows.map(row => [...row])])) } : {}) };
-    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
+    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, poseTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
     return packet;
   }
 }
@@ -41,6 +42,7 @@ export class InputQueue {
   constructor() {
     this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0])); this.pending = { ...this.seen };
+    this.skillPoseTicks = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.newestDodgeHeld=false;
     this.stats = { consumed: 0, starved: 0, skipped: 0 };
@@ -52,17 +54,17 @@ export class InputQueue {
     for (const row of Array.isArray(p.prev) ? p.prev : []) {
       const [seq, v, metadata] = Array.isArray(row) ? row : [];
       if (Number.isSafeInteger(seq) && seq > this.last && seq < p.seq && Array.isArray(v)) {
-        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, dodgeViews: metadata?.dodgeViews, skillViews: metadata?.skillViews, arrived: now }); this.last = seq;
+        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, poseTick: metadata?.poseTick, dodgeViews: metadata?.dodgeViews, skillViews: metadata?.skillViews, arrived: now }); this.last = seq;
       }
     }
-    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, dodgeViews: p.dodgeViews, skillViews: p.skillViews, arrived: now }); this.last = p.seq; this.at = now;
+    this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, poseTick: p.poseTick, dodgeViews: p.dodgeViews, skillViews: p.skillViews, arrived: now }); this.last = p.seq; this.at = now;
     if (this.queue.length > 30) { this.stats.skipped += this.queue.length - 30; this.queue.splice(0, this.queue.length - 30); }
     return true;
   }
   apply(cmd) {
     this.seq = cmd.seq;
     ['mx', 'my', 'aimX', 'aimY'].forEach((k, i) => { this.value[k] = finite(cmd.v[i]); });
-    this.value.viewTick = cmd.viewTick;
+    this.value.viewTick = cmd.viewTick; this.value.poseTick = cmd.poseTick;
     this.value.attack = cmd.attack; this.value.autoAttack = cmd.autoAttack;
     if (cmd.edges) for (const k of EDGES) {
       const n = cmd.edges[k];
@@ -72,7 +74,7 @@ export class InputQueue {
         const count = Math.min(MAX_PENDING_EDGES, n - this.seen[k]);
         const dropped = Math.max(0, this.pending[k] + count - MAX_PENDING_EDGES);
         if (k === 'dodgeEdge') this.dodgeViews.splice(0, dropped);
-        if (TIMED_SKILL_EDGES.includes(k)) this.skillViews[k].splice(0, dropped);
+        if (TIMED_SKILL_EDGES.includes(k)) { this.skillViews[k].splice(0, dropped); this.skillPoseTicks[k].splice(0, dropped); }
         if (k === 'dodgeEdge') for (let i = n - count + 1; i <= n; i++) {
           const row = Array.isArray(cmd.dodgeViews) ? cmd.dodgeViews.find(r => Array.isArray(r) && r[0] === i) : null;
           this.dodgeViews.push(row ? row[1] : n - this.seen[k] === 1 ? cmd.viewTick : undefined);
@@ -80,6 +82,7 @@ export class InputQueue {
         if (TIMED_SKILL_EDGES.includes(k)) for (let i = n - count + 1; i <= n; i++) {
           const rows = cmd.skillViews?.[k];
           const row = Array.isArray(rows) ? rows.find(r => Array.isArray(r) && r[0] === i) : null;
+          this.skillPoseTicks[k].push(row ? row[2] : !cmd.skillViews && n - this.seen[k] === 1 ? cmd.poseTick : undefined);
           this.skillViews[k].push(row ? row[1] : !cmd.skillViews && n - this.seen[k] === 1 ? cmd.viewTick : undefined);
         }
         this.pending[k] = Math.min(MAX_PENDING_EDGES, this.pending[k] + count); this.seen[k] = n;
@@ -91,6 +94,7 @@ export class InputQueue {
     for (const cmd of this.queue) this.apply(cmd);
     this.queue = []; this.primed = false;
     this.pending = Object.fromEntries(EDGES.map(k => [k, 0]));
+    this.skillPoseTicks = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.value = emptyInput(); this.newestDodgeHeld = false;
     return true;
@@ -114,8 +118,8 @@ export class InputQueue {
     const input = { ...this.value, dodgeHeld:now-this.at<=1000 && this.newestDodgeHeld };
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
     if (input.dodgeEdge) input.viewTick = this.dodgeViews.shift();
-    input.skillViewTicks = {};
-    for (const k of TIMED_SKILL_EDGES) if (input[k]) input.skillViewTicks[k] = this.skillViews[k].shift();
+    input.skillViewTicks = {}; input.skillPoseTicks = {};
+    for (const k of TIMED_SKILL_EDGES) if (input[k]) { input.skillViewTicks[k] = this.skillViews[k].shift(); input.skillPoseTicks[k] = this.skillPoseTicks[k].shift(); }
     return input;
   }
 }
@@ -264,7 +268,8 @@ export class SnapshotBuffer {
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
     // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
-    return currentTelegraphs({ ...latest.world, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
+    const positionTick = span > 0 ? a.world.tick + alpha * span : a.world.tick;
+    return currentTelegraphs({ ...latest.world, positionTick, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
 export function localView(world, uid) {

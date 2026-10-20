@@ -6,10 +6,10 @@ const T=1000/30;
 test('host sends hit presentation on its damage tick before the next snapshot; repeated delivery renders once',()=>{
  const {s}=pair(), w=s.host.world, [h,g]=w.entities; w.round.pending=[]; w.entities=[h,g];
  h.x=300;h.y=300;g.x=340;g.y=300;h.hp=h.maxHp=10000;
- const sent=[],fast=[],normal=[];const send=s.host.sendRt;
+ const sent=[],fast=[],normal=[],presentation=[];const send=s.host.sendRt;
  s.host.sendRt=p=>{sent.push(structuredClone(p));send(p);};
  s.guest.onEvents=(view,events)=>{assert.equal(s.guest.world,null);fast.push(...events);};
- s.guest.onFrame=(view,events)=>normal.push(...events);
+ s.guest.onFrame=(view,events,meta)=>{normal.push(...events);presentation.push(...meta.presentation);};
  let oddHit=false;
  for(let i=0;i<80;i++){
   s.guest.update(T,{...emptyInput(),attack:true,aimX:-1});
@@ -23,7 +23,7 @@ test('host sends hit presentation on its damage tick before the next snapshot; r
   }
  }
  assert.ok(oddHit,'a hit on an odd tick must arrive without waiting for a snapshot');
- assert.ok(fast.length>0);assert.equal(normal.filter(e=>e.type==='hit').length,0,'snapshot must not replay already shown hits');
+ assert.ok(fast.length>0);assert.ok(normal.some(e=>e.type==='hit'),'reliable hits must still reach mastery/progression tracking');assert.equal(presentation.filter(e=>e.type==='hit').length,0,'snapshot presentation must not replay already shown hits');
  assert.equal(s.guest.eventAck,s.host.eventSeq,'reliable journal acknowledgements still advance');
 });
 test('only the real host can deliver immediate presentation; snapshot fallback survives a dropped fast packet',()=>{

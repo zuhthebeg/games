@@ -33,3 +33,16 @@ test('host resume does not catch up stale elapsed time or replay its own queued 
  const {s}=pair();s.host.update(10,{...emptyInput(),skillEdge:true});const tick=s.host.world.tick;s.host.resume();s.host.update(1,emptyInput());
  assert.equal(s.host.world.tick,tick);assert.equal(s.host.latches.host.consume(s.host.now).skillEdge,false);
 });
+test('queued socket callbacks after a long frozen rAF gap cannot replay stale hit sounds before the first frame',()=>{
+ const {s}=pair(),fx=[];s.guest.onEvents=(v,e)=>fx.push(...e);s.guest.lastUpdateWall=-10000;
+ s.guest.rt('host',{t:'events',tick:1,events:[{seq:1,event:{type:'hit',src:1,dst:2,dmg:9,x:0,y:0}}]});
+ assert.equal(fx.length,0);assert.equal(s.guest.resumeStats.count,1);
+});
+test('the first timer callback after a long visible host stall resyncs before any catch-up sim ticks',()=>{
+ const {s}=pair(),tick=s.host.world.tick;s.host.update(2500,{...emptyInput(),skillEdge:true});
+ assert.equal(s.host.world.tick,tick);assert.equal(s.host.resumeStats.count,1);
+});
+test('duplicate visibility/frame resume signals retain the original correction measurement while awaiting authority',()=>{
+ const {s}=pair(),g=s.guest;const before=g.prediction.state.x;g.sendRt=()=>{};g.resume();g.resume();
+ assert.equal(g.resumeFrom.x,before);
+});

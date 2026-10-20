@@ -1,4 +1,5 @@
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
+import { recordAttackPoses, bindAttackPose, attackShapeHits } from './attack-lag.js';
 import { separateBodyPair } from './body-contact.js';
 // Deterministic round simulation. Host-authoritative in multiplayer (design §7.5, §15.2):
 // the host calls step() at 30Hz with every player's input; guests render snapshots.
@@ -188,6 +189,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
 export function step(world, inputs = {}) {
   world.events = [];
+  recordAttackPoses(world);
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
   if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) {if(p.shieldGuard) p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;} return world.events; }
@@ -360,6 +362,7 @@ function stepPlayer(world, p, inp) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
+      bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
       if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
     }
   }
@@ -395,6 +398,7 @@ function stepPlayer(world, p, inp) {
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
     startAct(world, p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(world, p, inp, mlen));
+    bindAttackPose(world, p, p.act, inp);
   }
 
   if (p.act) advanceAct(world, p);
@@ -727,7 +731,7 @@ function sourceMult(ent, def) {
 function hitShape(world, ent, act, shape, ox, oy) {
   for (const t of world.entities) {
     if (t.team === ent.team || !isTargetable(t) || act.hit.includes(t.id)) continue;
-    if (!shapeHitsCircle(shape, ox, oy, act.facing, t.x, t.y, t.r)) continue;
+    if (!attackShapeHits(world, ent, act, shape, ox, oy, t)) continue;
     if (act.counterSecond && !act.firstCounterDamage?.[t.id]) continue;
     act.hit.push(t.id);
     const dealt = applyHit(world, t, {

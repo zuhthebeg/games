@@ -1,0 +1,13 @@
+# ARPG multiplayer feel follow-ups
+
+1. Host sends `events` immediately on any authoritative hit tick. Guests deduplicate presentation by journal sequence. Snapshots retain the full ordered gameplay journal (including already-shown hits for mastery); only presentation is filtered. Lost fast packets fall back to snapshots. Guest never owns a simulation.
+2. Visibility return, persisted pageshow, >1s rAF/timer gap, and socket-first wake trigger a host response barrier. Guest drops prediction, fractional preview, contact carry and interpolation history; input counters are baselined at the host. Old journal entries still settle rewards/mastery but have no VFX/audio. Responses must be from the actual host and match the request nonce. Existing relay reconnect scheduling is reused after an unanswered health probe or closed socket; no server/protocol infrastructure changes.
+3. `positionTick` is the actual fractional position-sampling time, separate from the current telegraph `viewTick`. Commands preserve it as `poseTick`, including redundant movement history and edge-bound skill history. Host-only WeakMap pose history is enabled for remote guests only. Non-dash shape attacks may use historical **monster** positions; no player/PvP, projectile, zone, dash or counter rewind. Attacker origin/range and all damage/resources remain current/host-authoritative. Rewind is capped at 6 ticks (200ms); future, nonfinite, negative or >12-tick-old claims get ordinary current-time judgment. Missing/dead/unspawned history, >80px discontinuities and outside-arena historical poses cannot grant a compensated hit. Arena walls are the rectangular arena boundary; this game has no interior wall collision/LOS system to bypass.
+
+## Reproducible accuracy comparison
+
+`ARPG_ROOT=/path/to/baseline ARPG_MEASURE_OUT=/tmp/before.json node arpg/tools/net-rewind-measure.mjs`
+
+Repeat with candidate root. Same 500 seeds per 0/100/200ms RTT, ±5ms seeded jitter, same continuously moving sinusoidal monster trajectories, same input queue, same two-tick snapshot cadence and 100ms position buffer. Guest local basic attack timeline is predicted by the real predictor; a looked-like-hit is an active rendered cone intersecting the interpolated monster. Count a miss when that trial produces no real host damage event. No static-target/control mismatch or differently seeded rooms. This is a deterministic simulation measurement, not a WAN/phone measurement. The 200ms cap intentionally leaves residual misses for older views.
+
+Observed baseline→candidate: RTT0 62/236→14/236; RTT100 101/233→24/233; RTT200 138/238→60/238. All 1,500 visual-trial decisions match between before/after. Max applied rewind 200ms.
