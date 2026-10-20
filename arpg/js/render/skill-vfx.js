@@ -1,3 +1,4 @@
+import { drawHandsBurst } from './skeleton-vfx.js';
 import { HolyVfx } from './holy-vfx.js';
 import { ABILITIES } from '../content/combat.js';
 import { shapePath } from './shapes.js';
@@ -13,6 +14,12 @@ export const effekseerEnabled = (search = globalThis.location?.search || '', sto
 // New table entries can reuse these styles or supply drawEffect/onEvent/onActor/
 // drawProjectile hooks. Hooks receive this fixed-pool presenter, never a sim writer.
 export const SKILL_VFX = Object.freeze({
+  poison_arrow: Object.freeze({style:'arrow',projectile:ABILITIES.poison_arrow.projectile,projectileRadius:8,color:0x78c547,accent:0xd6ffa2,windup:'bow',impact:'spark',activeLife:.2,residueLife:.35,particles:12,reducedParticles:2}),
+  cursed_hands: Object.freeze({statusCue:true,style:'heal',radius:ABILITIES.cursed_hands.shape.radius,color:0xbc85e3,accent:0xead3fa,windup:'runes',impact:'rise',activeLife:.65,residueLife:.5,particles:12,reducedParticles:2,drawEffect:drawHandsBurst,
+    onEvent(v,e,w,reduced){if(e.type==='handsBurst'){v.effect(this,'active',e.x,e.y,0,e.radius,null,reduced);v.emit(this,'rise',e.x,e.y,0,e.radius,reduced);return true;}return false;} }),
+  blood_spear: Object.freeze({style:'pierce',projectile:ABILITIES.blood_spear.projectile,projectileRadius:11,color:0xc82d4f,accent:0xffadb9,windup:'crystal',impact:'spark',activeLife:.25,residueLife:.4,particles:14,reducedParticles:2,
+    drawProjectile(g,p){g.poly([-30,-3,12,-5,28,0,12,5,-30,3]).fill({color:0xbb2448,alpha:.95}).stroke({color:0xffb0bf,width:1.5}).moveTo(-40,0).lineTo(19,0).stroke({color:0xffdce1,width:2});} }),
+  dead_explosion: Object.freeze({style:'ember',radius:ABILITIES.dead_explosion.shape.radius,color:0xae356e,accent:0xe7c7f1,windup:'converge',impact:'smoke',motif:'blast',activeLife:.6,residueLife:.7,particles:30,reducedParticles:3}),
   curse: Object.freeze({statusCue:true,style:'heal',radius:ABILITIES.curse.shape.radius,color:0xbc85e3,accent:0xe4b7ff,windup:'runes',impact:'rise',activeLife:.3,residueLife:.4,particles:8,reducedParticles:2}),
   invisibility: Object.freeze({statusCue:true,style:'heal',radius:28,color:0x8cb2bb,accent:0xd1edf2,windup:'runes',impact:'rise',activeLife:.2,residueLife:.2,particles:4,reducedParticles:1}),
   berserk: Object.freeze({statusCue:true,style:'heal',radius:32,color:0xf17b60,accent:0xffc08d,windup:'runes',impact:'rise',activeLife:.3,residueLife:.4,particles:8,reducedParticles:2}),

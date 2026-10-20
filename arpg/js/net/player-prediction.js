@@ -93,6 +93,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
   if (p.berserk && (p.berserk.expiresTick <= tick || !canUseSkill('berserk',p.weapon,p.weaponForm,p.lineage,p.handedness))) delete p.berserk;
+  const rooted=p.rootUntil>tick;
+  if (rooted) {p.dodge.dashLeft=0;p.bufferDodge=0;p.kx=0;p.ky=0;p.moving=false;}
+  else if (p.rootUntil) delete p.rootUntil;
   tickCombo(p);
   const d = p.dodge;
   if (inp.attack) delete p.invisibleUntil;
@@ -107,7 +110,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   p.mp = Math.min(p.maxMp, p.mp + (p.mpRegen || 0) * DT);
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
-  if (inp.dodgeEdge && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
+  if (inp.dodgeEdge && !rooted && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
       ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
@@ -125,7 +128,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   if (guarding && p.act?.id !== 'shield_bash') { if(p.act)endAct(p); p.moving=false; return finish(); }
   if(p.act?.id === 'shield_bash') {
     const act=p.act;
-    if(act.phase === 'active') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
+    if(!rooted && act.phase === 'active') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
     p.facing=act.facing;p.moving=act.phase === 'active';
     act.elapsed++;act.left--;skipEmptyPhases(p);
     return finish();
@@ -134,7 +137,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const dodgeSkillId = p.skills?.[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
   if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm, p.lineage, p.handedness)
-    && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
+    && !rooted && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
     && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
     const facing = resolveAim(p, inp, mlen, others);
     if (p.act) endAct(p);
@@ -172,11 +175,11 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));
-      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
+      if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }
   const autoTarget = !p.invisibleUntil && !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
@@ -194,13 +197,13 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       if (act.def.status === 'berserk') p.berserk={...act.growth,expiresTick:tick+ticks(act.growth.durationMs)};
     }
     if (act.phase === 'active' && act.def.spin) p.facing += Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
-    if (act.phase === 'active' && act.def.delivery === 'dash') {
+    if (!rooted && act.phase === 'active' && act.def.delivery === 'dash') {
       if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
       else {p.x += Math.cos(act.facing) * act.dashStep; p.y += Math.sin(act.facing) * act.dashStep;} p.moving = true;
     }
     act.elapsed++; act.left--;
     skipEmptyPhases(p);
   }
-  Object.assign(p, walkingPosition(p, inp));
+  if (!rooted) Object.assign(p, walkingPosition(p, inp));
   return finish();
 }

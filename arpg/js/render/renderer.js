@@ -1,5 +1,6 @@
 import {BOSS_TUNING} from '../content/boss-tuning.js';
 import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
+import { drawGraspingHands } from './skeleton-vfx.js';
 import { getTelegraphs } from '../sim/world.js';
 import { paintDragonVfx } from './dragon-presentation.js';
 import { shapePath, pattern } from './shapes.js';
@@ -364,6 +365,7 @@ export class ArenaRenderer {
       const visual = this.skillVfx.visual(this.skillVfx.level(caster, event.ability), event.ability, this.reduced);
       if (!this.reduced && visual.afterglow && caster?.pid === world.entities[0]?.pid && ['hit', 'explode'].includes(event.type))
         this.trauma = Math.min(1, this.trauma + .035);
+      if (event.type === 'explode' && event.ability === 'dead_explosion' && !this.reduced) this.trauma=Math.min(1,this.trauma+.65);
       if (this.skillVfx.event(event, world, this.reduced)) continue;
       if (healingFeedback(this, event)) continue;
       if (event.type === 'hit') {
@@ -542,9 +544,12 @@ export class ArenaRenderer {
         this.effect(view.x, view.y, entity.r, 0x9dd4cd, FEEL.trail.life, 'trail');
         view.trailLeft = FEEL.trail.dodgeInterval;
       }
+      const poison=entity.poison?.left>0, rooted=entity.rootUntil>world.tick;
       const ice = entity.frozenUntil > world.tick, fire = entity.burn?.expiresTick > world.tick, shield = entity.shieldUntil > world.tick, cursed=entity.curse?.expiresTick>world.tick, rage=entity.berserk?.expiresTick>world.tick;
       view.statusRing.clear(); view.statusRing.position.set(view.x, view.y);
-      view.statusRing.visible = !entity.dead && (ice || fire || shield || cursed || rage);
+      view.statusRing.visible = !entity.dead && (ice || fire || shield || cursed || rage || poison || rooted);
+      if (poison) {view.statusRing.ellipse(0,1,entity.r+5,(entity.r+5)*.45).stroke({color:0x81d74a,width:3,alpha:.85});for(const x of [-9,0,9])view.statusRing.circle(x,-entity.r*1.7-5-Math.abs(x)*.3,3).fill({color:0xa6ec67,alpha:.9});}
+      if (rooted) drawGraspingHands(view.statusRing,entity.r);
       if (cursed) view.statusRing.moveTo(-9,-entity.r-19).lineTo(9,-entity.r-1).moveTo(9,-entity.r-19).lineTo(-9,-entity.r-1).stroke({color:0xbc85e3,width:4});
       if (rage) view.statusRing.ellipse(0,0,entity.r+7,(entity.r+7)*.55).stroke({color:0xf17b60,width:4}).moveTo(-8,-entity.r-6).lineTo(0,-entity.r-18).lineTo(8,-entity.r-6).stroke({color:0xf17b60,width:3});
       if (shield) view.statusRing.ellipse(0, -entity.r * .6, entity.r + 9, entity.r * 1.6).fill({color:0x73baf0,alpha:.12}).stroke({color:0xa8dafa,width:2,alpha:.8});

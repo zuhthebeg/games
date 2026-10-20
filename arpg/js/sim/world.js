@@ -146,7 +146,7 @@ export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   if (world.zones) world.zones = [];
   for (const p of world.entities) if (p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
   if (world.projectiles.some(pr => ABILITIES[pr.abilityId]?.spin)) world.projectiles = world.projectiles.filter(pr => !ABILITIES[pr.abilityId]?.spin);
-  for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;}
+  for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;delete p.rootUntil;if(p.poison)p.poison=null;}
   if (st.arena) {
     for (const p of world.entities.filter(e => e.kind === 'player')) {
       p.x *= st.arena.w / world.arena.w; p.y *= st.arena.h / world.arena.h;
@@ -193,12 +193,14 @@ export function step(world, inputs = {}) {
   recordAttackPoses(world);
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
-  if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) {if(p.shieldGuard) p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;} return world.events; }
+  if (world.round?.objective && world.round.state !== 'running') { for(const p of world.entities) {if(p.shieldGuard) p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;delete p.rootUntil;if(p.poison)p.poison=null;} return world.events; }
   for (const ent of world.entities) {
     for (const key of ['curse','berserk']) if (ent[key] && (world.tick >= ent[key].expiresTick || !alive(ent) || world.round && world.round.state !== 'running' || key === 'berserk' && !canUseSkill('berserk',ent.weapon,ent.weaponForm,ent.lineage,ent.handedness))) delete ent[key];
     if (ent.invisibleUntil && (world.tick >= ent.invisibleUntil || !alive(ent) || world.round && world.round.state !== 'running')) delete ent.invisibleUntil;
     if (ent.shieldUntil && (world.tick >= ent.shieldUntil || !alive(ent))) { delete ent.shieldUntil; delete ent.shieldCharges; }
     if (ent.frozenUntil && (world.tick >= ent.frozenUntil || !alive(ent))) delete ent.frozenUntil;
+    if (ent.rootUntil && (world.tick >= ent.rootUntil || !alive(ent) || world.round && world.round.state !== 'running')) delete ent.rootUntil;
+    if (ent.poison) stepPoison(world, ent);
     if (ent.burn) stepBurn(world, ent);
     if (ent.slow && (world.tick >= ent.slow.expiresTick || !alive(ent))) delete ent.slow;
     if (ent.sunder && world.tick >= ent.sunder.expiresTick) delete ent.sunder;
@@ -212,7 +214,7 @@ export function step(world, inputs = {}) {
   stepRound(world, inputs);
   for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
-  if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;}
+  if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;delete e.rootUntil;if(e.poison)e.poison=null;}
   world.tick++;
   return world.events;
 }
@@ -237,7 +239,8 @@ function stepPlayer(world, p, inp) {
   if (p.bufferDodge > 0) p.bufferDodge--;
   for (const k in p.cds) if (p.cds[k] > 0) p.cds[k]--;
   if (!alive(p)) { p.pendingCounter = null; if(p.shieldGuard)p.shieldGuard.left=0; return; }
-  stepPoison(world, p);
+  const rooted = p.rootUntil > world.tick;
+  if (rooted) { d.dashLeft=0; p.bufferDodge=0; p.kx=0; p.ky=0; p.moving=false; }
   if (!alive(p)) { p.pendingCounter = null; if(p.shieldGuard)p.shieldGuard.left=0; return; }
   if (p.pendingCounter && world.tick > p.pendingCounter.expiresTick) p.pendingCounter = null;
 
@@ -245,7 +248,7 @@ function stepPlayer(world, p, inp) {
   if (p.hpRegen > 0) p.hp = Math.min(p.maxHp, p.hp + p.hpRegen * DT);
   const { mlen, mx, my } = movementInput(inp);
 
-  if (inp.dodgeEdge && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
+  if (inp.dodgeEdge && !rooted && !p.dodgeDisabled && (p.offhand !== 'shield' || inp.dodgeHeld)) {
     p.bufferDodge = ticks(PB.bufferMs);
     p.bufferDodgeDir = p.offhand === 'shield' && (inp.aimX || inp.aimY)
       ? [Math.cos(Math.atan2(inp.aimY,inp.aimX)),Math.sin(Math.atan2(inp.aimY,inp.aimX))]
@@ -307,7 +310,7 @@ function stepPlayer(world, p, inp) {
   const dodgeSkillId = p.skills[SKILL_EDGES.indexOf(dodgeSkillEdge)];
   const dodgeSkill = ABILITIES[dodgeSkillId];
   if (dodgeSkill?.dodgeShot && canUseSkill(dodgeSkillId, p.weapon, p.weaponForm, p.lineage, p.handedness)
-    && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
+    && !rooted && !p.dodgeDisabled && d.cdLeft === 0 && d.dashLeft === 0 && canCancel(p.act)
     && !(p.cds[dodgeSkillId] > 0) && p.mp >= dodgeSkill.manaCost) {
     const facing = resolveAim(world, p, inp, mlen);
     if (p.act) endAct(world, p, true);
@@ -359,12 +362,15 @@ function stepPlayer(world, p, inp) {
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
-    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
+    if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
+      const sacrificed = def.hpCostFrac ? Math.min(p.hp-1,Math.max(1,Math.floor(p.hp*def.hpCostFrac))) : 0;
+      p.hp -= sacrificed;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
+      if (sacrificed) p.act.sacrificed = sacrificed;
       bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
-      if (def.zone) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone);
+      if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }
   // Explicit controls win; a pending counter reserves the next basic slot,
@@ -404,7 +410,7 @@ function stepPlayer(world, p, inp) {
 
   if (p.act) advanceAct(world, p);
 
-  Object.assign(p, walkingPosition(p, inp));
+  if (!rooted) Object.assign(p, walkingPosition(p, inp));
   decayKnock(p);
 }
 
@@ -441,6 +447,7 @@ function resolveAim(world, p, inp, mlen) {
 function stepMonster(world, m) {
   for (const k in m.cds) if (m.cds[k] > 0) m.cds[k]--;
   if (m.dead) return;
+  if (m.rootUntil > world.tick) {m.moving=false;m.kx=0;m.ky=0;}
   if (m.frozenUntil > world.tick) { m.moving = false; m.kx = 0; m.ky = 0; return; }
   if (m.spawnLeft > 0) { m.spawnLeft--; return; }
   const def = MONSTERS[m.type];
@@ -505,6 +512,7 @@ function pickTarget(world, m) {
 }
 
 function moveMonster(world, m, def, target, dist) {
+  if (m.rootUntil > world.tick) {m.moving=false;m.kx=0;m.ky=0;return;}
   const [lo, hi] = def.keepRange;
   const ang = Math.atan2(target.y - m.y, target.x - m.x);
   let dir;
@@ -529,7 +537,10 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   if (abilityId !== 'invisibility') delete ent.invisibleUntil;
   const comboStep = ent.kind === 'player' ? beginCombo(ent, abilityId, counter) : 0;
   const step = counter && ABILITIES[abilityId].combo ? 1 : comboStep;
-  const def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
+  let def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
+  const authoredGrowth=skillGrowth(abilityId,ent.skillMasteryLevels?.[abilityId]);
+  if (abilityId === 'poison_arrow') def={...def,damage:authoredGrowth.damage,poison:{...def.poison,damage:authoredGrowth.dotDamage,durationMs:authoredGrowth.durationMs}};
+  if (abilityId === 'blood_spear') def={...def,damage:authoredGrowth.damage};
   const rate = ent.kind === 'player' && (abilityId === WEAPONS[ent.weapon].basic || ent.skills.includes(abilityId))
     ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) * (ent.berserk?.speedMult ?? 1) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
@@ -619,11 +630,30 @@ function doActive(world, ent, act) {
     if (def.status === 'invisibility') {
       ent.invisibleUntil=expiresTick; ent.pendingCounter=null;
       for (const foe of world.entities) if (foe.team !== ent.team && foe.targetId === ent.id) foe.targetId=0;
+    } else if (def.status === 'root') {
+      const point=act.zonePoint;
+      for (const target of world.entities) {
+        if (target.team === ent.team || !isTargetable(target) || MONSTERS[target.type]?.invulnerable || target.ccImmune || !shapeHitsCircle({...def.shape,radius:growth.radius},point.x,point.y,0,target.x,target.y,target.r)) continue;
+        target.rootUntil=Math.max(target.rootUntil||0,world.tick+ticks(growth.durationMs/(isBoss(target)?3:1)));
+        target.kx=0;target.ky=0;target.moving=false;
+        if (target.dodge) {target.dodge.dashLeft=0;target.bufferDodge=0;}
+        world.events.push({type:'root',src:ent.id,id:target.id,ability:act.id,x:target.x,y:target.y});
+      }
+      world.events.push({type:'handsBurst',id:ent.id,ability:act.id,x:point.x,y:point.y,radius:growth.radius});
     } else if (def.status === 'berserk') ent.berserk={...growth,expiresTick};
     else for (const target of world.entities) if (target.team !== ent.team && isTargetable(target) && shapeHitsCircle(def.shape,ent.x,ent.y,act.facing,target.x,target.y,target.r)) {
       const old=target.curse;
       target.curse={expiresTick:Math.max(expiresTick,old?.expiresTick||0),damageMult:Math.min(growth.damageMult,old?.damageMult??1),armorMult:Math.min(growth.armorMult,old?.armorMult??1)};
     }
+    world.events.push({type:'statusCast',id:ent.id,ability:act.id});
+  } else if (def.delivery === 'sacrifice') {
+    if (act.fired) return;
+    act.fired=true;
+    const g=act.growth;
+    for (const target of world.entities) if (target.team !== ent.team && isTargetable(target) && shapeHitsCircle({...def.shape,radius:g.radius},ent.x,ent.y,0,target.x,target.y,target.r)) {
+      applyHit(world,target,{srcId:ent.id,srcKind:ent.kind,srcType:ent.weapon,abilityId:act.id,def:{...def,damage:act.sacrificed*g.damagePerHp},mult:1,poiseMult:1,fromX:ent.x,fromY:ent.y});
+    }
+    world.events.push({type:'explode',id:ent.id,presentationOwner:ent.id,ability:act.id,x:ent.x,y:ent.y,radius:g.radius});
     world.events.push({type:'statusCast',id:ent.id,ability:act.id});
   } else if (def.zone) {
     if (act.fired) return;
@@ -684,6 +714,7 @@ function doActive(world, ent, act) {
     if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
+    if (ent.rootUntil > world.tick) {ent.moving=false;return;}
     if(act.id === 'shield_bash') Object.assign(ent,shieldRushPosition(ent,act.dashStep,world.entities,world.arena));
     else { ent.x += Math.cos(act.facing) * act.dashStep; ent.y += Math.sin(act.facing) * act.dashStep; }
     ent.moving = true;
@@ -696,14 +727,14 @@ function doActive(world, ent, act) {
       act.shotsFired = (act.shotsFired || 0) + 1;
     } else if (act.fired) return;
     act.fired = true;
-    const pr = act.id === 'sword_wave' ? {...def.projectile,rangePx:act.growth.range,pierce:act.growth.targets-1} : def.projectile;
+    const pr = act.id === 'blood_spear' ? {...def.projectile,rangePx:act.growth.range,pierce:act.growth.targets-1} : act.id === 'sword_wave' ? {...def.projectile,rangePx:act.growth.range,pierce:act.growth.targets-1} : def.projectile;
     for (let i = 0; i < pr.count; i++) {
       const spread = pr.count > 1 ? ((i / (pr.count - 1)) - 0.5) * pr.spreadDeg * Math.PI / 180 : 0;
       const a = act.facing + spread + (def.spin ? Math.PI * 2 * (act.growth ? (act.shotsFired - 1) / act.growth.count : activeTick / act.phaseTicks.active) : 0);
       world.projectiles.push({
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
-        ...(act.step ? { step: act.step, def } : {}),
+        ...(act.step || act.id === 'poison_arrow' || act.id === 'blood_spear' ? { ...(act.step ? {step:act.step} : {}), def } : {}),
         x: ent.x + Math.cos(a) * (ent.r + 4), y: ent.y + Math.sin(a) * (ent.r + 4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,
         travelled: 0, range: pr.rangePx, pierce: pr.pierce, hit: [],
@@ -864,20 +895,16 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player') recordGuestHit(world, t, blocked ? {...hit,shieldBlocked:true} : hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
-  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && mdef ? { periodic: true } : {}), ...(hit.zonePulse ? { zonePulse: true } : {}), ...(hit.castId ? { castId: hit.castId } : {}), ...(hit.step ? { step: hit.step } : {}) });
+  world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && (mdef || hit.abilityId === 'poison_arrow') ? { periodic: true } : {}), ...(hit.zonePulse ? { zonePulse: true } : {}), ...(hit.castId ? { castId: hit.castId } : {}), ...(hit.step ? { step: hit.step } : {}) });
 
-  if (t.kind === 'player') {
-    if(!hit.periodic && t.pendingCounter?.kind === 'shield')t.pendingCounter=null;
-    if (!hit.periodic && t.act?.id === 'shield_bash') {endAct(world,t,true);t.pendingCounter=null;}
-    if (!hit.periodic) { t.hurtInvuln = ticks(PB.hurtInvulnMs); resetCombo(t); }
-    if (def.poison && t.hp > 0) {
+  if (def.poison && t.hp > 0 && !mdef?.invulnerable) {
       const status = def.poison;
       const left = ticks(status.durationMs);
       const interval = ticks(status.intervalMs);
       const dotHit = { ...hit, periodic: true, def: { damage: status.damage, knockback: 0 } };
       if (!t.poison) {
         t.poison = { left, interval, next: interval, hit: dotHit };
-        world.events.push({ type: 'poison', id: t.id, ability: hit.abilityId });
+        world.events.push({ type: 'poison', id: t.id, ability: hit.abilityId, x:t.x, y:t.y });
       } else {
         t.poison.left = Math.max(t.poison.left, left);
         if (status.damage * hit.mult > t.poison.hit.def.damage * t.poison.hit.mult) {
@@ -886,6 +913,11 @@ function applyHit(world, t, hit) {
         }
       }
     }
+
+  if (t.kind === 'player') {
+    if(!hit.periodic && t.pendingCounter?.kind === 'shield')t.pendingCounter=null;
+    if (!hit.periodic && t.act?.id === 'shield_bash') {endAct(world,t,true);t.pendingCounter=null;}
+    if (!hit.periodic) { t.hurtInvuln = ticks(PB.hurtInvulnMs); resetCombo(t); }
     if (t.channel > 0) {
       t.channel = 0;
       t.scrollRetry = ticks(PB.scroll.retryMs);
@@ -896,7 +928,7 @@ function applyHit(world, t, hit) {
       t.skeletal = true;
       t.hp = Math.max(1, Math.round(t.maxHp * 0.3));
       t.poison = null;
-      delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.slow; delete t.sunder; delete t.shieldUntil; delete t.shieldCharges;
+      delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.rootUntil; t.poison=null; delete t.slow; delete t.sunder; delete t.shieldUntil; delete t.shieldCharges;
       t.pendingCounter = null; t.channel = 0; t.kx = 0; t.ky = 0;
       if (t.shieldGuard) t.shieldGuard.left = 0;
       if (t.act) endAct(world, t, true);
@@ -957,7 +989,7 @@ function applyHit(world, t, hit) {
   if (t.hp <= 0) {
     t.hp = 0;
     t.dead = true;
-    delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil;
+    delete t.invisibleUntil; delete t.curse; delete t.berserk; delete t.burn; delete t.frozenUntil; delete t.rootUntil; t.poison=null;
     if (t.act) endAct(world, t, true);
     world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
@@ -1211,6 +1243,7 @@ function stepRound(world, inputs) {
 export function getTelegraphs(world) {
   const out = [];
   for (const m of world.entities) {
+    if (m.act?.def.groundTarget && m.act.phase === 'windup') {const a=m.act;out.push({id:m.id,ability:a.id,phase:a.phase,progress:a.elapsed/a.total,facing:0,major:false,shape:{...a.def.shape,radius:a.growth.radius},ox:a.zonePoint.x,oy:a.zonePoint.y});}
     if (m.kind !== 'monster' || m.dead || !m.act) continue;
     const act = m.act, def = act.def;
     if (act.phase === 'recovery') continue;

@@ -12,6 +12,10 @@ export function skillGrowth(id, level = 1) {
   level = Number.isSafeInteger(level) ? Math.max(1, Math.min(30, level)) : 1;
   const tier = GROWTH_LEVELS.filter(n => n <= level).length - 1;
   switch (id) {
+    case 'poison_arrow': return { damage:22+3*tier, dotDamage:5+tier, durationMs:4000+1000*Math.floor(tier/2), intervalMs:1000 };
+    case 'cursed_hands': return { radius:100+5*tier, durationMs:1500+250*tier };
+    case 'blood_spear': return { damage:56+6*tier, targets:3+Math.floor(tier/2), range:580+20*tier };
+    case 'dead_explosion': return { radius:170+10*tier, damagePerHp:1.6+.2*tier };
     case 'protective_shield': return { charges: level >= 20 ? 3 : level >= 10 ? 2 : 1, durationMs: 8000 + Math.floor((level - 1) * 4000 / 29) };
     case 'poison_field': return { radius:80+10*tier, durationMs:3000+500*tier, count:6+tier, intervalMs:500 };
     case 'curse': return { durationMs:4000+500*tier, damageMult:1-(10+2*tier)/100, armorMult:1-(15+3*tier)/100 };
@@ -26,7 +30,7 @@ export function skillGrowth(id, level = 1) {
   }
 }
 export function growthLabel(id, level = 1) {
-  const describe = g => id === 'protective_shield' ? `${g.charges}회 · ${Math.round(g.durationMs / 100) / 10}초` : id === 'poison_field' ? `반경 ${g.radius} · ${g.durationMs/1000}초 · ${g.count}회` : id === 'curse' ? `${g.durationMs/1000}초 · 공격 -${Math.round((1-g.damageMult)*100)}% · 방어 -${Math.round((1-g.armorMult)*100)}%` : id === 'invisibility' ? `${g.durationMs/1000}초` : id === 'sword_wave' ? `${g.range}px · ${g.targets}대상` : id === 'berserk' ? `${g.durationMs/1000}초 · 위력/공속 +${Math.round((g.damageMult-1)*1000)/10}% · 받는 피해 +20%` : id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
+  const describe = g => id === 'poison_arrow' ? `직격 ${g.damage} · 독 ${g.dotDamage}/초 · ${g.durationMs/1000}초` : id === 'cursed_hands' ? `반경 ${g.radius} · 속박 ${g.durationMs/1000}초 (보스 ${Math.round(g.durationMs/3/100)/10}초)` : id === 'blood_spear' ? `피해 ${g.damage} · ${g.targets}대상 · ${g.range}px` : id === 'dead_explosion' ? `희생 HP ×${Math.round(g.damagePerHp*10)/10} · 반경 ${g.radius}` : id === 'protective_shield' ? `${g.charges}회 · ${Math.round(g.durationMs / 100) / 10}초` : id === 'poison_field' ? `반경 ${g.radius} · ${g.durationMs/1000}초 · ${g.count}회` : id === 'curse' ? `${g.durationMs/1000}초 · 공격 -${Math.round((1-g.damageMult)*100)}% · 방어 -${Math.round((1-g.armorMult)*100)}%` : id === 'invisibility' ? `${g.durationMs/1000}초` : id === 'sword_wave' ? `${g.range}px · ${g.targets}대상` : id === 'berserk' ? `${g.durationMs/1000}초 · 위력/공속 +${Math.round((g.damageMult-1)*1000)/10}% · 받는 피해 +20%` : id === 'firewall' ? `${g.durationMs / 1000}초 · ${g.count}회` : id === 'spinning_shot' ? `1.2초 · ${g.count}발` : `${g.count}회`;
   const current = skillGrowth(id, level);
   if (!current) return '';
   const next = GROWTH_LEVELS.find(n => n > level);

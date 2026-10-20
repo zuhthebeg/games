@@ -27,6 +27,9 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
       assert.equal(profile.shape, ABILITIES[ability].shape);
       if (ability === 'heavy_cleave') { assert.equal(profile.shape.range, 168.75); assert.equal(profile.shape.arc, 70); }
       else { assert.equal(ability, 'armor_break'); assert.equal(profile.shape.range, 110); assert.equal(profile.shape.arc, 60); }
+    } else if (ABILITIES[ability].delivery === 'sacrifice') {
+      assert.equal(profile.radius,ABILITIES[ability].shape.radius);
+      assert.equal(ability,'dead_explosion');
     } else if (profile.style === 'ember') {
       assert.equal(profile.radius, ABILITIES[ability].projectile.explode.radius);
       assert.equal(profile.projectileRadius, ABILITIES[ability].projectile.radius);

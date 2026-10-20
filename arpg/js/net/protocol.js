@@ -166,17 +166,17 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 const COMMON = ['skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
-  'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
+  'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
   'mpRegen', 'hpRegen', 'effectiveInt', 'silverWeapon', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'armorWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
 const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
-  return { t: 'snapshot', tick: world.tick, arena: world.arena, threat: world.threat,
+  return { t: 'snapshot', statusVersion:1, tick: world.tick, arena: world.arena, threat: world.threat,
     round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat', 'invasion', 'invasionExitAt']),
     ...(world.round.objective ? { objective: structuredClone(world.round.objective) } : {}), pending: world.round.pending.length,
-    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION), ...select(e, ['skillMasteryLevels']),
+    entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.poison ? {poison:{left:e.poison.left}} : {}), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION), ...select(e, ['skillMasteryLevels']),
         pendingCounter: !!e.pendingCounter,
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
@@ -193,6 +193,8 @@ export function decodeSnapshot(packet, uid) {
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
     if(e.shieldModel !== undefined && !validShieldModel(e.shieldModel)) return null;
+    if (e.rootUntil !== undefined && !expires(e.rootUntil,90)) return null;
+    if (e.poison && (!Number.isSafeInteger(e.poison.left) || e.poison.left<1 || e.poison.left>210 || Object.keys(e.poison).some(k=>k!=='left'))) return null;
     if (e.shieldCharges !== undefined && (!Number.isSafeInteger(e.shieldCharges) || e.shieldCharges < 1 || e.shieldCharges > 3 || !expires(e.shieldUntil,360))) return null;
     if (e.invisibleUntil !== undefined && !expires(e.invisibleUntil,150)) return null;
     if (e.curse && (!expires(e.curse.expiresTick,210) || !(e.curse.damageMult>=.7 && e.curse.damageMult<=1) || !(e.curse.armorMult>=.5 && e.curse.armorMult<=1))) return null;

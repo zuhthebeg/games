@@ -65,7 +65,8 @@ test('content audit: no hitscan/beam/long ranged instant shapes; projectile tele
     else{assert.ok(a.zone.durationMs<=4000);assert.ok(a.zone.intervalMs>=500);assert.ok(a.zone.length<=220);}
     continue;
   }
-  if(a.delivery==='status'){assert.ok(['curse','invisibility','berserk'].includes(id));assert.ok(a.requiresSkeleton || a.requiresTwohand);continue;}
+  if(a.delivery==='status'){assert.ok(['curse','invisibility','berserk','cursed_hands'].includes(id));assert.ok(a.requiresSkeleton || a.requiresTwohand);continue;}
+  if(a.delivery==='sacrifice'){assert.equal(id,'dead_explosion');assert.equal(a.requiresSkeleton,true);assert.equal(a.hpCostFrac,.5);assert.ok(a.windupMs>=440);assert.ok(a.shape.radius<=170);continue;}
   assert.ok(['shape','projectile','dash'].includes(a.delivery),id);
   if(a.delivery==='shape')assert.ok(['circle','cone'].includes(a.shape.type),id);
  }

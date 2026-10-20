@@ -5,7 +5,7 @@ export const PLAYER_LINEAGES = Object.freeze({
   skeleton_mage: Object.freeze({ id: 'skeleton_mage', family: 'focus', baseForm: 'skeleton_mage', evolvedForm: 'lich',
     weaponForms: Object.freeze(['wand', 'staff']) }),
   skeleton_knight: Object.freeze({ id: 'skeleton_knight', family: 'blade', baseForm: 'skeleton_knight', evolvedForm: 'death_knight',
-    weaponForms: Object.freeze(['sword', 'blunt']) }),
+    weaponForms: Object.freeze(['sword', 'blunt', 'bow', 'wand', 'staff']) }),
   skeleton_archer: Object.freeze({ id: 'skeleton_archer', family: 'bow', baseForm: 'skeleton_archer', evolvedForm: 'death_archer',
     weaponForms: Object.freeze(['bow']) }),
 });
@@ -31,7 +31,7 @@ export const normalizedWeaponForm = def => def?.form
 export function lineageAllowsWeapon(saveOrId, def) {
   const lineage = playerLineage(saveOrId);
   return def?.kind !== 'weapon' || lineage.id === 'human'
-    || (def.family === lineage.family && lineage.weaponForms.includes(normalizedWeaponForm(def)));
+    || ((lineage.id === 'skeleton_knight' ? ['blade','bow','focus'].includes(def.family) : def.family === lineage.family) && lineage.weaponForms.includes(normalizedWeaponForm(def)));
 }
 
 // Public single-skeleton identity; old internal slot/lineage names remain unchanged.

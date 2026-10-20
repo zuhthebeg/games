@@ -7,7 +7,7 @@ import { ITEMS, craftRecipeId, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeigh
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf, validWeaponLoadouts } from './skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, ownsSkill, validLoadout, loadoutOf, validWeaponLoadouts } from './skills.js';
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 import { validQuests } from './quest-progress.js';
@@ -143,7 +143,7 @@ export function validateSave(save) {
     if (!Array.isArray(save.learned) || new Set(save.learned).size !== save.learned.length
       || !save.learned.every(id => typeof id === 'string' && Object.hasOwn(BOOKS, id))) return false;
     if (!record(save.skills) || !Object.entries(save.skills).every(([family, id]) =>
-      Object.hasOwn(DEFAULT_SKILLS, family) && typeof id === 'string' && hasSkill(save, id)
+      Object.hasOwn(DEFAULT_SKILLS, family) && typeof id === 'string' && ownsSkill(save, id)
         && ABILITIES[id]?.family === family)) return false;
     for (const [id, count] of Object.entries(save.stacks)) {
       if (!Object.hasOwn(ITEMS, id) || !['material', 'consumable'].includes(ITEMS[id].kind) || !integer(count)) {

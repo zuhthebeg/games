@@ -11,7 +11,7 @@ import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, sta
 import { compareItems } from '../meta/compare.js';
 import { MONSTER_VARIANTS } from '../content/monsters.js';
 import { STAGES, ABILITIES, canUseSkill, WEAPONS, weaponAttackMultiplier, SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate, skillLineageAllowed } from '../meta/skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily, weaponForm, weaponLoadoutCandidate, skillLineageAllowed, skillSchool } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { setStatus, equippedSets, STAT_KEYS, STAT_NAMES, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
@@ -26,7 +26,7 @@ import { ENCHANT, STONE, GREATER_STONE, ENCHANT_STONES } from '../meta/economy.j
 import { createSave, DEFAULT_AUTO_BUY, RETIRED_SCROLLS } from '../meta/save.js';
 import { AUTO_USE_LEVELS, autoUseSettings, validAutoUse } from '../meta/auto-use.js';
 import { icon, itemIcon } from './icons.js';
-import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
+import { ACADEMY, FAMILY_LABELS, skillIcon, skillCardHtml, slotPickHtml, loadoutHtml, weaponWarnHtml, skillUse } from './skill-view.js';
 import { supplyQuote, purchaseLedgerHtml, autoBuySupplies } from './shop-view.js';
 import { playCraftFx } from './craft-fx.js';
 import { playEnchantFx, ritualCircleHtml } from './enchant-fx.js';
@@ -923,6 +923,9 @@ export class HubUI {
 
   openSkill(id) {
     if (!SKILL_DISPLAY[id] || !hasSkill(this.save,id)) throw new Error('아직 배우지 않은 기술입니다.');
+    if (['poison_arrow','cursed_hands','blood_spear','dead_explosion'].includes(id)) {
+      return this.mountSheet(this.dialogHtml(ABILITIES[id].name,skillCardHtml(id,this.save,{context:'detail'}),slotPickHtml(id,this.save,'character')));
+    }
     const a = ABILITIES[id], p = a.projectile, shape = a.shape;
     const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
       : a.zone ? `고정 지점 사거리 ${a.zone.range} px · ${a.zone.radius ? `반경 ${a.zone.radius} px` : `길이 ${a.zone.length} px · 폭 ${a.zone.width * 2} px`} · ${a.zone.delayMs ? `낙하 대기 ${amount(a.zone.delayMs / 1000)}초` : `지속 ${amount(a.zone.durationMs / 1000)}초`}`
@@ -942,9 +945,9 @@ export class HubUI {
 
   showTrainer({ keepScroll = false } = {}) {
     this.academyFamily ||= ITEMS[equippedItem(this.save,'weapon')?.id]?.family || 'blade';
-    const family = this.academyFamily, school = ACADEMY[family];
-    const tabs = FAMILIES.map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
-    const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => BOOKS[id].family === family && skillLineageAllowed(this.save,id))].sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
+    const family = this.academyFamily, school = ACADEMY[family], skeleton = this.save.lineage?.startsWith('skeleton_');
+    const tabs = (skeleton ? ['blade','focus','bow'] : FAMILIES).map(id => button(`${skillIcon(ACADEMY[id].mark)}<span>${skeleton ? ({blade:'물리',focus:'마법',bow:'궁수'})[id] : ACADEMY[id].name}</span>`, 'academy-tab', `data-family="${id}" id="academy-tab-${id}" class="faculty-${id}" role="tab" aria-selected="${family === id}" aria-controls="academy-panel"`)).join('');
+    const ids = [DEFAULT_SKILLS[family],...Object.keys(BOOKS).filter(id => (skeleton ? skillSchool(id) : BOOKS[id].family) === family)].filter(id => skillLineageAllowed(this.save,id)).sort((a,b) => SKILL_DISPLAY[a].grade-SKILL_DISPLAY[b].grade);
     const ladder = [0,1,2].map(grade => `<section class="academy-stage" data-grade="${grade}"><h3><span>${grade+1}</span>${['입문','숙련','상급'][grade]}</h3><div class="academy-stage-cards">${ids.filter(id => SKILL_DISPLAY[id].grade === grade).map(id => skillCardHtml(id,this.save)).join('')}</div></section>`).join('');
     this.showInnPanel('아카데미', `${loadoutHtml(this.save, { interactive: false })}<div class="academy-tabs" role="tablist" aria-label="아카데미 학부">${tabs}</div><section id="academy-panel" class="academy-panel faculty-${family}" role="tabpanel" aria-labelledby="academy-tab-${family}"><p class="npc-line">“${school.quote}”</p><div class="academy-ladder">${ladder}</div></section>`, 'trainer', '', {eyebrow:'검술 · 궁술 · 마법', keepScroll});
   }
@@ -1468,6 +1471,10 @@ export class HubUI {
         return this.showReceipt();
       // Trainer
       case 'trainer': return this.showTrainer();
+      case 'skill-book-info': {
+        if (!SKILL_DISPLAY[data.id] || !skillLineageAllowed(this.save,data.id)) throw new Error('현재 계보의 기술이 아닙니다.');
+        return this.mountSheet(this.dialogHtml(ABILITIES[data.id].name, skillCardHtml(data.id,this.save,{context:'detail'}), ''));
+      }
       case 'academy-tab':
         if (!ACADEMY[data.family]) return;
         this.academyFamily = data.family;

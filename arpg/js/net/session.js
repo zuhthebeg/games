@@ -15,7 +15,7 @@ import { MASTERY_SKILLS, MASTERY_MAX } from '../meta/skill-mastery.js';
 const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
   && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= MASTERY_MAX);
 
-const NEW_GEAR_SKILLS = new Set(['poison_field','curse','invisibility','sword_wave','berserk']);
+const NEW_GEAR_SKILLS = new Set(['poison_arrow','cursed_hands','blood_spear','dead_explosion','poison_field','curse','invisibility','sword_wave','berserk']);
 function hostMods(profile) {
   if (validLobbyProfile(profile)) return {...invasionProfile(profile).mods,lineage:profile.rewardSave.lineage || 'human'};
   // Legacy simulation fixtures may omit a save; they cannot claim new lineage/form skills.

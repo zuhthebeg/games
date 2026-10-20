@@ -10,6 +10,18 @@ import { OBJECTIVE_QUESTS } from './quest-expansion.js';
 // trackTurnDeg: max turn rate (deg/s) toward the target during windup. Zero during lock (no re-target, no snap).
 
 export const ABILITIES = {
+  poison_arrow: { name:'포이즌 애로우', windupMs:220, lockMs:0, activeMs:34, recoveryMs:240, cooldownMs:6000, manaCost:18,
+    delivery:'projectile', projectile:{speed:720,radius:8,rangePx:600,count:1,spreadDeg:0,pierce:0},
+    damage:22, poison:{durationMs:4000,intervalMs:1000,damage:5}, poise:8, knockback:35, family:'bow', requiresSkeleton:true, requiresSchool:true, cancelInto:['recovery'] },
+  cursed_hands: { name:'저주받은 손', windupMs:550, lockMs:0, activeMs:34, recoveryMs:260, cooldownMs:10000, manaCost:24,
+    delivery:'status', status:'root', groundTarget:{range:360,reach:200}, shape:{type:'circle',radius:100,offset:0},
+    damage:0, poise:0, knockback:0, family:'focus', requiresSkeleton:true, requiresSchool:true, cancelInto:['recovery'] },
+  blood_spear: { name:'블러드 스피어', windupMs:320, lockMs:0, activeMs:34, recoveryMs:260, cooldownMs:6500, manaCost:22,
+    delivery:'projectile', projectile:{speed:680,radius:11,rangePx:580,count:1,spreadDeg:0,pierce:2}, hpCostFrac:.05, minHp:2,
+    damage:56, poise:20, knockback:45, family:'focus', requiresSkeleton:true, requiresSchool:true, cancelInto:['recovery'] },
+  dead_explosion: { name:'망자의 폭발', windupMs:440, lockMs:0, activeMs:34, recoveryMs:340, cooldownMs:16000, manaCost:20,
+    delivery:'sacrifice', shape:{type:'circle',radius:170,offset:0}, hpCostFrac:.5, minHp:10,
+    damage:0, poise:55, knockback:180, family:'blade', requiresSkeleton:true, requiresSchool:true, cancelInto:['recovery'] },
   shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:200, recoveryMs:180, cooldownMs:0,
     delivery:'dash', dash:{distance:85,bodyPad:8}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
   poison_field: { name:'맹독 지대', windupMs:260, lockMs:0, activeMs:34, recoveryMs:220, cooldownMs:8000, manaCost:20,
@@ -22,7 +34,7 @@ export const ABILITIES = {
     delivery:'status', status:'invisibility', damage:0, poise:0, knockback:0, family:'blade', requiresSkeleton:true, cancelInto:['recovery'] },
   sword_wave: { name:'검기', windupMs:220, lockMs:0, activeMs:34, recoveryMs:240, cooldownMs:6000, manaCost:20,
     delivery:'projectile', projectile:{speed:620,radius:18,rangePx:300,count:1,spreadDeg:0,pierce:1},
-    damage:36, poise:18, knockback:60, family:'blade', requiresForm:'sword', cancelInto:['recovery'] },
+    damage:36, poise:18, knockback:60, family:'blade', requiresHuman:true, requiresForm:'sword', cancelInto:['recovery'] },
   berserk: { name:'광전사', windupMs:220, lockMs:0, activeMs:34, recoveryMs:200, cooldownMs:15000, manaCost:24,
     delivery:'status', status:'berserk', damage:0, poise:0, knockback:0, family:'blade', requiresTwohand:true, cancelInto:['recovery'] },
   // ---------- player: blade (Vanguard)
@@ -300,10 +312,15 @@ export const SKILL_USE = {
   focus: { focus: 1, blade: 0.6, bow: 0.6 },
 };
 export const SKILL_SLOTS = 3;
+export const isSkeletonLineage = lineage => ['skeleton_knight','skeleton_mage','skeleton_archer'].includes(lineage);
+export const skillLineageEligible = (id,lineage='human') => !!ABILITIES[id] && (!ABILITIES[id].requiresSkeleton || isSkeletonLineage(lineage)) && (!ABILITIES[id].requiresHuman || !isSkeletonLineage(lineage));
 export function skillDamageShare(abilityId, weapon, form, lineage = 'human', handedness = 1) {
   const def = ABILITIES[abilityId];
   if (!form && weapon === 'blade') form='sword';
-  if (def?.requiresSkeleton) return ['skeleton_knight','skeleton_mage','skeleton_archer'].includes(lineage) ? 1 : undefined;
+  const skeleton = isSkeletonLineage(lineage);
+  if (def?.requiresHuman && skeleton) return undefined;
+  if (def?.requiresSkeleton) return skeleton && (!def.requiresSchool || weapon === def.family) ? 1 : undefined;
+  if (abilityId === 'berserk' && skeleton && Object.hasOwn(WEAPONS,weapon)) return 1;
   if (def?.requiresTwohand && (weapon !== 'blade' || !['sword','blunt'].includes(form) || handedness !== 2)) return undefined;
   if (def?.requiresFocus && weapon !== 'focus') return undefined;
   if (def?.shield) return SKILL_USE.focus[weapon] === undefined ? undefined : 1;

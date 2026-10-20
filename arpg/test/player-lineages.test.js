@@ -14,7 +14,7 @@ import { toOldScale } from './fixtures/old-scale.js';
 
 const roles = [
   ['skeleton_mage', 'focus', 'lich', ['wand', 'staff']],
-  ['skeleton_knight', 'blade', 'death_knight', ['sword', 'blunt']],
+  ['skeleton_knight', 'blade', 'death_knight', ['sword', 'blunt', 'bow', 'wand', 'staff']],
   ['skeleton_archer', 'bow', 'death_archer', ['bow']],
 ];
 const forms = ['sword', 'blunt', 'bow', 'wand', 'staff'];
@@ -79,7 +79,7 @@ test('actual item definitions normalize only implicit sword/bow, with exact fami
   assert.equal(normalizedWeaponForm(ITEMS.apprentice_wand), 'wand');
   for (const [id, family, , allowedForms] of roles) {
     for (const def of Object.values(ITEMS).filter(d => d.kind === 'weapon')) {
-      assert.equal(lineageAllowsWeapon(id, def), def.family === family && allowedForms.includes(normalizedWeaponForm(def)));
+      assert.equal(lineageAllowsWeapon(id, def), (id === 'skeleton_knight' || def.family === family) && allowedForms.includes(normalizedWeaponForm(def)));
       assert.equal(lineageAllowsWeapon('human', def), true);
       assert.equal(lineageAllowsWeapon({}, def), true);
     }
@@ -141,7 +141,7 @@ for (const [id, family, boss, allowed] of roles) {
       } else {
         const next = equip(s, form);
         assert.equal(validateSave(next), true);
-        assert.deepEqual(withFamilyLoadout(s, next), next);
+        if (ITEMS[next.items.find(i=>i.uid===next.equipped.weapon).id].family === family) assert.deepEqual(withFamilyLoadout(s,next),next);else assert.deepEqual(withFamilyLoadout(s,next).loadouts[family],s.loadout);
         for (const keepCurrent of [false, true]) {
           const c = weaponLoadoutCandidate(s, next, { keepCurrent });
           assert.equal(validateSave(c.save), true); assert.deepEqual(c.save.learned, s.learned);
@@ -160,13 +160,13 @@ for (const [id, family, boss, allowed] of roles) {
     // Existing deterministic stock need not contain every family on every refresh.
     s.shopRefresh = Array.from({ length: 20 }, (_, n) => n).find(n => {
       const weapons = shopStock(s.createdAt, n).filter(i => ITEMS[i.id].kind === 'weapon');
-      return weapons.some(i => lineageAllowsWeapon(s, ITEMS[i.id])) && weapons.some(i => !lineageAllowsWeapon(s, ITEMS[i.id]));
+      return weapons.some(i => lineageAllowsWeapon(s, ITEMS[i.id])) && (id === 'skeleton_knight' || weapons.some(i => !lineageAllowsWeapon(s, ITEMS[i.id])));
     });
     assert.ok(Number.isInteger(s.shopRefresh));
     store.save(s); const raw = f.data.get(SAVE_KEY), before = structuredClone(s);
     const stock = shopStock(s.createdAt, s.shopRefresh).filter(i => ITEMS[i.id].kind === 'weapon');
     assert.ok(stock.some(i => lineageAllowsWeapon(s, ITEMS[i.id])));
-    assert.ok(stock.some(i => !lineageAllowsWeapon(s, ITEMS[i.id])));
+    if (id !== 'skeleton_knight') assert.ok(stock.some(i => !lineageAllowsWeapon(s, ITEMS[i.id])));
     for (const item of stock) {
       const bought = buyGear(s, item.uid), uid = bought.items.at(-1).uid;
       assert.equal(validateSave(bought), true, 'carrying/buying any family stays allowed');
@@ -229,13 +229,12 @@ test('actual HubUI entry points reject mismatches before pending/save/purchase; 
       h.mountSheet = () => null; h.returnToPanel = () => {}; h.showReceipt = () => {}; h.showMerchant = () => {}; h.lootState = {};
       const original = structuredClone(s);
       const denied = forms.find(form => !allowed.includes(form));
-      for (const action of ['equip', 'loot-equip']) {
+      for (const action of denied ? ['equip', 'loot-equip'] : []) {
         assert.throws(() => h.action(action, { uid: denied }), /계보/);
         assert.deepEqual(h.save, original); assert.equal(h.pendingEquipment, undefined); assert.deepEqual(h.persisted, []);
       }
       const deniedStock = shopStock(s.createdAt, s.shopRefresh).find(item => ITEMS[item.id].kind === 'weapon' && !lineageAllowsWeapon(s, ITEMS[item.id]));
-      assert.ok(deniedStock);
-      assert.throws(() => h.action('buy-equip', { uid: deniedStock.uid }), /계보/);
+      if (id !== 'skeleton_knight') {assert.ok(deniedStock);assert.throws(() => h.action('buy-equip', { uid: deniedStock.uid }), /계보/);}
       assert.deepEqual(h.save, original); assert.deepEqual(h.persisted, []); assert.equal(h.pendingEquipment, undefined);
       // Distinct UID even for the archer's single form; exercises the real confirmation path.
       h.save.items.push({ ...h.save.items.find(item => item.uid === allowed.at(-1)), uid: 'allowed-copy' });

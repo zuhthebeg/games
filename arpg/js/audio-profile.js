@@ -38,11 +38,11 @@ export const SPECIES_AUDIO = Object.freeze({
 const entity = (entities, id) => entities?.find(e => e.id === id);
 const cue = (name, fallback, pitch = 1, gain = 1, key = name, cooldown = .025) =>
   ({ name, fallback, pitch, gain, key, cooldown });
-const SKILLS = Object.freeze({ slash: 'blade', lunge: 'blade', whirl: 'blade', heavy_cleave: 'blade',
+const SKILLS = Object.freeze({ poison_arrow:'bow', cursed_hands:'arcane', blood_spear:'arcane', dead_explosion:'blunt', slash: 'blade', lunge: 'blade', whirl: 'blade', heavy_cleave: 'blade',
   ground_slam: 'blunt', armor_break: 'blunt', arrow: 'bow', volley: 'bow', pierce_shot: 'bow', triple_arrow: 'bow', evasion_shot: 'bow',
   rain_arrow: 'bow', spinning_shot: 'bow', meteor: 'fire', firewall: 'fire', blast_arrow: 'fire', ember_bolt: 'fire', flame_ring: 'fire', frost_lance: 'ice',
   focus_pulse: 'arcane', healing_light: 'heal' });
-const SKILL_PITCH = Object.freeze({ lunge: 1.12, whirl: .94, heavy_cleave: .84,
+const SKILL_PITCH = Object.freeze({ poison_arrow:.86,cursed_hands:.65,blood_spear:.8,dead_explosion:.6,lunge: 1.12, whirl: .94, heavy_cleave: .84,
   ground_slam: .8, armor_break: 1.08, volley: .94, pierce_shot: 1.16,
   blast_arrow: 1.13, ember_bolt: 1, flame_ring: .86, frost_lance: 1.1 });
 export function skillAudio(ability, source) {
@@ -52,6 +52,8 @@ export function skillAudio(ability, source) {
 export function eventCues(event, localId, entities = []) {
   const source = entity(entities, event.src ?? event.id);
   if (event.zonePulse || event.type === 'zonePulse') return [];
+  if (event.type === 'handsBurst') return [cue('bone-hit','hit',.65,.7,'hands-burst',.15)];
+  if (event.type === 'explode' && event.ability === 'dead_explosion') return [cue('blunt-impact','critical',.55,1,'dead-explosion',.2)];
   if (event.type === 'explode' && event.ability === 'meteor') return [cue('fire-impact', 'hit', .8, .75, 'meteor-impact', .1)];
   if (event.type === 'turnUndead') return [event.success
     ? cue('heal-cast', 'level-up', 1.35, .8, 'holy-success', .12)

@@ -1,4 +1,4 @@
-import { ABILITIES, WEAPONS, SKILL_SLOTS, canUseSkill } from '../content/combat.js';
+import { ABILITIES, WEAPONS, SKILL_SLOTS, canUseSkill, skillLineageEligible } from '../content/combat.js';
 import { cloneSave, equippedItem, ITEMS } from './items.js';
 import { effectiveStats, STAT_NAMES } from './stats.js';
 
@@ -6,6 +6,10 @@ export const DEFAULT_SKILLS = Object.fromEntries(Object.entries(WEAPONS).map(([f
 // skills-v2 §3 (100-point scale): 숙련 30 / 상급 45 of the family stat, counted with gear
 // at the moment of learning. Learned books stay learned.
 export const BOOKS = {
+  poison_arrow:{family:'bow',type:'해골 교본',price:220,req:{stat:'agi',value:30}},
+  cursed_hands:{family:'focus',type:'해골 교본',price:280,req:{stat:'int',value:30}},
+  blood_spear:{family:'focus',type:'해골 교본',price:300,req:{stat:'int',value:45}},
+  dead_explosion:{family:'blade',type:'해골 교본',price:320,req:{stat:'str',value:45}},
   poison_field:{family:'blade',type:'해골 교본',price:280,req:{stat:'str',value:30}},
   curse:{family:'blade',type:'해골 교본',price:280,req:{stat:'str',value:30}},
   invisibility:{family:'blade',type:'해골 교본',price:300,req:{stat:'str',value:30}},
@@ -35,14 +39,17 @@ export function bookRequirement(save, id) {
   const have = effectiveStats(save)[req.stat];
   return { ...req, have, ok: have >= req.value, label: `${STAT_NAMES[req.stat]} ${have}/${req.value}` };
 }
-export const skillLineageAllowed = (save,id) => !ABILITIES[id]?.requiresSkeleton || ['skeleton_knight','skeleton_mage','skeleton_archer'].includes(save.lineage);
+export const skillSchool = id => ['poison_field','curse','invisibility'].includes(id) ? 'focus' : ABILITIES[id]?.family;
+export const skillLineageAllowed = (save,id) => skillLineageEligible(id,save.lineage);
+// Save ownership is distinct from current lineage permission: never erase hidden learned books.
+export const ownsSkill = (save,id) => Object.values(DEFAULT_SKILLS).includes(id) || Object.hasOwn(BOOKS,id) && (save.learned || []).includes(id);
 export const hasSkill = (save, id) => skillLineageAllowed(save,id) && (Object.values(DEFAULT_SKILLS).includes(id)
   || (Object.hasOwn(BOOKS, id) && (save.learned || []).includes(id)));
 export const equippedSkill = (save, family) => save.skills?.[family] || DEFAULT_SKILLS[family];
 
 export function learnSkill(save, id) {
   if (!Object.hasOwn(BOOKS, id)) throw new Error('없는 교본입니다.');
-  if (!skillLineageAllowed(save,id)) throw new Error('해골 계보 전용 기술입니다.');
+  if (!skillLineageAllowed(save,id)) throw new Error('현재 계보로 배울 수 없는 기술입니다.');
   if (hasSkill(save, id)) throw new Error('이미 배운 기술입니다.');
   const book = BOOKS[id];
   if (save.gold < book.price) throw new Error('골드가 부족합니다.');
@@ -57,7 +64,7 @@ export function learnSkill(save, id) {
 // skills-v2 §2: three family-free slots that survive weapon swaps. The sim drops ids the
 // current weapon cannot use; an empty or dropped slot 1 falls back to the kit skill.
 export const validLoadout = (save, loadout) => Array.isArray(loadout) && loadout.length === SKILL_SLOTS
-  && Array.from(loadout).every(id => id === null || (typeof id === 'string' && Object.hasOwn(ABILITIES, id) && hasSkill(save, id)))
+  && Array.from(loadout).every(id => id === null || (typeof id === 'string' && Object.hasOwn(ABILITIES, id) && ownsSkill(save, id)))
   && new Set(loadout.filter(Boolean)).size === loadout.filter(Boolean).length;
 
 // Saves before K2 had one skill per weapon family: keep that pick in slot 1 and fill the
@@ -140,6 +147,7 @@ export function equipSkill(save, family, id) {
 
 // Display-only grades. No combat, book-price or learning requirement changes.
 export const SKILL_DISPLAY = {
+  poison_arrow:{grade:1,label:'해골'}, cursed_hands:{grade:1,label:'해골'}, blood_spear:{grade:2,label:'해골'}, dead_explosion:{grade:2,label:'해골'},
   poison_field:{grade:2,label:'해골'}, curse:{grade:2,label:'해골'}, invisibility:{grade:2,label:'해골'}, sword_wave:{grade:2,label:'상급'}, berserk:{grade:2,label:'상급'},
   rain_arrow:{ grade:2, label:'상급' }, spinning_shot:{ grade:2, label:'상급' },
   meteor:{ grade:2, label:'상급' }, firewall:{ grade:2, label:'상급' },

@@ -44,7 +44,7 @@ export function trackMastery(tracker, events, world, pid) {
     if (event.type === 'act') tracker.masteryCasts[event.ability] = { counted: false };
     const positiveHeal = event.type === 'heal' && event.ability === 'healing_light' && Number.isFinite(event.heal) && event.heal > 0;
     const positiveShield = event.type === 'shield' && event.ability === 'protective_shield';
-    const released = ['poison_field','curse','invisibility','sword_wave','berserk'].includes(event.ability) && ['statusCast','zoneCast','projectile'].includes(event.type);
+    const released = ['poison_arrow','cursed_hands','blood_spear','dead_explosion','poison_field','curse','invisibility','sword_wave','berserk'].includes(event.ability) && ['statusCast','zoneCast','projectile'].includes(event.type);
     if (!released && !positiveShield && !positiveHeal && (event.type !== 'hit' || !(event.masteryEnemy || world.entities.find(e => e.id === event.dst)?.kind === 'monster'))) continue;
     const cast = tracker.masteryCasts[event.ability];
     if (!cast || cast.counted) continue;
