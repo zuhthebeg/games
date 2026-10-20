@@ -16,7 +16,7 @@ export function paintSpellZones(g, world, reduced = false) {
       for(let i=0;i<7;i++){const a=i*2.4,r=radius*.55,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;
         const h=reduced?12:12+(world.tick+i*7)%20;
         g.circle(px,py-h,4).stroke({color:0xc9ee91,width:2,alpha:.75});}
-      if(!zone.pending){const remaining=Math.max(0,(zone.endTick-world.tick)/(zone.endTick-zone.startTick));g.arc(x,y,radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xe0f6b4,width:4});}
+      if(!zone.pending){const remaining=Math.max(0,(zone.endTick-world.tick)/(zone.endTick-zone.startTick));g.moveTo(x,y-(radius-6)).arc(x,y,radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xe0f6b4,width:4});}
     } else if (zone.abilityId === 'rain_arrow') {
       g.circle(x,y,def.radius).fill({color:0xc8ba7d,alpha:.12}).stroke({color:0xe7d69d,width:3});
       const age=zone.pending ? 0 : Math.max(0,world.tick-zone.activeTick);
@@ -29,13 +29,13 @@ export function paintSpellZones(g, world, reduced = false) {
       }
       if (!zone.pending) {
         const remaining=Math.max(0,(zone.endTick-world.tick)/(zone.endTick-zone.startTick));
-        g.arc(x,y,def.radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xf4e4bc,width:4});
+        g.moveTo(x,y-(def.radius-6)).arc(x,y,def.radius-6,-Math.PI/2,-Math.PI/2+Math.PI*2*remaining).stroke({color:0xf4e4bc,width:4});
       }
     } else if (def.radius) {
       const remaining=zone.pending ? 1 : Math.max(0,((zone.nextTick ?? zone.activeTick)-world.tick)/Math.max(1,zone.intervalTicks ?? (zone.activeTick-zone.startTick)));
       g.circle(x,y,def.radius).fill({color:0xf06d28,alpha:.12}).stroke({color:0xffb34b,width:3,alpha:.9});
       g.moveTo(x-12,y).lineTo(x+12,y).moveTo(x,y-12).lineTo(x,y+12).stroke({color:0xffe3aa,width:2});
-      g.arc(x,y,def.radius-7,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-remaining)).stroke({color:0xffdc81,width:4});
+      g.moveTo(x,y-(def.radius-7)).arc(x,y,def.radius-7,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-remaining)).stroke({color:0xffdc81,width:4});
       if (!zone.pending) {
         const height=reduced ? 42 : 32+remaining*210;
         if (!reduced) g.moveTo(x,y-height-65).lineTo(x,y-height).stroke({color:0xfca344,width:17,alpha:.6});

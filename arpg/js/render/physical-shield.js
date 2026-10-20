@@ -99,7 +99,7 @@ export function withPhysicalShield(visual,Graphics,Container) {
   const container=new Container(),back=new Container(),front=new Container();
   const arm=new Graphics(),shield=new Graphics();
   container.addChild(back,visual.container,front);front.addChild(arm,shield);
-  const reusable={};let pose=null,destroyed=false,lastBehind=false,lastWidth=-1,lastFront=null,lastBlock=null,lastShape=null;
+  const reusable={};let pose=null,destroyed=false,lastBehind=false,lastWidth=-1,lastHeight=-1,lastFront=null,lastBlock=null,lastShape=null;
   return {...visual,container,get debug(){return {...visual.debug,physicalShield:pose};},update(e,anim,dt){
     if(destroyed)return;
     visual.update(e,anim,dt);
@@ -108,8 +108,8 @@ export function withPhysicalShield(visual,Graphics,Container) {
     shield.visible=arm.visible=!!pose;if(!pose)return;
     if(pose.behind!==lastBehind){(pose.behind?back:front).addChild(arm,shield);lastBehind=pose.behind;}
     arm.clear().moveTo(pose.handX,pose.handY).lineTo(pose.x,pose.y).stroke({color:0x64533a,width:3});
-    if(pose.width!==lastWidth||pose.front!==lastFront||pose.blocking!==lastBlock||pose.shape!==lastShape){
-      drawPhysicalShield(shield,pose);lastWidth=pose.width;lastFront=pose.front;lastBlock=pose.blocking;lastShape=pose.shape;
+    if(pose.width!==lastWidth||pose.height!==lastHeight||pose.front!==lastFront||pose.blocking!==lastBlock||pose.shape!==lastShape){
+      drawPhysicalShield(shield,pose);lastWidth=pose.width;lastHeight=pose.height;lastFront=pose.front;lastBlock=pose.blocking;lastShape=pose.shape;
     }
     shield.position.set(pose.x,pose.y);
   },destroy(){if(destroyed)return;destroyed=true;

@@ -155,9 +155,16 @@ function spriteVisual(entity, { color }, asset) {
     container,
     offhandPose() {
       if(entity.kind !== 'player')return null;
-      const hand=handFrames?.[`${stateName}_${direction}`]?.[frame];
+      const sockets=handFrames?.[`${stateName}_${direction}`];
+      // Evolved combat clips have different frame counts than the source socket rig.
+      const count=asset.animations[`${stateName}_${direction}`]?.length||1;
+      const socketFrame=asset.id==='player-death-knight'?Math.min((sockets?.length||1)-1,Math.floor(frame*(sockets?.length||1)/count)):frame;
+      const hand=sockets?.[socketFrame];
       if(!hand)return null;
-      handPose.scale=sprite.scale.x;handPose.x=hand[0]*sprite.scale.x;handPose.y=hand[1]*sprite.scale.x;
+      // Hand tables are authored pawn-local physical pixels. The evolved kit's
+      // .5 sprite correction compensates logical256 textures, not equipment size.
+      const equipmentScale=atlasScale(entity);
+      handPose.scale=equipmentScale;handPose.x=hand[0]*equipmentScale;handPose.y=hand[1]*equipmentScale;
       handPose.facing=DIRECTIONS.indexOf(direction)*Math.PI/4;
       handPose.behind=direction === 'E' || direction === 'NE' || direction === 'N' || direction === 'NW';
       return handPose;

@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Graphics,Container} from '../vendor/pixi-8.22.0.min.mjs';
+import {BOOKS,DEFAULT_SKILLS} from '../js/meta/skills.js';
+import {ABILITIES} from '../js/content/combat.js';
+import {SKILL_SIGNATURES} from '../js/render/skill-signatures.js';
+import {QuarksVfx,QUARKS_CAPS} from '../js/render/quarks-vfx.js';
+const ids=[...new Set([...Object.keys(BOOKS),...Object.values(DEFAULT_SKILLS),'shield_bash'])];
+const world=(id,tick=30)=>({tick,entities:[{id:1,kind:'player',x:200,y:200,r:18,act:{id,phase:'active',elapsed:10,total:25,facing:.2,def:ABILITIES[id]}}],projectiles:[],zones:[]});
+test('exact canonical 30 player skills have authored signatures, no basic or enemy attacks',()=>{assert.equal(ids.length,30);assert.deepEqual(Object.keys(SKILL_SIGNATURES).sort(),ids.sort());for(const s of Object.values(SKILL_SIGNATURES)){assert.ok(s.signature.length>12);assert.ok(s.motif);}});
+for(const id of ids)test(id+': accepted active/recovery snapshot fires once without mutating world',()=>{const q=new QuarksVfx(Graphics,new Container()),w=world(id),before=JSON.stringify(w);q.update(w,1/60);assert.ok(q.slots.some(s=>s.live),id);const count=q.slots.filter(s=>s.live).length;q.update(JSON.parse(JSON.stringify(w)),1/60);assert.equal(q.slots.filter(s=>s.live).length,count);w.tick++;w.entities[0].act.elapsed++;w.entities[0].act.phase='recovery';q.update(w,1/60);assert.equal(q.slots.filter(s=>s.live).length,count);w.tick--;w.entities[0].act.elapsed--;w.entities[0].act.phase='active';assert.equal(JSON.stringify(w),before);q.reset();assert.ok(q.slots.every(s=>!s.live));});
+test('continuous poison cannot consume transient heal headroom; fixed allocations and expiry',()=>{const q=new QuarksVfx(Graphics,new Container()),w=world('healing_light');w.entities=[];w.zones=Array.from({length:16},(_,id)=>({id,abilityId:'poison_field',x:200,y:200,radius:80,activeTick:0,endTick:1000}));for(let i=0;i<60;i++){w.tick++;q.update(w,1/60);}w.entities=world('healing_light',w.tick).entities;q.update(w,1/60);assert.ok(q.slots.some(s=>s.live&&s.kind==='heal'));assert.ok(q.slots.filter(s=>s.live).length<=QUARKS_CAPS.particles);for(let i=0;i<100;i++)q.update({tick:w.tick+i+1,entities:[],zones:[],projectiles:[]},1/60);assert.ok(q.slots.every(s=>!s.live));assert.equal(q.casts.size,0);});
+
+for(const id of ids)test(id+': accepted impact replay is idempotent and fallback disables cleanly',()=>{const q=new QuarksVfx(Graphics,new Container()),w=world(id),event={type:id==='cursed_hands'?'handsBurst':'hit',ability:id,x:200,y:200,radius:40,src:1,dst:2};q.event(event,w);const n=q.slots.filter(s=>s.live).length;q.event({...event},w);assert.equal(q.slots.filter(s=>s.live).length,n);q.update(w,.016,false);assert.ok(q.slots.every(s=>!s.live));q.update(w,.016);q.update(w,10);assert.ok(q.slots.every(s=>!s.live));});
+
+import {createWorld,addPlayer,startStage,step} from '../js/sim/world.js';
+import {encodeSnapshot,decodeSnapshot} from '../js/net/protocol.js';
+for(const id of ids)test(id+': real guest decode retains authoritative choreography and original source',()=>{const w=createWorld({seed:7});addPlayer(w,{pid:'local'});startStage(w,'S2');step(w,{local:{}});w.tick=100;w.entities[0].act={id,def:ABILITIES[id],phase:'recovery',elapsed:18,total:30,facing:0};const q=new QuarksVfx(Graphics,new Container()),before=JSON.stringify(w);const guest=decodeSnapshot(encodeSnapshot(w),'local');q.update(guest,1/60);assert.ok(q.slots.some(s=>s.live),id);const n=q.slots.filter(s=>s.live).length;q.update(decodeSnapshot(encodeSnapshot(w),'local'),1/60);assert.equal(q.slots.filter(s=>s.live).length,n);assert.equal(JSON.stringify(w),before);});
