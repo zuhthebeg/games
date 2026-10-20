@@ -762,7 +762,7 @@ export class HubUI {
       : this.forgeTab === 'salvage' ? `<p class="forge-worn" aria-label="착용 강화 단계">${worn}</p>${picker}${this.forgeSalvageHtml()}${this.forgeRecipesHtml()}`
         : `${html}${picker}`;
     this.showInnPanel(this.hubCopy('대장장이', '저주받은 대장장이'), `${tabs}${noticeHtml}${this.craftResultHtml()}<div class="forge-tab-panel" data-forge-tab="${this.forgeTab}">${content}</div>`,
-      'forge', this.forgeTab === 'enhance' ? footer : '', { eyebrow: `시작 +0~${ENCHANT.safe - 1} · 안전 / +${ENCHANT.safe}~${ENCHANT.max - 1} · 일반·저주 파괴 위험 · +12부터 축복도 위험·비용 증가 · 뼈 세트는 +0부터 모든 강화석 파괴 위험` });
+      'forge', this.forgeTab === 'enhance' ? footer : '');
   }
 
   craftResultHtml() {

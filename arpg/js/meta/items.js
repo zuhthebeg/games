@@ -95,12 +95,17 @@ for (const [id, base, name] of [
   RECIPES[id] = { ...RECIPES[base], [secondary]: RECIPES[base][secondary] - 6, silver_ingot: 6 };
 }
 const TIER_LEVEL = { 2: 5, 3: 10, 4: 15 };
+const ARMOR_NAMES = {
+  head: { light: '가죽 두건', medium: '철 투구', heavy: '강철 대투구' },
+  hands: { light: '천 장갑', medium: '가죽 장갑', heavy: '강철 건틀릿' },
+  feet: { light: '천 신발', medium: '가죽 장화', heavy: '강철 군화' },
+};
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {
   for (const [armorClass, scale] of [['light', 1], ['medium', 1.5], ['heavy', 2]]) {
     for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2], ['fine', 3]]) {
       const id = `${slot}_${armorClass}_${rarity}_t${tier}`;
-      ITEMS[id] = { name: `${{head:'머리',hands:'장갑',feet:'신발'}[slot]} · ${armorClass} T${tier}`,
+      ITEMS[id] = { name: `${['', '', '단련된 ', '정예 '][tier]}${ARMOR_NAMES[slot][armorClass]}`,
         kind: slot, slot, material: slot === 'head' || armorClass === 'heavy' ? 'metal' : 'leather', armorClass, rarity, huntTier: tier,
         ac: toAc(Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity])),
         weight: weight * scale, requiredLevel: TIER_LEVEL[tier] ?? (rarity === 'common' ? 1 : 2) };

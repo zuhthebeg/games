@@ -23,7 +23,8 @@ for (const id of Object.keys(EQUIPMENT_SETS)) test(`${id}: every partial tier UI
     const item=s.items.find(i=>i.id===catalogue[0].id), html=itemDetailsHtml(item,s);
     assert.ok(html.includes(`${status.name} 세트 · 착용 ${n}/${status.parts}`));
     for(const b of status.bonuses)assert.ok(html.includes(`data-active="${b.active}" data-count="${b.count}"`));
-    assert.ok(cardHtml(item,s).includes('class="item-set"'));
+    // Set prose lives only in the detail sheet; grid cards carry a small marker (cocy 10-20).
+    assert.ok(!cardHtml(item,s).includes('class="item-set"'));assert.ok(cardHtml(item,s).includes('card-set-mark'));
     if(n)assert.ok(itemSetHtml(item,s).includes(' (착용)'));
     assert.ok(itemSetHtml(item,s).includes('set-members'));
   }

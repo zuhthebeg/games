@@ -82,7 +82,8 @@ test('inventory merchant reveal and socket paths all use full loss-inclusive com
   h.openItem(next.uid,'sell');assert.doesNotMatch(h.html,/compare-sheet/);
   h.showSocket('weapon');assert.doesNotMatch(h.html,/compare-sheet|= 유지/);assert.match(h.html,/data-detail="hp_flat"/);assert.match(h.html,/옵션 4개 변경 · 2개 사라짐/);
   assert.match(h.revealHtml({lootKept:{items:[next]}}),/옵션 4개 변경 · 2개 사라짐/);
-  assert.match(cardHtml(next,s,{compact:true}),/옵션 4개 변경 · 2개 사라짐/);
+  // Compact grid cards are icon + name only; option changes are disclosed in socket/reveal/detail (cocy 10-20).
+  assert.doesNotMatch(cardHtml(next,s,{compact:true}),/옵션 \d+개 변경/);
   const c=compareItems(old,next,s);for(const field of ['lines','weightAfter','weightLimit','locked','lockReason'])assert.ok(Object.hasOwn(c,field));
   for(const l of c.lines)for(const field of ['key','label','from','to','delta','good'])assert.ok(Object.hasOwn(l,field));
   assert.equal(row(c,'weight').delta,1);assert.equal(row(c,'hp_flat').from,10);assert.equal(row(c,'hp_flat').to,0);

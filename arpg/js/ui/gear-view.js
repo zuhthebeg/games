@@ -1,4 +1,5 @@
 import { SILVER_UNDEAD_MULTIPLIER } from '../content/combat.js';
+import { BALANCE } from '../content/balance.js';
 import { SKELETON_PORTRAITS } from '../render/skeleton-portrait-frames.js';
 import { skeletonAppearance } from '../render/skeleton-equipment-state.js';
 import { knightFormName } from '../content/player-lineages.js';
@@ -106,12 +107,16 @@ export function cardHtml(item, save, { action = 'open-item', compact = false, ex
   const def = ITEMS[item.id];
   const locked = !meetsRequirement(save, def);
   const worn = isWorn(save, item.uid);
-  const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${amount(effectiveWeight(item))} kg`}`;
+  // Grid cards stay icon + name: rarity is on the emblem; set, handedness and option changes live in the detail sheet.
+  const meta = compact ? note : `${SLOT_NAMES[def.slot]} · ${note || `${amount(effectiveWeight(item))} kg`}`;
+  const lockText = !knightEquipmentAllowed(save, def) ? `Lv.${KNIGHT_ARMOR_LEVELS[def.kind]}`
+    : (save.stats?.str ?? BALANCE.stats.base) < (def.requiredStr || 0) ? `힘 ${def.requiredStr}` : '';
+  const setMark = def.setId ? '<span class="card-set-mark" aria-hidden="true">◆</span>' : '';
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
-    + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
-    + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>${def.handedness === 2 ? '<small class="twohand-note">양손 · 무기 피해 ×2 · 방패 장착 불가</small>' : def.form === 'wand' ? '<small>한손 완드 · 방패 장착 가능</small>' : ''}`
-    + `${compact ? optionHintHtml(comparisonFor(item, save)) : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
-    + `${itemSetHtml(item, save)}${locked ? `<small class="loss">${icon('lock')}${knightEquipmentAllowed(save, def) ? `힘 ${def.requiredStr}` : `해골 Lv.${KNIGHT_ARMOR_LEVELS[def.kind]} 해금`}</small>` : ''}</span></button>`;
+    + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}${locked ? ', 장착 불가' : ''}">${emblem(item)}`
+    + `<span class="p2-card-copy"><strong>${setMark}${escape(def.name)}</strong>${meta ? `<small>${escape(meta)}</small>` : ''}`
+    + `${compact ? '' : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
+    + `${locked ? `<small class="loss card-lock">${icon('lock')}${lockText}</small>` : ''}</span></button>`;
 }
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
@@ -164,7 +169,7 @@ export function itemDetailsHtml(item, save) {
     ...(def.kind === 'offhand' ? [row('guard','막기','누르는 동안 정면 120° · 피해 70% 감소 · 타이밍 막기 피해 0 + 방패 돌진')] : []),
     row('weight', '무게', `${amount(effectiveWeight(item))} kg`),
     ...Object.entries(def.innateStats || {}).map(([key, value]) => row(`innate-${key}`, `기본 ${STAT_NAMES[key]}`, `+${value}`)),
-    ...(def.boneSet ? [row('bone-set', '뼈 5세트', '무기·머리·몸·손·발 착용 시 출정당 1회 HP 30%로 해골 부활 · 방패 제외 · +0부터 모든 강화석 파괴 위험')] : []),
+    ...(def.boneSet ? [row('bone-set', '뼈 5세트', '5부위 착용 시 출정당 1회 해골 부활')] : []),
     ...(def.silverWeapon ? [row('silver', '은 무기', `제작 전용 · 언데드에게 무기 공격 피해 +${(SILVER_UNDEAD_MULTIPLIER - 1) * 100}% (기본타·무기 기술) · 일반 생물 보너스 없음 · 힐·턴 언데드·지속피해·마법 스킬 제외`)] : []),
     ...(def.silverWeapon ? [row('silver-source', '은 주괴', ITEMS.silver_ingot.description)] : []),
     ...(def.affinity ? [row('affinity', '속성', {fire:'화염 · 화염 마법 피해 +25%',frost:'서리 · 서리 창 피해 +25%',holy:'신성 · 회복 +20% · 턴 언데드 +5%p (보스 +0.1%p, 최대 0.9%)'}[def.affinity])] : []),
