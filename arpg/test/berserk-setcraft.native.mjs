@@ -9,7 +9,7 @@ import {noteMaterials} from '../js/meta/recipe-discovery.js';
 import {statBudget,setStatus} from '../js/meta/stats.js';
 const base=process.env.ARPG_BASE_URL||'http://127.0.0.1:8981';
 const server=process.env.ARPG_BASE_URL?null:spawn('python3',['-m','http.server','8981','--bind','127.0.0.1'],{cwd:new URL('../..',import.meta.url).pathname,stdio:'ignore'});
-const report={base,rows:[],errors:[],screenshots:[],sourceBinding:{}};
+const report={base,rows:[],errors:[],screenshots:[],popups:[],sourceBinding:{}};
 const fixture=()=>{const s=trained();s.stats.str=100;s.statPoints=statBudget(s.level)-Object.values(s.stats).reduce((n,v)=>n+v-10,0);s.gold=100000;s.stacks=Object.fromEntries([...new Set(Object.values(RECIPES).flatMap(r=>Object.keys(r)))].filter(k=>k!=='gold').map(k=>[k,100]));s.loadout=['berserk',null,null];return noteMaterials(s)};
 let browser;
 try{
@@ -29,20 +29,34 @@ try{
  return {context,page,press:async selector=>{const n=page.locator(selector).first();await n.scrollIntoViewIfNeeded();if(width===390)await n.tap();else await n.click()}};
  }
  // Real app boot, each rarity/enhancement/affix, both playable lineages.
- for(const lineage of (process.env.ARPG_UI_ONLY ? [] : ['human','skeleton_knight']))for(const id of ['warden_blade','warden_blade_common','warden_blade_rare','warden_blade_epic'])for(const kind of ['plain','enhanced','affixed']){
+ for(const lineage of (process.env.ARPG_UI_ONLY ? [] : ['human','skeleton_knight']))for(const id of ['warden_blade','warden_blade_common','warden_blade_rare','warden_blade_epic'])for(const kind of ['plain','enhanced','affixed'])for(const width of (lineage==='human'?[390,1280]:[390])){
  const seed=fixture();if(lineage!=='human')seed.lineage=lineage;
  seed.items.push({uid:'target',id,enhance:kind==='enhanced'?5:0,affixes:kind==='affixed'?[{k:'hp_flat',v:2}]:[],rolledAt:0});
  // common base rarity has no affix slots; skip impossible synthetic inventory.
  if(!validateSave(seed)){report.rows.push({lineage,id,kind,unsupported:'item rarity does not permit this affix count'});continue}
- const {page,context,press}=await open(seed,390,lineage);
- await press('[data-action="trainer"]');assert.equal(await page.locator('[data-skill="berserk"] .slot-blocked').count(),1,'one hand correctly blocked');
+ const {page,context,press}=await open(seed,width,lineage);
+ await press('[data-action="trainer"]');assert.equal(await page.locator('[data-skill="berserk"] .slot-blocked').count(),lineage==='human'?1:0,lineage==='human'?'one hand correctly blocked':'skeleton lineage never blocked');
  await press('[data-action="inn"]');await press('[data-action="inventory"]');await press('[data-action="open-item"][data-uid="target"]');
  await press('[data-action="equip"][data-uid="target"]');
- if(await page.locator('[data-action="weapon-confirm"]').count())await press('[data-action="weapon-confirm"]');
+ if(await page.locator('[data-action="weapon-confirm"]').count()){const row=(await page.locator('dialog[open] .p2-lines dd').allTextContents()).find(t=>t.includes('광전사'));assert.ok(row,'popup lists berserk');assert.ok(!row.split('→')[1].includes('사용 불가'),'popup after-state: '+row);report.popups.push({lineage,id,kind,row});await press('[data-action="weapon-confirm"]');}
  await press('[data-action="inn"]');await press('[data-action="trainer"]');assert.equal(await page.locator('[data-skill="berserk"] .slot-blocked').count(),0);
  await press('[data-action="inn"]');await press('[data-action="trainer"]');assert.equal(await page.locator('[data-skill="berserk"] .slot-blocked').count(),0);
  await press('[data-action="inn"]');await press('[data-action="character"]');await press('[data-action="character-tab"][data-tab="skills"]');assert.equal(await page.locator('.character-skill[data-id="berserk"] .skill-warn').count(),0);
- report.rows.push({lineage,id,kind,realInventoryEquip:true,academyReopen:true,character:true});await context.close();
+ report.rows.push({lineage,id,kind,width,realInventoryEquip:true,academyReopen:true,character:true});await context.close();
+ }
+ for(const width of [390,1280])for(const id of ['warden_blade','warden_blade_rare']){
+ const seed=fixture();seed.equipped.weapon='blunt';seed.items.push({uid:'target',id,enhance:0,affixes:[],rolledAt:0});
+ const {page,context,press}=await open(seed,width);
+ await press('[data-action="inventory"]');await press('[data-action="open-item"][data-uid="target"]');await press('[data-action="equip"][data-uid="target"]');
+ await page.waitForSelector('dialog[open] [data-action="weapon-confirm"]');
+ const row=(await page.locator('dialog[open] .p2-lines dd').allTextContents()).find(t=>t.includes('광전사')&&t.includes('→'));
+ assert.ok(row,'popup lists berserk transition');assert.ok(!row.split('→')[1].includes('사용 불가'),'popup after-state: '+row);
+ assert.ok(!(await page.locator('dialog[open] .p2-hint').allTextContents()).some(t=>t.includes('사용 불가')),'no unusable warning for two-handed sword');
+ report.popups.push({width,id,row:row.trim()});
+ await press('dialog[open] [data-action="weapon-confirm"]:not([data-current])');
+ await page.waitForSelector('dialog[open]',{state:'detached'});
+ await press('[data-action="inn"]');await press('[data-action="trainer"]');assert.equal(await page.locator('[data-skill="berserk"] .slot-blocked').count(),0);
+ await context.close();
  }
  for(const width of [1280,390])for(const count of [0,1,2]){
  let seed=fixture();for(const id of ['warden_blade_rare','warden_plate'].slice(0,count)){seed.items.push({uid:id,id,enhance:3,affixes:[],rolledAt:0});seed.equipped[ITEMS[id].slot]=id}
