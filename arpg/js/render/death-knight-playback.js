@@ -2,7 +2,7 @@
 // Keep the original atlas clock unchanged for all pre-existing kits.
 export function advanceDeathKnightPlayback(clock, entity, state, dt, { frozen = false, hidden = false } = {}) {
   if (frozen || hidden) return clock.age || 0;
-  const restart = clock.state !== state || state === 'attack' && clock.act !== entity.act
+  const restart = clock.state !== state || (state === 'attack' || state === 'magic') && clock.act !== entity.act
     || state === 'dodge' && clock.startedTick !== entity.dodge?.startedTick;
   clock.age = restart ? 0 : (clock.age || 0) + dt;
   if (restart) clock.startCdLeft = entity.dodge?.cdLeft;
@@ -20,7 +20,7 @@ export function advanceDeathKnightPlayback(clock, entity, state, dt, { frozen = 
   return clock.age;
 }
 
-export function deathKnightAnimation(entity, animation, select, clock = {}, duration = .2) {
+export function deathKnightAnimation(entity, animation, select, clock = {}, duration = .2, casting = false) {
   if (entity.terminal && !entity.dead) return 'idle';
   const selected = select(entity, animation);
   // The sim consumes the first dash tick in its start step. Its last movement
@@ -28,5 +28,8 @@ export function deathKnightAnimation(entity, animation, select, clock = {}, dura
   // of cutting the endpoint off with run on that step; never mask hit/death/act.
   if ((selected === 'idle' || selected === 'run') && clock.state === 'dodge'
     && clock.startedTick === entity.dodge?.startedTick && clock.age < duration) return 'dodge';
+  // Focus-family spells plus explicit dark rituals; bow/steel moves stay physical.
+  if (casting && selected === 'attack' && (entity.act?.def?.family === 'focus'
+    || ['dead_explosion', 'poison_field', 'curse', 'invisibility', 'berserk'].includes(entity.act?.id))) return 'magic';
   return selected;
 }

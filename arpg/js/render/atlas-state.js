@@ -50,7 +50,7 @@ export function atlasAnimation(entity, animation) {
 
 export function atlasFrame(state, count, age, fps, entity, duration) {
   if (entity.type === 'throne_dragon' && entity.act && Object.values(DRAGON_CLIPS).includes(state)) return dragonFrame(entity.act, count);
-  if (state === 'attack' && entity.act) {
+  if ((state === 'attack' || state === 'magic') && entity.act) {
     // These authored eight-frame clips separate anticipation / impact / recovery.
     // Long authoritative recovery must not delay the baked slam or bolt release.
     if (['rune_guardian', 'spirit'].includes(entity.type) && ['windup', 'lock', 'active', 'recovery'].includes(entity.act.phase)) {

@@ -1,4 +1,5 @@
 import {ITEMS,equippedItem,permitsShield} from '../meta/items.js';
+import {DEATH_KNIGHT_SOCKETS} from './death-knight-sockets.js';
 import {SHIELD_HAND_ANCHORS} from './shield-hand-anchors.js';
 import {physicalShieldPose,drawPhysicalShield} from './physical-shield.js';
 
@@ -9,7 +10,7 @@ export function portraitShieldDescriptor(save, portrait, composed=true) {
   const skeleton=save.lineage==='skeleton_knight';
   return {weapon:weapon.family,weaponForm:weapon.form,handedness:weapon.handedness,
     shieldModel:shield.shieldType?{v:1,type:shield.shieldType}:null,
-    source:skeleton?(portrait.appearance.id==='player-skeleton-equipment'?'skeleton':'blade'):
+    source:skeleton?(portrait.appearance.id==='player-skeleton-equipment'?'skeleton':'death-knight'):
       `${composed?'':'atlas-'}${weapon.family==='focus'?'focus':'blade'}`,
     anchor:portrait.anchor||{x:.5,y:.6202935874462128}};
 }
@@ -33,7 +34,7 @@ export function portraitShieldHtml(descriptor,direction='SW') {
   if(!descriptor)return '';
   const dirs=['E','SE','S','SW','W','NW','N','NE'],index=dirs.indexOf(direction);
   if(index<0)return '';
-  const [x,y]=SHIELD_HAND_ANCHORS[descriptor.source][`idle_${direction}`][0];
+  const [x,y]=(descriptor.source==='death-knight'?DEATH_KNIGHT_SOCKETS:SHIELD_HAND_ANCHORS[descriptor.source])[`idle_${direction}`][0];
   const facing=index*Math.PI/4,behind=['E','NE','N','NW'].includes(direction);
   const p=physicalShieldPose({kind:'player',offhand:'shield',...descriptor,facing},0,{x,y,facing,behind,scale:1});
   if(!p)return '';

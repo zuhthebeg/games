@@ -3,8 +3,8 @@ import{chromium}from'/home/cocy/.openclaw/workspace/node_modules/playwright/inde
 import assert from'node:assert/strict';import{spawn,execFileSync}from'node:child_process';import{readFile,writeFile}from'node:fs/promises';import{fileURLToPath}from'node:url';
 import{createSave,SaveStore,validateSave}from'../js/meta/save.js';import{trained}from'./fixtures/trained.js';import{instance}from'../js/meta/items.js';
 import{createSkeletonSave}from'../js/meta/character-creation.js';
+import{DEATH_KNIGHT_SOCKETS}from'../js/render/death-knight-sockets.js';
 import{SHIELD_HAND_ANCHORS}from'../js/render/shield-hand-anchors.js';
-const evolvedSheet=JSON.parse(await readFile(new URL('../assets/sprites/player-death-knight/atlas-0.webp.json',import.meta.url),'utf8'));
 const root=fileURLToPath(new URL('../..',import.meta.url)),base=process.env.ARPG_BASE_URL||'http://127.0.0.1:8997',out=process.env.ARPG_SHIELD_MODEL_EVIDENCE||'/home/cocy/.openclaw/workspace/tmp/arpg-all-skills-shield-combat.json';
 const server=process.env.ARPG_BASE_URL?null:spawn('python3',['-m','http.server','8997','--bind','127.0.0.1'],{cwd:root,stdio:'ignore'});
 let save=trained(createSave({name:'방패 검증',weapon:'blade',answers:[0,0,0,0,0],createdAt:1}),30);save.items.push(instance('fixture:shield','round_shield',0,[]));save.equipped.offhand='fixture:shield';save.stacks.potion=30;
@@ -35,7 +35,7 @@ try{
   await page.waitForTimeout(200);await sample('guard');if(mobile)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});else await page.keyboard.up('Space');
   await press('#attack');await page.waitForTimeout(120);await sample('attack');
   const directions=new Set();let maxGrip=0,maxBoneError=0;
-  for(const s of samples){const v=s.visual;assert.ok(v?.physicalShield,'rendered shield visible');directions.add(v.direction);const p=v.physicalShield,sockets=SHIELD_HAND_ANCHORS[v.id==='player-skeleton-equipment'?'skeleton':v.id==='paperdoll-focus'?'focus':'blade'][v.state+'_'+v.direction],h=sockets[v.id==='player-death-knight'?Math.min(sockets.length-1,Math.floor(v.frame*sockets.length/evolvedSheet.animations[v.state+'_'+v.direction].length)):v.frame];
+  for(const s of samples){const v=s.visual;assert.ok(v?.physicalShield,'rendered shield visible');directions.add(v.direction);const p=v.physicalShield,sockets=v.id==='player-death-knight'?DEATH_KNIGHT_SOCKETS[v.state+'_'+v.direction]:SHIELD_HAND_ANCHORS[v.id==='player-skeleton-equipment'?'skeleton':v.id==='paperdoll-focus'?'focus':'blade'][v.state+'_'+v.direction],h=sockets[v.frame];
    const equipmentScale=v.id==='player-death-knight'?v.scale*2:v.scale;const error=h?Math.hypot(p.handX-h[0]*equipmentScale,p.handY-h[1]*equipmentScale):0,grip=Math.hypot(p.x-p.handX,p.y-p.handY);maxBoneError=Math.max(maxBoneError,error);maxGrip=Math.max(maxGrip,grip);assert.ok(error<.02,'actual displayed frame/bone binding');assert.ok(grip<=6,'no detached shield');assert.equal(p.shape,'bone');assert.ok(p.height>=16,'no half-sized evolved shield');
   }
   assert.equal(directions.size,8,'native full rotation sweep');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

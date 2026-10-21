@@ -1,3 +1,4 @@
+import { DEATH_KNIGHT_SOCKETS } from './death-knight-sockets.js';
 import { SHIELD_HAND_ANCHORS } from './shield-hand-anchors.js';
 import { advanceDeathKnightPlayback, deathKnightAnimation } from './death-knight-playback.js';
 import { BALANCE } from '../content/balance.js';
@@ -149,17 +150,14 @@ function spriteVisual(entity, { color }, asset) {
   container.addChild(sprite, flash, stars, bar, health);
   const deathKnightPlayback = {};
   const handPose = {x:0,y:0,facing:0,behind:false,scale:1};
-  const handFrames = SHIELD_HAND_ANCHORS[asset.id === 'player-skeleton-equipment' ? 'skeleton' : asset.id === 'hero-sword' ? 'atlas-blade' : asset.id === 'hero-focus' ? 'atlas-focus' : asset.id === 'paperdoll-focus' ? 'focus' : 'blade'];
+  const handFrames = asset.id === 'player-death-knight' ? DEATH_KNIGHT_SOCKETS : SHIELD_HAND_ANCHORS[asset.id === 'player-skeleton-equipment' ? 'skeleton' : asset.id === 'hero-sword' ? 'atlas-blade' : asset.id === 'hero-focus' ? 'atlas-focus' : asset.id === 'paperdoll-focus' ? 'focus' : 'blade'];
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {
     container,
     offhandPose() {
       if(entity.kind !== 'player')return null;
       const sockets=handFrames?.[`${stateName}_${direction}`];
-      // Evolved combat clips have different frame counts than the source socket rig.
-      const count=asset.animations[`${stateName}_${direction}`]?.length||1;
-      const socketFrame=asset.id==='player-death-knight'?Math.min((sockets?.length||1)-1,Math.floor(frame*(sockets?.length||1)/count)):frame;
-      const hand=sockets?.[socketFrame];
+      const hand=sockets?.[frame];
       if(!hand)return null;
       // Hand tables are authored pawn-local physical pixels. The evolved kit's
       // .5 sprite correction compensates logical256 textures, not equipment size.
@@ -196,7 +194,7 @@ function spriteVisual(entity, { color }, asset) {
       if (animation.frozen) return;
       animation.age += deltaTime;
       if (state.dead) animation.deadAge += deltaTime;
-      const wanted = ['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? deathKnightAnimation(state, animation, atlasAnimation, deathKnightPlayback, asset.animation_durations.dodge) : atlasAnimation(state, animation);
+      const wanted = ['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? deathKnightAnimation(state, animation, atlasAnimation, deathKnightPlayback, asset.animation_durations.dodge, asset.id === 'player-death-knight') : atlasAnimation(state, animation);
       const next = asset.animations[`${wanted}_E`] ? wanted : 'idle';
       if (['player-death-knight','player-skeleton-equipment'].includes(asset.id)) {
         age = advanceDeathKnightPlayback(deathKnightPlayback, state, next, deltaTime);
