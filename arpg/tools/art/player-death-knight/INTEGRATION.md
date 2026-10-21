@@ -15,8 +15,11 @@ node arpg/test/death-knight-scene.native.mjs
 node arpg/test/all-skills-shield.native.mjs
 node arpg/test/inn-shield.native.mjs
 node arpg/test/academy-lineage-weapons.native.mjs
-P0_KIT=blade node arpg/test/mp-freeze-p0.native.mjs
+P0_KIT=blade P0_THIRD=skeleton P0_STAGE=S1 P0_KEEP_DISTANCE=1 node arpg/test/mp-freeze-p0.native.mjs
 
 Native fixtures are isolated valid preboot SAVE data; no user save access/world injection. Only local captures. Exact-frame fixture is OFFLINE synthetic state, distinct from actual game native inputs. Exhaustive584frames×4shield×guard2×width2:9344 samples,0socket error; dead state intentionally hides shield (source hand still checked). Local natural scene PC1280/touch390 proves sword+bone shield attack and actual curse magic. Full test command node --test arpg/test/*.test.js arpg/test/*.test.mjs retains same63named baseline failures (1904→1909 tests); not a full-green claim. Focused229pass, no failures.
 
 Static24sprite submission p95 recorded by runtime fixture is only softwareChromium CPU/submission timing, not GPU-completed frame time or physical-phoneFPS. Existing30skillVFX allocation limits unchanged; no live rig/Three/context/dependency added. New atlas budget is payload/decode cost, not a claim of feature heap delta.
+
+## Strict relay acceptance
+Earlier S4 soak checked only application rAF: normal human defeat could terminate simulation while rAF continued. That is not accepted as 60s active play. The strengthened native test requires accepted world tick progress at every sample and actual DK attack+magic frames on BOTH peers; held touch/key attack crosses fixed ticks. S1, no forced player approach, three real profiles (human/evolved/ordinary skeleton), both host orders:75787/75023ms active local, zero errors. This is a safe-stage continuity regression, not a hard-PvP victory or performance benchmark. All fixtures remain isolated valid preboot saves and inputs remain native; no world mutation/game balance workaround.
