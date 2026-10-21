@@ -1,0 +1,26 @@
+{
+  "artStageOnly": true,
+  "visualAcceptance": "parent pending",
+  "legacySocketComparison": {
+    "frames": 480,
+    "maxErrorPx": 20.167917626269702,
+    "meanErrorPx": 6.458630588057669,
+    "action": "must consume source-derived-sockets.json; do not ship normalized legacy mapping"
+  },
+  "runtimeRegression": {
+    "command": "node --test arpg/test/death-knight-runtime.test.js",
+    "pass": 3,
+    "fail": 2,
+    "reason": "old test hardcodes single480-frame sheet and returns atlas0 for every requested page; new candidate584frames/two pages. Actual AtlasLibrary with real per-URL sheets passes56groups.",
+    "requiredParentTestUpdate": "aggregate all descriptor sheets; inject loadSheet(url) reading actual requested JSON; expect584frames/56groups"
+  },
+  "remaining": [
+    "runtime magic selection and authoritative phase mapping",
+    "exact DK socket consumer integration",
+    "real physical shield eight-direction overlay review",
+    "actual gameplay1280/390 QA",
+    "parent visual acceptance",
+    "release stamps/CI/deploy"
+  ],
+  "productionModified": false
+}

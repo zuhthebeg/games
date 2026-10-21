@@ -4,7 +4,7 @@ Executed only by this namespace's baker at Idle frame zero. No IP meshes/texture
 steel=material('DK obsidian steel',(.055,.073,.105));edge=material('DK blue steel edges',(.22,.28,.36));dark=material('DK recess',(.018,.022,.032));bonewhite=material('DK aged skull silver',(.43,.47,.51));red=material('DK red eye',(.95,.008,.003),3);orange=material('DK flame orange',(1,.085,.003),2);yellow=material('DK flame core',(1,.55,.015),3)
 armor=[]
 def world_attach(o,bone_name):
- b=rig.pose.bones[bone_name];parent_world=rig.matrix_world@b.matrix@Matrix.Translation((0,b.length,0));desired=o.matrix_world.copy()
+ b=rig.pose.bones[bone_name];parent_world=rig.matrix_world@b.matrix.copy();parent_world.translation=rig.matrix_world@b.tail;desired=o.matrix_world.copy()
  o.parent=rig;o.parent_type='BONE';o.parent_bone=bone_name;o.matrix_basis=parent_world.inverted()@desired
  meshes.append(o);armor.append(o);return o
 
@@ -26,7 +26,7 @@ def segment(name,bn,radius,mat):
  # Mesh long axis follows actual bone rather than world vertical.
  q=(c-a).to_track_quat('Z','Y');local=o.matrix_world.copy();local.translation=center
  desired=Matrix.Translation(center)@q.to_matrix().to_4x4()
- b=rig.pose.bones[bn];pw=rig.matrix_world@b.matrix@Matrix.Translation((0,b.length,0));o.matrix_basis=pw.inverted()@desired
+ b=rig.pose.bones[bn];pw=rig.matrix_world@b.matrix.copy();pw.translation=rig.matrix_world@b.tail;o.matrix_basis=pw.inverted()@desired
  return o
 # Body dimensions from actual animated CC0 geometry; fitted at source Idle0.
 dg=bpy.context.evaluated_depsgraph_get();bodyobj=next(o for o in skinned if o.name.endswith('_Body'))
@@ -71,6 +71,30 @@ for side in [-1,1]:
  part('temple_guard_'+str(side),[(side*hw*.85,hc.y-.20,hc.z+.14),(side*hw*1.18,hc.y+.12,hc.z+.28),(side*hw*.98,hc.y+.25,hc.z-.12),(side*hw*.70,hc.y-.12,hc.z-.21)],[(0,1,2,3)],steel,headbone)
  # Separate hanging hip plate, moves with hips, leaving knees/legs articulated.
  part('tasset_'+str(side),[(side*.04,-.22,.64),(side*.28,-.19,.64),(side*.31,-.20,.40),(side*.08,-.27,.35)],[(0,1,2,3)],steel,'hips')
+# DK-only gravitas: remodel authored shells in world space around their own
+# anatomical centers. Proportion control is geometry, not runtime sprite scale.
+if job.get('gravitas'):
+ for o in list(armor):
+  if o.type!='MESH':continue
+  is_head=o.parent_bone==headbone
+  is_chest=o.parent_bone==chestbone
+  if not (is_head or is_chest):continue
+  pivot=hc if is_head else center
+  factors=Vector((.70,.68,.80) if is_head else (1.24,1.02,1.14))
+  mw=o.matrix_world.copy();inv=mw.inverted()
+  for v in o.data.vertices:
+   p=mw@v.co;delta=p-pivot
+   v.co=inv@(pivot+Vector(tuple(delta[i]*factors[i] for i in range(3))))
+ # Broader, low-set shoulder plates read as adult forged armor, not round mitts.
+ for suffix in ('l','r'):
+  b=rig.pose.bones['upperarm.'+suffix];p=rig.matrix_world@b.head
+  ellipsoid('gravitas_pauldron_'+suffix,p+Vector((0,0,.015)),(.285,.245,.105),steel,'upperarm.'+suffix,1)
+# Preserve credited source anatomy but do not let its old skull silhouette
+# protrude through the newly narrower helmet; original vertices remain intact.
+if job.get('gravitas'):
+ for o in skinned:
+  if o.name.endswith(('_Head','_Jaw','_Eyes')):o.hide_render=True
+ bpy.context.view_layer.update()
 # Base skull remains credited/preserved; new shell/visor owns the visible helmet silhouette.
 for o in skinned:
  if o.name.endswith(('_Head','_Jaw')):

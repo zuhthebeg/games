@@ -699,7 +699,8 @@
       "death_knight"
     ],
     "sheets": [
-      "atlas-0.webp.json"
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
     ],
     "animations": [
       "idle",
@@ -707,7 +708,8 @@
       "attack",
       "hit",
       "death",
-      "dodge"
+      "dodge",
+      "magic"
     ],
     "fps": 12,
     "animation_durations": {
@@ -717,12 +719,12 @@
     },
     "anchor": {
       "x": 0.5,
-      "y": 0.6383123993873596
+      "y": 0.6547760367393494
     },
     "lineage": "skeleton_knight",
     "form": "death_knight",
     "monster": false,
-    "bytes": 837266
+    "bytes": 1017774
   },
   {
     "id": "rune-guardian",

@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "groups": 56,
+  "states": [
+    "idle",
+    "run",
+    "attack",
+    "hit",
+    "death",
+    "dodge",
+    "magic"
+  ],
+  "timingUnchanged": true
+}

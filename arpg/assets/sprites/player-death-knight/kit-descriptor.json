@@ -1,12 +1,13 @@
 {
   "id": "player-death-knight",
-  "label": "데스나이트 · 영구 진화",
+  "label": "\ub370\uc2a4\ub098\uc774\ud2b8 \u00b7 \uc601\uad6c \uc9c4\ud654",
   "registered": true,
   "content_ids": [
     "death_knight"
   ],
   "sheets": [
-    "atlas-0.webp.json"
+    "atlas-0.webp.json",
+    "atlas-1.webp.json"
   ],
   "animations": [
     "idle",
@@ -14,7 +15,8 @@
     "attack",
     "hit",
     "death",
-    "dodge"
+    "dodge",
+    "magic"
   ],
   "fps": 12,
   "animation_durations": {
@@ -24,7 +26,7 @@
   },
   "anchor": {
     "x": 0.5,
-    "y": 0.6383123993873596
+    "y": 0.6547760367393494
   },
   "logical_frame_size": 256,
   "physical_frame_size": 128,
@@ -49,7 +51,8 @@
     "phase": "atlasFrame duration .2 maps 6 frames; final source endpoint at age >= 1/6s",
     "root_translation": "horizontal root/hips constant drivers; simulation owns travel",
     "not_run_alias": true,
-    "registration_pending": false
+    "registration_pending": false,
+    "authored_action": "DK_Gravitas_dodge"
   },
   "parent_visual_review_required": true,
   "lineage": "skeleton_knight",

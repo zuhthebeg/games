@@ -1,0 +1,11 @@
+{
+  "idle_foot_max_drift_world": 0.0012037670735721105,
+  "magic_foot_max_drift_world": 0.0,
+  "max_blade_grip_error": 2.9802322387695312e-08,
+  "frames": 584,
+  "groups": 56,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.6547760367393494
+  }
+}

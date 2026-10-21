@@ -31,11 +31,11 @@ for(const name of descriptor.sheets){
  for(const [key,names] of Object.entries(data.animations)) assert.deepEqual(names,[...names].sort());
  report.sheets.push({physical:data.meta.size,actualResolution:source.resolution,logicalTexture:[source.width,source.height],textures:Object.keys(sheet.textures).length});
 }
-assert.equal(Object.keys(report.groups).length,48);
+assert.equal(Object.keys(report.groups).length,descriptor.animations.length*8);
 for(const state of descriptor.animations) for(const d of ['E','SE','S','SW','W','NW','N','NE']) assert(report.groups[state+'_'+d]>=2);
-assert.equal(report.frames,480);
+assert.equal(report.frames,descriptor.animations.includes('magic') ? 584 : 480);
 assert.equal(new Set(descriptor.sheets.flatMap(name=>Object.keys(JSON.parse(fs.readFileSync(path.join(kit,name),'utf8')).frames))).size,report.frames);
-assert.equal(Object.keys(merged).length,48);
+assert.equal(Object.keys(merged).length,descriptor.animations.length*8);
 const ticks=Array.from({length:7},(_,i)=>({age:i/30,frame:atlasFrame('dodge',6,i/30,12,{},descriptor.animation_durations.dodge)}));
 assert.deepEqual(ticks.slice(0,6).map(x=>x.frame),[0,1,2,3,4,5]);
 assert.equal(ticks[6].frame,5);assert.equal(atlasFrame('dodge',6,1,12,{},.2),5);

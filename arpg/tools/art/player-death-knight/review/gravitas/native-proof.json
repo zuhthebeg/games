@@ -1,0 +1,323 @@
+{
+  "pass": true,
+  "rows": [
+    {
+      "width": 1280,
+      "tested": 312,
+      "groups": 56,
+      "bounds": [
+        {
+          "state": "idle",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "renderer": "webgl",
+      "canvas": [
+        1280,
+        800
+      ],
+      "simulationWrites": 0,
+      "errors": [],
+      "scope": "isolated actual-size native sprite canvas, NOT gameplay scene/shield acceptance"
+    },
+    {
+      "width": 390,
+      "tested": 312,
+      "groups": 56,
+      "bounds": [
+        {
+          "state": "idle",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "idle",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "attack",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "E",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "SE",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "S",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "SW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "W",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "NW",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "N",
+          "w": 128,
+          "h": 128
+        },
+        {
+          "state": "magic",
+          "di": "NE",
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "renderer": "webgl",
+      "canvas": [
+        390,
+        844
+      ],
+      "simulationWrites": 0,
+      "errors": [],
+      "scope": "isolated actual-size native sprite canvas, NOT gameplay scene/shield acceptance"
+    }
+  ]
+}

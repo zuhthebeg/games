@@ -81,7 +81,8 @@ def attach(obj, reference, rig, bone=None):
 
 def attach_at_hand(obj, rig, bone_name):
     bone = rig.pose.bones[bone_name]
-    parent_world = rig.matrix_world @ bone.matrix @ Matrix.Translation((0, bone.length, 0))
+    parent_world = rig.matrix_world @ bone.matrix.copy()
+    parent_world.translation = rig.matrix_world @ bone.tail
     desired = Matrix.Translation(rig.matrix_world @ bone.tail)
     obj.parent = rig
     obj.parent_type = 'BONE'
@@ -169,6 +170,9 @@ for job in config['characters']:
         rig.animation_data.action = clip
         rig.animation_data.action_slot = clip.slots[0]
         return clip
+
+    if job.get('gravitas'):
+        exec((Path(args[0]).parent / 'gravitas.py').read_text(encoding='utf-8'))
 
     if 'T-Pose' in actions:
         action('T-Pose')
@@ -408,11 +412,11 @@ for job in config['characters']:
         clip = action(clip_name)
         begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
         assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = (6 if clip_name == 'Dodge_Forward' else max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5)))
+        count = (6 if clip_name in ('Dodge_Forward', 'DK_Gravitas_dodge') else max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5)))
         for angle in config['directions'].values():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
-                frame = (begin + (end-begin)*index/(count-1) if clip_name == 'Dodge_Forward' else begin + index / bake_fps * scene.render.fps)
+                frame = (begin + (end-begin)*index/(count-1) if clip_name in ('Dodge_Forward', 'DK_Gravitas_dodge') else begin + index / bake_fps * scene.render.fps)
 
                 sample(clip_name, angle, frame)
                 depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -454,14 +458,14 @@ for job in config['characters']:
         clip = action(clip_name)
         begin, end = job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
         assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = (6 if clip_name == 'Dodge_Forward' else max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5)))
+        count = (6 if clip_name in ('Dodge_Forward', 'DK_Gravitas_dodge') else max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5)))
         if preview:
             count = 1
         for direction, angle in config['directions'].items():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
-                frame = (begin + (end-begin)*index/(count-1) if clip_name == 'Dodge_Forward' else begin + index / bake_fps * scene.render.fps)
-                if '--checkpoint' in args and not (direction in ('S','E','N') and animation in ('idle','attack','dodge') and index in (0,count//2,count-1)): continue
+                frame = (begin + (end-begin)*index/(count-1) if clip_name in ('Dodge_Forward', 'DK_Gravitas_dodge') else begin + index / bake_fps * scene.render.fps)
+                if '--checkpoint' in args and not (direction in ('S','E','N') and animation in ('idle','attack','magic','dodge') and index in (0,count//2,count-1)): continue
                 sample(clip_name, angle, frame)
                 name = f'{animation}_{direction}_{index:03d}'
                 folder = out / job['name']
@@ -503,7 +507,11 @@ for job in config['characters']:
                                    round(max(point.x for point in weapon_projection) * config['frame_size'], 2),
                                    round((1 - min(point.y for point in weapon_projection)) * config['frame_size'], 2)]
                 hand = rig.matrix_world @ rig.pose.bones['handslot.r'].tail
-                contact = {'blade_grip_error': (blade.matrix_world.translation-hand).length,
+                left_hand = world_to_camera_view(scene, camera, rig.matrix_world @ rig.pose.bones['handslot.l'].tail)
+                right_hand = world_to_camera_view(scene, camera, hand)
+                contact = {'left_hand_pixel': [left_hand.x*256, (1-left_hand.y)*256],
+                           'right_hand_pixel': [right_hand.x*256, (1-right_hand.y)*256],
+                           'blade_grip_error': (blade.matrix_world.translation-hand).length,
                            'hand_world':list(hand),'blade_world':list(blade.matrix_world.translation),
                            'root_world':list(rig.matrix_world @ rig.pose.bones['root'].head)}
                 assert contact['blade_grip_error'] < .0001, contact
