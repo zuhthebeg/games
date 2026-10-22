@@ -156,8 +156,10 @@ function spriteVisual(entity, { color }, asset) {
     container,
     offhandPose() {
       if(entity.kind !== 'player')return null;
-      const sockets=handFrames?.[`${stateName}_${direction}`];
-      const hand=sockets?.[frame];
+      const sourceName=asset.id==='player-skeleton-equipment' ? asset.manifest.animations[stateName+'_'+direction]?.[frame] : null;
+      const exact=sourceName && asset.manifest.sockets?.[sourceName]?.offhand;
+      const sockets=handFrames?.[stateName+'_'+direction];
+      const hand=asset.id==='player-skeleton-equipment' ? exact : sockets?.[frame];
       if(!hand)return null;
       // Hand tables are authored pawn-local physical pixels. The evolved kit's
       // .5 sprite correction compensates logical256 textures, not equipment size.
@@ -165,6 +167,7 @@ function spriteVisual(entity, { color }, asset) {
       handPose.scale=equipmentScale;handPose.x=hand[0]*equipmentScale;handPose.y=hand[1]*equipmentScale;
       handPose.facing=DIRECTIONS.indexOf(direction)*Math.PI/4;
       handPose.behind=direction === 'E' || direction === 'NE' || direction === 'N' || direction === 'NW';
+      handPose.baked=asset.id==='player-skeleton-equipment' && asset.descriptor.layers.some(k=>k.endsWith('shield')||k==='buckler');
       return handPose;
     },
     // Current drawn-weapon pose in this container's local space, for presentation overlays.
@@ -179,7 +182,7 @@ function spriteVisual(entity, { color }, asset) {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         equipment: asset.descriptor || null,
         ...(necropolisBoss ? {bossMarker:true, bossName:bossTitle.text, crown:true} : {}),
-        ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: 'source-dodge' } : {}),
+        ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: asset.id==='player-skeleton-equipment' ? 'source-poses-with-approved-idle-fallbacks' : 'source-dodge' } : {}),
         // Read-only art diagnostics: actual drawn atlas bounds, not combat radius/telegraph geometry.
         ...(['rune-guardian', 'spirit'].includes(asset.id) ? { geometry: {
           anchor: { x: sprite.anchor.x, y: sprite.anchor.y },

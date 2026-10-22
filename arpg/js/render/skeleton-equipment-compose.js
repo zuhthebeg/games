@@ -1,12 +1,13 @@
 // Independent animated 3D layers with camera-Z occlusion. Only selected parts decode.
 const base = new URL('../../assets/sprites/player-skeleton-equipment/', import.meta.url);
 import { loadJSON, loadBlob, decodeBitmap } from './composition-load.js';
+import { skeletonLayout } from './skeleton-layout.js';
 let cachedManifest;
 const canvas = (w,h) => { const c=document.createElement('canvas'); c.width=w;c.height=h;return c; };
 async function manifest(signal) {
   if(cachedManifest)return cachedManifest;
-  const m=await loadJSON(new URL('manifest.json',base),signal);
-  if(m.id!=='player-skeleton-equipment'||Object.keys(m.animations).length!==48)throw new Error('Incomplete skeleton kit');
+  const m=await loadJSON(new URL('manifest.json?v=warrior-player-independent-v1',base),signal);
+  if(m.id!=='player-skeleton-equipment'||m.version!=='warrior-player-independent-v1'||m.frames.length!==368||Object.keys(m.animations).length!==48||m.frames.some(n=>!Array.isArray(m.sockets?.[n]?.offhand)||!Array.isArray(m.sockets?.[n]?.mainhand)))throw new Error('Incomplete approved skeleton kit');
   signal?.throwIfAborted();cachedManifest=m;return m;
 }
 // Nearest camera-distance fragment wins, with real alpha edge coverage, not slot order.
@@ -18,17 +19,17 @@ export function overFragments(fragments) {
   return [Math.round(r),Math.round(g),Math.round(b),Math.round(a*255)];
 }
 export async function composeSkeleton(descriptor, signal) {
-  const start=performance.now(),m=await manifest(signal),sources={};let decoded=0,transfer=0;
+  const start=performance.now(),source=await manifest(signal),m={...source,layout:skeletonLayout(source,descriptor.layers)},sources={};let decoded=0,transfer=0;
   const read=async file=>{
-    const blob=await loadBlob(new URL(file,base),signal);transfer+=blob.size;
+    const blob=await loadBlob(new URL(file+'?v='+m.version,base),signal);transfer+=blob.size;
     const bitmap=await decodeBitmap(blob,signal,{premultiplyAlpha:'none',colorSpaceConversion:'none'});let c;
     try {c=canvas(bitmap.width,bitmap.height);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height);decoded+=pixels.data.byteLength;return pixels;}
     finally{bitmap.close();if(c)c.width=c.height=1;}
   };
   for(const key of descriptor.layers){const layer=m.layers[key];if(!layer)throw new Error(`Missing skeleton layer ${key}`);sources[key]={color:await read(layer.image),depth:await read(layer.depth),layer};}
-  const decodeMs=performance.now()-start,out=canvas(...m.layout.size),target=out.getContext('2d'), weaponKey=descriptor.layers.find(k=>k==='sword'||k==='blunt'), weaponCanvas=weaponKey?canvas(...m.layout.size):null, weaponTarget=weaponCanvas?.getContext('2d'), weaponFrames={}, weaponRects=[];
+  const decodeMs=performance.now()-start,out=canvas(...m.layout.size),target=out.getContext('2d'), weaponKey=descriptor.layers.find(k=>['sword','blunt','bow','wand','staff'].includes(k)), weaponCanvas=weaponKey?canvas(...m.layout.size):null, weaponTarget=weaponCanvas?.getContext('2d'), weaponFrames={}, weaponRects=[];
   try {
-  for(const name of m.frames){const trim=m.layout.frames[name].trim,rect=m.layout.frames[name].rect,pixels=target.createImageData(rect[2],rect[3]), mask=weaponTarget?.createImageData(rect[2],rect[3]);
+  for(const name of m.frames){signal?.throwIfAborted();const trim=m.layout.frames[name].trim,rect=m.layout.frames[name].rect,pixels=target.createImageData(rect[2],rect[3]), mask=weaponTarget?.createImageData(rect[2],rect[3]);
     const active=descriptor.layers.filter(k=>sources[k].layer.frames[name]).map(k=>{const s=sources[k],f=s.layer.frames[name];return {...s,key:k,offset:f.offset,rect:s.layer.rects[f.index]};});
     for(let y=0;y<rect[3];y++)for(let x=0;x<rect[2];x++){
       const fragments=[];

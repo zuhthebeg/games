@@ -30,10 +30,10 @@ test('permanent DK has dedicated source in BOTH seams after every armor removed'
 test('depth decides occlusion irrespective of slot iteration and supports alpha edges',()=>{
  const r={z:200,rgba:[255,0,0,255]},b={z:100,rgba:[0,0,255,255]};assert.deepEqual(overFragments([r,b]),[0,0,255,255]);assert.deepEqual(overFragments([b,r]),[0,0,255,255]);assert.deepEqual(overFragments([]),[0,0,0,0]);assert.deepEqual(overFragments([r,{z:100,rgba:[0,0,255,128]}]),[127,0,128,255]);
 });
-test('new kit retains true dodge state and restores every human/AI factory by identity',()=>{
+test('approved kit retains authoritative dodge state, labels idle art alias, restores every human/AI factory by identity',()=>{
  const calls=[],updates=[];const f=k=>(e,o)=>{calls.push({k,e,o});return {debug:{mode:'paperdoll',id:'player-skeleton-equipment'},update:(...a)=>updates.push(a),container:{},destroy(){}};};
  const factories=new Map(['blade','bow','focus','skeleton_warrior','death_knight',...Object.keys(HUMAN_PRESENTATIONS)].map(k=>[k,f(k)]));const original=new Map(factories),p={factories,register(k,f){factories.set(k,f);}},s=fixture();const restore=installKnightPresentation(p,s);
- const e={kind:'player',weapon:'blade',dodge:{dashLeft:3}};const raw=JSON.stringify(e);const v=factories.get('blade')(e,{});v.update(e,{},.03);assert.equal(calls.at(-1).k,'blade');assert.deepEqual(calls.at(-1).o.equipment,skeletonAppearance(s));assert.equal(updates.at(-1)[0],e);assert.equal(v.debug.dodgeFallback,null);assert.equal(JSON.stringify(e),raw);
+ const e={kind:'player',weapon:'blade',dodge:{dashLeft:3}};const raw=JSON.stringify(e);const v=factories.get('blade')(e,{});v.update(e,{},.03);assert.equal(calls.at(-1).k,'blade');assert.deepEqual(calls.at(-1).o.equipment,skeletonAppearance(s));assert.equal(updates.at(-1)[0],e);assert.equal(v.debug.dodgeFallback,'idle (approved source has no dodge clip)');assert.equal(JSON.stringify(e),raw);
  for(const type of Object.keys(HUMAN_PRESENTATIONS)){factories.get(type)({kind:'monster',type},{});assert.equal(calls.at(-1).k,HUMAN_PRESENTATIONS[type]);assert.equal(calls.at(-1).o.equipment,null);}
  restore();restore();assert.deepEqual(factories,original);assert.equal(equipmentVisual(createSave({name:'human',answers:[0,0,0,0,0],createdAt:1})).kit,'blade');
 });

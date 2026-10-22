@@ -648,7 +648,7 @@ try {
       if (running) hud.update(world, elapsed / 1000);
       showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
     } else if (!coopSession && !hidden && world?.entities[0].terminal
-      && renderer.views.get(world.entities[0].id)?.visual.debug.presentation === 'death_knight') {
+      && ['death_knight','skeleton_knight'].includes(renderer.views.get(world.entities[0].id)?.visual.debug.presentation)) {
       // Result UI owns settlement. Finish this kit's death/idle presentation
       // without stepping the terminal world, tracking loot or saving again.
       renderer.render(world, 1, elapsed / 1000);

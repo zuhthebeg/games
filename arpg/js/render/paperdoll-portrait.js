@@ -4,6 +4,19 @@ import { paperdolls } from './paperdoll-library.js';
 export const PORTRAIT_DIRECTIONS = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
 export const PORTRAIT_FRAMES = [[0,0], [1408,0], [768,128], [128,256], [1536,256], [896,384], [256,512], [1664,512]];
 
+// Padding changes storage/CSS bounds only; physical128 density and original body origin stay fixed.
+export function portraitPadding(asset) {
+  if(asset.id!=='player-skeleton-equipment')return 0;
+  let pad=0;
+  for(const d of PORTRAIT_DIRECTIONS){const f=asset.manifest.layout.frames['idle_'+d+'_000'];if(f){const[x,y,w,h]=f.trim;pad=Math.max(pad,-x,-y,x+w-128,y+h-128);}}
+  return Math.ceil(pad)+2;
+}
+function configureCanvas(canvas,asset){
+  const pad=portraitPadding(asset),size=128+pad*2;
+  if(canvas.width!==size||canvas.height!==size)canvas.width=canvas.height=size;
+  if(pad)Object.assign(canvas.style,{position:'absolute',width:(size/128*100)+'%',height:(size/128*100)+'%',left:(-pad/128*100)+'%',top:(-pad/128*100)+'%'});
+  return pad;
+}
 export function setPortraitDirection(node, direction) {
   const index = PORTRAIT_DIRECTIONS.indexOf(direction);
   if (!node || index < 0) return;
@@ -13,11 +26,12 @@ export function setPortraitDirection(node, direction) {
   node.style.backgroundPosition = `-${x}px -${y}px`;
   const asset = portraits.get(node)?.lease?.asset;
   if (!asset) return;
-  const canvas = node.querySelector('canvas'), ctx = canvas.getContext('2d');
+  const canvas = node.querySelector('canvas'), pad=configureCanvas(canvas,asset), ctx = canvas.getContext('2d');
+  node.dataset.paperdollPad=String(pad);node.dataset.paperdollFrame='idle_'+direction+'_000';
   const {rect,trim} = asset.manifest.layout.frames[`idle_${direction}_000`];
   ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0,0,128,128);
-  ctx.drawImage(asset.canvas,...rect,...trim);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(asset.canvas,...rect,trim[0]+pad,trim[1]+pad,trim[2],trim[3]);
   drawPortraitGlow(node, asset, `idle_${direction}_000`);
 }
 
@@ -27,20 +41,20 @@ function drawPortraitGlow(node, asset, name) {
   const glow = node.querySelector('.portrait-weapon-glow'), mask = asset.weaponMask;
   const target = glow?.querySelector('canvas');
   if (!glow || !target || !mask?.canvas) return;
-  const frame = mask.layer.frames[name], g = target.getContext('2d');
-  g.clearRect(0,0,128,128);
+  const pad=configureCanvas(target,asset), frame = mask.layer.frames[name], g = target.getContext('2d');
+  g.clearRect(0,0,target.width,target.height);
   delete glow.dataset.pending; glow.dataset.anchored = 'true';
   glow.hidden = !frame;
   if (!frame) return;
   const [x,y,w,h] = mask.layer.rects[frame.index], [ox,oy] = frame.offset;
   g.save(); g.imageSmoothingEnabled = false;
-  for (const [dx,dy] of HALO) g.drawImage(mask.canvas,x,y,w,h,ox+dx,oy+dy,w,h);
+  for (const [dx,dy] of HALO) g.drawImage(mask.canvas,x,y,w,h,ox+pad+dx,oy+pad+dy,w,h);
   g.globalCompositeOperation = 'source-in';
   g.fillStyle = getComputedStyle(glow).getPropertyValue('--enhance-color').trim() || '#cde8ee';
-  g.fillRect(0,0,128,128);
+  g.fillRect(0,0,target.width,target.height);
   // Keep the weapon's own pixels readable: only a light tint over them, full halo around.
   g.globalCompositeOperation = 'destination-out'; g.globalAlpha = .6;
-  g.drawImage(mask.canvas,x,y,w,h,ox,oy,w,h);
+  g.drawImage(mask.canvas,x,y,w,h,ox+pad,oy+pad,w,h);
   g.restore();
   glow.style.setProperty('--cx', `${(ox + w/2) / 1.28}%`);
   glow.style.setProperty('--cy', `${(oy + h/2) / 1.28}%`);

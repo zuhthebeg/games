@@ -5,6 +5,7 @@ import {physicalShieldPose,drawPhysicalShield} from './physical-shield.js';
 
 // Portraits use the original 128px frame, before combat's entity scale/translation.
 export function portraitShieldDescriptor(save, portrait, composed=true) {
+  if(composed && portrait.appearance?.id==='player-skeleton-equipment')return null; // Shield is already in the exact-source composed portrait.
   const weapon=ITEMS[equippedItem(save,'weapon')?.id],shield=ITEMS[equippedItem(save,'offhand')?.id];
   if(!permitsShield(weapon)||shield?.form!=='shield')return null;
   const skeleton=save.lineage==='skeleton_knight';

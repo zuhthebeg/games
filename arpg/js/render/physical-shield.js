@@ -2,6 +2,7 @@ import {shieldSpec} from '../content/shields.js';
 // Presentation only: the grip comes from the same baked frame as the character.
 // round_shield currently has one shared item artwork: pointed wood, gold rim/boss.
 export function physicalShieldPose(e, age=0, hand=null, out={}) {
+  if(hand?.baked)return null; // Selected skeleton layer already depth-composes this shield.
   if(e.kind !== 'player' || !(e.weapon === 'blade' || e.weapon === 'focus' && e.weaponForm === 'wand') || e.offhand !== 'shield' || e.handedness === 2 || e.dead || e.terminal) return null;
   const bashing=e.act?.id === 'shield_bash',blocking=e.shieldGuard?.left>0 || bashing;
   // Match the sprite's eight discrete facings; never orbit between snapped frames.

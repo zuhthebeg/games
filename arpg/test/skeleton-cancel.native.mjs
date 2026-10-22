@@ -15,7 +15,8 @@ await p.route('**/www.googletagmanager.com/**',r=>r.fulfill({body:''}));
 if(process.env.RED)for(const file of ['paperdoll-library.js','skeleton-equipment-compose.js']){
  const old=execFileSync('git',['show',`9e29ecc:arpg/js/render/${file}`],{cwd:root});await p.route(`**/js/render/${file}*`,r=>r.fulfill({contentType:'text/javascript',body:old}));}
 let stalled=false,release;const gate=new Promise(r=>release=r);
-await p.route('**/player-skeleton-equipment/*.{png,webp}',async r=>{stalled=true;await gate;await r.abort().catch(()=>{});});
+const heldPattern=url=>{const p=new URL(url).pathname;return p.includes('/player-skeleton-equipment/')&&(p.endsWith('.png')||p.endsWith('.webp'));};
+await p.route(heldPattern,async r=>{stalled=true;await gate;await r.abort().catch(()=>{});});
 await p.addInitScript(f=>{localStorage.setItem('arpg.save.v1',JSON.stringify(f.h));localStorage.setItem('arpg.save.v1.slots.skeleton_knight',JSON.stringify(f.s));},{h:createSave({name:'Human',answers:[0,0,0,0,0],createdAt:1}),s:createSkeletonSave({lineage:'skeleton_knight',name:'Skeleton',answers:[0,0,0,0,0],createdAt:1})});
 await p.goto('http://127.0.0.1:8914/arpg/?character=skeleton_knight');await p.locator('#inn-name').waitFor();
 // Manifest defines WebP sources; hold either source extension, never fail request first.
@@ -25,7 +26,7 @@ for(let n=0;n<100&&!stalled;n++)await new Promise(r=>setTimeout(r,20));assert.ok
 await p.locator('[data-action="character-choice"]').click();await p.locator('[data-action="choose-human"]').click();
 const start=Date.now();await p.waitForFunction(()=>document.querySelector('.p2-hero')?.dataset.paperdollReady,null,{timeout:5000});
 assert.equal(stalled,true);rows.push({nativeSwitchWhileOldRequestStillHeld:true,humanPortraitMs:Date.now()-start});
-await p.locator('[data-action="board"]').click();await p.locator('[data-action="sortie"][data-stage="S1"]').click();await p.locator('#sortie-confirm').click();await p.waitForFunction(()=>__arpg.art.visuals[0]?.id==='paperdoll-blade');release();await p.unroute('**/player-skeleton-equipment/*.{png,webp}');await p.unroute('**/player-skeleton-equipment/*.webp');
+await p.locator('[data-action="board"]').click();await p.locator('[data-action="sortie"][data-stage="S1"]').click();await p.locator('#sortie-confirm').click();await p.waitForFunction(()=>__arpg.art.visuals[0]?.id==='paperdoll-blade');release();await p.unroute(heldPattern);await p.unroute('**/player-skeleton-equipment/*.webp');
 // Fault injection only at resource API seam; no live simulation writes.
 const stages=await p.evaluate(async()=>{
  const {PaperdollLibrary}=await import('./js/render/paperdoll-library.js');const {loadBlob,decodeBitmap}=await import('./js/render/composition-load.js');

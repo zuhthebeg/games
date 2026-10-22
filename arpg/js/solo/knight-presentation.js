@@ -26,7 +26,7 @@ export function installKnightPresentation(provider, save = { lineage: 'skeleton_
         const loaded = evolved ? visual.debug.mode === 'atlas' && visual.debug.id === 'player-death-knight' : visual.debug.mode === 'paperdoll' && visual.debug.id === 'player-skeleton-equipment';
         return { ...visual.debug, presentation: playerForm(save),
           artFallback: loaded ? null : evolved ? 'DeathKnight atlas loading or failed; procedural fallback (not approved art)' : 'skeleton equipment kit loading or failed',
-          dodgeFallback: loaded ? null : 'run (no baked dodge clip)' };
+          dodgeFallback: loaded ? (evolved ? null : 'idle (approved source has no dodge clip)') : 'run (no baked dodge clip)' };
       },
       update(state, anim, dt) {
         // Cosmetic locomotion fallback only. Actual dash/iframes/cooldown are untouched.
