@@ -1,3 +1,4 @@
+import { victoryResultDelay } from './ui/victory-result-delay.js';
 import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
@@ -106,6 +107,8 @@ try {
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
   bindBattleSettings(document, input);
+  const resultPresentation = victoryResultDelay();
+  window.addEventListener('pagehide', () => resultPresentation.cancel());
   const hub = new HubUI({
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
@@ -121,6 +124,7 @@ try {
       renderer.root.visible = false;
     },
     onOverlay: () => {
+      resultPresentation.cancel();
       input.reset();
       input.enabled = false;
       renderer.root.visible = false;
@@ -128,6 +132,7 @@ try {
     },
     startRound: (stageId, reduced, overrideWeapon) => {
       if (undead || undeadStarting) return;
+      resultPresentation.cancel();
       characters.assertOwner();
       roundOwner = characters.active;
       closeCoop();
@@ -317,11 +322,14 @@ try {
     coopFinished = true;
     running = false;
     if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
-    hub.finish(coopResult.save, coopResult.receipt, hud.deathExplanation(world));
-    if (coopNote) {
-      const note = document.createElement('p'); note.className = 'risk-note'; note.textContent = coopNote;
-      hub.root.prepend(note);
-    }
+    const cause = hud.deathExplanation(world);
+    resultPresentation.schedule(coopResult.receipt, () => {
+      hub.finish(coopResult.save, coopResult.receipt, cause);
+      if (coopNote) {
+        const note = document.createElement('p'); note.className = 'risk-note'; note.textContent = coopNote;
+        hub.root.prepend(note);
+      }
+    }, performance.now());
   }
   // Presentation only; no new sim event or save schema. Cleared maps retain historical replay state.
   const arrivedMaps = new Set();
@@ -336,6 +344,7 @@ try {
     closeCoop();
     if (!hub.save) return;
     characters.assertOwner();
+    resultPresentation.cancel();
     roundOwner = characters.active;
     // The host chooses on the existing departure panel; guests retain their own build/save.
     const localSave = structuredClone(hub.save);
@@ -571,8 +580,9 @@ try {
 
   function finishRound() {
     if (undead) return;
+    const terminalAt = performance.now();
     running = false;
-    input.reset();
+    input.reset(); input.enabled = false;
     accumulator = 0;
     const player = world.entities[0];
     const result = settleRound(roundSave, {
@@ -587,7 +597,8 @@ try {
     const nextSave = developmentRound ? hub.save : result.save;
     characters.persist(nextSave, roundOwner);
     if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
-    hub.finish(nextSave, result.receipt, hud.deathExplanation(world));
+    const cause = hud.deathExplanation(world);
+    resultPresentation.schedule(result.receipt, () => hub.finish(nextSave, result.receipt, cause), terminalAt);
     if (result.receipt.levelsGained > 0) audio.play('level-up');
   }
 
@@ -602,6 +613,7 @@ try {
       requestAnimationFrame(frame);
       return;
     }
+    resultPresentation.update(now);
     if (coopSession && !coopSession.isHost && !hidden) {
       coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad); guestTime = now;
     }
@@ -647,8 +659,8 @@ try {
       renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
       if (running) hud.update(world, elapsed / 1000);
       showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
-    } else if (!coopSession && !hidden && world?.entities[0].terminal
-      && ['death_knight','skeleton_knight'].includes(renderer.views.get(world.entities[0].id)?.visual.debug.presentation)) {
+    } else if (!hidden && world && (resultPresentation.pending || (!coopSession && world.entities[0].terminal
+      && ['death_knight','skeleton_knight'].includes(renderer.views.get(world.entities[0].id)?.visual.debug.presentation)))) {
       // Result UI owns settlement. Finish this kit's death/idle presentation
       // without stepping the terminal world, tracking loot or saving again.
       renderer.render(world, 1, elapsed / 1000);
