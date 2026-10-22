@@ -1,0 +1,1072 @@
+{
+  "sourceSHA256": "43c687e0d2e16e8a6636f2c4d1106c20b30dde7ec79b62cfde6970154bd6fbd6",
+  "gripRest": [
+    -0.3811730742454529,
+    -0.03828069195151329,
+    0.4814748167991638
+  ],
+  "shaftAxis": [
+    0.7721681594848633,
+    -0.4386149048805237,
+    0.45975348353385925
+  ],
+  "bladeWidthAxis": [
+    0.5022476315498352,
+    0.8645201921463013,
+    -0.018767045810818672
+  ],
+  "bladeNormal": [
+    -0.38923466205596924,
+    0.24540141224861145,
+    0.8878482580184937
+  ],
+  "bladeLength": 0.18,
+  "totalLength": 0.275,
+  "clips": {
+    "idle": 13,
+    "run": 10,
+    "attack": 13,
+    "death": 10
+  },
+  "directions": {
+    "E": -90,
+    "SE": -45,
+    "S": 0,
+    "SW": 45,
+    "W": 90,
+    "NW": 135,
+    "N": 180,
+    "NE": -135
+  },
+  "poses": [
+    {
+      "clip": "idle",
+      "frame": 0,
+      "grip": [
+        -0.18384595215320587,
+        -0.14015772938728333,
+        0.5196866393089294
+      ],
+      "tip": [
+        -0.21425598859786987,
+        -0.13707022368907928,
+        0.7496642470359802
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 1,
+      "grip": [
+        -0.18367233872413635,
+        -0.14006440341472626,
+        0.5204107761383057
+      ],
+      "tip": [
+        -0.21505524218082428,
+        -0.13747921586036682,
+        0.7502638101577759
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 2,
+      "grip": [
+        -0.1835387796163559,
+        -0.13999225199222565,
+        0.5209696292877197
+      ],
+      "tip": [
+        -0.21567027270793915,
+        -0.13779598474502563,
+        0.7507233023643494
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 3,
+      "grip": [
+        -0.18347559869289398,
+        -0.13995787501335144,
+        0.5212346315383911
+      ],
+      "tip": [
+        -0.21596133708953857,
+        -0.13794642686843872,
+        0.7509400844573975
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 4,
+      "grip": [
+        -0.18349702656269073,
+        -0.1399695724248886,
+        0.5211445093154907
+      ],
+      "tip": [
+        -0.21586237847805023,
+        -0.13789531588554382,
+        0.7508664727210999
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 5,
+      "grip": [
+        -0.1835983246564865,
+        -0.14002443850040436,
+        0.520720362663269
+      ],
+      "tip": [
+        -0.2153959721326828,
+        -0.13765445351600647,
+        0.7505186796188354
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 6,
+      "grip": [
+        -0.18375644087791443,
+        -0.14010977745056152,
+        0.5200595259666443
+      ],
+      "tip": [
+        -0.21466772258281708,
+        -0.1372806280851364,
+        0.7499735951423645
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 7,
+      "grip": [
+        -0.18393558263778687,
+        -0.14020556211471558,
+        0.5193140506744385
+      ],
+      "tip": [
+        -0.21384358406066895,
+        -0.13686037063598633,
+        0.74935382604599
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 8,
+      "grip": [
+        -0.18409453332424164,
+        -0.14028997719287872,
+        0.5186548829078674
+      ],
+      "tip": [
+        -0.21311216056346893,
+        -0.136490136384964,
+        0.748801589012146
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 9,
+      "grip": [
+        -0.18419674038887024,
+        -0.14034390449523926,
+        0.5182324051856995
+      ],
+      "tip": [
+        -0.21264216303825378,
+        -0.13625365495681763,
+        0.7484455108642578
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 10,
+      "grip": [
+        -0.1842184215784073,
+        -0.14035530388355255,
+        0.518142819404602
+      ],
+      "tip": [
+        -0.21254225075244904,
+        -0.13620352745056152,
+        0.7483698725700378
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 11,
+      "grip": [
+        -0.18415454030036926,
+        -0.14032170176506042,
+        0.5184065103530884
+      ],
+      "tip": [
+        -0.212835893034935,
+        -0.13635095953941345,
+        0.7485924959182739
+      ]
+    },
+    {
+      "clip": "idle",
+      "frame": 12,
+      "grip": [
+        -0.1840200424194336,
+        -0.14025048911571503,
+        0.5189632773399353
+      ],
+      "tip": [
+        -0.21345461905002594,
+        -0.13666340708732605,
+        0.7490604519844055
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 0,
+      "grip": [
+        -0.18249467015266418,
+        -0.14177212119102478,
+        0.5152940154075623
+      ],
+      "tip": [
+        -0.22076135873794556,
+        -0.09595536440610886,
+        0.7394824028015137
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 1,
+      "grip": [
+        -0.17888376116752625,
+        -0.11854053288698196,
+        0.5144968032836914
+      ],
+      "tip": [
+        -0.2397640198469162,
+        -0.0953756794333458,
+        0.7371645569801331
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 2,
+      "grip": [
+        -0.1763741374015808,
+        -0.1039111465215683,
+        0.5151322484016418
+      ],
+      "tip": [
+        -0.25300732254981995,
+        -0.09275304526090622,
+        0.73382568359375
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 3,
+      "grip": [
+        -0.1763741374015808,
+        -0.1039111465215683,
+        0.5151322484016418
+      ],
+      "tip": [
+        -0.25300732254981995,
+        -0.09275304526090622,
+        0.73382568359375
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 4,
+      "grip": [
+        -0.17888376116752625,
+        -0.11854053288698196,
+        0.5144968032836914
+      ],
+      "tip": [
+        -0.2397640198469162,
+        -0.0953756794333458,
+        0.7371645569801331
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 5,
+      "grip": [
+        -0.18249467015266418,
+        -0.14177212119102478,
+        0.5152940154075623
+      ],
+      "tip": [
+        -0.22076135873794556,
+        -0.09595536440610886,
+        0.7394824028015137
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 6,
+      "grip": [
+        -0.18542106449604034,
+        -0.16444848477840424,
+        0.5181646943092346
+      ],
+      "tip": [
+        -0.2040712535381317,
+        -0.09119348227977753,
+        0.7375041842460632
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 7,
+      "grip": [
+        -0.18692547082901,
+        -0.17812401056289673,
+        0.5209057927131653
+      ],
+      "tip": [
+        -0.19423185288906097,
+        -0.08533395826816559,
+        0.733415961265564
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 8,
+      "grip": [
+        -0.18692547082901,
+        -0.17812401056289673,
+        0.5209057927131653
+      ],
+      "tip": [
+        -0.19423185288906097,
+        -0.08533395826816559,
+        0.733415961265564
+      ]
+    },
+    {
+      "clip": "run",
+      "frame": 9,
+      "grip": [
+        -0.18542106449604034,
+        -0.16444848477840424,
+        0.5181646943092346
+      ],
+      "tip": [
+        -0.2040712535381317,
+        -0.09119348227977753,
+        0.7375041842460632
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 0,
+      "grip": [
+        -0.18384595215320587,
+        -0.14015772938728333,
+        0.5196866393089294
+      ],
+      "tip": [
+        -0.21425598859786987,
+        -0.13707022368907928,
+        0.7496642470359802
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 1,
+      "grip": [
+        -0.21692892909049988,
+        -0.07594531774520874,
+        0.5441104173660278
+      ],
+      "tip": [
+        -0.24104760587215424,
+        -0.08525271713733673,
+        0.7746654748916626
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 2,
+      "grip": [
+        -0.2588399052619934,
+        -0.011707384139299393,
+        0.5633571147918701
+      ],
+      "tip": [
+        -0.23771309852600098,
+        -0.05088747292757034,
+        0.7910466194152832
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 3,
+      "grip": [
+        -0.22884562611579895,
+        -0.040470514446496964,
+        0.6106148362159729
+      ],
+      "tip": [
+        -0.22441887855529785,
+        0.043463319540023804,
+        0.8268541097640991
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 4,
+      "grip": [
+        -0.18152675032615662,
+        -0.059450358152389526,
+        0.6373701691627502
+      ],
+      "tip": [
+        -0.29611414670944214,
+        -0.056839048862457275,
+        0.8390799164772034
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 5,
+      "grip": [
+        -0.05344916135072708,
+        -0.20787322521209717,
+        0.6168653964996338
+      ],
+      "tip": [
+        -0.19881439208984375,
+        -0.3197616934776306,
+        0.7589000463485718
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 6,
+      "grip": [
+        -0.0008062850683927536,
+        -0.22890254855155945,
+        0.553044855594635
+      ],
+      "tip": [
+        -0.13626156747341156,
+        -0.25379788875579834,
+        0.7397425770759583
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 7,
+      "grip": [
+        0.028002047911286354,
+        -0.2413620501756668,
+        0.480538010597229
+      ],
+      "tip": [
+        0.011498617939651012,
+        -0.22280362248420715,
+        0.7112048864364624
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 8,
+      "grip": [
+        -0.00424320250749588,
+        -0.21191665530204773,
+        0.4776771664619446
+      ],
+      "tip": [
+        -0.06632404774427414,
+        -0.2160508781671524,
+        0.7011784911155701
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 9,
+      "grip": [
+        -0.04576418548822403,
+        -0.18018542230129242,
+        0.47766464948654175
+      ],
+      "tip": [
+        -0.12214701622724533,
+        -0.20167756080627441,
+        0.6956731677055359
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 10,
+      "grip": [
+        -0.08902408927679062,
+        -0.16537779569625854,
+        0.4933287501335144
+      ],
+      "tip": [
+        -0.16637524962425232,
+        -0.18308651447296143,
+        0.711336076259613
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 11,
+      "grip": [
+        -0.1349576711654663,
+        -0.15219345688819885,
+        0.5070282816886902
+      ],
+      "tip": [
+        -0.19709177315235138,
+        -0.16099026799201965,
+        0.7303799390792847
+      ]
+    },
+    {
+      "clip": "attack",
+      "frame": 12,
+      "grip": [
+        -0.18384595215320587,
+        -0.14015772938728333,
+        0.5196866393089294
+      ],
+      "tip": [
+        -0.21425598859786987,
+        -0.13707022368907928,
+        0.7496642470359802
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 0,
+      "grip": [
+        -0.32635512948036194,
+        -0.05480874329805374,
+        0.44976916909217834
+      ],
+      "tip": [
+        -0.18679846823215485,
+        -0.12549376487731934,
+        0.6210922598838806
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 1,
+      "grip": [
+        -0.3277720808982849,
+        -0.053071700036525726,
+        0.43551328778266907
+      ],
+      "tip": [
+        -0.18677306175231934,
+        -0.13432106375694275,
+        0.6008670926094055
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 2,
+      "grip": [
+        -0.33160561323165894,
+        -0.047973569482564926,
+        0.39821362495422363
+      ],
+      "tip": [
+        -0.1868147999048233,
+        -0.1551743596792221,
+        0.5443903207778931
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 3,
+      "grip": [
+        -0.33724310994148254,
+        -0.03993844985961914,
+        0.34665238857269287
+      ],
+      "tip": [
+        -0.1871689110994339,
+        -0.1773887425661087,
+        0.458048939704895
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 4,
+      "grip": [
+        -0.34404608607292175,
+        -0.030527550727128983,
+        0.2892337143421173
+      ],
+      "tip": [
+        -0.18806017935276031,
+        -0.19045311212539673,
+        0.3518137037754059
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 5,
+      "grip": [
+        -0.3513214886188507,
+        -0.022230086848139763,
+        0.2326636016368866
+      ],
+      "tip": [
+        -0.1895761787891388,
+        -0.18838681280612946,
+        0.24003998935222626
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 6,
+      "grip": [
+        -0.35832276940345764,
+        -0.017083102837204933,
+        0.18158121407032013
+      ],
+      "tip": [
+        -0.1915876865386963,
+        -0.17244496941566467,
+        0.13815166056156158
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 7,
+      "grip": [
+        -0.3642742931842804,
+        -0.015403198078274727,
+        0.1446058601140976
+      ],
+      "tip": [
+        -0.19372856616973877,
+        -0.15001200139522552,
+        0.06325079500675201
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 8,
+      "grip": [
+        -0.3684003949165344,
+        -0.01578345336019993,
+        0.1363983005285263
+      ],
+      "tip": [
+        -0.19544853270053864,
+        -0.13071171939373016,
+        0.03294222429394722
+      ]
+    },
+    {
+      "clip": "death",
+      "frame": 9,
+      "grip": [
+        -0.36994174122810364,
+        -0.016247360035777092,
+        0.1329202800989151
+      ],
+      "tip": [
+        -0.19614113867282867,
+        -0.12287762016057968,
+        0.022252561524510384
+      ]
+    }
+  ],
+  "delivery": {
+    "frames": 368,
+    "sheet": "atlas-211f1020e219.webp.json",
+    "image": "atlas-211f1020e219.webp",
+    "dimensions": [
+      1024,
+      1472
+    ],
+    "decodedBytes": 6029312,
+    "bytes": 957653,
+    "fallbacks": {
+      "hit": "runtime idle",
+      "dodge": "runtime idle"
+    },
+    "perFrameSHA256": {
+      "attack_E_000": "0f3725201d6f66de0d55a07384291aafe4ba1d9b9378dc13efdbb804d4dcced1",
+      "attack_E_001": "725bc93e785f15421496c832b05f83d775c47addae970c20bd71200d50237698",
+      "attack_E_002": "b070533c96b225c93bca25a7180c6684dca0a7167e0367fc28da5ad577163727",
+      "attack_E_003": "e8f97f4005e9ae513a714be915d686439cc4b65843fcbbf946d3aa69e6a10856",
+      "attack_E_004": "070b725a649a1a9c3c0575f28b01f9a8b1af1b3549a93f7e790a531aa27a374f",
+      "attack_E_005": "9f0e7ce2ab7967a4f1b62b0a6c5c40c633a594bc6ddd0efe0369642ecefe854d",
+      "attack_E_006": "eb4d08a829605277f6c23ca632ff3c975cd9d6901526cc2a3b779b19f86ca810",
+      "attack_E_007": "819199125618c08b76b1fe4c53c8500bd8e14d6f739c395fbb2e66592927a4ef",
+      "attack_E_008": "26e7b20cd7ad22ced4fb61ea514d042133ba4dfbfacfb910182693039a09ab42",
+      "attack_E_009": "25640a344067d2d9a53380c902b9924dd660d13c722acadc65e4a141c15b1bdc",
+      "attack_E_010": "77450a96c80a72e98dbfe91ad7676b26fde9ab797ec07ae22670a38fc1b75165",
+      "attack_E_011": "924510542cccd3decfa7efbe384af0e673f641f6730c4c2062a65ab4bc6dd9f7",
+      "attack_E_012": "44686e6c52e8ac79a5d64d29c5538f877036bbbbdf134b94c0152922a530566b",
+      "attack_NE_000": "c19fc9a7220e0be8a9cacb0d80a706d951d3f6f867344e06445ddfe1f0fa3435",
+      "attack_NE_001": "a3c05ec3c445c69a91eb57943d44e34259def0c271e549524376ab63bbe9088c",
+      "attack_NE_002": "8bd2494991427e4bcc67ab70f193aea0cd125ca62dd955e6d5767cdecf6c3714",
+      "attack_NE_003": "e89143fe01229e7ab3c09f3de7451460fc118e69c804f6e3d0aeca35de612245",
+      "attack_NE_004": "76c06e537b2685595b90453c46dac759a84b80b5269ddc42e783108ed2ed7087",
+      "attack_NE_005": "cbe13b2712f88cbf5c46c622703d68c999df2d0d6428829a2fe38965d28a2278",
+      "attack_NE_006": "33bec40b16df7b538fdfbac461dd750382cc25b6982dd43fa9f9eb83b5eb9a5c",
+      "attack_NE_007": "b4de3367c8147422dc80c63c7925a8e1cb861d6191612387400b0fea43ee5f85",
+      "attack_NE_008": "23a1aa5e51bc43f35fd4f6e537d8f78f2023fa3fbadc78bcc8c0c20a0d21bb55",
+      "attack_NE_009": "b409b23974b31200164accd979b5079e55499f0f1ebfe703f3784718690fdd67",
+      "attack_NE_010": "7bd77ed799dcd9b98793c307882921f8424aa6d7e0f6277f5e6d0eda4239659d",
+      "attack_NE_011": "a14be8557822edf07eae7ad7f4435440c848c34a6bf97970dccb53e8c7fc9ff7",
+      "attack_NE_012": "16a9b068ad2bd45713223757840efd068382499dce90a29e50bfadcebc2f1e96",
+      "attack_NW_000": "6a64e7ecb7fd6aedba6a367641a7af54bad653ea9f6eb74574a2bed9ca5aabc9",
+      "attack_NW_001": "20ddb6c2e477641b82d9bc26d967cf306d771c8b016a46cde62d854618384087",
+      "attack_NW_002": "26d64817bfebac9b5285b155c6c9df87c611d07710bfdfe3896e8f28cef3ce6f",
+      "attack_NW_003": "a739f88e875c01754676e50c701ed15a930fca3a02856ae4e7c256ee86a2d7f2",
+      "attack_NW_004": "3f24d5f36ce573b8be5c611ff69713b956ee4aeb0f1ff2adbe30541710911d8f",
+      "attack_NW_005": "bfaaad8faa334881e1253860e8cd6c142a3bb1ecce24c16e9f6adef6c45cf775",
+      "attack_NW_006": "3e0a57a52ce33fe76175bf472165f9d5a44a1760ec149cf5e17e81bdf901cc0d",
+      "attack_NW_007": "2e43a53bbddccdea9d171c19e4971f7f416b0e68e3f3920ceab1452e1c3faa09",
+      "attack_NW_008": "22f8e06bdf8857d3c2f91a0838e23fdf2a84b65a495eb770cfb0455c9e3b960b",
+      "attack_NW_009": "dc96a280a5233b2984d9a4bd9b0c821a2b7c39072b016ef1666f820c3d3a7cd9",
+      "attack_NW_010": "0b99185007232325b9edfbdafc78ed3b14dc1d0cf4580bb4a703fd3162cb4b25",
+      "attack_NW_011": "85b8e40a00a7d4ce7b2817980731fe0e1a67312a605c084853cb3bdb71822ad1",
+      "attack_NW_012": "fc9552732300d3881c0218a5bfaba73863d30631888516229a00369a95b4e44d",
+      "attack_N_000": "6c20737de671e6ffe7815eebd30529a112df05ba6825c5e7a70bafac65e7457f",
+      "attack_N_001": "af45585b0ce909488a3e9a6d652c4463b14d4a5172d7dc84fb0bc5cd310d3ae2",
+      "attack_N_002": "a7969c0829c9822180122153719b68d51bdafc679bb93941ac3915ad5157d567",
+      "attack_N_003": "611f7a8529be2fe62f88bab19d69c40bde626dea6571bc444257a3fe0820e803",
+      "attack_N_004": "27527cb4710ebbfdefd543f9f3d46e812f9774b4eb2a3a38f90c5c2a9e36bb80",
+      "attack_N_005": "3d3b56e3c147614aca83e345cb926d567838b19f0867a0706099e454845816ca",
+      "attack_N_006": "379a978dea2db96f74d947d396614e22a7e97489425f3667c495d6dad036ada4",
+      "attack_N_007": "5c68b32f26cc499536cd89a3951141fbb4fce4ab1b20fa18cdfd1bad99f2b70f",
+      "attack_N_008": "a5604325616ca4a9bdcdb3913422afca3ca0f000ab6e869b83de4028983755ce",
+      "attack_N_009": "13b9c34856ba913ed4e8f56e3cfeff0c957bffd5d86d152c843337b7b71868c0",
+      "attack_N_010": "8da94207ce8bd60d93195ea4c5d15e61ecf2da87e2cf86bbbace626968e4a99c",
+      "attack_N_011": "4d5380931dd9177df01a57c4bb04b8f5cbfbac857b4b7682eeb762ec2e2720ef",
+      "attack_N_012": "33b6ffd6847ca482b2f05930e395a2cb84b6439d394c62c8d66b1f29ee4a5c05",
+      "attack_SE_000": "be0e62c4a94be1b9b027080defc79f7777541c372627873f624c74d9e19cde97",
+      "attack_SE_001": "287e65227f4273d62767dd7deed55f01acf993a445c0d93e9c792e72ac00686d",
+      "attack_SE_002": "08e642d097a26020d62d6902bfb770da9f270820683b16fcd083ca77c3ad709d",
+      "attack_SE_003": "0ff7fc8ba854f99b0132cdf1baf3d4558dc8e7ccb47e6e50dca029d0f974f896",
+      "attack_SE_004": "041cedcfb7ce64fa58c7f4ef58440b2cfea07146f41bac12771428a2bed10d21",
+      "attack_SE_005": "d32464e5d9b89340b8f3c14b11e5f8acd1982b750a3ee74147e4f7d3bdbcadc6",
+      "attack_SE_006": "8ccfd24c42067c5161aade9b18b70656dd832f0daf9c6378156553201d0ef0da",
+      "attack_SE_007": "abb30dec123ba6c576c79b45cab3931925b5586bdb39fc4e967c012fb0a996b1",
+      "attack_SE_008": "7d186c7b68be14087f94f84925c4d8e4863c2376024fd05c51e7db73d37caaf2",
+      "attack_SE_009": "eb5f889f0b0413fdc6ee05d763bddb5d4739733f4966d40595fb950a700268f0",
+      "attack_SE_010": "7279d2f02bcf30947dbaae638a42afdb2da9b7fca003323d4e8a80db884a4077",
+      "attack_SE_011": "8bcb0baea7360ef17c839bb470ac256613fc8e3c3e83d20aa13497eb13762b8a",
+      "attack_SE_012": "0a1d3bb7833f25c06adc68b23af9634fbcfb9ff0c4b0cb0a47f52e7d24945c88",
+      "attack_SW_000": "7d449d2db13466187629fd94db2b177da79c0ede005464749ce83a737b8f79a6",
+      "attack_SW_001": "d981db56dbfeffc85039688a60c6c111dd84f86062182bfab89907083df26e1d",
+      "attack_SW_002": "c5dbdfef646fc36eff59c7bbbc684c1fb2e4a90c65a15f22c98ca006f623b0ca",
+      "attack_SW_003": "40ee5569949a5791d74bf1811e4fb656123d76d2a55b754cfd338ae817d90129",
+      "attack_SW_004": "a33f122b5789c114b25abae65e288474f9fda127ebe2bf33f7960d90c4717831",
+      "attack_SW_005": "3d0fff9dc8fa6dc578f131ac065707ad30ffaa5addc1439c1f85cfd38b9da414",
+      "attack_SW_006": "99f71bd431ee03599cdeb2c72c7b1b05a9fec65c0da76a8c5c9c5999e48f41ea",
+      "attack_SW_007": "9530f752c8fb41357db9a8b95499bee87a2aa56bf0e0dd5ba61e846709c90229",
+      "attack_SW_008": "14a2318ea8afb4e94cbfeb1c1aab7a7886c61fbe726a8ed231be160634110d74",
+      "attack_SW_009": "667bea070b629b4ea2d1b0bf96bab93a49deb00aa550959380c0dc35fea60804",
+      "attack_SW_010": "8a7a8f03d701406dfdbe2034d23ccd82950613bf36f74f140c572769b2e5e12b",
+      "attack_SW_011": "135a7a70445de34752009b975a6a4d177bfcefe965724886d014d00813e5b393",
+      "attack_SW_012": "08726ac3649f24f2892f8910f939058bb0952eb43c9e35697481025cc5865692",
+      "attack_S_000": "83de4abb963ee7ae1806fa3b9651caeb87635a6e0b0f961a1b210a67c370e17e",
+      "attack_S_001": "9e5feafb6939720e969394803b951cd48c7c7d023b3f8bca96e261857458db2d",
+      "attack_S_002": "1ed341b2e5a15ed525e572b9bd2792c054815df4a4edbe822aa5829a427956a9",
+      "attack_S_003": "abcbbc56f97835c0f1e896a83da218d7d2788c9cb1cf5c1293868a8dba47fd90",
+      "attack_S_004": "5f4542bcef767ae8bfb236ee6c5f40a425993c6fab87b0e17fdc6a1123840a2d",
+      "attack_S_005": "37a3516d6212f305281a197363365f58db44ecfc9e4c2a75e51619846f55fef9",
+      "attack_S_006": "5c584e073d46da77b04a34261fb1ca591fc2a3a7a3317c3a02ab34b5f03ee729",
+      "attack_S_007": "22271ca9517837f6349d52ed068ac6b3dc521dd2bfbaa58606e04dc44517cadf",
+      "attack_S_008": "51bfc9997d43ed9ff3229b04f89f74e8229a0b9931ed79707a3ab26a6f8d30ca",
+      "attack_S_009": "f738196e2a26f53e5227cea266edbad9d5a77f73859871f233155fcf9f47788b",
+      "attack_S_010": "612262b5027b83008731efaf9df714f06e5bfdce1525553a6d37af3b76c6d95a",
+      "attack_S_011": "dc4df47c44ffed0e5b2e9b23567a04603483ae4e68d57940e62b0269e335fc22",
+      "attack_S_012": "972507a581c55f582a66709d7e3df12bc919b42dd2588cec6d6326437014ec8f",
+      "attack_W_000": "38b7cc9971fcdd1e45f9050ead0ec688a2c1b525c4e69f1035c646a1fab12008",
+      "attack_W_001": "b6cabf8466e0c5a478f29d84bfdf8111b07f369707ac80680c51786c95eea579",
+      "attack_W_002": "c21089dd1d18ca9e8353b6e53293a4d74850a7e227bfc139ec08e8d9fa02f4c8",
+      "attack_W_003": "20d016cd99f15328cdf655279631024d05a8619ddb3212af1f464066bafb2f06",
+      "attack_W_004": "b8f0ba2347c822719a9b2a1093704b2ac866889d499843308f9325538f4d9258",
+      "attack_W_005": "3eb4bc5bad1fdc036c9632d32ae7b5d375ae49ae00edcd70ca5dd9b5b28e32bd",
+      "attack_W_006": "953f27ad604bd86d5f16432f542a7a22387cedb6afb6b399352ff04c8f8dff57",
+      "attack_W_007": "cf5a6a0ce4b22ee4e92cd64afc383943fec3449d1e92583952bd676f010c987d",
+      "attack_W_008": "f9f57f69b0c65ce560112b3e41ba34e01c87515c07d733326bf40984203341b5",
+      "attack_W_009": "34f168f0cdc20aaba834651a81ef815f9181f99b48fa9788dbe384c6a0c96867",
+      "attack_W_010": "204f38982ffa84d95f06fd92694db7f59054f012d1fa9c93e807d4774edfa6a3",
+      "attack_W_011": "e16628fcd40b79b401d04ce09ae3d15047a535171bc7393ef666fc36f2b80c0c",
+      "attack_W_012": "d6ef3526115229d36be60fb24a575698cbb62ab269dae5ef95f7c4d4cc5f5479",
+      "death_E_000": "5d7ab44fa8017d949f321edb9e0e15f942a55df11fe9e32fa9835c7e1500fd41",
+      "death_E_001": "a2a82663b3af78b2d1b37769c4eaa1f120897d2a1237e10bf3ea69570a215828",
+      "death_E_002": "ec56b196d5767f3c1192ecb2d77b8f0fb29d9661bc97cef0120ae9fa29659921",
+      "death_E_003": "1dd4883a14312e8b903601f81e50210af338100c79cc0c7d9b677849b010d5e7",
+      "death_E_004": "ca29861558051d5239f60b389a3767af9570c2cceba5a61a6fbb79387f63843a",
+      "death_E_005": "afe78792acf93bef4123f53f3cad4a4a2f1afe4408062622f3dd352ff7bc82e5",
+      "death_E_006": "085a8cbb8ad71b27da5796c0fa15dd60efb34913450aaf77807b1f70e61c1771",
+      "death_E_007": "0588fcdfa3d8e9ff666bd4e04c2ba83661628b962a85aa469de29e32711d55f0",
+      "death_E_008": "9fab8885d6d451ed39585c96e86aab25c9d1c96a9a806237154c5c7f586669c5",
+      "death_E_009": "26407bddef70ab938b59463a4ab2a7685484d049f76e936a860d2a5919b9098e",
+      "death_NE_000": "0a8554e6ece6308fd853ed8178f8f0852535cdb0d663500efbaa5973a8d994f0",
+      "death_NE_001": "5a78e5d2fd274f655097a7f554962677a633ceef51edc89af5c637b2a0aa58ef",
+      "death_NE_002": "c40b74ec72e3edbe7b99bd23102af30f2671ffa6a46139020ab6ce8610b8cb0e",
+      "death_NE_003": "3dee2cba6886f9d813bfcef169be25781f2dae4420a87b23824b9d078e2eb475",
+      "death_NE_004": "fe03eb308a0e62d7e3385ae6017fddbed1ddd9de86f58841bb238bd9911d2830",
+      "death_NE_005": "3ac780ec298bae117f0a155a2ad2c774d4711602f6b9a94b92d74223cf2e8abb",
+      "death_NE_006": "b3d7366d9b33818ab386e4ae06ebba3bc148b0783028c95d22393e9f7a87a828",
+      "death_NE_007": "236ba04b0cbadea49cfb6d675ca9ff1d65efc0bc282b781ca215c37d3ef56675",
+      "death_NE_008": "8082f39dfd990017d1d637d38bca5fd83d4c8f60f25bc30a1bf9a56fb2a703bc",
+      "death_NE_009": "45585d9d38f563de67f4c70c50c90fed915f1f5d22dcca519a71768406445463",
+      "death_NW_000": "54fa2bc09e1ad07ae3a2484e17d53523448aa0cebc3cac434840e758bf47520b",
+      "death_NW_001": "d5a59d0bae4627911ab7517e40293141716ae488781a8d142d8596be4156a10f",
+      "death_NW_002": "d6b121b427d988a40d7fcb2430326dbb8778163e03ae5c308ae8426c28df2526",
+      "death_NW_003": "209a284ed366cd8828329d90bf30a54dccfb374caafd248e20f0149bcdc9af40",
+      "death_NW_004": "b6566438a6c70934d26d8b8dde269b7e82fd1fc9762402a0d698f955d357d3f7",
+      "death_NW_005": "16882b36ba2d1b8667583dbd385d6351b13cf7fe6b26ca85e8c9abea0266e51f",
+      "death_NW_006": "8553d158da14daa4f91a68d1d3370738fd7e72a37a3933abe5e15f3e7bc92666",
+      "death_NW_007": "4418210d95a5f6c6f154a1438fcfe526cd10028e9d36dc6b45df18d3ac501931",
+      "death_NW_008": "fadd99c9fd7521a0ca5193e3f01b40ac39704462913043273318c06db0026136",
+      "death_NW_009": "18fcc1deb9bf3e3409ae6ef2ee4b8a7b43e5e2d2e255e6e77bfd3a14da740bc8",
+      "death_N_000": "aec2f2d10ce144162363c71348397310926e1a644d41914dd1dfdbeed2e11af0",
+      "death_N_001": "77a2f20c216d7452fbcbeae9f5ff718f53302e8c680993dbd1aae5cf07c4cf18",
+      "death_N_002": "ebe37af420e3bad017e619c8f67e41ac13c2429ae5661051706b87d6abde617d",
+      "death_N_003": "7fbd79a10f35e8e7efeab5969175ed126fd467bbff3507c309cfe72f65736f80",
+      "death_N_004": "eb9a7f9e7467524772de6dd1b5f600c5321e78eb6d3c3950c0104b61a604d1b7",
+      "death_N_005": "252dea682a574827a924a799b1fe1d72cec3356f1c32797b7a85f5e81935dd8a",
+      "death_N_006": "d6e63be78bd35b321dd48af9cf900fae9128bf519d3ee7dea97efaa439dd1d84",
+      "death_N_007": "3ff2e413b0cb1dc2ef3ddbdb5144db8501461bf07e561a8f2ed8ad804c055fd9",
+      "death_N_008": "8622b491911a210f6dd75aef3f90ce4724f6006a92ba466694ba2d7dbd82972f",
+      "death_N_009": "1659953d853de660c98fb23564feee6af573974a8873bade63265b02c821841c",
+      "death_SE_000": "e66d9987061b027b3ec7233ca0da8493546dbbec81d888252e6688f8f09d06b1",
+      "death_SE_001": "36aa1164b2438bd37c7f176c976481c77a1d832204c68666b10534534b912743",
+      "death_SE_002": "558d9d208ffd7e3baf01fdf1bba492f2c79c5fc28c5feab5733d3f41664cbcc9",
+      "death_SE_003": "b111b6255405edc7bc9e88535ddcbff3d3d4734ee3635631622ff8a9b0b0cb9f",
+      "death_SE_004": "1ae562bdbff367368ac711253e237408a471cb57ae030f9644cf3f0dbe9d8c86",
+      "death_SE_005": "a7a0c737ec5e3d1ef289ed66881ab267ec9c5c5a4af878b482606fe887d3e4b8",
+      "death_SE_006": "e36bbab02f0bb41fa8f08c260041741c076c513aba7e6e578466a885ff14c3bb",
+      "death_SE_007": "41dfa6f1f5fb46390196d47473713d3a41c21257829c03344ea3fd6797f48c44",
+      "death_SE_008": "6962ac7a5192dfe70749ac0236ebca057edde332756c75d139d54e2e1f0b9add",
+      "death_SE_009": "21f374994b18fbeffc4828abc87819b93fbe7ac850b538168388635b1f9949cd",
+      "death_SW_000": "910d6eab77db95a8b49f8f5c6e0a4d2d636757789f8ccc7e38379f1feda74a01",
+      "death_SW_001": "e9d59b7970cb5b1229571e8e4b27ad1af8dbdfd97740f906c2e2be5eb93c4306",
+      "death_SW_002": "cbfdab51d2c512174e1ecc5536d9bb2b6beed367c598143f0e6110db13d7d0d1",
+      "death_SW_003": "174e58d3b84ea4e997ce022a5a633931a34dcb7606ee98c886b2c6c2c2268e86",
+      "death_SW_004": "c4e9085ce1a54b9a4fb1e3d36be2dc26a0ec6967a9a154dcfa84d48330c95ff4",
+      "death_SW_005": "a963f70a2144cfdda7c6a9c62e7231e146c09599d1608e7930514f071bcbac2c",
+      "death_SW_006": "72277635f4022dbd98d7fcbe584d85f4fb5c8b1f9f26c868a49d5673ffb66273",
+      "death_SW_007": "49d802880f17a52bfdce3e91f8c6ab7f7a8aa81c0c9aee1705e2e172e00d8c4f",
+      "death_SW_008": "c1b4fca4163c8a2473f1435679dba4ab394f153e529949d896a5b5da29afad6f",
+      "death_SW_009": "24d89059bfdfeb46f3fd2252f34eee63229d9d6eb6f640ffc24c942eae6e511f",
+      "death_S_000": "f33a6be5375148ceb8600446a0219b79332aa5d799fe6f0f11e8bdd1633c4805",
+      "death_S_001": "56a6d76c95eba1dfa39373ce2f3a83fd429db05bc80c21fec8806e1f3d284736",
+      "death_S_002": "33d04df52ea3d081d2ec95333996d14be71ae857c32dd361f73c8b075c70d11e",
+      "death_S_003": "9cad1baf8fde62fbb6f29894531b9eed666082803164d1c7cee72a89426b1b40",
+      "death_S_004": "de6b28b734474e4eb2f35eb502bf93a746dcce0d8b42afdf2f4ed7a79fb29122",
+      "death_S_005": "79a0d28cf06bf9d4ea8b3e832361886ea29342d5bb2ea42d944adca4b3907cb6",
+      "death_S_006": "dec3ac8fc120005612ac6cee9c1ac2a816714cd9e83bd72b38adcf38e9ac5288",
+      "death_S_007": "d57c0a5a9226ba60d26ceada156d378f6f0c44c51b9e039a729b9967bdf80918",
+      "death_S_008": "47beeaaca36cbdf18615f3da3e19bfae3f73e799e56d6913d3dc37b3d4d7f7ed",
+      "death_S_009": "5e82c2630d489bdcc055f6facc73edc40b63cd250ac7e4a5a9604fdad8ef640f",
+      "death_W_000": "72a8e10beba48ef7ca40c1c5eb74896936269027dd6ef101100298b30deef1ad",
+      "death_W_001": "d4077c8f6ef00f379f3403ddc2362ff6645d152e8d12c499c263d4ca51c62e4d",
+      "death_W_002": "e7c6401a8a743720eaa33f8dce6516bec21140e37d8d879cd4599c3f67546232",
+      "death_W_003": "4c948dabb5aed51205f7905370ab425809b435d87c46865a235bfb7cf6f4aedd",
+      "death_W_004": "7f8830c65131dcf63eeb0d3f8ab0fa6265fecacbb947ab9eb0cb963379dbcb6e",
+      "death_W_005": "216539fa8bcfef526793ea5c05aaf49b5fe3138ef58973b395951c949150e231",
+      "death_W_006": "961a4b07e5711224622cef5c9818b01ce0b30666284563d7d3549180cd7759ed",
+      "death_W_007": "fe9bb45f67ebc79286f6c4ec3d37d74f513e2b8fd987051a57a67c92a3a59977",
+      "death_W_008": "90e3da619ae22bb3bae444a338e51c0a56173018593f7e04ddd0c7e8f9104e03",
+      "death_W_009": "33297fab80f2348c6e8307d26a102141a63ad0c8754bf6ee8fcf933ca05e3352",
+      "idle_E_000": "72f6d792f0e9e4ffe6b71b4f7c132e8724ea2feea85efa58d8a03c96f0d23b68",
+      "idle_E_001": "6706dfb4f2a5bca3cb86c83e7a30fda3f34a31f020491d1c082289157ffc3312",
+      "idle_E_002": "79543265384f9bf917f664c125ab28fd5854a57fad809211a409b6b8bfca7a62",
+      "idle_E_003": "6bb37699f3ddbe27964e2e4b1e1e82b96752e0293684b105eea32a1b57f331af",
+      "idle_E_004": "da98379deaba22706a5ec4506f4c79ccf30781e93ec800d97755814d23a05989",
+      "idle_E_005": "dda2377cacc641b71e2344b583d0e7ed6a611819c75ccd157d03809df648c729",
+      "idle_E_006": "83884a042c95b3661f7ef881c26b7e92152b16de8c8b52a5dc340e1da054f289",
+      "idle_E_007": "6813429228c193ab62f38df1c00e4c0c996e2c94341cbb227c260a74d2aa3732",
+      "idle_E_008": "45fbae73593f859ede2e3e91c0d31f266eb4ebdbf78fa975cc1a63b75bb9514c",
+      "idle_E_009": "85b92b4935e4b53a2046fe376a99305c7113d05c6c8c428ee23c23e4af33646e",
+      "idle_E_010": "868d29f761c8da888f43f923e924c404a666ba43bb8d0b22eaad419fc9a0f08c",
+      "idle_E_011": "47774bb4e3431d848068f7356252c8de12f00957f54d3eaa0f3811fe2567f3f1",
+      "idle_E_012": "18170542145d7f76c247048eef5de616ebab1d42cd7eb892aeb751cf6439c655",
+      "idle_NE_000": "fd8f86b8da5658e634c9e684ca892ef7e23545fa305fb938fd3810d2290e607d",
+      "idle_NE_001": "82cbb08f6a208773ceebce13bd40156678b2a85e86a7ba89a62d17cdb6498132",
+      "idle_NE_002": "df0d0917ea2979e2055679108aafd8c97f1dc5568cc1b2ba8ca33433e8b1fd0c",
+      "idle_NE_003": "205fc5ca29bfa1ec7ebdc8ec959b79890e2c9f36ce3f56852fa472ab40a758d0",
+      "idle_NE_004": "212264e7cf81a3a79baa2a3417df7b43ddf0880c39b9b7a91fe3b6a0664d2224",
+      "idle_NE_005": "5d7d42d4e40e251d3b14c5f48b866672614d33491f20f355314bca6c3f44bc05",
+      "idle_NE_006": "2eb9e49e45f1c0e2a3ea6c86299f1eebd95e68d2e9b1b90a61233b451389c52a",
+      "idle_NE_007": "a5fee311e038fab954a0d064a50c7503c862a271169fc8889c4175df69f374c3",
+      "idle_NE_008": "2d7100c8d0a303a6c821424877d61f942d2fb9225b5f674c04afbbdfef736817",
+      "idle_NE_009": "1df4f226e04be3932c8ff3bb5c452f80d3916950f282576ea32aafd1a730f2f5",
+      "idle_NE_010": "1d14cb123b013d59c7bc32d13221e90691bffaf9f7500ed61a1efeea7ac66230",
+      "idle_NE_011": "59fc67235e13cfe07d1f58e866713ebb5aafdfd8c373f60706bbbbeea0592262",
+      "idle_NE_012": "6c29ebd8b034be3297e7ed2ef83a1c833dd63913d465afdd047648abfc3cde98",
+      "idle_NW_000": "4d9697051a7f409814d1dbdd165703567b7f94387c21c8cf7e2b78a66e99999b",
+      "idle_NW_001": "2977171fbe93daed88999ba8f51c1589a63372441574830062dd8a9a3d98a2c3",
+      "idle_NW_002": "6de0fbe96c3f0bdafcb7714642ecbb7a45030379e91d6f6b6f3e70ab3cff82ed",
+      "idle_NW_003": "7308bb7450a2b7dc86dd0860d2a1ea3b367a76d51deb8c58663b465a8450f689",
+      "idle_NW_004": "03a7eaf2adfdaf43b4e8acd86dd3ebf3983044309a28d34c5b085adc1e7979a9",
+      "idle_NW_005": "8566773086b0890bb290da382e88dc1320a0f5cfcd5dd264c1c9319b97381953",
+      "idle_NW_006": "8657c23688e9335643042f544f3130bcf1b4a9cd20099cbf5241611c9a139344",
+      "idle_NW_007": "790a1e81096755f635c2bb79715b0e12ecafe47b3f04e13ccb6cad8bebaca5e3",
+      "idle_NW_008": "9e6a9a34d4befcdc4a694cc461dde85e016a7906b8d266cea34d134631694372",
+      "idle_NW_009": "eb5254876e0f3bb5343dc9b960846d869a236e8fae85fd11876d5de68d40ee7a",
+      "idle_NW_010": "5e44d649863d2321dd7ac91e00e0945edd843bc5cc659a5175b9740b2e4c5d00",
+      "idle_NW_011": "39777b65628898b78f6efcf3da40d86734c0427ca4ca7228878bd135c5eb1e6d",
+      "idle_NW_012": "326ff9e7af938b97689ced048abf080d121246f0c1997389a392e30770b5f6ee",
+      "idle_N_000": "d8d3375c4888805d4bcc10b58234c458716483b23d07126bd58ad6c8688237a4",
+      "idle_N_001": "b11b831784ee7575c97f78901ff18de284aebea61021ea1fd2d3cbc7a6c04546",
+      "idle_N_002": "d2c013fb118f1d05f0be49cc3823101d5bd71a9931fcfa8682f3673c59420b7c",
+      "idle_N_003": "e76f50dc707dee771ad89fcf6a1d7ad8ed76c21324ae3ad480e8ff340e91006f",
+      "idle_N_004": "385a74e64894a5fed20b93357ed561bec64617de9d346c1f2a5137de13b8f62b",
+      "idle_N_005": "e18d6569a4b2066bdf853694f8b56540af3435294c87347ccf48f861e173649d",
+      "idle_N_006": "add440074d716a26fd103f7ee54ac78ee781c998c3473ee7a94dfd1d767b7f36",
+      "idle_N_007": "4eece90763020c592cb35b692a58c0d14101837034229051daf263d762773894",
+      "idle_N_008": "fa190cad18afc10325de766a27b4000f4f884ce5fe969de7f24d14280f54a3ff",
+      "idle_N_009": "6649f6bdac6ab6949898610c534c4f3993eb2d70e963967edcd888cbf2dce9f4",
+      "idle_N_010": "bbd5a9d735e141c2c77f1c1be4a68bc4d44fbd1cb97a0ce6d093d644e9a72b1b",
+      "idle_N_011": "c92f2963c966e43459124f68c7688d6e008506f7f77d1c32d2bb9a40e25724c4",
+      "idle_N_012": "40c99f62443900ad99466dae059564acf0985c1658b97cec5788a75d78bf4d68",
+      "idle_SE_000": "bf27f67f9f273ab9d5392b13863c981471d47b9af3b9d307b9f923b4a7e73b6e",
+      "idle_SE_001": "6c884cee00520668d60c1f4fe9c4aa105518a43956644c5db10a51b6e9e697df",
+      "idle_SE_002": "331660145029d94c4799f4e5409e067e913fd50d4ae4dc3a568ee738f3dbe802",
+      "idle_SE_003": "a69b612f82223bac6f6441fbe46a29d0d6f0df6f4d284d2016c494fb3a6ca37c",
+      "idle_SE_004": "25649455ef7877456eee2b1ff3d5f0f91defb5a4a70255e80a5c912cd6520ae8",
+      "idle_SE_005": "ec2f28f69c89018d523de2927bdc856e9b82a059d160fde75e00ec0994d05ce8",
+      "idle_SE_006": "c72b42497d6308ed69031b0f624435a1e9c339fab10214ac195eccbcbc754e01",
+      "idle_SE_007": "74a4d2e3d2cfc07176778d1558dbddb7973bd231e39fc8f095cefa2e4b60a9b9",
+      "idle_SE_008": "c6fc7de0139f7b2655d6691173e7ff9696337bf2766b9607e08f95ca4de1100b",
+      "idle_SE_009": "044917a6b699517530afe9b2d1cc273f9f6812fae8a1e8e47c420794a68761dc",
+      "idle_SE_010": "20a0e33a7124d61524646fc941241560f399ec001c2dc4fdcdbddc9d58b33876",
+      "idle_SE_011": "9f8409b57e5affe056a67fe2fe09310139751776c009bd7da1112a2df9754f17",
+      "idle_SE_012": "b20c0ae5be77e8772a040ef2694e18a71970d210d201ff8cfbf925e4cc19face",
+      "idle_SW_000": "34e7050cf22aeee231c3cf00f2763239bf020c38b6893546fb31939f34b23e71",
+      "idle_SW_001": "6bccd10a2c55637ac21238c21a2ceafff06b4153b458ac338cbecb69e4041d63",
+      "idle_SW_002": "0fc53c262dca90227931dfb6a1cae5424748590cd98c982acc6c309282c5b13a",
+      "idle_SW_003": "daeafb4ea278b6baf8ab17d5f893368b217826423aa4f8f3afd44e314a2e39d6",
+      "idle_SW_004": "d0b9b4cdf937fcaf99c4e79e2bfd066a2caf24893cf8e8ed2244ca57e1e54a4c",
+      "idle_SW_005": "b25738098f12e37b6ed55494865821203043a13714b48e313ae06d442f09cb62",
+      "idle_SW_006": "6c5bb1cead372732c43ccb09e714d590c3f487d3e2d9a7c2fdacd79b9a36beab",
+      "idle_SW_007": "e9fcbcbff603bd7d5f01a1d25bd4c159eb8db8b1295d3637d37773e9e8598a84",
+      "idle_SW_008": "604c8cb361b761ea09c1d8950eaf3bc8c97b5949b29550ccc587f98934b5b780",
+      "idle_SW_009": "9d867d272f5855026e5cad1eb2ed9fcf69b9c2010289492e8d66a35f4bce9676",
+      "idle_SW_010": "39e98fd1cab9b9919fa21d8d5c5a2d4204ea94a8c85e794217df5bebb2357c3a",
+      "idle_SW_011": "b1dfaf4ec4fb5d70c323120aa426020af9b571bd581ef877307b15aa786ef0e1",
+      "idle_SW_012": "cf38131af5fbdffeeefb5d003f3f25d5555ed1b4a9fd63a765aeef8bf7ea5c21",
+      "idle_S_000": "9668061e467f864a6550ed2c7abadc8064880135c42d9a176007ff87e07c1793",
+      "idle_S_001": "d8bb8193f379e12aaf9ec8621407a010d57dfa5713b0a4c413423ebd2993ed6f",
+      "idle_S_002": "0e708ea19431f8d0a2748420538453bd11c70af88ccdfe9ba133749aaf6ed268",
+      "idle_S_003": "7c77712bb5e11f47fec17709d5d82b9323162292b17020fc5562f4f245aba89f",
+      "idle_S_004": "b806b7d2d8e0bd83d9f743b0124109c3c38d9ee1e6bf481621bdbc30f9dd1c28",
+      "idle_S_005": "3dd4fecd1e84572936f4c37c8f780eae74dbf18984c190c3cfe39746f368e73a",
+      "idle_S_006": "12e6db739b20371970e8051235830e6c82fd3589c9b69c41546573b894cb5ea5",
+      "idle_S_007": "66050cbf1b20a80faf66e3fc876f85f53e353a27a4429653f65f000e4001ea3c",
+      "idle_S_008": "b2de0c816218a2c74bab14293f9ec90159272243a0650bfd3e76909c0d4e496b",
+      "idle_S_009": "1e37aeb09f6142c974ff685289104b8e1ef3f6cb2abc3437b2b765022b5d6276",
+      "idle_S_010": "f1f597c2b16e35832091e006d2a4d73649fbd36d95acdf4132fd6735f01f13f8",
+      "idle_S_011": "e69f886cc50afebe0f411662bea826db38061909f704f26cd396c0a8b8e85f99",
+      "idle_S_012": "99da2d501104c9fa122626b5e7710eea389575ba7c480dbaa3ba62a45b62a865",
+      "idle_W_000": "6e3b53d03cb82b54d656f8e588b005c916e72601f3f3383de9137664cdd56742",
+      "idle_W_001": "1bb83684076c0d97b5b2a180bc5e11f71f88593d2b051c05875ae8254a3819fc",
+      "idle_W_002": "7ae09e52a32f8bd0b3c9c8fa14bd87d30b61c33a02bd1de1a4c82b0fcba5741a",
+      "idle_W_003": "2b820830be88690eb7ffc78471af61f8b48c2fa902e484c9d1f76ae22dcf0cc8",
+      "idle_W_004": "8d1bf699f63156331b89f7b2b8056aa8693f8ead94ba4468d256d843ff2c1b8c",
+      "idle_W_005": "182fa3db8d805be955c4f80fb4ea5f0b50d41849332b168eea7fa5c338172071",
+      "idle_W_006": "8067aa53597ab5911f93c506fc7e36216199a16ad3899e760c61fa97562a0f8e",
+      "idle_W_007": "d71e6ca9e556edc8f6fa5b5d21fa9e201d3708d86375e7c48666ed170a9db54f",
+      "idle_W_008": "c4c7197fd2ce4f67ef214525ef1b1851de132bcbf2c1f7a93e96d85d0b6b8e59",
+      "idle_W_009": "dc3cee74489d9123c6963af63c14ae108217b9baf4ed06e0481d9dd0c13a526d",
+      "idle_W_010": "4a4106c686d94f942c0cf4ecd0c7e38d3acb30236caab3bdf2a269d1fc24b10b",
+      "idle_W_011": "8e459f64957941e015d0ccf13525af68c3c5b471ee61100f38890695945fa156",
+      "idle_W_012": "71fa358baf133d37a0fc3e29db2548294f001b6b4b3932a10c734dc801306fb0",
+      "run_E_000": "a24151986da43ddb3df4cd990fcb45acecf90329a1a29d9ae13414f31c090b93",
+      "run_E_001": "b815db0d653610087ac0d06b3ffeb09eb46d9b284ab2db4abba7ed84b3e25813",
+      "run_E_002": "eaadd185589cd33d04890607487fb29b2c57c6317802108208c54ef6e2e65621",
+      "run_E_003": "3c365dc2e93689c5471d021955e7ff362dfd2b6c29543899ea70701767d03263",
+      "run_E_004": "eec23b032b13a28bc39f5a79879e14ec0acb582a5e047733ef01aa688adb061b",
+      "run_E_005": "2f71ddb033974f82f743b9f86f9f9c498ee2647041291c23661c31929d303dd5",
+      "run_E_006": "396cf50b0a4ca290c16efac94eb8d689d61489c2b0671ba440a0208367e7ee3a",
+      "run_E_007": "82b7eb5c11c9ed1d1caa7e39d4d048fead17e0000415ed171caf6531b1ff36a4",
+      "run_E_008": "423744703db789638cb75d159208fd1f5db6044a7623761464b01c82f68ab87e",
+      "run_E_009": "2df3420bbe7508a3b8f435f0234a103927aaf468a49269d9589e8b982d187bbf",
+      "run_NE_000": "e8639976fc1eacaa01889c627cc5ef16775dc4b0b6a6ae30924498d2ec9ec464",
+      "run_NE_001": "6819a520e273326e1cc5d62dac407104ffc51ca925c686b761580e4b20f3d177",
+      "run_NE_002": "6f685b8830ff5f870b178893d6af8c42eb47dcf97a7cf8fab90f20290ac12013",
+      "run_NE_003": "67ace21bf378135914db47367d13396309a6a527351feeeb1b427dfeb80754d4",
+      "run_NE_004": "ff5f8063b916da09b7a845ce68da263c3eb05e115f19b6428405f4fcd5e7e0d2",
+      "run_NE_005": "52dab563f6f66870ff626dba51c680eedf37b2086837e1e8d23c6756e4448aca",
+      "run_NE_006": "fdef7b5dc3da3580f965ecc93e215a25526fa28f8889aa36e7a3ed08a4723221",
+      "run_NE_007": "862dcd62aba5d957499083ec2629d77335697e117b11d64cbb773f4f3b4c2a6d",
+      "run_NE_008": "2a4f991f987919e551729b86c2b05f7cfc1dd273d7794ce3a16a775cd1da92bd",
+      "run_NE_009": "0df70988f66c3733893f099012c20e200a7c39791e2520c0b429ecef4f76b2ed",
+      "run_NW_000": "b622be01e0470c9224e183c454461ec63ece627cf1fdb703f71f412840335000",
+      "run_NW_001": "0169eec310705cb0cdde2ef8ea37a00937a4e98a10fca5bf6eff892be5364f80",
+      "run_NW_002": "f42e16d0ff7b766b52340cd242374438d186ad7c37346ed2f2648b8bfe7eb985",
+      "run_NW_003": "1ec4e43da22662c635d133d930aa3b11b5337e375be4fec1e62d41b45dc997a4",
+      "run_NW_004": "20ab3fcec1ce31f59a34ca0989e36cffd085faec31911390f20f419a5a176b6b",
+      "run_NW_005": "f4713107762efab1ad30bb1a4961a567c4f3898826c895eeb989158ab10a34e4",
+      "run_NW_006": "b1c095edb5a3968a93782abb85f7a421a9115de9b58cdef21405cd0c4456c587",
+      "run_NW_007": "ccf221996acc2832a2e23253334dafef22d79f49da05894352bfe61f252a4b09",
+      "run_NW_008": "a0eda4b012e417348c12df8761fcd0888e4957c82f6c68db8d851330f10624f3",
+      "run_NW_009": "2786e23e065ecc850e46a45b1c49f88d93b47432808947c4ba90ab21c6698394",
+      "run_N_000": "ac85f9468bc7dc34840b9dd60c5f9d5ee625ce791d8a5aa1f702a1f740210f6b",
+      "run_N_001": "a2497168192da8120a1dddf903016f7dd126a54068b60870fa83e000be95a4d0",
+      "run_N_002": "8e6c7dc18798495922a7812fc4dd26b7dc6e25b9c1a0f21ee4493c88b96f15d1",
+      "run_N_003": "72f5625d7b7587f45ab4d353081b6426cae1bd0e494c947a4102c3ac597b45f5",
+      "run_N_004": "c7d32d90f25a3ebf76ce2f41ab0f7a7cb54cb88f1dfa0e46e8ba136f2a9b89e8",
+      "run_N_005": "22cf8b48898af992fe724f0d35c42faffe2de5b30e9cfe406e7222f176764574",
+      "run_N_006": "1cc8a587d7bf1ad72fd6c391a70f3328c1b2e65ee1b458bc4fcab3c0e517ace8",
+      "run_N_007": "989116818fdefe00385be64d09e7fff76ed381201ee9f5c8718316576afdf6cd",
+      "run_N_008": "eb368983278dded5e367fa7f80f7029484d73f31d53df82fcf03ba75d892b97f",
+      "run_N_009": "9a69f0451992e3287e1cf3da4bb63f49f5be50ca46a731c4da3e382269b9496c",
+      "run_SE_000": "e48a6ccc02d5168e0de90906d5cbea0ac55c20ad258b2f6e503c0e8fc9978111",
+      "run_SE_001": "7742528aa64a0b01a23d288e9701eb01c4d7e7dbb3a653b2fc11ad8867c12833",
+      "run_SE_002": "ae4f85fc990281565ae30ef81f85cf643539f94dbe8ab72951d3f8bc4474ede1",
+      "run_SE_003": "cec7150663e3780adcc97e667c3040e290a934e9197d92f15f838ee226613d6b",
+      "run_SE_004": "35fbe162c8d906ff0fb6a4eed96476cc5dc93ff732ba7d8225fe880096058337",
+      "run_SE_005": "7dbaa302b4dae00903a47bf5b40d5ec5cc9a90b19d619dc50967a1b4d740e9cb",
+      "run_SE_006": "c9866c40d75b0d94d770befe9325fc524fca376d1e6d6cd427dd763949c52ee2",
+      "run_SE_007": "bf19831118d233aa71b745b75850423a46b8be519e816c2fe061f1d27c47a4cc",
+      "run_SE_008": "c7088eca033843c9ccfd5eb0a37fb7d46bb5908773a03c55af0cb3bdad2db883",
+      "run_SE_009": "b39cf56535ab1dfc700ca439ddec2af44a54616382bc5d729ce64c182e4b73f5",
+      "run_SW_000": "f7c5d4bab64531b00120bb2ff531104db0b61bc94e9cc47f853aa15b00e6a8f6",
+      "run_SW_001": "07fff28b03ef3af87583abc98e6b465fe329408f385683a8a4c4fb5e709730f5",
+      "run_SW_002": "2827ca0cddd018bcd65da3a8946fb8ea75f233126e11840a00c79e27566ce709",
+      "run_SW_003": "e2ad3b50ea1ebeec3cdc3d6b4b5a314d38b0828093cd79c60036628c8bd1ac29",
+      "run_SW_004": "474287d9a0aa7f3160af1862fea72a666f9f4a25aa4eb1839b7b55afa0d78e3f",
+      "run_SW_005": "aaac41748650b1328ec2b3d93bbcb50c7dbdcb0511011315424f06028e002bf1",
+      "run_SW_006": "c6c6c4ce79d538f4801f4f4fc7e51a4ad5234540150bcfae06c8fee697a00511",
+      "run_SW_007": "fbdfc30e9da6b338e29bfa790158a5877957358cc7dd74b39e38171bf47ea76a",
+      "run_SW_008": "36af03035f62a917cd48ce1958b796ba75bcf4b87cf432417ffd69bb270519c7",
+      "run_SW_009": "273e36d45a46afe74e8abf3463229416c307522ee06d4ec5abff35ff7f0ab02d",
+      "run_S_000": "be1cf4992998cf519fc1c2d71114b17e1ac9611f6027c52b6dc74a7501919c08",
+      "run_S_001": "0fe427c1fe946fa8ca4889a182de254b2d34ab6f201ac15967ae3109feae60d9",
+      "run_S_002": "785c35d5d3277f4537d283937836e3132bd1fb20de774bd94ab0294828854e17",
+      "run_S_003": "8452456df6d4e7a11271d0e96dddd8492dd673e38a2eb4a80da89e5a90425d70",
+      "run_S_004": "54852104e5146ec975d3a744f8c8b81bb1e01c38a2cead7c27983d888e55d482",
+      "run_S_005": "1380bf202316e7b29ef74e8fe736861bdca4cd62a26297e68cea2c2bfd65af4f",
+      "run_S_006": "165b7641676cfb91eaddc503a3a2130ba428d6ab4f98b4633b2d005cbac6bc32",
+      "run_S_007": "ef7036eb84684d8d33fd9a1a61ec968a6cb0b021c4ead3b4ef3300b9e3335885",
+      "run_S_008": "6018b6ce647e897c5150481e1eabb64b09434641249a604582060f916b83c0e7",
+      "run_S_009": "bf728d6ebf341b21fefc224be1ce4b14424cbd7225106a1b33983e5f30fd6ff3",
+      "run_W_000": "780b1a60d12562008298565d7ff3e1c92785b9f7cf06e463a78965eb6a1add46",
+      "run_W_001": "384fcc6b2951ba42fba3b20ddf4ead15690f113ed449a453dbe95801dd578c77",
+      "run_W_002": "90e46fb469546eb1e61b4c517f79516c7ccf4d55e21a7acdf81e54da37028ac8",
+      "run_W_003": "360eba93781fb75ff15d35f93e3b208f23934bce632ffa8860532b599e505bad",
+      "run_W_004": "ce08c945d60b81b69715162fe3d91a129e722207d0068e510ee3e86e67edb440",
+      "run_W_005": "4e09f81588c6e8223f264d3fdedfbae76b8fd795af2a18ee239176f85b1154c4",
+      "run_W_006": "651d6d6f4c927b8c38c1e52de5589c999534a1024270774d585ad53ba6d548df",
+      "run_W_007": "1244d63018225d7d7905eb70b63f4368e8a399568f403506ee0e67e153ed5927",
+      "run_W_008": "9ad8ae15dd2f596196b8edb3d26fa1fadc98e01b027f46d24ca4a48bfd8f481b",
+      "run_W_009": "a17058c73e3ff3ce6b875fe6ea94cae9b19888cbcc46263aae4a514b29133fe2"
+    }
+  }
+}

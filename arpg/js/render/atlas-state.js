@@ -21,7 +21,7 @@ export const ATLAS_IDS = Object.freeze({
   training_dragon: 'dragon',
   throne_dragon: 'throne-dragon',
   skeleton_minion: 'skeleton-minion',
-  skeleton_warrior: 'skeleton-warrior',
+  skeleton_warrior: 'warrior-dagger',
   skeleton_rogue: 'skeleton-rogue',
   skeleton_mage: 'skeleton-mage',
 });

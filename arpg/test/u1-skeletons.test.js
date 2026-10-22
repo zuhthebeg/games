@@ -33,7 +33,7 @@ test('U1 all four skeleton identities are hostile undead with neutral source-col
     assert.equal(variant.nameKey, id);
     assert.deepEqual(variant.speciesTags, ['skeleton', 'humanoid']);
     assert.deepEqual(MONSTER_PALETTES[variant.paletteId], [0xffffff]);
-    assert.equal(ATLAS_IDS[id], id.replace('_', '-'));
+    assert.equal(ATLAS_IDS[id], id === 'skeleton_warrior' ? 'warrior-dagger' : id.replace('_', '-'));
   }
 });
 
@@ -76,7 +76,8 @@ test('U1 delivered bytes bind every source alpha and unchanged humanoid gates to
   for (const [path, expected] of Object.entries(proof.file_sha256))
     assert.equal(createHash('sha256').update(read('../assets/sprites/' + path)).digest('hex'), expected, path);
   for (const id of ids) {
-    const kit = ATLAS_IDS[id];
+    // Historical U1 art is retained for the boss/legacy trial; keep its exact-byte proof.
+    const kit = id.replace('_', '-');
     const entry = manifest.find(row => row.id === kit);
     const record = proof.results.find(row => row.name === kit);
     const anchor = ground.results.find(row => row.id === kit);

@@ -40,7 +40,7 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   if (options.equipment?.id === 'player-skeleton-equipment') current.container.visible = false;
   container.addChild(current.container);
   // Evolved knights use the combat atlas, not the portrait compositor (which has no playback metadata).
-  const atlasKey = options.equipment?.id === 'player-death-knight' ? 'death_knight' : visualKey(entity);
+  const atlasKey = options.equipment?.id === 'player-death-knight' ? 'death_knight' : (options.atlasKey || visualKey(entity));
   const load = atlasKey === 'death_knight' ? library.load(atlasKey) : entity.kind === 'player' && options.equipment && (options.equipment.id === 'player-skeleton-equipment' || paperdollEnabled())
     ? (async () => {
       try {

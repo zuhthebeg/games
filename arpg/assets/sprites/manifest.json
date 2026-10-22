@@ -783,5 +783,38 @@
       "hit": 0.18,
       "death": 0.65
     }
+  },
+  {
+    "id": "warrior-dagger",
+    "label": "해골 전사",
+    "monster": true,
+    "content_ids": [
+      "skeleton_warrior"
+    ],
+    "sheets": [
+      "atlas-211f1020e219.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "death"
+    ],
+    "fps": 12,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6370674967765808
+    },
+    "bytes": 957653,
+    "animation_durations": {
+      "idle": 1.0833333333333333,
+      "run": 0.8333333333333334,
+      "attack": 1.0833333333333333,
+      "death": 0.6
+    },
+    "presentation_fallbacks": {
+      "hit": "idle",
+      "dodge": "idle"
+    }
   }
 ]

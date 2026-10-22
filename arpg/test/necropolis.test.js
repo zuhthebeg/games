@@ -105,11 +105,12 @@ test('normal board hides the necropolis until both gates and reveals only its fr
 });
 
 
-test('boss and escort share one existing atlas lease, with no manifest mutation or premature release',async()=>{
+test('boss retains existing atlas independently of dagger escort, without manifest mutation or premature release',async()=>{
  const {AtlasLibrary}=await import('../js/render/atlas-library.js');const loads=[],unloads=[];
  const entry={id:'skeleton-warrior',content_ids:['skeleton_warrior'],sheets:['atlas.json'],animations:['idle']};
+ const dagger={...entry,id:'warrior-dagger'};
  const animations=Object.fromEntries(['E','SE','S','SW','W','NW','N','NE'].map(d=>['idle_'+d,[{}]]));
- const library=new AtlasLibrary({baseUrl:'http://localhost/sprites/',fetchManifest:async()=>[entry],loadSheet:async url=>{loads.push(url);return {animations};},unloadSheet:async url=>unloads.push(url)});
- library.beginRound([boss,'skeleton_warrior']);const [a,b]=await Promise.all([library.load(boss),library.load('skeleton_warrior')]);assert.ok(a);assert.equal(a,b);assert.equal(loads.length,1);
- library.beginRound([boss]);assert.equal(unloads.length,0);assert.equal(await library.load(boss),a);library.beginRound([]);await Promise.all(library.releasing.values());assert.equal(unloads.length,1);assert.deepEqual(entry.content_ids,['skeleton_warrior']);
+ const library=new AtlasLibrary({baseUrl:'http://localhost/sprites/',fetchManifest:async()=>[entry,dagger],loadSheet:async url=>{loads.push(url);return {animations};},unloadSheet:async url=>unloads.push(url)});
+ library.beginRound([boss,'skeleton_warrior']);const [a,b]=await Promise.all([library.load(boss),library.load('skeleton_warrior')]);assert.ok(a);assert.ok(b);assert.notEqual(a,b);assert.equal(a.id,'skeleton-warrior');assert.equal(b.id,'warrior-dagger');assert.equal(loads.length,2);
+ library.beginRound([boss]);await Promise.all(library.releasing.values());assert.equal(unloads.length,1);assert.ok(unloads[0].includes('/warrior-dagger/'));assert.equal(await library.load(boss),a);library.beginRound([]);await Promise.all(library.releasing.values());assert.equal(unloads.length,2);assert.deepEqual(entry.content_ids,['skeleton_warrior']);
 });

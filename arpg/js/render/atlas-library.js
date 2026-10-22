@@ -1,6 +1,13 @@
 import { MONSTER_VARIANTS } from '../content/monsters.js';
 import { ATLAS_IDS } from './atlas-state.js';
 
+// Keep an explicitly different presentation (e.g. necropolis boss) independent
+// of its simulation variant base. Equal-model aliases still share one lease.
+function presentationKey(key) {
+  const base = MONSTER_VARIANTS[key]?.baseModelId;
+  return base && (!ATLAS_IDS[key] || ATLAS_IDS[key] === ATLAS_IDS[base]) ? base : key;
+}
+
 // One promise per requested kit: no download of other weapons or future spawns.
 // Inject loaders so the lifecycle (including failure) is testable without WebGL.
 export class AtlasLibrary {
@@ -17,7 +24,7 @@ export class AtlasLibrary {
   }
 
   beginRound(keys) {
-    this.active = new Set(keys.map(key => MONSTER_VARIANTS[key]?.baseModelId || key));
+    this.active = new Set(keys.map(presentationKey));
     for (const [key, record] of this.entries) {
       if (!this.active.has(key) && record.asset) {
         this.entries.delete(key);
@@ -33,7 +40,7 @@ export class AtlasLibrary {
   }
 
   load(key) {
-    key = MONSTER_VARIANTS[key]?.baseModelId || key;
+    key = presentationKey(key);
     this.active.add(key);
     if (this.entries.has(key)) return this.entries.get(key).promise;
     if (this.failed.has(key)) return Promise.resolve(null);
@@ -57,7 +64,7 @@ export class AtlasLibrary {
     this.manifest ||= this.fetchManifest(new URL('manifest.json', this.baseUrl).href);
     const manifest = await this.manifest;
     const entry = manifest.find((candidate) => candidate.id === id);
-    if (!entry || !entry.content_ids.includes(key)) throw new Error(`Atlas manifest missing ${key}`);
+    if (!entry || !(entry.content_ids.includes(key) || entry.content_ids.includes(MONSTER_VARIANTS[key]?.baseModelId))) throw new Error(`Atlas manifest missing ${key}`);
     const animations = {};
     for (const filename of entry.sheets) {
       const url = new URL(`${id}/${filename}`, this.baseUrl).href;

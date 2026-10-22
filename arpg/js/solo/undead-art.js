@@ -9,7 +9,7 @@ export function installEncounterArt(provider) {
   if (!skeleton || !human) throw new Error('Required registered atlas factory missing');
   const previousHuman = provider.factories.get(HUMAN_ID);
   provider.register('blade', (entity, options) => skeleton(
-    { ...entity, kind: 'monster', type: 'skeleton_warrior' }, { ...options, color: 0xffffff, equipment: null }));
+    { ...entity, kind: 'monster', type: 'skeleton_warrior' }, { ...options, color: 0xffffff, equipment: null, atlasKey: 'necropolis_lord' }));
   provider.register(HUMAN_ID, (entity, options) => human(
     { ...entity, kind: 'player', weapon: 'blade' }, { ...options, color: 0xffffff, equipment: null }));
   return () => {
