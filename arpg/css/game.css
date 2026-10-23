@@ -1115,3 +1115,23 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 
 /* Academy: icon-led cards, full current/next effects on the card action sheet. */
 .academy-stage-cards .skill-chips,.academy-stage-cards .skill-growth,.academy-stage-cards .skill-mastery{display:none}.academy-stage-cards .skill-card-main{border:0;background:transparent;text-align:left;padding:0;min-height:58px}.academy-stage-cards .skill-card-main:hover{background:var(--raised)}.academy-stage-cards .skill-type{font-size:10px}.academy-stage-cards .skill-icon{flex-shrink:0}.academy-stage-cards .skill-copy{gap:3px}
+
+/* ARPG lobby has four players plus a QR; keep the buttons reachable on mobile. */
+#mpl-lobby.mpl-ov {
+  align-items: flex-start; overflow-y: auto;
+  max-height: 100vh; max-height: 100dvh;
+  padding: calc(18px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+    calc(18px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+#mpl-lobby .mpl-card { margin: auto; flex: 0 0 auto; min-width: 0; }
+#arpg-clear-banner {
+  position: absolute; top: 36%; left: 50%; transform: translate(-50%, -50%);
+  width: max-content; max-width: 90%; text-align: center; padding: .4em .7em;
+  border-radius: .35em; font-size: clamp(1.7rem, 8vw, 4rem); font-weight: 900;
+  color: #fff4b8; background: #183b32dd; box-shadow: 0 0 40px #ffd25d99;
+  text-shadow: 0 2px 12px #001c0f; z-index: 12;
+  animation: arpg-clear-pop .65s ease-out both;
+}
+@keyframes arpg-clear-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.65); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { #arpg-clear-banner { animation: none; } }

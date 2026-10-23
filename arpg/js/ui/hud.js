@@ -24,6 +24,11 @@ const seconds = (value) => `${(value / 30).toFixed(1)}`;
 const SLOT_NODES = ['skill', 'skill2', 'skill3'];
 const SLOT_KEYS = ['K', 'L', ';'];
 
+export function remainingMonsters(world) {
+  if (world.round?.state === 'victory' || world.round?.state === 'clear' || world.entities[0]?.terminal === 'clear') return 0;
+  return world.entities.filter(entity => entity.kind === 'monster' && !entity.dead).length + (world.round?.pending?.length || 0);
+}
+
 export class HUD {
   constructor() {
     this.noticeLeft = 0;
@@ -40,6 +45,16 @@ export class HUD {
     $('#hud').append(this.party);
     this.partyRows = new Map();
   }
+
+  showClear() {
+    if (!this.clearBanner) {
+      const banner = document.createElement('div');
+      banner.id = 'arpg-clear-banner'; banner.textContent = '스테이지 클리어!';
+      banner.setAttribute('role', 'status');
+      $('#hud').append(banner); this.clearBanner = banner;
+    }
+  }
+  hideClear() { this.clearBanner?.remove(); this.clearBanner = null; }
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
@@ -170,7 +185,7 @@ export class HUD {
     const objective = world.round?.objective;
     this.text(nodes.objective, !world.round ? `상대: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
-      : `◇ ${alive + world.round.pending.length}`);
+      : `◇ ${remainingMonsters(world)}`);
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
     this.text(nodes.potion.lastElementChild, `${player.potions}${potionCooldown}`);
     this.text(nodes.mana.lastElementChild, `${player.manaPotions}${potionCooldown}`);

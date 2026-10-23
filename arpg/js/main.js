@@ -2,7 +2,7 @@ import { victoryResultDelay } from './ui/victory-result-delay.js';
 import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
-import { CoopLobby, roomEntry } from './net/lobby.js';
+import { CoopLobby, roomEntry, clearRoomInvite } from './net/lobby.js';
 import { equipmentVisual } from './render/paperdoll-state.js';
 import { emptyInput } from './sim/world.js';
 import { selectThreat, unlockedThreat } from './meta/run.js';
@@ -107,7 +107,7 @@ try {
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
   bindBattleSettings(document, input);
-  const resultPresentation = victoryResultDelay();
+  const resultPresentation = victoryResultDelay({ onClear: () => hud.showClear(), onCancel: () => hud.hideClear() });
   window.addEventListener('pagehide', () => resultPresentation.cancel());
   const hub = new HubUI({
     save: saved,
@@ -300,7 +300,14 @@ try {
     hud.update(world, elapsed / 1000);
   }
   function closeCoop() {
-    coop?.close(); coop = null; coopSession = null;
+    if (coop) {
+      coop.close();
+      if (new URLSearchParams(location.search).has('room')) {
+        history.replaceState(history.state, '', clearRoomInvite(location.href));
+        hub['roomInvite'] = false;
+      }
+    }
+    coop = null; coopSession = null;
     document.querySelector('#coop-status').hidden = true;
   }
   function settleCoopPlayer() {
@@ -321,7 +328,7 @@ try {
     if (!coopResult) return;
     coopFinished = true;
     running = false;
-    if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
+    hud.update(world, 0);
     const cause = hud.deathExplanation(world);
     resultPresentation.schedule(coopResult.receipt, () => {
       hub.finish(coopResult.save, coopResult.receipt, cause);
@@ -596,7 +603,7 @@ try {
     // Development kit overrides never grant progression or consume real supplies.
     const nextSave = developmentRound ? hub.save : result.save;
     characters.persist(nextSave, roundOwner);
-    if (world.round.objective?.kind === 'kill-target') hud.update(world, 0);
+    hud.update(world, 0);
     const cause = hud.deathExplanation(world);
     resultPresentation.schedule(result.receipt, () => hub.finish(nextSave, result.receipt, cause), terminalAt);
     if (result.receipt.levelsGained > 0) audio.play('level-up');

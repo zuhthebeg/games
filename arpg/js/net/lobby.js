@@ -18,6 +18,20 @@ export function roomEntry(query) {
     legacyEntry: !query.has('room') && !soloSelected && (query.get('debug') === '1' || query.get('dev') === '1') };
 }
 
+export function clearRoomInvite(href) {
+  const url = new URL(href);
+  if (!url.searchParams.has('room')) return url.toString();
+  url.searchParams.delete('room'); url.searchParams.delete('relay');
+  return url.toString();
+}
+export function canStartParty(roster, uid, profiles) {
+  const players = [...new Map((roster.players || []).filter(p => p.user || p.uid).map(p => [p.user || p.uid, p])).values()];
+  const active = players.filter(p => !p.disconnected);
+  return roster.hostUser === uid && active.length >= 2 && active.length <= 4
+    && active.some(p => (p.user || p.uid) === roster.hostUser)
+    && active.every(p => (p.user || p.uid) === roster.hostUser || p.ready);
+}
+
 export class CoopLobby {
   constructor({ profile, config, onSession, onLeave, ...callbacks }) {
     Object.assign(this, { profile, config, onSession, onLeave, callbacks });
@@ -102,8 +116,7 @@ export class CoopLobby {
       note.textContent += ` · ${p.nick || profile?.name || id}: ${role}`;
     }
     const start = card.querySelector('#mpl-start');
-    if (start) start.disabled = !amHost || players.length < 2 || players.length > 4
-      || players.some(p => !this.partyProfiles[p.user || p.uid] || (p.user || p.uid) !== this.lobby._roster.hostUser && !p.ready);
+    if (start) start.disabled = !canStartParty(this.lobby._roster, this.uid, this.partyProfiles);
   }
 
   started(config) {
