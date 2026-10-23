@@ -1,6 +1,8 @@
 // Presentation-only palettes. No collision, simulation RNG or network state.
 const biome = (tiles, path, accent, boundary, props) => ({ tiles, path, accent, boundary, props });
 export const BIOMES = {
+  frost_cavern: biome([0x25343a, 0x2b3b42, 0x213138, 0x304048], 0x3b5159, 0x55707a, 'rocks',
+    ['stones', 'crack', 'rune', 'boulder', 'column', 'water', 'pebbles', 'broken_column']),
   cinder_wastes: biome([0x302a29, 0x342d2a, 0x292625, 0x3a3029], 0x493631, 0x5c3b30, 'rocks',
     ['ash', 'crack', 'drygrass', 'stones', 'boulder', 'splinters', 'rune', 'brazier']),
   village_outskirts: biome([0x252f23, 0x283225, 0x222c21, 0x2b3427], 0x39362b, 0x42402f, 'fence',
@@ -25,6 +27,7 @@ export const BIOMES = {
     ['carpet', 'slab', 'rune', 'column', 'brazier', 'shield', 'rubble', 'urn'])
 };
 export const STAGE_BIOMES = Object.fromEntries([
+  ...[31,32,33].map(n => ['S' + n, 'frost_cavern']),
   ...[28,29,30].map(n => ['S' + n, 'cinder_wastes']),
   ...[1, 2, 3, 4].map(n => [`S${n}`, 'village_outskirts']),
   ...[5, 6, 7, 11, 16].map(n => [`S${n}`, 'forest']),

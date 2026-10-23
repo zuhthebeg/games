@@ -6,6 +6,10 @@ export const NEW_MONSTER_DROPS = {
   ash_reaver: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
   veil_stalker: { gold:[3,6], stacks:[{id:'fang',count:1},{id:'hide',count:1,chance:.3}], items:[] },
   cinder_oracle: { gold:[10,16], stacks:[{id:'frost_shard',count:2},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  // Frost cavern: late T4 guardian/beast budgets, no new loot currency.
+  orc_raider: { gold:[12,18], stacks:[{id:'web',count:3},{id:'scrap',count:3},{id:'potion',count:1,chance:.2}], items:[] },
+  frost_yeti: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
+  stone_giant: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
   // Succubus placement: exact slinger draws; unchanged explicit S19 hunt tier.
   succubus: { gold:[2,5], stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}], items:[] },
   // Succubus placement end.

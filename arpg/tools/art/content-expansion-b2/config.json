@@ -1,0 +1,117 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b2/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b2/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "orc_raider",
+      "label": "오크 약탈자",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b2/source/orc.glb",
+      "keep": [
+        "Orc",
+        "Orc_Weapon"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Weapon",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "orc_raider"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "frost_yeti",
+      "label": "설원 예티",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b2/source/yeti.glb",
+      "keep": [
+        "Yeti_Blob.001"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "root_bones": [],
+      "pose_profile": "floating",
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Walk",
+        "attack": "CharacterArmature|Bite_Front",
+        "hit": "CharacterArmature|HitRecieve",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "frost_yeti"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "stone_giant",
+      "label": "바위 거인",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b2/source/giant.glb",
+      "keep": [
+        "Giant"
+      ],
+      "neutral": true,
+      "arm_bones": [
+        "Arm.L",
+        "Arm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "EnemyArmature|EnemyArmature|EnemyArmature|Idle",
+        "run": "EnemyArmature|EnemyArmature|EnemyArmature|Run",
+        "attack": "EnemyArmature|EnemyArmature|EnemyArmature|Attack",
+        "hit": "EnemyArmature|EnemyArmature|EnemyArmature|HitRecieve",
+        "death": "EnemyArmature|EnemyArmature|EnemyArmature|Death"
+      },
+      "content_ids": [
+        "stone_giant"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "fps": 5
+    }
+  ]
+}

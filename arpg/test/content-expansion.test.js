@@ -84,3 +84,46 @@ test('recommended character clears each frontier stage and banks a valid next-st
   if(id!=='S30')assert.equal(mapUnlocked(out.save,ids[ids.indexOf(id)+1]),true);
  }
 });
+
+const frostIds=['S31','S32','S33'], frostTypes=['orc_raider','frost_yeti','stone_giant'];
+test('frost cavern opens only after ash frontier and progresses sequentially',()=>{
+ const save=original();for(const id of frostIds)assert.equal(mapUnlocked(save,id),false);
+ save.cleared.S30=true;assert.equal(mapUnlocked(save,'S31'),false);
+ save.cleared.S20=save.cleared.S27=true;assert.equal(mapUnlocked(save,'S31'),true);
+ for(let i=0;i<frostIds.length-1;i++){assert.deepEqual(MAPS[frostIds[i+1]].requires,[frostIds[i]]);save.cleared[frostIds[i]]=true;assert.equal(mapUnlocked(save,frostIds[i+1]),true)}
+ assert.deepEqual(REGIONS.find(r=>r.id==='frost').maps,frostIds);
+ assert.ok(REGION_EDGES.some(([a,b])=>a==='cinder'&&b==='frost'));
+});
+test('Orc Yeti Giant use three distinctive telegraphed action pairs and native atlas kits',()=>{
+ assert.deepEqual(frostTypes.map(id=>MONSTERS[id].abilities),[['chief_charge','goblin_slash'],['wolf_dash','wolf_bite'],['guardian_crush','guardian_ring']]);
+ assert.equal(MONSTERS.frost_yeti.lifeState,'beast');
+ const manifest=JSON.parse(readFileSync(new URL('../assets/sprites/manifest.json',import.meta.url)));
+ for(const type of frostTypes){assert.equal(ATLAS_IDS[type],type);assert.ok(SPECIES_AUDIO[type]);
+  const world=createWorld({seed:11});addPlayer(world,{pid:'a',x:400,y:400,mods:{maxHp:10000}});
+  const enemy=spawnMonster(world,type,490,400);enemy.spawnLeft=0;
+  let acted=false;for(let t=0;t<270;t++)acted ||= step(world).some(e=>e.type==='act'&&e.id===enemy.id);
+  assert.ok(acted,type+' never attacked');assert.ok(Number.isFinite(enemy.hp));
+  assert.ok(rollDrops(type,11,{stageId:'S31',huntTier:4,threat:1}).gold>0);
+  const atlas=manifest.find(x=>x.id===type);assert.ok(atlas);assert.deepEqual(atlas.content_ids,[type]);
+  let bytes=0;const clips=new Set();for(const sheet of atlas.sheets){const meta=JSON.parse(readFileSync(new URL('../assets/sprites/'+type+'/'+sheet,import.meta.url)));bytes+=meta.meta.size.w*meta.meta.size.h*4;Object.keys(meta.animations).forEach(x=>clips.add(x))}
+  assert.ok(bytes<=16*1048576,type+' decoded budget');for(const state of ['idle','run','attack','hit','death'])for(const d of ['E','SE','S','SW','W','NW','N','NE'])assert.ok(clips.has(state+'_'+d));
+ }
+});
+test('all three frost stages have bounded actor count and actual clears persist',()=>{
+ assert.ok(BIOMES.frost_cavern);assert.equal(BALANCE.stages.S33.eliteChance,1);
+ for(const id of frostIds){assert.equal(biomeForStage(id),'frost_cavern');assert.ok(STAGE_XP[id]>STAGE_XP.S30);assert.ok(STAGES[id].maxConcurrent<=3);
+  assert.ok(STAGES[id].spawns.every(s=>frostTypes.includes(s.monster)));
+  const save=preset(id);save.cleared.S20=save.cleared.S23=save.cleared.S27=save.cleared.S30=true;
+  for(const prior of frostIds.slice(0,frostIds.indexOf(id)))save.cleared[prior]=true;
+  const world=createWorld({seed:11}),player=addPlayer(world,{pid:'a',mods:buildRoundMods(save)});
+  let tracker=createTracker(11),kills=0;startStage(world,id);setLoad(world,'a',currentLoad(save,tracker).ratio);
+  while(world.tick<18000&&world.round.state==='running'){
+   const events=step(world,{a:botInput(world,player)});kills+=events.filter(e=>e.type==='kill').length;
+   const out=trackRound(save,tracker,events,usedConsumables(save,player));tracker=out.tracker;setLoad(world,'a',out.load.ratio);
+  }
+  assert.equal(world.round.state,'clear',id+' HP '+player.hp+' kills '+kills);assert.equal(kills,STAGES[id].spawns.length);
+  const out=settleRound(save,{stageId:id,terminal:player.terminal,...tracker,used:usedConsumables(save,player)});
+  assert.ok(validateSave(out.save)&&out.save.cleared[id]);assert.ok(out.receipt.goldGained>0);
+  if(id!=='S33')assert.equal(mapUnlocked(out.save,frostIds[frostIds.indexOf(id)+1]),true);
+ }
+});

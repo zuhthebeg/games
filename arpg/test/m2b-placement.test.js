@@ -76,7 +76,7 @@ test('M2b exact three grunt tables plus authorized succubus table preserve every
  assert.deepEqual(Object.keys(current),Object.keys(old));
  for(const [key,value] of Object.entries(old))if(key!=='NEW_MONSTER_DROPS')assert.deepEqual(current[key],value,key);
  const added=['demon','goleling','slime','succubus'];
- assert.deepEqual(Object.keys(NEW_MONSTER_DROPS).filter(k=>!added.includes(k)&&k!=='necropolis_lord'&&!['ash_reaver','veil_stalker','cinder_oracle'].includes(k)),Object.keys(old.NEW_MONSTER_DROPS));
+ assert.deepEqual(Object.keys(NEW_MONSTER_DROPS).filter(k=>!added.includes(k)&&k!=='necropolis_lord'&&!['ash_reaver','veil_stalker','cinder_oracle','orc_raider','frost_yeti','stone_giant'].includes(k)),Object.keys(old.NEW_MONSTER_DROPS));
  for(const [id,table] of Object.entries(old.NEW_MONSTER_DROPS))assert.deepEqual(NEW_MONSTER_DROPS[id],table,id);
  for(const id of added.filter(id=>id!=='succubus'))assert.deepEqual(NEW_MONSTER_DROPS[id],{gold:[3,6],stacks:[{id:'scrap',count:1,chance:.6},{id:'fang',count:1,chance:.4},{id:'potion',count:1,chance:.15}],items:[{id:'goblin_cleaver',chance:.06}]});
 });

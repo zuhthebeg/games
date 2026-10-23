@@ -900,5 +900,89 @@
       "hit": 0.15,
       "death": 0.6
     }
+  },
+  {
+    "id": "orc_raider",
+    "label": "오크 약탈자",
+    "monster": true,
+    "content_ids": [
+      "orc_raider"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5840181410312653
+    },
+    "bytes": 210574,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "frost_yeti",
+    "label": "설원 예티",
+    "monster": true,
+    "content_ids": [
+      "frost_yeti"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7799105942249298
+    },
+    "bytes": 255030,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "stone_giant",
+    "label": "바위 거인",
+    "monster": true,
+    "content_ids": [
+      "stone_giant"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 5,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.68033167719841
+    },
+    "bytes": 233986,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]
