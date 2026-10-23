@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { STAGES, MONSTERS, ABILITIES } from '../js/content/combat.js';
 import { BALANCE } from '../js/content/balance.js';
 import { MONSTER_VARIANTS } from '../js/content/monsters.js';
@@ -111,6 +112,12 @@ test('Orc Yeti Giant use three distinctive telegraphed action pairs and native a
   assert.ok(acted,type+' never attacked');assert.ok(Number.isFinite(enemy.hp));
   assert.ok(rollDrops(type,11,{stageId:'S31',huntTier:4,threat:1}).gold>0);
   const atlas=manifest.find(x=>x.id===type);assert.ok(atlas);assert.deepEqual(atlas.content_ids,[type]);
+  const digest=bytes=>createHash('sha256').update(bytes).digest('hex').slice(0,12);
+  const sheetFile=new URL('../assets/sprites/'+type+'/'+atlas.sheets[0],import.meta.url);
+  const sheetData=readFileSync(sheetFile), sheet=JSON.parse(sheetData);
+  const imageFile=new URL('../assets/sprites/'+type+'/'+sheet.meta.image.split('?')[0],import.meta.url);
+  assert.equal(atlas.cacheVersion,digest(sheetData));
+  assert.equal(new URL(sheet.meta.image,'https://assets.example/').searchParams.get('v'),digest(readFileSync(imageFile)));
   let bytes=0;const clips=new Set();for(const sheet of atlas.sheets){const meta=JSON.parse(readFileSync(new URL('../assets/sprites/'+type+'/'+sheet,import.meta.url)));bytes+=meta.meta.size.w*meta.meta.size.h*4;Object.keys(meta.animations).forEach(x=>clips.add(x))}
   assert.ok(bytes<=16*1048576,type+' decoded budget');for(const state of ['idle','run','attack','hit','death'])for(const d of ['E','SE','S','SW','W','NW','N','NE'])assert.ok(clips.has(state+'_'+d));
  }

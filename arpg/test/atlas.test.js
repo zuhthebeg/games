@@ -68,7 +68,7 @@ test('every registered content key has eight-direction WebP clips and bounded ki
     for (const filename of entry.sheets) {
       const url = new URL(`${id}/${filename}`, base);
       const data = JSON.parse(await readFile(url, 'utf8'));
-      assert.ok(data.meta.image.endsWith('.webp'));
+      assert.ok(new URL(data.meta.image, 'https://assets.example/').pathname.endsWith('.webp'));
       assert.ok(data.meta.size.w <= 2048 && data.meta.size.h <= 2048);
       bytes += (await stat(url)).size + (await stat(new URL(`${id}/${data.meta.image}`, base))).size;
       for (const frame of Object.values(data.frames)) {

@@ -1,3 +1,4 @@
+// New orc atlas sizing: deployment-safe content-addressed import.
 import { DRAGON_CLIPS, dragonFrame } from './dragon-presentation.js';
 import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.

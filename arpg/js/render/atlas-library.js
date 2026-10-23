@@ -67,7 +67,9 @@ export class AtlasLibrary {
     if (!entry || !(entry.content_ids.includes(key) || entry.content_ids.includes(MONSTER_VARIANTS[key]?.baseModelId))) throw new Error(`Atlas manifest missing ${key}`);
     const animations = {};
     for (const filename of entry.sheets) {
-      const url = new URL(`${id}/${filename}`, this.baseUrl).href;
+      const sheetUrl = new URL(`${id}/${filename}`, this.baseUrl);
+      if (entry.cacheVersion) sheetUrl.searchParams.set('v', entry.cacheVersion);
+      const url = sheetUrl.href;
       record.urls.push(url);
       const sheet = await this.loadSheet(url, id);
       Object.assign(animations, sheet.animations);

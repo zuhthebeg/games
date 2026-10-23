@@ -923,11 +923,12 @@
       "x": 0.5,
       "y": 0.5840181410312653
     },
-    "bytes": 210574,
+    "bytes": 210590,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
-    }
+    },
+    "cacheVersion": "613479e9788e"
   },
   {
     "id": "frost_yeti",
@@ -951,11 +952,12 @@
       "x": 0.5,
       "y": 0.7799105942249298
     },
-    "bytes": 255030,
+    "bytes": 255046,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
-    }
+    },
+    "cacheVersion": "4f268c2eda0e"
   },
   {
     "id": "stone_giant",
@@ -979,10 +981,11 @@
       "x": 0.5,
       "y": 0.68033167719841
     },
-    "bytes": 233986,
+    "bytes": 234002,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
-    }
+    },
+    "cacheVersion": "8e670c57968e"
   }
 ]

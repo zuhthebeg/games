@@ -1,3 +1,4 @@
+// New frost palette: deployment-safe content-addressed import.
 // Presentation-only palettes. No collision, simulation RNG or network state.
 const biome = (tiles, path, accent, boundary, props) => ({ tiles, path, accent, boundary, props });
 export const BIOMES = {
