@@ -6,8 +6,8 @@ let cachedManifest;
 const canvas = (w,h) => { const c=document.createElement('canvas'); c.width=w;c.height=h;return c; };
 async function manifest(signal) {
   if(cachedManifest)return cachedManifest;
-  const m=await loadJSON(new URL('manifest.json?v=warrior-player-independent-v1',base),signal);
-  if(m.id!=='player-skeleton-equipment'||m.version!=='warrior-player-independent-v1'||m.frames.length!==368||Object.keys(m.animations).length!==48||m.frames.some(n=>!Array.isArray(m.sockets?.[n]?.offhand)||!Array.isArray(m.sockets?.[n]?.mainhand)))throw new Error('Incomplete approved skeleton kit');
+  const m=await loadJSON(new URL('manifest.json?v=warrior-player-independent-v2',base),signal);
+  if(m.id!=='player-skeleton-equipment'||m.version!=='warrior-player-independent-v2'||m.frames.length!==368||Object.keys(m.animations).length!==48||m.frames.some(n=>!Array.isArray(m.sockets?.[n]?.offhand)||!Array.isArray(m.sockets?.[n]?.mainhand)))throw new Error('Incomplete approved skeleton kit');
   signal?.throwIfAborted();cachedManifest=m;return m;
 }
 // Nearest camera-distance fragment wins, with real alpha edge coverage, not slot order.
