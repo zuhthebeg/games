@@ -20,7 +20,7 @@ export const ENCHANT = {
   blessedHighDestroy: [.08, .12, .16, .20, .24, .28, .32, .36],
   cursedHighDestroy: [.35, .40, .45, .50, .55, .60, .65, .70],
   blessedSteps: [1, 2], blessedRiskWeights: [85, 15],
-  cursedSteps: [-1, 0, 1, 2, 3], cursedWeights: [15, 20, 30, 25, 10],
+  cursedSteps: [-1, 0, 1, 2, 3], cursedWeights: [5, 10, 40, 30, 15], cursedSafeWeights: [0, 0, 50, 35, 15],
   stoneCount: { normal: [1, 2], elite: [2, 3], boss: [3, 5] },
   blessedChance: { normal: 0.002, elite: 0.03, boss: 0.15 },
   cursedChance: { normal: 0.006, elite: 0.06, boss: 0.25 },

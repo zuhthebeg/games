@@ -16,6 +16,8 @@ const attemptRandom = (save, salt) =>
   rng((save.createdAt ^ hash(salt) ^ Math.imul((save.enchantCount || 0) + 1, 0x9e3779b9)) >>> 0);
 
 // chance is the chance of keeping the item, not necessarily increasing its level.
+// Cursed no-gain outcomes (-1/0) stay rarer than destruction; with no destruction risk they vanish.
+const cursedWeights = (risky) => risky ? ENCHANT.cursedWeights : ENCHANT.cursedSafeWeights;
 export function enchantPreview(save, uid, stoneId) {
   const item = save.items.find((candidate) => candidate.uid === uid);
   if (!item || !SLOTS.includes(ITEMS[item.id]?.kind)) throw new Error('강화할 장비가 없습니다.');
@@ -29,12 +31,12 @@ export function enchantPreview(save, uid, stoneId) {
   const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
   const high = Math.max(0, level - 11);
   const ordinaryChance = isRisky(level) ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck * (high ? ENCHANT.rates[level] / ENCHANT.rates[11] : 1)) : 1;
-  const stoneChance = stone.cursed ? 1 - (level >= 12 ? ENCHANT.cursedHighDestroy[level - 12] : ENCHANT.cursedDestroy[level] || 0)
-    : stone.blessed ? 1 - (level >= 12 ? ENCHANT.blessedHighDestroy[level - 12] : 0) : ordinaryChance;
+  // cocy 10-24: blessed/cursed stones share the ordinary destroy odds; only their survival steps differ.
+  const stoneChance = ordinaryChance;
   // Bone gear retains its stricter all-stone risk; no blessed/cursed branch bypasses it.
   const boneChance = level < 6 ? .8 - level * .05 : ENCHANT.rates[level];
   const chance = maxed ? 0 : bone ? Math.min(stoneChance, boneChance) : stoneChance;
-  const weights = stone.cursed ? ENCHANT.cursedWeights : stone.blessed ? risky ? ENCHANT.blessedRiskWeights : [50, 50] : [100];
+  const weights = stone.cursed ? cursedWeights(risky) : stone.blessed ? risky ? ENCHANT.blessedRiskWeights : [50, 50] : [100];
   const probabilities = [];
   for (const [i, step] of steps.entries()) {
     const to = Math.max(0, Math.min(level + step, ENCHANT.max));
@@ -47,7 +49,7 @@ export function enchantPreview(save, uid, stoneId) {
     item, level, maxed, risky, bone, blessed: !!stone.blessed, cursed: !!stone.cursed,
     cost: (stoneId === STONE ? ENCHANT.stonesPerAttempt : 1) * (1 + high),
     chance, destroyChance: maxed ? 0 : 1 - chance, probabilities,
-    outcomes: [...new Set(steps.map((step) => Math.max(0, Math.min(level + step, ENCHANT.max))))],
+    outcomes: [...new Set(steps.filter((_, i) => weights[i] > 0).map((step) => Math.max(0, Math.min(level + step, ENCHANT.max))))],
     refund: { [STONE]: refund },
     have: save.stacks[stoneId] || 0,
   };
@@ -85,7 +87,7 @@ export function enchant(save, uid, stoneId) {
   }
   const steps = preview.cursed ? ENCHANT.cursedSteps : preview.blessed ? ENCHANT.blessedSteps : [1];
   const step = preview.cursed
-    ? weighted(steps.map((step, i) => [step, ENCHANT.cursedWeights[i]]), random)
+    ? weighted(steps.map((step, i) => [step, cursedWeights(preview.risky)[i]]), random)
     : preview.blessed && preview.risky
       ? weighted(steps.map((step, i) => [step, ENCHANT.blessedRiskWeights[i]]), random)
       : steps[Math.floor(random() * steps.length)];

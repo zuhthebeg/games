@@ -81,22 +81,25 @@ test('outcome is fixed by the saved attempt counter: replaying the same save nev
   assert.deepEqual(store.load(), first.save);
 });
 
-test('blessed guarantees safe uniform +1/+2 and risky 85/15, never destroys or spends plain stones', () => {
+test('blessed shares ordinary destroy odds; survivors split safe 50/50 and risky 85/15 without plain stones', () => {
   for (const level of [0,5,6,9,10]) {
-    const n=5000, counts=[0,0], p=level<6?.5:.85;
+    const n=5000, counts=[0,0], p=level<6?.5:.85;let survived=0;
+    const ordinary=enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',W).chance;
     for(let seed=1;seed<=n;seed++) {
       const base=weaponAt(withStones(fresh(seed)),level), {save,result}=enchant(base,'starter:weapon',BW);
-      assert.equal(result.outcome,'success'); counts[result.to-level-1]++;
-      assert.equal(save.stacks[BW],base.stacks[BW]-1);assert.equal(save.stacks[W],base.stacks[W]);
-      assert.ok(validateSave(save)); assert.equal(enchantPreview(base,'starter:weapon',BW).chance,1);
+      if(result.outcome==='success'){survived++;counts[result.to-level-1]++;}
+      assert.equal(save.stacks[BW],base.stacks[BW]-1);if(result.outcome==='success')assert.equal(save.stacks[W],base.stacks[W]);
+      assert.ok(validateSave(save)); assert.equal(enchantPreview(base,'starter:weapon',BW).chance,ordinary);
       assert.deepEqual(enchant(base,'starter:weapon',BW),{save,result});
     }
-    assert.ok(Math.abs(counts[0]-n*p)<4*Math.sqrt(n*p*(1-p)),`${level}: ${counts}`);
+    if(level<6)assert.equal(survived,n);
+    assert.ok(Math.abs(survived-n*ordinary)<=4*Math.sqrt(n*ordinary*(1-ordinary))+1e-9,`${level}: survived ${survived}`);
+    assert.ok(Math.abs(counts[0]-survived*p)<4*Math.sqrt(survived*p*(1-p)),`${level}: ${counts}`);
     assert.deepEqual(enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',BW).outcomes,[level+1,level+2]);
   }
 });
 
-test('cursed conditional -1/0/+1/+2/+3 retains weights with real destruction, floor0 and cap20', () => {
+test('cursed conditional -1/0/+1/+2/+3 shares ordinary destruction and keeps no-gain below destruction', () => {
   const n=10000,counts=[0,0,0,0,0];let survived=0;
   for(let seed=1;seed<=n;seed++) {
     const base=weaponAt(withStones(fresh(seed)),7),attempt=enchant(base,'starter:weapon',CW);
@@ -104,11 +107,16 @@ test('cursed conditional -1/0/+1/+2/+3 retains weights with real destruction, fl
     assert.equal(attempt.save.stacks[CW],99);if(attempt.result.outcome==='success')assert.equal(attempt.save.stacks[W],100);
     assert.ok(validateSave(attempt.save));assert.deepEqual(enchant(base,'starter:weapon',CW),attempt);
   }
-  for(const [i,p] of [.15,.20,.30,.25,.10].entries()) assert.ok(Math.abs(counts[i]-survived*p)<4*Math.sqrt(survived*p*(1-p)),`${counts}`);
-  for(const [level,targets] of [[0,[0,1,2,3]],[19,[18,19,20]]]) {
+  const ordinary=enchantPreview(weaponAt(withStones(fresh()),7),'starter:weapon',W).chance;
+  assert.equal(enchantPreview(weaponAt(withStones(fresh()),7),'starter:weapon',CW).chance,ordinary);
+  assert.ok(Math.abs(survived-n*ordinary)<4*Math.sqrt(n*ordinary*(1-ordinary)),`survived ${survived}`);
+  assert.ok(counts[0]+counts[1]<n-survived,'no-gain must stay below destruction');
+  for(const [i,p] of [.05,.10,.40,.30,.15].entries()) assert.ok(Math.abs(counts[i]-survived*p)<4*Math.sqrt(survived*p*(1-p)),`${counts}`);
+  for(const [level,targets] of [[0,[1,2,3]],[19,[18,19,20]]]) {
     assert.deepEqual(enchantPreview(weaponAt(withStones(fresh()),level),'starter:weapon',CW).outcomes,targets);
     const seen=new Set();for(let seed=1;seed<400;seed++) {const {save,result}=enchant(weaponAt(withStones(fresh(seed)),level),'starter:weapon',CW);if(result.outcome==='success')seen.add(result.to);assert.ok(validateSave(save));}
-    assert.deepEqual([...seen].sort((a,b)=>a-b),targets);
+    // +19 survives only 2% now, so sampled outcomes are a subset of the declared targets.
+    if(level===0)assert.deepEqual([...seen].sort((a,b)=>a-b),targets);else assert.ok([...seen].every(v=>targets.includes(v)),`${[...seen]}`);
   }
 });
 

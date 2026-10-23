@@ -881,7 +881,7 @@ export class HubUI {
       <div class="forge-ritual" aria-hidden="true">${ritualCircleHtml()}<span class="forge-hero-art" data-enhance="${Math.min(10, item.enhance)}">${itemIcon(item.id, ITEMS[item.id])}</span><span class="forge-tier">+${item.enhance}</span></div>
       <div class="forge-progress"><b>+${item.enhance}</b><span>→</span><strong>${preview.maxed ? 'MAX' : target}</strong></div>
       ${preview.blessed ? `<p class="forge-blessing">축복 · ${danger ? '생존 시 ' : ''}+1~2 · ${preview.risky ? '+1 85% / +2 15%' : '각 50%'}</p>` : ''}
-      ${preview.cursed ? `<p class="forge-blessing">저주 · ${danger ? '생존 시 ' : ''}-1~+3 · -1 15% / 유지 20% / +1 30% / +2 25% / +3 10%</p>` : ''}
+      ${preview.cursed ? `<p class="forge-blessing">저주 · ${danger ? '생존 시 -1~+3 · -1 5% / 유지 10% / +1 40% / +2 30% / +3 15%' : '+1~+3 · +1 50% / +2 35% / +3 15%'}</p>` : ''}
       <strong class="forge-odds">${odds}</strong>
       <div class="p2-stones stone-picker" role="group" aria-label="사용할 강화석">${picker}</div>
       ${!preview.maxed && preview.have < preview.cost ? '<p class="p2-hint">강화석 부족</p>' : ''}
