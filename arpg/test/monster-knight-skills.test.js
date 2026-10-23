@@ -7,6 +7,7 @@ import {createSave,validateSave} from '../js/meta/save.js';
 import {trained} from './fixtures/trained.js';
 import {createWorld,addPlayer,spawnMonster,step,emptyInput} from '../js/sim/world.js';
 import {encodeSnapshot,decodeSnapshot} from '../js/net/protocol.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const monster=['poison_field','curse','invisibility'], knight=['sword_wave','berserk'];
 const save=(lineage='human')=>{const s=trained(createSave({name:'test',weapon:'blade',answers:[0,0,0,0,0],createdAt:1}));if(lineage!=='human')s.lineage=lineage;s.gold=5000;return s;};
 const fixture=(id,level=1,mods={})=>{const w=createWorld({seed:123});const p=addPlayer(w,{pid:'p',x:300,y:400,mods:{skills:[id],weaponForm:'sword',lineage:id==='sword_wave'?'human':'skeleton_knight',handedness:id==='berserk'?2:1,mpRegen:0,...mods},skillMasteryLevels:{[id]:level}});return {w,p};};

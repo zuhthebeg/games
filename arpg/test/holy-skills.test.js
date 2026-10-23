@@ -7,6 +7,7 @@ import { createSave, validateSave } from '../js/meta/save.js';
 import { deriveMods, eff } from '../js/meta/stats.js';
 import { learnSkill, equipSkill } from '../js/meta/skills.js';
 import { trained } from './fixtures/trained.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const fixture = (skill, int = 100) => { const world = createWorld(); const p = addPlayer(world, {pid:'p',weapon:'focus',x:500,y:400,mods:{skill,effectiveInt:int,mpRegen:0}}); return {world,p}; };
 const mob = (w,type,x=550) => {const t=spawnMonster(w,type,x,400);t.spawnLeft=0;t.thinkLeft=1000; return t;};
 const cast = (world,p) => { const events=step(world,{p:{...emptyInput(),skillEdge:true}}); for(let i=0;i<50;i++) events.push(...step(world));return events; };

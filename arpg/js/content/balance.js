@@ -6,6 +6,10 @@ export const BALANCE = {
   attackSpeed: { agiPerEff: .02, agiCap: .2, weightReference: 8, weightPerUnit: .0125,
     armorFreeWeight: 6, armorPerKg: { bow: .04, focus: .025, blade: .015 },
     weightCap: 24, loadStart: .8, loadCap: 1.2, loadSlope: .5, min: .7, max: 1.2 },
+  // cocy 10-23: global player attack-rate scale (-30%) so DEX/gear speed gains are felt; caps scale with it.
+  attackBase: .7,
+  // cocy 10-23: shield perfect-guard window after the guard press edge (solo dodge perfect is 150ms).
+  shield: { perfectMs: 350 },
   // cocy 10-11: dodge is the one manual skill auto-attack players keep, so the counter must pay off.
   counter: { damage: 2.2, poise: 3, graceMs: 300 },
   // cocy 10-14: current monster HP reduced another 20% (0.7 × 0.8), bosses included.
@@ -98,7 +102,7 @@ export function attackRate(agiBonus = 0, weaponWeight = 8, loadRatio = 0, armorW
   const weight = Math.max(0, Math.min(a.weightCap, weaponWeight));
   const load = Math.max(0, Math.min(a.loadCap, loadRatio) - a.loadStart);
   const armor = Math.max(0, armorWeight - a.armorFreeWeight) * a.armorPerKg[family];
-  return Math.max(a.min, Math.min(a.max, (1 + Math.max(0, Math.min(a.agiCap, agiBonus)))
+  return BALANCE.attackBase * Math.max(a.min, Math.min(a.max, (1 + Math.max(0, Math.min(a.agiCap, agiBonus)))
     / (1 + a.weightPerUnit * (weight - a.weightReference) + a.loadSlope * load + armor)));
 }
 

@@ -12,6 +12,7 @@ import { effectiveWeight, carriedWeight, capacity } from '../js/meta/items.js';
 import { linesHtml, splitComparisonHtml } from '../js/ui/gear-view.js';
 import { createWorld, addPlayer, spawnMonster, step, emptyInput, setLoad } from '../js/sim/world.js';
 import { ticks } from '../js/sim/core.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const fresh = weapon => createSave({ name:'W1', answers:[0,0,0,0,0], weapon, createdAt:1 });
 const gear = (uid, id, enhance=0) => ({ uid, id, enhance, affixes:[] });
 const close = (a,b) => assert.ok(Math.abs(a-b)<1e-9, `${a} != ${b}`);

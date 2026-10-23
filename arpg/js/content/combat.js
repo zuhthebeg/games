@@ -23,7 +23,7 @@ export const ABILITIES = {
     delivery:'sacrifice', shape:{type:'circle',radius:170,offset:0}, hpCostFrac:.5, minHp:10,
     damage:0, poise:55, knockback:180, family:'blade', requiresSkeleton:true, requiresSchool:true, cancelInto:['recovery'] },
   shield_bash: { name:'방패 강타', windupMs:80, lockMs:0, activeMs:200, recoveryMs:180, cooldownMs:0,
-    delivery:'dash', dash:{distance:85,bodyPad:8}, damage:4, poise:120, knockback:400, family:'blade', cancelInto:['recovery'] },
+    delivery:'dash', dash:{distance:200,bodyPad:10}, damage:22, poise:120, knockback:520, family:'blade', cancelInto:['recovery'] },
   poison_field: { name:'맹독 지대', windupMs:260, lockMs:0, activeMs:34, recoveryMs:220, cooldownMs:8000, manaCost:20,
     delivery:'zone', zone:{range:360,reach:220,durationMs:3000,intervalMs:500,radius:80},
     damage:8, poise:0, knockback:0, family:'blade', requiresSkeleton:true, cancelInto:['recovery'] },

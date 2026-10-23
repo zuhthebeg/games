@@ -12,6 +12,7 @@ import { buildRoundMods, createTracker, trackRound } from '../js/meta/run.js';
 import { CoopSession } from '../js/net/session.js';
 import { createMemoryTransport } from '../js/net/loopback.js';
 import { healingFeedback } from '../js/render/healing-feedback.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 
 const costs = { lunge: 16, volley: 16, ember_bolt: 14, whirl: 20, heavy_cleave: 26,
   pierce_shot: 18, blast_arrow: 24, frost_lance: 12, flame_ring: 18, healing_light: 28 };

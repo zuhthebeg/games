@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pair} from './fixtures/invasion-party.js';
 import {emptyInput} from '../js/sim/world.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const T=1000/30;
 test('host sends hit presentation on its damage tick before the next snapshot; repeated delivery renders once',()=>{
  const {s}=pair(), w=s.host.world, [h,g]=w.entities; w.round.pending=[]; w.entities=[h,g];

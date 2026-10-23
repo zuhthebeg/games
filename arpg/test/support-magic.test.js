@@ -11,6 +11,7 @@ import { learnSkill, setSlot } from '../js/meta/skills.js';
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { itemDetailsHtml } from '../js/ui/gear-view.js';
 import { skillCardHtml } from '../js/ui/skill-view.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const fixture = (skill='frost_lance', mods={}) => { const w=createWorld();const p=addPlayer(w,{pid:'p',weapon:'focus',x:500,y:400,mods:{skill,mpRegen:0,...mods}});return {w,p};};
 const mob = (w,type='ghoul',x=570) => {const t=spawnMonster(w,type,x,400,{hpMult:10});t.spawnLeft=0;t.thinkLeft=10000;return t;};
 const cast = (w,p,slot='skillEdge') => {const events=step(w,{[p.pid]:{...emptyInput(),[slot]:true}});for(let i=0;i<40;i++)events.push(...step(w));return events;};

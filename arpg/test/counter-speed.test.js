@@ -9,6 +9,7 @@ import { deriveMods, eff } from '../js/meta/stats.js';
 import { buildRoundMods, currentLoad, createTracker } from '../js/meta/run.js';
 import { createSave } from '../js/meta/save.js';
 import { ITEMS } from '../js/meta/items.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const input = (o = {}) => ({ ...emptyInput(), ...o });
 const run = (w, n, inputs = {}) => Array.from({ length: n }, () => step(w, inputs)).flat();
 function enemy(w, x = 610, y = 400) {

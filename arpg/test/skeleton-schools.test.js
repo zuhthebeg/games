@@ -9,6 +9,7 @@ import {trained} from './fixtures/trained.js';
 import {HubUI} from '../js/ui/hub.js';
 import {BOOKS,learnSkill,hasSkill} from '../js/meta/skills.js';
 import {encodeSnapshot,decodeSnapshot} from '../js/net/protocol.js';
+import { BALANCE as ATTACK_BASE_FIXTURE } from '../js/content/balance.js'; ATTACK_BASE_FIXTURE.attackBase = 1; // fixtures assume the unscaled player attack rate
 const ids=['poison_arrow','cursed_hands','blood_spear','dead_explosion'];
 const make=(id,lv=1,weapon= id==='poison_arrow'?'bow':id==='dead_explosion'?'blade':'focus')=>{const w=createWorld({seed:23});const p=addPlayer(w,{pid:'p',weapon,x:300,y:400,mods:{lineage:'skeleton_knight',weaponForm:weapon==='focus'?'wand':weapon==='bow'?'bow':'sword',skills:[id],mpRegen:0},skillMasteryLevels:{[id]:lv}});return {w,p};};
 const mob=(w,x=420,type='ghoul')=>{const m=spawnMonster(w,type,x,400);m.spawnLeft=0;m.frozenUntil=10000;m.hp=m.maxHp=10000;return m;};
