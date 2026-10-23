@@ -9,6 +9,9 @@ export const PROFILE_FILES = Object.freeze(['bone-hit', 'dry-hit', 'ghost-hit', 
   'perfect-dodge', 'counter-hit']);
 const species = (hit, death, pitch = 1) => Object.freeze({ hit, death, pitch });
 export const SPECIES_AUDIO = Object.freeze({
+  ash_reaver: species('dry-hit', 'dry-death', .84),
+  veil_stalker: species('dry-hit', 'dry-death', 1.2),
+  cinder_oracle: species('ghost-hit', 'ghost-death', .95),
   necropolis_lord: species('bone-hit', 'bone-death', .75),
   skeleton_minion: species('bone-hit', 'bone-death', 1.12),
   skeleton_warrior: species('bone-hit', 'bone-death', .88),

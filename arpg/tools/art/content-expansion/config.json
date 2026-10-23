@@ -1,0 +1,118 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion/frames",
+  "characters": [
+    {
+      "name": "ash_reaver",
+      "label": "재의 약탈자",
+      "model": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb",
+      "neutral": true,
+      "keep": [
+        "Barbarian_Hat",
+        "Barbarian_Cape",
+        "Barbarian_ArmLeft",
+        "Barbarian_ArmRight",
+        "Barbarian_Body",
+        "Barbarian_Head",
+        "Barbarian_LegLeft",
+        "Barbarian_LegRight",
+        "2H_Axe"
+      ],
+      "animations": {
+        "idle": "Idle",
+        "run": "Running_A",
+        "attack": "2H_Melee_Attack_Chop",
+        "hit": "Hit_A",
+        "death": "Death_A"
+      },
+      "content_ids": [
+        "ash_reaver"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "veil_stalker",
+      "label": "장막 추적자",
+      "model": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb",
+      "neutral": true,
+      "keep": [
+        "Rogue_Cape",
+        "Rogue_ArmLeft",
+        "Rogue_ArmRight",
+        "Rogue_Body",
+        "Rogue_Head_Hooded",
+        "Rogue_LegLeft",
+        "Rogue_LegRight",
+        "Knife"
+      ],
+      "animations": {
+        "idle": "Idle",
+        "run": "Running_A",
+        "attack": "1H_Melee_Attack_Stab",
+        "hit": "Hit_A",
+        "death": "Death_A"
+      },
+      "content_ids": [
+        "veil_stalker"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    },
+    {
+      "name": "cinder_oracle",
+      "label": "잿불 예언자",
+      "model": "C:/Users/user/ai-tools/arpg-art/source/KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Mage.glb",
+      "neutral": true,
+      "keep": [
+        "Mage_Hat",
+        "Mage_Cape",
+        "Mage_ArmLeft",
+        "Mage_ArmRight",
+        "Mage_Body",
+        "Mage_Head",
+        "Mage_LegLeft",
+        "Mage_LegRight",
+        "1H_Wand"
+      ],
+      "animations": {
+        "idle": "Idle",
+        "run": "Running_A",
+        "attack": "Spellcast_Shoot",
+        "hit": "Hit_A",
+        "death": "Death_A"
+      },
+      "content_ids": [
+        "cinder_oracle"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion/source",
+  "webp_quality": 52
+}

@@ -41,6 +41,9 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
+    S28: { hp:5.7, damage:2.22, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[27,'epic',4] },
+    S29: { hp:5.8, damage:2.25, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[28,'epic',4] },
+    S30: { hp:6, damage:2.3, eliteChance:1, waves:1, waveMs:0, concurrent:2, huntTier:4, rewardRank:12, sizeRank:19, rec:[29,'epic',4] },
     // Necropolis: bounded continuation of the graveyard; existing T4 loot and combat rules.
     S24: { hp:5.2, damage:2.05, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[24,'epic',4] },
     S25: { hp:5.4, damage:2.1, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[25,'epic',4] },

@@ -816,5 +816,89 @@
       "hit": "idle",
       "dodge": "idle"
     }
+  },
+  {
+    "id": "ash_reaver",
+    "label": "재의 약탈자",
+    "monster": true,
+    "content_ids": [
+      "ash_reaver"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5989413559436798
+    },
+    "bytes": 284002,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "veil_stalker",
+    "label": "장막 추적자",
+    "monster": true,
+    "content_ids": [
+      "veil_stalker"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6265285313129425
+    },
+    "bytes": 297556,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
+  },
+  {
+    "id": "cinder_oracle",
+    "label": "잿불 예언자",
+    "monster": true,
+    "content_ids": [
+      "cinder_oracle"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6130812764167786
+    },
+    "bytes": 242710,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    }
   }
 ]

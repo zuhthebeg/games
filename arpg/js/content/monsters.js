@@ -7,7 +7,7 @@ export const MONSTER_PALETTES = {
   wolf: [0x939da2], rune: [0x7e8f94], spirit: [0x9c91c9], spider: [0x657d50],
   ghoul: [0xffffff], ghost: [0xffffff], bat: [0xffffff],
   demon: [0xffffff], goleling: [0xffffff], slime: [0xffffff],
-  succubus: [0xffffff],
+  succubus: [0xffffff], ash: [0xffffff],
   human: [0xffffff],
   necropolis: [0xffdca0],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
@@ -18,14 +18,14 @@ export const MONSTER_MODELS = [
   'skeleton_minion', 'skeleton_warrior', 'skeleton_rogue', 'skeleton_mage',
   'ghoul', 'ghost', 'bat',
   'demon', 'goleling', 'slime',
-  'succubus',
+  'succubus', 'ash_reaver', 'veil_stalker', 'cinder_oracle',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
   undead_lab_human_melee: '인간 모험가 · 근접 AI',
   ghoul: '구울', ghost: '유령', bat: '거대 박쥐',
   demon: '악마', goleling: '고링', slime: '슬라임',
-  succubus: '서큐버스',
+  succubus: '서큐버스', ash_reaver: '재의 약탈자', veil_stalker: '장막 추적자', cinder_oracle: '잿불 예언자',
   gargoyle: '석상 가고일',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
@@ -40,6 +40,9 @@ const variant = (id, paletteId, speciesTags, lifeState) => ({
 export const MONSTER_VARIANTS = {
   necropolis_lord: { ...variant('necropolis_lord', 'necropolis', ['skeleton', 'humanoid', 'boss'], 'undead'), baseModelId: 'skeleton_warrior' },
   undead_lab_human_melee: variant('undead_lab_human_melee', 'human', ['human', 'humanoid'], 'living'),
+  ash_reaver: variant('ash_reaver', 'ash', ['human', 'humanoid'], 'living'),
+  veil_stalker: variant('veil_stalker', 'ash', ['human', 'humanoid'], 'living'),
+  cinder_oracle: variant('cinder_oracle', 'ash', ['human', 'humanoid'], 'living'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),
   goleling: variant('goleling', 'goleling', ['goleling', 'crafted'], 'construct'),

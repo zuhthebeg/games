@@ -10,13 +10,14 @@ export const REGIONS = [
   { id:'throne', name:'왕좌 앞뜰', maps:['TD1'], pos:[24,92] },
   { id:'graveyard', name:'버려진 묘지', maps:['S21','S22','S23'], pos:[76,74] },
   { id:'necropolis', name:'망자의 지하묘역', maps:['S24','S25','S26','S27'], pos:[76,92] },
+  { id:'cinder', name:'잿불 황야', maps:['S28','S29','S30'], pos:[50,92] },
   { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[24,74] },
 ];
-export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne'],['castle','graveyard'],['graveyard','necropolis']];
+export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne'],['castle','graveyard'],['graveyard','necropolis'],['necropolis','cinder']];
 export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map((id, index) => [id, {
   id, regionId:region.id, mainQuest:id,
   // Castle accepts EITHER completed branch, never both.
-  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20'],graveyard:['S20'],necropolis:['S23']}[region.id],
+  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20'],graveyard:['S20'],necropolis:['S23'],cinder:['S27']}[region.id],
 }])));
 for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
 // Append after legacy gates were derived: QC1 never changes TD1's S20 requirement.
@@ -26,6 +27,7 @@ export function mapUnlocked(save, id) {
   // Historical trial clears stay saved, but never bypass the official late-game gate.
   if (MAPS[id]?.regionId === 'graveyard' && !save.cleared?.S20) return false;
   if (map?.regionId === 'necropolis' && (!save.cleared?.S20 || !save.cleared?.S23)) return false;
+  if (map?.regionId === 'cinder' && (!save.cleared?.S20 || !save.cleared?.S27)) return false;
   if (id === 'TD1' || id === 'M_THRONE_GARGOYLE') return !!save.cleared?.S20;
   return !!map && (!!save.cleared?.[id] || !map.requires.length || map.requires.some(prior => !!save.cleared?.[prior]));
 }
@@ -38,7 +40,7 @@ export const discoveredRegions = save => {
 // Flow-grid slots preserve the fork/rejoin route without absolute-positioned touch targets.
 export const REGION_ROUTE = {
   outskirts:[1,0], forest:[2,0], pass:[3,0], mine:[4,1], swamp:[4,2],
-  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2],
+  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2], cinder:[8,2],
 };
 export const availableStages = save => Object.keys(STAGES).filter(id => mapUnlocked(save, id));
 export const regionFor = id => REGIONS.find(region => region.id === MAPS[id]?.regionId);

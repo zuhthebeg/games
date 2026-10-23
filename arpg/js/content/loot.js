@@ -2,6 +2,10 @@
 export const NEW_MONSTER_DROPS = {
   // Same bounded late guardian materials; ordinary T4 rolls, no chief-only guarantee.
   necropolis_lord: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
+  // T4 frontier: reuse guardian, rogue and spirit material budgets.
+  ash_reaver: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
+  veil_stalker: { gold:[3,6], stacks:[{id:'fang',count:1},{id:'hide',count:1,chance:.3}], items:[] },
+  cinder_oracle: { gold:[10,16], stacks:[{id:'frost_shard',count:2},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },
   // Succubus placement: exact slinger draws; unchanged explicit S19 hunt tier.
   succubus: { gold:[2,5], stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}], items:[] },
   // Succubus placement end.

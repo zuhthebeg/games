@@ -442,6 +442,15 @@ const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
 // Isolated undead encounter lab only: real living human, existing simple melee donor.
 // No stage references this ID; no ability/stat rebalance or undead identity inheritance.
 MONSTERS.undead_lab_human_melee = { ...MONSTERS.skeleton_minion, lifeState: 'living' };
+// Append after the historical archetypes so their order and host traces remain stable.
+Object.assign(MONSTERS, {
+  ash_reaver: { lifeState:'living', hp:190, r:21, speed:108, poise:85, kbResist:.45,
+    abilities:['chief_cleave','chief_charge','chief_slam'], xp:28, keepRange:[65,115] },
+  veil_stalker: { lifeState:'living', hp:85, r:16, speed:157, poise:26, kbResist:.1,
+    abilities:['goblin_hop','goblin_slash'], xp:16, keepRange:[110,180] },
+  cinder_oracle: { lifeState:'living', hp:92, r:17, speed:92, poise:26, kbResist:.1,
+    abilities:['spirit_bolt'], xp:20, keepRange:[210,300] },
+});
 
 export const STAGES = {
   S1: {
@@ -514,6 +523,9 @@ export const STAGES = {
   S25: stage('구울 소굴', [['ghoul',0,.76,.35],['ghoul',2000,.84,.7],['skeleton_rogue',4000,.88,.5],['ghoul',6000,.9,.25],['skeleton_mage',8000,.8,.65]]),
   S26: stage('망령 회랑', [['ghost',0,.76,.35],['skeleton_warrior',0,.84,.7],['skeleton_mage',2000,.88,.5],['ghost',4000,.9,.25],['skeleton_rogue',6000,.8,.65],['skeleton_mage',8000,.9,.75]]),
   S27: stage('망자의 성소', [['necropolis_lord',0,.78,.5],['skeleton_warrior',0,.86,.3],['skeleton_minion',0,.86,.7],['skeleton_rogue',6000,.9,.25],['skeleton_mage',8000,.9,.75],['skeleton_warrior',10000,.84,.5]]),
+  S28: stage('재의 경계', [['veil_stalker',0,.76,.35],['ash_reaver',0,.84,.7],['veil_stalker',2500,.88,.5],['cinder_oracle',5000,.9,.25]]),
+  S29: stage('붉은 협곡', [['cinder_oracle',0,.76,.35],['veil_stalker',0,.84,.7],['ash_reaver',2800,.88,.5],['cinder_oracle',5000,.9,.25]]),
+  S30: stage('잿불 제단', [['ash_reaver',0,.78,.5],['cinder_oracle',2200,.86,.3],['veil_stalker',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };
