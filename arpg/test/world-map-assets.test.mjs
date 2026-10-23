@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 
 const dir = new URL('../assets/world-map/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
-const expected = ['outskirts', 'forest', 'pass', 'mine', 'swamp', 'throne', 'graveyard', 'necropolis', 'castle'];
+const expected = ['outskirts', 'forest', 'pass', 'mine', 'swamp', 'throne', 'graveyard', 'necropolis', 'castle', 'cinder', 'frost'];
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
 // Parse the encoded bitstream dimensions, not just the provenance's claims.
@@ -21,7 +21,7 @@ function webpSize(bytes) {
   assert.fail('Unexpected WebP encoding: ' + kind);
 }
 
-test('exact nine region landscapes, encoded dimensions, hashes and payload budget', () => {
+test('all registered region landscapes, encoded dimensions, hashes and payload budget', () => {
   assert.deepEqual(manifest.assets.map(asset => asset.id), expected);
   assert.deepEqual(readdirSync(dir).filter(name => name.endsWith('.webp')).sort(), expected.map(id => id + '.webp').sort());
   assert.equal(manifest.reviewStatus, 'passed visual asset inspection');
@@ -38,7 +38,7 @@ test('exact nine region landscapes, encoded dimensions, hashes and payload budge
     hashes.add(asset.outputSha256);
     total += bytes.length;
   }
-  assert.equal(hashes.size, 9);
+  assert.equal(hashes.size, expected.length);
   assert.equal(total, manifest.outputTotalBytes);
   assert.ok(total < 1500000);
   assert.match(manifest.modelSha256, /^[0-9a-f]{64}$/);

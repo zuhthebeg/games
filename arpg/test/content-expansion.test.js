@@ -10,7 +10,7 @@ import { STAGE_XP } from '../js/meta/progression.js';
 import { createSave, SaveStore, validateSave } from '../js/meta/save.js';
 import { createWorld, addPlayer, startStage, step, spawnMonster } from '../js/sim/world.js';
 import { rollDrops } from '../js/meta/items.js';
-import { ATLAS_IDS } from '../js/render/atlas-state.js';
+import { ATLAS_IDS, atlasScale } from '../js/render/atlas-state.js';
 import { SPECIES_AUDIO } from '../js/audio-profile.js';
 import { preset } from '../tools/balance/botsim.mjs';
 import { botInput } from '../tools/balance/bot.js';
@@ -86,6 +86,12 @@ test('recommended character clears each frontier stage and banks a valid next-st
 });
 
 const frostIds=['S31','S32','S33'], frostTypes=['orc_raider','frost_yeti','stone_giant'];
+test('orc atlas is enlarged once without changing combat radius or other monsters',()=>{
+ const orc=spawnMonster(createWorld({seed:42}),'orc_raider',480,400,{stageId:'S31'});
+ assert.equal(atlasScale(orc),1.3*orc.sizeScale);
+ assert.equal(orc.r,MONSTERS.orc_raider.r*orc.sizeScale);
+ assert.equal(atlasScale({type:'frost_yeti',sizeScale:1}),1);
+});
 test('frost cavern opens only after ash frontier and progresses sequentially',()=>{
  const save=original();for(const id of frostIds)assert.equal(mapUnlocked(save,id),false);
  save.cleared.S30=true;assert.equal(mapUnlocked(save,'S31'),false);

@@ -7,7 +7,7 @@ import { DANGER_COLORS } from '../js/content/monsters.js';
 import { createWorld, addPlayer, startStage } from '../js/sim/world.js';
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 
-test('all twenty stages have distinct, dark, danger-compatible biome palettes', () => {
+test('all registered stages have distinct, dark, danger-compatible biome palettes', () => {
   assert.deepEqual(Object.keys(STAGE_BIOMES).sort(), Object.keys(STAGES).sort());
   assert.ok(Object.keys(BIOMES).length >= 6);
   for (const b of Object.values(BIOMES)) {

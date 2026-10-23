@@ -1,7 +1,7 @@
 // Presentation-only palettes. No collision, simulation RNG or network state.
 const biome = (tiles, path, accent, boundary, props) => ({ tiles, path, accent, boundary, props });
 export const BIOMES = {
-  frost_cavern: biome([0x25343a, 0x2b3b42, 0x213138, 0x304048], 0x3b5159, 0x55707a, 'rocks',
+  frost_cavern: biome([0x25343a, 0x2b3b42, 0x213138, 0x304048], 0x30464b, 0x31484d, 'rocks',
     ['stones', 'crack', 'rune', 'boulder', 'column', 'water', 'pebbles', 'broken_column']),
   cinder_wastes: biome([0x302a29, 0x342d2a, 0x292625, 0x3a3029], 0x493631, 0x5c3b30, 'rocks',
     ['ash', 'crack', 'drygrass', 'stones', 'boulder', 'splinters', 'rune', 'brazier']),
