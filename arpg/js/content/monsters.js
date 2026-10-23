@@ -8,6 +8,7 @@ export const MONSTER_PALETTES = {
   ghoul: [0xffffff], ghost: [0xffffff], bat: [0xffffff],
   demon: [0xffffff], goleling: [0xffffff], slime: [0xffffff],
   succubus: [0xffffff], ash: [0xffffff], frost: [0xffffff],
+  marsh_wasp: [0xe8c87a], bog_wizard: [0xb9a3d8], mire_frog: [0x88b783],
   human: [0xffffff],
   necropolis: [0xffdca0],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
@@ -19,6 +20,7 @@ export const MONSTER_MODELS = [
   'ghoul', 'ghost', 'bat',
   'demon', 'goleling', 'slime',
   'succubus', 'ash_reaver', 'veil_stalker', 'cinder_oracle', 'orc_raider', 'frost_yeti', 'stone_giant',
+  'marsh_wasp', 'bog_wizard', 'mire_frog',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
@@ -26,6 +28,7 @@ export const MONSTER_NAMES = {
   ghoul: '구울', ghost: '유령', bat: '거대 박쥐',
   demon: '악마', goleling: '고링', slime: '슬라임',
   succubus: '서큐버스', ash_reaver: '재의 약탈자', veil_stalker: '장막 추적자', cinder_oracle: '잿불 예언자', orc_raider: '오크 약탈자', frost_yeti: '설원 예티', stone_giant: '바위 거인',
+  marsh_wasp: '습지 말벌', bog_wizard: '늪의 술사', mire_frog: '진흙 개구리',
   gargoyle: '석상 가고일',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
@@ -46,6 +49,9 @@ export const MONSTER_VARIANTS = {
   orc_raider: variant('orc_raider', 'frost', ['orc', 'humanoid'], 'living'),
   frost_yeti: variant('frost_yeti', 'frost', ['beast'], 'beast'),
   stone_giant: variant('stone_giant', 'frost', ['giant', 'humanoid'], 'living'),
+  marsh_wasp: variant('marsh_wasp', 'marsh_wasp', ['insect', 'beast'], 'beast'),
+  bog_wizard: variant('bog_wizard', 'bog_wizard', ['mage', 'humanoid'], 'living'),
+  mire_frog: variant('mire_frog', 'mire_frog', ['amphibian', 'beast'], 'beast'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),
   goleling: variant('goleling', 'goleling', ['goleling', 'crafted'], 'construct'),

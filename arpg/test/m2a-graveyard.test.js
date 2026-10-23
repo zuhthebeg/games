@@ -90,7 +90,7 @@ test('M2a preserves all main combat/identity entries, sprites, sim/net/renderer/
 }));
 
 test('M2a preserves every stage host digest across 216 seeded weapon runs',()=>{
- const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES).filter(id=>!/^S2[1-9]$|^S3[0-3]$/.test(id)));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
+ const e=json('../tools/art/m2a/host-trace-validation.json');const a=read('../tools/art/m2a/host-trace-before.json');const b=read('../tools/art/m2a/host-trace-after.json');assert.equal(e.ok,true);assert.equal(e.cmp_equal,true);assert.equal(e.traces,216);assert.deepEqual(e.stage_ids,Object.keys(combat.STAGES).filter(id=>!/^S2[1-9]$|^S3[0-6]$/.test(id)));assert.equal(sha(a),e.before_sha256);assert.equal(sha(b),e.after_sha256);assert.deepEqual(a,b);
 });
 
 test('M2a states and octants are readonly; humanoid and unknown-profile guards are not relaxed',()=>{

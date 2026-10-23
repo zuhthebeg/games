@@ -410,6 +410,28 @@
       "conversion": "Pillow authored procedural 1536x768 Lanczos WebP quality=82",
       "reviewNotes": "Distinct cavern landscape, empty of UI, creatures, text",
       "sourceLicense": "Original locally authored scene; no third-party content"
+    },
+    {
+      "id": "mire",
+      "prompt": "Original empty dark willow swamp with drowned forest, mushrooms and drifting mist; procedural hand-authored landscape",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 36042,
+      "steps": 0,
+      "guidance": 0,
+      "scheduler": "deterministic procedural",
+      "width": 768,
+      "height": 384,
+      "sourceWindowsPath": "not applicable",
+      "sourceSha256": "6de1ce85eef06a1fe892741119449362cb280f26e33d917fac286c885a1307f8",
+      "sourceBytes": 3333,
+      "outputFile": "mire.webp",
+      "outputSha256": "8c356c563c3ebf4ed9df351eae9bcd46412d7e25a4aec9057fb71a93609efd64",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 10190,
+      "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
+      "reviewNotes": "Distinct willow-and-mushroom mire landscape; no UI, characters or typography",
+      "sourceLicense": "Original locally authored scene; no third-party content"
     }
   ],
   "schemaVersion": 1,
@@ -423,7 +445,7 @@
     768,
     384
   ],
-  "outputTotalBytes": 444766,
+  "outputTotalBytes": 454956,
   "pipelineSkill": "cocy-game-image-pipeline",
   "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
   "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",

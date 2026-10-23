@@ -8,6 +8,7 @@ export const HUMAN_PRESENTATIONS = Object.freeze({
   skeleton_warrior: 'blade', skeleton_rogue: 'blade', skeleton_mage: 'focus',
   ghoul: 'blade', ghost: 'focus', bat: 'blade', demon: 'blade', goleling: 'blade',
   slime: 'blade', succubus: 'bow', ash_reaver: 'blade', veil_stalker: 'blade', cinder_oracle: 'focus', orc_raider: 'blade', frost_yeti: 'blade', stone_giant: 'blade',
+  marsh_wasp: 'blade', bog_wizard: 'focus', mire_frog: 'blade',
 });
 export const ORIGINAL_PRESENTATIONS = Object.freeze(['scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon', 'necropolis_lord']);
 

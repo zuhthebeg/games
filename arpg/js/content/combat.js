@@ -456,6 +456,12 @@ Object.assign(MONSTERS, {
     abilities:['wolf_dash','wolf_bite'], xp:26, keepRange:[45,75] },
   stone_giant: { lifeState:'living', hp:410, r:33, speed:65, heavyPoise:true, poise:115, kbResist:.7,
     abilities:['guardian_crush','guardian_ring'], xp:38, keepRange:[65,115] },
+  marsh_wasp: { lifeState:'beast', hp:88, r:15, speed:155, poise:24, kbResist:.12,
+    abilities:['wolf_dash','spider_bite'], xp:19, keepRange:[48,88] },
+  bog_wizard: { lifeState:'living', hp:138, r:20, speed:87, poise:38, kbResist:.2,
+    abilities:['spirit_bolt','spider_puddle'], xp:28, keepRange:[190,290] },
+  mire_frog: { lifeState:'beast', hp:204, r:22, speed:124, poise:66, kbResist:.38,
+    abilities:['goblin_hop','wolf_bite'], xp:25, keepRange:[45,80] },
 });
 
 export const STAGES = {
@@ -535,6 +541,9 @@ export const STAGES = {
   S31: stage('서리 동굴 입구', [['orc_raider',0,.76,.35],['frost_yeti',0,.84,.7],['orc_raider',2500,.88,.5],['frost_yeti',5000,.9,.25]]),
   S32: stage('얼음 기둥 길', [['stone_giant',0,.76,.35],['frost_yeti',0,.84,.7],['orc_raider',2800,.88,.5],['frost_yeti',5000,.9,.25]]),
   S33: stage('깊은 설원 제단', [['stone_giant',0,.78,.5],['orc_raider',2200,.86,.3],['frost_yeti',4500,.86,.7]]),
+  S34: stage('안개 수렁', [['marsh_wasp',0,.76,.35],['mire_frog',0,.84,.7],['marsh_wasp',2600,.88,.5],['bog_wizard',5200,.9,.25]]),
+  S35: stage('침수된 고목', [['bog_wizard',0,.76,.35],['marsh_wasp',0,.84,.7],['mire_frog',2700,.88,.5],['marsh_wasp',5200,.9,.25]]),
+  S36: stage('독안개 심장', [['bog_wizard',0,.78,.5],['mire_frog',2200,.86,.3],['marsh_wasp',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

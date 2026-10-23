@@ -9,6 +9,9 @@ export const PROFILE_FILES = Object.freeze(['bone-hit', 'dry-hit', 'ghost-hit', 
   'perfect-dodge', 'counter-hit']);
 const species = (hit, death, pitch = 1) => Object.freeze({ hit, death, pitch });
 export const SPECIES_AUDIO = Object.freeze({
+  marsh_wasp: species('bat-hit', 'bat-death', 1.25),
+  bog_wizard: species('ghost-hit', 'ghost-death', .92),
+  mire_frog: species('boar-hit', 'boar-death', 1.16),
   orc_raider: species('goblin-hit', 'goblin-death', .83),
   frost_yeti: species('boar-hit', 'boar-death', .9),
   stone_giant: species('stone-hit', 'stone-death', .7),

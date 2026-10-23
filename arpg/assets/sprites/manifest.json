@@ -987,5 +987,92 @@
       "death": 0.6
     },
     "cacheVersion": "8e670c57968e"
+  },
+  {
+    "id": "marsh_wasp",
+    "label": "습지 말벌",
+    "monster": true,
+    "content_ids": [
+      "marsh_wasp"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 5,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6516050100326538
+    },
+    "bytes": 317925,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "ede2976cc3a5"
+  },
+  {
+    "id": "bog_wizard",
+    "label": "늪의 술사",
+    "monster": true,
+    "content_ids": [
+      "bog_wizard"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.8566641956567764
+    },
+    "bytes": 239887,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "9ae0172d133d"
+  },
+  {
+    "id": "mire_frog",
+    "label": "진흙 개구리",
+    "monster": true,
+    "content_ids": [
+      "mire_frog"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5673125982284546
+    },
+    "bytes": 194801,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "202ee0b5888e"
   }
 ]

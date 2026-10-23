@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 
 const dir = new URL('../assets/world-map/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
-const expected = ['outskirts', 'forest', 'pass', 'mine', 'swamp', 'throne', 'graveyard', 'necropolis', 'castle', 'cinder', 'frost'];
+const expected = ['outskirts', 'forest', 'pass', 'mine', 'swamp', 'throne', 'graveyard', 'necropolis', 'castle', 'cinder', 'frost', 'mire'];
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
 // Parse the encoded bitstream dimensions, not just the provenance's claims.

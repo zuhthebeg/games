@@ -9,6 +9,7 @@ export const ATLAS_IDS = Object.freeze({
   succubus: 'succubus',
   ash_reaver: 'ash_reaver', veil_stalker: 'veil_stalker', cinder_oracle: 'cinder_oracle',
   orc_raider: 'orc_raider', frost_yeti: 'frost_yeti', stone_giant: 'stone_giant',
+  marsh_wasp: 'marsh_wasp', bog_wizard: 'bog_wizard', mire_frog: 'mire_frog',
   rune_guardian: 'rune-guardian', spirit: 'spirit',
   blade: 'hero-sword',
   death_knight: 'player-death-knight',
