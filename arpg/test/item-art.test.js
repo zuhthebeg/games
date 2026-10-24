@@ -46,7 +46,8 @@ test('empty sockets and unknown/missing art retain SVG; forge gets real stone pi
   assert.ok(!itemIcon('future-unreviewed-item', {}).includes('<img'));
   assert.equal(itemArtPath('unknown'), null);
   assert.ok(!itemIcon('unknown-family', {slot:'weapon',family:'future'}).includes('<img'));
-  for (let n=1;n<=3;n++) assert.ok(icon(`enhance_stone_${n}`).includes('<picture>'));
+  for (const id of ['enhance_stone_1','enhance_stone_blessed','enhance_stone_cursed']) assert.ok(itemIcon(id,ITEMS[id]).includes('<picture>'));
+  assert.ok(!icon('enhance_stone_3').includes('<picture>'), 'retired greater-stone alias has no active art');
 });
 
 test('delivered WebPs match source manifest and stay below legacy 200 KiB + T4 32 KiB total', () => {

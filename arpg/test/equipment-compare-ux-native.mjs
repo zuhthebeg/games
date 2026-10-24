@@ -1,5 +1,6 @@
 import {chromium} from '/home/cocy/.openclaw/workspace/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
+import {ENCHANT} from '../js/meta/economy.js';
 import {spawn,execFileSync} from 'node:child_process';
 import {writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -23,6 +24,9 @@ try {
     const close=()=>press('dialog[open] [data-action="close-sheet"]');
     const state=()=>page.evaluate(()=>({raw:fixture.raw(),save:JSON.stringify(fixture.hub.save),commits:probe.commits}));
     const layout=async()=>{const l=await page.evaluate(()=>{const d=document.querySelector('dialog[open]'),r=d.getBoundingClientRect();return{width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,dialogOverflow:d.scrollWidth>d.clientWidth,footer:d.querySelector('footer').getBoundingClientRect().bottom<=innerHeight+1,bad:[...d.querySelectorAll('button,input,table')].filter(n=>{const b=n.getBoundingClientRect();return b.left<r.left-1||b.right>r.right+1}).map(n=>n.textContent)}});assert.equal(l.overflow,false);assert.equal(l.dialogOverflow,false);assert.equal(l.footer,true);assert.deepEqual(l.bad,[]);return l;};
+    // The synthetic HTML fixture predates max20 and its old shop seed no longer rolls a bow.
+    // Keep the same-form purchase assertion: select a legitimate bow-stock seed, not a mocked shop.
+    await page.route('**/equipment-compare-ux-native.html',async route=>{let body=await readFile(root+'/arpg/test/equipment-compare-ux-native.html','utf8');body=body.replace('const s=trained();',"const s=trained();for(let seed=1;!shopStock(s.createdAt,s.shopRefresh).some(i=>ITEMS[i.id].family==='bow')&&seed<1000;seed++)s.createdAt=seed;").replace(".enhance=12;",'.enhance='+ENCHANT.max+';');await route.fulfill({contentType:'text/html',body});});
     await page.goto(base+'/arpg/test/equipment-compare-ux-native.html');await page.waitForFunction(()=>window.ready);
     await press('[data-action="socket"][data-slot="weapon"]');
     assert.equal(await page.locator('dialog[open] footer>.item-enhance-action [data-action="socket-forge"]').getAttribute('data-uid'),'bow');
@@ -37,15 +41,15 @@ try {
     assert.equal(await page.locator('#compare-ignore-enhancement').evaluate(n=>n===document.activeElement),true);
     assert.notEqual(await page.locator('[data-line="attack"]').first().getAttribute('data-from'),actualAttack);
     assert.equal(await page.locator('.own-details').getAttribute('open'),'');assert.equal(await page.locator('[data-comparison-group="affixes"]').getAttribute('open'),'');
-    assert.deepEqual(await state(),initial);assert.match(await page.locator('.p2-weight-after').innerText(),/실제 장착 후 소지/);
+    assert.deepEqual(await state(),initial);assert.match(await page.locator('.p2-weight-after').innerText(),/장착 후 소지/);
     await press('#compare-ignore-enhancement');assert.equal(await page.locator('[data-line="attack"]').first().getAttribute('data-from'),actualAttack);assert.deepEqual(await state(),initial);
     layouts.push(await layout());
     await press('dialog[open] footer>.item-enhance-action [data-action="socket-forge"]');
     assert.equal(await page.evaluate(()=>fixture.hub.selectedUid),'bow2');assert.equal(await page.evaluate(()=>fixture.hub.forgeTab),'enhance');assert.deepEqual(await state(),initial);
-    assert.match(await page.locator('.action-footer').innerText(),/강화석 부족/);
+    assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await page.locator('.action-footer [data-action="enhance"]').isDisabled(),true);assert.match(await page.locator('.forge-work').innerText(),/강화석 부족/);
     // Bag and seller owned details use the same footer slot; maximum is disabled with reason.
     await press('[data-action="inn"]');await press('[data-action="inventory"]');await press('[data-action="open-item"][data-uid="staff"]');
-    assert.equal(await page.locator('.item-enhance-action button').isDisabled(),true);assert.match(await page.locator('#item-enhance-reason').innerText(),/최대 강화 \+12/);await close();
+    assert.equal(await page.locator('.item-enhance-action button').isDisabled(),true);assert.match(await page.locator('#item-enhance-reason').innerText(),new RegExp('최대 강화 \\+'+ENCHANT.max));await close();
     await press('[data-action="inn"]');await press('[data-action="merchant"]');await press('[data-action="merchant-tab"][data-tab="sell"]');await press('[data-action="open-item"][data-uid="bow2"]');
     assert.equal(await page.locator('footer>.item-enhance-action button').getAttribute('data-uid'),'bow2');await close();
     await press('[data-action="merchant-tab"][data-tab="weapon"]');const stock=await page.evaluate(()=>fixture.stock);await press(`[data-action="open-item"][data-uid="${stock}"]`);

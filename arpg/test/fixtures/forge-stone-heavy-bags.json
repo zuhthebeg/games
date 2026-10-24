@@ -1,0 +1,132 @@
+{
+  "S20:14": {
+    "skipped": 1,
+    "tempLoot": {
+      "gold": 3932,
+      "items": [],
+      "stacks": {
+        "scrap": 77,
+        "enhance_stone_1": 351,
+        "rune_shard": 15,
+        "frost_shard": 16,
+        "silver_ingot": 13,
+        "hide": 48,
+        "wood": 48,
+        "fang": 23,
+        "potion": 2,
+        "mana_potion": 1,
+        "enhance_stone_blessed": 4
+      }
+    }
+  },
+  "S20:58": {
+    "skipped": 1,
+    "tempLoot": {
+      "gold": 3945,
+      "items": [
+        {
+          "uid": "drop:2654435715:rolled:0:tower_shield_rare",
+          "id": "tower_shield_rare",
+          "enhance": 5,
+          "affixes": [
+            {
+              "k": "mana_pct",
+              "v": 4
+            },
+            {
+              "k": "wis_flat",
+              "v": 3
+            }
+          ],
+          "rolledAt": 3783067030
+        }
+      ],
+      "stacks": {
+        "scrap": 77,
+        "enhance_stone_1": 349,
+        "rune_shard": 15,
+        "frost_shard": 14,
+        "silver_ingot": 13,
+        "hide": 48,
+        "wood": 48,
+        "fang": 19,
+        "potion": 6,
+        "enhance_stone_blessed": 6,
+        "mana_potion": 1
+      }
+    }
+  },
+  "S20:99": {
+    "skipped": 1,
+    "tempLoot": {
+      "gold": 3924,
+      "items": [
+        {
+          "uid": "drop:2654435802:rolled:0:warden_plate_rare",
+          "id": "warden_plate_rare",
+          "enhance": 5,
+          "affixes": [
+            {
+              "k": "int_flat",
+              "v": 7
+            },
+            {
+              "k": "potion_pct",
+              "v": 13
+            }
+          ],
+          "rolledAt": 3783067087
+        }
+      ],
+      "stacks": {
+        "scrap": 76,
+        "enhance_stone_1": 214,
+        "rune_shard": 15,
+        "frost_shard": 17,
+        "silver_ingot": 15,
+        "hide": 48,
+        "fang": 18,
+        "wood": 48,
+        "potion": 1,
+        "enhance_stone_blessed": 4,
+        "mana_potion": 3
+      }
+    }
+  },
+  "S20:3:13": {
+    "skipped": 10,
+    "tempLoot": {
+      "gold": 3703,
+      "items": [
+        {
+          "uid": "drop:2654435764:rolled:0:warden_blade_rare",
+          "id": "warden_blade_rare",
+          "enhance": 2,
+          "affixes": [
+            {
+              "k": "dodge_pct",
+              "v": 15
+            },
+            {
+              "k": "potion_pct",
+              "v": 3
+            }
+          ],
+          "rolledAt": 3783067041
+        }
+      ],
+      "stacks": {
+        "scrap": 74,
+        "fang": 27,
+        "enhance_stone_1": 327,
+        "rune_shard": 14,
+        "frost_shard": 15,
+        "silver_ingot": 15,
+        "hide": 45,
+        "wood": 45,
+        "enhance_stone_blessed": 5,
+        "potion": 2
+      }
+    }
+  }
+}

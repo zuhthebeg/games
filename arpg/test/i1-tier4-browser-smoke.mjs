@@ -114,16 +114,16 @@ try {
       for(const id of ${JSON.stringify(rare)}){let item;for(let seed=0;seed<1000&&!item;seed++)item=rollDrops('throne_dragon',seed,{boss:true,huntTier:3}).items.find(i=>i.id===id);if(!item)throw Error(id);s.items.push(item);}
       new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
-    await activate('[data-action="forge"]');await activate('[data-action="forge-tab"][data-tab="salvage"]');
+    await activate('[data-action="forge"]');await activate('[data-action="forge-tab"][data-tab="craft"]');
     assert.match(await evaluate('document.querySelector(".craft-list").textContent'),/수호룡 비늘: 1/);await audit();
     const recipes=await evaluate(`(async()=>{const {RECIPES}=await import('./js/meta/items.js');return RECIPES;})()`);
     const crafted=[];
     for(const id of common){
-      await activate('[data-action="forge-tab"][data-tab="salvage"]');
-      const path=await decode(`.recipe:has([data-action="craft"][data-id="${id}"]) img`);assert.deepEqual(path,[`assets/items/${id.replaceAll('_','-')}.webp`]);
+      await activate('[data-action="forge-tab"][data-tab="craft"]');
+      const piece='[data-action="forge-piece"][data-id="'+id+'"]',grouped=await evaluate('!!document.querySelector('+JSON.stringify(piece)+')');if(grouped)await activate(piece);const path=await decode(grouped?piece+' img':`.recipe:has([data-action="craft"][data-id="${id}"]) img`);assert.deepEqual(path,[`assets/items/${id.replaceAll('_','-')}.webp`]);
       const before=await snapshot();await activate(`[data-action="craft"][data-id="${id}"]`);const made=await snapshot();assert.equal(made.items.at(-1).id,id);
       const recipe=recipes[id];assert.equal(made.gold,before.gold-recipe.gold);for(const [k,n]of Object.entries(recipe))if(k!=='gold')assert.equal(made.stacks[k],before.stacks[k]-n);
-      crafted.push({id,uid:made.items.at(-1).uid,path:path[0]});
+      await waitFor('!document.querySelector(".craft-fx")');crafted.push({id,uid:made.items.at(-1).uid,path:path[0]});
     }
     assert.equal(await evaluate(`document.querySelector('[data-action="craft"][data-id="dragonfang_blade"]')===null&&document.querySelector('[data-action="craft"][data-id="dragon_scale_armor"]')===null`),true);
     await activate('[data-action="inn"]');await activate('[data-action="inventory"]');
@@ -145,7 +145,7 @@ try {
     const beforeReload=await snapshot();await command('Page.reload');await waitFor(page('inn'));assert.deepEqual(await snapshot(),beforeReload);
     // Persist only a fixture change; native forge controls must disable every T4 recipe without a scale.
     await evaluate(`(async()=>{const {SaveStore}=await import('./js/meta/save.js');const store=new SaveStore(localStorage),s=store.load();s.stacks.dragon_scale=0;store.save(s);})()`);
-    await command('Page.reload');await waitFor(page('inn'));await activate('[data-action="forge"]');await activate('[data-action="forge-tab"][data-tab="salvage"]');
+    await command('Page.reload');await waitFor(page('inn'));await activate('[data-action="forge"]');await activate('[data-action="forge-tab"][data-tab="craft"]');
     for(const id of common)assert.equal(await evaluate(`document.querySelector('[data-action="craft"][data-id="${id}"]').disabled`),true);
     states.push({width,height,input:keyboard?'native keyboard Enter':'native touch',crafted,comparisons,scaleRow:true,missingScaleDisabled:8,saveReload:true});
   }

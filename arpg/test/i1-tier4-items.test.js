@@ -11,6 +11,7 @@ import { statBudget, BASE_STATS, STAT_KEYS } from '../js/meta/stats.js';
 import { itemArtKey, itemArtPath } from '../js/ui/item-art.js';
 import { shopStock } from '../js/meta/shop.js';
 import { HubUI } from '../js/ui/hub.js';
+import { projectLegacyStones } from './fixtures/greater-stone-drop-cases.js';
 const common = ['revenant_blade','bone_bow','soulfire_wand','gravekeeper_staff','ossuary_maul','shroud_robe','shadow_leather','ossuary_plate'];
 const rare = ['dragonfang_blade','dragon_scale_armor'];
 const fresh = () => {const s=createSave({name:'I1',answers:[0,0,0,0,0],createdAt:123});s.gold=100000;s.level=30;s.stats={...BASE_STATS,str:100};s.statPoints=statBudget(s.level)-STAT_KEYS.reduce((n,k)=>n+s.stats[k]-BASE_STATS[k],0);for(const r of Object.values(RECIPES))for(const k of Object.keys(r))if(k!=='gold')s.stacks[k]=1000;return s;};
@@ -71,12 +72,12 @@ test('B 1,000 seeds / existing monster / contexts: exact pre-B gold/consumable/s
   const a=rollDrops(m,seed,c);if(m==='throne_dragon')assert.equal(a.stacks.dragon_scale,1);
   const previous=old.drops[ix++];
   // New authored boss identities intentionally change their former normal-rank rewards.
-  if(c.boss || !['rune_guardian','gargoyle','throne_dragon'].includes(m))assert.equal(JSON.stringify(stable(a)),previous,`${m}/${seed}/${JSON.stringify(c)}`);
+  if(c.boss || !['rune_guardian','gargoyle','throne_dragon'].includes(m))assert.deepEqual(stable(a),projectLegacyStones(JSON.parse(previous)),`${m}/${seed}/${JSON.stringify(c)}`);
   else assert.ok(a.items.length&&a.items.every(i=>['rare','epic'].includes(ITEMS[i.id].rarity)));
  }
 });
 test('I1 UI labels and new material render from definitions with no schema/UI redesign',()=>{
- const h=Object.assign(Object.create(HubUI.prototype),{save:fresh(),forgeTab:'salvage',showInnPanel:(_t,html)=>h.html=html});h.showForge();
+ const h=Object.assign(Object.create(HubUI.prototype),{save:fresh(),forgeTab:'craft',showInnPanel:(_t,html)=>h.html=html});h.showForge();
  assert.match(h.html,/수호룡 비늘: 1/);for(const id of common)assert.ok(h.html.includes(`data-id="${id}"`));
  for(const id of rare)assert.ok(!h.html.includes(`data-id="${id}"`));assert.doesNotMatch(h.html,/undefined|NaN/);
 });

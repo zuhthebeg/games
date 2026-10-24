@@ -19,8 +19,8 @@ for (const lineage of ['human','skeleton_knight']) {
     assert.doesNotMatch(hub.html,/data-action="craft-hub"/);
     assert.equal((hub.html.match(/data-action="forge"/g)||[]).length,1);
     hub.action('forge',{});assert.equal(hub.page,'forge');
-    hub.action('forge-tab',{tab:'salvage'});
-    assert.match(hub.html,/data-forge-tab="salvage"/);
+    hub.action('forge-tab',{tab:'craft'});
+    assert.match(hub.html,/data-forge-tab="craft"/);
     assert.match(hub.html,/class="craft-list"/);
     assert.deepEqual(hub.save,before);
   });

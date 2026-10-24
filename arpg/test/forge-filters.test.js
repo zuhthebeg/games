@@ -5,7 +5,7 @@ import {createSave} from '../js/meta/save.js';
 import {ITEMS,RECIPES,craft,craftingRecipes} from '../js/meta/items.js';
 import {noteMaterials,recipeRevealed} from '../js/meta/recipe-discovery.js';
 const fresh=()=>createSave({name:'Filters',answers:[0,0,0,0,0],createdAt:1});
-const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'salvage',showInnPanel(_title,html){this.html=html;},commit(next){this.save=next;}});
+const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'craft',showInnPanel(_title,html){this.html=html;},commit(next){this.save=next;}});
 const ids=html=>[...html.matchAll(/data-recipe-id="([^"]+)"/g)].map(m=>m[1]).sort((a,b)=>craftingRecipes().findIndex(([id])=>id===a)-craftingRecipes().findIndex(([id])=>id===b));
 const rich=()=>noteMaterials({...fresh(),gold:1000000,stacks:Object.fromEntries(Object.keys(ITEMS).filter(k=>ITEMS[k].kind==='material').map(k=>[k,10000]))});
 const affordable=(s,id)=>Object.entries(RECIPES[id]).every(([k,n])=>(k==='gold'?s.gold:s.stacks[k]||0)>=n);
@@ -33,12 +33,12 @@ test('rich data-driven categories combine in both modes; entry resets, tab switc
   hub.action('forge-recipe-mode',{mode});hub.action('forge-recipe-kind',{kind});
   const expected=craftingRecipes().map(([id])=>id).filter(id=>recipeRevealed(save,id)&&(kind==='all'||(ITEMS[id].slot ? (['weapon','offhand'].includes(ITEMS[id].slot) ? ITEMS[id].slot : 'armor') : 'material')===kind));assert.deepEqual(ids(hub.html),expected);
  }
- hub.action('forge-recipe-kind',{kind:'weapon'});hub.action('forge-tab',{tab:'enhance'});assert.deepEqual(ids(hub.html),[]);hub.action('forge-tab',{tab:'salvage'});assert.ok(ids(hub.html).every(id=>ITEMS[id].slot==='weapon'));
- hub.action('forge',{});hub.action('forge-tab',{tab:'salvage'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id));assert.equal(hub.forgeRecipeMode,'craftable');assert.equal(hub.forgeRecipeKind,'all');
+ hub.action('forge-recipe-kind',{kind:'weapon'});hub.action('forge-tab',{tab:'enhance'});assert.deepEqual(ids(hub.html),[]);hub.action('forge-tab',{tab:'craft'});assert.ok(ids(hub.html).every(id=>ITEMS[id].slot==='weapon'));
+ hub.action('forge',{});hub.action('forge-tab',{tab:'craft'});assert.deepEqual(ids(hub.html),craftingRecipes().map(([id])=>id));assert.equal(hub.forgeRecipeMode,'craftable');assert.equal(hub.forgeRecipeKind,'all');
 });
 
 test('exact craft cost and enhancement route remain; unaffordable crafting still rejects',()=>{
- const save=rich(),hub=hubFor(save);hub.action('craft',{id:'iron_sword'});assert.deepEqual(hub.save,craft(save,'iron_sword'));assert.equal(hub.forgeTab,'salvage');assert.equal(hub.selectedUid,hub.save.items.at(-1).uid);
+ const save=rich(),hub=hubFor(save);hub.action('craft',{id:'iron_sword'});assert.deepEqual(hub.save,craft(save,'iron_sword'));assert.equal(hub.forgeTab,'craft');assert.equal(hub.selectedUid,hub.save.items.at(-1).uid);
  const poor=hubFor({...fresh(),gold:0,stacks:{}});assert.throws(()=>poor.action('craft',{id:'iron_sword'}));
 });
 

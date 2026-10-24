@@ -8,8 +8,8 @@ import {allocateStats,statBudget,effectiveStats} from '../js/meta/stats.js';
 import {addXp} from '../js/meta/progression.js';
 import {HubUI} from '../js/ui/hub.js';
 import {splitComparisonHtml} from '../js/ui/gear-view.js';
-const rich=()=>({...createSave({name:'Quality',answers:[0,0,0,0,0],createdAt:1}),gold:1000000,stacks:Object.fromEntries(Object.entries(ITEMS).filter(([,d])=>d.kind==='material'&&!d.legacy).map(([id])=>[id,10000]))});
-const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'salvage',forgeRecipeMode:'all',showInnPanel(_t,html){this.html=html;},commit(next){this.save=next;}});
+const rich=()=>({...createSave({name:'Quality',answers:[0,0,0,0,0],createdAt:1}),gold:1000000,stacks:Object.fromEntries(Object.entries(ITEMS).filter(([,d])=>d.kind==='material'&&!d.legacy&&d!==ITEMS.enhance_stone_3).map(([id])=>[id,10000]))});
+const hubFor=save=>Object.assign(Object.create(HubUI.prototype),{save,forgeTab:'craft',forgeRecipeMode:'all',showInnPanel(_t,html){this.html=html;},commit(next){this.save=next;}});
 test('one recipe per equipment base; legacy definitions and paid recipe budgets survive',()=>{
  const rows=items.craftingRecipes();const families=rows.filter(([id])=>ITEMS[id].slot).map(([id])=>ITEMS[id].baseId);assert.equal(new Set(families).size,families.length);
  for(const [id,recipe] of Object.entries(RECIPES)){assert.ok(ITEMS[id]);if(!ITEMS[id].slot){assert.ok(rows.some(([key])=>key===id));continue;}const base=ITEMS[id].baseId;assert.ok(rows.some(([key,cost])=>key===base&&cost===RECIPES[base]));const s=rich(),made=craft(s,id),result=made.items.at(-1);assert.ok(['fine','rare','epic'].includes(ITEMS[result.id].rarity),id);assert.equal(s.gold-made.gold,recipe.gold);assert.equal(ITEMS[result.id].baseId,base);assert.ok(validateSave(made),id);assert.equal(items.craftRecipeId(result),id);}

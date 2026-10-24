@@ -514,16 +514,19 @@ try {
   await command('Page.reload');
   await waitFor(page('inn'));
   await click('[data-action="forge"]');
-  await click('[data-action="forge-tab"][data-tab="salvage"]');
-  await click('[data-action="craft"][data-id="iron_sword"]');
+  await click('[data-action="forge-tab"][data-tab="craft"]');
+  await click('[data-action="craft"][data-id="iron_sword"]');await waitFor('!document.querySelector(".craft-fx")');
+  assert.equal(await evaluate('document.querySelector("[data-forge-tab]").dataset.forgeTab'),'craft');
+  await click('[data-action="forge-tab"][data-tab="enhance"]');
   await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');await waitFor("!document.querySelector('[data-enchant-fx]')");
-  await click('[data-action="forge-tab"][data-tab="salvage"]');
-  await click('[data-action="equip"][data-uid="craft:iron_sword:1"]');
+  await click('[data-action="inn"]');await click('[data-action="inventory"]');await click('[data-action="open-item"][data-uid="craft:iron_sword:1"]');
+  await click('dialog[open] [data-action="equip"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.equipped.weapon'), 'craft:iron_sword:1');
-  assert.ok(await evaluate(
-    "document.querySelector('[data-action=\"dismantle\"][data-uid=\"craft:iron_sword:1\"]').disabled"));
-  await click('[data-action="select-gear"][data-uid="starter:weapon"]');
-  await click('[data-action="equip"][data-uid="starter:weapon"]');
+  await click('[data-action="inn"]');await click('[data-action="forge"]');await click('[data-action="forge-tab"][data-tab="salvage"]');
+  assert.ok(await evaluate("document.querySelector('[data-action=\"dismantle\"][data-uid=\"craft:iron_sword:1\"]').disabled"));
+  assert.equal(await evaluate('!!document.querySelector(".forge-salvage [data-action=equip]")'),false);
+  await click('[data-action="inn"]');await click('[data-action="inventory"]');await click('[data-action="open-item"][data-uid="starter:weapon"]');await click('dialog[open] [data-action="equip"][data-uid="starter:weapon"]');
+  await click('[data-action="inn"]');await click('[data-action="forge"]');await click('[data-action="forge-tab"][data-tab="salvage"]');
   await click('[data-action="select-gear"][data-uid="craft:iron_sword:1"]');
   await click('[data-action="dismantle"][data-uid="craft:iron_sword:1"]');
   assert.ok(await evaluate("!!document.querySelector('dialog[open]')"), 'dismantle must ask for confirmation');

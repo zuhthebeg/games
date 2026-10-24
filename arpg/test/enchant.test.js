@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import { instance, dismantle, rollDrops } from '../js/meta/items.js';
-import { ENCHANT, enhanceMultiplier } from '../js/meta/economy.js';
-import { enchant, enchantPreview, crackGreaterStone } from '../js/meta/enchant.js';
+import { ENCHANT, GREATER_STONE_EQUIVALENT, enhanceMultiplier } from '../js/meta/economy.js';
+import { enchant, enchantPreview } from '../js/meta/enchant.js';
 
 const fresh = (createdAt = 7) => createSave({ name: '강화 시험', answers: [0, 0, 0, 0, 0], createdAt });
 const W = 'enhance_stone_1', A = W, BW = 'enhance_stone_blessed', CW = 'enhance_stone_cursed';
@@ -143,27 +143,28 @@ test('+20 caps all jumps and save validation while +12 and older saves still rou
   assert.equal(validateSave(weaponAt(withStones(fresh()),21)),false);
 });
 
-test('greater stone keeps 5~10 attempts of value as 25~50 plain stones, seeded and replayable', () => {
-  const counts=new Set();
-  for(let seed=1;seed<=400;seed++) {
-    const base=withStones(fresh(seed));base.stacks.enhance_stone_3=1;
-    const attempt=crackGreaterStone(base),{save,result}=attempt;
-    assert.equal(result.id,W);assert.ok(result.count>=25&&result.count<=50);assert.equal(result.count%5,0);counts.add(result.count);
-    assert.equal(save.stacks.enhance_stone_3,0);assert.equal(save.stacks[W],base.stacks[W]+result.count);
-    assert.deepEqual(crackGreaterStone(base),attempt);assert.ok(validateSave(save));
+test('a legacy greater stone loads as exactly 38 plain stones, deterministically, and enchanting never cracks it again', () => {
+  assert.equal(GREATER_STONE_EQUIVALENT, 38);
+  for (let seed = 1; seed <= 400; seed++) {
+    const legacy = withStones(fresh(seed)); legacy.stacks.enhance_stone_3 = 1 + seed % 7;
+    const storage = new Map([[SAVE_KEY, JSON.stringify(legacy)]]);
+    const store = () => new SaveStore({ getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: (k) => storage.delete(k) });
+    const loaded = store().load();
+    assert.equal(loaded.stacks[W], legacy.stacks[W] + 38 * legacy.stacks.enhance_stone_3);
+    assert.equal(Object.hasOwn(loaded.stacks, 'enhance_stone_3'), false);
+    assert.deepEqual(store().load(), loaded); assert.ok(validateSave(loaded));
   }
-  assert.equal(counts.size,6);assert.throws(()=>crackGreaterStone(fresh()),/상급/);
 });
 
-test('dismantle refund scales with enhance; +7 and above also give the greater stone', () => {
+test('dismantle refund scales with enhance; the old greater share is paid as 38 plain stones each, never a greater stone', () => {
   const base = fresh();
   for (let level = 0; level <= ENCHANT.max; level++) {
     const save = structuredClone(base);
     save.items.push({ ...instance('spare', 'iron_sword', 1, []), enhance: level });
     const next = dismantle(save, 'spare');
-    assert.equal(next.stacks.enhance_stone_1 || 0, ENCHANT.dismantleStones[level]);
-    assert.equal(next.stacks.enhance_stone_3 || 0, ENCHANT.dismantleGreater[level]);
-    assert.equal((next.stacks.enhance_stone_3 || 0) > 0, level >= 7);
+    assert.equal(next.stacks.enhance_stone_1 || 0, ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38);
+    assert.equal(Object.hasOwn(next.stacks, 'enhance_stone_3'), false);
+    assert.equal(ENCHANT.dismantleGreater[level] > 0, level >= 7);
     assert.ok(validateSave(next));
   }
   // Monotone, and a destroyed item always leaves less than dismantling it would have.
@@ -216,8 +217,8 @@ test('removed scroll saves reject safely and valid special stones load normally'
   }
 });
 
-test('forge salvage shows and pays exact plain/greater refund for dropped enhanced gear', async () => {
+test('forge salvage shows and pays the exact combined plain-stone refund for dropped enhanced gear', async () => {
  const {HubUI}=await import('../js/ui/hub.js');const h=Object.create(HubUI.prototype);h.save=withStones(fresh());h.selectedUid='drop:42:weapon';h.save.items.push({...instance(h.selectedUid,'iron_sword',1,[]),enhance:9});
- assert.match(h.forgeSalvageHtml(),/강화석: 18.*상급 강화석: 2/);
- const next=dismantle(h.save,h.selectedUid);assert.equal(next.stacks[W]-h.save.stacks[W],18);assert.equal(next.stacks.enhance_stone_3,2);
+ assert.match(h.forgeSalvageHtml(),/강화석: 94/);
+ const next=dismantle(h.save,h.selectedUid);assert.equal(next.stacks[W]-h.save.stacks[W],18+2*38);assert.equal(Object.hasOwn(next.stacks,'enhance_stone_3'),false);
 });

@@ -8,7 +8,7 @@ import { instance } from '../js/meta/items.js';
 import { ENCHANT, STONE, BLESSED_STONE } from '../js/meta/economy.js';
 import { PORTRAIT_DIRECTIONS, setPortraitDirection } from '../js/render/paperdoll-portrait.js';
 const fresh = () => createSave({name:'H1',answers:[0,0,0,0,0],createdAt:1});
-const hub = () => Object.assign(Object.create(HubUI.prototype), {save:fresh(), dialogHtml:(title,body,footer)=>footer, mountSheet(html){this.html=html;}, openEnhancement(){this.forgeShown=true;}});
+const hub = () => Object.assign(Object.create(HubUI.prototype), {save:fresh(), dialogHtml:(title,body,footer)=>footer, mountSheet(html){this.html=html;}, closeSheet(){},showForge(){this.forgeShown=true;}});
 
 test('socket footer has merchant and selected-equipment forge shortcut; max/empty disabled', () => {
   const h=hub();h.showSocket('weapon');

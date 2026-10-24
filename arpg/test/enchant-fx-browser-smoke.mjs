@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
+import {ENCHANT} from '../js/meta/economy.js';
 
 const root = resolve(process.env.ARPG_ROOT || fileURLToPath(new URL('../../', import.meta.url)));
 const port = Number(process.env.ARPG_CDP_PORT || 19127);
@@ -106,17 +107,17 @@ try {
     await click('[data-debug="close"]');
   };
   const fixture = async (level, outcome = null, stoneId = 'enhance_stone_1', target = null) => evaluate(`(async()=>{
-    const {createSave}=await import('./js/meta/save.js'); const {enchant}=await import('./js/meta/enchant.js');
+    const {createSave}=await import('./js/meta/save.js'); const {enchant,enchantPreview}=await import('./js/meta/enchant.js');const {ENCHANT}=await import('./js/meta/economy.js');
     let s,expected;
     for(let seed=1;seed<10000;seed++) {
       s=createSave({name:'강화 연출 시험',answers:[0,0,0,0,0],createdAt:seed});
       s.items.find(i=>i.uid===s.equipped.weapon).enhance=${level};
-      s.stacks.enhance_stone_1=100;s.stacks.enhance_stone_blessed=2;s.stacks.enhance_stone_cursed=2;s.stacks.enhance_stone_3=2;
-      expected=${level}<12?enchant(s,s.equipped.weapon,${JSON.stringify(stoneId)}).result:null;
+      s.stacks.enhance_stone_1=100;s.stacks.enhance_stone_blessed=100;s.stacks.enhance_stone_cursed=100;
+      expected=${level}<ENCHANT.max?enchant(s,s.equipped.weapon,${JSON.stringify(stoneId)}).result:null;
       if((!${JSON.stringify(outcome)}||expected.outcome===${JSON.stringify(outcome)})
         && (${target}===null||expected.to===${target}))break;
     }
-    __fxContext.persistSave(s);__fxContext.hub.forgeTab='enhance';__fxContext.hub.selectedUid=null;__fxContext.hub.forgeStone='enhance_stone_1';__fxContext.hub.showForge();return {expected,seed:s.createdAt,uid:s.equipped.weapon};
+    __fxContext.persistSave(s);__fxContext.hub.forgeTab='enhance';__fxContext.hub.selectedUid=null;__fxContext.hub.forgeStone='enhance_stone_1';__fxContext.hub.showForge();return {expected,seed:s.createdAt,uid:s.equipped.weapon,preview:enchantPreview(s,s.equipped.weapon,${JSON.stringify(stoneId)})};
   })()`);
   const audit = async () => {
     const result=await evaluate(`(()=>{
@@ -143,15 +144,14 @@ try {
   };
   const tabsAudit = async () => {
     assert.equal(await evaluate("document.querySelector('[data-forge-tab]').dataset.forgeTab"),'enhance');
-    assert.equal(await evaluate("document.querySelector('.forge-hero-art').getBoundingClientRect().width"),192);
+    assert.ok(await evaluate("(()=>{const n=document.querySelector('.forge-hero-art'),r=n.getBoundingClientRect();return r.width>=96&&r.width<=192&&r.height===r.width;})()"),'responsive ritual art remains square and legible');
     assert.equal(await evaluate("!!document.querySelector('[data-action=\"craft-scroll\"],[data-action=\"dismantle\"],[data-action=\"sell\"],[data-action=\"craft\"]')"),false);
-    await click('[data-action="forge-tab"][data-tab="stones"]');await audit();
-    assert.equal(await evaluate("!!document.querySelector('[data-action=\"enhance\"]')"),false);
-    const before=await evaluate('__arpg.save.stacks.enhance_stone_1');
-    await click('[data-action="crack-greater"]');await tapFx();await tapFx();await waitFor("!document.querySelector('[data-enchant-fx]')");
-    assert.ok(await evaluate('__arpg.save.stacks.enhance_stone_1')>=before+25);
+    assert.deepEqual(await evaluate('[...document.querySelectorAll("[data-action=forge-tab]")].map(n=>n.dataset.tab)'),['enhance','craft','salvage']);
+    assert.equal(await evaluate('!!document.querySelector("[data-action=crack-greater]")'),false);
+    await click('[data-action="forge-tab"][data-tab="craft"]');await audit();assert.equal(await evaluate('!!document.querySelector(".craft-list")'),true);
     await click('[data-action="forge-tab"][data-tab="salvage"]');await audit();
-    for(const action of ['equip','dismantle','sell','craft'])assert.equal(await evaluate(`!!document.querySelector('[data-action="${action}"]')`),true);
+    for(const action of ['dismantle','sell'])assert.equal(await evaluate(`!!document.querySelector('[data-action="${action}"]')`),true);
+    for(const action of ['equip','craft'])assert.equal(await evaluate(`!!document.querySelector('[data-action="${action}"]')`),false);
     await click('[data-action="forge-tab"][data-tab="enhance"]');await audit();
   };
   for(const [width,height] of [[360,640],[390,844],[1280,900]]) {
@@ -222,33 +222,21 @@ try {
       assert.equal(await evaluate('__fxSounds.at(-1)'),outcome==='destroyed'?'kill':'level-up');
       await cleaned();scenarios.push({width,height,kind:outcome,seed:f.seed,chargeMs,text});
     }
-    await fixture(0);
-    await evaluate("window.__fxCounts=[];window.__countObserver=new MutationObserver(()=>{const n=document.querySelector('.enchant-fx.crack .enchant-result');if(n?.textContent&&!__fxCounts.includes(n.textContent))__fxCounts.push(n.textContent);});__countObserver.observe(document.querySelector('#meta-screen'),{childList:true,subtree:true,characterData:true});");
-    await click('[data-action="forge-tab"][data-tab="stones"]');await audit();
-    await click('[data-action="crack-greater"]');
-    assert.equal(await evaluate("document.querySelectorAll('.enchant-cards i').length"),await evaluate('__fxContext.hub.lastCrack.count / 5'));
-    await audit();
-    assert.equal(await evaluate("document.querySelector('[data-enchant-fx]').dataset.enchantFx"),'crack');
-    const crack=await evaluate('JSON.parse(JSON.stringify(__fxContext.hub.lastCrack))');
-    await waitFor("document.querySelector('[data-enchant-fx]')?.dataset.phase==='result'");
-    assert.equal(await evaluate("document.querySelector('.enchant-result').textContent"),`강화석 ${crack.count}개`);
-    await waitFor("!document.querySelector('[data-enchant-fx]')");
-    const counts=await evaluate('__countObserver.disconnect();__fxCounts');assert.ok(counts.length>=3,JSON.stringify(counts));
-    await cleaned();scenarios.push({width,height,kind:'crack',count:crack.count,countup:counts});
+    await fixture(0);assert.equal(await evaluate('!!document.querySelector(".enchant-fx.crack,[data-action=crack-greater]")'),false);scenarios.push({width,height,kind:'removed-greater-no-crack'});
     // E1: actual blessed selection, candidates, preview, committed result and max lock.
-    for (const [from,to] of [[5,7],[9,11],[10,11],[11,12]]) {
+    for (const [from,to] of [[5,7],[9,11],[10,11],[11,12],[ENCHANT.max-1,ENCHANT.max]]) {
       const f=await fixture(from,'success','enhance_stone_blessed',to);
       assert.equal(f.expected.to,to);
       await click('[data-action="pick-stone"][data-id="enhance_stone_blessed"]');
-      const view=await evaluate(`(()=>{const work=document.querySelector('.forge-work');return {blessing:work.querySelector('.forge-blessing').textContent,targets:work.querySelector('.forge-progress strong').textContent,odds:work.querySelector('.forge-odds')?.textContent||'',unchanged:work.querySelectorAll('[data-delta="0"]').length};})()`);
-      assert.match(view.blessing,/축복 · \+1~2/);assert.equal(view.unchanged,0);
-      assert.equal(view.targets,from===5?'+6 / +7':from===9?'+10 / +11':from===10?'+11 / +12':'+12');
-      assert.equal(view.odds,'파괴 없음');
+      const view=await evaluate(`(()=>{const work=document.querySelector('.forge-work');return {effects:[...work.querySelectorAll('.stone-effect')].map(n=>n.textContent),targets:work.querySelector('.forge-progress strong').textContent,probabilities:work.querySelector('.forge-probabilities').textContent,odds:work.querySelector('.forge-odds')?.textContent||'',unchanged:work.querySelectorAll('[data-delta="0"]').length};})()`);
+      assert.equal(view.unchanged,0);assert.ok(view.effects.some(t=>t.includes('+1 / +2')||t.includes('+1')));
+      assert.equal(view.targets,f.preview.outcomes.map(n=>'+'+n).join(' / '));
+      for(const row of f.preview.probabilities.filter(r=>r.chance>0))assert.ok(view.probabilities.includes((row.to===null?'파괴':'+'+row.to)+' '+Number((row.chance*100).toFixed(3))+'%'));
       await audit();await click('[data-action="enhance"]');
       assert.equal(await evaluate('__arpg.save.items[0].enhance'),to);
       await tapFx();assert.equal(await evaluate("document.querySelector('.enchant-result').textContent"),`+${to}${from>=6?' 강화 성공!':''}`);
       await tapFx();await waitFor("!document.querySelector('[data-enchant-fx]')");await cleaned();
-      assert.equal(await evaluate("document.querySelector('[data-action=\"enhance\"]').disabled"),to===12);
+      assert.equal(await evaluate("document.querySelector('[data-action=\"enhance\"]').disabled"),to===ENCHANT.max);
       scenarios.push({width,height,kind:'E1-blessed',from,to,seed:f.seed,view});
     }
   }

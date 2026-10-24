@@ -87,7 +87,7 @@ test('owned detail entry points share last-footer enhance route even without scr
   h.showSocket('weapon');assert.match(h.sheet,/class="item-enhance-action"/);
   h.save.items.find(i=>i.uid==='bow').enhance=20;h.openItem('bow');assert.match(h.sheet,/data-action="socket-forge"[^>]*disabled/);assert.match(h.sheet,/최대 강화 \+20/);
   const offer=shopStock(h.save.createdAt,h.save.shopRefresh)[0];h.openItem(offer.uid,'buy');assert.doesNotMatch(h.sheet,/data-action="socket-forge"/);
-  const before=structuredClone(h.save);h.openEnhancement=()=>{h.forgeOpened=true};h.action('socket-forge',{uid:'wand'});
+  const before=structuredClone(h.save);h.closeSheet=()=>{};h.showForge=()=>{h.forgeOpened=true};h.action('socket-forge',{uid:'wand'});
   assert.equal(h.selectedUid,'wand');assert.equal(h.forgeTab,'enhance');assert.equal(h.forgeOpened,true);assert.deepEqual(h.save,before);assert.equal(h.persisted.length,0);
 });
 test('synthetic comparison UIDs never shadow real owned gear or normalize a different item',()=>{

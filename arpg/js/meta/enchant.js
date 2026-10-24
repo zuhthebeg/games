@@ -2,8 +2,8 @@ import { deriveMods } from './stats.js';
 // Direct stone enchanting, shared by weapons and armor.
 // Outcomes are seeded by (account, item, attempt counter), and the result is part of the
 // returned save, so a reload during the animation cannot reroll an attempt.
-import { SLOTS, ENCHANT, STONE, GREATER_STONE, ENCHANT_STONES, rng, weighted } from './economy.js';
-import { ITEMS, START_WEAPONS, cloneSave, dismantleStones, uniqueUid, meetsRequirement } from './items.js';
+import { SLOTS, ENCHANT, STONE, ENCHANT_STONES, rng, weighted } from './economy.js';
+import { ITEMS, START_WEAPONS, cloneSave, uniqueUid, meetsRequirement } from './items.js';
 
 export const isRisky = (level) => level >= ENCHANT.safe;
 
@@ -28,7 +28,8 @@ export function enchantPreview(save, uid, stoneId) {
   const bone = ITEMS[item.id].boneSet === true;
   const risky = bone || isRisky(level);
   const steps = stone.cursed ? ENCHANT.cursedSteps : stone.blessed ? ENCHANT.blessedSteps : [1];
-  const refund = Math.floor(dismantleStones(item)[STONE] * ENCHANT.failRefund);
+  // Failure refund stays tied to the plain-stone table, not the converted greater share.
+  const refund = Math.floor((ENCHANT.dismantleStones[level] || 0) * ENCHANT.failRefund);
   const high = Math.max(0, level - 11);
   const ordinaryChance = isRisky(level) ? Math.min(1, ENCHANT.rates[level] + deriveMods(save).enchantLuck * (high ? ENCHANT.rates[level] / ENCHANT.rates[11] : 1)) : 1;
   // cocy 10-24: blessed/cursed stones share the ordinary destroy odds; only their survival steps differ.
@@ -94,16 +95,4 @@ export function enchant(save, uid, stoneId) {
   const to = Math.max(0, Math.min(from + step, ENCHANT.max));
   next.items.find((candidate) => candidate.uid === uid).enhance = to;
   return { save: next, result: { outcome: 'success', uid, id: preview.item.id, from, to, risky: preview.risky, refund: null } };
-}
-
-// One greater stone retains 5~10 attempts of value as 25~50 plain stones.
-export function crackGreaterStone(save) {
-  if ((save.stacks[GREATER_STONE] || 0) < 1) throw new Error('상급 강화석이 없습니다.');
-  const [min, max] = ENCHANT.greaterYield;
-  const count = (min + Math.floor(attemptRandom(save, 'greater')() * (max - min + 1))) * ENCHANT.stonesPerAttempt;
-  const next = cloneSave(save);
-  next.enchantCount = (save.enchantCount || 0) + 1;
-  next.stacks[GREATER_STONE] -= 1;
-  next.stacks[STONE] = (next.stacks[STONE] || 0) + count;
-  return { save: next, result: { id: STONE, count } };
 }

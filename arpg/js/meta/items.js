@@ -1,6 +1,6 @@
 import {isBossType} from '../content/boss-tuning.js';
 import { eff, effectiveStats, setBonuses } from './stats.js';
-import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE, BLESSED_STONE, CURSED_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
+import { SLOTS, LEGACY_SLOTS, MATERIAL_STACK, SALVAGE, ECONOMY, ENCHANT, STONE, GREATER_STONE_EQUIVALENT, BLESSED_STONE, CURSED_STONE, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
 import { BALANCE, threatMultipliers } from '../content/balance.js';
@@ -200,6 +200,8 @@ export const requirementLabel = (def) => def?.requiredStr ? `힘 ${def.requiredS
 // SaveStore.load converts held mid stones into plain stones.
 ITEMS.enhance_stone_1 = { name: '강화석', kind: 'material', weight: 0.1, sell: 2 };
 ITEMS.enhance_stone_2 = { name: '중급 강화석', kind: 'material', weight: 0.1, sell: 2, legacy: true };
+// Deprecated: no longer dropped, crafted or refunded. Kept so old saves/receipts validate until SaveStore.load
+// converts them to GREATER_STONE_EQUIVALENT plain stones.
 ITEMS.enhance_stone_3 = { name: '상급 강화석', kind: 'material', weight: 0.1, sell: 25 };
 ITEMS[BLESSED_STONE] = { name: '축복받은 강화석', kind: 'material', weight: 0, sell: 30, blessed: true };
 ITEMS[CURSED_STONE] = { name: '저주받은 강화석', kind: 'material', weight: 0, sell: 30, cursed: true };
@@ -273,8 +275,7 @@ export function dismantleRefund(item) {
 
 // Enhanced gear also returns stones; primary material stays tied to rarity/provenance above.
 export const dismantleStones = (item) => ({
-  [STONE]: ENCHANT.dismantleStones[item.enhance] || 0,
-  [GREATER_STONE]: ENCHANT.dismantleGreater[item.enhance] || 0,
+  [STONE]: (ENCHANT.dismantleStones[item.enhance] || 0) + (ENCHANT.dismantleGreater[item.enhance] || 0) * GREATER_STONE_EQUIVALENT,
 });
 
 export function dismantle(save, uid) {
@@ -481,12 +482,13 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
   if (stoneRandom() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
     const count = boss ? 1 + (stoneRandom() < ECONOMY.stoneExtraChance ? 1 : 0) : 1;
-    // A drop event is either a pile of plain stones (5 = one attempt) or a single greater stone.
+    // A drop event is either a pile of plain stones (5 = one attempt) or what used to be one greater stone
+    // (now GREATER_STONE_EQUIVALENT plain stones). The weighted draw and the pile-size draw are unchanged.
     const [min, max] = ENCHANT.stoneCount[boss ? 'boss' : elite ? 'elite' : 'normal'];
     for (let i = 0; i < count; i++) {
-      const stone = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], stoneRandom);
-      const amount = stone === STONE ? min + Math.floor(stoneRandom() * (max - min + 1)) : 1;
-      loot.stacks[stone] = (loot.stacks[stone] || 0) + amount;
+      const event = weighted([[STONE, ECONOMY.stoneWeights[Math.min(tier, 3)][0]], [GREATER_STONE_EQUIVALENT, ECONOMY.stoneWeights[Math.min(tier, 3)][1]]], stoneRandom);
+      const amount = event === STONE ? min + Math.floor(stoneRandom() * (max - min + 1)) : event;
+      loot.stacks[STONE] = (loot.stacks[STONE] || 0) + amount;
     }
   }
   // Special stones have independent streams so legacy gear/stone/gold rolls stay unchanged.

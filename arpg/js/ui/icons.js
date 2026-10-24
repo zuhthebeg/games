@@ -52,7 +52,7 @@ const silhouettes = {
   "leather": "<path fill=\"currentColor\" d=\"m6 2 8 4 11-3 4 8-5 8 2 10-11-3-9 4-4-10 4-9z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" stroke-dasharray=\"2 2\" d=\"m9 8 12 1-2 13-10 1z\"/>",
   "ore": "<path fill=\"currentColor\" d=\"m3 24 4-15 13-6 9 14-5 12H9z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m7 9 11 10 11-2M18 19l-3 9\"/>"
 };
-const aliases = { weapon:'sword', blade:'sword', focus:'wand', armor:'body', hide:'leather', fang:'ore', silver_ingot:'ore', rune_shard:'ore', frost_shard:'ore', web:'leather', enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high', enhance_stone_blessed:'stone-high', enhance_stone_cursed:'stone-mid' };
+const aliases = { weapon:'sword', blade:'sword', focus:'wand', armor:'body', hide:'leather', fang:'ore', silver_ingot:'ore', rune_shard:'ore', frost_shard:'ore', web:'leather', enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_blessed:'stone-high', enhance_stone_cursed:'stone-mid' };
 function svgIcon(name) {
   const shape = silhouettes[aliases[name] || name];
   return `<svg class="icon icon-${name} ${shape ? 'silhouette' : ''}" viewBox="0 0 ${shape ? '32 32' : '24 24'}" aria-hidden="true" focusable="false">${shape || paths[name] || paths.load}</svg>`;

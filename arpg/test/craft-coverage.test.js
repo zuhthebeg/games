@@ -7,7 +7,7 @@ import {noteMaterials} from '../js/meta/recipe-discovery.js';
 import {HubUI} from '../js/ui/hub.js';
 import {itemDetailsHtml} from '../js/ui/gear-view.js';
 const fresh=()=>createSave({name:'제작 검증',answers:[0,0,0,0,0],createdAt:1});
-const rich=()=>({...fresh(),gold:100000,stacks:{...fresh().stacks,...Object.fromEntries(Object.entries(ITEMS).filter(([,d])=>d.kind==='material'&&!d.legacy).map(([id])=>[id,1000]))}});
+const rich=()=>({...fresh(),gold:100000,stacks:{...fresh().stacks,...Object.fromEntries(Object.entries(ITEMS).filter(([,d])=>d.kind==='material'&&!d.legacy&&d!==ITEMS.enhance_stone_3).map(([id])=>[id,1000]))}});
 test('B every T2+ non-dropOnly equipment including rarity variants has a recipe and roundtrips lossily',()=>{
  let covered=0;
  for(const [id,def] of Object.entries(ITEMS).filter(([,d])=>d.slot&&d.huntTier>=2)){
@@ -29,10 +29,10 @@ test('B dropped enhanced gear provenance appears in receipt and detail; enhanced
  for(const html of [receiptHtml,reveal])assert.match(html,/loot-highlight[\s\S]*득템/);
  for(const id of ['rune_shard','frost_shard','dragon_scale'])assert.match(receiptHtml,new RegExp(`data-premium="${id}"`));
  assert.doesNotMatch(itemDetailsHtml(save.items[0]),/누군가 떨군/);
- const before=save.stacks.enhance_stone_1||0,next=dismantle(save,drop.uid);assert.equal(next.stacks.enhance_stone_1-before,ENCHANT.dismantleStones[drop.enhance]);
+ const before=save.stacks.enhance_stone_1||0,next=dismantle(save,drop.uid);assert.equal(next.stacks.enhance_stone_1-before,ENCHANT.dismantleStones[drop.enhance]+ENCHANT.dismantleGreater[drop.enhance]*38);
 });
 test('B crafting stays under smith and incomplete recipes state exact shortages',()=>{
- const hub=Object.create(HubUI.prototype);hub.save=noteMaterials({...fresh(),gold:2,stacks:{...fresh().stacks,scrap:1}});hub.forgeTab='salvage';hub.showInnPanel=(_t,html)=>hub.html=html;hub.showForge();
+ const hub=Object.create(HubUI.prototype);hub.save=noteMaterials({...fresh(),gold:2,stacks:{...fresh().stacks,scrap:1}});hub.forgeTab='craft';hub.showInnPanel=(_t,html)=>hub.html=html;hub.showForge();
  hub.action('forge-recipe-mode',{mode:'all'}); // Shortages are intentionally hidden by the craftable-only default.
  assert.match(hub.html,/고철 7개 부족/);assert.match(hub.html,/58 G 부족/);assert.match(hub.html,/aria-describedby="craft-reason-iron_sword"/);
  hub.recoverVitals=()=>{};hub.show=html=>hub.html=html;hub.showInn();assert.doesNotMatch(hub.html,/data-action="craft-hub"/);assert.match(hub.html,/data-action="forge"/);

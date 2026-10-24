@@ -49,9 +49,10 @@ try{
   check(salvage.h<=155,label+' salvage picker height');for(const c of salvage.cards)check(c.h<=130&&c.w>=80&&c.w<=100,label+' salvage card size');
   let sheet=null;
   if(name!=='empty'){
-   await press('.forge-picker .p2-card:last-child');await page.waitForSelector('.forge-sheet[open]');
-   sheet=await page.evaluate(()=>{const d=document.querySelector('.forge-sheet[open]');const b=n=>{const r=n.getBoundingClientRect();return {top:r.top,bottom:r.bottom,w:r.width,h:r.height};};return {dialog:b(d),title:b(d.querySelector('.forge-item-title')),action:b(d.querySelector('[data-action="enhance"]')),scroll:d.querySelector('.p2-sheet-body').scrollTop,pickerScroll:document.querySelector('.forge-picker').scrollLeft};});
-   check(sheet.scroll===0,label+' sheet initially unscrolled');if(name==='many')check(sheet.pickerScroll>0,label+' last card scrolled into view');check(sheet.title.top>=0&&sheet.title.bottom<=height,label+' selected title visible');check(sheet.action.top>=0&&sheet.action.bottom<=height,label+' selected action visible');
+   await press('.forge-picker .p2-card:last-child');
+   assert.equal(await page.locator('dialog[open]').count(),0,'selection remains inline');
+   sheet=await page.evaluate(()=>{const d=document.querySelector('.forge-salvage');const b=n=>{const r=n.getBoundingClientRect();return {top:r.top,bottom:r.bottom,w:r.width,h:r.height};};return {inline:b(d),title:b(d.querySelector('h3')),action:b(d.querySelector('[data-action="dismantle"]')),pickerScroll:document.querySelector('.forge-picker').scrollLeft,selected:document.querySelector('.forge-picker [aria-pressed="true"]').dataset.uid,focus:document.activeElement.dataset.uid};});
+   if(name==='many')check(sheet.pickerScroll>0,label+' last card scrolled into view');check(sheet.selected===sheet.focus,label+' selected focus retained');check(sheet.title.top>=0&&sheet.title.bottom<=height,label+' selected title visible');check(sheet.action.top>=0&&sheet.action.bottom<=height,label+' selected action visible');
   }
   const persisted=await page.evaluate(key=>({save:JSON.parse(localStorage.getItem(key)),writes:window.__pickerWrites.filter(k=>k.startsWith('arpg.save.')),world:window.__arpg.world}),SAVE_KEY);assert.deepEqual(persisted.save,seed);assert.deepEqual(persisted.writes,[]);assert.equal(persisted.world,null);
   for(const binding of Object.values(report.sourceBinding))assert.ok(requests.has(binding.url),'actual page requested '+binding.url);

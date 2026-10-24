@@ -99,34 +99,35 @@ try {
     await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');const s=createSave({name:'C1',answers:[0,0,0,0,0],createdAt:123});s.gold=10000;Object.assign(s.stacks,{scrap:1000,hide:1000,wood:1000,web:1000,rune_shard:1000,fang:1000,frost_shard:1000,dragon_scale:1000});for(const id of ['short_bow','leather_vest','cloth_tunic','rune_blade','iron_sword'])s.items.push(instance('smoke:'+id,id));s.items.find(i=>i.id==='leather_vest').enhance=7;new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload'); await waitFor(page('inn'));
     await nativeActivate('[data-action="forge"]',true);await waitFor(page('forge'));
-    await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');
+    await nativeActivate('[data-action="forge-tab"][data-tab="craft"]');
     assert.match(await evaluate('document.querySelector(".craft-list").textContent'),/목재: 8/);
     assert.match(await evaluate('document.querySelector(".craft-list").textContent'),/룬 조각: 16/);
     assert.match(await evaluate('document.querySelector(".craft-list").textContent'),/거미줄: 16/);
+    await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');
     const snapshot=()=>evaluate('JSON.parse(JSON.stringify(__arpg.save))');
     const refunds=[];
     for(const [id,key,label,amount] of [['short_bow','wood','목재',2],['leather_vest','hide','가죽',5],['cloth_tunic','web','거미줄',2],['rune_blade','rune_shard','룬 조각',5],['iron_sword','scrap','고철',5]]) {
       await nativeActivate(`[data-action="select-gear"][data-uid="smoke:${id}"]`);
       const text=await evaluate('document.querySelector(".forge-salvage [data-action=dismantle]").textContent');
       assert.match(text,new RegExp(`${label}: ${amount}`));
-      if(id==='leather_vest'){assert.match(text,/강화석: 10/);assert.match(text,/상급 강화석: 1/);}
+      if(id==='leather_vest'){assert.match(text,/강화석: 48/);assert.doesNotMatch(text,/상급/);}
       const before=await snapshot();
       await nativeActivate('.forge-salvage [data-action="dismantle"]');
       assert.match(await evaluate('document.querySelector("[data-action=confirm-dismantle]").textContent'),new RegExp(`${label}: ${amount}`));
       await nativeActivate('[data-action="confirm-dismantle"]',true);
       const after=await snapshot();assert.equal(after.stacks[key],before.stacks[key]+amount);
       assert.equal(after.items.some(i=>i.uid===`smoke:${id}`),false);assert.equal(after.gold,before.gold);
-      if(id==='leather_vest'){assert.equal(after.stacks.enhance_stone_1,10);assert.equal(after.stacks.enhance_stone_3,1);}
+      if(id==='leather_vest'){assert.equal(after.stacks.enhance_stone_1,48);assert.equal(after.stacks.enhance_stone_3,undefined);}
       refunds.push({id,key,amount});
     }
     const crafted=[];
     const recipes=await evaluate(`(async()=>{const {RECIPES}=await import('./js/meta/items.js');return RECIPES;})()`);
     for(const [id,recipe] of Object.entries(recipes)) {
-      const before=await snapshot();await nativeActivate(`[data-action="craft"][data-id="${id}"]`,true);
+      await nativeActivate('[data-action="forge-tab"][data-tab="craft"]');const piece='[data-action="forge-piece"][data-id="'+id+'"]';if(await evaluate('!!document.querySelector('+JSON.stringify(piece)+')'))await nativeActivate(piece);const before=await snapshot();await nativeActivate(`[data-action="craft"][data-id="${id}"]`,true);
       const made=await snapshot(), item=made.items.at(-1);assert.equal(item.id,id);assert.ok(item.uid.startsWith('craft:'));
       assert.equal(made.gold,before.gold-recipe.gold);
       for(const [key,n] of Object.entries(recipe)) if(key!=='gold') assert.equal(made.stacks[key],before.stacks[key]-n);
-      await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');
+      await waitFor('!document.querySelector(".craft-fx")');await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');
       const primary=await evaluate(`(async()=>{const {dismantleMaterial}=await import('./js/meta/items.js');return dismantleMaterial(__arpg.save.items.at(-1));})()`);
       const refund=Math.floor(recipe[primary]/4);
       await nativeActivate('.forge-salvage [data-action="dismantle"]');await nativeActivate('[data-action="confirm-dismantle"]');
@@ -140,7 +141,7 @@ try {
     // Remove wood only in fixture, then verify actual native UI cannot offer a material-free craft.
     await evaluate(`(async()=>{const {SaveStore}=await import('./js/meta/save.js');const store=new SaveStore(localStorage),s=store.load();s.stacks.wood=0;store.save(s);})()`);
     await command('Page.reload');await waitFor(page('inn'));
-    await nativeActivate('[data-action="forge"]');await nativeActivate('[data-action="forge-tab"][data-tab="salvage"]');
+    await nativeActivate('[data-action="forge"]');await nativeActivate('[data-action="forge-tab"][data-tab="craft"]');
     assert.equal(await evaluate('document.querySelector("[data-action=craft][data-id=hunter_bow]").disabled'),true);
     assert.equal(await evaluate('document.querySelector("[data-action=craft][data-id=altar_staff]").disabled'),true);
     assert.doesNotMatch(await evaluate('document.querySelector("#meta-screen").textContent'),/undefined|NaN/);

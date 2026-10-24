@@ -48,6 +48,7 @@ test('save cheats preserve level/point invariant and valid resource/progress sta
   let save = fixture();
   for (const action of ['gold:1000','gold:10000','stones','materials','potions','unlock','reroll','refresh-reset','pity','progress-reset']) {
     save = mutateSave(save, action); assert.equal(validateSave(save), true, action);
+    assert.equal(save.stacks.enhance_stone_3,undefined,'debug grants never create retired greater stones');
   }
   save = setLevel(save, 30); assert.equal(save.statPoints, 232); assert.equal(validateSave(save), true);
   save = setLevel(save, 1); assert.equal(save.statPoints, 0); assert.equal(validateSave(save), true);

@@ -10,7 +10,7 @@ import { createSave } from '../js/meta/save.js';
 import { HubUI } from '../js/ui/hub.js';
 
 const success = {outcome:'success',id:'training_sword',from:5,to:6,risky:false,refund:null};
-test('safe/risky/destroyed/crack presentation uses only committed immutable results', () => {
+test('safe/risky/destroyed presentation uses only committed immutable results', () => {
   const result = Object.freeze(success), before = JSON.stringify(result);
   assert.equal(enchantPresentation(result).chargeMs,180);
   assert.equal(enchantPresentation(result).chargeMs + enchantPresentation(result).holdMs,600);
@@ -20,8 +20,8 @@ test('safe/risky/destroyed/crack presentation uses only committed immutable resu
   assert.equal(enchantPresentation({...result,risky:true,to:7}).title,'+7 강화 성공!');
   const destroyed = enchantPresentation({...result,outcome:'destroyed',to:null,risky:true,refund:{enhance_stone_1:4}});
   assert.equal(destroyed.title,'장비가 산산조각 났다');assert.equal(destroyed.detail,'남은 강화석 4개');assert.equal(destroyed.sound,'kill');
-  const crack = enchantPresentation({id:'enhance_stone_1',count:35});
-  assert.equal(crack.kind,'crack');assert.equal(crack.title,'강화석 35개');
+  assert.equal(enchantPresentation({...result,to:4}).title,'+4 약화');
+  assert.equal(enchantPresentation({...result,to:5}).title,'+5 변화 없음');
   assert.equal(enchantPresentation({...result,risky:true},true).chargeMs,80);
 });
 test('weapon tiers have bounded distinct effects and reduced motion has no particles/pulse/trail', () => {
@@ -54,7 +54,7 @@ test('enhancement metadata changes badges/portrait/combat but not paperdoll bake
 });
 test('hub commits before playing and blocks actions during animation; no presentation writes to save/sim', () => {
   const hub=readFileSync(new URL('../js/ui/hub.js',import.meta.url),'utf8');
-  const section=hub.slice(hub.indexOf("case 'enhance':"),hub.indexOf("case 'crack-greater':"));
+  const section=hub.slice(hub.indexOf("case 'enhance':"),hub.indexOf("case 'craft-compare':"));
   assert.ok(section.indexOf('this.commit(save)')<section.indexOf('playEnchantFx'));
   assert.ok(hub.includes('if (this.enchantFx?.active) return;'));
   const fx=readFileSync(new URL('../js/ui/enchant-fx.js',import.meta.url),'utf8');
@@ -72,14 +72,9 @@ test('a persistence failure neither plays a result nor advances in-memory save',
 });
 
 
-test('a greater-stone persistence failure cannot reveal or reroll its committed count', () => {
-  const hub=Object.create(HubUI.prototype);
-  hub.save=createSave({name:'원석 저장 실패',answers:[0,0,0,0,0],createdAt:1});
-  hub.save.stacks.enhance_stone_3=2;
-  hub.persist=()=>{throw new Error('quota');};hub.showForge=()=>{throw new Error('must not reveal');};
-  const before=JSON.stringify(hub.save);
-  assert.throws(()=>hub.action('crack-greater',{family:'weapon'}),/quota/);
-  assert.equal(JSON.stringify(hub.save),before);assert.equal(hub.lastCrack,undefined);assert.equal(hub.enchantFx,undefined);
+test('retired opening action has no reducer and cannot spend, reveal or advance attempts', () => {
+  const hub=Object.create(HubUI.prototype);hub.save=createSave({name:'폐지 액션',answers:[0,0,0,0,0],createdAt:1});const before=structuredClone(hub.save);
+  hub.persist=()=>{throw Error('must not persist')};hub.action('crack-greater',{});assert.deepEqual(hub.save,before);assert.equal(hub.enchantFx,undefined);assert.equal(hub.save.enchantCount,undefined);
 });
 
 test('ritual has reusable bounded rune geometry and tier palette, not per-particle DOM nodes', () => {
@@ -104,13 +99,12 @@ test('forge separates all legacy actions, defaults to ritual, and keeps selected
   assert.match(hub.html,/forge-ritual/);assert.match(hub.html,/forge-hero-art/);
   assert.match(hub.footer,/data-action="enhance"/);
   assert.doesNotMatch(hub.html,/data-action="(?:craft-scroll|crack-greater|dismantle|sell|craft|equip)"/);
-  hub.openEnhancement=()=>{hub.sheet=hub.forgeDetail();};
   hub.action('select-gear',{uid:'starter:armor'});
-  assert.match(hub.sheet.html,/강화 의식/);assert.match(hub.sheet.footer,/starter:armor/);
-  for (const tab of ['stones','salvage','enhance']) {
+  assert.match(hub.html,/강화 의식/);assert.match(hub.footer,/starter:armor/);assert.doesNotMatch(hub.html,/<dialog/);
+  for (const tab of ['craft','salvage','enhance']) {
     hub.action('forge-tab',{tab});assert.equal(hub.selectedUid,'starter:armor');
-    if(tab==='stones') {assert.doesNotMatch(hub.html,/craft-scroll|주문서/);assert.match(hub.html,/crack-greater/);assert.equal(hub.footer,'');}
-    if(tab==='salvage') {assert.doesNotMatch(hub.html,/data-action="craft"/);hub.action('forge-recipe-mode',{mode:'all'});for(const action of ['equip','dismantle','sell','craft'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.equal(hub.footer,'');}
+    if(tab==='craft') {hub.action('forge-recipe-mode',{mode:'all'});assert.match(hub.html,/data-action="craft"/);assert.doesNotMatch(hub.html,/forge-salvage|crack-greater/);assert.equal(hub.footer,'');}
+    if(tab==='salvage') {for(const action of ['dismantle','sell'])assert.match(hub.html,new RegExp(`data-action="${action}"`));assert.doesNotMatch(hub.html,/data-action="(?:equip|craft)"|상급/);assert.equal(hub.footer,'');}
   }
   hub.action('forge-tab',{tab:'bad'});assert.equal(hub.forgeTab,'enhance');
   hub.save.items[0].enhance=20;hub.selectedUid='starter:weapon';hub.showForge();

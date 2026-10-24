@@ -75,14 +75,12 @@ try {
     assert.equal(blocked.length,2);assert.ok(blocked.every(n=>n.x));
     await activate('[data-action="inn"]',mobile);await activate('[data-action="forge"]',mobile);
     for(const id of ['rune_maul','warden_maul']) {
-      await activate('[data-action="forge-tab"][data-tab="salvage"]',mobile);
+      await activate('[data-action="forge-tab"][data-tab="craft"]',mobile);
       await activate(`[data-action="craft"][data-id="${id}"]`,mobile);
-      assert.equal(await host.eval(`__arpg.save.items.at(-1).id`),id);
+      assert.equal(await host.eval(`__arpg.save.items.at(-1).id`),id);await host.wait('!document.querySelector(".craft-fx")');
     }
     const uid=await host.eval(`__arpg.save.items.find(i=>i.id==='rune_maul').uid`);
-    await activate(`[data-action="select-gear"][data-uid="${uid}"]`,mobile);
-    await activate('[data-action="forge-tab"][data-tab="salvage"]',mobile);
-    await activate(`.forge-salvage [data-action="equip"][data-uid="${uid}"]`,mobile);
+    await activate('[data-action="inn"]',mobile);await activate('[data-action="inventory"]',mobile);await activate(`[data-action="open-item"][data-uid="${uid}"]`,mobile);await activate(`dialog[open] [data-action="equip"][data-uid="${uid}"]`,mobile);
     assert.equal(await host.eval(`__arpg.save.equipped.weapon`),uid);
     await activate('[data-action="inn"]',mobile);await activate('[data-action="character"]',mobile);
     await activate('[data-action="character-tab"][data-tab="skills"]',mobile);

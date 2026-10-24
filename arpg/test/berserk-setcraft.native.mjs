@@ -61,7 +61,7 @@ try{
  for(const width of [1280,390])for(const count of [0,1,2]){
  let seed=fixture();for(const id of ['warden_blade_rare','warden_plate'].slice(0,count)){seed.items.push({uid:id,id,enhance:3,affixes:[],rolledAt:0});seed.equipped[ITEMS[id].slot]=id}
  const {page,context,press}=await open(seed,width);
- await press('[data-action="forge"]');await press('[data-action="forge-tab"][data-tab="salvage"]');await press('[data-action="forge-recipe-set"][data-set="set:warden"]');
+ await press('[data-action="forge"]');await press('[data-action="forge-tab"][data-tab="craft"]');await press('[data-action="forge-recipe-set"][data-set="set:warden"]');
  const panel=page.locator('[data-craft-set="warden"]');assert.ok((await panel.textContent()).includes(`${count} / 2 보유`));assert.ok((await panel.textContent()).includes(`${count} / 2 착용`));assert.equal(await panel.locator('.forge-set-tier[data-active="true"]').count(),count===2?1:0);assert.equal(await panel.locator('[data-action="craft"]').count(),1);
  await press('[data-action="forge-piece"][data-id="warden_blade"]');assert.equal(await panel.locator('[data-action="craft"]').getAttribute('data-id'),'warden_blade');
  const fit=await page.evaluate(()=>{const n=document.querySelector('.inn-shell>.content');return {viewport:innerWidth,doc:document.documentElement.scrollWidth,content:n.clientWidth,scroll:n.scrollWidth}});assert.ok(fit.doc<=fit.viewport&&fit.scroll<=fit.content,JSON.stringify(fit));
@@ -78,10 +78,10 @@ try{
  await page.locator('#compare-ignore-enhancement').check();assert.equal(await page.locator('#compare-ignore-enhancement').isChecked(),true);await press('[data-action="close-sheet"]');
  await press('[data-action="forge-tab"][data-tab="enhance"]');
  await press('.forge-picker [data-action="select-gear"]');
- assert.equal(await page.locator('.forge-sheet[open]').count(),1);
- const layout=await page.evaluate(()=>{const d=document.querySelector('.forge-sheet'),art=d.querySelector('.forge-hero-art').getBoundingClientRect(),ritual=d.querySelector('.forge-ritual').getBoundingClientRect(),stone=d.querySelector('.stone-picker [aria-pressed=true]').getBoundingClientRect(),n=d.querySelector('[data-action="enhance"]'),t=d.querySelector('.forge-item-title'),r=n.getBoundingClientRect(),h=t.getBoundingClientRect();return {buttonBottom:r.bottom,titleTop:h.top,height:innerHeight,bodyScroll:d.querySelector('.p2-sheet-body').scrollTop,overflow:d.scrollWidth>d.clientWidth,costBottom:stone.bottom,footerTop:d.querySelector('footer').getBoundingClientRect().top,artCenter:art.x+art.width/2,ritualCenter:ritual.x+ritual.width/2}});
+ assert.equal(await page.locator('dialog[open]').count(),0);
+ const layout=await page.evaluate(()=>{const d=document.querySelector('.inn-shell'),art=d.querySelector('.forge-hero-art').getBoundingClientRect(),ritual=d.querySelector('.forge-ritual').getBoundingClientRect(),stone=d.querySelector('.stone-picker [aria-pressed=true]').getBoundingClientRect(),n=d.querySelector('[data-action="enhance"]'),t=d.querySelector('.forge-item-title'),r=n.getBoundingClientRect(),h=t.getBoundingClientRect();return {buttonBottom:r.bottom,titleTop:h.top,height:innerHeight,bodyScroll:d.querySelector('.content').scrollTop,overflow:d.scrollWidth>d.clientWidth,costBottom:stone.bottom,footerTop:d.querySelector('.action-footer').getBoundingClientRect().top,artCenter:art.x+art.width/2,ritualCenter:ritual.x+ritual.width/2}});
  assert.ok(layout.buttonBottom<=layout.height&&layout.titleTop>=0&&!layout.overflow&&layout.bodyScroll===0&&layout.costBottom<=layout.footerTop&&Math.abs(layout.artCenter-layout.ritualCenter)<1,JSON.stringify(layout));
- await press('[data-action="close-sheet"]');
+ assert.equal(await page.locator('dialog[open]').count(),0);
  }
  report.rows.push({width,count,counts:true,tiers:true,singleCraft:true,fit,realCraft:count===0});await context.close();
  }

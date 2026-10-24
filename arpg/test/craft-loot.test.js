@@ -65,9 +65,9 @@ test('B basic materials gain ~50% with stochastic rounding, consumable and gold/
  for(let seed=1;seed<=n;seed++){const loot=rollDrops('skeleton_minion',seed,{huntTier:1}),r=rng(seed);r();if(r()<.6)base++;if(r()<.4)base++;total+=(loot.stacks.scrap||0)+(loot.stacks.fang||0);}
  assert.ok(Math.abs(total/base-1.5)<.025,`${total/base}`);console.log('B basic material ratio',total/base);
  for(const [m,c,hash] of [
-  ['goblin_grunt',{},'519c8604b50270e9f77aef572fbe6ba81c9784e2bbff941743c23673b5722bfa'],
-  ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'73f3357475a7697f5f148fded89cc21eb690c7ff8d4e59dfb9953d30f1f66cd7'],
-  ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'55a2366a458e1b5a5dca08a82dc929ead699275c38987a44100b80f380b6b57b']]){
+  ['goblin_grunt',{},'204431c3341147a27a78407041d43fb76180e7353350b519f6b038cf08735b02'],
+  ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'575df7520c2920153ff49b16c7fb464f0d9cff923141bb1deaa4fa6e187ba7a8'],
+  ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'d6d1a549c6638d51bce967d327ac4708c68e7ebcef84ea80df47e91dd1506059']]){
   const out=[];for(let seed=1;seed<=500;seed++){const l=rollDrops(m,seed,c);out.push({gold:l.gold,stones:Object.fromEntries(Object.entries(l.stacks).filter(([id])=>id.startsWith('enhance_stone')))});}
   assert.equal(createHash('sha256').update(JSON.stringify(out)).digest('hex'),hash);
  }

@@ -8,6 +8,7 @@ import { sellStack, sellItem } from '../js/meta/shop.js';
 import { questReward } from './fixtures/quest-rewards.js';
 import { HubUI } from '../js/ui/hub.js';
 import { MONSTERS } from '../js/content/combat.js';
+import { projectLegacyStones } from './fixtures/greater-stone-drop-cases.js';
 
 const fresh = () => createSave({ name: 'C1', answers: [0,0,0,0,0], createdAt: 123 });
 const rich = () => ({ ...fresh(), gold: 10000, stacks: { ...fresh().stacks,
@@ -38,8 +39,7 @@ test('C1 every equipment rarity yields only its primary material plus unchanged 
     const next = dismantle(freeze(base), item.uid), primary = MATERIAL_STACK[def.material];
     assert.equal(dismantleMaterial(item), primary); assert.equal(dismantleRefund(item), SALVAGE[def.rarity]);
     assert.deepEqual(next.stacks, { ...base.stacks, [primary]:SALVAGE[def.rarity],
-      ...(ENCHANT.dismantleStones[level] ? {enhance_stone_1:ENCHANT.dismantleStones[level]} : {}),
-      ...(ENCHANT.dismantleGreater[level] ? {enhance_stone_3:ENCHANT.dismantleGreater[level]} : {}) });
+      ...(ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38 ? {enhance_stone_1:ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38} : {}) });
     assert.deepEqual(next.items, base.items.slice(0,-1)); assert.equal(next.gold, base.gold);
   }
 });
@@ -106,7 +106,7 @@ test('C1 existing uncrafted and craft-UID saves need no schema migration and kee
 });
 
 test('C1 UI recipes/refunds use actual labels and values, worn disabled, no undefined quantities', () => {
-  const hub=Object.create(HubUI.prototype);hub.save=rich();hub.forgeTab='salvage';hub.showInnPanel=(_title,html)=>hub.html=html;
+  const hub=Object.create(HubUI.prototype);hub.save=rich();hub.forgeTab='craft';hub.showInnPanel=(_title,html)=>hub.html=html;
   hub.forgeRecipeMode='all';hub.showForge();assert.match(hub.html,/목재: 100 \/ 8/);assert.match(hub.html,/룬 조각: 100 \/ 16/);assert.match(hub.html,/거미줄: 100 \/ 16/);
   assert.doesNotMatch(hub.html,/제작 · 고철과 재료|undefined|NaN/);
   for(const id of ['short_bow','leather_vest','cloth_tunic','rune_blade','iron_sword']) {
@@ -155,7 +155,7 @@ test('B 1,000 seeds per monster retain pre-B gold, consumables and stone bytes',
     const expected=old[index++];
     const actual=rollDrops(m,seed,{materialBonus:7,threat:2});
     // Large guardian now uses the approved boss reward rank; every other historical stream is exact.
-    if(m!=='rune_guardian')assert.deepEqual(stable(actual),stable(expected),`${m}:${seed}`);
+    if(m!=='rune_guardian')assert.deepEqual(stable(actual),projectLegacyStones(stable(expected)),`${m}:${seed}`);
     assert.deepEqual(actual,rollDrops(m,seed,{materialBonus:7,threat:2}));
     for(const id of Object.keys(basic)){basic[id].before+=expected.stacks[id]||0;basic[id].after+=actual.stacks[id]||0;}
   }

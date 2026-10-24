@@ -139,8 +139,11 @@ test('10,000 seeded kills: craft-first equipment rates, discounted rarity, uncha
       if (rolled.length) gearKills++;
       if (rolled.length === 2) bossExtra++;
       for (const item of rolled) rarities[ITEMS[item.id].rarity]++;
-      // One drop event is a pile of plain stones or a single greater stone; count events, not stones.
-      const stones = [loot.stacks.enhance_stone_1 || 0, loot.stacks.enhance_stone_3 || 0];
+      // One drop event is a pile of plain stones or one 38-stone greater-equivalent; plain piles total <= 10,
+      // so floor(total / 38) recovers the number of greater events. Count events, not stones.
+      assert.equal(loot.stacks.enhance_stone_3, undefined);
+      const total = loot.stacks.enhance_stone_1 || 0, greaterEvents = Math.floor(total / 38);
+      const stones = [total - greaterEvents * 38, greaterEvents];
       assert.equal(loot.stacks.enhance_stone_2, undefined);
       if (stones.some(Boolean)) stoneKills++;
       stoneTypes[0] += stones[0] ? 1 : 0; stoneTypes[1] += stones[1] ? 1 : 0;
@@ -159,7 +162,7 @@ test('10,000 seeded kills: craft-first equipment rates, discounted rarity, uncha
   const mixes = [];
   for (const tier of [1, 2, 3]) {
     let greater = 0;
-    for (let seed = 0; seed < 10000; seed++) greater += rollDrops('goblin_chief', seed, { huntTier: tier }).stacks.enhance_stone_3 || 0;
+    for (let seed = 0; seed < 10000; seed++) greater += Math.floor((rollDrops('goblin_chief', seed, { huntTier: tier }).stacks.enhance_stone_1 || 0) / 38);
     mixes.push(greater / 10000);
   }
   assert.ok(mixes[0] < mixes[1] && mixes[1] < mixes[2]);
@@ -273,7 +276,7 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
       assert.equal(made.gold, before.gold - RECIPES[id].gold);
       const salvaged = dismantle(made, item.uid);
       // Refunded stones never pay back the 25 stones spent reaching +5.
-      assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5]);
+      assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5] + ENCHANT.dismantleGreater[5] * 38);
       assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerAttempt);
       assert.equal(salvaged.stacks.enhance_stone_3, made.stacks.enhance_stone_3);
       assert.ok(salvaged.stacks[dismantleMaterial(item)] < before.stacks[dismantleMaterial(item)]);
@@ -308,15 +311,16 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(allowed.weightLimit, 112); assert.equal(allowed.locked, false);
 });
 
-test('forge tabs preserve five-slot overview, stone costs, stock comparison and item receipts', () => {
+test('forge tabs preserve owned equipment choices, stone costs, stock comparison and item receipts', () => {
   const hub = Object.create(HubUI.prototype);
   hub.save = fresh(); hub.save.gold = 10000;
   hub.selectedUid = hub.save.equipped.weapon;
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   hub.showForge();
   assert.match(hub.html, /강화석/); assert.match(hub.html, /forge-progress[\s\S]*?\+1/);
-  hub.action('forge-tab', {tab:'stones'});assert.match(hub.html, /강화석 25~50개/);
-  hub.action('forge-tab', {tab:'salvage'});for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
+  assert.equal((hub.html.match(/data-action="pick-stone"/g)||[]).length,3);assert.doesNotMatch(hub.html,/crack-greater/);
+  hub.action('forge-tab', {tab:'salvage'});for (const item of hub.save.items) assert.ok(hub.html.includes(`data-uid="${item.uid}"`));
+  assert.doesNotMatch(hub.html,/forge-worn/);for(const action of ['sell','dismantle'])assert.ok(hub.html.includes(`data-action="${action}"`));
   assert.match(hub.gearShopHtml(), /refresh-shop/);
   assert.match(hub.gearShopHtml(), /공격력/);
   const receipt = settleRound(hub.save, { stageId: 'S2', terminal: 'clear', tempLoot: { gold: 1, stacks: {}, items: [instance('drop', 'iron_sword', 1)] } }).receipt;

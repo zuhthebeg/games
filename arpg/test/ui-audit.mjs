@@ -151,10 +151,10 @@ try {
   if(!baseline){
     // Report text counts rather than comparing to pre-P2 NPC panels: the character,
     // skill-book and bag/stash pages intentionally expose additional information.
-    await evaluate("auditHub.showForge();document.querySelector('.craft-list').open=true");
+    await evaluate("auditHub.forgeTab='craft';auditHub.showForge()");
     counts.craftShelf=await evaluate("document.querySelector('#meta-screen').innerText.length");
     validateRects(await rectangles('#meta-screen button'));
-    await evaluate("auditHub.showForge();auditHub.action('select-gear',{uid:'craft:iron_sword:1'})");
+    await evaluate("auditHub.forgeTab='enhance';auditHub.showForge();auditHub.action('select-gear',{uid:'craft:iron_sword:1'})");
     counts.forgeSelected=await evaluate("document.querySelector('#meta-screen').innerText.length");
     validateRects(await rectangles('#meta-screen button:not(details button)'));
     await evaluate("auditHub.showReceipt()");

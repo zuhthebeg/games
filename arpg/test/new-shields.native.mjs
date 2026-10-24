@@ -28,8 +28,8 @@ assert.ok(validateSave(save));const storage={};new SaveStore({setItem:(k,v)=>sto
   const picker=page.locator('.forge-picker .p2-card');await picker.first().waitFor();const sizes=await picker.evaluateAll(nodes=>nodes.map(n=>({width:n.getBoundingClientRect().width,overflow:n.scrollWidth>n.clientWidth+1})));assert.ok(sizes.every(s=>s.width<=97&&!s.overflow),'96px picker stays compact');
   await press(`[data-action="select-gear"][data-uid="fixture:${shieldId}"]`);await press(`[data-action="enhance"][data-uid="fixture:${shieldId}"]`);
   await page.waitForFunction(id=>__arpg.save.items.find(i=>i.uid==='fixture:'+id).enhance===1,shieldId);
-  await page.keyboard.press('Escape');if(await page.locator('dialog[open]').count())await press('[data-action="close-sheet"]');
-  await press('[data-action="forge-tab"][data-tab="salvage"]');const beforeCraft=await page.evaluate(()=>({count:__arpg.save.items.length,gold:__arpg.save.gold}));
+  await page.keyboard.press('Escape');if(await page.locator('.enchant-fx[open]').count())await page.keyboard.press('Escape');await page.locator('.enchant-fx').waitFor({state:'detached'});
+  await press('[data-action="forge-tab"][data-tab="craft"]');const beforeCraft=await page.evaluate(()=>({count:__arpg.save.items.length,gold:__arpg.save.gold}));
   await press(`[data-action="craft"][data-id="${shieldId}"]`);await page.waitForFunction(n=>__arpg.save.items.length===n+1,beforeCraft.count);
   const made=await page.evaluate(()=>({item:JSON.parse(JSON.stringify(__arpg.save.items.at(-1))),gold:__arpg.save.gold}));assert.equal(ITEMS[made.item.id].baseId,shieldId);assert.equal(beforeCraft.gold-made.gold,RECIPES[shieldId].gold);
   await page.locator('.craft-result').waitFor();await page.locator('.craft-fx').waitFor({state:'hidden'});await press('[data-action="inn"]');await press('[data-action="board"]');await press('[data-action="map-region"][data-region="outskirts"]');await press('[data-action="sortie"][data-stage="S1"]');await press('#sortie-confirm');
