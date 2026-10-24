@@ -51,8 +51,8 @@ export class CloudSave {
   async token() {
     const client = window.MultiplayerClient?.getInstance();
     if (!client) throw new Error('Relay auth unavailable');
-    await client.ensureAuth();
-    return client.token;
+    if (!this.authPromise) this.authPromise = client.ensureAuth().then(() => client.token).finally(() => { this.authPromise = null; });
+    return this.authPromise;
   }
   async load() {
     const token = await this.token();
