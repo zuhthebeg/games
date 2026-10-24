@@ -49,6 +49,13 @@ export class CloudSave {
     this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map(); this.uploading = new Set();
   }
   async token() {
+    const stored = this.storage.getItem('relay_token');
+    if (stored?.split('.').length === 3 && stored.split('.')[2]) {
+      try {
+        const payload = JSON.parse(atob(stored.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (payload.exp > Date.now() / 1000 + 60) return stored;
+      } catch { /* Let the relay auth client repair an invalid token. */ }
+    }
     const client = window.MultiplayerClient?.getInstance();
     if (!client) throw new Error('Relay auth unavailable');
     if (!this.authPromise) this.authPromise = client.ensureAuth().then(() => client.token).finally(() => { this.authPromise = null; });
