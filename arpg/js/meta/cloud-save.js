@@ -50,7 +50,8 @@ export class CloudSave {
   }
   async token() {
     const stored = this.storage.getItem('relay_token');
-    if (stored?.split('.').length === 3 && stored.split('.')[2]) {
+    const mainToken = this.storage.getItem('cocy_auth_token') || this.storage.getItem('accessToken');
+    if ((!mainToken || mainToken === stored) && stored?.split('.').length === 3 && stored.split('.')[2]) {
       try {
         const payload = JSON.parse(atob(stored.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
         if (payload.exp > Date.now() / 1000 + 60) return stored;
