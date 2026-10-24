@@ -1,0 +1,118 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b8/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b8/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "sky_armabee",
+      "label": "첨탑 갑주벌",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b8/source/sky_armabee.glb",
+      "keep": [
+        "Armabee"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Wing1.L",
+        "Wing1.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Punch",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "sky_armabee"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "sky_pigeon",
+      "label": "신전 수호 비둘기",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b8/source/sky_pigeon.glb",
+      "keep": [
+        "Pigeon_Blob_Eyes"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Walk",
+        "attack": "CharacterArmature|Bite_Front",
+        "hit": "CharacterArmature|HitRecieve",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "sky_pigeon"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "sky_birb",
+      "label": "폭풍 수정 괴조",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b8/source/sky_birb.glb",
+      "keep": [
+        "Birb_Blob"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Walk",
+        "attack": "CharacterArmature|Bite_Front",
+        "hit": "CharacterArmature|HitRecieve",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "sky_birb"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    }
+  ]
+}

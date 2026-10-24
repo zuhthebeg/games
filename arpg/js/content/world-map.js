@@ -17,13 +17,14 @@ export const REGIONS = [
   { id:'spore', name:'포자 군락지', maps:['S40','S41','S42'], pos:[24,124] },
   { id:'abyss', name:'심연 해구', maps:['S43','S44','S45'], pos:[24,140] },
   { id:'clockwork', name:'태엽 폐허', maps:['S46','S47','S48'], pos:[50,156] },
+  { id:'sky', name:'구름 첨탑', maps:['S49','S50','S51'], pos:[76,172] },
   { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[24,74] },
 ];
-export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne'],['castle','graveyard'],['graveyard','necropolis'],['necropolis','cinder'],['cinder','frost'],['frost','mire'],['mire','dunes'],['dunes','spore'],['spore','abyss'],['abyss','clockwork']];
+export const REGION_EDGES = [['outskirts','forest'],['forest','pass'],['pass','mine'],['pass','swamp'],['mine','castle'],['swamp','castle'],['castle','throne'],['castle','graveyard'],['graveyard','necropolis'],['necropolis','cinder'],['cinder','frost'],['frost','mire'],['mire','dunes'],['dunes','spore'],['spore','abyss'],['abyss','clockwork'],['clockwork','sky']];
 export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map((id, index) => [id, {
   id, regionId:region.id, mainQuest:id,
   // Castle accepts EITHER completed branch, never both.
-  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20'],graveyard:['S20'],necropolis:['S23'],cinder:['S27'],frost:['S30'],mire:['S33'],dunes:['S36'],spore:['S39'],abyss:['S42'],clockwork:['S45']}[region.id],
+  requires: index ? [region.maps[index - 1]] : {outskirts:[],forest:['S4'],pass:['S7'],mine:['S10'],swamp:['S10'],castle:['S17','S18'],throne:['S20'],graveyard:['S20'],necropolis:['S23'],cinder:['S27'],frost:['S30'],mire:['S33'],dunes:['S36'],spore:['S39'],abyss:['S42'],clockwork:['S45'],sky:['S48']}[region.id],
 }])));
 for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
 // Append after legacy gates were derived: QC1 never changes TD1's S20 requirement.
@@ -37,6 +38,7 @@ export function mapUnlocked(save, id) {
   if (map?.regionId === 'frost' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30)) return false;
   if (map?.regionId === 'mire' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33)) return false;
   if (map?.regionId === 'dunes' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33 || !save.cleared?.S36)) return false;
+  if (map?.regionId === 'sky' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33 || !save.cleared?.S36 || !save.cleared?.S39 || !save.cleared?.S42 || !save.cleared?.S45 || !save.cleared?.S48)) return false;
   if (map?.regionId === 'clockwork' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33 || !save.cleared?.S36 || !save.cleared?.S39 || !save.cleared?.S42 || !save.cleared?.S45)) return false;
   if (map?.regionId === 'abyss' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33 || !save.cleared?.S36 || !save.cleared?.S39 || !save.cleared?.S42)) return false;
   if (map?.regionId === 'spore' && (!save.cleared?.S20 || !save.cleared?.S27 || !save.cleared?.S30 || !save.cleared?.S33 || !save.cleared?.S36 || !save.cleared?.S39)) return false;
@@ -52,7 +54,7 @@ export const discoveredRegions = save => {
 // Flow-grid slots preserve the fork/rejoin route without absolute-positioned touch targets.
 export const REGION_ROUTE = {
   outskirts:[1,0], forest:[2,0], pass:[3,0], mine:[4,1], swamp:[4,2],
-  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2], cinder:[8,2], frost:[9,2], mire:[10,2], dunes:[11,2], spore:[12,2], abyss:[13,2], clockwork:[14,1],
+  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2], cinder:[8,2], frost:[9,2], mire:[10,2], dunes:[11,2], spore:[12,2], abyss:[13,2], clockwork:[14,1], sky:[15,0],
 };
 export const availableStages = save => Object.keys(STAGES).filter(id => mapUnlocked(save, id));
 export const regionFor = id => REGIONS.find(region => region.id === MAPS[id]?.regionId);

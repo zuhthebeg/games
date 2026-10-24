@@ -9,6 +9,9 @@ export const PROFILE_FILES = Object.freeze(['bone-hit', 'dry-hit', 'ghost-hit', 
   'perfect-dodge', 'counter-hit']);
 const species = (hit, death, pitch = 1) => Object.freeze({ hit, death, pitch });
 export const SPECIES_AUDIO = Object.freeze({
+  sky_armabee: species('slime-hit', 'boar-death', 1.4),
+  sky_pigeon: species('dry-hit', 'boar-death', 1.25),
+  sky_birb: species('stone-hit', 'dragon-death', .85),
   clock_drone: species('stone-hit', 'dry-death', 1.32),
   clock_walker: species('stone-hit', 'stone-death', 1.1),
   clock_colossus: species('stone-hit', 'dragon-death', .7),

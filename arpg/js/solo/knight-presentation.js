@@ -10,6 +10,7 @@ export const HUMAN_PRESENTATIONS = Object.freeze({
   slime: 'blade', succubus: 'bow', ash_reaver: 'blade', veil_stalker: 'blade', cinder_oracle: 'focus', orc_raider: 'blade', frost_yeti: 'blade', stone_giant: 'blade',
   marsh_wasp: 'blade', bog_wizard: 'focus', mire_frog: 'blade',
   dune_cactoro: 'blade', sun_totem: 'focus', crown_alpaking: 'blade',
+  sky_armabee: 'bow', sky_pigeon: 'blade', sky_birb: 'focus',
   clock_drone: 'blade', clock_walker: 'bow', clock_colossus: 'blade',
   abyss_glub: 'blade', drowned_skull: 'focus', abyss_squidle: 'blade',
   spore_mushnub: 'blade', gale_hywirl: 'focus', spore_king: 'blade',

@@ -59,7 +59,7 @@ test('SUC identity is additive hostile/living only; ATLAS_IDS adds exactly one k
 
 test('SUC slinger raw gold/material/gear/stone/scroll outputs equal isolated checkpoint for all tiers/threats/elite/bonus seeds',async()=>{
  const oldSource=git('show',base+':arpg/js/content/loot.js');const old=await import('data:text/javascript;base64,'+oldSource.toString('base64'));
- assert.deepEqual(Object.fromEntries(Object.entries(NEW_MONSTER_DROPS).filter(([id])=>id!=='succubus'&&id!=='necropolis_lord'&&!['ash_reaver','veil_stalker','cinder_oracle','orc_raider','frost_yeti','stone_giant','marsh_wasp','bog_wizard','mire_frog','dune_cactoro','sun_totem','crown_alpaking','spore_mushnub','gale_hywirl','spore_king','abyss_glub','drowned_skull','abyss_squidle','clock_drone','clock_walker','clock_colossus'].includes(id))),old.NEW_MONSTER_DROPS);
+ assert.deepEqual(Object.fromEntries(Object.entries(NEW_MONSTER_DROPS).filter(([id])=>id!=='succubus'&&id!=='necropolis_lord'&&!['ash_reaver','veil_stalker','cinder_oracle','orc_raider','frost_yeti','stone_giant','marsh_wasp','bog_wizard','mire_frog','dune_cactoro','sun_totem','crown_alpaking','spore_mushnub','gale_hywirl','spore_king','abyss_glub','drowned_skull','abyss_squidle','clock_drone','clock_walker','clock_colossus','sky_armabee','sky_pigeon','sky_birb'].includes(id))),old.NEW_MONSTER_DROPS);
  assert.deepEqual(NEW_MONSTER_DROPS.succubus,{gold:[2,5],stacks:[{id:'wood',count:1,chance:.5},{id:'hide',count:1,chance:.3},{id:'mana_potion',count:1,chance:.15}],items:[]});
  // meta/items is exactly frozen below, so existing slinger remains the checkpoint implementation.
  for(const huntTier of [1,2,3,4])for(const threat of [1,2,3])for(const elite of [false,true])for(const bonus of [0,20])for(let seed=0;seed<256;seed++){

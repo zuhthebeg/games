@@ -1,0 +1,47 @@
+[
+  {
+    "name": "sky_armabee",
+    "frames": 208,
+    "webp_quality": 52,
+    "webp_bytes": 188576,
+    "json_bytes": 47730,
+    "total_bytes": 236306,
+    "seconds": 18.802519699995173,
+    "atlas_sizes": [
+      [
+        2048,
+        1664
+      ]
+    ]
+  },
+  {
+    "name": "sky_pigeon",
+    "frames": 176,
+    "webp_quality": 52,
+    "webp_bytes": 192036,
+    "json_bytes": 40374,
+    "total_bytes": 232410,
+    "seconds": 14.90613369998755,
+    "atlas_sizes": [
+      [
+        2048,
+        1408
+      ]
+    ]
+  },
+  {
+    "name": "sky_birb",
+    "frames": 176,
+    "webp_quality": 52,
+    "webp_bytes": 193446,
+    "json_bytes": 40374,
+    "total_bytes": 233820,
+    "seconds": 16.63178500000504,
+    "atlas_sizes": [
+      [
+        2048,
+        1408
+      ]
+    ]
+  }
+]

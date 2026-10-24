@@ -1422,5 +1422,92 @@
       "death": 0.6
     },
     "cacheVersion": "65eea3fd31d8"
+  },
+  {
+    "id": "sky_armabee",
+    "label": "첨탑 갑주벌",
+    "monster": true,
+    "content_ids": [
+      "sky_armabee"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6997393071651459
+    },
+    "bytes": 236321,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "1ac8c02bb53b"
+  },
+  {
+    "id": "sky_pigeon",
+    "label": "신전 수호 비둘기",
+    "monster": true,
+    "content_ids": [
+      "sky_pigeon"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7687388062477112
+    },
+    "bytes": 232425,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "5b8dd07f1bc1"
+  },
+  {
+    "id": "sky_birb",
+    "label": "폭풍 수정 괴조",
+    "monster": true,
+    "content_ids": [
+      "sky_birb"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6825172007083893
+    },
+    "bytes": 233835,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "dbb7cc1edfac"
   }
 ]

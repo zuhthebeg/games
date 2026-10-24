@@ -10,6 +10,10 @@ export const NEW_MONSTER_DROPS = {
   orc_raider: { gold:[12,18], stacks:[{id:'web',count:3},{id:'scrap',count:3},{id:'potion',count:1,chance:.2}], items:[] },
   frost_yeti: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   stone_giant: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
+  // Cloud spire: existing T4 materials and equipment pools, no new currency.
+  sky_armabee: { gold:[11,18], stacks:[{id:'web',count:2},{id:'frost_shard',count:1},{id:'potion',count:1,chance:.2}], items:[] },
+  sky_pigeon: { gold:[11,18], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  sky_birb: { gold:[21,29], stacks:[{id:'rune_shard',count:2},{id:'frost_shard',count:2},{id:'hide',count:2}], items:[] },
   // Clockwork ruins: existing T4 materials and equipment pools, no new currency.
   clock_drone: { gold:[10,17], stacks:[{id:'scrap',count:3},{id:'frost_shard',count:1},{id:'potion',count:1,chance:.2}], items:[] },
   clock_walker: { gold:[11,18], stacks:[{id:'scrap',count:2},{id:'rune_shard',count:1},{id:'mana_potion',count:1,chance:.25}], items:[] },

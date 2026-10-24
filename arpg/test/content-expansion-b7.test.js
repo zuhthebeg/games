@@ -35,8 +35,8 @@ test('S46–S48 follow the abyss frontier without changing old save gates',()=>{
  for(const id of ids){assert.equal(biomeForStage(id),'clockwork_ruins');assert.ok(STAGE_XP[id]>STAGE_XP.S45);assert.equal(STAGES[id].goal,'killAll');assert.ok(STAGES[id].maxConcurrent<=3);assert.ok(STAGES[id].spawns.every(s=>types.includes(s.monster)))}
  assert.equal(BALANCE.stages.S48.eliteChance,1);assert.equal(STAGES.S48.spawns[0].monster,'clock_colossus');
  // Append-only registries: seeded tests iterate Object.keys order.
- assert.deepEqual(Object.keys(MONSTERS).slice(-6),['abyss_glub','drowned_skull','abyss_squidle',...types]);
- assert.deepEqual(Object.keys(STAGES).filter(id=>/^S4\d$/.test(id)).slice(-6),['S43','S44','S45',...ids]);
+ assert.deepEqual(Object.keys(MONSTERS).slice(Object.keys(MONSTERS).indexOf('abyss_glub'),Object.keys(MONSTERS).indexOf('clock_colossus')+1),['abyss_glub','drowned_skull','abyss_squidle',...types]);
+ assert.deepEqual(Object.keys(STAGES).filter(id=>/^S4[3-8]$/.test(id)),['S43','S44','S45',...ids]);
 });
 test('diving claw drone, rivet-gun walker and charging colossus use distinct native rigs within atlas budgets',()=>{
  assert.deepEqual(types.map(id=>MONSTERS[id].abilities),[['wolf_dash','goblin_slash'],['sling_stone','guardian_crush'],['chief_charge','guardian_ring']]);
