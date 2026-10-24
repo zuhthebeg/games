@@ -595,7 +595,7 @@ try {
       get running() { return running; }, get tracker() { return tracker; } });
   }
   const inputs = { local: null };
-  cloud.load().then(() => { if (running) return; if (hub.panel === 'character-choice') hub.showCharacterChoice(); else if (hub.panel === 'inn') hub.showInn(); else if (hub.panel === 'intro') hub.showIntro(); }).catch(() => {});
+  cloud.load().then(() => { if (running) return; if (hub.root.dataset.page === 'character-choice') hub.showCharacterChoice(); else if (hub.root.dataset.page === 'inn') hub.showInn(); else if (hub.root.dataset.page === 'intro') hub.showIntro(); }).catch(() => {});
 
   document.addEventListener('visibilitychange', () => {
     hidden = document.hidden;

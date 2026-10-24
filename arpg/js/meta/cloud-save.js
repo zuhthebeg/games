@@ -46,7 +46,7 @@ export function combatPower(data) {
 export class CloudSave {
   constructor({ storage, fetcher = (...args) => fetch(...args), now = () => Date.now(), timer = (fn, delay) => setTimeout(fn, delay), cancelTimer = id => clearTimeout(id) } = {}) {
     this.storage = storage; this.fetcher = fetcher; this.now = now; this.timer = timer; this.cancelTimer = cancelTimer;
-    this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map();
+    this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map(); this.uploading = new Set();
   }
   async token() {
     const client = window.MultiplayerClient?.getInstance();
@@ -105,7 +105,9 @@ export class CloudSave {
   }
   async flush({ hidden = false } = {}) {
     for (const [slot, entry] of [...this.pending]) {
+      if (this.uploading.has(slot)) continue;
       if (this.now() - (this.lastSent.get(slot) || 0) < 60000 && !hidden) { this.retry(slot, 60000 - (this.now() - this.lastSent.get(slot))); continue; }
+      this.uploading.add(slot);
       try {
         const token = await this.token();
         const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(entry.data), keepalive: hidden });
@@ -114,6 +116,7 @@ export class CloudSave {
         if (this.pending.get(slot) === entry) this.pending.delete(slot);
         this.lastHash.set(slot, entry.hash); this.lastSent.set(slot, this.now());
       } catch { this.retry(slot, 30000); }
+      finally { this.uploading.delete(slot); }
     }
   }
   retry(slot, delay) { this.timer(() => { if (this.pending.has(slot)) this.flush(); }, delay); }
