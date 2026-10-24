@@ -44,7 +44,7 @@ export function combatPower(data) {
   return Math.round(attack * 2 + defense * 1.5 + (data.stats?.agi || 0));
 }
 export class CloudSave {
-  constructor({ storage, fetcher = fetch, now = () => Date.now(), timer = setTimeout, cancelTimer = clearTimeout } = {}) {
+  constructor({ storage, fetcher = (...args) => fetch(...args), now = () => Date.now(), timer = (fn, delay) => setTimeout(fn, delay), cancelTimer = id => clearTimeout(id) } = {}) {
     this.storage = storage; this.fetcher = fetcher; this.now = now; this.timer = timer; this.cancelTimer = cancelTimer;
     this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map();
   }
