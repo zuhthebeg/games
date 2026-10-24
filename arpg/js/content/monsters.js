@@ -10,6 +10,7 @@ export const MONSTER_PALETTES = {
   succubus: [0xffffff], ash: [0xffffff], frost: [0xffffff],
   marsh_wasp: [0xe8c87a], bog_wizard: [0xb9a3d8], mire_frog: [0x88b783],
   dune_cactoro: [0xffffff], sun_totem: [0xffffff], crown_alpaking: [0xffffff],
+  spore_mushnub: [0xffffff], gale_hywirl: [0xffffff], spore_king: [0xffffff],
   human: [0xffffff],
   necropolis: [0xffdca0],
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
@@ -23,6 +24,7 @@ export const MONSTER_MODELS = [
   'succubus', 'ash_reaver', 'veil_stalker', 'cinder_oracle', 'orc_raider', 'frost_yeti', 'stone_giant',
   'marsh_wasp', 'bog_wizard', 'mire_frog',
   'dune_cactoro', 'sun_totem', 'crown_alpaking',
+  'spore_mushnub', 'gale_hywirl', 'spore_king',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
@@ -32,6 +34,7 @@ export const MONSTER_NAMES = {
   succubus: '서큐버스', ash_reaver: '재의 약탈자', veil_stalker: '장막 추적자', cinder_oracle: '잿불 예언자', orc_raider: '오크 약탈자', frost_yeti: '설원 예티', stone_giant: '바위 거인',
   marsh_wasp: '습지 말벌', bog_wizard: '늪의 술사', mire_frog: '진흙 개구리',
   dune_cactoro: '사막 선인장귀', sun_totem: '태양 가면 정령', crown_alpaking: '황금 관 알파킹',
+  spore_mushnub: '포자 뭉치귀', gale_hywirl: '포자 회오리 정령', spore_king: '버섯 왕',
   gargoyle: '석상 가고일',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
@@ -58,6 +61,9 @@ export const MONSTER_VARIANTS = {
   dune_cactoro: variant('dune_cactoro', 'dune_cactoro', ['plant', 'humanoid'], 'living'),
   sun_totem: variant('sun_totem', 'sun_totem', ['spirit', 'mage'], 'living'),
   crown_alpaking: variant('crown_alpaking', 'crown_alpaking', ['flyer', 'beast'], 'beast'),
+  spore_mushnub: variant('spore_mushnub', 'spore_mushnub', ['fungus', 'beast'], 'living'),
+  gale_hywirl: variant('gale_hywirl', 'gale_hywirl', ['elemental', 'spirit'], 'living'),
+  spore_king: variant('spore_king', 'spore_king', ['fungus', 'humanoid'], 'living'),
   succubus: variant('succubus', 'succubus', ['demon', 'humanoid'], 'living'),
   demon: variant('demon', 'demon', ['demon', 'humanoid'], 'living'),
   goleling: variant('goleling', 'goleling', ['goleling', 'crafted'], 'construct'),

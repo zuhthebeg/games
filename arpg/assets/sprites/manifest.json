@@ -1161,5 +1161,92 @@
       "death": 0.6
     },
     "cacheVersion": "1cbf411b7b70"
+  },
+  {
+    "id": "spore_mushnub",
+    "label": "포자 뭉치귀",
+    "monster": true,
+    "content_ids": [
+      "spore_mushnub"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.8607604205608368
+    },
+    "bytes": 329207,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "e4236ca55005"
+  },
+  {
+    "id": "gale_hywirl",
+    "label": "포자 회오리 정령",
+    "monster": true,
+    "content_ids": [
+      "gale_hywirl"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6058495044708252
+    },
+    "bytes": 274373,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "09bf71b347a8"
+  },
+  {
+    "id": "spore_king",
+    "label": "버섯 왕",
+    "monster": true,
+    "content_ids": [
+      "spore_king"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5754370987415314
+    },
+    "bytes": 208609,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "63a6ec20c946"
   }
 ]

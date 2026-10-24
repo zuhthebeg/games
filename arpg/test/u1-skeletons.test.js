@@ -154,8 +154,8 @@ test('U1 main-versus-definition host traces cover every stage and remain byte-id
   const after = read('../tools/art/u1-skeletons/host-trace-after.json');
   assert.equal(evidence.baseline, 'dc2a876d0ce367cc2b99c77b0b1cd0f7c8dceaf8');
   assert.equal(evidence.ok, true); assert.equal(evidence.cmp_equal, true);
-  assert.deepEqual(evidence.stage_ids, Object.keys(STAGES).filter(id=>!/^S2[1-9]$|^S3[0-9]$/.test(id)));
-  assert.equal(evidence.traces, Object.keys(STAGES).filter(id=>!/^S2[1-9]$|^S3[0-9]$/.test(id)).length * 9);
+  assert.deepEqual(evidence.stage_ids, Object.keys(STAGES).filter(id=>!/^S2[1-9]$|^S3[0-9]$|^S4[0-2]$/.test(id)));
+  assert.equal(evidence.traces, Object.keys(STAGES).filter(id=>!/^S2[1-9]$|^S3[0-9]$|^S4[0-2]$/.test(id)).length * 9);
   assert.equal(JSON.parse(before).length, evidence.traces);
   assert.deepEqual(before, after);
   assert.equal(sha(before), evidence.before_sha256); assert.equal(sha(after), evidence.after_sha256);

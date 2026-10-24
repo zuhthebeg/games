@@ -1,0 +1,122 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b5/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b5/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "spore_mushnub",
+      "label": "포자 뭉치귀",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b5/source/spore_mushnub.glb",
+      "keep": [
+        "Mushnub_Evolved",
+        "Mushnub_Evolved.001",
+        "Mushnub_Evolved.002"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Walk",
+        "attack": "CharacterArmature|Bite_Front",
+        "hit": "CharacterArmature|HitRecieve",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "spore_mushnub"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "gale_hywirl",
+      "label": "포자 회오리 정령",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b5/source/gale_hywirl.glb",
+      "keep": [
+        "Hywirl"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Punch",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "gale_hywirl"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "spore_king",
+      "label": "버섯 왕",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b5/source/spore_king.glb",
+      "keep": [
+        "MushroomKing",
+        "Mushroom"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Weapon",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "spore_king"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ]
+}

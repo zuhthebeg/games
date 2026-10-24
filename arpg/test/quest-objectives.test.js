@@ -20,7 +20,7 @@ test('QM1 registry: distinct map, three fixed slots, gate S10, mine biome and ex
  assert.equal(MAPS[id].questId,'QM1');assert.equal(STAGES[id].goal,'objective');assert.deepEqual(STAGES[id].spawns,OBJECTIVE_QUESTS.QM1.spawns);
  assert.deepEqual(STAGES[id].spawns.map(s=>s.at),[0,0,2000]);assert.equal(STAGES[id].maxConcurrent,3);
  assert.equal(mapUnlocked({cleared:{S10:true}},id),true);assert.equal(mapUnlocked({cleared:{S12:true}},id),false);
- assert.deepEqual(REGIONS.find(r=>r.id==='mine').maps,['S12','S17']);assert.equal(REGIONS.length,13);assert.equal(biomeForStage(id),'mine');
+ assert.deepEqual(REGIONS.find(r=>r.id==='mine').maps,['S12','S17']);assert.equal(REGIONS.length,14);assert.equal(biomeForStage(id),'mine');
  assert.equal(BALANCE.stages[id].huntTier,3);assert.equal(BALANCE.stages[id].rewardRank,12);
  assert.deepEqual(monsterSizeProfile(id,false,false,.7),monsterSizeProfile('S12',false,false,.7));
 });

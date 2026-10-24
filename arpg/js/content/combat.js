@@ -468,6 +468,12 @@ Object.assign(MONSTERS, {
     abilities:['sling_stone','guardian_ring'], xp:30, keepRange:[150,240] },
   crown_alpaking: { lifeState:'beast', hp:318, r:24, speed:112, heavyPoise:true, poise:96, kbResist:.5,
     abilities:['goblin_hop','chief_slam'], xp:36, keepRange:[50,100] },
+  spore_mushnub: { lifeState:'living', hp:176, r:18, speed:132, poise:40, kbResist:.25,
+    abilities:['goblin_hop','spider_bite'], xp:28, keepRange:[45,80] },
+  gale_hywirl: { lifeState:'living', hp:142, r:18, speed:118, poise:30, kbResist:.18,
+    abilities:['spirit_bolt','wolf_dash'], xp:30, keepRange:[170,260] },
+  spore_king: { lifeState:'living', hp:340, r:28, speed:84, heavyPoise:true, poise:110, kbResist:.6,
+    abilities:['guardian_crush','spider_puddle'], xp:38, keepRange:[60,110] },
 });
 
 export const STAGES = {
@@ -553,6 +559,9 @@ export const STAGES = {
   S37: stage('모래바람 길', [['dune_cactoro',0,.76,.35],['sun_totem',0,.84,.7],['dune_cactoro',2600,.88,.5],['sun_totem',5200,.9,.25]]),
   S38: stage('가시 선인장 협곡', [['crown_alpaking',0,.76,.35],['dune_cactoro',0,.84,.7],['sun_totem',2700,.88,.5],['dune_cactoro',5200,.9,.25]]),
   S39: stage('태양 왕관 제단', [['crown_alpaking',0,.78,.5],['sun_totem',2200,.86,.3],['dune_cactoro',4500,.86,.7]]),
+  S40: stage('발광 균사 길', [['spore_mushnub',0,.76,.35],['gale_hywirl',0,.84,.7],['spore_mushnub',2600,.88,.5],['gale_hywirl',5200,.9,.25]]),
+  S41: stage('포자 회오리 골짜기', [['spore_king',0,.76,.35],['spore_mushnub',0,.84,.7],['gale_hywirl',2700,.88,.5],['spore_mushnub',5200,.9,.25]]),
+  S42: stage('버섯 왕의 옥좌', [['spore_king',0,.78,.5],['gale_hywirl',2200,.86,.3],['spore_mushnub',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

@@ -18,7 +18,7 @@ const hubFor = save => Object.assign(Object.create(HubUI.prototype), {save, pers
 
 test('W2 owns the main campaign, throne challenge, graveyard and four-map necropolis', () => {
   assert.deepEqual([...REGIONS.flatMap(r=>r.maps)].filter(id=>!id.startsWith('M_')).sort(),Object.keys(STAGES).filter(id=>!id.startsWith('M_')).sort());
-  assert.equal(REGIONS.length,13);
+  assert.equal(REGIONS.length,14);
   assert.deepEqual(MAPS.S14.requires,['S17','S18']);
   for(const [id,prior] of Object.entries({S2:'S1',S5:'S4',S8:'S7',S12:'S10',S11:'S10',S17:'S12',S13:'S11',S16:'S13',S18:'S16',S15:'S14',S19:'S15',S20:'S19'})) assert.deepEqual(MAPS[id].requires,[prior]);
 });
@@ -34,7 +34,7 @@ test('historical out-of-order clears remain replayable, debug all-clears open ev
   const v3={...toOldScale(fresh(),3),cleared:{...fresh().cleared,...old.cleared}};delete v3.stash;delete v3.learned;delete v3.skills;
   const storage={getItem:()=>JSON.stringify(v3),setItem:()=>{},removeItem:()=>{}};const migrated=new SaveStore(storage).load();assert.ok(migrated);
   for(const [id,clear] of Object.entries(old.cleared)) if(clear) assert.ok(mapUnlocked(migrated,id));
-  s.cleared=Object.fromEntries(Object.keys(STAGES).map(id=>[id,true]));assert.equal(availableStages(s).length,43);
+  s.cleared=Object.fromEntries(Object.keys(STAGES).map(id=>[id,true]));assert.equal(availableStages(s).length,46);
 });
 test('locked sortie and launch reject action dispatch; coop fallback uses the same graph', () => {
   const h=hubFor(fresh());assert.throws(()=>h.showSortie('S14'),/잠긴/);assert.throws(()=>h.launch('S14'),/잠긴/);

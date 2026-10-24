@@ -454,6 +454,28 @@
       "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
       "reviewNotes": "Distinct amber dune-and-mesa landscape; no UI, characters or typography",
       "sourceLicense": "Original locally authored scene; no third-party content"
+    },
+    {
+      "id": "spore",
+      "prompt": "Original empty bioluminescent fungal hollow of giant glowing mushroom trees, hanging roots, rock shelves and drifting spores; procedural hand-authored landscape",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 42042,
+      "steps": 0,
+      "guidance": 0,
+      "scheduler": "deterministic procedural",
+      "width": 768,
+      "height": 384,
+      "sourceWindowsPath": "not applicable",
+      "sourceSha256": "6b3729bca7435ef498cfaaf39d4dcb190d48b5e726b915fd0007d1874de11bff",
+      "sourceBytes": 2942,
+      "outputFile": "spore.webp",
+      "outputSha256": "aa3db713f9fdc7d8d47478a98c3bb7af42a6f31cffa9b5a338439526f43fa680",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 18544,
+      "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
+      "reviewNotes": "Distinct indigo-and-teal glowing mushroom hollow; no UI, characters or typography",
+      "sourceLicense": "Original locally authored scene; no third-party content"
     }
   ],
   "schemaVersion": 1,
@@ -467,7 +489,7 @@
     768,
     384
   ],
-  "outputTotalBytes": 464102,
+  "outputTotalBytes": 482646,
   "pipelineSkill": "cocy-game-image-pipeline",
   "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
   "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",
