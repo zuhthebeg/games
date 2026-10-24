@@ -296,7 +296,7 @@ export class HubUI {
       const country = code => /^[A-Z]{2}$/.test(code || '') ? [...code].map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') : '';
       const mine = localStorage.getItem('relay_userId');
       const content = rows.map(row => `<div class="ranking-row${row.userId === mine ? ' mine' : ''}"><b>${row.rank}</b> <span>${country(row.country)} ${escape(row.nickname)}</span> <span>Lv.${row.level}</span> <span>${row.stage && STAGES[row.stage] ? escape(STAGES[row.stage].name) : '-'}</span> <span>${row.power}</span></div>`).join('');
-      this.showInnPanel('🏆 랭킹', content || '<p>기록 없음</p>', 'cloud-ranking');
+      this.showInnPanel('🏆 랭킹', content ? `<div class="ranking-row heading"><b>#</b><span>닉네임</span><span>레벨</span><span>스테이지</span><span>전투력</span></div>${content}` : '<p>기록 없음</p>', 'cloud-ranking');
     } catch { this.showInnPanel('🏆 랭킹', '<p>불러오지 못함</p>', 'cloud-ranking'); }
   }
 

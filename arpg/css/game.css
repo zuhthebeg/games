@@ -1137,3 +1137,5 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 .ranking-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ranking-row.mine { background:rgba(231,192,106,.16); color:#f8dc9b; }
 @media(max-width:420px) { .ranking-row { gap:.25rem; font-size:.72rem; padding-inline:.2rem; } }
+
+.ranking-row.heading { color:#c8c1aa; font-size:.72rem; border-bottom-color:rgba(255,255,255,.28); }
