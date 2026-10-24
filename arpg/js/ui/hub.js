@@ -276,7 +276,28 @@ export class HubUI {
     this.show(this.panelHtml('어떤 모습으로 깨어날까', `
       <p>캐릭터는 이 브라우저의 독립 슬롯에 보관됩니다.</p>
       ${button('인간 · 이어하기', 'choose-human')}
-      ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}`), 'character-choice');
+      ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}
+      ${this.cloudOffersHtml()}`), 'character-choice');
+  }
+
+  cloudOffersHtml() {
+    if (!this.cloud) return '';
+    return ['human', 'skeleton_knight'].map(slot => {
+      const offer = this.cloud.offer(slot);
+      return offer ? button(`서버 저장 캐릭터 복원 · ${escape(offer.save.name)} Lv.${offer.save.level}`, 'cloud-restore', `data-slot="${slot}"`) : '';
+    }).join('');
+  }
+
+  async showCloudRanking() {
+    if (!this.cloud) return;
+    this.showInnPanel('🏆 랭킹', '<p role="status">불러오는 중</p>', 'cloud-ranking');
+    try {
+      const rows = await this.cloud.rankings();
+      const country = code => /^[A-Z]{2}$/.test(code || '') ? [...code].map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') : '';
+      const mine = localStorage.getItem('relay_userId');
+      const content = rows.map(row => `<div class="ranking-row${row.userId === mine ? ' mine' : ''}"><b>${row.rank}</b> <span>${country(row.country)} ${escape(row.nickname)}</span> <span>Lv.${row.level}</span> <span>${row.stage && STAGES[row.stage] ? escape(STAGES[row.stage].name) : '-'}</span> <span>${row.power}</span></div>`).join('');
+      this.showInnPanel('🏆 랭킹', content || '<p>기록 없음</p>', 'cloud-ranking');
+    } catch { this.showInnPanel('🏆 랭킹', '<p>불러오지 못함</p>', 'cloud-ranking'); }
   }
 
   showSaveLocked() {
@@ -292,7 +313,7 @@ export class HubUI {
     this.show(this.panelHtml('문 너머의 불빛', `
       <p class="story">이세계로 소환되었다.<br>낯선 하늘 아래, 꺼지지 않은 여관의 불빛이 보인다.<br>
       손등의 인장이 당신에게 이름을 묻는다.</p>
-      ${button('인장에 이름 새기기', 'name')}${this.initialCharacters ? button('캐릭터 선택', 'character-choice') : ''}`, 'UNTITLED · M1'), 'intro');
+      ${button('인장에 이름 새기기', 'name')}${this.initialCharacters ? button('캐릭터 선택', 'character-choice') : ''}${this.cloudOffersHtml()}`, 'UNTITLED · M1'), 'intro');
   }
 
   showName() {
@@ -353,6 +374,7 @@ export class HubUI {
         aria-valuenow="${Math.round(ratio * 100)}"><i style="width:${ratio * 100}%"></i></div></div></div>
       ${this.money()}
       ${this.initialCharacters ? button('캐릭터 선택', 'character-choice') : ''}
+      ${button('🏆 랭킹', 'cloud-ranking')}
       ${button(icon('settings'), 'settings', 'class="icon-button" aria-label="설정"')}</header>`;
   }
 
@@ -395,7 +417,7 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
-    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${room}${activeSetsHtml(this.save)}
+    const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${room}${this.cloudOffersHtml()}${activeSetsHtml(this.save)}
       ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
@@ -1185,6 +1207,8 @@ export class HubUI {
     if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {
       case 'character-choice': return this.showCharacterChoice();
+      case 'cloud-ranking': return this.showCloudRanking();
+      case 'cloud-restore': { this.onCloudRestore(data.slot); return; }
       case 'save-reload': return this.reloadFresh();
       case 'save-discard-ask': this.lockDiscardStep = 1; return this.showSaveLocked();
       case 'save-discard':

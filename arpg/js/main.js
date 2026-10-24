@@ -19,6 +19,7 @@ import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { CharacterStores } from './meta/selected-character.js';
+import { CloudSave } from './meta/cloud-save.js';
 import { reloadIfStale } from './build-freshness.js';
 import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
@@ -73,6 +74,7 @@ function readonly(value) {
 try {
   if (await reloadIfStale()) throw Object.assign(new Error('reloading'), { reloading: true });
   const characters = new CharacterStores(localStorage);
+  const cloud = new CloudSave({ storage: localStorage });
   const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
   const { soloSelected, legacyEntry } = roomEntry(bootQuery);
@@ -119,6 +121,7 @@ try {
     persist: (save) => {
       if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
       store.save(save);
+      cloud.changed(save);
     },
     resetSave: () => {
       if (undead || undeadStarting) { leaveUndead(); return; }
@@ -323,6 +326,7 @@ try {
       depositedXp: tracker.depositedXp, tempLoot: tracker.tempLoot, used: usedConsumables(roundSave, player), skillMastery: tracker.skillMastery,
     });
     characters.persist(coopResult.save, roundOwner);
+    cloud.changed(coopResult.save);
     input.reset(); input.enabled = false;
   }
   function finishCoop() {
@@ -386,7 +390,7 @@ try {
       onLeave: () => { if (!ownsLobby()) return; closeCoop(); hub.showBoard(); },
       onBegin: config => {
         if (!ownsLobby()) return;
-        if (config.invasion) { characters.persist(localSave, roundOwner); hub.save = localSave; }
+        if (config.invasion) { characters.persist(localSave, roundOwner); hub.save = localSave; cloud.changed(localSave); }
         else delete localSave.activeInvasion;
         roundSave = selectThreat(localSave, config.stageId, config.threat);
         tracker = createTracker(crypto.getRandomValues(new Uint32Array(1))[0]);
@@ -508,6 +512,14 @@ try {
       },
     }),
   });
+  hub.cloud = cloud;
+  hub.onCloudRestore = slot => {
+    cloud.restore(slot);
+    const url = new URL(location.href); url.searchParams.set('character', slot); history.replaceState(null, '', url);
+    if (slot === 'human') hub.save = characters.selectHuman();
+    else hub.save = characters.selectKnight();
+    hub.receipt = null; hub.showInn();
+  };
   hub.discardLockedSave = () => {
     characters.human.discardLocked();
     characters.active.raw = null;
@@ -542,7 +554,7 @@ try {
         characters.equipmentNotice = hub.equipmentNotice = humanDraftSelection.notice;
         chooseUrl('human');
       },
-      create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); return save; },
+      create: options => { const save = characters.createKnight(options); chooseUrl('skeleton_knight'); if (typeof cloud !== 'undefined') cloud.changed(save); return save; },
     };
     // Keep debug's direct human/intro startup, without hiding real character selection.
     if (legacyEntry) {
@@ -556,6 +568,7 @@ try {
   }
 
   const debugQuery = new URLSearchParams(location.search).get('dev') === '1' ? '1' : new URLSearchParams(location.search).get('debug');
+
   let debugEnabled = debugQuery === '1';
   try {
     if (debugQuery === '0' || debugQuery === '1') localStorage.setItem('arpg.debug', debugQuery);
@@ -582,12 +595,14 @@ try {
       get running() { return running; }, get tracker() { return tracker; } });
   }
   const inputs = { local: null };
+  cloud.load().then(() => { if (running) return; if (hub.panel === 'character-choice') hub.showCharacterChoice(); else if (hub.panel === 'inn') hub.showInn(); else if (hub.panel === 'intro') hub.showIntro(); }).catch(() => {});
+
   document.addEventListener('visibilitychange', () => {
     hidden = document.hidden;
     accumulator = 0;
     lastTime = performance.now();
     input.reset();
-    if (hidden) { audio.stop(); coopSession?.suspend(); }
+    if (hidden) { audio.stop(); coopSession?.suspend(); cloud.flush({ hidden: true }); }
     else if (coopSession) resumeCoop();
     hud.pause(hidden && running && !coopSession);
   });
@@ -610,6 +625,7 @@ try {
     // Development kit overrides never grant progression or consume real supplies.
     const nextSave = developmentRound ? hub.save : result.save;
     characters.persist(nextSave, roundOwner);
+    if (!developmentRound) cloud.changed(nextSave);
     hud.update(world, 0);
     const cause = hud.deathExplanation(world);
     resultPresentation.schedule(result.receipt, () => hub.finish(nextSave, result.receipt, cause), terminalAt);

@@ -1131,3 +1131,9 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 /* Keep the complete decision area above the footer even in 800px-tall desktop shells. */
 #meta-screen[data-page="forge"] .forge-tabs{margin-bottom:8px}.forge-selection{margin-bottom:2px}.forge-picker .p2-card{height:104px;padding:6px}.forge-picker .p2-emblem{flex:0 0 40px;width:40px;height:40px}.forge-picker .p2-card-copy strong{font-size:11px;line-height:1.3}.forge-item-title h3{font-size:18px;margin-top:4px}.forge-tab-panel .forge-progress{line-height:1.1}.forge-probabilities{margin-bottom:10px}
 .forge-tab-panel .forge-odds{margin:6px 0}.forge-probabilities{margin-top:6px;margin-bottom:8px}
+
+/* Cloud ranking uses the same hub panel shell on narrow and wide screens. */
+.ranking-row { display:grid; grid-template-columns:2ch minmax(7ch,1fr) 4.5ch minmax(5ch,1fr) 5ch; gap:.5rem; align-items:center; padding:.65rem .45rem; border-bottom:1px solid rgba(255,255,255,.12); font-size:.85rem; }
+.ranking-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ranking-row.mine { background:rgba(231,192,106,.16); color:#f8dc9b; }
+@media(max-width:420px) { .ranking-row { gap:.25rem; font-size:.72rem; padding-inline:.2rem; } }
