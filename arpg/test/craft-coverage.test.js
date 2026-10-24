@@ -29,7 +29,7 @@ test('B dropped enhanced gear provenance appears in receipt and detail; enhanced
  for(const html of [receiptHtml,reveal])assert.match(html,/loot-highlight[\s\S]*득템/);
  for(const id of ['rune_shard','frost_shard','dragon_scale'])assert.match(receiptHtml,new RegExp(`data-premium="${id}"`));
  assert.doesNotMatch(itemDetailsHtml(save.items[0]),/누군가 떨군/);
- const before=save.stacks.enhance_stone_1||0,next=dismantle(save,drop.uid);assert.equal(next.stacks.enhance_stone_1-before,ENCHANT.dismantleStones[drop.enhance]+ENCHANT.dismantleGreater[drop.enhance]*38);
+ const before=save.stacks.enhance_stone_1||0,next=dismantle(save,drop.uid);assert.equal(next.stacks.enhance_stone_1-before,ENCHANT.dismantleStones[drop.enhance]);
 });
 test('B crafting stays under smith and incomplete recipes state exact shortages',()=>{
  const hub=Object.create(HubUI.prototype);hub.save=noteMaterials({...fresh(),gold:2,stacks:{...fresh().stacks,scrap:1}});hub.forgeTab='craft';hub.showInnPanel=(_t,html)=>hub.html=html;hub.showForge();

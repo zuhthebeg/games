@@ -56,7 +56,7 @@ test('C silver rolls retain approved catalog loot fingerprint (gold/gear/materia
  assert.deepEqual(rows,HISTORICAL);
 });
 // Boss entries reflect the approved rare floor; both nonboss historical hashes remain unchanged.
-const HISTORICAL=['584a6b3a845fcff20a282917e84da32670f05a38bbb75bf0f33abce03766d4e8','68a506abc6a31bd512c08ceb5c04ec7cabccfbd2a7673a6ea36c4b2d5ece7cb4','f61a3327a3cade7435cf053c1e1c67ec04d8b3258fee65f39d93e665decd1c8f'];
+const HISTORICAL=['4798f710c8b3298f34038957aa582c7b4422bc86100b102a6fd7a5def841a1f6','cf600d6015e4c9a684067ec7a369cd02f58afa2f31440e6093e430eab4b71c48','85a7f249c573c5c26f72b6b99b286cfd5760b56497896b32d6148855e09b3801'];
 
 test('C real T2/T3 construct stages award ingots through tracker/settlement; necropolis boss never does',async()=>{
  const {createTracker,trackRound,settleRound}=await import('../js/meta/run.js');
@@ -89,9 +89,9 @@ test('C authored construct boss identity guarantees 1-2 without ctx.boss; non-bo
 });
 test('C construct non-silver loot retains approved catalog fingerprint, including all special stones',()=>{
  for(const[monster,ctx,hash]of[
-  ['goleling',{huntTier:3,stageId:'S12'},'f0b25ee25b28b56aef596d3eca6fdbbeba453e9c1a7d5d036491430c9c938177'],
-  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'7885ce9f4ddae921a721a9bad91eba77043d095f36ef7f8a4a743aa7dcb3316e'],
-  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'a5e5885092fe93443331fe2234d1aa23af0885f9e7decea2a9c0d3f11d2716e2'],
+  ['goleling',{huntTier:3,stageId:'S12'},'b36b652b8cfe3a27bab4720b6ff8889649a07800b4817c7fbc5588fb229f4e7f'],
+  ['rune_guardian',{huntTier:2,stageId:'S9',elite:true,threat:2},'358562bf7388d7384aedc6536db858454c3b9df0de8d50487666b5d0cf3e3cac'],
+  ['gargoyle',{huntTier:3,stageId:'M_THRONE_GARGOYLE',boss:true,threat:3},'4b60ec97cd5b5dcc7eded2d3cc0c0940424133886e6acddf14ebe46f8f8f77d8'],
   ['scarecrow',{huntTier:4,boss:true},'ff461329715346518d112f0b0180ba61d46671d9a5363dca3ff8f58d90208e6e']]){
   const rows=[];for(let seed=1;seed<=1000;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks.silver_ingot;rows.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(rows)).digest('hex'),hash,monster);

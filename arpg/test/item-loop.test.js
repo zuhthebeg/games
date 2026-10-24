@@ -124,14 +124,13 @@ const sigma = (count, n, p, label) => {
   assert.ok(Math.abs(count - expected) <= tolerance, `${label}: ${count}/${n}, expected ${expected} ±${tolerance}`);
 };
 
-test('10,000 seeded kills: craft-first equipment rates, discounted rarity, unchanged stones and tier mix within ±2σ', () => {
+test('10,000 seeded kills: craft-first equipment rates, discounted rarity, unchanged plain-stone chances with retired outcomes removed within ±2σ', () => {
   for (const [monster, ctx, gearP, stoneP] of [
     ['goblin_slinger', {}, 0.04, 0.125], ['goblin_slinger', { elite: true }, 0.16, 0.4],
     ['goblin_chief', {}, 1, 1],
   ]) {
     let gearKills = 0, stoneKills = 0, bossExtra = 0;
     const rarities = { common: 0, fine: 0, rare: 0, epic: 0 };
-    const stoneTypes = [0, 0];
     for (let seed = 0; seed < 10000; seed++) {
       const loot = rollDrops(monster, seed, ctx);
       assert.deepEqual(loot, rollDrops(monster, seed, ctx));
@@ -139,33 +138,26 @@ test('10,000 seeded kills: craft-first equipment rates, discounted rarity, uncha
       if (rolled.length) gearKills++;
       if (rolled.length === 2) bossExtra++;
       for (const item of rolled) rarities[ITEMS[item.id].rarity]++;
-      // One drop event is a pile of plain stones or one 38-stone greater-equivalent; plain piles total <= 10,
-      // so floor(total / 38) recovers the number of greater events. Count events, not stones.
       assert.equal(loot.stacks.enhance_stone_3, undefined);
-      const total = loot.stacks.enhance_stone_1 || 0, greaterEvents = Math.floor(total / 38);
-      const stones = [total - greaterEvents * 38, greaterEvents];
       assert.equal(loot.stacks.enhance_stone_2, undefined);
-      if (stones.some(Boolean)) stoneKills++;
-      stoneTypes[0] += stones[0] ? 1 : 0; stoneTypes[1] += stones[1] ? 1 : 0;
+      if (loot.stacks.enhance_stone_1) stoneKills++;
+      assert.ok((loot.stacks.enhance_stone_1 || 0) <= 10);
       if (monster === 'goblin_chief') assert.ok(loot.stacks.scrap === 4 || loot.stacks.scrap === 5);
     }
-    sigma(gearKills, 10000, gearP, `${monster} gear`); sigma(stoneKills, 10000, stoneP, `${monster} stones`);
+    sigma(gearKills, 10000, gearP, `${monster} gear`); sigma(stoneKills, 10000, gearP === 1 ? .5 * .97 + .5 * (1 - .03 ** 2) : stoneP * .97, `${monster} stones`);
     if (gearP === 1) sigma(bossExtra, 10000, 0.25, 'boss 2 gear');
     const total = Object.values(rarities).reduce((a, b) => a + b, 0);
     const weights = Object.entries(gearP === 1 ? ECONOMY.bossRarity : ECONOMY.normalRarity).filter(([rarity])=>gearP!==1||['rare','epic'].includes(rarity)).map(([rarity,weight])=>[rarity,weight*ECONOMY.gearRarityMultiplier[rarity]]);
     const weightSum = weights.reduce((sum,[,weight])=>sum+weight,0);
     for (const [rarity, weight] of weights) sigma(rarities[rarity], total, weight / weightSum, `${monster} ${rarity}`);
-    const stoneTotal = stoneTypes.reduce((a, b) => a + b, 0);
-    if (gearP !== 1) stoneTypes.forEach((count, i) => sigma(count, stoneTotal, ECONOMY.stoneWeights[1][i] / 100, `${monster} stone ${i + 1}`));
-    console.log(`P1 distribution ${monster} elite=${ctx.elite || false}: gear=${gearKills}, stones=${stoneKills}, rarity=${JSON.stringify(rarities)}, stoneTypes=${stoneTypes}`);
   }
   const mixes = [];
   for (const tier of [1, 2, 3]) {
-    let greater = 0;
-    for (let seed = 0; seed < 10000; seed++) greater += Math.floor((rollDrops('goblin_chief', seed, { huntTier: tier }).stacks.enhance_stone_1 || 0) / 38);
-    mixes.push(greater / 10000);
+    let plain = 0;
+    for (let seed = 0; seed < 10000; seed++) plain += rollDrops('goblin_chief', seed, { huntTier: tier }).stacks.enhance_stone_1 || 0;
+    mixes.push(plain / 10000);
   }
-  assert.ok(mixes[0] < mixes[1] && mixes[1] < mixes[2]);
+  assert.ok(mixes[0] > mixes[1] && mixes[1] > mixes[2]);
 });
 
 test('monster themes bias slots rather than force them; spirit weapons are focus', () => {
@@ -276,7 +268,7 @@ test('economy properties over 1,000 stocks: buy/sell, buy/dismantle/craft/sell a
       assert.equal(made.gold, before.gold - RECIPES[id].gold);
       const salvaged = dismantle(made, item.uid);
       // Refunded stones never pay back the 25 stones spent reaching +5.
-      assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5] + ENCHANT.dismantleGreater[5] * 38);
+      assert.equal(salvaged.stacks.enhance_stone_1 - made.stacks.enhance_stone_1, ENCHANT.dismantleStones[5]);
       assert.ok(ENCHANT.dismantleStones[5] < 5 * ENCHANT.stonesPerAttempt);
       assert.equal(salvaged.stacks.enhance_stone_3, made.stacks.enhance_stone_3);
       assert.ok(salvaged.stacks[dismantleMaterial(item)] < before.stacks[dismantleMaterial(item)]);

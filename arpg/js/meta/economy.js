@@ -8,11 +8,10 @@ export const ENCHANT = {
   safe: 6, max: 20,
   rates: { 6: 0.5, 7: 0.4, 8: 0.3, 9: 0.2, 10: 0.15, 11: 0.10, 12: 0.09, 13: 0.08, 14: 0.07, 15: 0.06, 16: 0.05, 17: 0.04, 18: 0.03, 19: 0.02 },
   stonesPerAttempt: 5,
-  // Dismantle refund by enhance level (+0..+20). dismantleGreater is paid out as plain stones (x GREATER_STONE_EQUIVALENT).
+  // Dismantle refund by enhance level (+0..+20). Retired greater-stone rewards are not replaced.
   // cocy 10-14: every enhanced item returns stones on dismantle (+1 was 0).
   dismantleStones: [0, 1, 2, 3, 4, 5, 7, 10, 14, 18, 24, 30, 38, 46, 56, 68, 82, 98, 116, 136, 158],
-  dismantleGreater: [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-  // A destroyed item leaves this fraction of dismantleStones[level] only (the greater share is never refunded).
+  // A destroyed item leaves this fraction of dismantleStones[level] only.
   failRefund: 0.5,
   // Non-bone blessed keeps legacy protection through +11; beyond +12 every stone risks destruction.
   // Cursed trades conditional -1..+3 jumps for destruction even before its step is drawn.
@@ -26,8 +25,6 @@ export const ENCHANT = {
   cursedChance: { normal: 0.006, elite: 0.06, boss: 0.25 },
 };
 export const STONE = 'enhance_stone_1';
-// Retired greater stone (enhance_stone_3) is worth exactly this many plain stones; saves convert on load.
-export const GREATER_STONE_EQUIVALENT = 38;
 export const BLESSED_STONE = 'enhance_stone_blessed';
 export const CURSED_STONE = 'enhance_stone_cursed';
 export const ENCHANT_STONES = [STONE, BLESSED_STONE, CURSED_STONE];
@@ -40,7 +37,7 @@ export const ECONOMY = {
   gearRarityMultiplier: { common: 1, fine: 1, rare: 0.7, epic: 0.5 },
   dropEnhanceWeights: { normal: [50,25,12,7,4,2,0], elite: [20,25,22,17,10,5,1], boss: [5,15,20,25,20,10,5] },
   normalRarity: BALANCE.threats[0].rarity, bossRarity: BALANCE.threats[0].bossRarity,
-  // [강화석, 상급 강화석] weight per stone drop event, by hunting tier.
+  // [plain pile, retired/no reward] weights; keep plain probabilities and RNG draws unchanged.
   stoneWeights: { 1: [97, 3], 2: [92, 8], 3: [82, 18] },
   rarityPrice: { common: 1, fine: 1.6, rare: 3, epic: 5 },
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },

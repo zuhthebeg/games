@@ -1,5 +1,4 @@
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { ITEMS, rollDrops, dropSeed, instance } from '../js/meta/items.js';
 import { createTracker, trackRound, settleRound, currentLoad } from '../js/meta/run.js';
@@ -39,14 +38,7 @@ test('seeded budget counts awards, not bag contents; batching/JSON reload and UI
   assert.deepEqual(store.load(), twice.save); // stats/equipment/learned and receipts survive reload
 });
 
-// Legacy greater stones (0.1kg) are now 38 plain stones (3.8kg): these seeds roll enough of them to overflow the bag.
-// Known weight side effect of the conversion, pinned so any further drift is noticed.
-const STONE_HEAVY_BAGS = new Set(['S20:14', 'S20:58', 'S20:99']), STONE_HEAVY_RAW_BAGS = new Set(['S20:3:13']);
-const STONE_HEAVY_EXPECTED = JSON.parse(readFileSync(new URL('./fixtures/forge-stone-heavy-bags.json', import.meta.url), 'utf8'));
-function assertConvertedCapacity(tracker, key) {
-  assert.deepEqual({ skipped: tracker.skipped, tempLoot: tracker.tempLoot }, STONE_HEAVY_EXPECTED[key], key + ' exact converted-bag overflow');
-}
-
+// Retired rewards must not inflate bag weight or suppress reserved boss gear.
 test('boss-last reserved award includes rareless and first-chief guarantees without inflating quality', () => {
   for (const stageId of ['S4', 'S10', 'S20']) for (let seed = 1; seed <= 100; seed++) {
     const save = rewardSave(stageId, 3, stageId === 'S4', 6);
@@ -54,7 +46,6 @@ test('boss-last reserved award includes rareless and first-chief guarantees with
     const tracker = trackRound(save, createTracker(seed), events).tracker;
     const result = settle(save, tracker, stageId);
     assert.ok(result.receipt.lootKept.items.length <= tracker.gearBudget);
-    if (STONE_HEAVY_BAGS.has(`${stageId}:${seed}`)) { assertConvertedCapacity(tracker, `${stageId}:${seed}`); continue; }
     assert.ok(result.receipt.lootKept.items.some(i => ['rare','epic'].includes(ITEMS[i.id].rarity)));
     if (stageId === 'S4') assert.ok(result.receipt.lootKept.items.some(i => i.id === 'chief_maul'));
     else {
@@ -80,7 +71,6 @@ test('gear filtering leaves raw gold/material/consumable/scroll rolls byte-ident
         for (const [id, count] of Object.entries(drop.stacks)) stacks[id] = (stacks[id] || 0) + count;
       });
       assert.equal(tracker.tempLoot.gold, gold);
-      if (STONE_HEAVY_RAW_BAGS.has(`${stageId}:${threat}:${seed}`)) { assertConvertedCapacity(tracker, `${stageId}:${threat}:${seed}`); continue; }
       assert.deepEqual(tracker.tempLoot.stacks, stacks); // representative bags never overflow
       assert.ok(currentLoad(save, tracker).weight > currentLoad(save, createTracker(seed)).weight);
     }

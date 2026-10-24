@@ -1,6 +1,6 @@
 import { BALANCE } from '../content/balance.js';
 export const SAVE_VERSION = 5;
-import { SLOTS, STONE, GREATER_STONE_EQUIVALENT } from './economy.js';
+import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, statBudget } from './stats.js';
 import { ITEMS, craftRecipeId, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity, permitsShield } from './items.js';
@@ -196,11 +196,10 @@ export function migrateStatScale(data) {
   return { ...data, version: SAVE_VERSION, stats, statPoints };
 }
 
-// The greater stone (enhance_stone_3) was retired: every held or receipt-recorded one becomes
-// GREATER_STONE_EQUIVALENT plain stones, zero counts included. A location with a malformed count is left
-// as-is so validateSave still rejects it; an unsafe sum is written through for the same reason.
+// Remove only valid retired entries; never refund or deduct existing plain stones.
+// Malformed counts remain for the existing strict validation/save-safety path.
 const RETIRED_GREATER = 'enhance_stone_3';
-export function migrateGreaterStones(data) {
+export function removeRetiredGreaterStones(data) {
   if (!record(data)) return data;
   const holders = [['stacks'], ['stash', 'stacks'], ['lastReceipt', 'lootKept', 'stacks'], ['lastReceipt', 'lootLost', 'stacks']];
   const stacksAt = (path, root) => path.reduce((node, key) => (record(node) ? node[key] : undefined), root);
@@ -209,10 +208,7 @@ export function migrateGreaterStones(data) {
   for (const path of holders) {
     const stacks = stacksAt(path, next);
     if (!record(stacks) || !Object.hasOwn(stacks, RETIRED_GREATER)) continue;
-    const plain = Object.hasOwn(stacks, STONE) ? stacks[STONE] : 0;
-    if (!integer(stacks[RETIRED_GREATER]) || !integer(plain)) continue;
-    if (stacks[RETIRED_GREATER] > 0) stacks[STONE] = plain + stacks[RETIRED_GREATER] * GREATER_STONE_EQUIVALENT;
-    delete stacks[RETIRED_GREATER];
+    if (integer(stacks[RETIRED_GREATER])) delete stacks[RETIRED_GREATER];
   }
   return next;
 }
@@ -280,7 +276,7 @@ export class SaveStore {
       data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };
       delete data.stacks.enhance_stone_2;
     }
-    data = migrateGreaterStones(data);
+    data = removeRetiredGreaterStones(data);
     data=repairTwohandShield(data);
     if (validateSave(data)) {
       const family = ITEMS[data.items.find(item => item.uid === data.equipped.weapon)?.id]?.family || 'blade';

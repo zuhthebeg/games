@@ -14,11 +14,10 @@ export function digest(loot) {
   const others = Object.fromEntries(Object.entries(stacks).filter(([id]) => id !== STONE && id !== LEGACY_GREATER).sort(([a], [b]) => a < b ? -1 : 1));
   return createHash('sha256').update(JSON.stringify({ rest, others })).digest('hex').slice(0, 12);
 }
-// Legacy pinned baselines predate the conversion: one greater stone is exactly 38 plain stones.
+// Historical baselines retain greater entries: remove only those retired rewards.
 export function projectLegacyStones(loot) {
   const stacks = { ...loot.stacks }, greater = stacks[LEGACY_GREATER];
   if (greater === undefined) return loot;
   delete stacks[LEGACY_GREATER];
-  stacks[STONE] = (stacks[STONE] || 0) + greater * 38;
   return { ...loot, stacks };
 }

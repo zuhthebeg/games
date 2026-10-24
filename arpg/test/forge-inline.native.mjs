@@ -15,7 +15,7 @@ const root=fileURLToPath(new URL('../..',import.meta.url));
 const remote=!!process.env.ARPG_BASE_URL,mode=remote?'production':'local';
 const httpPort=Number(process.env.ARPG_HTTP_PORT||8993),port=Number(process.env.ARPG_CDP_PORT||19203);
 const base=(process.env.ARPG_BASE_URL||'http://127.0.0.1:'+httpPort).replace(/\/$/,'').replace(/\/arpg$/,'');
-const output='/home/cocy/.openclaw/workspace/tmp/arpg-forge-ux';
+const output=process.env.ARPG_OUTPUT_DIR||'/home/cocy/.openclaw/workspace/tmp/arpg-forge-ux';
 await mkdir(output,{recursive:true});
 const report={status:'RUNNING',mode,base,head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),rows:[],failures:[],errors:[],httpErrors:[],sourceBinding:{},screenshots:[],existingUserStorage:0,runtimeSaveInjection:0};
 let server,chrome,socket,sequence=0;const pending=new Map();
@@ -91,8 +91,8 @@ try{
   assert.deepEqual(await state(),craft(beforeCraft,'iron_sword'));assert.equal(await ev('document.querySelector("[data-forge-tab]").dataset.forgeTab'),'craft');await press('.craft-result [data-action="craft-compare"]');await wait('document.querySelector("dialog[open]")');await press('dialog[open] [data-action="close-sheet"]');row.craft={exact:true,tab:'craft',recipeAndResultComparison:true};
   await press('[data-action="forge-tab"][data-tab="salvage"]');await press('[data-action="select-gear"][data-uid="'+seed.equipped.weapon+'"]');
   assert.equal(await ev('[...document.querySelectorAll(".forge-salvage button")].every(n=>n.disabled)'),true);assert.equal(await ev('!!document.querySelector(".forge-salvage [data-action=equip]")'),false);
-  await press('[data-action="select-gear"][data-uid="forge:spare9"]');row.salvageText=await ev('document.querySelector(".forge-salvage").textContent');assert.match(row.salvageText,/강화석: 94/);assert.doesNotMatch(row.salvageText,/상급/);if(mobile)await shot('local-salvage-390');
-  const beforeSalvage=await state();await press('.forge-salvage [data-action="dismantle"]');assert.ok(!(await noDialog()));assert.deepEqual(await state(),beforeSalvage);await press('[data-action="confirm-dismantle"]');const afterSalvage=await state();assert.deepEqual(afterSalvage,dismantle(beforeSalvage,'forge:spare9'));assert.equal(afterSalvage.stacks.enhance_stone_1-beforeSalvage.stacks.enhance_stone_1,94);row.salvage={plain:94,confirm:true,wornDisabled:true,noEquip:true};
+  await press('[data-action="select-gear"][data-uid="forge:spare9"]');row.salvageText=await ev('document.querySelector(".forge-salvage").textContent');assert.match(row.salvageText,/강화석: 18/);assert.doesNotMatch(row.salvageText,/상급/);if(mobile)await shot('local-salvage-390');
+  const beforeSalvage=await state();await press('.forge-salvage [data-action="dismantle"]');assert.ok(!(await noDialog()));assert.deepEqual(await state(),beforeSalvage);await press('[data-action="confirm-dismantle"]');const afterSalvage=await state();assert.deepEqual(afterSalvage,dismantle(beforeSalvage,'forge:spare9'));assert.equal(afterSalvage.stacks.enhance_stone_1-beforeSalvage.stacks.enhance_stone_1,18);row.salvage={plain:18,confirm:true,wornDisabled:true,noEquip:true};
   // Consume all ten specials by actual safe native attempts; depleted stone stays selectable.
   await press('[data-action="forge-tab"][data-tab="enhance"]');await press('[data-action="pick-stone"][data-id="enhance_stone_blessed"]');
   for(let n=0;n<10;n++){await press('[data-action="select-gear"][data-uid="forge:rack:'+Object.entries(ITEMS).filter(([,d])=>d.slot)[n][0]+'"]');await press('[data-action="enhance"]');await wait('!document.querySelector("[data-enchant-fx]")');}

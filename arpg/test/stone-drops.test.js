@@ -32,9 +32,9 @@ test('special stones use exact tier chances, threat multiplier and independent s
 // Necropolis fingerprint alone changes for the approved rare boss floor.
 test('B tuned loot fingerprints include safe random enhancement and crafting materials',()=>{
  for(const [monster,ctx,expected] of [
- ['goblin_grunt',{},'578ad549340543833910917facb7a668bb791e6fbf9924fc43104d71c913c682'],
- ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'e08d6a70ee8642712a50024c1da806a6be5b738366d996afccb00b9bedbdf5cd'],
- ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'335486c271b7cfd2ba6108428e6cd44efa7dc67c8ef9d61f251ba0ebbeece766']]) {
+ ['goblin_grunt',{},'41ea7909508e55bd34916c34b00c1037c4df4fba38e124e0be0ae1f868018527'],
+ ['ghost',{elite:true,huntTier:3,stageId:'S21',threat:2},'3155942a8047e7de7740fe2211cd64b0bdc0e2f387c41755a8a2b24d47f86cba'],
+ ['necropolis_lord',{boss:true,huntTier:4,stageId:'S27',threat:3},'87f5d8fb7cd20983f82910e19185ae2b972997c055ccbea64f16582777979dcd']]) {
   const out=[];for(let seed=1;seed<=500;seed++){const loot=rollDrops(monster,seed,ctx);delete loot.stacks[blessed];delete loot.stacks[cursed];delete loot.stacks.silver_ingot;delete loot.stacks.undead_bone;out.push(loot);}
   assert.equal(createHash('sha256').update(JSON.stringify(out)).digest('hex'),expected);
  }

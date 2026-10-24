@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSave, SaveStore, SAVE_KEY, validateSave } from '../js/meta/save.js';
 import { instance, dismantle, rollDrops } from '../js/meta/items.js';
-import { ENCHANT, GREATER_STONE_EQUIVALENT, enhanceMultiplier } from '../js/meta/economy.js';
+import { ENCHANT, enhanceMultiplier } from '../js/meta/economy.js';
 import { enchant, enchantPreview } from '../js/meta/enchant.js';
 
 const fresh = (createdAt = 7) => createSave({ name: '강화 시험', answers: [0, 0, 0, 0, 0], createdAt });
@@ -143,28 +143,26 @@ test('+20 caps all jumps and save validation while +12 and older saves still rou
   assert.equal(validateSave(weaponAt(withStones(fresh()),21)),false);
 });
 
-test('a legacy greater stone loads as exactly 38 plain stones, deterministically, and enchanting never cracks it again', () => {
-  assert.equal(GREATER_STONE_EQUIVALENT, 38);
+test('a legacy greater stone is removed without compensation, deterministically, and enchanting never cracks it again', () => {
   for (let seed = 1; seed <= 400; seed++) {
     const legacy = withStones(fresh(seed)); legacy.stacks.enhance_stone_3 = 1 + seed % 7;
     const storage = new Map([[SAVE_KEY, JSON.stringify(legacy)]]);
     const store = () => new SaveStore({ getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: (k) => storage.delete(k) });
     const loaded = store().load();
-    assert.equal(loaded.stacks[W], legacy.stacks[W] + 38 * legacy.stacks.enhance_stone_3);
+    assert.equal(loaded.stacks[W], legacy.stacks[W]);
     assert.equal(Object.hasOwn(loaded.stacks, 'enhance_stone_3'), false);
     assert.deepEqual(store().load(), loaded); assert.ok(validateSave(loaded));
   }
 });
 
-test('dismantle refund scales with enhance; the old greater share is paid as 38 plain stones each, never a greater stone', () => {
+test('dismantle refund scales with enhance; the old greater share is removed without replacement', () => {
   const base = fresh();
   for (let level = 0; level <= ENCHANT.max; level++) {
     const save = structuredClone(base);
     save.items.push({ ...instance('spare', 'iron_sword', 1, []), enhance: level });
     const next = dismantle(save, 'spare');
-    assert.equal(next.stacks.enhance_stone_1 || 0, ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38);
+    assert.equal(next.stacks.enhance_stone_1 || 0, ENCHANT.dismantleStones[level]);
     assert.equal(Object.hasOwn(next.stacks, 'enhance_stone_3'), false);
-    assert.equal(ENCHANT.dismantleGreater[level] > 0, level >= 7);
     assert.ok(validateSave(next));
   }
   // Monotone, and a destroyed item always leaves less than dismantling it would have.
@@ -219,6 +217,6 @@ test('removed scroll saves reject safely and valid special stones load normally'
 
 test('forge salvage shows and pays the exact combined plain-stone refund for dropped enhanced gear', async () => {
  const {HubUI}=await import('../js/ui/hub.js');const h=Object.create(HubUI.prototype);h.save=withStones(fresh());h.selectedUid='drop:42:weapon';h.save.items.push({...instance(h.selectedUid,'iron_sword',1,[]),enhance:9});
- assert.match(h.forgeSalvageHtml(),/강화석: 94/);
- const next=dismantle(h.save,h.selectedUid);assert.equal(next.stacks[W]-h.save.stacks[W],18+2*38);assert.equal(Object.hasOwn(next.stacks,'enhance_stone_3'),false);
+ assert.match(h.forgeSalvageHtml(),/강화석: 18/);
+ const next=dismantle(h.save,h.selectedUid);assert.equal(next.stacks[W]-h.save.stacks[W],18);assert.equal(Object.hasOwn(next.stacks,'enhance_stone_3'),false);
 });

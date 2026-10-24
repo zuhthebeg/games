@@ -9,7 +9,6 @@ import { stageXp, STAGE_XP } from '../js/meta/progression.js';
 import { partyHpScale } from '../js/net/protocol.js';
 import { createWorld, addPlayer, startStage, step } from '../js/sim/world.js';
 import { rollDrops, ITEMS } from '../js/meta/items.js';
-import { GREATER_STONE_EQUIVALENT } from '../js/meta/economy.js';
 import { HubUI } from '../js/ui/hub.js';
 const fresh=()=>createSave({name:'왕좌',answers:[0,0,0,0,0],createdAt:1});
 test('TD1 requires S20 even with historical trial clears; no mutation, campaign unlock or save wipe',()=>{
@@ -52,7 +51,7 @@ test('late rewards use existing T3 plus guardian-only T4 pools, finite bounded g
   assert.ok(Number.isSafeInteger(loot.gold)&&loot.gold>=0&&loot.gold<=250);
   assert.ok(loot.items.length<=4);if(!loot.items.length)zeroGear++;
   for(const item of loot.items){assert.ok(ITEMS[item.id]);assert.equal(ITEMS[item.id].huntTier,ITEMS[item.id].slot==='offhand'?3:ITEMS[item.id].dropOnly==='throne_dragon'?4:3);}
-  for(const [id,n] of Object.entries(loot.stacks)){assert.ok(ITEMS[id]);assert.ok(Number.isSafeInteger(n)&&n>0&&n<=(id==='enhance_stone_1'?10+2*GREATER_STONE_EQUIVALENT:10));}
+  for(const [id,n] of Object.entries(loot.stacks)){assert.ok(ITEMS[id]);assert.ok(Number.isSafeInteger(n)&&n>0&&n<=10);}
  }
  assert.equal(zeroGear,0);
 });

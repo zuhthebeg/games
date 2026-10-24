@@ -1,4 +1,4 @@
-import { validateSave, repairTwohandShield, migrateStatScale, migrateGreaterStones, RETIRED_SCROLLS } from './save.js';
+import { validateSave, repairTwohandShield, migrateStatScale, removeRetiredGreaterStones, RETIRED_SCROLLS } from './save.js';
 import { SLOT_SAVE_KEYS } from './character-slots.js';
 import { persistSkeletonCharacter } from './character-creation.js';
 
@@ -34,7 +34,7 @@ export function readKnight(storage) {
   }
   if (save.version === 3) save = { ...save, version: 4, stash: { stacks: {} }, learned: [], skills: {} };
   if (save.version === 4) save = migrateStatScale(save);
-  save = migrateGreaterStones(save);
+  save = removeRetiredGreaterStones(save);
   save = repairTwohandShield(save);
   if (!validateSave(save)) throw blocked('캐릭터 능력치·장비·소지품 저장 규칙 검증 실패');
   return save;

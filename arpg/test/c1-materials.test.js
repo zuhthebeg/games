@@ -39,7 +39,7 @@ test('C1 every equipment rarity yields only its primary material plus unchanged 
     const next = dismantle(freeze(base), item.uid), primary = MATERIAL_STACK[def.material];
     assert.equal(dismantleMaterial(item), primary); assert.equal(dismantleRefund(item), SALVAGE[def.rarity]);
     assert.deepEqual(next.stacks, { ...base.stacks, [primary]:SALVAGE[def.rarity],
-      ...(ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38 ? {enhance_stone_1:ENCHANT.dismantleStones[level] + ENCHANT.dismantleGreater[level] * 38} : {}) });
+      ...(ENCHANT.dismantleStones[level] ? {enhance_stone_1:ENCHANT.dismantleStones[level]} : {}) });
     assert.deepEqual(next.items, base.items.slice(0,-1)); assert.equal(next.gold, base.gold);
   }
 });
