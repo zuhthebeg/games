@@ -1,0 +1,142 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b7/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b7/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "clock_drone",
+      "label": "태엽 갈퀴 드론",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b7/source/clock_drone.glb",
+      "keep": [
+        "Cube.000",
+        "Sphere.001"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Attack",
+        "hit": "CharacterArmature|Dead",
+        "death": "CharacterArmature|Dead"
+      },
+      "state_ranges": {
+        "hit": [
+          0,
+          4
+        ]
+      },
+      "content_ids": [
+        "clock_drone"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "clock_walker",
+      "label": "태엽 포격 보행기",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b7/source/clock_walker.glb",
+      "keep": [
+        "Enemy_Robot_2Legs",
+        "Cylinder"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Leg1.L",
+        "Leg1.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Attack",
+        "hit": "CharacterArmature|Death",
+        "death": "CharacterArmature|Death"
+      },
+      "state_ranges": {
+        "hit": [
+          0,
+          6
+        ]
+      },
+      "content_ids": [
+        "clock_walker"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "quadruped",
+      "fps": 5
+    },
+    {
+      "name": "clock_colossus",
+      "label": "태엽 거신",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b7/source/clock_colossus.glb",
+      "keep": [
+        "Cube.005",
+        "Sphere"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Leg1.L",
+        "Leg1.R"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Attack",
+        "hit": "CharacterArmature|Death",
+        "death": "CharacterArmature|Death"
+      },
+      "state_ranges": {
+        "hit": [
+          0,
+          5
+        ]
+      },
+      "content_ids": [
+        "clock_colossus"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "quadruped"
+    }
+  ]
+}

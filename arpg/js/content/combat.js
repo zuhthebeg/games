@@ -480,6 +480,12 @@ Object.assign(MONSTERS, {
     abilities:['sling_stone','spider_puddle'], xp:31, keepRange:[130,185] },
   abyss_squidle: { lifeState:'beast', hp:360, r:28, speed:80, heavyPoise:true, poise:115, kbResist:.6,
     abilities:['chief_cleave','guardian_ring'], xp:40, keepRange:[60,110] },
+  clock_drone: { lifeState:'construct', hp:164, r:17, speed:132, poise:34, kbResist:.2,
+    abilities:['wolf_dash','goblin_slash'], xp:31, keepRange:[30,75] },
+  clock_walker: { lifeState:'construct', hp:182, r:18, speed:96, poise:44, kbResist:.3,
+    abilities:['sling_stone','guardian_crush'], xp:32, keepRange:[60,130] },
+  clock_colossus: { lifeState:'construct', hp:380, r:30, speed:78, heavyPoise:true, poise:120, kbResist:.65,
+    abilities:['chief_charge','guardian_ring'], xp:42, keepRange:[120,190] },
 });
 
 export const STAGES = {
@@ -571,6 +577,9 @@ export const STAGES = {
   S43: stage('물빛 산호 회랑', [['abyss_glub',0,.76,.35],['drowned_skull',0,.84,.7],['abyss_glub',2600,.88,.5],['drowned_skull',5200,.9,.25]]),
   S44: stage('익사한 해골의 무덤', [['abyss_squidle',0,.76,.35],['drowned_skull',0,.84,.7],['abyss_glub',2700,.88,.5],['drowned_skull',5200,.9,.25]]),
   S45: stage('심연 군주의 소용돌이', [['abyss_squidle',0,.78,.5],['abyss_glub',2200,.86,.3],['drowned_skull',4500,.86,.7]]),
+  S46: stage('녹슨 톱니 회랑', [['clock_drone',0,.76,.35],['clock_walker',0,.84,.7],['clock_drone',2600,.88,.5],['clock_walker',5200,.9,.25]]),
+  S47: stage('증기 포대 공방', [['clock_colossus',0,.76,.35],['clock_walker',0,.84,.7],['clock_drone',2700,.88,.5],['clock_walker',5200,.9,.25]]),
+  S48: stage('태엽 거신의 심장로', [['clock_colossus',0,.78,.5],['clock_drone',2200,.86,.3],['clock_walker',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

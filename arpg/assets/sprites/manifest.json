@@ -1335,5 +1335,92 @@
       "death": 0.6
     },
     "cacheVersion": "0b91ddaf82da"
+  },
+  {
+    "id": "clock_drone",
+    "label": "태엽 갈퀴 드론",
+    "monster": true,
+    "content_ids": [
+      "clock_drone"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.58875572681427
+    },
+    "bytes": 225003,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "eb30bc022777"
+  },
+  {
+    "id": "clock_walker",
+    "label": "태엽 포격 보행기",
+    "monster": true,
+    "content_ids": [
+      "clock_walker"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 5,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6287197172641754
+    },
+    "bytes": 254343,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "0c78e8544db8"
+  },
+  {
+    "id": "clock_colossus",
+    "label": "태엽 거신",
+    "monster": true,
+    "content_ids": [
+      "clock_colossus"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6422479748725891
+    },
+    "bytes": 294895,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "65eea3fd31d8"
   }
 ]

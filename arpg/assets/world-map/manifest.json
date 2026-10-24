@@ -498,6 +498,28 @@
       "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
       "reviewNotes": "Distinct deep-sea teal-and-ink sunken ruin with coral accents; no UI, characters or typography",
       "sourceLicense": "Original locally authored scene; no third-party content"
+    },
+    {
+      "id": "clockwork",
+      "prompt": "Original empty ruined clockwork foundry at amber dusk: half-buried brass gears, leaning pipes, a fallen girder, chimney stacks, steam vents and drifting sparks; procedural hand-authored landscape",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 48048,
+      "steps": 0,
+      "guidance": 0,
+      "scheduler": "deterministic procedural",
+      "width": 768,
+      "height": 384,
+      "sourceWindowsPath": "not applicable",
+      "sourceSha256": "ec8f42f8f2584313fe9bc6f8b233abc38ab34d011c8b0261c32453e6598c033b",
+      "sourceBytes": 3312,
+      "outputFile": "clockwork.webp",
+      "outputSha256": "0139e2e7fc5b32efa332f5707a84fde27fd7fcba0ddbe53bae9648fbb62d4913",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 16156,
+      "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
+      "reviewNotes": "Distinct amber-and-soot brass gear foundry ruin; no UI, characters or typography",
+      "sourceLicense": "Original locally authored scene; no third-party content"
     }
   ],
   "schemaVersion": 1,
@@ -511,7 +533,7 @@
     768,
     384
   ],
-  "outputTotalBytes": 502858,
+  "outputTotalBytes": 519014,
   "pipelineSkill": "cocy-game-image-pipeline",
   "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
   "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",
