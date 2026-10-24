@@ -407,8 +407,8 @@ export class HubUI {
     return `<section class="character-summary"><h3>${escape(this.save.name)}${this.save.lineage === 'skeleton_knight' ? ` · ${knightFormName(this.save)}` : ''} · Lv.${this.save.level}</h3>
       <p class="minor">XP ${amount(this.save.xp)} / ${this.save.level === MAX_LEVEL ? 'MAX' : xpSpan(this.save.level)}</p>
       <div class="ledger"><div><span>HP / MP</span><b>${amount(mods.maxHp)} / ${amount(mods.maxMp)}</b></div>
-      <div><span>공격 배율</span><b>×${amount(mods.dmgMult[mods.family] * weaponAttackMultiplier(false, WEAPONS[mods.family].basic, null, mods.handedness))}</b></div>
-      <div><span>공격 속도</span><b>×${amount(rate)}</b></div>
+      <div><span>공격력</span><b>${Math.round(mods.dmgMult[mods.family] * weaponAttackMultiplier(false, WEAPONS[mods.family].basic, null, mods.handedness) * 100)}</b></div>
+      <div><span>공속</span><b>${Math.round(rate * 100)}</b></div>
       <div><span>기술</span><b>${loadoutOf(this.save).filter(Boolean).map(id => escape(ABILITIES[id].name)).join(' · ')}</b></div></div>${this.weightHtml()}</section>
       <h3 class="section-title">${this.hubCopy('능력치 분배', '영혼의 제단')}</h3>`;
   }

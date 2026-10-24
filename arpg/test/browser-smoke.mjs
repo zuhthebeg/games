@@ -286,7 +286,7 @@ try {
   assert.equal(await evaluate("!!document.querySelector('[data-action=\"owner\"]')"), false);
   await click('[data-action="character"]');
   await waitFor(page('character'));
-  assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공격 속도')"));
+  assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공속')"));
   assert.ok(await evaluate(`document.querySelector('.receipt [aria-label="획득 경험치"]').textContent.includes('+50')`),
     'character panel lost the persisted last-run summary');
   await click('[data-action="inn"]');

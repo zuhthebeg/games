@@ -96,7 +96,7 @@ test('15-row route map places sky below clockwork and keeps the tapped region qu
   let scrolled=0;const section={getBoundingClientRect:()=>({top}),scrollIntoView:o=>{assert.deepEqual(o,{block:'start'});scrolled++}};
   const hub=Object.assign(Object.create(HubUI.prototype),{save,root:{querySelector:sel=>sel==='#map-region-sky'?section:null},showInnPanel(title,html){this.html=html}});
   hub.action('map-region',{region:'sky'});
-  assert.equal(hub.mapRegion,'sky');assert.match(hub.html,/data-region="sky"[^>]*grid-row:15;grid-column:1/);assert.match(hub.html,/data-route="clockwork:sky"/);
+  assert.equal(hub.mapRegion,'sky');assert.match(hub.html,/data-region="sky"[^>]*grid-row:15;grid-column:2/);assert.match(hub.html,/data-route="clockwork:sky"/);
   assert.match(hub.html,/world-map\/sky\.webp\?v=69b74d022b11/);assert.equal(scrolled,expected,String(top));
  }}finally{globalThis.innerHeight=previous}
 });

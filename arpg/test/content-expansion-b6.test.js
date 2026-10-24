@@ -93,6 +93,6 @@ test('13-row route map keeps the tapped region quest list on screen (desktop sti
   let scrolled=0;const section={getBoundingClientRect:()=>({top}),scrollIntoView:o=>{assert.deepEqual(o,{block:'start'});scrolled++}};
   const hub=Object.assign(Object.create(HubUI.prototype),{save,root:{querySelector:sel=>sel==='#map-region-outskirts'?section:null},showInnPanel(title,html){this.html=html}});
   hub.action('map-region',{region:'outskirts'});
-  assert.equal(hub.mapRegion,'outskirts');assert.match(hub.html,/data-region="abyss"[^>]*grid-row:13;grid-column:2/);assert.equal(scrolled,expected,String(top));
+  assert.equal(hub.mapRegion,'outskirts');assert.match(hub.html,/data-region="abyss"[^>]*grid-row:13;grid-column:1 \/ -1/);assert.equal(scrolled,expected,String(top));
  }}finally{globalThis.innerHeight=previous}
 });

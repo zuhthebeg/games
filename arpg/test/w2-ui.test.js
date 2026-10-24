@@ -61,8 +61,8 @@ test('every learned skill detail uses real damage/range/MP/cooldown/effects and 
 });
 test('full item details show actual base/enhancement/HP and every option with honest units even own item zero-deltas', () => {
   const weapon={...instance('detail','iron_sword_epic',0,[]),enhance:4,affixes:[{k:'atk_pct',v:6},{k:'capacity_flat',v:3},{k:'mana_pct',v:4}]};
-  const html=itemDetailsHtml(weapon);assert.ok(html.includes(`×${amount(ITEMS[weapon.id].power*enhanceMultiplier(4))}`));assert.match(html,/\+6%/);assert.match(html,/\+3 kg/);assert.match(html,/\+4%/);assert.match(html,/종류/);
-  const armor=itemDetailsHtml({...instance('armor','leather_vest'),enhance:2});assert.ok(armor.includes(`${ITEMS.leather_vest.ac} +2`));assert.match(armor,/방어력/);assert.doesNotMatch(armor,/HP 보호|DEF 수치|가벼울수록/);
+  const html=itemDetailsHtml(weapon);assert.ok(html.includes(`${Math.round(ITEMS[weapon.id].power*enhanceMultiplier(4)*100)}`));assert.match(html,/\+6%/);assert.match(html,/\+3 kg/);assert.match(html,/\+4%/);assert.match(html,/종류/);
+  const armor=itemDetailsHtml({...instance('armor','leather_vest'),enhance:2});assert.ok(armor.includes(`${Math.round(ITEMS.leather_vest.ac+2)}`));assert.match(armor,/방어력/);assert.doesNotMatch(armor,/HP 보호|DEF 수치|가벼울수록/);
   for(const k of ['hp_flat','speed_pct','dodge_pct','potion_pct','gold_pct','material_pct']) assert.ok(itemDetailsHtml({...weapon,affixes:[{k,v:2}]}).includes(`data-detail="${k}"`));
   const h=hubFor(fresh());h.mountSheet=html=>h.html=html;h.showSocket('weapon');assert.match(h.html,/data-detail="attack"/);assert.doesNotMatch(h.html,/= 유지|compare-sheet/);assert.match(h.html,/교체 후보/);
   h.openItem('starter:weapon');assert.match(h.html,/data-detail="attack"/);assert.match(h.html,/장비 정보/);assert.doesNotMatch(h.html,/추가 옵션 없음|compare-sheet/);

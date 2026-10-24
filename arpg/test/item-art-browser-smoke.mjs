@@ -162,7 +162,7 @@ try {
     // Fixture is a trained Lv15 (skill books need 힘 30); the badge shows exactly the unspent points.
     assert.ok(await evaluate("document.querySelector('[data-action=\"character\"] .badge').textContent===String(__arpg.save.statPoints)&&__arpg.save.statPoints>0"));
     await click('[data-action="character"]');await audit();
-    assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공격 속도')"));
+    assert.ok(await evaluate("document.querySelector('.character-summary').textContent.includes('공속')"));
     const pointsBefore=await evaluate('__arpg.save.statPoints');
     await click('[data-action="stat-plus"][data-key="str"]:not([data-step])');await audit();
     await click('#allocation-confirm');assert.equal(await evaluate('__arpg.save.statPoints'),pointsBefore-1);

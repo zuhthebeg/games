@@ -116,7 +116,7 @@ try {
     await nativeActivate('[data-action="socket"][data-slot="body"]');
     await nativeActivate('[data-action="open-item"][data-uid="w1-heavy"]');
     const compare=await evaluate(`(()=>{const n=document.querySelector('dialog[open] [data-line="attackRate"]');return {from:+n.dataset.from,to:+n.dataset.to,delta:+n.dataset.delta,text:n.textContent,summary:document.querySelector('dialog[open] .compare-summary').textContent}})()`);
-    assert.ok(compare.delta<0);assert.match(compare.text,/▼/);assert.match(compare.summary,/공격 속도.*▼/);
+    assert.ok(compare.delta<0);assert.match(compare.text,/▼/);assert.match(compare.summary,/공속.*▼/);
     await nativeActivate('[data-action="equip"][data-uid="w1-heavy"]');
     assert.equal(await evaluate('__arpg.save.equipped.body'),'w1-heavy');
     await nativeActivate('[data-action="inn"]');

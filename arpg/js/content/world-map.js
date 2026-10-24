@@ -11,12 +11,12 @@ export const REGIONS = [
   { id:'graveyard', name:'버려진 묘지', maps:['S21','S22','S23'], pos:[76,74] },
   { id:'necropolis', name:'망자의 지하묘역', maps:['S24','S25','S26','S27'], pos:[76,92] },
   { id:'cinder', name:'잿불 황야', maps:['S28','S29','S30'], pos:[50,92] },
-  { id:'frost', name:'서리 동굴', maps:['S31','S32','S33'], pos:[76,108] },
+  { id:'frost', name:'서리 동굴', maps:['S31','S32','S33'], pos:[24,108] },
   { id:'mire', name:'독안개 수렁', maps:['S34','S35','S36'], pos:[76,124] },
-  { id:'dunes', name:'작열하는 사구', maps:['S37','S38','S39'], pos:[50,124] },
-  { id:'spore', name:'포자 군락지', maps:['S40','S41','S42'], pos:[24,124] },
-  { id:'abyss', name:'심연 해구', maps:['S43','S44','S45'], pos:[24,140] },
-  { id:'clockwork', name:'태엽 폐허', maps:['S46','S47','S48'], pos:[50,156] },
+  { id:'dunes', name:'작열하는 사구', maps:['S37','S38','S39'], pos:[24,124] },
+  { id:'spore', name:'포자 군락지', maps:['S40','S41','S42'], pos:[76,124] },
+  { id:'abyss', name:'심연 해구', maps:['S43','S44','S45'], pos:[50,140] },
+  { id:'clockwork', name:'태엽 폐허', maps:['S46','S47','S48'], pos:[24,156] },
   { id:'sky', name:'구름 첨탑', maps:['S49','S50','S51'], pos:[76,172] },
   { id:'castle', name:'무너진 성채', maps:['S14','S15','S19','S20'], pos:[24,74] },
 ];
@@ -52,9 +52,10 @@ export const discoveredRegions = save => {
   return REGIONS.filter(region => maps.some(id => MAPS[id].regionId === region.id));
 };
 // Flow-grid slots preserve the fork/rejoin route without absolute-positioned touch targets.
+// 새 지역은 좌/우를 번갈아 배치, 막 관문은 0.
 export const REGION_ROUTE = {
   outskirts:[1,0], forest:[2,0], pass:[3,0], mine:[4,1], swamp:[4,2],
-  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2], cinder:[8,2], frost:[9,2], mire:[10,2], dunes:[11,2], spore:[12,2], abyss:[13,2], clockwork:[14,1], sky:[15,0],
+  castle:[5,0], throne:[6,1], graveyard:[6,2], necropolis:[7,2], cinder:[8,0], frost:[9,1], mire:[10,2], dunes:[11,1], spore:[12,2], abyss:[13,0], clockwork:[14,1], sky:[15,2],
 };
 export const availableStages = save => Object.keys(STAGES).filter(id => mapUnlocked(save, id));
 export const regionFor = id => REGIONS.find(region => region.id === MAPS[id]?.regionId);
