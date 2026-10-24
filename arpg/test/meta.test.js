@@ -344,7 +344,12 @@ test('save adapter: roundtrip, reset, corrupt/unknown versions back up before fr
   assert.equal(store.load().gold, 30);
   store.reset();
   assert.equal(store.load(), null);
-  for (const raw of ['{broken', '{"version":42}', JSON.stringify({ ...fresh(), gold: -1 })]) {
+  storage.setItem(SAVE_KEY, '{"version":42}');
+  assert.equal(store.load(), null);
+  assert.ok(store.locked, 'a future-version save is kept, not quarantined');
+  assert.equal(storage.getItem(SAVE_KEY), '{"version":42}');
+  store.reset();
+  for (const raw of ['{broken', JSON.stringify({ ...fresh(), gold: -1 })]) {
     storage.setItem(SAVE_KEY, raw);
     assert.equal(store.load(), null);
     assert.equal(storage.getItem(`${SAVE_KEY}.corrupt.999`), raw);

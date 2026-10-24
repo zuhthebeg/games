@@ -240,21 +240,37 @@ export function repairTwohandShield(data) {
     return validateSave(work)?work:data;
   } catch {return data;}
 }
+const CORRUPT_PREFIX = `${SAVE_KEY}.corrupt.`;
+
+// A newer build's character differs from corruption in one way: it names content this build never shipped.
+function namesUnknownContent(data) {
+  const unknown = (ids, known) => ids.some(id => !Object.hasOwn(known, id));
+  const keysOf = value => (record(value) ? Object.keys(value) : []);
+  const itemIds = list => (Array.isArray(list) ? list.map(item => item?.id) : []);
+  const loot = receipt => [receipt?.lootKept, receipt?.lootLost].flatMap(l => [...keysOf(l?.stacks), ...itemIds(l?.items)]);
+  return unknown([...itemIds(data.items), ...keysOf(data.stacks), ...keysOf(data.stash?.stacks), ...loot(data.lastReceipt)], ITEMS)
+    || unknown(keysOf(data.stageThreat), STAGE_XP)
+    || (Array.isArray(data.learned) && unknown(data.learned, BOOKS));
+}
+
 export class SaveStore {
   constructor(storage, now = () => Date.now()) {
     this.storage = storage;
     this.now = now;
+    // Set when the stored bytes are a current-or-newer save this build cannot read.
+    // Such bytes may be a newer client's character: never delete or overwrite them silently.
+    this.locked = null;
   }
 
-  load() {
-    const raw = this.storage.getItem(SAVE_KEY);
-    if (raw === null) return null;
+  // Same pipeline for the primary key and for restoring backups.
+  parse(raw) {
     let data;
     try {
       data = JSON.parse(raw);
     } catch {
       data = null;
     }
+    const version = record(data) ? data.version : undefined;
     if (record(data) && data.version === 3) {
       data = { ...data, version: 4, stash: { stacks: {} }, learned: [], skills: {} };
     }
@@ -268,8 +284,40 @@ export class SaveStore {
     data=repairTwohandShield(data);
     if (validateSave(data)) {
       const family = ITEMS[data.items.find(item => item.uid === data.equipped.weapon)?.id]?.family || 'blade';
-      return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse },
-        skillMastery: data.skillMastery ?? {}, loadout: loadoutOf(data, family) });
+      return { save: structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse },
+        skillMastery: data.skillMastery ?? {}, loadout: loadoutOf(data, family) }), foreign: false };
+    }
+    return { save: null, foreign: Number.isInteger(version) && (version > SAVE_VERSION || (version === SAVE_VERSION && namesUnknownContent(data))) };
+  }
+
+  backupKeys() {
+    const keys = typeof this.storage.keys === 'function' ? this.storage.keys() : [];
+    return keys.filter(key => key.startsWith(CORRUPT_PREFIX) && /^(0|[1-9][0-9]*)$/.test(key.slice(CORRUPT_PREFIX.length)))
+      .sort((a, b) => Number(b.slice(CORRUPT_PREFIX.length)) - Number(a.slice(CORRUPT_PREFIX.length)));
+  }
+
+  // An older cached build quarantines saves it cannot read; a build that can read them brings the character back.
+  restoreBackup() {
+    for (const key of this.backupKeys()) {
+      const raw = this.storage.getItem(key);
+      if (raw === null) continue;
+      const { save } = this.parse(raw);
+      if (!save) continue;
+      this.storage.setItem(SAVE_KEY, raw);
+      return save;
+    }
+    return null;
+  }
+
+  load() {
+    this.locked = null;
+    const raw = this.storage.getItem(SAVE_KEY);
+    if (raw === null) return this.restoreBackup();
+    const { save, foreign } = this.parse(raw);
+    if (save) return save;
+    if (foreign) {
+      this.locked = { raw };
+      return null;
     }
     // Back up before removing. A quota/storage failure leaves the original untouched.
     this.storage.setItem(`${SAVE_KEY}.corrupt.${this.now()}`, raw);
@@ -277,12 +325,28 @@ export class SaveStore {
     return null;
   }
 
+  // Explicit user choice to give up on unreadable bytes: keep a backup, then free the slot.
+  discardLocked() {
+    if (!this.locked) return;
+    if (this.storage.getItem(SAVE_KEY) !== this.locked.raw) throw new Error('저장 슬롯이 변경되었습니다. 다시 불러오세요.');
+    this.storage.setItem(`${SAVE_KEY}.corrupt.${this.now()}`, this.locked.raw);
+    this.storage.removeItem(SAVE_KEY);
+    this.locked = null;
+  }
+
   save(data) {
+    if (this.locked) throw new Error('읽을 수 없는 저장 데이터가 있어 덮어쓰지 않았습니다.');
     if (!validateSave(data)) throw new Error('저장 데이터 검증에 실패했습니다.');
     this.storage.setItem(SAVE_KEY, JSON.stringify(data));
   }
 
+  // Deliberate wipe: the character the user chose to erase must not return from a backup.
   reset() {
+    this.locked = null;
     this.storage.removeItem(SAVE_KEY);
+    for (const key of this.backupKeys()) {
+      const raw = this.storage.getItem(key);
+      if (raw !== null && this.parse(raw).save) this.storage.removeItem(key);
+    }
   }
 }

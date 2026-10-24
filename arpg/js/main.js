@@ -19,6 +19,7 @@ import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { CharacterStores } from './meta/selected-character.js';
+import { reloadIfStale } from './build-freshness.js';
 import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, settleInvasion, emptyLoot, currentLoad } from './meta/run.js';
@@ -70,6 +71,7 @@ function readonly(value) {
 }
 
 try {
+  if (await reloadIfStale()) throw Object.assign(new Error('reloading'), { reloading: true });
   const characters = new CharacterStores(localStorage);
   const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
@@ -113,6 +115,7 @@ try {
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
     canInteract: () => !undead && !undeadStarting,
+    saveLock: () => characters.active?.slot === 'human' && characters.human.locked,
     persist: (save) => {
       if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
       store.save(save);
@@ -505,6 +508,10 @@ try {
       },
     }),
   });
+  hub.discardLockedSave = () => {
+    characters.human.discardLocked();
+    characters.active.raw = null;
+  };
   document.querySelector('#boot').hidden = true;
   hub.roomInvite = bootQuery.has('room');
   {
@@ -678,6 +685,6 @@ try {
   }
   requestAnimationFrame(frame);
 } catch (error) {
-  document.querySelector('#boot-error').textContent = `초기화 실패: ${error.message}`;
+  if (!error.reloading) document.querySelector('#boot-error').textContent = `초기화 실패: ${error.message}`;
   console.error(error);
 }

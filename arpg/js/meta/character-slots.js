@@ -34,5 +34,16 @@ export function createSlotStorage(storage, slot) {
     getItem(key) { return storage.getItem(mapKey(key)); },
     setItem(key, value) { storage.setItem(mapKey(key), value); },
     removeItem(key) { storage.removeItem(mapKey(key)); },
+    // Backups of this slot only, named in SaveStore's own key form.
+    keys() {
+      const mine = `${destination}.corrupt.`, out = [];
+      for (let i = 0; i < (storage.length ?? 0); i++) {
+        const key = storage.key(i);
+        if (typeof key === 'string' && key.startsWith(mine)) {
+          try { out.push(`${corruptPrefix}${key.slice(mine.length)}`); mapKey(out.at(-1)); } catch { out.pop(); }
+        }
+      }
+      return out;
+    },
   });
 }

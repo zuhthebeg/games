@@ -151,7 +151,7 @@ test('reject arbitrary keys/prefixes/cross-slot diagnostics; expose only SaveSto
   const fixture = storageFixture();
   for (const slot of Object.keys(expectedKeys)) {
     const adapter = createSlotStorage(fixture.storage, slot);
-    assert.deepEqual(Object.keys(adapter).sort(), ['getItem', 'removeItem', 'setItem']);
+    assert.deepEqual(Object.keys(adapter).sort(), ['getItem', 'keys', 'removeItem', 'setItem']);
     for (const key of [undefined, null, {}, new String(SAVE_KEY), 'settings', `${SAVE_KEY}.backup.999`, `${SAVE_KEY}.corrupt.`, `${SAVE_KEY}.corrupt.-1`, `${SAVE_KEY}.corrupt.01`, `${SAVE_KEY}.corrupt.1.2`, `${SAVE_KEY}.corrupt.999.extra`, `${SAVE_KEY}.corrupt.9007199254740992`, ...newSlots.map(s => `${expectedKeys[s]}.corrupt.999`)]) {
       for (const method of ['getItem', 'setItem', 'removeItem']) assert.throws(() => adapter[method](key, 'bad'), /key/i);
     }

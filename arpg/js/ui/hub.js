@@ -98,8 +98,12 @@ export function weightDescription(weight, limit) {
 }
 
 export class HubUI {
-  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null }) {
+  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null, saveLock = null }) {
     this.initialCharacters = initialCharacters;
+    this.saveLock = saveLock;
+    this.lockDiscardStep = 0;
+    this.reloadFresh = () => location.reload();
+    this.discardLockedSave = () => {};
     this.canInteract = canInteract;
     this.save = save;
     this.persist = persist;
@@ -275,7 +279,16 @@ export class HubUI {
       ${button('해골 · 생성 / 이어하기', 'choose-skeleton')}`), 'character-choice');
   }
 
+  showSaveLocked() {
+    const confirming = this.lockDiscardStep === 1;
+    this.show(this.panelHtml('저장된 캐릭터를 읽을 수 없어요', `
+      <p class="story">이 화면은 저장된 캐릭터보다 오래된 버전일 수 있습니다.<br>캐릭터 데이터는 지우지 않고 그대로 보관 중입니다.</p>
+      ${button('최신 버전으로 새로고침', 'save-reload')}
+      ${button(confirming ? '정말 백업만 남기고 새로 시작' : '백업하고 새로 시작', confirming ? 'save-discard' : 'save-discard-ask', confirming ? 'class="danger"' : '')}`), 'save-locked');
+  }
+
   showIntro() {
+    if (this.saveLock?.()) return this.showSaveLocked();
     this.show(this.panelHtml('문 너머의 불빛', `
       <p class="story">이세계로 소환되었다.<br>낯선 하늘 아래, 꺼지지 않은 여관의 불빛이 보인다.<br>
       손등의 인장이 당신에게 이름을 묻는다.</p>
@@ -1171,6 +1184,12 @@ export class HubUI {
     if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {
       case 'character-choice': return this.showCharacterChoice();
+      case 'save-reload': return this.reloadFresh();
+      case 'save-discard-ask': this.lockDiscardStep = 1; return this.showSaveLocked();
+      case 'save-discard':
+        if (this.lockDiscardStep !== 1) throw new Error('확인이 필요합니다.');
+        this.lockDiscardStep = 0; this.discardLockedSave();
+        return this.showIntro();
       case 'choose-human':
         this.creationLineage = null;
         this.save = this.initialCharacters.human();
