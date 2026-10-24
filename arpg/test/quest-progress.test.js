@@ -25,7 +25,7 @@ const hubFor = save => Object.assign(Object.create(HubUI.prototype), { save, per
 
 test('QF1 data stays on existing wolf maps and adds no stage', () => {
   for (const id of QF1.maps) assert.ok(STAGES[id].spawns.some(s => s.monster === 'wolf'), id);
-  assert.equal(Object.keys(STAGE_XP).filter(id => !id.startsWith('M_') && !/^S2[1-9]$|^S3[0-9]$|^S4[0-2]$/.test(id)).length, 21);
+  assert.equal(Object.keys(STAGE_XP).filter(id => !id.startsWith('M_') && !/^S2[1-9]$|^S3[0-9]$|^S4[0-5]$/.test(id)).length, 21);
   assert.ok(!Object.hasOwn(STAGES, 'QF1'));
 });
 

@@ -2,6 +2,8 @@
 // Presentation-only palettes. No collision, simulation RNG or network state.
 const biome = (tiles, path, accent, boundary, props) => ({ tiles, path, accent, boundary, props });
 export const BIOMES = {
+  abyssal_trench: biome([0x152a33, 0x172e38, 0x13262f, 0x1a323c], 0x22404a, 0x2b4752, 'rocks',
+    ['water', 'reeds', 'stones', 'crack', 'rune', 'broken_column', 'urn', 'pebbles']),
   spore_hollow: biome([0x1f2433, 0x222837, 0x1c2130, 0x252b3a], 0x2c3b46, 0x3a3550, 'roots',
     ['mushroom', 'roots', 'stones', 'bush', 'crack', 'pebbles', 'log', 'rune']),
   sun_dunes: biome([0x3a3226, 0x3e3529, 0x352d22, 0x42392b], 0x4a3f2e, 0x524430, 'rocks',
@@ -34,6 +36,7 @@ export const BIOMES = {
     ['carpet', 'slab', 'rune', 'column', 'brazier', 'shield', 'rubble', 'urn'])
 };
 export const STAGE_BIOMES = Object.fromEntries([
+  ...[43,44,45].map(n => ['S' + n, 'abyssal_trench']),
   ...[40,41,42].map(n => ['S' + n, 'spore_hollow']),
   ...[37,38,39].map(n => ['S' + n, 'sun_dunes']),
   ...[34,35,36].map(n => ['S' + n, 'mire_fen']),

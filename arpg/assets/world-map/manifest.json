@@ -476,6 +476,28 @@
       "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
       "reviewNotes": "Distinct indigo-and-teal glowing mushroom hollow; no UI, characters or typography",
       "sourceLicense": "Original locally authored scene; no third-party content"
+    },
+    {
+      "id": "abyss",
+      "prompt": "Original empty sunken temple at the bottom of a deep ocean trench: broken columns, kelp, coral fans, light shafts and rising bubbles; procedural hand-authored landscape",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 45045,
+      "steps": 0,
+      "guidance": 0,
+      "scheduler": "deterministic procedural",
+      "width": 768,
+      "height": 384,
+      "sourceWindowsPath": "not applicable",
+      "sourceSha256": "d9556b922b83b03ce02fd3ef11f447a17c869680d48cac731d988ef908e80372",
+      "sourceBytes": 2871,
+      "outputFile": "abyss.webp",
+      "outputSha256": "9e694565778ff94274d10c6d8a4aac8f8465cd0469ab8d3835867805fe276d00",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 20212,
+      "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
+      "reviewNotes": "Distinct deep-sea teal-and-ink sunken ruin with coral accents; no UI, characters or typography",
+      "sourceLicense": "Original locally authored scene; no third-party content"
     }
   ],
   "schemaVersion": 1,
@@ -489,7 +511,7 @@
     768,
     384
   ],
-  "outputTotalBytes": 482646,
+  "outputTotalBytes": 502858,
   "pipelineSkill": "cocy-game-image-pipeline",
   "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
   "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",

@@ -10,6 +10,10 @@ export const NEW_MONSTER_DROPS = {
   orc_raider: { gold:[12,18], stacks:[{id:'web',count:3},{id:'scrap',count:3},{id:'potion',count:1,chance:.2}], items:[] },
   frost_yeti: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   stone_giant: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
+  // Abyssal trench: existing T4 materials and equipment pools, no new currency.
+  abyss_glub: { gold:[10,17], stacks:[{id:'hide',count:2},{id:'frost_shard',count:1},{id:'potion',count:1,chance:.2}], items:[] },
+  drowned_skull: { gold:[10,17], stacks:[{id:'web',count:2},{id:'frost_shard',count:1},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  abyss_squidle: { gold:[19,27], stacks:[{id:'rune_shard',count:2},{id:'frost_shard',count:2},{id:'scrap',count:3}], items:[] },
   // Spore hollow: existing T4 materials and equipment pools, no new currency.
   spore_mushnub: { gold:[10,16], stacks:[{id:'hide',count:2},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   gale_hywirl: { gold:[10,16], stacks:[{id:'frost_shard',count:1},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },

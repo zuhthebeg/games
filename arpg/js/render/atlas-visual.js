@@ -15,7 +15,7 @@ export function registerAtlasFactories(provider, fallbackFactory) {
     fetchManifest: async (url) => {
       // Revalidate the kit registry when a new stamped renderer boots; otherwise
       // an old cached manifest can hide newly delivered monster art for hours.
-      const response = await fetch(url + '?v=5fe9a0807270', { cache: 'no-cache' });
+      const response = await fetch(url + '?v=1029438e6587', { cache: 'no-cache' });
       if (!response.ok) throw new Error(`Atlas manifest HTTP ${response.status}`);
       return response.json();
     },

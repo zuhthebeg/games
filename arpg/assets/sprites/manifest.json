@@ -1248,5 +1248,92 @@
       "death": 0.6
     },
     "cacheVersion": "63a6ec20c946"
+  },
+  {
+    "id": "abyss_glub",
+    "label": "심연 아귀",
+    "monster": true,
+    "content_ids": [
+      "abyss_glub"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7458460330963135
+    },
+    "bytes": 253781,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "623372148f92"
+  },
+  {
+    "id": "drowned_skull",
+    "label": "익사한 해골령",
+    "monster": true,
+    "content_ids": [
+      "drowned_skull"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6411332488059998
+    },
+    "bytes": 256707,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "effa86022f02"
+  },
+  {
+    "id": "abyss_squidle",
+    "label": "심연 오징어 군주",
+    "monster": true,
+    "content_ids": [
+      "abyss_squidle"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6453579664230347
+    },
+    "bytes": 307491,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "0b91ddaf82da"
   }
 ]

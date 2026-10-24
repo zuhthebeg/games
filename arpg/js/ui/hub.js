@@ -49,7 +49,7 @@ const silverSourceStage = id => BALANCE.stages[id]?.huntTier >= 2
   && STAGES[id]?.spawns.some(s => MONSTER_VARIANTS[s.monster]?.lifeState === 'construct'
     && !MONSTER_VARIANTS[s.monster].speciesTags.includes('trainingDummy'));
 // Decorative environment art keeps all names, state labels and actions on solid surfaces.
-const regionArt = id => `<span class="region-art" aria-hidden="true" style="background-image:url('/arpg/assets/world-map/${id}.webp${id === 'frost' ? '?v=1479dad54ddc' : id === 'mire' ? '?v=8c356c563c3e' : id === 'dunes' ? '?v=4359af3015d9' : id === 'spore' ? '?v=aa3db713f9fd' : ''}')"></span>`;
+const regionArt = id => `<span class="region-art" aria-hidden="true" style="background-image:url('/arpg/assets/world-map/${id}.webp${id === 'frost' ? '?v=1479dad54ddc' : id === 'mire' ? '?v=8c356c563c3e' : id === 'dunes' ? '?v=4359af3015d9' : id === 'spore' ? '?v=aa3db713f9fd' : id === 'abyss' ? '?v=9e694565778f' : ''}')"></span>`;
 const mapPartyActions = label => `<div class="map-party-actions" role="group" aria-label="다른 모험가와 출정">
   ${button(label, 'coop')}
   <p>총 2~4명 · 인간은 사냥꾼 편, 해골은 몬스터 편으로 참가합니다.</p>
@@ -1507,9 +1507,14 @@ export class HubUI {
         const stage = mapUnlocked(this.save, this.sortieStage) ? this.sortieStage : availableStages(this.save).find(id => !this.save.cleared[id]) || 'S1';
         return this.startCoop?.(stage, this.sortieThreat || 1);
       }
-      case 'map-region':
+      case 'map-region': {
         this.mapRegion = data.region;
-        return this.showBoard();
+        this.showBoard();
+        // The route map is 13+ rows tall; keep the tapped region's quest list on screen.
+        const quests = this.root?.querySelector?.(`#map-region-${data.region}`), box = quests?.getBoundingClientRect?.();
+        if (box && (box.top < 0 || box.top > (globalThis.innerHeight || 0) - 120)) quests.scrollIntoView?.({ block: 'start' });
+        return;
+      }
       case 'board': return this.showBoard();
       case 'quest-accept':
         this.commit(acceptQuest(this.save, data.quest));

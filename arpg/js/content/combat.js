@@ -474,6 +474,12 @@ Object.assign(MONSTERS, {
     abilities:['spirit_bolt','wolf_dash'], xp:30, keepRange:[170,260] },
   spore_king: { lifeState:'living', hp:340, r:28, speed:84, heavyPoise:true, poise:110, kbResist:.6,
     abilities:['guardian_crush','spider_puddle'], xp:38, keepRange:[60,110] },
+  abyss_glub: { lifeState:'beast', hp:196, r:19, speed:126, poise:46, kbResist:.28,
+    abilities:['boar_charge','wolf_bite'], xp:30, keepRange:[45,80] },
+  drowned_skull: { lifeState:'undead', hp:150, r:17, speed:104, poise:30, kbResist:.18,
+    abilities:['sling_stone','spider_puddle'], xp:31, keepRange:[130,185] },
+  abyss_squidle: { lifeState:'beast', hp:360, r:28, speed:80, heavyPoise:true, poise:115, kbResist:.6,
+    abilities:['chief_cleave','guardian_ring'], xp:40, keepRange:[60,110] },
 });
 
 export const STAGES = {
@@ -562,6 +568,9 @@ export const STAGES = {
   S40: stage('발광 균사 길', [['spore_mushnub',0,.76,.35],['gale_hywirl',0,.84,.7],['spore_mushnub',2600,.88,.5],['gale_hywirl',5200,.9,.25]]),
   S41: stage('포자 회오리 골짜기', [['spore_king',0,.76,.35],['spore_mushnub',0,.84,.7],['gale_hywirl',2700,.88,.5],['spore_mushnub',5200,.9,.25]]),
   S42: stage('버섯 왕의 옥좌', [['spore_king',0,.78,.5],['gale_hywirl',2200,.86,.3],['spore_mushnub',4500,.86,.7]]),
+  S43: stage('물빛 산호 회랑', [['abyss_glub',0,.76,.35],['drowned_skull',0,.84,.7],['abyss_glub',2600,.88,.5],['drowned_skull',5200,.9,.25]]),
+  S44: stage('익사한 해골의 무덤', [['abyss_squidle',0,.76,.35],['drowned_skull',0,.84,.7],['abyss_glub',2700,.88,.5],['drowned_skull',5200,.9,.25]]),
+  S45: stage('심연 군주의 소용돌이', [['abyss_squidle',0,.78,.5],['abyss_glub',2200,.86,.3],['drowned_skull',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

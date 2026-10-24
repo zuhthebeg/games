@@ -41,6 +41,9 @@ export const BALANCE = {
     potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
+    S43: { hp:8, damage:2.95, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[30,'epic',4] },
+    S44: { hp:8.1, damage:3, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[30,'epic',4] },
+    S45: { hp:8.3, damage:3.05, eliteChance:1, waves:1, waveMs:0, concurrent:2, huntTier:4, rewardRank:12, sizeRank:19, rec:[30,'epic',4] },
     S40: { hp:7.5, damage:2.8, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[30,'epic',4] },
     S41: { hp:7.6, damage:2.85, eliteChance:.18, waves:4, waveMs:14000, concurrent:3, huntTier:4, rewardRank:1, sizeRank:19, rec:[30,'epic',4] },
     S42: { hp:7.8, damage:2.9, eliteChance:1, waves:1, waveMs:0, concurrent:2, huntTier:4, rewardRank:12, sizeRank:19, rec:[30,'epic',4] },

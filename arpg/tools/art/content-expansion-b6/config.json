@@ -1,0 +1,122 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b6/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b6/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "abyss_glub",
+      "label": "심연 아귀",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b6/source/abyss_glub.glb",
+      "keep": [
+        "Glub_Evolved"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Wing1.L",
+        "Wing1.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Headbutt",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "abyss_glub"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "drowned_skull",
+      "label": "익사한 해골령",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b6/source/drowned_skull.glb",
+      "keep": [
+        "Ghost_Skull"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Punch",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "drowned_skull"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "abyss_squidle",
+      "label": "심연 오징어 군주",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b6/source/abyss_squidle.glb",
+      "keep": [
+        "Squidle.002"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Flying_Idle",
+        "run": "CharacterArmature|Fast_Flying",
+        "attack": "CharacterArmature|Punch",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "abyss_squidle"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    }
+  ]
+}

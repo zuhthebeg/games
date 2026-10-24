@@ -10,6 +10,7 @@ export const MONSTER_PALETTES = {
   succubus: [0xffffff], ash: [0xffffff], frost: [0xffffff],
   marsh_wasp: [0xe8c87a], bog_wizard: [0xb9a3d8], mire_frog: [0x88b783],
   dune_cactoro: [0xffffff], sun_totem: [0xffffff], crown_alpaking: [0xffffff],
+  abyss_glub: [0xffffff], drowned_skull: [0xffffff], abyss_squidle: [0xffffff],
   spore_mushnub: [0xffffff], gale_hywirl: [0xffffff], spore_king: [0xffffff],
   human: [0xffffff],
   necropolis: [0xffdca0],
@@ -25,6 +26,7 @@ export const MONSTER_MODELS = [
   'marsh_wasp', 'bog_wizard', 'mire_frog',
   'dune_cactoro', 'sun_totem', 'crown_alpaking',
   'spore_mushnub', 'gale_hywirl', 'spore_king',
+  'abyss_glub', 'drowned_skull', 'abyss_squidle',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
@@ -34,6 +36,7 @@ export const MONSTER_NAMES = {
   succubus: '서큐버스', ash_reaver: '재의 약탈자', veil_stalker: '장막 추적자', cinder_oracle: '잿불 예언자', orc_raider: '오크 약탈자', frost_yeti: '설원 예티', stone_giant: '바위 거인',
   marsh_wasp: '습지 말벌', bog_wizard: '늪의 술사', mire_frog: '진흙 개구리',
   dune_cactoro: '사막 선인장귀', sun_totem: '태양 가면 정령', crown_alpaking: '황금 관 알파킹',
+  abyss_glub: '심연 아귀', drowned_skull: '익사한 해골령', abyss_squidle: '심연 오징어 군주',
   spore_mushnub: '포자 뭉치귀', gale_hywirl: '포자 회오리 정령', spore_king: '버섯 왕',
   gargoyle: '석상 가고일',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
@@ -61,6 +64,9 @@ export const MONSTER_VARIANTS = {
   dune_cactoro: variant('dune_cactoro', 'dune_cactoro', ['plant', 'humanoid'], 'living'),
   sun_totem: variant('sun_totem', 'sun_totem', ['spirit', 'mage'], 'living'),
   crown_alpaking: variant('crown_alpaking', 'crown_alpaking', ['flyer', 'beast'], 'beast'),
+  abyss_glub: variant('abyss_glub', 'abyss_glub', ['fish', 'beast'], 'beast'),
+  drowned_skull: variant('drowned_skull', 'drowned_skull', ['ghost', 'skull'], 'undead'),
+  abyss_squidle: variant('abyss_squidle', 'abyss_squidle', ['cephalopod', 'beast'], 'beast'),
   spore_mushnub: variant('spore_mushnub', 'spore_mushnub', ['fungus', 'beast'], 'living'),
   gale_hywirl: variant('gale_hywirl', 'gale_hywirl', ['elemental', 'spirit'], 'living'),
   spore_king: variant('spore_king', 'spore_king', ['fungus', 'humanoid'], 'living'),
