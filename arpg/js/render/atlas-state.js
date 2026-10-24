@@ -10,6 +10,7 @@ export const ATLAS_IDS = Object.freeze({
   ash_reaver: 'ash_reaver', veil_stalker: 'veil_stalker', cinder_oracle: 'cinder_oracle',
   orc_raider: 'orc_raider', frost_yeti: 'frost_yeti', stone_giant: 'stone_giant',
   marsh_wasp: 'marsh_wasp', bog_wizard: 'bog_wizard', mire_frog: 'mire_frog',
+  dune_cactoro: 'dune_cactoro', sun_totem: 'sun_totem', crown_alpaking: 'crown_alpaking',
   rune_guardian: 'rune-guardian', spirit: 'spirit',
   blade: 'hero-sword',
   death_knight: 'player-death-knight',
@@ -32,7 +33,7 @@ export const ATLAS_IDS = Object.freeze({
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
 
 export function atlasScale(entity) {
-  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : entity.type === 'orc_raider' ? 1.3 : entity.type === 'training_dragon' ? 1.2 : entity.type === 'throne_dragon' ? 1.4650580478478936 : 1) * (entity.sizeScale || 1);
+  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : entity.type === 'orc_raider' || entity.type === 'dune_cactoro' ? 1.3 : entity.type === 'training_dragon' ? 1.2 : entity.type === 'throne_dragon' ? 1.4650580478478936 : 1) * (entity.sizeScale || 1);
 }
 
 export function visualKey(entity) {

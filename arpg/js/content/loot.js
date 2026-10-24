@@ -10,6 +10,10 @@ export const NEW_MONSTER_DROPS = {
   orc_raider: { gold:[12,18], stacks:[{id:'web',count:3},{id:'scrap',count:3},{id:'potion',count:1,chance:.2}], items:[] },
   frost_yeti: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   stone_giant: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
+  // Sun dunes: existing T4 materials and equipment pools, no new currency.
+  dune_cactoro: { gold:[12,18], stacks:[{id:'wood',count:3},{id:'fang',count:1,chance:.6},{id:'potion',count:1,chance:.2}], items:[] },
+  sun_totem: { gold:[10,16], stacks:[{id:'rune_shard',count:1},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  crown_alpaking: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'hide',count:2},{id:'scrap',count:3}], items:[] },
   // Deep mire: existing T4 materials and equipment pools, no new currency.
   marsh_wasp: { gold:[8,12], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.7},{id:'wood',count:2},{id:'potion',count:1,chance:.2}], items:[] },
   bog_wizard: { gold:[10,16], stacks:[{id:'frost_shard',count:2},{id:'web',count:2},{id:'mana_potion',count:1,chance:.25}], items:[] },

@@ -432,6 +432,28 @@
       "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
       "reviewNotes": "Distinct willow-and-mushroom mire landscape; no UI, characters or typography",
       "sourceLicense": "Original locally authored scene; no third-party content"
+    },
+    {
+      "id": "dunes",
+      "prompt": "Original empty sunset desert of dune ridges, distant mesas, saguaro silhouettes and a ruined sun gate; procedural hand-authored landscape",
+      "negative": "people, person, human, woman, man, girl, boy, character, warrior, creature, animal, dragon creature, face, body, hands, anime character, photorealistic, photograph, 3d render, modern building, science fiction, text, letters, lettering, caption, logo, signature, watermark, UI, HUD, icons, border, frame, collage, split screen, blurry, low quality, gore, nudity",
+      "seed": 39042,
+      "steps": 0,
+      "guidance": 0,
+      "scheduler": "deterministic procedural",
+      "width": 768,
+      "height": 384,
+      "sourceWindowsPath": "not applicable",
+      "sourceSha256": "e1eddc482887c2ab822795f243d45111eea0052e21ae208581918bd53c2c592b",
+      "sourceBytes": 2824,
+      "outputFile": "dunes.webp",
+      "outputSha256": "4359af3015d93dcca8858ce8ec41762408e5e5a4b365109fecb4224f05eb5139",
+      "outputWidth": 768,
+      "outputHeight": 384,
+      "outputBytes": 9146,
+      "conversion": "Pillow authored 1536x768 Lanczos WebP quality=82",
+      "reviewNotes": "Distinct amber dune-and-mesa landscape; no UI, characters or typography",
+      "sourceLicense": "Original locally authored scene; no third-party content"
     }
   ],
   "schemaVersion": 1,
@@ -445,7 +467,7 @@
     768,
     384
   ],
-  "outputTotalBytes": 454956,
+  "outputTotalBytes": 464102,
   "pipelineSkill": "cocy-game-image-pipeline",
   "modelSha256Definition": "SHA-256 of UTF-8 compact sort_keys JSON array modelFiles; entries include relative path, SHA-256 and bytes for each cached safetensors/JSON file",
   "generationCommand": "powershell.exe -NoProfile -Command \"& 'C:\\Users\\user\\ai-tools\\diffusion-win\\Scripts\\python.exe' 'C:\\Users\\user\\ai-tools\\arpg-map-art-generate.py'\"",

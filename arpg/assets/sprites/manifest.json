@@ -1074,5 +1074,92 @@
       "death": 0.6
     },
     "cacheVersion": "202ee0b5888e"
+  },
+  {
+    "id": "dune_cactoro",
+    "label": "사막 선인장귀",
+    "monster": true,
+    "content_ids": [
+      "dune_cactoro"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5666943788528442
+    },
+    "bytes": 203299,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "7a32141ad44d"
+  },
+  {
+    "id": "sun_totem",
+    "label": "태양 가면 정령",
+    "monster": true,
+    "content_ids": [
+      "sun_totem"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7114349007606506
+    },
+    "bytes": 321225,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "5f9030b578e5"
+  },
+  {
+    "id": "crown_alpaking",
+    "label": "황금 관 알파킹",
+    "monster": true,
+    "content_ids": [
+      "crown_alpaking"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 5,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6436610817909241
+    },
+    "bytes": 288853,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "1cbf411b7b70"
   }
 ]

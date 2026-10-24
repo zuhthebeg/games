@@ -462,6 +462,12 @@ Object.assign(MONSTERS, {
     abilities:['spirit_bolt','spider_puddle'], xp:28, keepRange:[190,290] },
   mire_frog: { lifeState:'beast', hp:204, r:22, speed:124, poise:66, kbResist:.38,
     abilities:['goblin_hop','wolf_bite'], xp:25, keepRange:[45,80] },
+  dune_cactoro: { lifeState:'living', hp:262, r:22, speed:96, poise:82, kbResist:.45,
+    abilities:['boar_charge','boar_gore'], xp:29, keepRange:[45,80] },
+  sun_totem: { lifeState:'living', hp:150, r:19, speed:92, poise:36, kbResist:.2,
+    abilities:['sling_stone','guardian_ring'], xp:30, keepRange:[150,240] },
+  crown_alpaking: { lifeState:'beast', hp:318, r:24, speed:112, heavyPoise:true, poise:96, kbResist:.5,
+    abilities:['goblin_hop','chief_slam'], xp:36, keepRange:[50,100] },
 });
 
 export const STAGES = {
@@ -544,6 +550,9 @@ export const STAGES = {
   S34: stage('안개 수렁', [['marsh_wasp',0,.76,.35],['mire_frog',0,.84,.7],['marsh_wasp',2600,.88,.5],['bog_wizard',5200,.9,.25]]),
   S35: stage('침수된 고목', [['bog_wizard',0,.76,.35],['marsh_wasp',0,.84,.7],['mire_frog',2700,.88,.5],['marsh_wasp',5200,.9,.25]]),
   S36: stage('독안개 심장', [['bog_wizard',0,.78,.5],['mire_frog',2200,.86,.3],['marsh_wasp',4500,.86,.7]]),
+  S37: stage('모래바람 길', [['dune_cactoro',0,.76,.35],['sun_totem',0,.84,.7],['dune_cactoro',2600,.88,.5],['sun_totem',5200,.9,.25]]),
+  S38: stage('가시 선인장 협곡', [['crown_alpaking',0,.76,.35],['dune_cactoro',0,.84,.7],['sun_totem',2700,.88,.5],['dune_cactoro',5200,.9,.25]]),
+  S39: stage('태양 왕관 제단', [['crown_alpaking',0,.78,.5],['sun_totem',2200,.86,.3],['dune_cactoro',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };
