@@ -325,12 +325,12 @@ for job in config['characters']:
                 color.default_value = (luminance, luminance, luminance, 1)
     bpy.context.view_layer.update()
     if config['outline']['enabled']:
-        ink = material('outline ink', (.016, .02, .03))
+        ink = material('outline ink', job.get('outline_color', (.016, .02, .03)))
         ink.use_backface_culling = True
         nodes = ink.node_tree.nodes
         nodes.clear()
         emission = nodes.new('ShaderNodeEmission')
-        emission.inputs['Color'].default_value = (.012, .016, .024, 1)
+        emission.inputs['Color'].default_value = (*job.get('outline_color', (.012, .016, .024)), 1)
         output = nodes.new('ShaderNodeOutputMaterial')
         ink.node_tree.links.new(emission.outputs[0], output.inputs['Surface'])
         for obj in meshes:
@@ -351,7 +351,7 @@ for job in config['characters']:
                 polygon.material_index = 0
             modifier = hull.modifiers.new('outline expansion', 'DISPLACE')
             world_scale = sum(abs(value) for value in obj.matrix_world.to_scale()) / 3
-            modifier.strength = -config['outline']['thickness'] / world_scale
+            modifier.strength = -job.get('outline_thickness', config['outline']['thickness']) / world_scale
             modifier.mid_level = 0
             modifier.direction = 'NORMAL'
     root = bpy.data.objects.new('Facing', None)

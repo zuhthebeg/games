@@ -1561,12 +1561,12 @@
       "x": 0.5,
       "y": 0.6553894281387329
     },
-    "bytes": 170007,
+    "bytes": 192289,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
     },
-    "cacheVersion": "2c9ee1cedf72"
+    "cacheVersion": "d8e5baa6b67a"
   },
   {
     "id": "orbital_mech",
@@ -1675,13 +1675,13 @@
     "fps": 6,
     "anchor": {
       "x": 0.5,
-      "y": 0.5820713043212891
+      "y": 0.5819613337516785
     },
-    "bytes": 207505,
+    "bytes": 249465,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
     },
-    "cacheVersion": "bdf93ca5221f"
+    "cacheVersion": "caeb6d861f78"
   }
 ]

@@ -354,6 +354,40 @@ for job in config['characters']:
             modifier.strength = -config['outline']['thickness'] / world_scale
             modifier.mid_level = 0
             modifier.direction = 'NORMAL'
+    # Find the actual barrel lip in the idle skinned mesh. Gun's bone points
+    # vertically in this source rig, so its tail is NOT the muzzle.
+    muzzle = []
+    if job.get('baked_gun_recoil'):
+        spec = job['baked_gun_recoil']
+        bone_name = spec['bone']
+        assert bone_name in rig.pose.bones
+        gun_points = []
+        for obj in skinned:
+            group = obj.vertex_groups.get(bone_name)
+            if not group:
+                continue
+            points = evaluated_vertices(obj, bpy.context.evaluated_depsgraph_get())
+            for vertex, point in zip(obj.data.vertices, points):
+                if any(item.group == group.index and item.weight > .5 for item in vertex.groups):
+                    gun_points.append(point)
+        assert gun_points, (job['name'], 'missing skinned gun')
+        front = min(point.y for point in gun_points)
+        lip = [point for point in gun_points if point.y < front + .035]
+        tip = sum(lip, Vector()) / len(lip)
+        tip.y -= .16  # light originates just beyond the barrel, not in its hull
+        bone = rig.pose.bones[bone_name]
+        parent_world = rig.matrix_world @ bone.matrix @ Matrix.Translation((0, bone.length, 0))
+        for name, radius, color, emission, offset in (
+            ('GunFlashGold', spec['flash_radius'], (1.0, .72, .08), 5, 0),
+            ('GunFlashCore', spec['flash_radius'] * .48, (1.0, 1.0, .88), 8, -.27),
+        ):
+            obj = orb(name, (0, 0, 0), radius, material(name, color, emission))
+            obj.parent = rig
+            obj.parent_type = 'BONE'
+            obj.parent_bone = bone_name
+            obj.matrix_basis = parent_world.inverted() @ Matrix.Translation(tip + Vector((0, offset, 0)))
+            obj.hide_render = True
+            muzzle.append(obj)
     root = bpy.data.objects.new('Facing', None)
     bpy.context.collection.objects.link(root)
     # Preserve the imported transform (Quaternius uses a rotated 100x rig).
@@ -413,12 +447,26 @@ for job in config['characters']:
     scene.camera = camera
     up = camera.rotation_euler.to_matrix() @ Vector((0, 1, 0))
     right = camera.rotation_euler.to_matrix() @ Vector((1, 0, 0))
-    def sample(clip_name, angle, frame):
+    def sample(clip_name, angle, frame, animation):
         # Restore sparse-channel defaults for *every* sample. The envelope and
         # delivered render must not inherit different unkeyed bone transforms.
         action(clip_name)
         root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
         scene.frame_set(math.floor(frame), subframe=frame % 1)
+        if muzzle:
+            spec = job['baked_gun_recoil']
+            attack = job['animations']['attack']
+            if animation == 'attack':
+                start, end = actions[attack].frame_range
+                progress = max(0.0, min(1.0, (frame - start) / (end - start)))
+                strength = max(0.0, 1.0 - abs(progress - 0.4) / 0.4)
+                # Source Gun bone local Z is backward along the world-Y barrel.
+                rig.pose.bones[spec['bone']].location.z -= spec['distance'] * strength
+                show = .15 <= progress <= .6  # exactly fire frames 1-2 of five
+            else:
+                show = False
+            for flash in muzzle:
+                flash.hide_render = not show
         in_place()
 
     visible_meshes = [obj for obj in scene.objects if obj.type == 'MESH' and not obj.hide_render]
@@ -435,7 +483,7 @@ for job in config['characters']:
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
                 frame = begin + index / bake_fps * scene.render.fps
-                sample(clip_name, angle, frame)
+                sample(clip_name, angle, frame, animation)
                 depsgraph = bpy.context.evaluated_depsgraph_get()
                 for obj in visible_meshes:
                     if not obj.hide_render:
@@ -478,7 +526,7 @@ for job in config['characters']:
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
             for index in range(count):
                 frame = begin + index / bake_fps * scene.render.fps
-                sample(clip_name, angle, frame)
+                sample(clip_name, angle, frame, animation)
                 name = f'{animation}_{direction}_{index:03d}'
                 folder = out / job['name']
                 folder.mkdir(parents=True, exist_ok=True)

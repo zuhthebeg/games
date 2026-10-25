@@ -83,7 +83,7 @@
       "animations": {
         "idle": "CharacterArmature|Idle",
         "run": "CharacterArmature|Run",
-        "attack": "CharacterArmature|Shoot",
+        "attack": "CharacterArmature|Attack",
         "hit": "CharacterArmature|Attack",
         "death": "CharacterArmature|Dead"
       },
@@ -111,6 +111,11 @@
           0.93,
           1.0
         ]
+      },
+      "baked_gun_recoil": {
+        "bone": "Gun",
+        "distance": 0.0032,
+        "flash_radius": 0.25
       }
     },
     {

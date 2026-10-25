@@ -115,7 +115,13 @@
         "hit": 0.15,
         "death": 0.6
       },
-      "pose_profile": "humanoid"
+      "pose_profile": "humanoid",
+      "outline_color": [
+        0.53,
+        0.9,
+        1.0
+      ],
+      "outline_thickness": 0.014
     }
   ]
 }
