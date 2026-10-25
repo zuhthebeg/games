@@ -1596,5 +1596,92 @@
       "death": 0.6
     },
     "cacheVersion": "54fa9a765225"
+  },
+  {
+    "id": "lunar_bunny",
+    "label": "월광 토끼 척후",
+    "monster": true,
+    "content_ids": [
+      "lunar_bunny"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5758573412895203
+    },
+    "bytes": 219739,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "af3157613036"
+  },
+  {
+    "id": "lunar_crab",
+    "label": "수정 집게게",
+    "monster": true,
+    "content_ids": [
+      "lunar_crab"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7036694586277008
+    },
+    "bytes": 287863,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "086dd3375cbc"
+  },
+  {
+    "id": "lunar_ninja",
+    "label": "월영 파수자",
+    "monster": true,
+    "content_ids": [
+      "lunar_ninja"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5820713043212891
+    },
+    "bytes": 207505,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "bdf93ca5221f"
   }
 ]

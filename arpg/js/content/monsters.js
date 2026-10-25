@@ -12,6 +12,7 @@ export const MONSTER_PALETTES = {
   dune_cactoro: [0xffffff], sun_totem: [0xffffff], crown_alpaking: [0xffffff],
   sky_armabee: [0xffffff], sky_pigeon: [0xffffff], sky_birb: [0xffffff],
   orbital_scout: [0xffffff], orbital_gunner: [0xffffff], orbital_mech: [0xffffff],
+  lunar_bunny: [0xffffff], lunar_crab: [0xffffff], lunar_ninja: [0xffffff],
   clock_drone: [0xffffff], clock_walker: [0xffffff], clock_colossus: [0xffffff],
   abyss_glub: [0xffffff], drowned_skull: [0xffffff], abyss_squidle: [0xffffff],
   spore_mushnub: [0xffffff], gale_hywirl: [0xffffff], spore_king: [0xffffff],
@@ -33,6 +34,7 @@ export const MONSTER_MODELS = [
   'clock_drone', 'clock_walker', 'clock_colossus',
   'sky_armabee', 'sky_pigeon', 'sky_birb',
   'orbital_scout', 'orbital_gunner', 'orbital_mech',
+  'lunar_bunny', 'lunar_crab', 'lunar_ninja',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
@@ -44,6 +46,7 @@ export const MONSTER_NAMES = {
   dune_cactoro: '사막 선인장귀', sun_totem: '태양 가면 정령', crown_alpaking: '황금 관 알파킹',
   sky_armabee: '첨탑 갑주벌', sky_pigeon: '신전 수호 비둘기', sky_birb: '폭풍 수정 괴조',
   orbital_scout: '궤도 정찰병', orbital_gunner: '비행 포격기', orbital_mech: '궤도 중장갑기',
+  lunar_bunny: '월광 토끼 척후', lunar_crab: '수정 집게게', lunar_ninja: '월영 파수자',
   clock_drone: '태엽 갈퀴 드론', clock_walker: '태엽 포격 보행기', clock_colossus: '태엽 거신',
   abyss_glub: '심연 아귀', drowned_skull: '익사한 해골령', abyss_squidle: '심연 오징어 군주',
   spore_mushnub: '포자 뭉치귀', gale_hywirl: '포자 회오리 정령', spore_king: '버섯 왕',
@@ -79,6 +82,9 @@ export const MONSTER_VARIANTS = {
   orbital_scout: variant('orbital_scout', 'orbital_scout', ['machine', 'scout'], 'construct'),
   orbital_gunner: variant('orbital_gunner', 'orbital_gunner', ['machine', 'flyer'], 'construct'),
   orbital_mech: variant('orbital_mech', 'orbital_mech', ['machine', 'giant'], 'construct'),
+  lunar_bunny: variant('lunar_bunny', 'lunar_bunny', ['rabbit', 'beast'], 'beast'),
+  lunar_crab: variant('lunar_crab', 'lunar_crab', ['crab', 'beast'], 'beast'),
+  lunar_ninja: variant('lunar_ninja', 'lunar_ninja', ['guardian', 'humanoid'], 'living'),
   clock_drone: variant('clock_drone', 'clock_drone', ['machine', 'crafted', 'flyer'], 'construct'),
   clock_walker: variant('clock_walker', 'clock_walker', ['machine', 'crafted'], 'construct'),
   clock_colossus: variant('clock_colossus', 'clock_colossus', ['machine', 'crafted', 'giant'], 'construct'),

@@ -2,6 +2,8 @@
 // Presentation-only palettes. No collision, simulation RNG or network state.
 const biome = (tiles, path, accent, boundary, props) => ({ tiles, path, accent, boundary, props });
 export const BIOMES = {
+  lunar_garden: biome([0x202638,0x252b3d,0x1c2234,0x293044],0x34384c,0x3b3a56,'roots',
+    ['bush','flowers','roots','slab','rune','water','reeds','pebbles']),
   orbital_dock: biome([0x1d2934,0x22303d,0x192630,0x293644],0x334553,0x304858,'wall',['slab','beam','rails','crack','crate','rune','pebbles','brazier']),
   sky_spire: biome([0x2e2a3a, 0x322d3f, 0x2a2636, 0x363144], 0x433b52, 0x4a4060, 'wall',
     ['slab', 'column', 'broken_column', 'rune', 'urn', 'rubble', 'brazier', 'pebbles']),
@@ -41,6 +43,7 @@ export const BIOMES = {
     ['carpet', 'slab', 'rune', 'column', 'brazier', 'shield', 'rubble', 'urn'])
 };
 export const STAGE_BIOMES = Object.fromEntries([
+  ...[55,56,57].map(n => ['S' + n, 'lunar_garden']),
   ...[52,53,54].map(n => ['S' + n, 'orbital_dock']),
   ...[49,50,51].map(n => ['S' + n, 'sky_spire']),
   ...[46,47,48].map(n => ['S' + n, 'clockwork_ruins']),

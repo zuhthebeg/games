@@ -18,6 +18,10 @@ export const NEW_MONSTER_DROPS = {
   orbital_scout: { gold:[12,19], stacks:[{id:'scrap',count:3},{id:'frost_shard',count:1},{id:'potion',count:1,chance:.2}], items:[] },
   orbital_gunner: { gold:[13,20], stacks:[{id:'scrap',count:2},{id:'rune_shard',count:1},{id:'mana_potion',count:1,chance:.25}], items:[] },
   orbital_mech: { gold:[22,30], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4},{id:'frost_shard',count:1}], items:[] },
+  // Lunar biodome: existing T4 materials/equipment only.
+  lunar_bunny: { gold:[12,19], stacks:[{id:'hide',count:2},{id:'fang',count:1,chance:.6},{id:'potion',count:1,chance:.2}], items:[] },
+  lunar_crab: { gold:[13,20], stacks:[{id:'hide',count:2},{id:'frost_shard',count:1},{id:'mana_potion',count:1,chance:.25}], items:[] },
+  lunar_ninja: { gold:[23,31], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:3},{id:'hide',count:2}], items:[] },
   // Clockwork ruins: existing T4 materials and equipment pools, no new currency.
   clock_drone: { gold:[10,17], stacks:[{id:'scrap',count:3},{id:'frost_shard',count:1},{id:'potion',count:1,chance:.2}], items:[] },
   clock_walker: { gold:[11,18], stacks:[{id:'scrap',count:2},{id:'rune_shard',count:1},{id:'mana_potion',count:1,chance:.25}], items:[] },

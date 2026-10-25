@@ -498,6 +498,12 @@ Object.assign(MONSTERS, {
     abilities:['spirit_bolt','guardian_ring'], xp:36, keepRange:[65,110] },
   orbital_mech: { lifeState:'construct', hp:430, r:31, speed:78, heavyPoise:true, poise:130, kbResist:.68,
     abilities:['chief_slam','guardian_ring'], xp:46, keepRange:[60,105] },
+  lunar_bunny: { lifeState:'beast', hp:184, r:16, speed:156, poise:32, kbResist:.16,
+    abilities:['goblin_hop','spirit_bolt'], xp:36, keepRange:[115,180] },
+  lunar_crab: { lifeState:'beast', hp:248, r:23, speed:105, poise:64, kbResist:.4,
+    abilities:['boar_gore','guardian_ring'], xp:38, keepRange:[45,90] },
+  lunar_ninja: { lifeState:'living', hp:455, r:27, speed:132, heavyPoise:true, poise:128, kbResist:.65,
+    abilities:['wolf_dash','chief_cleave'], xp:48, keepRange:[45,95] },
 });
 
 export const STAGES = {
@@ -598,6 +604,9 @@ export const STAGES = {
   S52: stage('성층 궤도항 입구', [['orbital_scout',0,.76,.35],['orbital_gunner',0,.84,.7],['orbital_scout',2600,.88,.5],['orbital_gunner',5200,.9,.25]]),
   S53: stage('무중력 격납고', [['orbital_mech',0,.76,.35],['orbital_gunner',0,.84,.7],['orbital_scout',2700,.88,.5],['orbital_gunner',5200,.9,.25]]),
   S54: stage('궤도항 주동력로', [['orbital_mech',0,.78,.5],['orbital_scout',2200,.86,.3],['orbital_gunner',4500,.86,.7]]),
+  S55: stage('월면 생태돔 입구', [['lunar_bunny',0,.76,.35],['lunar_crab',0,.84,.7],['lunar_bunny',2600,.88,.5],['lunar_crab',5200,.9,.25]]),
+  S56: stage('달빛 수로 정원', [['lunar_ninja',0,.76,.35],['lunar_crab',0,.84,.7],['lunar_bunny',2700,.88,.5],['lunar_crab',5200,.9,.25]]),
+  S57: stage('월영 파수자의 제단', [['lunar_ninja',0,.78,.5],['lunar_bunny',2200,.86,.3],['lunar_crab',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

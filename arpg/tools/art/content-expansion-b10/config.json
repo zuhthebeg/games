@@ -1,0 +1,121 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b10/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b10/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "lunar_bunny",
+      "label": "월광 토끼 척후",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b10/source/lunar_bunny.glb",
+      "keep": [
+        "Bunny",
+        "Carrot"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Weapon",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "lunar_bunny"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "humanoid"
+    },
+    {
+      "name": "lunar_crab",
+      "label": "수정 집게게",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b10/source/lunar_crab.glb",
+      "keep": [
+        "Crab"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "Head2"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "MonsterArmature|Idle",
+        "run": "MonsterArmature|Walk",
+        "attack": "MonsterArmature|Bite_Front",
+        "hit": "MonsterArmature|HitRecieve",
+        "death": "MonsterArmature|Death"
+      },
+      "content_ids": [
+        "lunar_crab"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating"
+    },
+    {
+      "name": "lunar_ninja",
+      "label": "월영 파수자",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b10/source/lunar_ninja.glb",
+      "keep": [
+        "Ninja"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Weapon",
+        "hit": "CharacterArmature|HitReact",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "lunar_ninja"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "humanoid"
+    }
+  ]
+}
