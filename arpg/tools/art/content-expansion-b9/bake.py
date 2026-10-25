@@ -354,38 +354,33 @@ for job in config['characters']:
             modifier.strength = -config['outline']['thickness'] / world_scale
             modifier.mid_level = 0
             modifier.direction = 'NORMAL'
-    # Find the actual barrel lip in the idle skinned mesh. Gun's bone points
-    # vertically in this source rig, so its tail is NOT the muzzle.
+    # Track actual weighted barrel vertices through every evaluated pose. The
+    # muzzle is not the Gun bone tail, and its screen offset rotates per facing.
     muzzle = []
+    gun_vertices = []
     if job.get('baked_gun_recoil'):
         spec = job['baked_gun_recoil']
         bone_name = spec['bone']
         assert bone_name in rig.pose.bones
-        gun_points = []
         for obj in skinned:
             group = obj.vertex_groups.get(bone_name)
-            if not group:
-                continue
-            points = evaluated_vertices(obj, bpy.context.evaluated_depsgraph_get())
-            for vertex, point in zip(obj.data.vertices, points):
-                if any(item.group == group.index and item.weight > .5 for item in vertex.groups):
-                    gun_points.append(point)
-        assert gun_points, (job['name'], 'missing skinned gun')
-        front = min(point.y for point in gun_points)
-        lip = [point for point in gun_points if point.y < front + .035]
-        tip = sum(lip, Vector()) / len(lip)
-        tip.y -= .16  # light originates just beyond the barrel, not in its hull
-        bone = rig.pose.bones[bone_name]
-        parent_world = rig.matrix_world @ bone.matrix @ Matrix.Translation((0, bone.length, 0))
-        for name, radius, color, emission, offset in (
-            ('GunFlashGold', spec['flash_radius'], (1.0, .72, .08), 5, 0),
-            ('GunFlashCore', spec['flash_radius'] * .48, (1.0, 1.0, .88), 8, -.27),
+            if group:
+                points = evaluated_vertices(obj, bpy.context.evaluated_depsgraph_get())
+                weighted = [(i, p) for i, (v, p) in enumerate(zip(obj.data.vertices, points))
+                            if any(g.group == group.index and g.weight > .5 for g in v.groups)]
+                if weighted:
+                    front = min(p.y for _, p in weighted)
+                    rear = max(p.y for _, p in weighted)
+                    assert rear - front > .05, (job['name'], 'barrel too short')
+                    gun_vertices.append((obj,
+                        [i for i, p in weighted if p.y < front + .035],
+                        [i for i, p in weighted if p.y > rear - .035]))
+        assert gun_vertices, (job['name'], 'missing skinned gun')
+        for name, radius, color, emission in (
+            ('GunFlashGold', spec['flash_radius'], (1.0, .72, .08), 5),
+            ('GunFlashCore', spec['flash_radius'] * .48, (1.0, 1.0, .88), 8),
         ):
             obj = orb(name, (0, 0, 0), radius, material(name, color, emission))
-            obj.parent = rig
-            obj.parent_type = 'BONE'
-            obj.parent_bone = bone_name
-            obj.matrix_basis = parent_world.inverted() @ Matrix.Translation(tip + Vector((0, offset, 0)))
             obj.hide_render = True
             muzzle.append(obj)
     root = bpy.data.objects.new('Facing', None)
@@ -447,27 +442,64 @@ for job in config['characters']:
     scene.camera = camera
     up = camera.rotation_euler.to_matrix() @ Vector((0, 1, 0))
     right = camera.rotation_euler.to_matrix() @ Vector((1, 0, 0))
-    def sample(clip_name, angle, frame, animation):
-        # Restore sparse-channel defaults for *every* sample. The envelope and
-        # delivered render must not inherit different unkeyed bone transforms.
+    def barrel_pose():
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        front, rear = [], []
+        for obj, lip_indices, rear_indices in gun_vertices:
+            points = evaluated_vertices(obj, depsgraph)
+            front += [points[i] for i in lip_indices]
+            rear += [points[i] for i in rear_indices]
+        lip = sum(front, Vector()) / len(front)
+        back = sum(rear, Vector()) / len(rear)
+        return lip, (lip - back).normalized(), back
+
+    def sample(clip_name, angle, frame, animation, progress=0):
         action(clip_name)
         root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
         scene.frame_set(math.floor(frame), subframe=frame % 1)
+        in_place()
         if muzzle:
-            spec = job['baked_gun_recoil']
-            attack = job['animations']['attack']
             if animation == 'attack':
-                start, end = actions[attack].frame_range
-                progress = max(0.0, min(1.0, (frame - start) / (end - start)))
+                # Shoot is the source's straight-ahead gun pose. Attack swings
+                # Head (Gun parent) sideways by ~40 degrees at the fire frames.
                 strength = max(0.0, 1.0 - abs(progress - 0.4) / 0.4)
-                # Source Gun bone local Z is backward along the world-Y barrel.
-                rig.pose.bones[spec['bone']].location.z -= spec['distance'] * strength
-                show = .15 <= progress <= .6  # exactly fire frames 1-2 of five
+                # Translate only along the evaluated barrel axis: obtain the
+                # matching Gun local translation with a numerical pose Jacobian.
+                bone = rig.pose.bones[spec['bone']]
+                lip, axis, _ = barrel_pose()
+                if strength:
+                    original = bone.location.copy()
+                    columns = []
+                    for component in range(3):
+                        bone.location[component] += .001
+                        bpy.context.view_layer.update()
+                        displaced, _, _ = barrel_pose()
+                        columns.append((displaced - lip) / .001)
+                        bone.location = original.copy()
+                    jacobian = Matrix((columns[0], columns[1], columns[2])).transposed()
+                    bone.location = original + jacobian.inverted() @ (-axis * spec['distance'] * strength)
+                    bpy.context.view_layer.update()
+                show = .15 <= progress < .6
             else:
                 show = False
+            lip, axis, back = barrel_pose()
+            # Physical light is centered just beyond the current skinned lip.
+            center = lip + axis * .03
             for flash in muzzle:
+                flash.location = center
                 flash.hide_render = not show
-        in_place()
+            bpy.context.view_layer.update()
+            return lip, center, back, show
+        return None
+
+    def samples(animation, clip):
+        begin, end = job.get('state_ranges', {}).get(animation) or job.get('clip_ranges', {}).get(clip.name, clip.frame_range)
+        assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip.name, 'invalid source range')
+        duration = job.get('baked_gun_recoil', {}).get('duration_frames', end - begin) if animation == 'attack' else end - begin
+        count = max(2, math.ceil(duration / scene.render.fps * bake_fps - 1e-5))
+        for index in range(count):
+            progress = index / count
+            yield index, begin + progress * (end - begin), progress
 
     visible_meshes = [obj for obj in scene.objects if obj.type == 'MESH' and not obj.hide_render]
     # Envelope ALL delivered samples, including outline hulls; fixed ground
@@ -475,15 +507,10 @@ for job in config['characters']:
     projected_x, projected_y = [], []
     for animation, clip_name in job['animations'].items():
         clip = action(clip_name)
-        # state_ranges: per-state source sub-range (e.g. hit = opening recoil of the model's own Death clip).
-        begin, end = job.get('state_ranges', {}).get(animation) or job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
-        assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5))
         for angle in config['directions'].values():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
-            for index in range(count):
-                frame = begin + index / bake_fps * scene.render.fps
-                sample(clip_name, angle, frame, animation)
+            for index, frame, progress in samples(animation, clip):
+                sample(clip_name, angle, frame, animation, progress)
                 depsgraph = bpy.context.evaluated_depsgraph_get()
                 for obj in visible_meshes:
                     if not obj.hide_render:
@@ -517,16 +544,12 @@ for job in config['characters']:
     records = []
     for animation, clip_name in job['animations'].items():
         clip = action(clip_name)
-        begin, end = job.get('state_ranges', {}).get(animation) or job.get('clip_ranges', {}).get(clip_name, clip.frame_range)
-        assert clip.frame_range[0] <= begin < end <= clip.frame_range[1], (job['name'], clip_name, 'invalid source range')
-        count = max(2, math.ceil((end - begin) / scene.render.fps * bake_fps - 1e-5))
-        if preview:
-            count = 1
+        count = sum(1 for _ in samples(animation, clip))
         for direction, angle in config['directions'].items():
             root.rotation_euler.z = math.radians(angle + job.get('facing_offset', 0))
-            for index in range(count):
-                frame = begin + index / bake_fps * scene.render.fps
-                sample(clip_name, angle, frame, animation)
+            for index, frame, progress in samples(animation, clip):
+                if preview and index: break
+                gun_pose = sample(clip_name, angle, frame, animation, progress)
                 name = f'{animation}_{direction}_{index:03d}'
                 folder = out / job['name']
                 folder.mkdir(parents=True, exist_ok=True)
@@ -570,7 +593,12 @@ for job in config['characters']:
                                 'source': clip_name, 'source_frame': round(frame, 4),
                                 'pose': {'arm_degrees_from_bind': [round(value, 4) for value in arm_degrees],
                                          'skin_rms_from_bind_height': round(rms, 6),
-                                         'armature_modifiers': len(skinned)}, 'weapon_bbox': weapon_bbox})
+                                         'armature_modifiers': len(skinned)}, 'weapon_bbox': weapon_bbox,
+                                **({'gun': {
+                                    'lip': [round(v * config['frame_size'], 3) for v in (world_to_camera_view(scene, camera, gun_pose[0]).x, 1 - world_to_camera_view(scene, camera, gun_pose[0]).y)],
+                                    'flash': [round(v * config['frame_size'], 3) for v in (world_to_camera_view(scene, camera, gun_pose[1]).x, 1 - world_to_camera_view(scene, camera, gun_pose[1]).y)],
+                                    'rear': [round(v * config['frame_size'], 3) for v in (world_to_camera_view(scene, camera, gun_pose[2]).x, 1 - world_to_camera_view(scene, camera, gun_pose[2]).y)],
+                                    'visible': gun_pose[3]}} if gun_pose else {})})
         print('BAKED_ANIMATION', job['name'], animation, count, flush=True)
     elapsed = time.perf_counter() - start
     data = {'name': job['name'], 'frames': records, 'seconds': elapsed, 'engine': scene.render.engine,

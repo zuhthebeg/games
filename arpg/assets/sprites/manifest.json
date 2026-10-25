@@ -1561,12 +1561,12 @@
       "x": 0.5,
       "y": 0.6553894281387329
     },
-    "bytes": 192289,
+    "bytes": 197353,
     "animation_durations": {
       "hit": 0.15,
       "death": 0.6
     },
-    "cacheVersion": "d8e5baa6b67a"
+    "cacheVersion": "8bb0632fbaf5"
   },
   {
     "id": "orbital_mech",
