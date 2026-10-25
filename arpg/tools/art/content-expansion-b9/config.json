@@ -1,0 +1,153 @@
+{
+  "frame_size": 128,
+  "fps": 6,
+  "pitch": 40,
+  "ortho_scale": 2.45,
+  "samples": 16,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.008
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/content-expansion-b9/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/content-expansion-b9/source",
+  "webp_quality": 52,
+  "characters": [
+    {
+      "name": "orbital_scout",
+      "label": "궤도 정찰병",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b9/source/orbital_scout.glb",
+      "keep": [
+        "Enemy_Robot_2Legs"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "Leg1.L"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Attack",
+        "hit": "CharacterArmature|Jump",
+        "death": "CharacterArmature|Death"
+      },
+      "content_ids": [
+        "orbital_scout"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "quadruped",
+      "state_ranges": {
+        "idle": [
+          0,
+          40
+        ],
+        "attack": [
+          0,
+          28
+        ]
+      }
+    },
+    {
+      "name": "orbital_gunner",
+      "label": "비행 포격기",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b9/source/orbital_gunner.glb",
+      "keep": [
+        "Sphere.001"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "UpperArm.L",
+        "UpperArm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "animations": {
+        "idle": "CharacterArmature|Idle",
+        "run": "CharacterArmature|Run",
+        "attack": "CharacterArmature|Shoot",
+        "hit": "CharacterArmature|Attack",
+        "death": "CharacterArmature|Dead"
+      },
+      "content_ids": [
+        "orbital_gunner"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "floating",
+      "material_colors": {
+        "Material.001": [
+          0.08,
+          0.37,
+          0.72
+        ],
+        "Main": [
+          0.08,
+          0.37,
+          0.72
+        ],
+        "Material": [
+          0.3,
+          0.93,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "orbital_mech",
+      "label": "궤도 중장갑기",
+      "model": "C:/Users/user/ai-tools/arpg-art/content-expansion-b9/source/orbital_mech.glb",
+      "keep": [
+        "FinnTheFrog"
+      ],
+      "neutral": true,
+      "preserve_source_colors": true,
+      "arm_bones": [
+        "Head",
+        "UpperLeg.L"
+      ],
+      "root_bones": [],
+      "animations": {
+        "idle": "RobotArmature|Idle",
+        "run": "RobotArmature|Run",
+        "attack": "RobotArmature|Kick",
+        "hit": "RobotArmature|HitRecieve_1",
+        "death": "RobotArmature|Death"
+      },
+      "content_ids": [
+        "orbital_mech"
+      ],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      },
+      "pose_profile": "quadruped",
+      "state_ranges": {
+        "idle": [
+          0,
+          48
+        ]
+      }
+    }
+  ]
+}

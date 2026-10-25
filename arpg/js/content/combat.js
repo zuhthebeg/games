@@ -492,6 +492,12 @@ Object.assign(MONSTERS, {
     abilities:['wolf_dash','boar_gore'], xp:33, keepRange:[40,85] },
   sky_birb: { lifeState:'beast', hp:400, r:30, speed:84, heavyPoise:true, poise:125, kbResist:.65,
     abilities:['spirit_bolt','chief_slam'], xp:44, keepRange:[90,150] },
+  orbital_scout: { lifeState:'construct', hp:176, r:17, speed:142, poise:40, kbResist:.22,
+    abilities:['wolf_dash','sling_stone'], xp:34, keepRange:[130,210] },
+  orbital_gunner: { lifeState:'construct', hp:210, r:21, speed:102, poise:48, kbResist:.32,
+    abilities:['spirit_bolt','guardian_ring'], xp:36, keepRange:[65,110] },
+  orbital_mech: { lifeState:'construct', hp:430, r:31, speed:78, heavyPoise:true, poise:130, kbResist:.68,
+    abilities:['chief_slam','guardian_ring'], xp:46, keepRange:[60,105] },
 });
 
 export const STAGES = {
@@ -589,6 +595,9 @@ export const STAGES = {
   S49: stage('구름 계단 회랑', [['sky_armabee',0,.76,.35],['sky_pigeon',0,.84,.7],['sky_armabee',2600,.88,.5],['sky_pigeon',5200,.9,.25]]),
   S50: stage('깃털 폭풍 제단', [['sky_birb',0,.76,.35],['sky_pigeon',0,.84,.7],['sky_armabee',2700,.88,.5],['sky_pigeon',5200,.9,.25]]),
   S51: stage('괴조의 첨탑 정상', [['sky_birb',0,.78,.5],['sky_armabee',2200,.86,.3],['sky_pigeon',4500,.86,.7]]),
+  S52: stage('성층 궤도항 입구', [['orbital_scout',0,.76,.35],['orbital_gunner',0,.84,.7],['orbital_scout',2600,.88,.5],['orbital_gunner',5200,.9,.25]]),
+  S53: stage('무중력 격납고', [['orbital_mech',0,.76,.35],['orbital_gunner',0,.84,.7],['orbital_scout',2700,.88,.5],['orbital_gunner',5200,.9,.25]]),
+  S54: stage('궤도항 주동력로', [['orbital_mech',0,.78,.5],['orbital_scout',2200,.86,.3],['orbital_gunner',4500,.86,.7]]),
   TD1: { name: '왕좌의 수호룡', goal: 'killAll', arena: { w: 1680, h: 1000 },
     maxConcurrent: 1, spawns: [{ monster: 'throne_dragon', at: 0, fx: .55, fy: .5 }] },
 };

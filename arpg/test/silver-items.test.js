@@ -27,7 +27,7 @@ test('C five craft-only silver weapons match T4 bases, including rarity/enhance/
 });
 test('C silver ingots drop only combat constructs T2+, with exact normal/elite/boss and threat rolls',()=>{
  const constructs=Object.entries(MONSTER_VARIANTS).filter(([id,d])=>d.lifeState==='construct'&&!d.speciesTags.includes('trainingDummy')).map(([id])=>id);
- assert.deepEqual(constructs,['clock_drone','clock_walker','clock_colossus','goleling','gargoyle','rune_guardian']);
+ assert.deepEqual(constructs,['orbital_scout','orbital_gunner','orbital_mech','clock_drone','clock_walker','clock_colossus','goleling','gargoyle','rune_guardian']);
  const rows=[];
  for(const monster of constructs)for(const [rank,flags,chance]of [['normal',{},.03],['elite',{elite:true},.12],['boss',{boss:true},1]]){
   let total=0;for(let seed=1;seed<=24000;seed++){

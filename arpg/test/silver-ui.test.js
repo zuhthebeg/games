@@ -25,6 +25,6 @@ test('C silver source descriptions appear in items, recipes and construct region
  hub.showForge();hub.action('forge-recipe-mode',{mode:'all'});assert.match(hub.html,/은 주괴.*T2.*구조물/);assert.match(hub.html,/제작 전용.*언데드.*\+50%/);
  for(const stage of ['S9','S12','S14','S17','S19','M_THRONE_GARGOYLE']){hub.showSortie(stage);assert.match(hub.html,/silver-source/);assert.match(hub.html,/은 주괴.*T2.*구조물/);}
  for(const stage of ['S2','S6','S21','S27']){hub.showSortie(stage);assert.doesNotMatch(hub.html,/silver-source/);}
- hub.showBoard();assert.equal((hub.html.match(/class="silver-source"/g)||[]).length,5);
+ hub.showBoard();assert.equal((hub.html.match(/class="silver-source"/g)||[]).length,6);
  for(const id of ids)assert.match(itemDetailsHtml(instance('source',id,1,[])),/은 주괴.*T2.*구조물/);
 });

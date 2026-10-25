@@ -11,6 +11,7 @@ export const MONSTER_PALETTES = {
   marsh_wasp: [0xe8c87a], bog_wizard: [0xb9a3d8], mire_frog: [0x88b783],
   dune_cactoro: [0xffffff], sun_totem: [0xffffff], crown_alpaking: [0xffffff],
   sky_armabee: [0xffffff], sky_pigeon: [0xffffff], sky_birb: [0xffffff],
+  orbital_scout: [0xffffff], orbital_gunner: [0xffffff], orbital_mech: [0xffffff],
   clock_drone: [0xffffff], clock_walker: [0xffffff], clock_colossus: [0xffffff],
   abyss_glub: [0xffffff], drowned_skull: [0xffffff], abyss_squidle: [0xffffff],
   spore_mushnub: [0xffffff], gale_hywirl: [0xffffff], spore_king: [0xffffff],
@@ -31,6 +32,7 @@ export const MONSTER_MODELS = [
   'abyss_glub', 'drowned_skull', 'abyss_squidle',
   'clock_drone', 'clock_walker', 'clock_colossus',
   'sky_armabee', 'sky_pigeon', 'sky_birb',
+  'orbital_scout', 'orbital_gunner', 'orbital_mech',
 ];
 export const MONSTER_NAMES = {
   necropolis_lord: '망자의 군주',
@@ -41,6 +43,7 @@ export const MONSTER_NAMES = {
   marsh_wasp: '습지 말벌', bog_wizard: '늪의 술사', mire_frog: '진흙 개구리',
   dune_cactoro: '사막 선인장귀', sun_totem: '태양 가면 정령', crown_alpaking: '황금 관 알파킹',
   sky_armabee: '첨탑 갑주벌', sky_pigeon: '신전 수호 비둘기', sky_birb: '폭풍 수정 괴조',
+  orbital_scout: '궤도 정찰병', orbital_gunner: '비행 포격기', orbital_mech: '궤도 중장갑기',
   clock_drone: '태엽 갈퀴 드론', clock_walker: '태엽 포격 보행기', clock_colossus: '태엽 거신',
   abyss_glub: '심연 아귀', drowned_skull: '익사한 해골령', abyss_squidle: '심연 오징어 군주',
   spore_mushnub: '포자 뭉치귀', gale_hywirl: '포자 회오리 정령', spore_king: '버섯 왕',
@@ -73,6 +76,9 @@ export const MONSTER_VARIANTS = {
   sky_armabee: variant('sky_armabee', 'sky_armabee', ['insect', 'flyer'], 'beast'),
   sky_pigeon: variant('sky_pigeon', 'sky_pigeon', ['bird', 'beast'], 'beast'),
   sky_birb: variant('sky_birb', 'sky_birb', ['bird', 'flyer', 'giant'], 'beast'),
+  orbital_scout: variant('orbital_scout', 'orbital_scout', ['machine', 'scout'], 'construct'),
+  orbital_gunner: variant('orbital_gunner', 'orbital_gunner', ['machine', 'flyer'], 'construct'),
+  orbital_mech: variant('orbital_mech', 'orbital_mech', ['machine', 'giant'], 'construct'),
   clock_drone: variant('clock_drone', 'clock_drone', ['machine', 'crafted', 'flyer'], 'construct'),
   clock_walker: variant('clock_walker', 'clock_walker', ['machine', 'crafted'], 'construct'),
   clock_colossus: variant('clock_colossus', 'clock_colossus', ['machine', 'crafted', 'giant'], 'construct'),

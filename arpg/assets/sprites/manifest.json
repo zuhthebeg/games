@@ -1509,5 +1509,92 @@
       "death": 0.6
     },
     "cacheVersion": "dbb7cc1edfac"
+  },
+  {
+    "id": "orbital_scout",
+    "label": "궤도 정찰병",
+    "monster": true,
+    "content_ids": [
+      "orbital_scout"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6006473898887634
+    },
+    "bytes": 345049,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "5e8fa77817e7"
+  },
+  {
+    "id": "orbital_gunner",
+    "label": "비행 포격기",
+    "monster": true,
+    "content_ids": [
+      "orbital_gunner"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6553894281387329
+    },
+    "bytes": 170007,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "2c9ee1cedf72"
+  },
+  {
+    "id": "orbital_mech",
+    "label": "궤도 중장갑기",
+    "monster": true,
+    "content_ids": [
+      "orbital_mech"
+    ],
+    "sheets": [
+      "atlas-0.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 6,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6429885029792786
+    },
+    "bytes": 263395,
+    "animation_durations": {
+      "hit": 0.15,
+      "death": 0.6
+    },
+    "cacheVersion": "54fa9a765225"
   }
 ]
