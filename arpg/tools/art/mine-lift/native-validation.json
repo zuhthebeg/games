@@ -1,0 +1,127 @@
+{
+  "rows": [
+    {
+      "width": 1280,
+      "input": "native keyboard",
+      "first": {
+        "active": true,
+        "loaded": true,
+        "failed": false,
+        "frame": 0,
+        "seconds": 0.18329999999999996,
+        "visible": true,
+        "bounds": {
+          "x": 304,
+          "y": 0.3599999999999852,
+          "w": 192,
+          "h": 192
+        },
+        "scale": 1,
+        "layer": 1,
+        "telegraphLayer": 3,
+        "entityLayer": 5,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.92
+        }
+      },
+      "second": {
+        "active": true,
+        "loaded": true,
+        "failed": false,
+        "frame": 3,
+        "seconds": 0.8666000000000001,
+        "visible": true,
+        "bounds": {
+          "x": 304,
+          "y": 0.3599999999999852,
+          "w": 192,
+          "h": 192
+        },
+        "scale": 1,
+        "layer": 1,
+        "telegraphLayer": 3,
+        "entityLayer": 5,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.92
+        }
+      },
+      "requests": 1,
+      "fixture": {
+        "noRequest": true,
+        "ok": true,
+        "hidden": true,
+        "disposed": true
+      },
+      "decodeFailure": {
+        "failed": true,
+        "visible": false,
+        "asset": null
+      }
+    },
+    {
+      "width": 390,
+      "input": "native touch",
+      "first": {
+        "active": true,
+        "loaded": true,
+        "failed": false,
+        "frame": 0,
+        "seconds": 0.15,
+        "visible": true,
+        "bounds": {
+          "x": 218.88,
+          "y": 118.41920000000002,
+          "w": 138.24,
+          "h": 138.23999999999998
+        },
+        "scale": 0.72,
+        "layer": 1,
+        "telegraphLayer": 3,
+        "entityLayer": 5,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.92
+        }
+      },
+      "second": {
+        "active": true,
+        "loaded": true,
+        "failed": false,
+        "frame": 3,
+        "seconds": 0.8166000000000001,
+        "visible": true,
+        "bounds": {
+          "x": 218.88,
+          "y": 118.41920000000002,
+          "w": 138.24,
+          "h": 138.23999999999998
+        },
+        "scale": 0.72,
+        "layer": 1,
+        "telegraphLayer": 3,
+        "entityLayer": 5,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.92
+        }
+      },
+      "requests": 1,
+      "fixture": {
+        "noRequest": true,
+        "ok": true,
+        "hidden": true,
+        "disposed": true
+      },
+      "decodeFailure": {
+        "failed": true,
+        "visible": false,
+        "asset": null
+      }
+    }
+  ],
+  "errors": [],
+  "screenshots": 0,
+  "status": "PASS"
+}

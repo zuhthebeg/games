@@ -1,3 +1,4 @@
+import { createMineLift } from './mine-lift.js';
 import {BOSS_TUNING} from '../content/boss-tuning.js';
 import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { drawCursedGround, paintRootGrip } from './skeleton-vfx.js';
@@ -24,11 +25,12 @@ export class ArenaRenderer {
     this.root = new Container();
     this.root.eventMode = 'none';
     this.layers = {};
-    for (const name of ['ground', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'partyHp', 'numbers']) {
+    for (const name of ['ground', 'scenery', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'partyHp', 'numbers']) {
       const layer = new Container();
       this.layers[name] = layer;
       this.root.addChild(layer);
     }
+    this.mineLift = createMineLift(this.layers.scenery);
     this.layers.entities.sortableChildren = true;
     app.stage.addChild(this.root);
     this.warning = new Graphics();
@@ -177,6 +179,7 @@ export class ArenaRenderer {
       for (let x = 42; x < w; x += 120)
         graphic.circle(x, 26, 3).circle(x, h - 26, 3).fill(0xae8545);
     }
+    this.mineLift.reset(world.round?.stageId);
     this.snapshot(world);
   }
 
@@ -434,6 +437,7 @@ export class ArenaRenderer {
     world=presentationWorld(world);
     this.local = world.entities[0];
     this.time += deltaTime;
+    this.mineLift.update(deltaTime, this.reduced);
     const visualDelta = deltaTime * (this.slowLeft > 0 && !this.reduced ? FEEL.perfect.scale : 1);
     this.slowLeft = Math.max(0, this.slowLeft - deltaTime);
     this.trauma = Math.max(0, this.trauma - deltaTime * FEEL.shake.decay);
