@@ -1,5 +1,8 @@
 // [제안] S5~S7 personal, seeded drops. Wolf hides reuse §10.2 hide instead of a new currency.
 export const NEW_MONSTER_DROPS = {
+  ember_dragon: {gold:[8,12],stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}],items:[]},
+  frost_dragon: {gold:[8,12],stacks:[{id:'frost_shard',count:2},{id:'hide',count:2}],items:[]},
+  venom_dragon: {gold:[8,12],stacks:[{id:'web',count:2},{id:'fang',count:2}],items:[]},
   // Same bounded late guardian materials; ordinary T4 rolls, no chief-only guarantee.
   necropolis_lord: { gold:[18,26], stacks:[{id:'rune_shard',count:2},{id:'scrap',count:4}], items:[] },
   // T4 frontier: reuse guardian, rogue and spirit material budgets.

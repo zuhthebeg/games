@@ -25,7 +25,7 @@ test('S34–S36 follow the frost frontier without changing old save gates',()=>{
  save.cleared.S33=true;assert.equal(mapUnlocked(save,'S34'),false);
  save.cleared.S20=save.cleared.S27=save.cleared.S30=true;assert.equal(mapUnlocked(save,'S34'),true);
  for(let i=0;i<2;i++){assert.deepEqual(MAPS[ids[i+1]].requires,[ids[i]]);assert.equal(mapUnlocked(save,ids[i+1]),false);save.cleared[ids[i]]=true;assert.equal(mapUnlocked(save,ids[i+1]),true)}
- assert.deepEqual(REGIONS.find(r=>r.id==='mire').maps,ids);
+ assert.deepEqual(REGIONS.find(r=>r.id==='mire').maps,[...ids,'D_VENOM']);
  assert.ok(REGION_EDGES.some(([a,b])=>a==='frost'&&b==='mire'));
  assert.ok(BIOMES.mire_fen);
  for(const id of ids){assert.equal(biomeForStage(id),'mire_fen');assert.ok(STAGE_XP[id]>STAGE_XP.S33);assert.equal(STAGES[id].goal,'killAll');assert.ok(STAGES[id].maxConcurrent<=3);assert.ok(STAGES[id].spawns.every(s=>types.includes(s.monster)))}

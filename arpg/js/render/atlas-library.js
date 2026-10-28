@@ -4,6 +4,7 @@ import { ATLAS_IDS } from './atlas-state.js';
 // Keep an explicitly different presentation (e.g. necropolis boss) independent
 // of its simulation variant base. Equal-model aliases still share one lease.
 function presentationKey(key) {
+  if (MONSTER_VARIANTS[key]?.presentationKey) return MONSTER_VARIANTS[key].presentationKey;
   const base = MONSTER_VARIANTS[key]?.baseModelId;
   return base && (!ATLAS_IDS[key] || ATLAS_IDS[key] === ATLAS_IDS[base]) ? base : key;
 }

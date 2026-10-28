@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "frames": 264,
+  "clips": 40,
+  "directions": 8,
+  "frame_size": 128,
+  "wire_bytes": 656513,
+  "decoded_rgba_bytes": 17694720,
+  "atlas_sizes": [
+    [
+      1920,
+      1920
+    ],
+    [
+      1920,
+      384
+    ]
+  ],
+  "anchor": {
+    "x": 0.5,
+    "y": 0.5199252963066101
+  },
+  "geometry": {
+    "legs": 4,
+    "wings": 2,
+    "claws": 12,
+    "neck_segments": 4,
+    "tail_segments": 6,
+    "mesh_objects": 107,
+    "ember_ornaments": 16
+  },
+  "preservation": "Tracked baseline outside scoped additions identical; shared manifest, original source/copper and gargoyle byte-identical",
+  "limitations": "Offline art only; no registration, gameplay, deployment or physical-device test"
+}

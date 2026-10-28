@@ -1,8 +1,10 @@
 // New orc atlas sizing: deployment-safe content-addressed import.
 import { DRAGON_CLIPS, dragonFrame } from './dragon-presentation.js';
+import { HUNT_DRAGONS, huntDragonFrame } from './dragon-hunt-presentation.js';
 import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.
 export const ATLAS_IDS = Object.freeze({
+  ember_dragon:'ember-dragon',frost_dragon:'frost-dragon',venom_dragon:'venom-dragon',
   necropolis_lord: 'skeleton-warrior',
   ghoul: 'ghoul', ghost: 'ghost', bat: 'bat',
   demon: 'demon', goleling: 'goleling', slime: 'slime',
@@ -60,6 +62,7 @@ export function atlasAnimation(entity, animation) {
 }
 
 export function atlasFrame(state, count, age, fps, entity, duration) {
+  if (HUNT_DRAGONS.has(entity.type) && entity.act && state === 'attack') return huntDragonFrame(entity.act,count);
   if (entity.type === 'throne_dragon' && entity.act && Object.values(DRAGON_CLIPS).includes(state)) return dragonFrame(entity.act, count);
   if ((state === 'attack' || state === 'magic') && entity.act) {
     // These authored eight-frame clips separate anticipation / impact / recovery.

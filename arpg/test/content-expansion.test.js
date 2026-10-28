@@ -28,7 +28,7 @@ test('ash frontier is gated behind S27 and old saves roundtrip unchanged',()=>{
  save.cleared.S20=true;assert.equal(mapUnlocked(save,'S28'),true);
  assert.equal(mapUnlocked(save,'S29'),false);
  for(let i=0;i<ids.length-1;i++){assert.deepEqual(MAPS[ids[i+1]].requires,[ids[i]]);save.cleared[ids[i]]=true;assert.equal(mapUnlocked(save,ids[i+1]),true);}
- assert.deepEqual(REGIONS.find(r=>r.id==='cinder').maps,ids);
+ assert.deepEqual(REGIONS.find(r=>r.id==='cinder').maps,[...ids,'D_EMBER']);
  assert.ok(REGION_EDGES.some(([from,to])=>from==='necropolis'&&to==='cinder'));
  const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
  const store=new SaveStore(storage);const old=JSON.parse(raw);store.save(old);assert.deepEqual(store.load(),old);
@@ -98,7 +98,7 @@ test('frost cavern opens only after ash frontier and progresses sequentially',()
  save.cleared.S30=true;assert.equal(mapUnlocked(save,'S31'),false);
  save.cleared.S20=save.cleared.S27=true;assert.equal(mapUnlocked(save,'S31'),true);
  for(let i=0;i<frostIds.length-1;i++){assert.deepEqual(MAPS[frostIds[i+1]].requires,[frostIds[i]]);save.cleared[frostIds[i]]=true;assert.equal(mapUnlocked(save,frostIds[i+1]),true)}
- assert.deepEqual(REGIONS.find(r=>r.id==='frost').maps,frostIds);
+ assert.deepEqual(REGIONS.find(r=>r.id==='frost').maps,[...frostIds,'D_FROST']);
  assert.ok(REGION_EDGES.some(([a,b])=>a==='cinder'&&b==='frost'));
 });
 test('Orc Yeti Giant use three distinctive telegraphed action pairs and native atlas kits',()=>{

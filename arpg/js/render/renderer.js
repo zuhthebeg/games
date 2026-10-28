@@ -4,6 +4,7 @@ import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { drawCursedGround, paintRootGrip } from './skeleton-vfx.js';
 import { getTelegraphs } from '../sim/world.js';
 import { paintDragonVfx } from './dragon-presentation.js';
+import { paintHuntDragonVfx } from './dragon-hunt-presentation.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
@@ -622,6 +623,7 @@ export class ArenaRenderer {
           shapePath(graphic, telegraph.shape, telegraph.progress).fill({ color, alpha: .24 });
         pattern(graphic, telegraph.shape, color, locked);
         paintDragonVfx(graphic, telegraph, world.tick, this.reduced);
+        paintHuntDragonVfx(graphic, telegraph, world.tick, this.reduced);
         }
         graphic.telegraph = telegraph;
       }

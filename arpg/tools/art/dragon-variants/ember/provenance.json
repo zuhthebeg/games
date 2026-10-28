@@ -1,0 +1,21 @@
+{
+  "title": "Ember dragon \u2014 art preparation only",
+  "created": "2026-10-28",
+  "author": "Sol for cocy",
+  "method": "Original copper derivative; compact obsidian plate crest and curved horns",
+  "base_source": "arpg/tools/art/original-dragon/generate.py",
+  "base_sha256": "ad051e0a6299aa44aaebc69d631071420187e11c46a83a362617e09ca7b204cb",
+  "base_commit": "55c8844b19db91c6c4d514cfb272378ced7a561a",
+  "external_models": [],
+  "external_textures": [],
+  "paid_apis": [],
+  "license_note": "Project-authored derivative follows repository licensing; no third-party CC0 claim.",
+  "registration": "None; no gameplay, manifest, encounter or deployment changes.",
+  "pack_derivation": "Dedicated original-dragon/pack.py derivative; no shared manifest write; <=1MB inclusive metadata",
+  "source_blend_sha256": "9e63cc3c941b9d748988a694d79213a122e0ac2ebe7d7e4f125c7c19f28d296e",
+  "generator_sha256": "b04b233d685e783ad57e9f92dab250b3c93709d8e244e6f327c27c19e64df9f2",
+  "config_sha256": "48c2bd10a385337dc80406bb62b0f5c26155f3d15447c0b8fd2f0ab314efe9b9",
+  "source_rebuild_note": "Palette and ornament_scale=1 baked. Same final generator adds an explicit identity scale on added ornaments; no original geometry or animation changes.",
+  "wire_bytes": 656513,
+  "decoded_rgba_bytes": 17694720
+}

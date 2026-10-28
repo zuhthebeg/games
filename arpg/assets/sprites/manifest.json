@@ -1712,5 +1712,80 @@
       "hit": 0.18,
       "death": 0.65
     }
+  },
+  {
+    "id": "ember-dragon",
+    "label": "화염용",
+    "monster": true,
+    "content_ids": [
+      "ember_dragon"
+    ],
+    "sheets": [
+      "ember-v1-atlas-0.webp.json",
+      "ember-v1-atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5199252963066101
+    },
+    "bytes": 656513
+  },
+  {
+    "id": "frost-dragon",
+    "label": "서리용",
+    "monster": true,
+    "content_ids": [
+      "frost_dragon"
+    ],
+    "sheets": [
+      "frost-v1-atlas-0.webp.json",
+      "frost-v1-atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.5184591114521027
+    },
+    "bytes": 602581
+  },
+  {
+    "id": "venom-dragon",
+    "label": "독룡",
+    "monster": true,
+    "content_ids": [
+      "venom_dragon"
+    ],
+    "sheets": [
+      "venom-v1-atlas-0.webp.json",
+      "venom-v1-atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.518495112657547
+    },
+    "bytes": 623753
   }
 ]

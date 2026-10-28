@@ -31,8 +31,15 @@ export const MAPS = Object.fromEntries(REGIONS.flatMap(region => region.maps.map
 for (const q of Object.values(OBJECTIVE_QUESTS)) MAPS[q.mapId] = { id:q.mapId, regionId:q.regionId, questId:q.id, requires:q.requires };
 // Append after legacy gates were derived: QC1 never changes TD1's S20 requirement.
 REGIONS.find(r => r.id === 'throne').maps.push('M_THRONE_GARGOYLE');
+// Appended after all original campaign dependencies were derived.
+const DRAGON_HUNTS={D_EMBER:['cinder','S30',29],D_FROST:['frost','S33',30],D_VENOM:['mire','S36',30]};
+for(const [id,[regionId,gate]] of Object.entries(DRAGON_HUNTS)) {
+ MAPS[id]={id,regionId,questId:id,requires:[gate]};
+ REGIONS.find(r=>r.id===regionId).maps.push(id);
+}
 export function mapUnlocked(save, id) {
   const map = MAPS[id];
+  if(DRAGON_HUNTS[id] && (!save.cleared?.[DRAGON_HUNTS[id][1]] || save.level<DRAGON_HUNTS[id][2])) return false;
   // Historical trial clears stay saved, but never bypass the official late-game gate.
   if (MAPS[id]?.regionId === 'graveyard' && !save.cleared?.S20) return false;
   if (map?.regionId === 'necropolis' && (!save.cleared?.S20 || !save.cleared?.S23)) return false;

@@ -1,0 +1,81 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/frost-dragon-1028/frames",
+  "characters": [
+    {
+      "name": "frost-dragon",
+      "model": "C:/Users/user/ai-tools/arpg-art/frost-dragon-1028/source/frost-dragon.blend",
+      "neutral": true,
+      "animations": {
+        "idle": "idle",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "label": "\uc11c\ub9ac \ub4dc\ub798\uace4",
+      "content_ids": [],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/frost-dragon-1028/source",
+  "webp_quality": 85,
+  "frame_counts": {
+    "idle": 8,
+    "run": 8,
+    "attack": 6,
+    "hit": 4,
+    "death": 7
+  },
+  "variant": {
+    "palette": {
+      "Copper scales": [
+        0.08,
+        0.34,
+        0.57
+      ],
+      "Scarlet dorsal scales": [
+        0.3,
+        0.7,
+        0.92
+      ],
+      "Ivory belly horns claws": [
+        0.82,
+        0.94,
+        1.0
+      ],
+      "Golden burnt orange membrane": [
+        0.09,
+        0.25,
+        0.42
+      ],
+      "Mouth nostrils": [
+        0.012,
+        0.028,
+        0.06
+      ],
+      "Amber eyes": [
+        0.35,
+        0.9,
+        1.0
+      ]
+    },
+    "crystal_crown_height": 0.55,
+    "crystal_spine_height": 0.46,
+    "wing_edge_crystal_length": 0.34
+  }
+}

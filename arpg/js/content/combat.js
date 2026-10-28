@@ -213,6 +213,40 @@ export const ABILITIES = {
     aimOffsetDeg: 180, damage: 22, knockback: 210, rangeMin: 0, rangeMax: 260, weight: 1, major: true,
   },
 
+  // Normal regional dragons reuse the shared act, telegraph and contact machine.
+  ember_breath: {
+    name:'불길 숨결',windupMs:1400,lockMs:400,activeMs:600,recoveryMs:1800,cooldownMs:6200,
+    delivery:'shape',shape:{type:'cone',range:350,arc:70},trackTurnDeg:45,
+    damage:20,knockback:70,rangeMin:0,rangeMax:420,weight:3,major:true,
+  },
+  ember_stomp: {
+    name:'불씨 내려찍기',windupMs:1250,lockMs:400,activeMs:150,recoveryMs:1900,cooldownMs:4800,
+    delivery:'shape',shape:{type:'circle',radius:125,offset:95},trackTurnDeg:50,
+    damage:17,knockback:160,rangeMin:0,rangeMax:220,weight:2,major:true,
+  },
+  // Existing slow is monster-only; a committed narrow frost lane, not fictional player slow.
+  frost_breath: {
+    name:'서리 숨결',windupMs:1300,lockMs:450,activeMs:450,recoveryMs:1900,cooldownMs:5800,
+    delivery:'shape',shape:{type:'cone',range:430,arc:34},trackTurnDeg:35,element:'frost',
+    damage:19,knockback:40,rangeMin:0,rangeMax:470,weight:3,major:true,
+  },
+  frost_tail: {
+    name:'서리 꼬리치기',windupMs:1100,lockMs:400,activeMs:200,recoveryMs:1700,cooldownMs:4700,
+    delivery:'shape',shape:{type:'cone',range:220,arc:150,facingOffsetDeg:180},aimOffsetDeg:180,
+    damage:16,knockback:180,rangeMin:0,rangeMax:240,weight:2,major:true,
+  },
+  venom_breath: {
+    name:'독안개 숨결',windupMs:1500,lockMs:450,activeMs:2400,recoveryMs:1800,cooldownMs:7200,
+    delivery:'shape',shape:{type:'cone',range:310,arc:90},trackTurnDeg:25,
+    anchored:true,repeatHitMs:1000,poison:{durationMs:3000,intervalMs:1000,damage:2},
+    damage:5,knockback:0,rangeMin:0,rangeMax:370,weight:3,major:true,
+  },
+  venom_sweep: {
+    name:'독룡 휩쓸기',windupMs:1000,lockMs:400,activeMs:200,recoveryMs:1700,cooldownMs:4700,
+    delivery:'shape',shape:{type:'cone',range:200,arc:125},trackTurnDeg:50,
+    damage:15,knockback:170,rangeMin:0,rangeMax:220,weight:2,major:true,
+  },
+
   // ---------- monsters
   goblin_slash: {
     windupMs: 520, lockMs: 160, activeMs: 100, recoveryMs: 620, cooldownMs: 1300,
@@ -335,6 +369,12 @@ export const MONSTERS = {
     hp: 1, r: 22, speed: 0, poise: 0, kbResist: 1, abilities: [], invulnerable: true,
     xp: 0, keepRange: [0, 0],
   },
+  ember_dragon: { hp:450,r:38,speed:60,heavyPoise:true,poise:160,kbResist:.75,
+    abilities:['ember_breath','ember_stomp'],xp:0,keepRange:[100,190] },
+  frost_dragon: { hp:450,r:38,speed:82,heavyPoise:true,poise:150,kbResist:.65,
+    abilities:['frost_breath','frost_tail'],xp:0,keepRange:[45,90] },
+  venom_dragon: { hp:440,r:38,speed:76,heavyPoise:true,poise:140,kbResist:.65,
+    abilities:['venom_breath','venom_sweep'],xp:0,keepRange:[210,280] },
   throne_dragon: {
     hp: 1100, r: 48, speed: 48, heavyPoise: true, poise: 280, kbResist: 1,
     abilities: ['dragon_flame', 'dragon_stomp', 'dragon_tail'], xp: 40, keepRange: [100, 190],
@@ -634,6 +674,18 @@ for (const q of Object.values(OBJECTIVE_QUESTS)) {
   const tune = BALANCE.stages[q.mapId];
   STAGES[q.mapId] = { name:q.name, goal:'objective', objective:q.objective, maxConcurrent:3,
     spawns:q.spawns.map(s => ({...s})), hpMult:tune.hp, dmgMult:tune.damage, eliteChance:0 };
+}
+
+// Appended after legacy wave expansion: no changes to previous stage definitions.
+for (const [id,monster,anchor,name] of [
+  ['D_EMBER','ember_dragon','S30','화염용 사냥'],
+  ['D_FROST','frost_dragon','S33','서리용 사냥'],
+  ['D_VENOM','venom_dragon','S36','독룡 사냥'],
+]) {
+  const tune=BALANCE.stages[anchor];
+  STAGES[id]={name,goal:'killAll',arena:{w:1680,h:1000},maxConcurrent:1,
+    hpMult:tune.hp,dmgMult:tune.damage,eliteChance:0,
+    spawns:[{monster,at:0,fx:.7,fy:.5}]};
 }
 
 export const PLAYER_BASE = {

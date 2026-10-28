@@ -246,3 +246,17 @@ Native clips, all **8 directions × idle/run/attack/hit/death**, complete source
 ## MP1 original mine cart lift (renderer-only)
 - Asset: `assets/sprites/scenery/mine-lift/lift.webp`, original project-authored CC0 geometry/materials/rigid animation (no borrowed model). Reproducible source and provenance: `tools/art/mine-lift/`.
 - 32 x 192px frames, 4fps/8-second up/down loop, single 1536x768 atlas, 88,484 wire bytes / 4.5 MiB decoded RGBA. M_MINE_CART only, world (400,185), behind all gameplay; no collision/interactions. Lazy decode, unload on map reset, no-scenery load failure fallback; reduced-motion static.
+
+
+## 2026-10-28 — Frost dragon (unregistered art preparation)
+- Source: tools/art/dragon-variants/frost/; kit: assets/sprites/frost-dragon/.
+- Project-authored copper derivative: editable palette/geometry with 18 actual crown/dorsal/wing-edge ice crystals. Repository licensing; no external models/textures or fabricated CC0 claim.
+- Eight actual facings; idle/run/attack/hit/death; transparent 128px frames and fixed projected ground anchor. Focused evidence: source validation.json.
+- Art preparation only. No manifest/runtime/content/gameplay/encounter/deployment changes. Original copper, guardian and legacy gargoyle untouched. Parent/user look review and later gameplay remain separate.
+
+
+## 2026-10-28 — Ember and venom dragons (unregistered art preparation)
+- Sources: tools/art/dragon-variants/{ember,venom}/; kits: assets/sprites/{ember-dragon,venom-dragon}/.
+- Original project-authored copper derivatives; ember adds 16 obsidian plate/curved horn meshes, venom adds 22 neck-frill/fan-tail surface and rib meshes. Repository licensing; no external model/texture or fabricated CC0 claim.
+- Each kit: 8 directions, idle/run/attack/hit/death, 264 transparent 128px frames, fixed projected ground anchor; source and alpha/direction/budget evidence beside generator.
+- Art preparation only. No manifest, runtime, gameplay, UI, placement, effects or deployment. Original copper/shared manifest/existing frost unchanged; parent/user look approval remains pending.

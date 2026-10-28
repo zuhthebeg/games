@@ -21,7 +21,7 @@ export const MONSTER_PALETTES = {
   skeleton: [0xffffff], // Neutral multiplier preserves KayKit's baked source colors.
 };
 export const MONSTER_MODELS = [
-  'undead_lab_human_melee', 'scarecrow', 'training_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
+  'undead_lab_human_melee', 'scarecrow', 'training_dragon', 'ember_dragon', 'frost_dragon', 'venom_dragon', 'throne_dragon', 'goblin_grunt', 'goblin_slinger', 'iron_boar', 'goblin_chief',
   'gargoyle', 'wolf', 'rune_guardian', 'spirit', 'poison_spider',
   'skeleton_minion', 'skeleton_warrior', 'skeleton_rogue', 'skeleton_mage',
   'ghoul', 'ghost', 'bat',
@@ -51,6 +51,7 @@ export const MONSTER_NAMES = {
   abyss_glub: '심연 아귀', drowned_skull: '익사한 해골령', abyss_squidle: '심연 오징어 군주',
   spore_mushnub: '포자 뭉치귀', gale_hywirl: '포자 회오리 정령', spore_king: '버섯 왕',
   gargoyle: '석상 가고일',
+  ember_dragon:'화염용', frost_dragon:'서리용', venom_dragon:'독룡',
   throne_dragon: '왕좌의 수호룡', training_dragon: '드래곤', scarecrow: '허수아비', goblin_grunt: '고블린', goblin_slinger: '고블린 투석병',
   iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
   wolf: '적대 늑대', rune_guardian: '룬 수호자', spirit: '제단 정령', poison_spider: '독거미',
@@ -102,6 +103,9 @@ export const MONSTER_VARIANTS = {
   ghost: variant('ghost', 'ghost', ['ghost'], 'undead'),
   bat: variant('bat', 'bat', ['bat', 'beast'], 'beast'),
   gargoyle: variant('gargoyle', 'rune', ['guardian', 'crafted', 'gargoyle'], 'construct'),
+  ember_dragon: {...variant('ember_dragon','dragon',['dragon'],'living'),presentationKey:'ember_dragon'},
+  frost_dragon: {...variant('frost_dragon','dragon',['dragon'],'living'),presentationKey:'frost_dragon'},
+  venom_dragon: {...variant('venom_dragon','dragon',['dragon'],'living'),presentationKey:'venom_dragon'},
   throne_dragon: variant('throne_dragon', 'dragon', ['dragon', 'boss'], 'living'),
   training_dragon: variant('training_dragon', 'dragon', ['dragon', 'trainingDummy'], 'living'),
   scarecrow: variant('scarecrow', 'straw', ['trainingDummy'], 'construct'),

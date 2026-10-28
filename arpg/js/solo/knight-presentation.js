@@ -17,7 +17,7 @@ export const HUMAN_PRESENTATIONS = Object.freeze({
   abyss_glub: 'blade', drowned_skull: 'focus', abyss_squidle: 'blade',
   spore_mushnub: 'blade', gale_hywirl: 'focus', spore_king: 'blade',
 });
-export const ORIGINAL_PRESENTATIONS = Object.freeze(['scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon', 'necropolis_lord']);
+export const ORIGINAL_PRESENTATIONS = Object.freeze(['ember_dragon','frost_dragon','venom_dragon','scarecrow', 'training_dragon', 'goblin_chief', 'rune_guardian', 'gargoyle', 'throne_dragon', 'necropolis_lord']);
 
 export function installKnightPresentation(provider, save = { lineage: 'skeleton_knight', level: 1 }) {
   const previous = new Map(provider.factories);

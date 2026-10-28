@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "mesh_objects": 109,
+  "crystals": 18,
+  "animated_objects": 9,
+  "idle_paw_bottoms": [
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418,
+    -0.004999995231628418
+  ],
+  "states": [
+    "idle",
+    "run",
+    "attack",
+    "hit",
+    "death"
+  ]
+}

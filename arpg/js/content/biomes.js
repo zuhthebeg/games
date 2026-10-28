@@ -43,6 +43,7 @@ export const BIOMES = {
     ['carpet', 'slab', 'rune', 'column', 'brazier', 'shield', 'rubble', 'urn'])
 };
 export const STAGE_BIOMES = Object.fromEntries([
+  ['D_EMBER','cinder_wastes'],['D_FROST','frost_cavern'],['D_VENOM','mire_fen'],
   ...[55,56,57].map(n => ['S' + n, 'lunar_garden']),
   ...[52,53,54].map(n => ['S' + n, 'orbital_dock']),
   ...[49,50,51].map(n => ['S' + n, 'sky_spire']),

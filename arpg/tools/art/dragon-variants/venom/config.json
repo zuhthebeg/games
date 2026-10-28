@@ -1,0 +1,80 @@
+{
+  "frame_size": 128,
+  "fps": 10,
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/venom-dragon-1028/frames",
+  "characters": [
+    {
+      "name": "venom-dragon",
+      "model": "C:/Users/user/ai-tools/arpg-art/venom-dragon-1028/source/venom-dragon.blend",
+      "neutral": true,
+      "animations": {
+        "idle": "idle",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "label": "Venom dragon",
+      "content_ids": [],
+      "animation_durations": {
+        "hit": 0.15,
+        "death": 0.6
+      }
+    }
+  ],
+  "source": "C:/Users/user/ai-tools/arpg-art/venom-dragon-1028/source",
+  "webp_quality": 85,
+  "frame_counts": {
+    "idle": 8,
+    "run": 8,
+    "attack": 6,
+    "hit": 4,
+    "death": 7
+  },
+  "variant": {
+    "palette": {
+      "Copper scales": [
+        0.025,
+        0.34,
+        0.105
+      ],
+      "Scarlet dorsal scales": [
+        0.21,
+        0.035,
+        0.31
+      ],
+      "Ivory belly horns claws": [
+        0.5,
+        0.78,
+        0.27
+      ],
+      "Golden burnt orange membrane": [
+        0.16,
+        0.43,
+        0.11
+      ],
+      "Mouth nostrils": [
+        0.025,
+        0.014,
+        0.042
+      ],
+      "Amber eyes": [
+        0.74,
+        0.98,
+        0.12
+      ]
+    },
+    "ornament_style": "broad neck frill and fan tail",
+    "ornament_scale": 1
+  }
+}

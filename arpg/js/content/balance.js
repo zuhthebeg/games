@@ -83,6 +83,9 @@ export const BALANCE = {
     S23: { hp:5, damage:2, eliteChance:1, waves:1, waveMs:0, concurrent:1, huntTier:4, rewardRank:12, sizeRank:19, rec:[22,'epic',4] },
     // S20 aftermath: one fixed boss, HP below S20 chief (13860 vs 15770), stronger hits, no waves.
     TD1: { hp:18, damage:2.4, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:3, rewardRank:20, rec:[22,'epic',4] },
+    D_EMBER: { hp:6, damage:2.3, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:4, rewardRank:12, sizeRank:19, rec:[29,'epic',4] },
+    D_FROST: { hp:6.4, damage:2.45, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:4, rewardRank:12, sizeRank:19, rec:[30,'epic',4] },
+    D_VENOM: { hp:6.8, damage:2.6, eliteChance:0, waves:1, waveMs:0, concurrent:1, huntTier:4, rewardRank:12, sizeRank:19, rec:[30,'epic',4] },
     M_THRONE_GARGOYLE: { hp:5, damage:2, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:19, sizeRank:19, rec:[20,'epic',3] },
     M_MARSH_MARKERS: { hp:4.2, damage:2.16, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:13, sizeRank:13, rec:[12,'rare',2] },
     M_MINE_CART: { hp:3.5, damage:1.92, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:12, sizeRank:12, rec:[11,'fine',3] },
