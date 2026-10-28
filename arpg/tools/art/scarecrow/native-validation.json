@@ -1,0 +1,191 @@
+{
+  "status": "PASS",
+  "url": "http://127.0.0.1:8984/arpg/",
+  "errors": [],
+  "sourceBinding": {
+    "arpg/js/render/atlas-state.js": "f934c908010bb5b251070b93407d515ff3ddd294cb6252a5f2bf8b756aba71af",
+    "arpg/js/render/atlas-visual.js": "6fdefd47a070f1d069dad320932223c278fc67ccc541d86a77b4f551fdedccb3",
+    "arpg/assets/sprites/manifest.json": "4e3ad84276c5eaba5560846a6a5dbae8032de9e308b0a011d6c065c04c39379f",
+    "arpg/assets/sprites/scarecrow/atlas-0.webp.json": "9f647422b62891cca4c73507dbe49baf2da1c4869ff68b53d129362c8cd41c37",
+    "arpg/assets/sprites/scarecrow/atlas-0.webp": "c9e52ed45e26aad20486f6bb9e933d93cd50de5d5c208dca5c194e9ac611c198",
+    "arpg/assets/sprites/scarecrow/atlas-1.webp.json": "4b14928bb36abf2d70f19f04f3844d48bcaeda14adf7ebedb4eebc1c8122e911",
+    "arpg/assets/sprites/scarecrow/atlas-1.webp": "79600d66c0baf985c3a052e225ea0eca7caa5bf6914026684b5e8b227b21530e"
+  },
+  "screenshots": 0,
+  "existingUserStorage": 0,
+  "runtimeWorldWrites": 0,
+  "rows": [
+    {
+      "width": 1280,
+      "stage": "S1",
+      "input": "keyboard Enter/WASD",
+      "startedTick": 5,
+      "spawnOnly": true,
+      "seen": {
+        "scarecrow": {
+          "tick": 16,
+          "entity": {
+            "id": 2,
+            "type": "scarecrow",
+            "r": 22.788038620352744,
+            "sizeScale": 1.035819937288761,
+            "x": 868,
+            "y": 430
+          },
+          "visual": {
+            "id": "scarecrow",
+            "mode": "atlas",
+            "key": "scarecrow",
+            "loadFailure": null,
+            "state": "idle",
+            "direction": "W",
+            "frame": 0,
+            "tint": 11439699,
+            "scale": 1.035819937288761,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.9127818048000336
+              },
+              "width": 132.58495197296142,
+              "height": 132.58495197296142,
+              "bounds": {
+                "x": 801.7075240135193,
+                "y": 300.97886824879447,
+                "width": 132.58495197296133,
+                "height": 132.58495197296145
+              }
+            },
+            "textureLoaded": true,
+            "entityId": 2,
+            "outerScale": {
+              "x": 1,
+              "y": 1
+            },
+            "displayBounds": {
+              "x": 801.7075240135193,
+              "y": 300.97886824879447,
+              "width": 132.58495197296133,
+              "height": 132.58495197296145
+            }
+          },
+          "distance": 479.5638888888891,
+          "viewport": {
+            "w": 1280,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "scarecrow": [
+          "idle"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "stage": "S1",
+      "input": "native touch joystick",
+      "startedTick": 4,
+      "spawnOnly": true,
+      "seen": {
+        "scarecrow": {
+          "tick": 54,
+          "entity": {
+            "id": 2,
+            "type": "scarecrow",
+            "r": 23.90843842858449,
+            "sizeScale": 1.086747201299295,
+            "x": 868,
+            "y": 430
+          },
+          "visual": {
+            "id": "scarecrow",
+            "mode": "atlas",
+            "key": "scarecrow",
+            "loadFailure": null,
+            "state": "idle",
+            "direction": "W",
+            "frame": 4,
+            "tint": 11439699,
+            "scale": 1.086747201299295,
+            "equipment": null,
+            "geometry": {
+              "anchor": {
+                "x": 0.5,
+                "y": 0.9127818048000336
+              },
+              "width": 139.10364176630975,
+              "height": 139.10364176630975,
+              "bounds": {
+                "x": 288.8727403019249,
+                "y": 330.58068330628913,
+                "width": 100.154622071743,
+                "height": 100.154622071743
+              }
+            },
+            "textureLoaded": true,
+            "entityId": 2,
+            "outerScale": {
+              "x": 1,
+              "y": 1
+            },
+            "displayBounds": {
+              "x": 288.8727403019249,
+              "y": 330.58068330628913,
+              "width": 100.154622071743,
+              "height": 100.154622071743
+            }
+          },
+          "distance": 173.90666666666766,
+          "viewport": {
+            "w": 390,
+            "h": 844
+          }
+        }
+      },
+      "states": {
+        "scarecrow": [
+          "idle"
+        ]
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-0.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-0.webp",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-1.webp.json",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:8984/arpg/assets/sprites/scarecrow/atlas-1.webp",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

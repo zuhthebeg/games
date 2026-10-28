@@ -1,0 +1,40 @@
+{
+  "focused": {
+    "tests": 52,
+    "pass": 52,
+    "fail": 0,
+    "log": "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-focused.log"
+  },
+  "expanded": {
+    "tests": 55,
+    "pass": 53,
+    "fail": 2,
+    "log": "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-tests.log"
+  },
+  "baseline_s1": {
+    "tests": 3,
+    "pass": 1,
+    "fail": 2,
+    "log": "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-baseline-s1.log"
+  },
+  "baseline_equal_failures": [
+    "approved S1 change removes only training_dragon spawn; all other combat bytes and parent HP/damage/prices survive",
+    "S1 current final module graph differs only in9 S1 traces from merged d38de8f checkpoint; all234 other traces unchanged"
+  ],
+  "new_failures": 0,
+  "full_suite_run": false,
+  "native_s1": {
+    "widths": [
+      1280,
+      390
+    ],
+    "pass": true,
+    "pageerrors": 0,
+    "console_errors": 0,
+    "screenshots": 0,
+    "idle_texture_loaded_and_visible": true,
+    "combat_states_observed": false
+  },
+  "independent_reopened_source": true,
+  "all_frame_delivered_alpha_and_pose": 264
+}

@@ -1,0 +1,94 @@
+{
+  "kind": "offline real-source-model visual inspection; not a browser screenshot",
+  "assistant_reviewed": true,
+  "user_approved": false,
+  "frame_size": 128,
+  "native_first_idle_bounds": {
+    "E": {
+      "bbox": [
+        42,
+        13,
+        86,
+        120
+      ],
+      "occupied_width": 44,
+      "occupied_height": 107
+    },
+    "SE": {
+      "bbox": [
+        22,
+        13,
+        106,
+        119
+      ],
+      "occupied_width": 84,
+      "occupied_height": 106
+    },
+    "S": {
+      "bbox": [
+        9,
+        13,
+        119,
+        119
+      ],
+      "occupied_width": 110,
+      "occupied_height": 106
+    },
+    "SW": {
+      "bbox": [
+        22,
+        13,
+        105,
+        119
+      ],
+      "occupied_width": 83,
+      "occupied_height": 106
+    },
+    "W": {
+      "bbox": [
+        42,
+        14,
+        86,
+        120
+      ],
+      "occupied_width": 44,
+      "occupied_height": 106
+    },
+    "NW": {
+      "bbox": [
+        22,
+        14,
+        105,
+        121
+      ],
+      "occupied_width": 83,
+      "occupied_height": 107
+    },
+    "N": {
+      "bbox": [
+        9,
+        14,
+        119,
+        122
+      ],
+      "occupied_width": 110,
+      "occupied_height": 108
+    },
+    "NE": {
+      "bbox": [
+        22,
+        14,
+        106,
+        121
+      ],
+      "occupied_width": 84,
+      "occupied_height": 107
+    }
+  },
+  "review_files": [
+    "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-preview.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-contact-sheet.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-1028-scarecrow-all-states.png"
+  ],
+  "finding": "Recognizable planted-stake scarecrow, hat/cloth/straw silhouette and patches consistent across octants; all-state sheet inspected for attachment and intact silhouettes. Stylized low-poly rather than realistic. Hat brim partially shades face at 40 degree camera. Source preview native128 plus 2x enlargement reviewed before integration."
+}

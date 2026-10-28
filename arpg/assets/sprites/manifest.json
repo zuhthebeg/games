@@ -1683,5 +1683,34 @@
       "death": 0.6
     },
     "cacheVersion": "caeb6d861f78"
+  },
+  {
+    "id": "scarecrow",
+    "label": "허수아비",
+    "monster": false,
+    "content_ids": [
+      "scarecrow"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 8,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.9127818048000336
+    },
+    "bytes": 431225,
+    "animation_durations": {
+      "hit": 0.18,
+      "death": 0.65
+    }
   }
 ]

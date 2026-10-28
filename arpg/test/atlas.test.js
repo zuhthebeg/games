@@ -100,7 +100,7 @@ test('every registered content key has eight-direction WebP clips and bounded ki
     assert.equal(bytes, entry.bytes);
   }
   assert.equal(ATLAS_IDS.iron_boar, 'iron-boar', 'boar uses its verified pig rig and armor, never a skeleton');
-  assert.equal(ATLAS_IDS.scarecrow, undefined);
+  assert.equal(ATLAS_IDS.scarecrow, 'scarecrow');
 });
 
 test('lazy loading deduplicates current kit and only loads monsters when requested', async () => {
@@ -114,8 +114,8 @@ test('lazy loading deduplicates current kit and only loads monsters when request
   assert.deepEqual(library.status().loaded, ['blade', 'goblin_grunt']);
   assert.ok(calls.every((url) => /hero-sword|goblin-grunt/.test(url)));
   const before = calls.length;
-  assert.equal(await library.load('scarecrow'), null);
-  assert.equal(calls.length, before);
+  assert.equal((await library.load('scarecrow')).id, 'scarecrow');
+  assert.equal(calls.length, before + manifest.find(e => e.id === 'scarecrow').sheets.length);
 });
 
 test('round switch releases old kits and dead-round loads, sharing current assets safely', async () => {

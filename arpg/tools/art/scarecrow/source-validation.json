@@ -1,0 +1,180 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "id": "scarecrow",
+      "ok": true,
+      "model_sha256": "8c08a40f4b6beafc348cb51107d136bef1969331898034d3958475ae06fd452a",
+      "checked_meshes": [
+        "Scarecrow"
+      ],
+      "skinned_clip_motion": {
+        "idle": {
+          "source": "scarecrow_idle",
+          "samples": 8,
+          "max_skinned_rms_world": 0.014542123412759785
+        },
+        "run": {
+          "source": "scarecrow_run",
+          "samples": 8,
+          "max_skinned_rms_world": 0.02604199895800368
+        },
+        "attack": {
+          "source": "scarecrow_attack",
+          "samples": 8,
+          "max_skinned_rms_world": 0.06590896235285894
+        },
+        "hit": {
+          "source": "scarecrow_hit",
+          "samples": 3,
+          "max_skinned_rms_world": 0.12790620536646288
+        },
+        "death": {
+          "source": "scarecrow_death",
+          "samples": 6,
+          "max_skinned_rms_world": 0.5664653639801183
+        }
+      },
+      "direction_vectors": {
+        "E": {
+          "anatomical_xy": [
+            1.0,
+            4.371139183945161e-08
+          ],
+          "expected_xy": [
+            1.0,
+            0.0
+          ],
+          "dot": 1.0
+        },
+        "SE": {
+          "anatomical_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "S": {
+          "anatomical_xy": [
+            0.0,
+            -1.0
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            -1.0
+          ],
+          "dot": 1.0
+        },
+        "SW": {
+          "anatomical_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            -0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "W": {
+          "anatomical_xy": [
+            -1.0,
+            4.371139183945161e-08
+          ],
+          "expected_xy": [
+            -1.0,
+            -1.2246468525851679e-16
+          ],
+          "dot": 1.0
+        },
+        "NW": {
+          "anatomical_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "expected_xy": [
+            -0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        },
+        "N": {
+          "anatomical_xy": [
+            -8.742278367890322e-08,
+            1.0
+          ],
+          "expected_xy": [
+            6.123234262925839e-17,
+            1.0
+          ],
+          "dot": 1.0
+        },
+        "NE": {
+          "anatomical_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "expected_xy": [
+            0.7071067690849304,
+            0.7071067690849304
+          ],
+          "dot": 0.9999999403953552
+        }
+      },
+      "frames_checked": 264,
+      "max_ground_error_px": 0,
+      "bone_head_motion_world": {
+        "idle": {
+          "Root": 0.0,
+          "Body": 0.0,
+          "Arm.L": 0.009899815454647248,
+          "Arm.R": 0.009899815454647248,
+          "Head": 0.0164996964458714
+        },
+        "run": {
+          "Root": 0.0,
+          "Body": 0.0,
+          "Arm.L": 0.017998824562262383,
+          "Arm.R": 0.017998822136784626,
+          "Head": 0.029998044238448384
+        },
+        "attack": {
+          "Root": 0.0,
+          "Body": 0.0,
+          "Arm.L": 0.04498116730835145,
+          "Arm.R": 0.04498116213217059,
+          "Head": 0.07496863591249389
+        },
+        "hit": {
+          "Root": 0.0,
+          "Body": 0.0,
+          "Arm.L": 0.0856068691670811,
+          "Arm.R": 0.0856068691670811,
+          "Head": 0.14267814845677596
+        },
+        "death": {
+          "Root": 0.0,
+          "Body": 0.24166667218180918,
+          "Arm.L": 0.4747909779297492,
+          "Arm.R": 0.4747909543912413,
+          "Head": 0.6763990367734797
+        }
+      },
+      "vertices": 2292,
+      "bones": [
+        "Root",
+        "Body",
+        "Arm.L",
+        "Arm.R",
+        "Head"
+      ],
+      "min_idle_vertex_z": 0.0,
+      "no_ground_mesh": true,
+      "no_baked_shadow": true
+    }
+  ]
+}

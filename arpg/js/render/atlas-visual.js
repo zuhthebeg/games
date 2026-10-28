@@ -184,7 +184,7 @@ function spriteVisual(entity, { color }, asset) {
         ...(necropolisBoss ? {bossMarker:true, bossName:bossTitle.text, crown:true} : {}),
         ...(['player-death-knight','player-skeleton-equipment'].includes(asset.id) ? { age, duration: asset.animation_durations?.[stateName] || null, startedTick: previousDodge, playback: asset.id==='player-skeleton-equipment' ? 'source-poses-with-approved-idle-fallbacks' : 'source-dodge' } : {}),
         // Read-only art diagnostics: actual drawn atlas bounds, not combat radius/telegraph geometry.
-        ...(['rune-guardian', 'spirit'].includes(asset.id) ? { geometry: {
+        ...(['rune-guardian', 'spirit', 'scarecrow'].includes(asset.id) ? { geometry: {
           anchor: { x: sprite.anchor.x, y: sprite.anchor.y },
           width: sprite.width, height: sprite.height,
           bounds: (() => { const b = sprite.getBounds(); return { x:b.x, y:b.y, width:b.width, height:b.height }; })(),

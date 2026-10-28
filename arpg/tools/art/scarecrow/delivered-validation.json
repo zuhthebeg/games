@@ -1,0 +1,41 @@
+{
+  "name": "scarecrow",
+  "format": "webp",
+  "frames": 264,
+  "atlas_dimensions": [
+    [
+      2048,
+      2048
+    ],
+    [
+      1536,
+      128
+    ]
+  ],
+  "webp_bytes": 370668,
+  "json_bytes": 60557,
+  "total_bytes": 431225,
+  "alpha_coverage_percent": [
+    14.886,
+    25.299
+  ],
+  "max_idle_center_drift_px": 2.0,
+  "idle_center_method": "opaque silhouette bbox center",
+  "max_idle_bbox_center_drift_px": 2.0,
+  "unique_direction_hashes": {
+    "idle": 8,
+    "run": 8,
+    "attack": 8,
+    "hit": 8,
+    "death": 8
+  },
+  "pose_profile": "humanoid",
+  "pose_checked_frames": 264,
+  "t_pose_frames": 0,
+  "bind_pose_frames": 0,
+  "min_max_arm_degrees_from_bind": 20.34,
+  "min_skin_rms_from_bind_height": 0.029023,
+  "lossless_alpha_matches_pose_evidence": 264,
+  "clipped_frames": 0,
+  "idle_weapon_projected_span_px": []
+}

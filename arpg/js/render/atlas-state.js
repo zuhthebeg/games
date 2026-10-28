@@ -17,7 +17,7 @@ export const ATLAS_IDS = Object.freeze({
   clock_drone: 'clock_drone', clock_walker: 'clock_walker', clock_colossus: 'clock_colossus',
   abyss_glub: 'abyss_glub', drowned_skull: 'drowned_skull', abyss_squidle: 'abyss_squidle',
   spore_mushnub: 'spore_mushnub', gale_hywirl: 'gale_hywirl', spore_king: 'spore_king',
-  rune_guardian: 'rune-guardian', spirit: 'spirit',
+  rune_guardian: 'rune-guardian', spirit: 'spirit', scarecrow: 'scarecrow',
   blade: 'hero-sword',
   death_knight: 'player-death-knight',
   bow: 'hero-bow',

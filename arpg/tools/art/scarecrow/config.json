@@ -1,0 +1,58 @@
+{
+  "frame_size": 128,
+  "fps": 8,
+  "pitch": 40,
+  "samples": 8,
+  "outline": {
+    "enabled": true,
+    "thickness": 0.012
+  },
+  "directions": {
+    "E": 90,
+    "SE": 45,
+    "S": 0,
+    "SW": -45,
+    "W": -90,
+    "NW": -135,
+    "N": 180,
+    "NE": 135
+  },
+  "output": "C:/Users/user/ai-tools/arpg-art/scarecrow/frames",
+  "source": "C:/Users/user/ai-tools/arpg-art/scarecrow/source",
+  "webp_quality": 72,
+  "characters": [
+    {
+      "name": "scarecrow",
+      "label": "\ud5c8\uc218\uc544\ube44",
+      "model": "C:/Users/user/ai-tools/arpg-art/scarecrow/source/scarecrow.glb",
+      "keep": [
+        "Scarecrow"
+      ],
+      "neutral": false,
+      "arm_bones": [
+        "Arm.L",
+        "Arm.R"
+      ],
+      "root_bones": [
+        "Root"
+      ],
+      "pose_profile": "humanoid",
+      "animations": {
+        "idle": "scarecrow_idle",
+        "run": "scarecrow_run",
+        "attack": "scarecrow_attack",
+        "hit": "scarecrow_hit",
+        "death": "scarecrow_death"
+      },
+      "content_ids": [
+        "scarecrow"
+      ],
+      "animation_durations": {
+        "hit": 0.18,
+        "death": 0.65
+      },
+      "framing_margin": 1.13,
+      "preview_tint": "ffffff"
+    }
+  ]
+}
