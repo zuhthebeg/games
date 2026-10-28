@@ -195,6 +195,7 @@ export function decodeSnapshot(packet, uid) {
   for (const e of packet.entities) {
     if (e.skillMasteryLevels !== undefined && !validMasteryLevels(e.skillMasteryLevels)) return null;
     if (e.lunge20 !== undefined && e.lunge20 !== true) return null;
+    if (e.act?.id==='lunge' && !!e.lunge20!==!!e.act.lunge20) return null;
     if (e.act?.lunge20 !== undefined) {
       const a=e.act;
       if (a.lunge20!==true || !e.lunge20 || a.id!=='lunge' || !['windup','lock','active','recovery'].includes(a.phase)
@@ -203,6 +204,9 @@ export function decodeSnapshot(packet, uid) {
         || a.phaseTicks.active<5 || !Number.isFinite(a.dashStep) || a.dashStep<0 || a.dashStep>95
         || !Number.isSafeInteger(a.left) || a.left<1 || a.left>a.phaseTicks[a.phase]
         || !Number.isSafeInteger(a.elapsed) || a.elapsed<0 || a.elapsed>480 || !Number.isFinite(a.facing)) return null;
+      const phases=['windup','lock','active','recovery'];
+      const before=phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0);
+      if (a.elapsed!==before+a.phaseTicks[a.phase]-a.left || a.total!==a.phaseTicks.windup+a.phaseTicks.lock) return null;
     }
     if (e.greenPotions !== undefined && (!Number.isSafeInteger(e.greenPotions) || e.greenPotions < 0)) return null;
     if (e.greenActive !== undefined && typeof e.greenActive !== 'boolean') return null;

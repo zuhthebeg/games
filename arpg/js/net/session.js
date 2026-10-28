@@ -137,7 +137,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
-    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : p])); this.seed = data.seed;
+    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,p.skillMasteryLevels.lunge===undefined?{}:{lunge:1})} : {})}])); this.seed = data.seed;
     this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {

@@ -1,4 +1,4 @@
-import { lungeTimeline, lungeFrame } from '../sim/lunge-evolution.js';
+import { lungeTimeline, nextLungeFrame } from '../sim/lunge-evolution.js';
 // Display-only replay of the host's stepPlayer() for the guest's own pawn: the same
 // tick order, act timeline (windup/lock/active/recovery speed factors, dash steps),
 // buffered dodge and skill/basic starts, so prediction matches the host while
@@ -202,7 +202,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       if (act.def.status === 'berserk') p.berserk={...act.growth,expiresTick:tick+ticks(act.growth.durationMs)};
     }
     if (act.phase === 'active' && act.def.spin) p.facing += Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
-    const lunge=act.lunge20 && act.phase==='active' ? lungeFrame(act) : null;
+    const lunge=act.lunge20 && act.phase==='active' ? nextLungeFrame(act) : null;
     if (lunge) {act.dashStep=lunge.distance;p.moving=!!lunge.segment;}
     if (!rooted && act.phase === 'active' && act.def.delivery === 'dash' && (!lunge || lunge.segment)) {
       if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));

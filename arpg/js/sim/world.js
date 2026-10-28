@@ -1,4 +1,4 @@
-import { lunge20, lungeTimeline, lungeFrame } from './lunge-evolution.js';
+import { lunge20, lungeTimeline, nextLungeFrame } from './lunge-evolution.js';
 import { useGreenPotion, clearGreenPotion } from './green-potion.js';
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { recordAttackPoses, bindAttackPose, attackShapeHits } from './attack-lag.js';
@@ -729,7 +729,7 @@ function doActive(world, ent, act) {
   } else if (def.delivery === 'dash') {
     if (ent.rootUntil > world.tick) {ent.moving=false;return;}
     if (act.lunge20) {
-      const frame=lungeFrame(act);
+      const frame=nextLungeFrame(act);
       ent.moving=frame.segment!==0;
       if (!frame.segment) return;
       if (act.lungeSegment!==frame.segment) {act.lungeSegment=frame.segment;act.hit=[];}
@@ -893,8 +893,7 @@ function applyHit(world, t, hit) {
   if (lunge) {
     // First-only gets floor(B/2), second-only ceil(B/2); both exactly B.
     // Freeze the target budget on first contact, before stagger/exposure can change it.
-    const budget=prior || (lunge.lungeBudgets[t.id]={damage:dmg,crit});
-    dmg=lunge.lungeSegment===1 ? Math.floor(budget.damage/2) : Math.ceil(budget.damage/2);
+    if (!prior) lunge.lungeBudgets[t.id]={damage:dmg,crit};
     def={...def,poise:(def.poise||0)/2,knockback:(def.knockback||0)/2};
   }
   const blocked = t.kind === 'player' && shieldBlocks(t,hit);
@@ -903,6 +902,13 @@ function applyHit(world, t, hit) {
       world.events.push({type:'shieldBlock',id:t.id,src:hit.srcId,dmg:0});return;
     }
     dmg=shieldDamage(dmg,t.shieldModel);
+  }
+  if (lunge) {
+    // Guard rounding belongs to the whole cast budget, not each half.
+    const budget=lunge.lungeBudgets[t.id];
+    budget.defendedDamage ??= dmg;
+    const defended=Math.min(budget.defendedDamage,dmg);
+    dmg=lunge.lungeSegment===1 ? Math.floor(defended/2) : Math.ceil(defended/2);
   }
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';

@@ -459,7 +459,8 @@ export class SkillVfx {
     slot.seen = true;
     slot.guide.visible=act.id==='blood_spear' && act.phase==='windup';
     if(slot.guide.visible){slot.guide.position.set(entity.x,entity.y);slot.guide.rotation=act.facing;}
-    const charging = act.phase === 'windup' || act.phase === 'lock', p = windupProgress(act);
+    const completedLunge=act.lunge20 ? lungeFrame(act) : null;
+    const charging = act.phase === 'windup' || act.phase === 'lock' || !!(completedLunge && act.elapsed===act.phaseTicks.windup+act.phaseTicks.lock), p = windupProgress(act);
     const x = entity.x + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
     const y = entity.y + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
     slot.node.visible = charging; slot.node.position.set(x, y);
@@ -510,7 +511,7 @@ export class SkillVfx {
       if (charging) { slot.trailX = entity.x; slot.trailY = entity.y; }
       else {
         const segment=act.lunge20 ? lungeFrame(act).segment : 1;
-        slot.node.visible = act.phase === 'active' && segment!==0; slot.node.position.set(entity.x, entity.y);
+        slot.node.visible = act.lunge20 ? segment!==0 : act.phase === 'active'; slot.node.position.set(entity.x, entity.y);
         slot.node.alpha = act.lunge20 && segment===2 ? (reduced ? .55 : .9) : (reduced ? .35 : .8);
         const dx = entity.x - slot.trailX, dy = entity.y - slot.trailY, distance = Math.hypot(dx, dy);
         const radius = entity.r + profile.dash.bodyPad;
@@ -524,7 +525,7 @@ export class SkillVfx {
     if (slot.baked) slot.baked.visible = false;
     if (!reduced && this.fxRequested && charging) this.baked(slot, act.id, 'windup', x, y,
       profile.windup === 'bow' || profile.windup === 'blade' || profile.windup === 'crystal' ? act.facing : 0, 24, p);
-    if (!reduced && this.fxRequested && profile.style === 'dash' && act.phase === 'active' && (!act.lunge20 || lungeFrame(act).segment)) {
+    if (!reduced && this.fxRequested && profile.style === 'dash' && (act.lunge20 ? !!completedLunge.segment : act.phase === 'active')) {
       this.baked(slot, act.id, 'impact', entity.x, entity.y, act.facing, entity.r + profile.dash.bodyPad,
         clamp01(act.elapsed / Math.max(1, act.total)));
     }

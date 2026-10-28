@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MONSTERS} from '../js/content/combat.js';
 import {createWorld,addPlayer,startStage,step,emptyInput,spawnMonster} from '../js/sim/world.js';
+const profileAt=level=>{const rewardSave=createSave({name:'pilot',weapon:'blade',answers:[0,0,0,0,0],createdAt:1});rewardSave.cleared.S1=true;rewardSave.skillMastery.lunge=level>=20?500:450;return {weapon:'blade',level:1,mods:{mpRegen:0},lineage:'human',role:'hunter',rewardSave,skillMasteryLevels:{lunge:level}};};
 const fixture=level=>{const w=createWorld({seed:4});const p=addPlayer(w,{pid:'p',x:300,y:400,skillMasteryLevels:{lunge:level},mods:{mpRegen:0}});startStage(w,'S2');w.entities=[p];w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;return {w,p};};
 test('mastery20 automatic two actual dash segments with three host ticks between',()=>{for(const level of [19,20,30]){const {w,p}=fixture(level);const movements=[];for(let i=0;i<40;i++){const x=p.x;step(w,{p:{...emptyInput(),aimX:1,skillEdge:i===0}});movements.push(p.x-x);}const runs=[];for(const n of movements){if(n>0){if(!runs.length||runs.at(-1).gap)runs.push({ticks:0,distance:0});runs.at(-1).ticks++;runs.at(-1).distance+=n;}else if(runs.length)runs.at(-1).gap=(runs.at(-1).gap||0)+1;}assert.equal(runs.length,level<20?1:2);assert.ok(Math.abs(p.x-490)<1e-9);if(level>=20){assert.ok(Math.abs(runs[0].distance-95)<1e-9);assert.ok(Math.abs(runs[1].distance-95)<1e-9);assert.equal(runs[0].gap,3);}assert.equal(p.mp,p.maxMp-16);assert.equal(p.dodge.iframeLeft,0);}});
 import {encodeSnapshot,decodeSnapshot} from '../js/net/protocol.js';
@@ -43,7 +44,7 @@ test('same target exact odd damage/crit budget and once cast mastery; new target
 });
 test('codec rejects malformed evolution fields',()=>{const {w,p}=fixture(20);step(w,{p:{...emptyInput(),skillEdge:true}});for(const change of [e=>e.lunge20=2,e=>e.act.id='whirl',e=>e.act.left=999,e=>e.act.phaseTicks.active=1]){const packet=encodeSnapshot(w);change(packet.entities[0]);assert.equal(decodeSnapshot(packet,'p'),null);}});
 test('session freezes lunge power against live RT/setMastery and rejects old combat profiles',()=>{
- const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:{weapon:'blade',level:1,mods:{},skillMasteryLevels:{lunge:uid==='h'?20:19}},config:{stageId:'S2',seed:1,threat:1},...tr});}
+ const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:profileAt(uid==='h'?20:19),config:{stageId:'S2',seed:1,threat:1},...tr});}
  s.g.update(34,emptyInput());assert.equal(s.h.phase,'running');const [h,g]=s.h.world.entities;
  s.g.setMastery({lunge:30});s.h.setMastery({lunge:1});assert.equal(h.lunge20,true);assert.equal(g.lunge20,undefined);
  const a=new CoopSession({uid:'h',host:'h',players:['h','g'],profile:{weapon:'blade'},config:{stageId:'S2',threat:1}});
@@ -66,9 +67,9 @@ test('distinct first and second recipients each receive only their allocated hal
  const hits=[];for(let i=0;i<30;i++){const a=p.act,t=a?.phase==='active'?a.phaseTicks.active-a.left:-1;targets.forEach((g,j)=>{g.x=t>=0&&(j===0?t<3:t>=6)?p.x+20:900;g.kx=g.ky=0;});hits.push(...step(w,{p:{...emptyInput(),aimX:1,skillEdge:i===0}}).filter(e=>e.type==='hit'&&e.ability==='lunge'));}
  assert.deepEqual(hits.map(e=>[e.dst,e.dmg]),targets.map(g=>[g.id,26]));
 });
-test('actual host guest midpoint resume plus duplicated input admits one cast and one MP cost',()=>{
- const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:{weapon:'blade',level:1,mods:{mpRegen:0},skillMasteryLevels:{lunge:20}},config:{stageId:'S2',seed:1,threat:1},...tr});}
- s.g.update(34,emptyInput());const w=s.h.world;w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;const p=w.entities.find(e=>e.pid==='g');
+test('actual host guest midpoint resume admits one cast and one MP cost',()=>{
+ const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:profileAt(20),config:{stageId:'S2',seed:1,threat:1},...tr});}
+ s.g.update(34,emptyInput());const w=s.h.world;w.entities.forEach(e=>e.mpRegen=0);w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;const p=w.entities.find(e=>e.pid==='g');
  let acts=0,resumed=false;for(let t=0;t<50;t++){
   s.g.update(34,{...emptyInput(),aimX:1,skillEdge:t===0});s.h.update(34,emptyInput());acts+=w.events.filter(e=>e.type==='act'&&e.id===p.id&&e.ability==='lunge').length;
   if(p.act?.lunge20&&p.act.phase==='active'&&p.act.left===6&&!resumed){s.g.suspend();s.g.resume();resumed=true;}
@@ -76,8 +77,8 @@ test('actual host guest midpoint resume plus duplicated input admits one cast an
  assert.ok(resumed);assert.equal(acts,1);assert.equal(p.mp,p.maxMp-16);assert.equal(s.g.world,null);assert.equal(s.g.awaitingResync,false);
 });
 test('duplicate guest input packet retains one accepted lunge with one resource transaction',()=>{
- const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:{weapon:'blade',mods:{mpRegen:0},skillMasteryLevels:{lunge:20}},config:{stageId:'S2',seed:1,threat:1},...tr});}
- s.g.update(34,emptyInput());const w=s.h.world,p=w.entities.find(e=>e.pid==='g');w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;
+ const net=createMemoryTransport(),s={};for(const uid of ['h','g']){const tr=net.connect(uid,(from,d)=>d.t==='action'?s[uid].action(d.action):s[uid].rt(from,d));s[uid]=new CoopSession({uid,host:'h',players:['h','g'],profile:profileAt(20),config:{stageId:'S2',seed:1,threat:1},...tr});}
+ s.g.update(34,emptyInput());const w=s.h.world;w.entities.forEach(e=>e.mpRegen=0);const p=w.entities.find(e=>e.pid==='g');w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;
  const packet=s.g.sender.packet({...emptyInput(),aimX:1,skillEdge:true},w.tick,0);for(let i=0;i<20;i++)s.h.rt('g',packet);
  let acts=0;for(let i=0;i<40;i++){s.h.update(34,emptyInput());acts+=w.events.filter(e=>e.type==='act'&&e.id===p.id&&e.ability==='lunge').length;}
  assert.equal(acts,1);assert.equal(p.mp,p.maxMp-16);

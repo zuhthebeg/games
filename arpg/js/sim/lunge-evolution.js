@@ -8,8 +8,16 @@ export function lungeTimeline(activeTicks) {
   const first=Math.max(1,Math.ceil(activeTicks/2)), second=Math.max(1,Math.floor(activeTicks/2));
   return {first,second,total:first+3+second};
 }
-export function lungeFrame(act) {
+export function nextLungeFrame(act) {
   const {first,second}=lungeTimeline(act.phaseTicks.active-3);
   const t=act.phaseTicks.active-act.left;
   return t<first ? {segment:1,distance:95/first} : t<first+3 ? {segment:0,distance:0} : {segment:2,distance:95/second};
+}
+// Snapshots and rendering see the tick just executed, not the next sim tick.
+export function lungeFrame(act) {
+  const {first,second}=lungeTimeline(act.phaseTicks.active-3);
+  const t=act.elapsed-act.phaseTicks.windup-act.phaseTicks.lock-1;
+  return t<0 || t>=first+3+second ? {segment:0,distance:0}
+    : t<first ? {segment:1,distance:95/first}
+    : t<first+3 ? {segment:0,distance:0} : {segment:2,distance:95/second};
 }

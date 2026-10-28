@@ -7,8 +7,8 @@ import {ABILITIES} from '../js/content/combat.js';
 
 // Real session + real jitter queue: newest held can precede its accepted press.
 function contactBeforeEdge(mode, edge = true, status = false) {
-  const profiles = {host:{weapon:'blade',level:1,mods:{}},
-    guest:{weapon:'blade',level:1,mods:{offhand:'shield',mpRegen:0}}};
+  const profiles = {host:{combatVersion:1,weapon:'blade',level:1,mods:{}},
+    guest:{combatVersion:1,weapon:'blade',level:1,mods:{offhand:'shield',mpRegen:0}}};
   const config = {stageId:'S2',seed:1,threat:1}, events = [];
   const session = new CoopSession({uid:'host',host:'host',players:['host','guest'],
     profile:profiles.host,config,onFrame:(_w,e)=>events.push(...e)});
