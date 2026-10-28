@@ -10,7 +10,7 @@ import { emptyInput } from '../js/sim/world.js';
 function profile(bone, name) {
  const save = bone ? createSkeletonSave({lineage:'skeleton_knight',name,answers:[0,0,0,0,0],createdAt:1}) : createSave({name,answers:[0,0,0,0,0],createdAt:1});
  save.cleared.S1 = true; save.activeInvasion = 'local-token-' + name;
- return {name,level:save.level,lineage:bone?'skeleton_knight':'human',role:bone?'invader':'hunter',rewardSave:save,weapon:'blade',mods:buildRoundMods(save),threats:{S2:1}};
+ return {combatVersion:1,name,level:save.level,lineage:bone?'skeleton_knight':'human',role:bone?'invader':'hunter',rewardSave:save,weapon:'blade',mods:buildRoundMods(save),threats:{S2:1}};
 }
 for (const count of [2,3,4]) test(`ordinary S2 quest has ${count} total participants, skeleton always opposing`,()=>{
  const profiles = Object.fromEntries(Array.from({length:count},(_,i)=>['p'+i,profile(i===1,'P'+i)]));
