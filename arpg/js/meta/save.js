@@ -21,7 +21,7 @@ export const RETIRED_SCROLLS = Object.freeze({
   scroll_enchant_weapon: '무기 강화 주문서', scroll_enchant_armor: '방어구 강화 주문서',
   scroll_blessed_weapon: '축복받은 무기 강화 주문서', scroll_blessed_armor: '축복받은 방어구 강화 주문서',
 });
-export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1 });
+export const DEFAULT_AUTO_BUY = Object.freeze({ potion: 20, mana_potion: 0, return_scroll: 1, green_potion: 0 });
 
 export function createSave({ name, answers, weapon, createdAt }) {
   const result = resolve(answers);
@@ -72,7 +72,7 @@ function validReceipt(receipt) {
     || !receipt.masteryRises.every(r => record(r) && MASTERY_SKILLS.includes(r.id) && integer(r.level, 2, MASTERY_MAX)))) return false;
   for (const counts of [receipt.used, receipt.restored]) {
     if (!record(counts) || !Object.entries(counts).every(([id, count]) =>
-      ['potion', 'mana_potion', 'return_scroll'].includes(id) && integer(count))) return false;
+      CONSUMABLES.includes(id) && integer(count))) return false;
   }
   for (const loot of [receipt.lootKept, receipt.lootLost]) {
     if (!record(loot) || !integer(loot.gold) || !record(loot.stacks) || !Array.isArray(loot.items)) return false;

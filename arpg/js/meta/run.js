@@ -2,7 +2,7 @@ import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { ECONOMY, rng } from './economy.js';
 import { STAGES } from '../content/combat.js';
 import { threatMultipliers, BALANCE } from '../content/balance.js';
-import { deriveMods } from './stats.js';
+import { deriveMods, effectiveStats } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
 import { loadoutOf } from './skills.js';
@@ -10,7 +10,7 @@ import { questGain, settleQuests } from './quest-progress.js';
 import { trackMastery, settleMastery } from './skill-mastery.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
-const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
+const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll', greenPotions: 'green_potion' };
 
 // stageThreat stores the highest CLEARED tier; absent historical clears count as tier 1.
 // An uncleared stage always starts at tier 1, never gains a free higher-tier unlock.
@@ -26,7 +26,14 @@ export function selectThreat(save, stageId, threat) {
 export function buildRoundMods(save) {
   const { capacity: ignoredCapacity, shopDiscount, family, ...mods } = deriveMods(save);
   return {
-    ...mods, ...(save.lineage && save.lineage !== 'human' ? {lineage:save.lineage} : {}), threat: save.threat ?? 1,
+    ...mods, ...((save.stacks.green_potion || 0) > 0 ? {
+      greenPotions: save.stacks.green_potion,
+      effectiveAgi: effectiveStats(save).agi,
+      greenMods: (() => {
+        const boosted = deriveMods({...save, stats: {...save.stats, agi: save.stats.agi + 20}});
+        return {speedMult: boosted.speedMult, attackSpeedBonus: boosted.attackSpeedBonus, dodgeCdMult: boosted.dodgeCdMult, iframeBonusMs: boosted.iframeBonusMs};
+      })(),
+    } : {}), ...(save.lineage && save.lineage !== 'human' ? {lineage:save.lineage} : {}), threat: save.threat ?? 1,
     skills: loadoutOf(save, family), // sim drops weapon-forbidden ids; empty slot 1 = kit default
     potions: save.stacks.potion || 0,
     manaPotions: save.stacks.mana_potion || 0,
@@ -41,7 +48,7 @@ export function createTracker(seed) {
 }
 
 export function usedConsumables(save, player) {
-  return Object.fromEntries(Object.entries(USED_KEYS).map(([key, id]) => [key, (save.stacks[id] || 0) - player[key]]));
+  return Object.fromEntries(Object.entries(USED_KEYS).map(([key, id]) => [key, (save.stacks[id] || 0) - (player[key] ?? 0)]));
 }
 
 export function currentLoad(save, tracker, used = {}) {
@@ -142,9 +149,11 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   const consumption = {};
   for (const [key, id] of Object.entries(USED_KEYS)) {
     const count = used[key] ?? 0;
-    if (!Number.isSafeInteger(count) || count < 0 || count > (save.stacks[id] || 0)) {
+    if (!Number.isSafeInteger(count) || count < 0 || count > (save.stacks[id] || 0) || id === 'green_potion' && count > 1) {
       throw new Error('Invalid consumable claim');
     }
+    // Optional new supply stays absent in legacy saves/receipts when unused.
+    if (id === 'green_potion' && !Object.hasOwn(save.stacks, id) && count === 0) continue;
     next.stacks[id] = (save.stacks[id] || 0) - count;
     consumption[id] = count;
   }

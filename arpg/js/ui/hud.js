@@ -35,7 +35,7 @@ export class HUD {
     this.nodes = {};
     for (const id of [
       'hp-fill', 'hp-text', 'mp-fill', 'mp-text', 'stage-name', 'objective', 'potion', 'mana',
-      'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
+      'green', 'green-active', 'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
       'lv-text', 'xp-fill', 'xp-pending',
     ]) this.nodes[id] = $(`#${id}`);
     this.party = document.createElement('section');
@@ -186,6 +186,10 @@ export class HUD {
     this.text(nodes.objective, !world.round ? `상대: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
       : `◇ ${remainingMonsters(world)}`);
+    this.text(nodes.green.lastElementChild, player.greenPotions ?? 0);
+    nodes['green-active'].hidden = !player.greenActive;
+    nodes.green.classList.toggle('active', !!player.greenActive);
+    nodes.green.disabled = !(player.greenPotions > 0) || !!player.greenActive || !!player.dead || !!player.terminal || world.round?.state !== 'running';
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
     this.text(nodes.potion.lastElementChild, `${player.potions}${potionCooldown}`);
     this.text(nodes.mana.lastElementChild, `${player.manaPotions}${potionCooldown}`);

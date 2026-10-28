@@ -19,7 +19,7 @@ export class CharacterStores {
     try { const before=JSON.parse(this.active.raw);
       if(before?.equipped?.offhand && save && !save.equipped.offhand && ITEMS[save.items.find(i=>i.uid===save.equipped.weapon)?.id]?.handedness===2) {
         this.equipmentNotice='양손무기 분류 적용: 방패는 해제되어 가방에 보관됩니다. 캐릭터와 장비는 모두 유지됩니다.';
-        if(['potion','mana_potion','return_scroll'].some(id=>(before.stacks?.[id]||0)>(save.stacks[id]||0)))
+        if(['potion','mana_potion','return_scroll','green_potion'].some(id=>(before.stacks?.[id]||0)>(save.stacks[id]||0)))
           this.equipmentNotice+=' 초과 보급품은 창고에 보관했습니다.';
       }
     } catch { /* Save readers own validation. */ }

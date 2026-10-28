@@ -7,7 +7,7 @@ import { validZones } from '../sim/spell-zones.js';
 import { validShieldModel } from '../content/shields.js';
 import { BALANCE } from '../content/balance.js';
 
-export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge'];
+export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge'];
 export const TIMED_SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
 const MAX_PENDING_EDGES = 30;
 const finite = v => Number.isFinite(v) ? v : 0;
@@ -170,7 +170,7 @@ const COMMON = ['skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'p
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
   'mpRegen', 'hpRegen', 'effectiveInt', 'silverWeapon', 'cdMult', 'attackSpeedBonus', 'weaponWeight', 'armorWeight', 'bufferDodge', 'bufferDodgeDir', 'potionHealMult'];
-const HUD = ['mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
+const HUD = ['greenPotions', 'greenActive', 'greenMods', 'greenBase', 'effectiveAgi', 'mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
   return { t: 'snapshot', statusVersion:1, tick: world.tick, arena: world.arena, threat: world.threat,
@@ -192,6 +192,15 @@ export function decodeSnapshot(packet, uid) {
   if (!validZones(packet.zones)) return null;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
+    if (e.greenPotions !== undefined && (!Number.isSafeInteger(e.greenPotions) || e.greenPotions < 0)) return null;
+    if (e.greenActive !== undefined && typeof e.greenActive !== 'boolean') return null;
+    for (const key of ['greenMods', 'greenBase']) if (e[key] !== undefined) {
+      const value = e[key];
+      const keys = key === 'greenBase' ? ['speed','attackSpeedBonus','dodgeCdMult','iframeBonusMs','effectiveAgi'] : ['speed','attackSpeedBonus','dodgeCdMult','iframeBonusMs'];
+      if (!value || typeof value !== 'object' || Object.keys(value).length !== keys.length || keys.some(k => !Number.isFinite(value[k]) || value[k] < 0)) return null;
+    }
+    if (e.effectiveAgi !== undefined && (!Number.isFinite(e.effectiveAgi) || e.effectiveAgi < 0)) return null;
+    if (e.greenActive && (!e.greenBase || !e.greenMods || e.greenPotions === undefined)) return null;
     if(e.shieldModel !== undefined && !validShieldModel(e.shieldModel)) return null;
     if (e.rootUntil !== undefined && !expires(e.rootUntil,90)) return null;
     if (e.poison && (!Number.isSafeInteger(e.poison.left) || e.poison.left<1 || e.poison.left>210 || Object.keys(e.poison).some(k=>k!=='left'))) return null;

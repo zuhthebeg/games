@@ -20,6 +20,7 @@ function hostMods(profile) {
   if (validLobbyProfile(profile)) return {...invasionProfile(profile).mods,lineage:profile.rewardSave.lineage || 'human'};
   // Legacy simulation fixtures may omit a save; they cannot claim new lineage/form skills.
   const mods={...profile.mods,lineage:'human'};
+  delete mods.greenPotions; delete mods.greenMods; delete mods.effectiveAgi;
   delete mods.shieldModel; // New equipment identity requires a validated save, never a bare capability.
   if (Array.isArray(mods.skills)) mods.skills=mods.skills.map(id=>NEW_GEAR_SKILLS.has(id)?null:id);
   if (NEW_GEAR_SKILLS.has(mods.skill)) mods.skill=null;

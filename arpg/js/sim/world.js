@@ -1,3 +1,4 @@
+import { useGreenPotion, clearGreenPotion } from './green-potion.js';
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { recordAttackPoses, bindAttackPose, attackShapeHits } from './attack-lag.js';
 import { separateBodyPair } from './body-contact.js';
@@ -107,6 +108,10 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     ...(dodgeEnabled === false ? { dodgeDisabled: true } : {}),
     bufferDodge: 0, bufferDodgeDir: [0, 0],
     hurtInvuln: 0,
+    ...(mods.greenPotions > 0 && mods.greenMods ? {
+      greenPotions: mods.greenPotions, greenActive: false, effectiveAgi: mods.effectiveAgi,
+      greenMods: {speed: PB.speed * mods.greenMods.speedMult, attackSpeedBonus: mods.greenMods.attackSpeedBonus, dodgeCdMult: mods.greenMods.dodgeCdMult, iframeBonusMs: mods.greenMods.iframeBonusMs},
+    } : {}),
     potions: mods.potions ?? 3, manaPotions: mods.manaPotions ?? 0, potionCd: 0,
     scrolls: mods.scrolls ?? 1, scrollRetry: 0, channel: 0,
     ...(mods.boneRevival === true ? { boneRevival: true, boneRevivalReady: true } : {}),
@@ -190,6 +195,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
 export function step(world, inputs = {}) {
   world.events = [];
+  for (const p of world.entities) if (p.kind === 'player' && (p.dead || p.terminal || world.round?.state !== 'running')) clearGreenPotion(p);
   recordAttackPoses(world);
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
@@ -212,6 +218,7 @@ export function step(world, inputs = {}) {
   separate(world);
   for (const ent of world.entities) clampToArena(world, ent);
   stepRound(world, inputs);
+  for (const p of world.entities) if (p.kind === 'player' && (p.dead || p.terminal || world.round?.state !== 'running')) clearGreenPotion(p);
   for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;delete e.rootUntil;if(e.poison)e.poison=null;}
@@ -333,6 +340,7 @@ function stepPlayer(world, p, inp) {
     return;
   }
 
+  if (inp.greenEdge && world.round?.state === 'running' && useGreenPotion(p)) world.events.push({type: 'greenPotion', id: p.id});
   if (inp.potionEdge && p.potions > 0 && p.potionCd === 0 && p.hp < p.maxHp) {
     p.potions--;
     p.potionCd = ticks(PB.potion.cooldownMs);

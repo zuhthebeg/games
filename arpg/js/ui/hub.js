@@ -54,7 +54,7 @@ const mapPartyActions = label => `<div class="map-party-actions" role="group" ar
   ${button(label, 'coop')}
   <p>총 2~4명 · 인간은 사냥꾼 편, 해골은 몬스터 편으로 참가합니다.</p>
 </div>`;
-const SUPPLIES = ['potion', 'mana_potion', 'return_scroll'];
+const SUPPLIES = ['potion', 'mana_potion', 'return_scroll', 'green_potion'];
 const FORGE_RECIPE_MODES = [['craftable', '제작 가능'], ['owned', '보유 재료 관련'], ['all', '전체 공개']];
 const FORGE_RECIPE_KINDS = [['all', '전체 종류'], ['weapon', '무기'], ['armor', '방어구'], ['offhand', '방패'], ['material', '재료']];
 // Metadata is shared with authored equipment sets; fallbacks bridge pre-set catalogue saves/content.

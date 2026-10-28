@@ -138,13 +138,16 @@ test('real board discovers S4 → S5 → S6 → S7 frontier and recommended leve
 });
 
 test('craft-first seeded tables raise basic quantities, make premium materials rare and never add antidotes', () => {
-  assert.deepEqual(CONSUMABLES, ['potion', 'mana_potion', 'return_scroll']);
+  assert.deepEqual(CONSUMABLES, ['potion', 'mana_potion', 'return_scroll', 'green_potion']);
+  assert.equal(ITEMS.green_potion.price, 10);
+  assert.equal(ITEMS.green_potion.weight, .1);
   assert.equal(ITEMS.antidote, undefined);
   assert.ok(Object.values(ITEMS).filter((item) => item.kind === 'material').length <= 20);
   for (const [id, table] of Object.entries(NEW_MONSTER_DROPS)) {
     for (let seed = 0; seed < 100; seed++) {
       const result = rollDrops(id, seed);
       assert.deepEqual(result, rollDrops(id, seed));
+      assert.equal(result.stacks.green_potion, undefined, 'AS1 is shop-only; no new drop RNG');
       assert.ok(result.gold >= Math.floor(table.gold[0] * (isBossType(id)?1:BALANCE.normalGold)) && result.gold <= Math.ceil(table.gold[1] * (isBossType(id)?1:BALANCE.normalGold)));
       for (const stack of table.stacks.filter((entry) => entry.chance === undefined)) {
         if (['scrap','hide','wood','web','fang'].includes(stack.id)) assert.ok(result.stacks[stack.id] >= Math.floor(stack.count * 1.5) && result.stacks[stack.id] <= Math.ceil(stack.count * 1.5));

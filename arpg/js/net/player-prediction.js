@@ -4,6 +4,7 @@
 // attacking/casting. It never deals damage, emits events or touches a sim world.
 // Kept honest by test/net-player-prediction.test.js, which replays it against the
 // real host step() every tick.
+import { useGreenPotion } from '../sim/green-potion.js';
 import { dodgeViewTick, dodgeInputViewTick } from '../sim/dodge-lag.js';
 import { DT, ticks, dist2, shapeHitsCircle } from '../sim/core.js';
 import { ABILITIES, WEAPONS, PLAYER_BASE as PB, canUseSkill } from '../content/combat.js';
@@ -157,6 +158,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     Object.assign(d, movement.dodge); p.x = movement.x; p.y = movement.y; p.moving = movement.moving;
     return finish();
   }
+  if (inp.greenEdge) useGreenPotion(p);
   // Potions share one cooldown and gate later skill casts through MP.
   if (inp.potionEdge && p.potions > 0 && p.potionCd === 0 && p.hp < p.maxHp) {
     p.potions--; p.potionCd = ticks(PB.potion.cooldownMs);

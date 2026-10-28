@@ -72,6 +72,7 @@ export const ITEMS = {
   frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3, sell: 4 },
   web: { material: 'cloth', name: '거미줄', kind: 'material', weight: 0.2, sell: 2 },
   potion: { name: 'HP 물약', kind: 'consumable', weight: 0.1, price: 3 },
+  green_potion: { name: '초록물약', kind: 'consumable', weight: 0.1, price: 10 },
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 0.1, price: 5 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 0.01, price: 10 },
 };
@@ -209,7 +210,7 @@ export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rari
   ({ uid, id, enhance: 0, affixes, rolledAt: seed >>> 0 });
 
 export const START_WEAPONS = { blade: 'training_sword', bow: 'short_bow', focus: 'apprentice_wand' };
-export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll'];
+export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll', 'green_potion'];
 export { RECIPES, enhanceMultiplier } from './economy.js';
 // Lineage-style: every armor enchant level is +1 AC on that piece.
 export const armorAc = (item) => item && ITEMS[item.id]?.power === undefined ? (ITEMS[item.id]?.ac || 0) + (ITEMS[item.id]?.kind === 'offhand' ? 0 : item.enhance || 0) : 0;

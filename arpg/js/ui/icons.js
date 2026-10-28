@@ -7,6 +7,7 @@ const paths = {
   sound: '<path d="M3 9h4l5-5v16l-5-5H3zM16 8q6 4 0 8"/>',
   owner: '<path d="M8 20v-5a4 4 0 0 1 8 0v5M5 20h14"/><circle cx="12" cy="7" r="3"/>',
   potion: '<path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/>',
+  green_potion: '<path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-4 14 4-5h-3l3-3"/>',
   mana_potion: '<path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/>',
   return_scroll: '<path d="M6 4h12v16H6zM9 12h6m-3-3-3 3 3 3"/>',
   forge: '<path d="m5 4 7 7m-4-9 6 6-4 4-6-6zm4 11 8 8m-5-14 4-4 3 3-4 4M3 21l7-7"/>',
@@ -71,5 +72,6 @@ export function itemIcon(id, definition = {}) {
   const glyph = definition.slot === 'weapon'
     ? (definition.form || (definition.family === 'focus' ? 'wand' : definition.family))
     : definition.slot || id;
-  return pictureIcon(itemArtKey(id, definition), svgIcon(glyph));
+  const result = pictureIcon(itemArtKey(id, definition), svgIcon(glyph));
+  return id === 'green_potion' ? `<span class="green-potion-icon">${result}</span>` : result;
 }

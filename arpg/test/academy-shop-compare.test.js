@@ -86,7 +86,9 @@ test('maximum quantity respects gold, exact capacity, 99 UI bound without a retu
 });
 
 test('purchase card opens sheet; stepper and maximum update totals, reasons and disabled button', () => {
-  const h=hub();h.showShop();assert.doesNotMatch(h.html,/id="shop-buy"/);assert.equal((h.html.match(/class="shop-item"/g)||[]).length,3);
+  const h=hub();h.showShop();assert.doesNotMatch(h.html,/id="shop-buy"/);assert.equal((h.html.match(/class="shop-item"/g)||[]).length,4);
+  assert.match(h.html,/data-id="green_potion"/);
+  assert.match(h.html,/초록물약/);
   assert.match(h.html,/G \/ 개/);assert.match(h.html,/보유/);assert.match(h.html,/kg/);
   h.action('shop-select',{id:'potion'});assert.equal(h.shopCount,1);assert.match(h.sheet,/id="shop-count"/);assert.match(h.sheet,/data-action="shop-max"/);
   h.action('shop-count',{step:'1'});assert.equal(h.shopCount,2);assert.ok(h.sheet.includes(`id="shop-total">${shopPrice(h.save,'potion')*2}`));
