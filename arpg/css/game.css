@@ -1139,3 +1139,6 @@ body[data-theme="graveyard"] .npc-grid .hotspot strong{color:var(--ink)}
 @media(max-width:420px) { .ranking-row { gap:.25rem; font-size:.72rem; padding-inline:.2rem; } }
 
 .ranking-row.heading { color:#c8c1aa; font-size:.72rem; border-bottom-color:rgba(255,255,255,.28); }
+
+/* Art overlays the always-available faculty-colored SVG fallback. */
+.skill-icon>svg,.skill-icon>img{grid-area:1 / 1;min-width:0;min-height:0}.skill-icon>img[hidden]{display:none}

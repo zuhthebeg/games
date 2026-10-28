@@ -1,0 +1,64 @@
+{
+  "model": "C:/Users/user/.cache/huggingface/models--John6666--luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl/snapshots/0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "modelName": "LuminarQMix v7 SDXL",
+  "scheduler": "EulerAncestralDiscreteScheduler",
+  "width": 768,
+  "height": 768,
+  "steps": 30,
+  "guidance": 7,
+  "negative": "text, letters, logo, watermark, signature, frame, border, people, human, hands, fingers, face, low quality, blurry, photographic, clutter, duplicate subjects, ornate frame, decorative border, gold border, UI, symbol, emblem, badge, card, portrait, character, silhouette of person, warrior, knight, bird, wings, crest, jewelry",
+  "platform": "public web game UI",
+  "safety": "SFW objects and magic only",
+  "icons": [
+    {
+      "id": "lunge",
+      "seed": 102900,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. A long sharp steel sword thrusting forward from bottom left to upper right, silver blade filling the canvas, straight golden motion streaks behind the hilt. Dynamic forward thrust."
+    },
+    {
+      "id": "whirl",
+      "seed": 103001,
+      "prompt": "A silver sword spinning inside a large circular spiral of turquoise magical wind, a complete swirling vortex wrapping around the sword blade, curved crescent slash trails rotating around a dark empty center. Close-up painted fantasy action illustration, dramatic cyan light, dark background. No ribbon, no bow, no people."
+    },
+    {
+      "id": "heavy_cleave",
+      "seed": 102902,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. A massive heavy steel greatsword smashing downward into a stone floor, sharp broad blade pointed down, broken stone fragments and orange impact sparks, close view."
+    },
+    {
+      "id": "volley",
+      "seed": 102903,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. Exactly three long wooden arrows with sharp triangular silver arrowheads and white feather fletching, all three arrows flying parallel diagonally upward to the right. Long visible wooden shafts."
+    },
+    {
+      "id": "pierce_shot",
+      "seed": 103104,
+      "prompt": "Close up painting of a single long wooden archery arrow flying diagonally from lower left to upper right, large simple triangular silver steel arrowhead at upper right, long brown wooden shaft and white feather fletching at lower left. Bright cyan penetrating speed trails behind the arrow. Empty dark blue background. Fantasy action illustration, dramatic light, clean readable shape."
+    },
+    {
+      "id": "blast_arrow",
+      "seed": 102905,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. A wooden arrow with long shaft and feather fletching hitting an orange fiery explosion, arrow visibly entering the burst, radiating orange sparks."
+    },
+    {
+      "id": "ember_bolt",
+      "seed": 102906,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. A blazing round fireball flying upward right, spherical yellow molten center with a long flowing orange flame tail streaming to bottom left, scattered embers."
+    },
+    {
+      "id": "frost_lance",
+      "seed": 102907,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. A long sharp pale blue ice spear pointing upward right, narrow crystalline spear point with angular facets, white snow and blue frost trails against a dark navy background."
+    },
+    {
+      "id": "flame_ring",
+      "seed": 102908,
+      "prompt": "Close-up fantasy oil painting, richly painted brushwork, dramatic high contrast lighting, simple dark background, square crop, centered large subject. An empty dark circular area surrounded by a complete ring of orange fire on a stone floor. Top down view, clear black empty hole in the center, fire around the perimeter only."
+    },
+    {
+      "id": "healing_light",
+      "seed": 103009,
+      "prompt": "A radiant glowing emerald leaf in the center of soft golden sunbeams, organic curved leaf with fine veins, warm holy light washing over the leaf, tiny green healing particles rising around it. Centered close-up painted fantasy magic illustration against dark green background. No columns, no crystal, no architecture."
+    }
+  ]
+}

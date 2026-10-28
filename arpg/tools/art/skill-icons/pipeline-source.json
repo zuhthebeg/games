@@ -1,0 +1,8 @@
+{
+  "helperPath": "C:/Users/user/ai-tools/generate-image-win.py",
+  "helperSha256": "269f5999952d09f40a9b59271d7f2f931addd8ecd82a056da57bdb99245dff6d",
+  "snapshot": "0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "origin": "https://huggingface.co/John6666/luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl",
+  "python": "C:/Users/user/ai-tools/diffusion-win/Scripts/python.exe",
+  "offline": true
+}

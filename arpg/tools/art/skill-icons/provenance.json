@@ -1,0 +1,89 @@
+{
+  "platform": "win32",
+  "gpu": "NVIDIA GeForce RTX 3080 Ti",
+  "pipeline": "existing generate-image-win.py build_pipe, local cached LuminarQMix v7, no paid API or download",
+  "modelSnapshot": "C:/Users/user/.cache/huggingface/models--John6666--luminarqmix-v7-noobaixl-illustriousxl-anime-style-merge-model-v70-base-with-out-lora-sdxl/snapshots/0640e5837d88a339cfb3d9a9ac2715c93a54c036",
+  "settings": "prompts.json",
+  "delivery": {
+    "width": 256,
+    "height": 256,
+    "format": "WebP",
+    "quality": 65,
+    "method": 6,
+    "resample": "LANCZOS"
+  },
+  "generatedOutputsLicense": "AI-generated outputs; no claim of third-party CC0 or exclusive copyright",
+  "assets": [
+    {
+      "id": "lunge",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/lunge.png",
+      "sourceSha256": "3fb296f777b5dafbd9091786503399738ed119285ecc251c046d3408ac4f0dbd",
+      "webpSha256": "351b3f141f49b67771bce253b4d830cdbc000f0f0bf60380c55552f4fb156f51",
+      "bytes": 3748
+    },
+    {
+      "id": "whirl",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/whirl.png",
+      "sourceSha256": "fa1a6c94d586e1ec18690b818e4454d47d6e9e9a0f68a42ffab4060de5e880c1",
+      "webpSha256": "689d562a01dc298e7dde7409a1e9a982a779e050cab4b4f152d1ab5de10c40c3",
+      "bytes": 4214
+    },
+    {
+      "id": "heavy_cleave",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/heavy_cleave.png",
+      "sourceSha256": "e0c1cb472f920b8698ca797f71a6018116018e8155ca52b3581d5c4d6b214ea4",
+      "webpSha256": "7030a712d506071a764babffcc43fbddbba6342f70119598c3172746d7bccedd",
+      "bytes": 5772
+    },
+    {
+      "id": "volley",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/volley.png",
+      "sourceSha256": "5f075887c45a3fcc36527745e53956a2ee1181cd75542ea7d384a7b96d5f92f5",
+      "webpSha256": "392d9643315ff38a359bd7491a30831c5dbc8d1af3ba7d5f967aea3bb2fa12db",
+      "bytes": 2796
+    },
+    {
+      "id": "pierce_shot",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/pierce_shot.png",
+      "sourceSha256": "f71d295951bd865264ab30b60b73c1e3aafc9e9cbff7e452ca892e40c4729f17",
+      "webpSha256": "6cdabffee646105527cfb52ef2b49fe89a68e3330614586d240f829192bf4f20",
+      "bytes": 6552
+    },
+    {
+      "id": "blast_arrow",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/blast_arrow.png",
+      "sourceSha256": "801617df2b11949c79ab55437ee8002fb1774346dd2a18f24f1000d65ebf10ea",
+      "webpSha256": "a2663ba6e458e30ef560706c07069bff81af57e17db9ce4b5de0412ec653652e",
+      "bytes": 8264
+    },
+    {
+      "id": "ember_bolt",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/ember_bolt.png",
+      "sourceSha256": "fae532a02a520efd1908c27c7aad4d7ee558735cf5fd2ee4eb4c5888d122f6e2",
+      "webpSha256": "a1b57b90b00cae9ddfd157ade25263609f89f4e28c2019c442c64cb1255ab96f",
+      "bytes": 3632
+    },
+    {
+      "id": "frost_lance",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/frost_lance.png",
+      "sourceSha256": "1f93f52a7a4e432e72f1f2ce553c08af9a1d4cf7672ffd3d6f079e8e1a3eb0b6",
+      "webpSha256": "78e3772dddcd52b78c0d5db34a04f2fa84ad4fcf1c2c0734c13293270b4af250",
+      "bytes": 4916
+    },
+    {
+      "id": "flame_ring",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/flame_ring.png",
+      "sourceSha256": "2bb7b88dd67a1990685f5885394bcb1d2be2be0b2b5580d3e74bd4c6f8e49e9d",
+      "webpSha256": "e8c6480bd84046155a04dc2a8c2ef51c3fc89a6d3d16d593d21bd9e20622a35e",
+      "bytes": 5698
+    },
+    {
+      "id": "healing_light",
+      "source": "/mnt/c/Users/user/ai-tools/arpg-art/skill-icons-1028/healing_light.png",
+      "sourceSha256": "dc97992ffe99c6b03d715b64bdedded1a8d726638e83ff2012e093516b3d1ff0",
+      "webpSha256": "52e26bc826e962064e953e9757fb4cbd598419a2a5d5bee12b206ca797fad263",
+      "bytes": 3538
+    }
+  ],
+  "totalBytes": 49130
+}

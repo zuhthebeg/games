@@ -9,7 +9,18 @@ import { WEAPON_NAMES } from '../meta/quiz.js';
 import { escape, amount } from './gear-view.js';
 
 // Register generated local art here only when the file ships; absent entries never request an image.
-export const SKILL_ART = {};
+export const SKILL_ART = Object.freeze({
+  "lunge": "assets/skill-icons/lunge.webp",
+  "whirl": "assets/skill-icons/whirl.webp",
+  "heavy_cleave": "assets/skill-icons/heavy_cleave.webp",
+  "volley": "assets/skill-icons/volley.webp",
+  "pierce_shot": "assets/skill-icons/pierce_shot.webp",
+  "blast_arrow": "assets/skill-icons/blast_arrow.webp",
+  "ember_bolt": "assets/skill-icons/ember_bolt.webp",
+  "frost_lance": "assets/skill-icons/frost_lance.webp",
+  "flame_ring": "assets/skill-icons/flame_ring.webp",
+  "healing_light": "assets/skill-icons/healing_light.webp"
+});
 export const ACADEMY = {
   blade: { name:'검술관', mark:'lunge', quote:'칼끝보다 먼저, 발걸음을 다스려라.' },
   bow: { name:'궁술관', mark:'volley', quote:'바람을 읽고, 한 발에 뜻을 담아라.' },
@@ -56,11 +67,32 @@ export const SKILL_TYPES = {
   protective_shield:'파티 · 피해 방어',
   frost_lance:'관통 · 서리', flame_ring:'범위 · 화염', healing_light:'회복 · 언데드 피해', turn_undead:'언데드 · 확률 즉사',
 };
+// Capturing listeners cover dynamically inserted HUD/cards/sheets without inline CSP handlers.
+// The SVG stays underneath until load + decode succeeds, and remains on any failure.
+export function installSkillArtFallback(root) {
+  const failed = image => { image.hidden = true; image.removeAttribute('src'); };
+  const loaded = image => {
+    const source = image.currentSrc || image.src;
+    Promise.resolve().then(() => image.decode()).then(() => {
+      if (image.isConnected && (image.currentSrc || image.src) === source && image.naturalWidth > 0) image.hidden = false;
+    }).catch(() => failed(image));
+  };
+  const onLoad = event => { if (event.target?.matches?.('img[data-skill-art]')) loaded(event.target); };
+  const onError = event => { if (event.target?.matches?.('img[data-skill-art]')) failed(event.target); };
+  root.addEventListener('load', onLoad, true);
+  root.addEventListener('error', onError, true);
+  root.querySelectorAll('img[data-skill-art]').forEach(image => {
+    if (image.complete) image.naturalWidth > 0 ? loaded(image) : failed(image);
+  });
+  return () => { root.removeEventListener('load', onLoad, true); root.removeEventListener('error', onError, true); };
+}
+if (typeof document !== 'undefined') installSkillArtFallback(document);
+
 export function skillIcon(id, art = SKILL_ART) {
   const family = ABILITIES[id].family;
-  const face = art[id] ? `<img src="${escape(art[id])}" alt="" width="64" height="64">`
-    : `<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">${SILHOUETTES[id]}</svg>`;
-  return `<span class="skill-icon faculty-${family}" data-skill-icon="${id}">${face}</span>`;
+  const fallback = `<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">${SILHOUETTES[id]}</svg>`;
+  const image = art[id] ? `<img src="${escape(art[id])}" alt="" width="64" height="64" data-skill-art hidden decoding="async">` : '';
+  return `<span class="skill-icon faculty-${family}" data-skill-icon="${id}">${fallback}${image}</span>`;
 }
 export const FAMILY_LABELS = { blade:'검술', bow:'궁술', focus:'마법' };
 // Damage share of a skill with the equipped weapon: 1 full, <1 weakened, undefined = cannot fire.
