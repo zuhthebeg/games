@@ -1,3 +1,4 @@
+import { validMasteryLevels } from '../content/skill-growth.js';
 import { dodgeInputViewTick } from '../sim/dodge-lag.js';
 import { currentTelegraphs } from '../render/telegraph-time.js';
 import { emptyInput, getTelegraphs } from '../sim/world.js';
@@ -165,7 +166,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   const recommended = BALANCE.stages[stageId]?.rec?.[0] ?? [1, 2, 3, 4, 4, 5, 6][Number(stageId.slice(1)) - 1] ?? 1;
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
-const COMMON = ['skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
+const COMMON = ['lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
@@ -181,7 +182,7 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
     ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
@@ -192,6 +193,17 @@ export function decodeSnapshot(packet, uid) {
   if (!validZones(packet.zones)) return null;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
+    if (e.skillMasteryLevels !== undefined && !validMasteryLevels(e.skillMasteryLevels)) return null;
+    if (e.lunge20 !== undefined && e.lunge20 !== true) return null;
+    if (e.act?.lunge20 !== undefined) {
+      const a=e.act;
+      if (a.lunge20!==true || !e.lunge20 || a.id!=='lunge' || !['windup','lock','active','recovery'].includes(a.phase)
+        || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4
+        || ['windup','lock','active','recovery'].some(k=>!Number.isSafeInteger(a.phaseTicks[k]) || a.phaseTicks[k]<0 || a.phaseTicks[k]>120)
+        || a.phaseTicks.active<5 || !Number.isFinite(a.dashStep) || a.dashStep<0 || a.dashStep>95
+        || !Number.isSafeInteger(a.left) || a.left<1 || a.left>a.phaseTicks[a.phase]
+        || !Number.isSafeInteger(a.elapsed) || a.elapsed<0 || a.elapsed>480 || !Number.isFinite(a.facing)) return null;
+    }
     if (e.greenPotions !== undefined && (!Number.isSafeInteger(e.greenPotions) || e.greenPotions < 0)) return null;
     if (e.greenActive !== undefined && typeof e.greenActive !== 'boolean') return null;
     for (const key of ['greenMods', 'greenBase']) if (e[key] !== undefined) {

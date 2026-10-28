@@ -7,13 +7,18 @@ import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
 import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
+import { masteryLevels } from '../meta/skill-mastery.js';
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
 import { presentSkillEvents } from './skill-presentation.js';
-import { boundedMasteryLevels } from '../content/skill-growth.js';
-import { MASTERY_SKILLS, MASTERY_MAX } from '../meta/skill-mastery.js';
-const validLevels = levels => levels && typeof levels === 'object' && !Array.isArray(levels)
-  && Object.entries(levels).every(([id, n]) => MASTERY_SKILLS.includes(id) && Number.isInteger(n) && n >= 1 && n <= MASTERY_MAX);
+import { boundedMasteryLevels, validMasteryLevels } from '../content/skill-growth.js';
+const validLevels = validMasteryLevels;
+// Live mastery messages remain presentation-only for the evolved skill.
+function frozenLunge(levels, previous) {
+  const next={...levels};
+  if (previous?.lunge===undefined) delete next.lunge; else next.lunge=previous.lunge;
+  return next;
+}
 
 const NEW_GEAR_SKILLS = new Set(['poison_arrow','cursed_hands','blood_spear','dead_explosion','poison_field','curse','invisibility','sword_wave','berserk']);
 function hostMods(profile) {
@@ -49,8 +54,8 @@ const mergeInput = (held, input) => {
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
     onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onResync = () => {}, onTransportStale = () => {}, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
-    this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: profile };
+    Object.assign(this, { uid, host, profile: {...profile, combatVersion:1}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
+    this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: this.profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
@@ -101,6 +106,7 @@ export class CoopSession {
   }
   setMastery(levels) {
     if (!validLevels(levels)) return;
+    levels=frozenLunge(levels,this.profiles[this.uid]?.skillMasteryLevels);
     this.profile = { ...this.profile, skillMasteryLevels: { ...levels } };
     this.profiles[this.uid] = { ...this.profiles[this.uid], skillMasteryLevels: { ...levels } };
     if (this.isHost && this.world) { const pawn = this.world.entities.find(e => e.pid === this.uid); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(levels); }
@@ -108,7 +114,7 @@ export class CoopSession {
   }
   negotiate(profiles) {
     if (this.phase !== 'prepare' || !profiles?.[this.uid]
-      || Object.values(profiles).some(p => !p || typeof p !== 'object')) return false;
+      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==1 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
     const config = partyConfig(this.config, profiles);
     if (!validParty(config, profiles)
       || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
@@ -123,6 +129,7 @@ export class CoopSession {
     if (!!data.config?.invasion !== !!this.config.invasion
       || this.negotiatedProfiles && JSON.stringify(data.profiles) !== this.negotiatedProfiles
       || !validParty(data.config, data.profiles)
+      || Object.values(data.profiles).some(p=>p.combatVersion!==1 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
       || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
       || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
@@ -130,7 +137,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
-    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? invasionProfile(p) : p])); this.seed = data.seed;
+    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : p])); this.seed = data.seed;
     this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
@@ -189,10 +196,14 @@ export class CoopSession {
     } else if (data.t === 'claim' && this.isHost && this.lootLedger) {
       this.lootLedger.claim(this.world, from, {id:data.id});
     } else if (data.t === 'mastery' && this.isHost && this.profiles[from] && validLevels(data.levels)) {
+      data={...data,levels:frozenLunge(data.levels,this.profiles[from].skillMasteryLevels)};
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
       const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
-      if (!data.profile || Object.hasOwn(data.profile, 'team')
+      if (data.profile?.combatVersion!==1) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
+      if (!data.profile || data.profile.combatVersion!==1
+        || data.profile.skillMasteryLevels && !validLevels(data.profile.skillMasteryLevels)
+        || Object.hasOwn(data.profile, 'team')
         || data.profile.rewardSave && !validLobbyProfile(data.profile)
         || data.profile.lineage === 'skeleton_knight' && !validLobbyProfile(data.profile)) return;
       this.profiles[from] = data.profile; this.tryStart();

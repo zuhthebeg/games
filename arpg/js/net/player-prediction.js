@@ -1,3 +1,4 @@
+import { lungeTimeline, lungeFrame } from '../sim/lunge-evolution.js';
 // Display-only replay of the host's stepPlayer() for the guest's own pawn: the same
 // tick order, act timeline (windup/lock/active/recovery speed factors, dash steps),
 // buffered dodge and skill/basic starts, so prediction matches the host while
@@ -57,8 +58,10 @@ function startAct(p, abilityId, facing) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const evolution = abilityId === 'lunge' && p.lunge20 === true;
+  if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -90,7 +93,7 @@ function basicReachTarget(p, def, others) {
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
-  if (predictionBlocked(state)) return state;
+  if (predictionBlocked(state)) return state.act?.lunge20 ? {...state,act:null} : state;
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
   if (p.berserk && (p.berserk.expiresTick <= tick || !canUseSkill('berserk',p.weapon,p.weaponForm,p.lineage,p.handedness))) delete p.berserk;
@@ -199,7 +202,9 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       if (act.def.status === 'berserk') p.berserk={...act.growth,expiresTick:tick+ticks(act.growth.durationMs)};
     }
     if (act.phase === 'active' && act.def.spin) p.facing += Math.PI * 2 * (act.phaseTicks.active - act.left) / Math.max(1, act.phaseTicks.active - 1);
-    if (!rooted && act.phase === 'active' && act.def.delivery === 'dash') {
+    const lunge=act.lunge20 && act.phase==='active' ? lungeFrame(act) : null;
+    if (lunge) {act.dashStep=lunge.distance;p.moving=!!lunge.segment;}
+    if (!rooted && act.phase === 'active' && act.def.delivery === 'dash' && (!lunge || lunge.segment)) {
       if(act.id === 'shield_bash') Object.assign(p,shieldRushPosition(p,act.dashStep,others,arena));
       else {p.x += Math.cos(act.facing) * act.dashStep; p.y += Math.sin(act.facing) * act.dashStep;} p.moving = true;
     }

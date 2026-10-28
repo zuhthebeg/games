@@ -1,3 +1,4 @@
+import { lungeFrame } from "../sim/lunge-evolution.js";
 import { QuarksVfx } from './quarks-vfx.js';
 import { drawHandsBurst, drawBloodLance, drawBloodBurst } from './skeleton-vfx.js';
 import { HolyVfx } from './holy-vfx.js';
@@ -508,8 +509,9 @@ export class SkillVfx {
     if (profile.style === 'dash') {
       if (charging) { slot.trailX = entity.x; slot.trailY = entity.y; }
       else {
-        slot.node.visible = act.phase === 'active'; slot.node.position.set(entity.x, entity.y);
-        slot.node.alpha = reduced ? .35 : .8;
+        const segment=act.lunge20 ? lungeFrame(act).segment : 1;
+        slot.node.visible = act.phase === 'active' && segment!==0; slot.node.position.set(entity.x, entity.y);
+        slot.node.alpha = act.lunge20 && segment===2 ? (reduced ? .55 : .9) : (reduced ? .35 : .8);
         const dx = entity.x - slot.trailX, dy = entity.y - slot.trailY, distance = Math.hypot(dx, dy);
         const radius = entity.r + profile.dash.bodyPad;
         if (act.phase === 'active' && distance >= radius * .5) {
@@ -522,7 +524,7 @@ export class SkillVfx {
     if (slot.baked) slot.baked.visible = false;
     if (!reduced && this.fxRequested && charging) this.baked(slot, act.id, 'windup', x, y,
       profile.windup === 'bow' || profile.windup === 'blade' || profile.windup === 'crystal' ? act.facing : 0, 24, p);
-    if (!reduced && this.fxRequested && profile.style === 'dash' && act.phase === 'active') {
+    if (!reduced && this.fxRequested && profile.style === 'dash' && act.phase === 'active' && (!act.lunge20 || lungeFrame(act).segment)) {
       this.baked(slot, act.id, 'impact', entity.x, entity.y, act.facing, entity.r + profile.dash.bodyPad,
         clamp01(act.elapsed / Math.max(1, act.total)));
     }

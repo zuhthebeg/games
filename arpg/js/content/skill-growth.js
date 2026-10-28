@@ -3,6 +3,11 @@ const knownSkills = new Set([...Object.keys(BOOKS), ...Object.values(DEFAULT_SKI
 
 // Bounded five-level milestones. Counts are design defaults, not save thresholds.
 export const GROWTH_LEVELS = Object.freeze([1, 5, 10, 15, 20, 25, 30]);
+export function validMasteryLevels(levels) {
+  return levels !== null && typeof levels==='object' && !Array.isArray(levels)
+    && Object.keys(levels).length<=knownSkills.size
+    && Object.entries(levels).every(([id,n])=>knownSkills.has(id) && Number.isInteger(n) && n>=1 && n<=30);
+}
 export function boundedMasteryLevels(levels) {
   if (!levels || typeof levels !== 'object' || Array.isArray(levels)) return {};
   return Object.fromEntries(Object.entries(levels).filter(([id, n]) => knownSkills.has(id) && Number.isSafeInteger(n))

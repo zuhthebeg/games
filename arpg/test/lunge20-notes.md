@@ -1,0 +1,15 @@
+# Lunge mastery20 pilot (local candidate, not released)
+
+Assumptions: parent chose one-input automatic two segments, engineering defaults total190=95+95 and fixed3 host ticks pause. Not user-exact tuning. No other evolution.
+
+- Round admission captures boolean lunge20; casts freeze it. Live RT/setMastery cannot change eligibility. Actual validated save supplies mastery at CoopSession.begin; save/count/schema unchanged. Legacy no-save test profiles still supported with bounded levels.
+- Active movement ticks retain existing attackRate count, split ceil/floor; minimum one each (extreme speed yielding one old active tick needs two movement ticks). Adds3 fixed pause ticks, not speed-scaled. Windup/recovery/MP/CD values unchanged; CD still starts on action end as before, so absolute ready time extends by pause. No new iframe.
+- Per target first contact calculates old fully rounded damage including crit/exposure/equipment. First segment floor(B/2), second ceil(B/2). First-only loses remainder; second-only receives ceil half; both exactly B. Per-target crit draw once, not once per segment; no extra RNG for zero crit. Different newly encountered targets each have their own old RNG opportunity. Poise/knockback split half, existing boss resistance/stagger immunity remains; existing stagger can prevent remaining poise application (never over budget).
+- Entity separation/arena boundaries remain host authority. Current simulator has no static obstacles; wall-safe means arena clamp before evolved hit geometry, no new obstacle system.
+- State only on current act, per-target cache bounded by encounter contacts, removed with act. Death/terminal/stagger/channel cancel it; root suppresses segment movement without granting iframe. Guest prediction never damages or emits authoritative events. Snapshot only carries round boolean and cast boolean; existing phaseTicks/left reconstruct timeline, budgets remain host-only through same host reconnect.
+- New session profile combatVersion1 refuses missing/different peers; new host reports refresh message. Old host can receive new profile but new guest refuses its old start; no downgrade. Parent must bind changed modules through normal release stamp/import map before rollout. No stamp changes here.
+- Presentation hides actual dash body during pause, reappears segment2 with static alpha change even reduced motion; existing pools and fallback paths reused.
+
+Local ordinary browser harness outside repo: tmp/arpg-lunge20-logs/native.mjs. Two attempts exhausted at ordinary S2 board navigation: sortie[data-stage=S2] not visible even after outskirts click. No runtime mutation/screenshots; neither normalUI cast nor two-browser coop claimed. Fixture needs native map-detail selection step identified by parent. Unit fixture uses actual simulator and session memory transport, not browser/WAN evidence.
+
+Release gates: independent different Sol review, full suite baseline comparison, ordinary native desktop/touch cast + settlement and real two-context coop, cache stamp/deploy/live validation owned by parent. No push/deploy here.

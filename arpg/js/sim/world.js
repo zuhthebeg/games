@@ -1,3 +1,4 @@
+import { lunge20, lungeTimeline, lungeFrame } from './lunge-evolution.js';
 import { useGreenPotion, clearGreenPotion } from './green-potion.js';
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
 import { recordAttackPoses, bindAttackPose, attackShapeHits } from './attack-lag.js';
@@ -79,6 +80,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
   const ent = {
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
+    ...(lunge20(skillMasteryLevels) ? {lunge20:true} : {}),
     ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
     kx: 0, ky: 0, moving: false,
@@ -234,6 +236,7 @@ function canCancel(act) {
 
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
+  if (p.act?.lunge20 && (!alive(p) || p.staggerLeft>0 || p.channel>0)) endAct(world,p,true);
   if (inp.attack) delete p.invisibleUntil;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
@@ -555,10 +558,12 @@ function startAct(world, ent, abilityId, facing, counter = false) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const evolution = abilityId === 'lunge' && ent.lunge20 === true;
+  if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
     ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
-    rate, phaseTicks,
+    ...(evolution ? {lunge20:true, lungeBudgets:{}} : {}), rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
     total: phaseTicks.windup + phaseTicks.lock,
@@ -723,9 +728,17 @@ function doActive(world, ent, act) {
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
     if (ent.rootUntil > world.tick) {ent.moving=false;return;}
+    if (act.lunge20) {
+      const frame=lungeFrame(act);
+      ent.moving=frame.segment!==0;
+      if (!frame.segment) return;
+      if (act.lungeSegment!==frame.segment) {act.lungeSegment=frame.segment;act.hit=[];}
+      act.dashStep=frame.distance;
+    }
     if(act.id === 'shield_bash') Object.assign(ent,shieldRushPosition(ent,act.dashStep,world.entities,world.arena));
     else { ent.x += Math.cos(act.facing) * act.dashStep; ent.y += Math.sin(act.facing) * act.dashStep; }
     ent.moving = true;
+    if (act.lunge20) Object.assign(ent,arenaPosition(ent,world.arena));
     hitShape(world, ent, act, { type: 'circle', radius: ent.r + def.dash.bodyPad, offset: 0 }, ent.x, ent.y);
   } else if (def.delivery === 'projectile') {
     const activeTick = act.phaseTicks.active - act.left;
@@ -778,6 +791,7 @@ function hitShape(world, ent, act, shape, ox, oy) {
     const dealt = applyHit(world, t, {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
       ...(act.counterSecond ? {fixedDamage:act.firstCounterDamage[t.id]*.7} : {}),
+      ...(act.lunge20 ? {lungeAct:act} : {}),
       def: act.def, counter: !!act.counter, ...(act.step ? { step: act.step } : {}),
       mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
       poiseMult: (ent.poiseMult ?? 1) * (act.id === 'slash' && ent.kind === 'player' && ent.weaponForm === 'blunt' ? 1.4 : 1)
@@ -833,7 +847,7 @@ function awardPerfectDodge(world, t, hit, sinceDodge) {
 
 function applyHit(world, t, hit) {
   if (!alive(t) || t.hp <= 0) return;
-  const def = hit.def;
+  let def = hit.def;
   if (t.kind === 'player') {
     if ((!hit.periodic || hit.zonePulse) && t.dodge.iframeLeft > 0) {
       if (!awardPerfectDodge(world, t, hit, world.tick - t.dodge.startedTick)) {
@@ -844,36 +858,45 @@ function applyHit(world, t, hit) {
     if ((!hit.periodic || hit.zonePulse) && t.hurtInvuln > 0) return;
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
-  let dmg = hit.fixedDamage ?? def.damage * hit.mult;
+  const lunge=hit.lungeAct;
+  const prior=lunge?.lungeBudgets[t.id];
+  let dmg = prior?.damage ?? (hit.fixedDamage ?? def.damage * hit.mult);
   // Fixed follow-up counters already include the first hit's silver bonus; DOT and
   // execution bypass specialization. No RNG or timing change for ordinary weapons.
-  if (hit.srcKind === 'player' && (!hit.periodic || hit.weaponZone) && !hit.execute && hit.fixedDamage === undefined) {
+  if (!prior && hit.srcKind === 'player' && (!hit.periodic || hit.weaponZone) && !hit.execute && hit.fixedDamage === undefined) {
     const source=world.entities.find(e=>e.id===hit.srcId);
     dmg *= weaponAttackMultiplier(source?.silverWeapon, hit.abilityId, t.skeletal ? 'undead' : mdef?.lifeState, source?.handedness);
   }
-  if (hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
-  if (hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
+  if (!prior && hit.fixedDamage === undefined && mdef && t.burn && world.tick <= t.burn.expiresTick) dmg *= 1.1;
+  if (!prior && hit.fixedDamage === undefined && mdef && t.sunder && world.tick < t.sunder.expiresTick) dmg *= ABILITIES.armor_break.sunder.damageMult;
   let exposed = false;
-  if (mdef && hit.fixedDamage === undefined) {
+  if (!prior && mdef && hit.fixedDamage === undefined) {
     if (t.staggerLeft > 0) { dmg *= 1.3; exposed = true; }
     else if (t.act && t.act.phase === 'recovery') { dmg *= 1.15; exposed = true; }
   }
-  if (t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac * (t.curse?.armorMult ?? 1));
-  if (mdef && t.curse && hit.fixedDamage === undefined) dmg *= 2 - t.curse.armorMult;
-  if (t.kind === 'player' && shieldSpec(t.shieldModel)?.undeadWard && !hit.execute) {
+  if (!prior && t.kind === 'player' && t.ac > 0 && (!hit.periodic || hit.weaponZone)) dmg *= BALANCE.armor.k / (BALANCE.armor.k + t.ac * (t.curse?.armorMult ?? 1));
+  if (!prior && mdef && t.curse && hit.fixedDamage === undefined) dmg *= 2 - t.curse.armorMult;
+  if (!prior && t.kind === 'player' && shieldSpec(t.shieldModel)?.undeadWard && !hit.execute) {
     const source=world.entities.find(e=>e.id===hit.srcId);
     if(source?.skeletal || MONSTERS[source?.type]?.lifeState === 'undead') dmg *= 1-shieldSpec(t.shieldModel).undeadWard;
   }
-  if (t.berserk) dmg *= t.berserk.incomingMult;
-  if (t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
+  if (!prior && t.berserk) dmg *= t.berserk.incomingMult;
+  if (!prior && t.kind === 'player' && t.guard && !hit.periodic) dmg *= t.guard;
   // LUK crit (cocy 10-12): players' direct hits only; no RNG draw at 0% so luck-less runs stay identical.
-  let crit = false;
-  if (mdef && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
+  let crit = prior?.crit ?? false;
+  if (!prior && mdef && !hit.periodic && !hit.execute && hit.fixedDamage === undefined) {
     const src = world.entities.find((e) => e.id === hit.srcId);
     if (hit.counter && src?.weapon === 'bow') { crit=true;dmg*=1.8; }
     else if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
   }
   dmg = hit.execute ? t.hp : Math.max(1, Math.round(dmg));
+  if (lunge) {
+    // First-only gets floor(B/2), second-only ceil(B/2); both exactly B.
+    // Freeze the target budget on first contact, before stagger/exposure can change it.
+    const budget=prior || (lunge.lungeBudgets[t.id]={damage:dmg,crit});
+    dmg=lunge.lungeSegment===1 ? Math.floor(budget.damage/2) : Math.ceil(budget.damage/2);
+    def={...def,poise:(def.poise||0)/2,knockback:(def.knockback||0)/2};
+  }
   const blocked = t.kind === 'player' && shieldBlocks(t,hit);
   if (blocked) {
     if (awardPerfectDodge(world,t,hit,world.tick-t.dodge.startedTick)) {
@@ -900,7 +923,11 @@ function applyHit(world, t, hit) {
   const kbResist = mdef ? mdef.kbResist : 0;
   const ang = Math.atan2(t.y - hit.fromY, t.x - hit.fromX);
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
-  if (t.kind === 'player') recordGuestHit(world, t, blocked ? {...hit,shieldBlocked:true} : hit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
+  if (t.kind === 'player') {
+    const recordHit=lunge ? {...hit} : hit;
+    if (lunge) delete recordHit.lungeAct;
+    recordGuestHit(world, t, blocked ? {...recordHit,shieldBlocked:true} : recordHit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
+  }
   t.kx += Math.cos(ang) * kb;
   t.ky += Math.sin(ang) * kb;
   world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId, ...(hit.counter ? { counter: true } : {}), ...(crit ? { crit: true } : {}), ...(hit.periodic && (mdef || hit.abilityId === 'poison_arrow') ? { periodic: true } : {}), ...(hit.zonePulse ? { zonePulse: true } : {}), ...(hit.castId ? { castId: hit.castId } : {}), ...(hit.step ? { step: hit.step } : {}) });
