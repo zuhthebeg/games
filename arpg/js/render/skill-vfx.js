@@ -1,3 +1,4 @@
+import { whirlFrame } from '../sim/whirl-evolution.js';
 import { lungeFrame } from "../sim/lunge-evolution.js";
 import { QuarksVfx } from './quarks-vfx.js';
 import { drawHandsBurst, drawBloodLance, drawBloodBurst } from './skeleton-vfx.js';
@@ -457,6 +458,20 @@ export class SkillVfx {
       }
     }
     slot.seen = true;
+    if(act.whirl20) {
+      const frame=whirlFrame(act),radius=act.def.shape.radius,g=slot.node;
+      slot.guide.visible=false;slot.motes.forEach(n=>n.visible=false);if(slot.baked)slot.baked.visible=false;
+      g.clear();g.visible=frame.segment!==0;g.position.set(entity.x,entity.y);g.scale.set(1);
+      g.rotation=act.facing+(reduced ? 0 : frame.progress*Math.PI*2);
+      g.alpha=reduced ? .55 : .9;
+      const color=frame.segment===2 ? profile.accent : profile.color;
+      // Inward strokes stay inside the exact contact circle. Two static crescents
+      // also retain the dual-rotation cue with reduced motion (no trail/shake).
+      g.arc(0,0,radius,-Math.PI*.4,Math.PI*.4).stroke({color,width:reduced?3:6,alignment:1,alpha:.9})
+        .arc(0,0,radius*.78,Math.PI*.6,Math.PI*1.4).stroke({color:profile.accent,width:3,alignment:1,alpha:.75});
+      return true;
+    }
+
     slot.guide.visible=act.id==='blood_spear' && act.phase==='windup';
     if(slot.guide.visible){slot.guide.position.set(entity.x,entity.y);slot.guide.rotation=act.facing;}
     const completedLunge=act.lunge20 ? lungeFrame(act) : null;

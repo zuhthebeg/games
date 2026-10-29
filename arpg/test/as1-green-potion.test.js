@@ -85,6 +85,6 @@ test('settlement rejects more than one green potion in a hunt even with inventor
 
 test('host rebuilds green capability from validated save, not a forged guest mod bag',async()=>{
  const {CoopSession}=await import('../js/net/session.js');
- for(const legacy of [false,true]){const s=fresh();s.cleared.S1=true;const profile={combatVersion:2,name:'g',level:s.level,weapon:'blade',mods:{...buildRoundMods(s),greenPotions:999,effectiveAgi:999,greenMods:{speedMult:99,attackSpeedBonus:99,dodgeCdMult:0,iframeBonusMs:99}},threats:{S2:1},...(legacy?{}:{lineage:'human',role:'hunter',rewardSave:s})};
+ for(const legacy of [false,true]){const s=fresh();s.cleared.S1=true;const profile={combatVersion:3,name:'g',level:s.level,weapon:'blade',mods:{...buildRoundMods(s),greenPotions:999,effectiveAgi:999,greenMods:{speedMult:99,attackSpeedBonus:99,dodgeCdMult:0,iframeBonusMs:99}},threats:{S2:1},...(legacy?{}:{lineage:'human',role:'hunter',rewardSave:s})};
  const h=new CoopSession({uid:'h',host:'h',players:['h','g'],profile,config:{stageId:'S2',threat:1}});h.rt('g',{t:'profile',profile});assert.equal(h.phase,'running');for(const p of h.world.entities){assert.equal(p.greenPotions??0,0);assert.equal(p.greenMods,undefined);}}
 });

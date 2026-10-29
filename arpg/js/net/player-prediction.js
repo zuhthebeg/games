@@ -1,4 +1,5 @@
 import {emberDef,lockEmberPoint} from '../sim/ember-evolution.js';
+import { whirlTimeline } from '../sim/whirl-evolution.js';
 import { lungeTimeline, nextLungeFrame } from '../sim/lunge-evolution.js';
 // Display-only replay of the host's stepPlayer() for the guest's own pawn: the same
 // tick order, act timeline (windup/lock/active/recovery speed factors, dash steps),
@@ -49,7 +50,7 @@ function skipEmptyPhases(p) {
     if (act.phase === 'active' && act.left === 0) act.left = 1;
   }
 }
-function startAct(p, abilityId, facing) {
+function startAct(p, abilityId, facing, tick) {
   if (abilityId !== 'invisibility') delete p.invisibleUntil;
   const step = beginCombo(p, abilityId);
   const base=comboDef(abilityId,step,p.weaponForm);
@@ -60,10 +61,12 @@ function startAct(p, abilityId, facing) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const whirl=abilityId==='whirl' && p.whirl20===true;
+  if(whirl) phaseTicks.active=whirlTimeline(phaseTicks.active).total;
   const evolution = abilityId === 'lunge' && p.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -95,7 +98,7 @@ function basicReachTarget(p, def, others) {
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
-  if (predictionBlocked(state)) return state.act?.lunge20 || state.act?.ember20 ? {...state,act:null} : state;
+  if (predictionBlocked(state)) return state.act?.whirl20 || state.act?.lunge20 || state.act?.ember20 ? {...state,act:null} : state;
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
   if (p.berserk && (p.berserk.expiresTick <= tick || !canUseSkill('berserk',p.weapon,p.weaponForm,p.lineage,p.handedness))) delete p.berserk;
@@ -155,7 +158,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     Object.assign(d, movement.dodge);
     p.pendingCounter = null; p.bufferDodge = 0;
     p.mp -= dodgeSkill.manaCost;
-    startAct(p, dodgeSkillId, facing);
+    startAct(p, dodgeSkillId, facing, tick);
   }
   if (d.dashLeft > 0) {
     if (p.act?.def.dodgeShot) { p.act.elapsed++; p.act.left--; skipEmptyPhases(p); }
@@ -185,7 +188,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
-      startAct(p, skillId, resolveAim(p, inp, mlen, others));
+      startAct(p, skillId, resolveAim(p, inp, mlen, others), tick);
       if (p.act.ember20) {
         p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,others,arena,tick);
         p.act.facing=Math.atan2(p.act.zonePoint.y-p.y,p.act.zonePoint.x-p.x);
@@ -197,7 +200,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
     ? basicReachTarget(p, comboDef(w.basic, nextComboStep(p), p.weaponForm), others) : null;
   if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
-    startAct(p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(p, inp, mlen, others));
+    startAct(p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(p, inp, mlen, others), tick);
   }
   if (p.act) {
     const act = p.act;

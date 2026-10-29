@@ -6,6 +6,8 @@ import { ABILITIES } from '../content/combat.js';
 import { comboDef } from '../sim/basic-combo.js';
 import { validZones } from '../sim/spell-zones.js';
 import { validShieldModel } from '../content/shields.js';
+import { whirlTimeline } from '../sim/whirl-evolution.js';
+import { ticks } from '../sim/core.js';
 import { BALANCE } from '../content/balance.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge'];
@@ -167,7 +169,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 import {emberDef} from '../sim/ember-evolution.js';
-const COMMON = ['ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
+const COMMON = ['whirl20', 'ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
@@ -183,7 +185,7 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'whirl20', ...(e.act.whirl20 ? ['rate'] : []), 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
     ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'ox', 'oy', 'castTick', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
@@ -204,6 +206,22 @@ export function decodeSnapshot(packet, uid) {
       const releaseElapsed=a.phaseTicks?.windup+a.phaseTicks?.lock;
       if (!pointValid(a.zonePoint?.x,a.zonePoint?.y,a.ox,a.oy) || !Number.isSafeInteger(a.castTick) || a.castTick<0 || a.castTick+a.elapsed!==packet.tick || typeof a.fired!=='boolean' || a.fired!==(a.elapsed>releaseElapsed)) return null;
       if(a.ember20!==true || !e.ember20 || a.id!=='ember_bolt' || !phases.includes(a.phase) || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4 || phases.some(k=>!Number.isSafeInteger(a.phaseTicks[k])||a.phaseTicks[k]<0||a.phaseTicks[k]>120) || !Number.isSafeInteger(a.left)||a.left<1||a.left>a.phaseTicks[a.phase] || a.total!==a.phaseTicks.windup+a.phaseTicks.lock || a.elapsed!==phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0)+a.phaseTicks[a.phase]-a.left || !a.zonePoint || ![a.zonePoint.x,a.zonePoint.y,a.ox,a.oy,a.facing].every(Number.isFinite) || a.zonePoint.x<0||a.zonePoint.y<0||a.zonePoint.x>packet.arena.w||a.zonePoint.y>packet.arena.h) return null;
+    }
+    if(e.whirl20!==undefined && (e.whirl20!==true || e.kind!=='player')) return null;
+    if(e.act?.id==='whirl' && !!e.whirl20!==!!e.act.whirl20) return null;
+    if(e.act?.whirl20!==undefined) {
+      const a=e.act, phases=['windup','lock','active','recovery'];
+      if(a.whirl20!==true || !e.whirl20 || a.id!=='whirl' || !phases.includes(a.phase)
+        || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4
+        || phases.some(k=>!Number.isSafeInteger(a.phaseTicks[k]) || a.phaseTicks[k]<0 || a.phaseTicks[k]>120)
+        || ![a.rate,a.ox,a.oy,a.facing].every(Number.isFinite) || a.rate<=0 || a.rate>100
+        || !Number.isSafeInteger(a.castTick) || a.castTick<0 || a.castTick+a.elapsed!==packet.tick
+        || a.phaseTicks.windup!==Math.max(1,ticks(ABILITIES.whirl.windupMs/a.rate)) || a.phaseTicks.lock!==0
+        || a.phaseTicks.active!==whirlTimeline(Math.max(1,ticks(ABILITIES.whirl.activeMs/a.rate))).total
+        || a.phaseTicks.recovery!==Math.max(1,ticks(ABILITIES.whirl.recoveryMs/a.rate))
+        || !Number.isSafeInteger(a.left) || a.left<1 || a.left>a.phaseTicks[a.phase]
+        || !Number.isSafeInteger(a.elapsed) || a.elapsed!==phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0)+a.phaseTicks[a.phase]-a.left
+        || a.total!==a.phaseTicks.windup+a.phaseTicks.lock) return null;
     }
     if (e.lunge20 !== undefined && e.lunge20 !== true) return null;
     if (e.act?.id==='lunge' && !!e.lunge20!==!!e.act.lunge20) return null;

@@ -1,4 +1,5 @@
 import {ember20,emberDef,emberDamage,lockEmberPoint} from './ember-evolution.js';
+import { whirl20, whirlTimeline, nextWhirlFrame } from './whirl-evolution.js';
 import { lunge20, lungeTimeline, nextLungeFrame } from './lunge-evolution.js';
 import { useGreenPotion, clearGreenPotion } from './green-potion.js';
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
@@ -82,6 +83,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
     ...(ember20(skillMasteryLevels) ? {ember20:true} : {}),
+    ...(whirl20(skillMasteryLevels) ? {whirl20:true} : {}),
     ...(lunge20(skillMasteryLevels) ? {lunge20:true} : {}),
     ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
@@ -153,7 +155,7 @@ export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
   if (world.zones) world.zones = [];
-  for (const p of world.entities) if (p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
+  for (const p of world.entities) if (p.act?.whirl20 || p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
   if (world.projectiles.some(pr => ABILITIES[pr.abilityId]?.spin)) world.projectiles = world.projectiles.filter(pr => !ABILITIES[pr.abilityId]?.spin);
   for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;delete p.rootUntil;if(p.poison)p.poison=null;}
   if (st.arena) {
@@ -200,7 +202,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 export function step(world, inputs = {}) {
   world.events = [];
   for (const p of world.entities) if (p.kind === 'player' && (p.dead || p.terminal || world.round?.state !== 'running')) clearGreenPotion(p);
-  for(const p of world.entities) if(p.act?.ember20 && (p.dead||p.terminal||p.channel>0||world.round?.state!=='running')) endAct(world,p,true);
+  for(const p of world.entities) if((p.act?.whirl20 || p.act?.ember20) && (p.dead||p.terminal||p.channel>0||world.round?.state!=='running')) endAct(world,p,true);
   recordAttackPoses(world);
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
@@ -227,6 +229,7 @@ export function step(world, inputs = {}) {
   for(const p of world.entities) if(p.shieldGuard && (!alive(p) || world.round && world.round.state !== 'running')) p.shieldGuard.left=0;
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;delete e.rootUntil;if(e.poison)e.poison=null;}
+  for(const p of world.entities) if(p.act?.whirl20 && (!alive(p) || p.channel>0 || world.round?.state!=='running')) endAct(world,p,true);
   world.tick++;
   return world.events;
 }
@@ -239,7 +242,7 @@ function canCancel(act) {
 
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
-  if ((p.act?.lunge20 || p.act?.ember20) && (!alive(p) || p.staggerLeft>0 || p.channel>0)) endAct(world,p,true);
+  if ((p.act?.whirl20 || p.act?.lunge20 || p.act?.ember20) && (!alive(p) || p.staggerLeft>0 || p.channel>0)) endAct(world,p,true);
   if (inp.attack) delete p.invisibleUntil;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
@@ -376,7 +379,7 @@ function stepPlayer(world, p, inp) {
   // First pressed slot wins this tick; an empty slot is a no-op.
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
-  if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
+  if (skillId && !(skillId==='whirl' && p.whirl20 && world.round?.state!=='running') && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = skillId==='ember_bolt' && p.ember20 ? emberDef(ABILITIES[skillId]) : ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
@@ -385,7 +388,7 @@ function stepPlayer(world, p, inp) {
       p.hp -= sacrificed;
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
       if (sacrificed) p.act.sacrificed = sacrificed;
-      bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
+      if (!p.act?.whirl20) bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
       if (p.act.ember20) {
         p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,world.entities,world.arena,world.tick);
         p.act.facing=Math.atan2(p.act.zonePoint.y-p.y,p.act.zonePoint.x-p.x);
@@ -568,12 +571,15 @@ function startAct(world, ent, abilityId, facing, counter = false) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const whirl = abilityId === 'whirl' && ent.whirl20 === true;
+  if (whirl) phaseTicks.active=whirlTimeline(phaseTicks.active).total;
   const evolution = abilityId === 'lunge' && ent.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
     ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
     ...(abilityId==='ember_bolt' && ent.ember20 ? {ember20:true,castTick:world.tick} : {}),
+    ...(whirl ? {whirl20:true,castTick:world.tick,whirlBudgets:{}} : {}),
     ...(evolution ? {lunge20:true, lungeBudgets:{}} : {}), rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -593,7 +599,7 @@ function skipEmptyPhases(world, ent) {
     if (i === PHASES.length - 1) { endAct(world, ent, false); return; }
     act.phase = PHASES[i + 1];
     act.left = act.phaseTicks[act.phase];
-    if (!act.ember20 && (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored))) {
+    if (!act.whirl20 && !act.ember20 && (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored))) {
       act.ox = ent.x; act.oy = ent.y;
     }
     if (act.phase === 'active' && act.def.delivery === 'dash') {
@@ -629,8 +635,8 @@ function advanceAct(world, ent, target) {
       const want = Math.atan2(target.y - ent.y, target.x - ent.x);
       act.facing = turnToward(act.facing, want, (def.trackTurnDeg * Math.PI / 180) * DT);
     }
-    // Evolved ember keeps its cast origin for the locked point and strict codec.
-    if (!act.ember20) { act.ox = ent.x; act.oy = ent.y; }
+    // Evolved casts keep immutable origin identity; shape contacts use current center.
+    if (!act.whirl20 && !act.ember20) { act.ox = ent.x; act.oy = ent.y; }
   }
   ent.facing = act.facing;
   // Bash movement is phase-owned, like prediction: no stale walking flag in
@@ -736,6 +742,10 @@ function doActive(world, ent, act) {
     }
   } else if (def.delivery === 'shape') {
     const activeTick = act.phaseTicks.active - act.left;
+    if (act.whirl20) {
+      const {segment}=nextWhirlFrame(act);
+      if(act.whirlSegment!==segment) {act.whirlSegment=segment;act.hit=[];}
+    }
     if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
@@ -804,11 +814,12 @@ function hitShape(world, ent, act, shape, ox, oy) {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
       ...(act.counterSecond ? {fixedDamage:act.firstCounterDamage[t.id]*.7} : {}),
       ...(act.lunge20 ? {lungeAct:act} : {}),
+      ...(act.whirl20 ? {whirlAct:act} : {}),
       def: act.def, counter: !!act.counter, ...(act.step ? { step: act.step } : {}),
       mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
       poiseMult: (ent.poiseMult ?? 1) * (act.id === 'slash' && ent.kind === 'player' && ent.weaponForm === 'blunt' ? 1.4 : 1)
         * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
-      cause: { shape, ox: act.ox, oy: act.oy, facing: act.facing },
+      cause: { shape, ox: act.whirl20 ? ox : act.ox, oy: act.whirl20 ? oy : act.oy, facing: act.facing },
     });
     if (act.doubleCounter && dealt) (act.firstCounterDamage ||= {})[t.id] = dealt;
     if (!ent.act) return; // attacker got interrupted by its own hit side-effects (not expected, defensive)
@@ -870,9 +881,11 @@ function applyHit(world, t, hit) {
     if ((!hit.periodic || hit.zonePulse) && t.hurtInvuln > 0) return;
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
-  const lunge=hit.lungeAct;
-  const prior=lunge?.lungeBudgets[t.id];
+  const splitAct=hit.lungeAct || hit.whirlAct;
+  const budgets=hit.whirlAct ? splitAct.whirlBudgets : splitAct?.lungeBudgets;
+  const prior=budgets?.[t.id];
   let dmg = prior?.damage ?? (hit.fixedDamage ?? def.damage * hit.mult);
+  if (prior && hit.whirlAct) dmg *= Math.min(1,(t.guard || 1)/prior.guard);
   // Fixed follow-up counters already include the first hit's silver bonus; DOT and
   // execution bypass specialization. No RNG or timing change for ordinary weapons.
   if (!prior && hit.srcKind === 'player' && (!hit.periodic || hit.weaponZone) && !hit.execute && hit.fixedDamage === undefined) {
@@ -902,10 +915,10 @@ function applyHit(world, t, hit) {
     else if (src?.kind === 'player' && src.critChance > 0 && rand(world) < src.critChance) { crit = true; dmg *= src.critMult; }
   }
   dmg = hit.execute ? t.hp : Math.max(1, Math.round(dmg));
-  if (lunge) {
+  if (splitAct) {
     // First-only gets floor(B/2), second-only ceil(B/2); both exactly B.
     // Freeze the target budget on first contact, before stagger/exposure can change it.
-    if (!prior) lunge.lungeBudgets[t.id]={damage:dmg,crit};
+    if (!prior) budgets[t.id]={damage:dmg,crit,...(hit.whirlAct ? {guard:t.guard||1} : {})};
     def={...def,poise:(def.poise||0)/2,knockback:(def.knockback||0)/2};
   }
   const blocked = t.kind === 'player' && shieldBlocks(t,hit);
@@ -915,12 +928,12 @@ function applyHit(world, t, hit) {
     }
     dmg=shieldDamage(dmg,t.shieldModel);
   }
-  if (lunge) {
+  if (splitAct) {
     // Guard rounding belongs to the whole cast budget, not each half.
-    const budget=lunge.lungeBudgets[t.id];
+    const budget=budgets[t.id];
     budget.defendedDamage ??= dmg;
     const defended=Math.min(budget.defendedDamage,dmg);
-    dmg=lunge.lungeSegment===1 ? Math.floor(defended/2) : Math.ceil(defended/2);
+    dmg=(hit.whirlAct ? splitAct.whirlSegment : splitAct.lungeSegment)===1 ? Math.floor(defended/2) : Math.ceil(defended/2);
   }
   const attacker = world.entities.find(e => e.id === hit.srcId);
   const hostile = attacker ? attacker.team !== t.team : hit.srcKind !== 'player';
@@ -942,8 +955,8 @@ function applyHit(world, t, hit) {
   const ang = Math.atan2(t.y - hit.fromY, t.x - hit.fromX);
   const kb = (def.knockback || 0) * (1 - kbResist) * DT * 2.2;
   if (t.kind === 'player') {
-    const recordHit=lunge ? {...hit} : hit;
-    if (lunge) delete recordHit.lungeAct;
+    const recordHit=splitAct ? {...hit} : hit;
+    if (splitAct) {delete recordHit.lungeAct;delete recordHit.whirlAct;}
     recordGuestHit(world, t, blocked ? {...recordHit,shieldBlocked:true} : recordHit, dmg, Math.cos(ang) * kb, Math.sin(ang) * kb);
   }
   t.kx += Math.cos(ang) * kb;
