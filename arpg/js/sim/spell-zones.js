@@ -18,7 +18,7 @@ export function zoneContains(zone, def, target) {
   return across*across + Math.max(0,Math.abs(along)-def.length/2)**2 <= (def.width+target.r)**2;
 }
 export function validZones(zones) {
-  return zones === undefined || Array.isArray(zones) && zones.length <= MAX_ZONES && zones.every(z => z && ['meteor','firewall','rain_arrow','poison_field'].includes(z.abilityId)
+  return zones === undefined || Array.isArray(zones) && zones.length <= MAX_ZONES && zones.every(z => z && ['ember_bolt','meteor','firewall','rain_arrow','poison_field'].includes(z.abilityId)
     && ['id','ownerId','team','startTick','activeTick','endTick'].every(k=>Number.isSafeInteger(z[k]) && z[k]>=0)
     && ['x','y','facing'].every(k=>Number.isFinite(z[k]) && Math.abs(z[k])<=100000)
     && z.activeTick>=z.startTick && z.endTick>=z.activeTick && z.endTick-z.startTick<=(['firewall','poison_field'].includes(z.abilityId) ? 210 : z.abilityId === 'rain_arrow' ? 99 : 75)

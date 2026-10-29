@@ -17,6 +17,7 @@ const validLevels = validMasteryLevels;
 function frozenLunge(levels, previous) {
   const next={...levels};
   if (previous?.lunge===undefined) delete next.lunge; else next.lunge=previous.lunge;
+  if (previous?.ember_bolt===undefined) delete next.ember_bolt; else next.ember_bolt=previous.ember_bolt;
   return next;
 }
 
@@ -54,7 +55,7 @@ const mergeInput = (held, input) => {
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
     onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onResync = () => {}, onTransportStale = () => {}, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile: {...profile, combatVersion:1}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
+    Object.assign(this, { uid, host, profile: {...profile, combatVersion:2}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: this.profile };
     this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid);
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
@@ -114,7 +115,7 @@ export class CoopSession {
   }
   negotiate(profiles) {
     if (this.phase !== 'prepare' || !profiles?.[this.uid]
-      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==1 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
+      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==2 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
     const config = partyConfig(this.config, profiles);
     if (!validParty(config, profiles)
       || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
@@ -129,7 +130,7 @@ export class CoopSession {
     if (!!data.config?.invasion !== !!this.config.invasion
       || this.negotiatedProfiles && JSON.stringify(data.profiles) !== this.negotiatedProfiles
       || !validParty(data.config, data.profiles)
-      || Object.values(data.profiles).some(p=>p.combatVersion!==1 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
+      || Object.values(data.profiles).some(p=>p.combatVersion!==2 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
       || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
       || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
@@ -137,7 +138,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
-    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,p.skillMasteryLevels.lunge===undefined?{}:{lunge:1})} : {})}])); this.seed = data.seed;
+    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,{...(p.skillMasteryLevels.lunge===undefined?{}:{lunge:1}),...(p.skillMasteryLevels.ember_bolt===undefined?{}:{ember_bolt:1})})} : {})}])); this.seed = data.seed;
     this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
@@ -200,8 +201,8 @@ export class CoopSession {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
       const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
-      if (data.profile?.combatVersion!==1) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
-      if (!data.profile || data.profile.combatVersion!==1
+      if (data.profile?.combatVersion!==2) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
+      if (!data.profile || data.profile.combatVersion!==2
         || data.profile.skillMasteryLevels && !validLevels(data.profile.skillMasteryLevels)
         || Object.hasOwn(data.profile, 'team')
         || data.profile.rewardSave && !validLobbyProfile(data.profile)

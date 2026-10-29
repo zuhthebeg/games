@@ -166,7 +166,8 @@ export function partyHpScale(count, partyLevel, stageId) {
   const recommended = BALANCE.stages[stageId]?.rec?.[0] ?? [1, 2, 3, 4, 4, 5, 6][Number(stageId.slice(1)) - 1] ?? 1;
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
-const COMMON = ['lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
+import {emberDef} from '../sim/ember-evolution.js';
+const COMMON = ['ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
@@ -182,7 +183,7 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'ember20', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
     ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
@@ -194,6 +195,12 @@ export function decodeSnapshot(packet, uid) {
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
     if (e.skillMasteryLevels !== undefined && !validMasteryLevels(e.skillMasteryLevels)) return null;
+    if(e.ember20!==undefined && (e.ember20!==true || e.kind!=='player')) return null;
+    if(e.act?.id==='ember_bolt' && !!e.ember20!==!!e.act.ember20) return null;
+    if(e.act?.ember20!==undefined) {
+      const a=e.act,phases=['windup','lock','active','recovery'];
+      if(a.ember20!==true || !e.ember20 || a.id!=='ember_bolt' || !phases.includes(a.phase) || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4 || phases.some(k=>!Number.isSafeInteger(a.phaseTicks[k])||a.phaseTicks[k]<0||a.phaseTicks[k]>120) || !Number.isSafeInteger(a.left)||a.left<1||a.left>a.phaseTicks[a.phase] || a.total!==a.phaseTicks.windup+a.phaseTicks.lock || a.elapsed!==phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0)+a.phaseTicks[a.phase]-a.left || !a.zonePoint || ![a.zonePoint.x,a.zonePoint.y,a.ox,a.oy,a.facing].every(Number.isFinite) || a.zonePoint.x<0||a.zonePoint.y<0||a.zonePoint.x>packet.arena.w||a.zonePoint.y>packet.arena.h) return null;
+    }
     if (e.lunge20 !== undefined && e.lunge20 !== true) return null;
     if (e.act?.id==='lunge' && !!e.lunge20!==!!e.act.lunge20) return null;
     if (e.act?.lunge20 !== undefined) {
@@ -225,9 +232,16 @@ export function decodeSnapshot(packet, uid) {
     if (e.curse && (!expires(e.curse.expiresTick,210) || !(e.curse.damageMult>=.7 && e.curse.damageMult<=1) || !(e.curse.armorMult>=.5 && e.curse.armorMult<=1))) return null;
     if (e.berserk && (!expires(e.berserk.expiresTick,210) || !(e.berserk.damageMult>=1.15 && e.berserk.damageMult<=1.3) || !(e.berserk.speedMult>=1.15 && e.berserk.speedMult<=1.3) || e.berserk.incomingMult!==1.2)) return null;
   }
+  const ids=new Set();
+  for(const z of packet.zones||[]) if(z.abilityId==='ember_bolt') {
+    const owner=packet.entities.find(e=>e.id===z.ownerId);
+    if(ids.has(z.id)||packet.entities.some(e=>e.id===z.id)||!owner?.ember20||owner.dead||owner.terminal||owner.channel>0||owner.team!==z.team||z.activeTick-z.startTick!==12||z.endTick!==z.activeTick||z.nextTick!==z.activeTick||z.startTick>packet.tick||z.activeTick<packet.tick||z.x<0||z.y<0||z.x>packet.arena.w||z.y>packet.arena.h||['radius','intervalTicks','pulsesLeft','dmgMult'].some(k=>z[k]!==undefined))return null;
+    ids.add(z.id);
+  }
   const copy = structuredClone(packet);
   copy.zones ||= [];
   for (const e of copy.entities) if (e.act) e.act.def = e.act.counter ? ABILITIES[e.act.id] : comboDef(e.act.id, e.act.step, e.weaponForm);
+  for(const e of copy.entities) if(e.act?.ember20) e.act.def=emberDef(ABILITIES.ember_bolt);
   const index = copy.entities.findIndex(e => e.pid === uid && e.kind === 'player');
   if (index > 0) copy.entities.unshift(...copy.entities.splice(index, 1));
   if (copy.objective) copy.round.objective = copy.objective;

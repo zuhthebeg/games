@@ -1,6 +1,6 @@
 import { ABILITIES } from '../content/combat.js';
 import { MAX_ZONES } from '../sim/spell-zones.js';
-export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone, poison_field: ABILITIES.poison_field.zone });
+export const SPELL_ZONE_VFX = Object.freeze({ ember_bolt:{radius:117}, meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone, poison_field: ABILITIES.poison_field.zone });
 // One reusable Graphics context, bounded geometry. Presentation only, including reduced motion.
 export function paintSpellZones(g, world, reduced = false) {
   g.clear();

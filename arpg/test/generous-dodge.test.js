@@ -40,7 +40,7 @@ test('solo retains exact 7 tick iframe and 5 tick perfect window',()=>{
  for(let i=1;i<6;i++)step(f.w);shot(f);const ev=step(f.w);assert.equal(f.p.hp,f.p.maxHp);assert.equal(ev.some(e=>e.type==='perfectDodge'),false);
 });
 test('real CoopSession opts in both host and guest, prediction parity survives snapshot codec',()=>{
- const profile={combatVersion:1,weapon:'blade',mods:{},level:1};const config={stageId:'S2',threat:1};const data={profiles:{h:profile,g:profile},config,seed:4};
+ const profile={combatVersion:2,weapon:'blade',mods:{},level:1};const config={stageId:'S2',threat:1};const data={profiles:{h:profile,g:profile},config,seed:4};
  const session=new CoopSession({uid:'h',host:'h',players:['h','g'],profile,config});session.begin(data);
  for(const pid of ['h','g']){
  const w=session.world;w.round.pending=[];w.round.goal="timer";w.round.timerTicks=1e6;w.entities=w.entities.filter(e=>e.kind==='player');

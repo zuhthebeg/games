@@ -392,7 +392,7 @@ export class SkillVfx {
       return false; // Existing numbers, impact, hit-stop and camera remain untouched.
     }
     if (event.type === 'explode' && profile.style === 'ember') {
-      this.effect(profile, 'active', event.x, event.y, 0, event.radius, null, reduced);
+      this.effect(profile, 'active', event.x, event.y, 0, event.radius, null, reduced, event.presentationOwner);
       this.emit(profile, 'smoke', event.x, event.y, 0, event.radius, reduced);
       return true;
     }

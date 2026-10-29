@@ -1,3 +1,4 @@
+import {ember20,emberDef,emberDamage,lockEmberPoint} from './ember-evolution.js';
 import { lunge20, lungeTimeline, nextLungeFrame } from './lunge-evolution.js';
 import { useGreenPotion, clearGreenPotion } from './green-potion.js';
 import {BOSS_TUNING, isBossType} from '../content/boss-tuning.js';
@@ -80,6 +81,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
   const ent = {
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
+    ...(ember20(skillMasteryLevels) ? {ember20:true} : {}),
     ...(lunge20(skillMasteryLevels) ? {lunge20:true} : {}),
     ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
     x: x ?? world.arena.w * 0.22, y: y ?? world.arena.h * 0.5, r: PB.r, facing,
@@ -198,6 +200,7 @@ const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 export function step(world, inputs = {}) {
   world.events = [];
   for (const p of world.entities) if (p.kind === 'player' && (p.dead || p.terminal || world.round?.state !== 'running')) clearGreenPotion(p);
+  for(const p of world.entities) if(p.act?.ember20 && (p.dead||p.terminal||p.channel>0||world.round?.state!=='running')) endAct(world,p,true);
   recordAttackPoses(world);
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   // Only new objective rounds freeze here; legacy full-world traces stay byte-identical.
@@ -236,7 +239,7 @@ function canCancel(act) {
 
 function stepPlayer(world, p, inp) {
   const d = p.dodge;
-  if (p.act?.lunge20 && (!alive(p) || p.staggerLeft>0 || p.channel>0)) endAct(world,p,true);
+  if ((p.act?.lunge20 || p.act?.ember20) && (!alive(p) || p.staggerLeft>0 || p.channel>0)) endAct(world,p,true);
   if (inp.attack) delete p.invisibleUntil;
   pruneGuestHits(p, world.tick);
   tickCombo(p);
@@ -372,7 +375,7 @@ function stepPlayer(world, p, inp) {
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
   if (skillId && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
-    const def = ABILITIES[skillId];
+    const def = skillId==='ember_bolt' && p.ember20 ? emberDef(ABILITIES[skillId]) : ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
@@ -381,7 +384,8 @@ function stepPlayer(world, p, inp) {
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
       if (sacrificed) p.act.sacrificed = sacrificed;
       bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
-      if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
+      if (p.act.ember20) p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,world.entities,world.arena);
+      else if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }
   // Explicit controls win; a pending counter reserves the next basic slot,
@@ -549,6 +553,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   const comboStep = ent.kind === 'player' ? beginCombo(ent, abilityId, counter) : 0;
   const step = counter && ABILITIES[abilityId].combo ? 1 : comboStep;
   let def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
+  if (abilityId==='ember_bolt' && ent.ember20) def=emberDef(def);
   const authoredGrowth=skillGrowth(abilityId,ent.skillMasteryLevels?.[abilityId]);
   if (abilityId === 'poison_arrow') def={...def,damage:authoredGrowth.damage,poison:{...def.poison,damage:authoredGrowth.dotDamage,durationMs:authoredGrowth.durationMs}};
   if (abilityId === 'blood_spear') def={...def,damage:authoredGrowth.damage};
@@ -563,6 +568,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
     ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
+    ...(abilityId==='ember_bolt' && ent.ember20 ? {ember20:true} : {}),
     ...(evolution ? {lunge20:true, lungeBudgets:{}} : {}), rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -1055,17 +1061,18 @@ function stepZones(world) {
   for (const zone of world.zones) {
     const owner = world.entities.find(e => e.id === zone.ownerId);
     if (!owner || !alive(owner) || owner.team !== zone.team || world.round && world.round.state !== 'running') continue;
-    const def = ABILITIES[zone.abilityId];
-    if (world.tick >= zone.nextTick && world.tick >= zone.activeTick && (zone.abilityId === 'meteor' || world.tick < zone.endTick)) {
+    if (zone.abilityId==='ember_bolt' && owner.channel>0) continue;
+    const def = zone.abilityId==='ember_bolt' ? emberDef(ABILITIES.ember_bolt) : ABILITIES[zone.abilityId];
+    if (world.tick >= zone.nextTick && world.tick >= zone.activeTick && (zone.abilityId === 'meteor' || zone.abilityId === 'ember_bolt' || world.tick < zone.endTick)) {
       const pulse = !!def.zone.intervalMs;
       zone.nextTick += zone.intervalTicks ?? ticks(def.zone.intervalMs || 10000);
       if (zone.pulsesLeft !== undefined) zone.pulsesLeft--;
-      world.events.push({ type: pulse ? 'zonePulse' : 'explode', id: zone.id, ability: zone.abilityId,
+      world.events.push({ type: pulse ? 'zonePulse' : 'explode', id: zone.id, ability: zone.abilityId, ...(zone.abilityId==='ember_bolt' ? {presentationOwner:owner.id,castId:zone.id,ember20:true} : {}),
         x: zone.x, y: zone.y, radius: zone.radius || def.zone.radius || 0 });
       for (const target of world.entities) {
         if (target.team === zone.team || !isTargetable(target) || !zoneContains(zone, zone.radius ? {...def.zone,radius:zone.radius} : def.zone, target)) continue;
         applyHit(world, target, { srcId: owner.id, srcKind: owner.kind, srcType: owner.weapon,
-          abilityId: zone.abilityId, def, mult: zone.dmgMult, poiseMult: 1, castId: zone.id,
+          abilityId: zone.abilityId, def:zone.abilityId==='ember_bolt'?{...def,damage:emberDamage(zone,target)}:def, mult: zone.dmgMult, poiseMult: 1, castId: zone.id,
           ...(def.zone.physical ? { weaponZone: true } : {}),
           ...(pulse ? { periodic: true, zonePulse: true, castId: zone.id } : {}), fromX: zone.x, fromY: zone.y,
           cause: { shape: { type: 'circle', radius: def.zone.radius || def.zone.width, offset: 0 }, ox: zone.x, oy: zone.y, facing: zone.facing } });
