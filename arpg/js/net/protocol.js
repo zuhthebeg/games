@@ -307,7 +307,7 @@ export class SnapshotBuffer {
     this.pierceCapability = pierceCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
     this.visual = new Map();
-    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
+    this.offsets = []; this.clock = 0; this.play = null; this.prevPlay = null; this.lastNow = null; this.lateP90 = 0;
     this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
   push(packet, at) {
@@ -357,6 +357,8 @@ export class SnapshotBuffer {
         advance *= Math.max(0, Math.min(1, (horizon - this.play) / 3));
       this.play = Math.min(horizon, this.play + advance);
     }
+    const advance = this.prevPlay === null ? 0 : Math.max(0, this.play - this.prevPlay);
+    this.prevPlay = this.play;
     this.lastNow = now;
     const tick = this.play, first = this.frames[0];
     let a = first, b = first;
@@ -387,18 +389,23 @@ export class SnapshotBuffer {
       }
       const previous = this.visual.get(e.id);
       let ox = previous?.ox || 0, oy = previous?.oy || 0;
-      const jump = previous ? Math.hypot(e.x + ox - previous.x, e.y + oy - previous.y) : 0;
       ox *= decay; oy *= decay;
-      if (!previous || e.dead || e.terminal || jump >= 200) {
+      const from = a.world.entities.find(v => v.id === e.id), to = b.world.entities.find(v => v.id === e.id);
+      const speed = span > 0 && from && to ? Math.hypot(to.x - from.x, to.y - from.y) / span : 0;
+      const dx = previous ? e.x - previous.rx : 0, dy = previous ? e.y - previous.ry : 0;
+      const rawJump = previous ? Math.hypot(dx, dy) : 0;
+      const expected = speed * advance + 12;
+      if (!previous || e.dead || e.terminal || rawJump >= 200) {
         ox = 0; oy = 0;
-      } else if (jump > 32) {
-        ox += previous.x - (e.x + ox);
-        oy += previous.y - (e.y + oy);
+      } else if (rawJump - expected > 16) {
+        const unexpected = 1 - expected / rawJump;
+        ox -= dx * unexpected;
+        oy -= dy * unexpected;
         const length = Math.hypot(ox, oy);
         if (length > 120) { ox *= 120 / length; oy *= 120 / length; }
       }
       const x = e.x + ox, y = e.y + oy;
-      this.visual.set(e.id, { x, y, ox, oy });
+      this.visual.set(e.id, { rx: e.x, ry: e.y, ox, oy });
       return { ...e, x, y };
     });
     for (const id of this.visual.keys()) if (!present.has(id)) this.visual.delete(id);

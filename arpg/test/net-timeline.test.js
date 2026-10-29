@@ -115,7 +115,7 @@ test('snapshot playback time-dilates catch-up after a 700ms packet gap', () => {
 
 test('late extrapolation velocity change stays continuous and converges to the sampled path', () => {
   const world = fixture(), buffer = new SnapshotBuffer('guest', 125, { adaptive: false });
-  const velocity = 23.75, resumeAt = 10 * T + 60 + 150;
+  const velocity = 24, resumeAt = 10 * T + 60 + 150;
   const arrivals = [0, 2, 4].map(tick => ({ tick, x: 500, at: tick * T + 60 }));
   arrivals.push({ tick: 10, x: 500 + (10 - 4) * velocity, at: resumeAt });
   let next = 0, previousX = null, previousPlay = null, maxStep = 0, maxExcess = 0, convergence = null;
@@ -140,6 +140,35 @@ test('late extrapolation velocity change stays continuous and converges to the s
   }
   assert.ok(maxExcess <= 32 + 1e-6, `max step ${maxStep.toFixed(1)}px, excess ${maxExcess.toFixed(1)}px`);
   assert.ok(convergence !== null && convergence <= 1, `sampled path error ${convergence}`);
+});
+
+test('120ms frame gaps do not offset a constant 24px/tick dash', () => {
+  const world = fixture(), buffer = new SnapshotBuffer('guest', 0, { adaptive: false });
+  const frameGap = 120, velocity = 24;
+  for (let frame = 0; frame <= 5; frame++) {
+    const tick = frame * 4, at = frame * frameGap;
+    buffer.push(packet(world, tick, tick * velocity), at);
+    const view = buffer.sample(at), host = view.entities.find(entity => entity.pid === 'host');
+    const visual = buffer.visual.get(host.id);
+    assert.ok(Math.abs(visual.ox) < 1e-9 && Math.abs(visual.oy) < 1e-9,
+      `frame ${frame} offset ${visual.ox}, ${visual.oy}`);
+    assert.ok(Math.abs(host.x - visual.rx) < 1e-9 && Math.abs(host.y - visual.ry) < 1e-9);
+  }
+});
+
+test('moving entities are not offset during playback catch-up at +50% rate', () => {
+  const world = fixture(), buffer = new SnapshotBuffer('guest', 0, { adaptive: false });
+  buffer.push(packet(world, 0, 0), 0);
+  const initial = buffer.sample(0), hostId = initial.entities.find(entity => entity.pid === 'host').id;
+  const initialPlay = buffer.play, elapsed = 150;
+  buffer.push(packet(world, 20, 20 * 24), elapsed);
+  const view = buffer.sample(elapsed), host = view.entities.find(entity => entity.id === hostId);
+  const visual = buffer.visual.get(hostId);
+  const played = buffer.play - initialPlay;
+  assert.ok(Math.abs(played / (elapsed / T) - 1.5) < 1e-9, `playback rate ${played / (elapsed / T)}`);
+  assert.equal(buffer.stats.resets, 0);
+  assert.ok(Math.abs(visual.ox) < 1e-9 && Math.abs(visual.oy) < 1e-9);
+  assert.ok(Math.abs(host.x - visual.rx) < 1e-9 && Math.abs(host.y - visual.ry) < 1e-9);
 });
 
 test('remote position teleports of 200px or more are not visually smoothed', () => {
