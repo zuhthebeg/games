@@ -629,7 +629,8 @@ function advanceAct(world, ent, target) {
       const want = Math.atan2(target.y - ent.y, target.x - ent.x);
       act.facing = turnToward(act.facing, want, (def.trackTurnDeg * Math.PI / 180) * DT);
     }
-    act.ox = ent.x; act.oy = ent.y;
+    // Evolved ember keeps its cast origin for the locked point and strict codec.
+    if (!act.ember20) { act.ox = ent.x; act.oy = ent.y; }
   }
   ent.facing = act.facing;
   // Bash movement is phase-owned, like prediction: no stale walking flag in
