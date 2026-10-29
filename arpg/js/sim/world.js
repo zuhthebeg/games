@@ -1,4 +1,5 @@
 import {ember20,emberDef,emberDamage,lockEmberPoint} from './ember-evolution.js';
+import {pierce20,pierceDef} from './pierce-evolution.js';
 import { whirl20, whirlTimeline, nextWhirlFrame } from './whirl-evolution.js';
 import { lunge20, lungeTimeline, nextLungeFrame } from './lunge-evolution.js';
 import { useGreenPotion, clearGreenPotion } from './green-potion.js';
@@ -83,6 +84,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
     ...(ember20(skillMasteryLevels) ? {ember20:true} : {}),
+    ...(pierce20(skillMasteryLevels) ? {pierce20:true} : {}),
     ...(whirl20(skillMasteryLevels) ? {whirl20:true} : {}),
     ...(lunge20(skillMasteryLevels) ? {lunge20:true} : {}),
     ...(skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(skillMasteryLevels) } : {}),
@@ -561,6 +563,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   const comboStep = ent.kind === 'player' ? beginCombo(ent, abilityId, counter) : 0;
   const step = counter && ABILITIES[abilityId].combo ? 1 : comboStep;
   let def = counter ? ABILITIES[abilityId] : comboDef(abilityId, step, ent.weaponForm);
+  if (abilityId==='pierce_shot' && ent.pierce20) def=pierceDef(def);
   if (abilityId==='ember_bolt' && ent.ember20) def=emberDef(def);
   const authoredGrowth=skillGrowth(abilityId,ent.skillMasteryLevels?.[abilityId]);
   if (abilityId === 'poison_arrow') def={...def,damage:authoredGrowth.damage,poison:{...def.poison,damage:authoredGrowth.dotDamage,durationMs:authoredGrowth.durationMs}};
@@ -579,6 +582,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   ent.act = {
     ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
     ...(abilityId==='ember_bolt' && ent.ember20 ? {ember20:true,castTick:world.tick} : {}),
+    ...(abilityId==='pierce_shot' && ent.pierce20 ? {pierce20:true,castTick:world.tick} : {}),
     ...(whirl ? {whirl20:true,castTick:world.tick,whirlBudgets:{}} : {}),
     ...(evolution ? {lunge20:true, lungeBudgets:{}} : {}), rate, phaseTicks,
     ...(step ? { step } : {}),
@@ -777,6 +781,7 @@ function doActive(world, ent, act) {
       world.projectiles.push({
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
+        ...(act.pierce20 ? {pierce20:true} : {}),
         ...(act.step || act.id === 'poison_arrow' || act.id === 'blood_spear' ? { ...(act.step ? {step:act.step} : {}), def } : {}),
         x: ent.x + Math.cos(a) * (ent.r + 4), y: ent.y + Math.sin(a) * (ent.r + 4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,

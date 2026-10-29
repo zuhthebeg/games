@@ -1,3 +1,4 @@
+import {pierceDef} from '../sim/pierce-evolution.js';
 import {emberDef,lockEmberPoint} from '../sim/ember-evolution.js';
 import { whirlTimeline } from '../sim/whirl-evolution.js';
 import { lungeTimeline, nextLungeFrame } from '../sim/lunge-evolution.js';
@@ -54,7 +55,7 @@ function startAct(p, abilityId, facing, tick) {
   if (abilityId !== 'invisibility') delete p.invisibleUntil;
   const step = beginCombo(p, abilityId);
   const base=comboDef(abilityId,step,p.weaponForm);
-  const def=abilityId==='ember_bolt' && p.ember20 ? emberDef(base) : base;
+  const def=abilityId==='pierce_shot' && p.pierce20 ? pierceDef(base) : abilityId==='ember_bolt' && p.ember20 ? emberDef(base) : base;
   const rate = abilityId === WEAPONS[p.weapon].basic || p.skills.includes(abilityId)
     ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) * (p.berserk?.speedMult ?? 1) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map(phase => {
@@ -66,7 +67,7 @@ function startAct(p, abilityId, facing, tick) {
   const evolution = abilityId === 'lunge' && p.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }

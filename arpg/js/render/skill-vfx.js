@@ -434,6 +434,10 @@ export class SkillVfx {
           .moveTo(0, -14).lineTo(-9, 0).lineTo(0, 14)
           .stroke({ color: profile.accent, width: 2, alpha: .9 })
           .moveTo(-9, 0).lineTo(22, 0).stroke({ color: profile.accent, width: 2, alpha: .8 });
+        if(act.pierce20) {
+          for(const y of [-1.5,1.5]) g.moveTo(-7,y).lineTo(7,y).stroke({color:profile.accent,width:1,alpha:.95});
+          for(const x of [-4,0,4]) g.circle(x,0,2).stroke({color:profile.accent,width:1,alpha:.9});
+        }
       } else if (profile.windup === 'crystal') {
         g.poly([-16, 0, 0, -8, 16, 0, 0, 8]).fill({ color: profile.color, alpha: .5 })
           .stroke({ color: profile.accent, width: 2, alignment: 1, alpha: .95 })
@@ -568,6 +572,13 @@ export class SkillVfx {
       } else g.circle(0, 0, particle.r).fill({ color: profile.color, alpha: .85 })
         .circle(0, 0, particle.r * .5).fill({ color: profile.accent, alpha: .85 })
         .circle(0, 0, particle.r * .22).fill({ color: 0xffffff, alpha: .9 });
+    }
+    if(particle.pierce20 && particle.abilityId==='pierce_shot') {
+      // Identity-local static grooves/rings, wholly inside radius8; no extra nodes.
+      const g=slot.node,r=particle.r;
+      g.clear().poly([r,0,0,-r*.45,0,r*.45]).fill({color:profile.color,alpha:.85});
+      for(const y of [-1.5,1.5]) g.moveTo(-r+1,y).lineTo(r-1,y).stroke({color:profile.accent,width:1,alpha:.95});
+      for(const x of [-4,0,4]) g.circle(x,0,2).stroke({color:profile.accent,width:1,alpha:.9});
     }
     slot.seen = true;
     const x = slot.prevX + (particle.x - slot.prevX) * alpha, y = slot.prevY + (particle.y - slot.prevY) * alpha;

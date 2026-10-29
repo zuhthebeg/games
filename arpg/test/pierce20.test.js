@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createWorld,addPlayer,startStage,step,emptyInput,spawnMonster} from '../js/sim/world.js';
+import {encodeSnapshot,decodeSnapshot} from '../js/net/protocol.js';
+import {trackMastery} from '../js/meta/skill-mastery.js';
+export function fixture(level=20){const w=createWorld({seed:4});const p=addPlayer(w,{pid:'p',weapon:'bow',x:100,y:400,skillMasteryLevels:{pierce_shot:level},mods:{mpRegen:0,skills:['pierce_shot']}});startStage(w,'S2');w.entities=[p];w.round.pending=[];w.round.goal='timer';w.round.timerTicks=10000;return {w,p};}
+export const input=cast=>({...emptyInput(),aimX:1,skillEdge:cast});
+export function targets(w,n=7){return Array.from({length:n},(_,i)=>{const g=spawnMonster(w,'goblin_grunt',180+i*70,400);Object.assign(g,{spawnLeft:0,hp:10000,maxHp:10000,frozenUntil:10000,r:1});return g;});}
+test('pierce20 real seven-target sweep contacts five versus six, damage/resources/mastery once',()=>{for(const level of [19,20,30]){const {w,p}=fixture(level),gs=targets(w),tracker={},hits=[];for(let i=0;i<36;i++){hits.push(...step(w,{p:input(i===0)}).filter(e=>e.type==='hit'));trackMastery(tracker,w.events,w,'p');}assert.equal(hits.length,level<20?5:6);assert.deepEqual(hits.map(e=>e.dmg),Array(level<20?5:6).fill(48));assert.equal(gs[6].hp,10000);assert.equal(p.mp,p.maxMp-18);assert.equal(tracker.skillMastery.pierce_shot,1);assert.ok(p.cds.pierce_shot>0);}});
+test('pierce20 reciprocal act and projectile codec markers',()=>{const {w,p}=fixture();step(w,{p:input(true)});assert.equal(p.act.pierce20,true);let packet=encodeSnapshot(w);assert.equal(decodeSnapshot(packet,'p').entities[0].act.def.projectile.pierce,5);delete packet.entities[0].act.pierce20;assert.equal(decodeSnapshot(packet,'p'),null);while(!w.projectiles.length)step(w,{p:input(false)});assert.equal(w.projectiles[0].pierce20,true);packet=encodeSnapshot(w);packet.projectiles[0].pierce20=false;assert.equal(decodeSnapshot(packet,'p'),null);});
