@@ -197,7 +197,7 @@ export class MasterySkillVfx extends SkillVfx {
     this.projectileLive = live;
   }
   events(events, world) {
-    if (events.some(e=>e.type==='explode' && Object.hasOwn(e,'presentationOwner'))) return events;
+    // Always maintain the projectile journal, even in already-decorated batches.
     return presentSkillEvents(events,world,this.projectileOwners);
   }
   reset() { super.reset(); this.levels={};this.equipment={};this.presentation?.clear();this.projectileOwners?.clear();this.projectileLive?.clear();

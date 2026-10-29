@@ -4,7 +4,7 @@ Parent tuning: same ember ID/MP14/CD2600/windup/recovery; Lv20..30 replaces grou
 
 Capacity: accepted unfired zone acts themselves reserve slots (zones.length + other unfired zone acts); existing zones use same accounting. Sequential deterministic entity order ensures no more than32 including four players. endAct removes reservation; release transfers to one zone. Owner death/terminal/channel/end/leave cancels ember pending; postrelease stagger/walking never moves/cancels point.
 
-Known contract/oracle conflict (do NOT edit old assertions here): skill-mastery-net.test.js expects bare ember20/30 level map and live setMastery changes, while parent demands legacy ember=1 and frozen level. Three old tests newly fail. This is not an importmap stamp failure. Parent decision needed; no green full regression claim.
+Historical conflict resolved: the bare level map and live setMastery values are render metadata, not evolved-combat admission. Validated rewardSave alone grants ember20 combat capability; unchanged skill-mastery-net.test.js passes all4 tests. The final origin-fix/review and parent release reports supersede this initial local-candidate note; it is not current release adjudication.
 
 Focused10 C2 tests plus C1/zone/prediction/save/cloud/projectile suite68 pass. Additional handshake159 and VFX159 pass. Exact pinned fullworld/event comparisons10 original skills Lv1/19 and C1/meteor1..30 pass, no field exclusions. Full suite baseline2121/2060/61 reconfirmed. Final full suite separately logged.
 

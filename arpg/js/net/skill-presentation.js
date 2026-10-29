@@ -21,7 +21,10 @@ export function presentSkillEvents(events, world, owners) {
       const enemy = event.type === 'hit' && world.entities.find(e => e.id === event.dst)?.kind === 'monster';
       if (source?.kind === 'player') return { ...event, masteryPid: source.pid, ...(enemy ? { masteryEnemy: true } : {}) };
     }
-    if (event.type !== 'explode') return event;
+    // Attribution is per event: explicit/host-decorated explosions must not
+    // suppress neighboring shots or be reassigned after their journal retires.
+    // An own undefined owner also records an already-attempted unknown fallback.
+    if (event.type !== 'explode' || Object.hasOwn(event, 'presentationOwner')) return event;
     const end = events.slice(i + 1).find(e => e.type === 'projectileEnd');
     return { ...event, presentationOwner: event.presentationOwner ?? owners.get(end?.id) };
   });
