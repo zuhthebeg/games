@@ -17,7 +17,6 @@ const validLevels = validMasteryLevels;
 function frozenLunge(levels, previous) {
   const next={...levels};
   if (previous?.lunge===undefined) delete next.lunge; else next.lunge=previous.lunge;
-  if (previous?.ember_bolt===undefined) delete next.ember_bolt; else next.ember_bolt=previous.ember_bolt;
   return next;
 }
 
@@ -138,7 +137,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
-    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,{...(p.skillMasteryLevels.lunge===undefined?{}:{lunge:1}),...(p.skillMasteryLevels.ember_bolt===undefined?{}:{ember_bolt:1})})} : {})}])); this.seed = data.seed;
+    this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,{...(p.skillMasteryLevels.lunge===undefined?{}:{lunge:1}),})} : {})}])); this.seed = data.seed;
     this.profiles = Object.fromEntries(Object.entries(this.profiles).map(([pid, p]) => [pid, { ...p, ...(p.skillMasteryLevels ? { skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels) } : {}) }]));
     this.players = new Set(Object.keys(data.profiles));
     if (this.isHost) {
@@ -149,7 +148,10 @@ export class CoopSession {
         partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels(p.skillMasteryLevels), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
+        // Admission authority is frozen on creation; live mastery remains display metadata.
+        if (p.skillMasteryLevels) player.skillMasteryLevels=boundedMasteryLevels(p.skillMasteryLevels);
+        else delete player.skillMasteryLevels;
         if (data.config.invasion) {
           player.invasionRole = p.role;
           if (p.role === 'invader') { player.team = TEAM_MONSTER; player.skeletal = true; player.x = this.world.arena.w * .78; player.facing = Math.PI; }

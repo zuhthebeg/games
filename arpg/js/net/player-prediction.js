@@ -186,7 +186,10 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       if (p.act) endAct(p);
       p.mp -= def.manaCost || 0;
       startAct(p, skillId, resolveAim(p, inp, mlen, others));
-      if (p.act.ember20) p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,others,arena);
+      if (p.act.ember20) {
+        p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,others,arena,tick);
+        p.act.facing=Math.atan2(p.act.zonePoint.y-p.y,p.act.zonePoint.x-p.x);
+      }
       else if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }

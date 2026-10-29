@@ -363,6 +363,8 @@ function stepPlayer(world, p, inp) {
   }
   if (inp.scrollEdge && p.scrolls > 0 && p.scrollRetry === 0 && !p.act) {
     p.pendingCounter = null;
+    // Accepted return starts irrevocably cancel this owner's pending ember impacts.
+    if (world.zones) world.zones=world.zones.filter(z=>z.abilityId!=='ember_bolt'||z.ownerId!==p.id);
     p.channel = ticks(PB.scroll.channelMs);
     world.events.push({ type: 'channelStart', id: p.id, ticks: p.channel });
     p.moving = false;
@@ -384,7 +386,10 @@ function stepPlayer(world, p, inp) {
       startAct(world, p, skillId, resolveAim(world, p, inp, mlen));
       if (sacrificed) p.act.sacrificed = sacrificed;
       bindAttackPose(world, p, p.act, inp, SKILL_EDGES.find(k => inp[k]));
-      if (p.act.ember20) p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,world.entities,world.arena);
+      if (p.act.ember20) {
+        p.act.zonePoint=lockEmberPoint(p,inp,p.act.facing,world.entities,world.arena,world.tick);
+        p.act.facing=Math.atan2(p.act.zonePoint.y-p.y,p.act.zonePoint.x-p.x);
+      }
       else if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, world.entities, world.arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }
@@ -568,7 +573,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
     ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}),
-    ...(abilityId==='ember_bolt' && ent.ember20 ? {ember20:true} : {}),
+    ...(abilityId==='ember_bolt' && ent.ember20 ? {ember20:true,castTick:world.tick} : {}),
     ...(evolution ? {lunge20:true, lungeBudgets:{}} : {}), rate, phaseTicks,
     ...(step ? { step } : {}),
     id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
@@ -588,7 +593,7 @@ function skipEmptyPhases(world, ent) {
     if (i === PHASES.length - 1) { endAct(world, ent, false); return; }
     act.phase = PHASES[i + 1];
     act.left = act.phaseTicks[act.phase];
-    if (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored)) {
+    if (!act.ember20 && (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored))) {
       act.ox = ent.x; act.oy = ent.y;
     }
     if (act.phase === 'active' && act.def.delivery === 'dash') {
@@ -680,7 +685,7 @@ function doActive(world, ent, act) {
     if ((world.zones?.length || 0) >= MAX_ZONES) return;
     const point = act.zonePoint;
     const growth = act.growth;
-    const zone = { ...(growth?.radius ? {radius:growth.radius} : {}), ...(growth ? { pulsesLeft: growth.count, intervalTicks: ticks(growth.intervalMs) } : {}), id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
+    const zone = { ...(act.ember20 ? {ox:act.ox,oy:act.oy,castTick:act.castTick} : {}), ...(growth?.radius ? {radius:growth.radius} : {}), ...(growth ? { pulsesLeft: growth.count, intervalTicks: ticks(growth.intervalMs) } : {}), id: world.nextId++, ownerId: ent.id, team: ent.team, abilityId: act.id,
       x: point.x, y: point.y, facing: act.facing, startTick: world.tick,
       activeTick: world.tick + ticks(def.zone.delayMs || 0),
       endTick: world.tick + ticks((def.zone.delayMs || 0) + (growth?.durationMs ?? (act.id === 'meteor' && growth ? (growth.count - 1) * growth.intervalMs : def.zone.durationMs || 0))),

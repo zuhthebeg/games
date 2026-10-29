@@ -183,15 +183,17 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'ember20', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
-    ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
+    ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'ox', 'oy', 'castTick', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
     projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }
 export function decodeSnapshot(packet, uid) {
   if (packet?.t !== 'snapshot' || !Number.isSafeInteger(packet.tick) || !Array.isArray(packet.entities)) return null;
   if (!validZones(packet.zones)) return null;
+  // Ember origin/point are unquantized on the wire: no range-increasing rounding allowance.
+  const pointValid=(x,y,ox,oy)=>[x,y,ox,oy].every(Number.isFinite) && x>=0 && y>=0 && x<=packet.arena?.w && y<=packet.arena?.h && ox>=0 && oy>=0 && ox<=packet.arena?.w && oy<=packet.arena?.h && Math.hypot(x-ox,y-oy)<=560+1e-10;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
     if (e.skillMasteryLevels !== undefined && !validMasteryLevels(e.skillMasteryLevels)) return null;
@@ -199,6 +201,8 @@ export function decodeSnapshot(packet, uid) {
     if(e.act?.id==='ember_bolt' && !!e.ember20!==!!e.act.ember20) return null;
     if(e.act?.ember20!==undefined) {
       const a=e.act,phases=['windup','lock','active','recovery'];
+      const releaseElapsed=a.phaseTicks?.windup+a.phaseTicks?.lock;
+      if (!pointValid(a.zonePoint?.x,a.zonePoint?.y,a.ox,a.oy) || !Number.isSafeInteger(a.castTick) || a.castTick<0 || a.castTick+a.elapsed!==packet.tick || typeof a.fired!=='boolean' || a.fired!==(a.elapsed>releaseElapsed)) return null;
       if(a.ember20!==true || !e.ember20 || a.id!=='ember_bolt' || !phases.includes(a.phase) || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4 || phases.some(k=>!Number.isSafeInteger(a.phaseTicks[k])||a.phaseTicks[k]<0||a.phaseTicks[k]>120) || !Number.isSafeInteger(a.left)||a.left<1||a.left>a.phaseTicks[a.phase] || a.total!==a.phaseTicks.windup+a.phaseTicks.lock || a.elapsed!==phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0)+a.phaseTicks[a.phase]-a.left || !a.zonePoint || ![a.zonePoint.x,a.zonePoint.y,a.ox,a.oy,a.facing].every(Number.isFinite) || a.zonePoint.x<0||a.zonePoint.y<0||a.zonePoint.x>packet.arena.w||a.zonePoint.y>packet.arena.h) return null;
     }
     if (e.lunge20 !== undefined && e.lunge20 !== true) return null;
@@ -235,6 +239,9 @@ export function decodeSnapshot(packet, uid) {
   const ids=new Set();
   for(const z of packet.zones||[]) if(z.abilityId==='ember_bolt') {
     const owner=packet.entities.find(e=>e.id===z.ownerId);
+    if (!pointValid(z.x,z.y,z.ox,z.oy) || !Number.isSafeInteger(z.castTick) || z.castTick<0 || z.castTick>z.startTick || owner?.kind!=='player' || !(owner.hp>0) || (packet.zones||[]).filter(a=>a.id===z.id).length!==1 || (packet.projectiles||[]).some(a=>a.id===z.id)) return null;
+    const a=owner.act;
+    if (a?.ember20 && z.startTick>=a.castTick && (a.castTick!==z.castTick || !a.fired || a.zonePoint.x!==z.x || a.zonePoint.y!==z.y || a.ox!==z.ox || a.oy!==z.oy || a.facing!==z.facing || z.startTick!==a.castTick+a.phaseTicks.windup+a.phaseTicks.lock)) return null;
     if(ids.has(z.id)||packet.entities.some(e=>e.id===z.id)||!owner?.ember20||owner.dead||owner.terminal||owner.channel>0||owner.team!==z.team||z.activeTick-z.startTick!==12||z.endTick!==z.activeTick||z.nextTick!==z.activeTick||z.startTick>packet.tick||z.activeTick<packet.tick||z.x<0||z.y<0||z.x>packet.arena.w||z.y>packet.arena.h||['radius','intervalTicks','pulsesLeft','dmgMult'].some(k=>z[k]!==undefined))return null;
     ids.add(z.id);
   }
