@@ -4,7 +4,7 @@ import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
 import { bodyContactEligible, bodyWeight } from '../sim/body-contact.js';
 
 const TICK_MS = 1000 / 30;
-// Keep normal drift's 24px cutoff; evidenced hits may smooth up to 96px over four ticks.
+// Evidenced corrections under 96px smooth as hits; large corrections remain gross.
 const HIT_WINDOW_MS = 2 * TICK_MS, HIT_LIMIT_PX = 48, HIT_GROSS_PX = 96;
 const lerp = (a, b, t) => a + (b - a) * t;
 // Fraction of last frame's contact displacement kept while easing back to the replayed pawn.
@@ -58,13 +58,12 @@ export class LocalPrediction {
       const terminal = p.dead || p.terminal || (world.round?.state && world.round.state !== 'running');
       const continuing = this.hitSmoothing && this.smoothLeft > 0;
       const correctionDistance = Math.max(distance, replayDistance);
-      const evidencedHit = hit && correctionDistance < HIT_GROSS_PX;
       const reason = terminal || this.state.dead || this.state.terminal ? 'terminal'
         : blocked || predictionBlocked(this.state) || predictionBlocked(next) ? 'blocked'
-        : evidencedHit ? 'authority-hit' : correctionDistance >= HIT_LIMIT_PX ? 'gross' : hit ? 'authority-hit'
+        : correctionDistance >= HIT_GROSS_PX ? 'gross' : hit ? 'authority-hit'
         : continuing && distance < 24 ? 'hit-continuation' : 'drift';
       const smoothHit = reason === 'authority-hit' || reason === 'hit-continuation';
-      const snap = reason === 'terminal' || reason === 'blocked' || reason === 'gross' || (!smoothHit && distance >= 24);
+      const snap = reason === 'terminal' || reason === 'blocked' || reason === 'gross';
       // Sub-pixel disagreement is not worth a visible correction.
       if (distance > .5) {
         this.stats.corrections++; this.stats.totalDistance += distance;
@@ -81,7 +80,8 @@ export class LocalPrediction {
           this.offset = { x: dx, y: dy };
           // Follow-up authority must not perpetually restart an active hit's deadline.
           const hitWindow = distance > HIT_LIMIT_PX ? 4 * TICK_MS : HIT_WINDOW_MS;
-          this.smoothLeft = smoothHit ? (continuing ? Math.min(this.smoothLeft, hitWindow) : hitWindow) : 150;
+          this.smoothLeft = smoothHit ? (continuing ? Math.min(this.smoothLeft, hitWindow) : hitWindow)
+            : distance >= 24 ? 4 * TICK_MS : 150;
           this.hitSmoothing = smoothHit;
         }
         this.stats.lastCorrection = { reason, distance, replayDistance, jump: snap ? distance : 0,

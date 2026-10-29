@@ -64,13 +64,15 @@ test('self prediction advances instantly, replays only unacknowledged dt without
   assert.deepEqual(p.pending.map(row => row.seq), [2]); assert.ok(Math.abs(p.state.x - (303.68 + 230 / 30)) < .01);
   assert.equal(JSON.stringify(b.frames[0].world), authoritative);
 });
-test('correction below 24px converges in 150ms, sub-0.5px ignored, exactly 24px snaps', () => {
+test('correction below 24px converges in 150ms; exactly 24px drift uses four-tick smoothing', () => {
   const p = new LocalPrediction('g'), b = new SnapshotBuffer('g'); b.push(frame(0, 300), 0); p.reconcile(b.frames[0].world);
   b.push(frame(1, 300.4), 33); p.reconcile(b.frames.at(-1).world); assert.equal(p.offset.x, 0); assert.equal(p.stats.corrections, 0);
   b.push(frame(2, 310.4), 66); p.reconcile(b.frames.at(-1).world); assert.ok(Math.abs(p.offset.x + 10) < 1e-9); assert.equal(p.stats.snaps, 0);
   p.advance(tx(1, 0), emptyInput(), 75); assert.ok(Math.abs(p.offset.x + 5) < 1e-9);
   p.advance(tx(2, 0), emptyInput(), 75); assert.equal(p.offset.x, 0);
-  b.push(frame(3, 334.4, 2), 99); p.reconcile(b.frames.at(-1).world); assert.equal(p.stats.snaps, 1); assert.equal(p.offset.x, 0);
+  b.push(frame(3, 334.4, 2), 99); p.reconcile(b.frames.at(-1).world);
+  assert.equal(p.stats.snaps, 0); assert.ok(Math.abs(p.offset.x + 24) < 1e-9);
+  assert.equal(p.smoothLeft, 4 * (1000 / 30));
 });
 // Host stepPlayer never freezes walking for these: prediction must keep replaying (no snap).
 for (const [name, override] of Object.entries({ knockback: { kx: 2 }, hurt: { hurtInvuln: 3 },

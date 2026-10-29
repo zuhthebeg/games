@@ -112,3 +112,41 @@ test('snapshot playback time-dilates catch-up after a 700ms packet gap', () => {
     `resume step ${maxResumeStep.toFixed(3)}px exceeded ${nominalStep * 1.6}px`);
   assert.ok(catchup && Math.abs(catchup.gap) <= 2, JSON.stringify(catchup));
 });
+
+test('late extrapolation velocity change stays continuous and converges to the sampled path', () => {
+  const world = fixture(), buffer = new SnapshotBuffer('guest', 125, { adaptive: false });
+  const velocity = 23.75, resumeAt = 10 * T + 60 + 150;
+  const arrivals = [0, 2, 4].map(tick => ({ tick, x: 500, at: tick * T + 60 }));
+  arrivals.push({ tick: 10, x: 500 + (10 - 4) * velocity, at: resumeAt });
+  let next = 0, previousX = null, previousPlay = null, maxStep = 0, maxExcess = 0, convergence = null;
+  for (let now = 0; now <= resumeAt + 350; now += T / 2) {
+    while (next < arrivals.length && arrivals[next].at <= now) {
+      const { tick, x, at } = arrivals[next++];
+      buffer.push(packet(world, tick, x), at);
+    }
+    const view = buffer.sample(now);
+    if (!view) continue;
+    const x = view.entities.find(entity => entity.pid === 'host').x;
+    if (now >= resumeAt && previousX !== null) {
+      const step = Math.abs(x - previousX), nominal = velocity * Math.max(0, buffer.play - previousPlay);
+      maxStep = Math.max(maxStep, step);
+      maxExcess = Math.max(maxExcess, step - nominal);
+    }
+    if (now >= resumeAt + 300) {
+      const trueX = 500 + (Math.min(buffer.play, 13) - 4) * velocity;
+      convergence = Math.abs(x - trueX);
+    }
+    previousX = x; previousPlay = buffer.play;
+  }
+  assert.ok(maxExcess <= 32 + 1e-6, `max step ${maxStep.toFixed(1)}px, excess ${maxExcess.toFixed(1)}px`);
+  assert.ok(convergence !== null && convergence <= 1, `sampled path error ${convergence}`);
+});
+
+test('remote position teleports of 200px or more are not visually smoothed', () => {
+  const world = fixture(), buffer = new SnapshotBuffer('guest', 0, { adaptive: false });
+  buffer.push(packet(world, 0, 100), 0);
+  const before = buffer.sample(0).entities.find(entity => entity.pid === 'host').x;
+  buffer.push(packet(world, 2, 350), 2 * T);
+  const after = buffer.sample(2 * T).entities.find(entity => entity.pid === 'host').x;
+  assert.ok(after - before >= 200, `teleport was smoothed: ${before} -> ${after}`);
+});

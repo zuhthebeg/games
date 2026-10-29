@@ -306,6 +306,7 @@ export class SnapshotBuffer {
   constructor(uid, delay = 125, { adaptive = true, pierceCapability = null } = {}) {
     this.pierceCapability = pierceCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
+    this.visual = new Map();
     this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
     this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
@@ -377,9 +378,33 @@ export class SnapshotBuffer {
       if (!from || !to || e.dead || e.terminal) return e;
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
+    const present = new Set(), decay = Math.exp(-elapsed / 50);
+    const entities = interpolate('entities').map(e => {
+      present.add(e.id);
+      if (e.pid === this.uid || e.kind === 'projectile') {
+        this.visual.delete(e.id);
+        return e;
+      }
+      const previous = this.visual.get(e.id);
+      let ox = previous?.ox || 0, oy = previous?.oy || 0;
+      const jump = previous ? Math.hypot(e.x + ox - previous.x, e.y + oy - previous.y) : 0;
+      ox *= decay; oy *= decay;
+      if (!previous || e.dead || e.terminal || jump >= 200) {
+        ox = 0; oy = 0;
+      } else if (jump > 32) {
+        ox += previous.x - (e.x + ox);
+        oy += previous.y - (e.y + oy);
+        const length = Math.hypot(ox, oy);
+        if (length > 120) { ox *= 120 / length; oy *= 120 / length; }
+      }
+      const x = e.x + ox, y = e.y + oy;
+      this.visual.set(e.id, { x, y, ox, oy });
+      return { ...e, x, y };
+    });
+    for (const id of this.visual.keys()) if (!present.has(id)) this.visual.delete(id);
     // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
     const positionTick = span > 0 ? a.world.tick + alpha * span : a.world.tick;
-    return currentTelegraphs({ ...latest.world, positionTick, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
+    return currentTelegraphs({ ...latest.world, positionTick, entities, projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
 export function localView(world, uid) {
