@@ -1,3 +1,4 @@
+import {frost20} from '../sim/frost-evolution.js';
 import {pierce20} from '../sim/pierce-evolution.js';
 import { whirl20 } from '../sim/whirl-evolution.js';
 import { currentLoad, usedConsumables } from '../meta/run.js';
@@ -56,9 +57,9 @@ const mergeInput = (held, input) => {
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
     onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onResync = () => {}, onTransportStale = () => {}, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile: {...profile, combatVersion:4}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
+    Object.assign(this, { uid, host, profile: {...profile, combatVersion:5}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: this.profile };
-    this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid,125,{pierceCapability:id=>this.pierceCapability(id)});
+    this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id)});
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
@@ -71,6 +72,10 @@ export class CoopSession {
   }
   // Players are allocated first, in departure-profile order. This is the frozen
   // admission, not a live-owner registry: departed owners retain released shots.
+  frostCapability(id) {
+    if(!Number.isSafeInteger(id) || id<1) return undefined;
+    return this.frostCapabilities?.[Object.keys(this.frostCapabilities||{})[id-1]];
+  }
   pierceCapability(id) {
     if(!Number.isSafeInteger(id) || id<1) return undefined;
     return this.pierceCapabilities?.[Object.keys(this.pierceCapabilities||{})[id-1]];
@@ -122,7 +127,7 @@ export class CoopSession {
   }
   negotiate(profiles) {
     if (this.phase !== 'prepare' || !profiles?.[this.uid]
-      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==4 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
+      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==5 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
     const config = partyConfig(this.config, profiles);
     if (!validParty(config, profiles)
       || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
@@ -137,7 +142,7 @@ export class CoopSession {
     if (!!data.config?.invasion !== !!this.config.invasion
       || this.negotiatedProfiles && JSON.stringify(data.profiles) !== this.negotiatedProfiles
       || !validParty(data.config, data.profiles)
-      || Object.values(data.profiles).some(p=>p.combatVersion!==4 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
+      || Object.values(data.profiles).some(p=>p.combatVersion!==5 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
       || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
       || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
@@ -145,6 +150,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
+    this.frostCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && frost20(masteryLevels(p.rewardSave))])));
     this.pierceCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && pierce20(masteryLevels(p.rewardSave))])));
     this.whirlCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && whirl20(masteryLevels(p.rewardSave))])));
     this.config = data.config; this.profiles = Object.fromEntries(Object.entries(data.profiles).map(([id,p])=>[id,validLobbyProfile(p) ? {...invasionProfile(p),skillMasteryLevels:masteryLevels(p.rewardSave)} : {...p,...(p.skillMasteryLevels ? {skillMasteryLevels:frozenLunge(p.skillMasteryLevels,{...(p.skillMasteryLevels.lunge===undefined?{}:{lunge:1}),})} : {})}])); this.seed = data.seed;
@@ -158,7 +164,7 @@ export class CoopSession {
         partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,pierce_shot:this.pierceCapabilities[pid] ? 20 : 1,whirl:this.whirlCapabilities[pid] ? 20 : 1,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,frost_lance:this.frostCapabilities[pid] ? 20 : 1,pierce_shot:this.pierceCapabilities[pid] ? 20 : 1,whirl:this.whirlCapabilities[pid] ? 20 : 1,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
         // Admission authority is frozen on creation; live mastery remains display metadata.
         if (p.skillMasteryLevels) player.skillMasteryLevels=boundedMasteryLevels(p.skillMasteryLevels);
         else delete player.skillMasteryLevels;
@@ -213,8 +219,8 @@ export class CoopSession {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
       const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
-      if (data.profile?.combatVersion!==4) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
-      if (!data.profile || data.profile.combatVersion!==4
+      if (data.profile?.combatVersion!==5) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
+      if (!data.profile || data.profile.combatVersion!==5
         || data.profile.skillMasteryLevels && !validLevels(data.profile.skillMasteryLevels)
         || Object.hasOwn(data.profile, 'team')
         || data.profile.rewardSave && !validLobbyProfile(data.profile)
@@ -247,13 +253,15 @@ export class CoopSession {
       if (this.phase === 'prepare') return;
       // Snapshots can represent the frozen admission, never create a new power.
       if (data.projectiles!==undefined && !Array.isArray(data.projectiles)) return;
-      if (!Array.isArray(data.entities) || data.entities.some(e=>e.kind==='player' && (!!e.whirl20!==!!this.whirlCapabilities?.[e.pid] || !!e.pierce20!==!!this.pierceCapabilities?.[e.pid]))) return;
+      if (!Array.isArray(data.entities) || data.entities.some(e=>e.kind==='player' && (!!e.frost20!==!!this.frostCapabilities?.[e.pid] || !!e.whirl20!==!!this.whirlCapabilities?.[e.pid] || !!e.pierce20!==!!this.pierceCapabilities?.[e.pid]))) return;
+      if(data.entities.some(e=>e.frost20 && Object.keys(this.frostCapabilities)[e.id-1]!==e.pid)) return;
+      if((data.projectiles||[]).some(p=>p.abilityId==='frost_lance' && !!p.frost20!==!!this.frostCapability(p.ownerId))) return;
       if(data.entities.some(e=>e.pierce20 && Object.keys(this.pierceCapabilities)[e.id-1]!==e.pid)) return;
       if((data.projectiles||[]).some(p=>p.abilityId==='pierce_shot' && !!p.pierce20!==!!this.pierceCapability(p.ownerId))) return;
       const resumed = this.awaitingResync && data.resync?.to === this.uid && data.resync.nonce === this.resyncNonce;
       const silent = this.suspended || this.awaitingResync;
       // A fresh host reply is the barrier: earlier queued packets cannot seed playback.
-      if (resumed) { this.buffer = new SnapshotBuffer(this.uid,125,{pierceCapability:id=>this.pierceCapability(id)}); this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true }); }
+      if (resumed) { this.buffer = new SnapshotBuffer(this.uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id)}); this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true }); }
       const fresh = this.buffer.push(data, now);
       // A retransmitted final objective packet can repair a journal gap at the same tick.
       if (!fresh && !((data.objective || this.config.invasion) && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
