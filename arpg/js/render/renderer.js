@@ -234,7 +234,7 @@ export class ArenaRenderer {
       anim: { age: 0, deadAge: 0, hurt: 0, flash: 0, frozen: false, reduced: this.reduced },
       stopLeft: 0, flashLeft: 0, flashAlpha: 0, kickAge: FEEL.kick.life,
       kickX: 0, kickY: 0, trailLeft: 0,
-      lastAct: null
+      lastActiveKey: null
     };
     this.views.set(entity.id, view);
     return view;
@@ -581,14 +581,13 @@ export class ArenaRenderer {
         view.bluntCharge.alpha = Math.min(1, .65 * visual.brightness);
       }
       const active = entity.act?.phase === 'active';
-      if (entity.kind === 'player' && active && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastAct !== entity.act) {
+      const activeKey = active ? `${entity.act.id}|${entity.act.step ?? 0}` : null;
+      if (entity.kind === 'player' && activeKey && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && view.lastActiveKey !== activeKey) {
         const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
         this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, entity.act.def.comboTrail || (blunt ? 'blunt' : 'slash'), entity.act.def.shape, entity.act.facing, visual);
         if (visual.extraParticles) this.burst(entity.x, entity.y, { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, entity.act.facing);
-        view.lastAct = entity.act;
       }
-      if (!entity.act)
-        view.lastAct = null;
+      view.lastActiveKey = activeKey;
     }
     // Roster departures remove views, not just the authoritative entity.
     const liveIds = new Set(world.entities.map(e => e.id));

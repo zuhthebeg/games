@@ -300,14 +300,14 @@ export function decodeSnapshot(packet, uid, pierceCapability = null) {
 const TICK_MS = 1000 / 30;
 // Remote entities play back on the host's tick timeline, not on packet arrival times.
 // clock = fastest recent (arrival - tick time), i.e. base latency; later arrivals are
-// jitter, covered by an adaptive delay. Playback speed is nudged (max 8%) toward the
+// jitter, covered by an adaptive delay. Playback speed is nudged toward the
 // target instead of jumping, so arrival jitter/bursts do not show up as stutter.
 export class SnapshotBuffer {
   constructor(uid, delay = 125, { adaptive = true, pierceCapability = null } = {}) {
     this.pierceCapability = pierceCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
-    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null;
-    this.stats = { resets: 0, extrapolatedMs: 0, heldMs: 0 };
+    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
+    this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
   push(packet, at) {
     const last = this.frames.at(-1);
@@ -316,10 +316,16 @@ export class SnapshotBuffer {
     if (!world || !Number.isFinite(at)) return false;
     this.frames.push({ world, at }); if (this.frames.length > 24) this.frames.shift();
     this.offsets.push(at - world.tick * TICK_MS); if (this.offsets.length > 40) this.offsets.shift();
-    this.clock = Math.min(...this.offsets);
+    const last4 = this.offsets.slice(-4);
+    if (this.offsets.length >= 8 && Math.min(...last4) - this.clock > Math.max(2 * TICK_MS, this.lateP90)) {
+      this.offsets = last4;
+      this.clock = Math.min(...last4);
+      this.stats.rebases++;
+    } else this.clock = Math.min(...this.offsets);
     if (this.adaptive && this.offsets.length >= 4) {
       const late = this.offsets.map(o => o - this.clock).sort((a, b) => a - b);
       const p90 = late[Math.min(late.length - 1, Math.floor(late.length * .9))];
+      this.lateP90 = p90;
       const interval = last ? Math.min(6, world.tick - last.world.tick) * TICK_MS : 2 * TICK_MS;
       this.delay += (Math.max(80, Math.min(300, p90 + interval + 15)) - this.delay) * .1;
     }
@@ -335,11 +341,19 @@ export class SnapshotBuffer {
   sample(now, rtt = 0) {
     const latest = this.frames.at(-1);
     if (!latest) return null;
-    const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : now - this.lastNow;
-    if (this.play === null || elapsed < 0 || Math.abs(target - this.play) > 8) {
-      if (this.play !== null) this.stats.resets++;
-      this.play = target;
-    } else this.play += elapsed / TICK_MS * (1 + Math.max(-.08, Math.min(.08, (target - this.play) * .04)));
+    const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : Math.max(0, now - this.lastNow);
+    const horizon = latest.world.tick + 3;
+    if (this.play === null) this.play = Math.min(target, horizon);
+    else if (target - this.play > 8) {
+      const next = Math.min(target, horizon);
+      if (next - this.play >= .5) this.stats.resets++;
+      this.play = next;
+    } else {
+      let advance = elapsed / TICK_MS * (1 + Math.max(-.2, Math.min(.08, (target - this.play) * .04)));
+      if (this.play > latest.world.tick)
+        advance *= Math.max(0, Math.min(1, (horizon - this.play) / 3));
+      this.play = Math.min(horizon, this.play + advance);
+    }
     this.lastNow = now;
     const tick = this.play, first = this.frames[0];
     let a = first, b = first;
@@ -355,7 +369,7 @@ export class SnapshotBuffer {
     }
     // At most 3 ticks (100ms) of extrapolation, from tick-time velocity.
     const span = b.world.tick - a.world.tick;
-    const alpha = span > 0 ? Math.max(0, (Math.min(tick, latest.world.tick + 3) - a.world.tick) / span) : 0;
+    const alpha = span > 0 ? Math.max(0, (Math.min(tick, horizon) - a.world.tick) / span) : 0;
     const interpolate = key => latest.world[key].map(e => {
       const from = a.world[key].find(v => v.id === e.id), to = b.world[key].find(v => v.id === e.id);
       if (!from || !to || e.dead || e.terminal) return e;
