@@ -1,13 +1,13 @@
 import { ABILITIES } from '../content/combat.js';
 import { MAX_ZONES } from '../sim/spell-zones.js';
-export const SPELL_ZONE_VFX = Object.freeze({ ember_bolt:{radius:117}, meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone, poison_field: ABILITIES.poison_field.zone });
+export const SPELL_ZONE_VFX = Object.freeze({ meteor: ABILITIES.meteor.zone, firewall: ABILITIES.firewall.zone, rain_arrow: ABILITIES.rain_arrow.zone, poison_field: ABILITIES.poison_field.zone });
 // One reusable Graphics context, bounded geometry. Presentation only, including reduced motion.
 export function paintSpellZones(g, world, reduced = false) {
   g.clear();
   const pending = world.entities.filter(e=>!e.dead && !e.terminal && e.act?.zonePoint && ['windup','lock'].includes(e.act.phase));
   const zones = world.zones || [];
   for (const zone of [...pending.map(e=>({abilityId:e.act.id,...e.act.zonePoint,facing:e.act.facing,pending:true})),...zones].slice(0,MAX_ZONES)) {
-    const def=SPELL_ZONE_VFX[zone.abilityId];
+    const def=zone.abilityId==='ember_bolt' ? {radius:117} : SPELL_ZONE_VFX[zone.abilityId];
     if (!def) continue;
     const x=zone.x,y=zone.y;
     if (zone.abilityId === 'poison_field') {
