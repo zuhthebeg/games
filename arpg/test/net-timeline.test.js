@@ -81,3 +81,34 @@ test('steady packet jitter keeps warmed playback steps within ten percent of rea
   assert.ok(steps.every(step => step > .45 && step < .55),
     JSON.stringify(steps.filter(step => !(step > .45 && step < .55)).slice(0, 10)));
 });
+
+test('snapshot playback time-dilates catch-up after a 700ms packet gap', () => {
+  const world = fixture(), buffer = new SnapshotBuffer('guest'), arrivals = [];
+  for (let tick = 0; tick <= 60; tick += 2)
+    arrivals.push({ tick, at: tick * T + 60 });
+  for (let tick = 82; tick <= 180; tick += 2)
+    arrivals.push({ tick, at: tick * T + 60 });
+
+  const resumeAt = 82 * T + 60, nominalStep = .5;
+  let next = 0, previousX = null, maxResumeStep = 0, catchup = null;
+  for (let now = 0; now <= resumeAt + 2500; now += 1000 / 60) {
+    while (next < arrivals.length && arrivals[next].at <= now) {
+      const { tick, at } = arrivals[next++];
+      buffer.push(packet(world, tick, tick), at);
+    }
+    const view = buffer.sample(now);
+    if (!view) continue;
+    const x = view.entities.find(entity => entity.pid === 'host').x;
+    if (now >= resumeAt && previousX !== null)
+      maxResumeStep = Math.max(maxResumeStep, x - previousX);
+    if (now >= resumeAt + 2000 && catchup === null) {
+      const target = (now - buffer.clock - buffer.delay) / T;
+      catchup = { gap: target - buffer.play, now };
+    }
+    previousX = x;
+  }
+
+  assert.ok(maxResumeStep <= nominalStep * 1.6,
+    `resume step ${maxResumeStep.toFixed(3)}px exceeded ${nominalStep * 1.6}px`);
+  assert.ok(catchup && Math.abs(catchup.gap) <= 2, JSON.stringify(catchup));
+});

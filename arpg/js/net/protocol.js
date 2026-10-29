@@ -343,13 +343,15 @@ export class SnapshotBuffer {
     if (!latest) return null;
     const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : Math.max(0, now - this.lastNow);
     const horizon = latest.world.tick + 3;
+    const gap = target - this.play;
     if (this.play === null) this.play = Math.min(target, horizon);
-    else if (target - this.play > 8) {
+    else if (gap > 30) {
       const next = Math.min(target, horizon);
       if (next - this.play >= .5) this.stats.resets++;
       this.play = next;
     } else {
-      let advance = elapsed / TICK_MS * (1 + Math.max(-.2, Math.min(.08, (target - this.play) * .04)));
+      const maxNudge = gap <= 4 ? .08 : Math.min(.5, gap * .04);
+      let advance = elapsed / TICK_MS * (1 + Math.max(-.2, Math.min(maxNudge, gap * .04)));
       if (this.play > latest.world.tick)
         advance *= Math.max(0, Math.min(1, (horizon - this.play) / 3));
       this.play = Math.min(horizon, this.play + advance);
