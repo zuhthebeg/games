@@ -442,6 +442,7 @@ export class SkillVfx {
         g.poly([-16, 0, 0, -8, 16, 0, 0, 8]).fill({ color: profile.color, alpha: .5 })
           .stroke({ color: profile.accent, width: 2, alignment: 1, alpha: .95 })
           .poly([-7, 0, 0, -14, 7, 0, 0, 14]).stroke({ color: profile.accent, width: 1, alpha: .6 });
+        if(act.id==='frost_lance' && act.frost20) g.moveTo(-10,0).lineTo(-3,-3).lineTo(3,0).lineTo(8,-2).stroke({color:profile.accent,width:1,alpha:.95}).moveTo(-3,-3).lineTo(-1,3).lineTo(3,0).stroke({color:profile.accent,width:1,alpha:.95});
       } else if (profile.windup === 'vertical') {
         g.moveTo(0, 8).lineTo(0, -56).stroke({ color: profile.color, width: 16, alpha: .2 })
           .moveTo(0, 8).lineTo(0, -56).stroke({ color: profile.accent, width: 3, alpha: .95 })
@@ -557,7 +558,7 @@ export class SkillVfx {
     if (!slot) slot = this.projectiles.find(item => item.id === null);
     if (!slot) return;
     if (slot.id !== particle.id) {
-      Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0, bakedAge: 0 });
+      Object.assign(slot, { id: particle.id, prevX: particle.x, prevY: particle.y, count: 0, clock: 0, bakedAge: 0, frostFacet:false });
       const g = slot.node; g.clear();g.blendMode=particle.abilityId==='blood_spear'?'normal':'add';
       if (profile.drawProjectile) profile.drawProjectile(g, particle, reduced);
       else if (profile.projectile && profile.style !== 'ember') {
@@ -572,6 +573,12 @@ export class SkillVfx {
       } else g.circle(0, 0, particle.r).fill({ color: profile.color, alpha: .85 })
         .circle(0, 0, particle.r * .5).fill({ color: profile.accent, alpha: .85 })
         .circle(0, 0, particle.r * .22).fill({ color: 0xffffff, alpha: .9 });
+    }
+    if(particle.frost20 && particle.abilityId==='frost_lance' && !slot.frostFacet) {
+      slot.frostFacet=true;
+      const g=slot.node,r=particle.r;
+      g.moveTo(-r*.65,0).lineTo(-r*.2,-r*.18).lineTo(r*.2,0).lineTo(r*.55,-r*.08).stroke({color:profile.accent,width:1,alpha:.95})
+        .moveTo(-r*.2,-r*.18).lineTo(-r*.1,r*.18).lineTo(r*.2,0).stroke({color:profile.accent,width:1,alpha:.95});
     }
     if(particle.pierce20 && particle.abilityId==='pierce_shot') {
       // Identity-local static grooves/rings, wholly inside radius8; no extra nodes.

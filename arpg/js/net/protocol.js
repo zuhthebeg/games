@@ -1,3 +1,4 @@
+import {frostDef} from '../sim/frost-evolution.js';
 import {pierceDef} from '../sim/pierce-evolution.js';
 import { validMasteryLevels } from '../content/skill-growth.js';
 import { dodgeInputViewTick } from '../sim/dodge-lag.js';
@@ -170,7 +171,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 import {emberDef} from '../sim/ember-evolution.js';
-const COMMON = ['pierce20', 'whirl20', 'ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
+const COMMON = ['frost20', 'pierce20', 'whirl20', 'ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
@@ -186,13 +187,13 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'pierce20', ...(e.act.pierce20 ? ['rate'] : []), 'whirl20', ...(e.act.whirl20 ? ['rate'] : []), 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'frost20', ...(e.act.frost20 ? ['rate'] : []), 'pierce20', ...(e.act.pierce20 ? ['rate'] : []), 'whirl20', ...(e.act.whirl20 ? ['rate'] : []), 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
     ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'ox', 'oy', 'castTick', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
-    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'pierce20', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
+    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'frost20', 'pierce20', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }
-export function decodeSnapshot(packet, uid, pierceCapability = null) {
+export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapability = null) {
   if (packet?.t !== 'snapshot' || !Number.isSafeInteger(packet.tick) || !Array.isArray(packet.entities)) return null;
   if (packet.projectiles!==undefined && !Array.isArray(packet.projectiles)) return null;
   if (!validZones(packet.zones)) return null;
@@ -201,6 +202,21 @@ export function decodeSnapshot(packet, uid, pierceCapability = null) {
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
     if (e.skillMasteryLevels !== undefined && !validMasteryLevels(e.skillMasteryLevels)) return null;
+    if(e.kind==='player' && frostCapability && !!e.frost20!==!!frostCapability(e.id)) return null;
+    if(e.frost20!==undefined && (e.frost20!==true || e.kind!=='player' || !Number.isSafeInteger(e.id) || e.id<1 || packet.entities.filter(p=>p.id===e.id).length!==1 || ![e.x,e.y,e.r,e.facing].every(Number.isFinite) || e.r<=0)) return null;
+    if(e.act?.id==='frost_lance' && !!e.frost20!==!!e.act.frost20) return null;
+    if(e.act?.frost20!==undefined) {
+      const a=e.act, phases=['windup','lock','active','recovery'],def=ABILITIES.frost_lance;
+      if(typeof a.fired!=='boolean' || a.fired!==(a.elapsed>a.phaseTicks?.windup+a.phaseTicks?.lock)) return null;
+      if(a.frost20!==true || !e.frost20 || a.id!=='frost_lance' || !phases.includes(a.phase)
+        || !a.phaseTicks || Object.keys(a.phaseTicks).length!==4
+        || ![a.rate,a.ox,a.oy,a.facing].every(Number.isFinite) || a.rate<=0 || a.rate>100
+        || phases.some(k=>a.phaseTicks[k]!==((def[k+'Ms']||k==='active')?Math.max(1,ticks((def[k+'Ms']||0)/a.rate)):0))
+        || !Number.isSafeInteger(a.castTick) || a.castTick<0 || a.castTick+a.elapsed!==packet.tick
+        || !Number.isSafeInteger(a.left) || a.left<1 || a.left>a.phaseTicks[a.phase]
+        || a.elapsed!==phases.slice(0,phases.indexOf(a.phase)).reduce((n,k)=>n+a.phaseTicks[k],0)+a.phaseTicks[a.phase]-a.left
+        || a.total!==a.phaseTicks.windup+a.phaseTicks.lock) return null;
+    }
     if(e.pierce20!==undefined && (e.pierce20!==true || e.kind!=='player' || !Number.isSafeInteger(e.id) || e.id<1 || packet.entities.filter(p=>p.id===e.id).length!==1 || ![e.x,e.y,e.r,e.facing].every(Number.isFinite) || e.r<=0)) return null;
     if(e.act?.id==='pierce_shot' && !!e.pierce20!==!!e.act.pierce20) return null;
     if(e.act?.pierce20!==undefined) {
@@ -281,6 +297,11 @@ export function decodeSnapshot(packet, uid, pierceCapability = null) {
   }
   for(const p of packet.projectiles||[]) {
     const owner=packet.entities.find(e=>e.id===p.ownerId);
+    if(p.frost20!==undefined && (p.frost20!==true || p.abilityId!=='frost_lance')) return null;
+    const frostAdmitted=frostCapability ? frostCapability(p.ownerId) : owner ? !!owner.frost20 : undefined;
+    if(p.abilityId==='frost_lance' && (frostAdmitted===undefined && p.frost20 || frostAdmitted!==undefined && !!p.frost20!==frostAdmitted)) return null;
+    if(p.frost20 && ['pierce','hit','travelled','range','dmgMult','poiseMult','def','team','ownerKind'].some(k=>p[k]!==undefined)) return null;
+    if(p.frost20 && (owner && owner.kind!=='player' || !Number.isSafeInteger(p.ownerId) || p.ownerId<1 || !Number.isSafeInteger(p.id) || p.id<1 || packet.entities.some(e=>e.id===p.id) || (packet.projectiles||[]).filter(q=>q.id===p.id).length!==1 || (packet.zones||[]).some(z=>z.id===p.id) || ![p.x,p.y,p.vx,p.vy,p.r].every(Number.isFinite) || p.r!==10 || Math.abs(Math.hypot(p.vx,p.vy)-820)>1e-8 || p.x<0 || p.y<0 || p.x>packet.arena?.w || p.y>packet.arena?.h)) return null;
     if(p.pierce20!==undefined && (p.pierce20!==true || p.abilityId!=='pierce_shot')) return null;
     const admitted=owner ? !!owner.pierce20 : pierceCapability?.(p.ownerId);
     if(p.abilityId==='pierce_shot' && (admitted===undefined && p.pierce20 || admitted!==undefined && !!p.pierce20!==admitted)) return null;
@@ -290,6 +311,7 @@ export function decodeSnapshot(packet, uid, pierceCapability = null) {
   copy.zones ||= [];
   for (const e of copy.entities) if (e.act) e.act.def = e.act.counter ? ABILITIES[e.act.id] : comboDef(e.act.id, e.act.step, e.weaponForm);
   for(const e of copy.entities) if(e.act?.ember20) e.act.def=emberDef(ABILITIES.ember_bolt);
+  for(const e of copy.entities) if(e.act?.frost20) e.act.def=frostDef(ABILITIES.frost_lance);
   for(const e of copy.entities) if(e.act?.pierce20) e.act.def=pierceDef(ABILITIES.pierce_shot);
   const index = copy.entities.findIndex(e => e.pid === uid && e.kind === 'player');
   if (index > 0) copy.entities.unshift(...copy.entities.splice(index, 1));
@@ -303,8 +325,8 @@ const TICK_MS = 1000 / 30;
 // jitter, covered by an adaptive delay. Playback speed is nudged (max 8%) toward the
 // target instead of jumping, so arrival jitter/bursts do not show up as stutter.
 export class SnapshotBuffer {
-  constructor(uid, delay = 125, { adaptive = true, pierceCapability = null } = {}) {
-    this.pierceCapability = pierceCapability;
+  constructor(uid, delay = 125, { adaptive = true, pierceCapability = null, frostCapability = null } = {}) {
+    this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
     this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null;
     this.stats = { resets: 0, extrapolatedMs: 0, heldMs: 0 };
@@ -312,7 +334,7 @@ export class SnapshotBuffer {
   push(packet, at) {
     const last = this.frames.at(-1);
     if (last && packet.tick <= last.world.tick) return false;
-    const world = decodeSnapshot(packet, this.uid, this.pierceCapability);
+    const world = decodeSnapshot(packet, this.uid, this.pierceCapability, this.frostCapability);
     if (!world || !Number.isFinite(at)) return false;
     this.frames.push({ world, at }); if (this.frames.length > 24) this.frames.shift();
     this.offsets.push(at - world.tick * TICK_MS); if (this.offsets.length > 40) this.offsets.shift();
