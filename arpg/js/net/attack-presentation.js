@@ -100,7 +100,7 @@ export class AttackPresentation {
     if (act.presentationSeq !== undefined) {
       const row = this.starts.get(act.presentationSeq);
       const age = row ? this.now - row.at : Infinity;
-      if (!row || row.rejected || row.completed || age > this.timeout * (row.visible ? 2 : 1)) return null;
+      if (!row || row.rejected || row.completed || (!row.confirmed && age > this.timeout * (row.visible ? 2 : 1))) return null;
       row.visible = true;
       return act;
     }
@@ -115,7 +115,7 @@ export class AttackPresentation {
     this.shots = this.shots.filter(p => {
       p.x += p.vx * dt / 1000; p.y += p.vy * dt / 1000; p.travelled += Math.hypot(p.vx,p.vy) * dt / 1000;
       const row = this.starts.get(p.seq);
-      return row && !row.rejected && p.travelled < p.range && (row.confirmed ? this.now - p.born : this.now - row.at) <= this.timeout;
+      return row && !row.rejected && p.travelled < p.range && (row.confirmed || this.now - row.at <= this.timeout);
     });
     const act = pawn.act, row = this.starts.get(act?.presentationSeq);
     if (!row || row.rejected || row.delivered || (!row.confirmed && this.now - row.at > this.timeout)
@@ -138,8 +138,8 @@ export class AttackPresentation {
   projectiles() { return this.shots.flatMap(p => {
     const row = this.starts.get(p.seq);
     return !row || row.rejected ? [] : [{ ...p,
-      presentationAlpha: .55 * Math.min(1, Math.max(0, (this.timeout
-        - (row.confirmed ? this.now - p.born : this.now - row.at)) / 100)) }];
+      presentationAlpha: .55 * (row.confirmed ? 1 : Math.min(1, Math.max(0, (this.timeout
+        - (this.now - row.at)) / 100))) }];
   }); }
   clear() { this.starts.clear(); this.shots = []; }
 }

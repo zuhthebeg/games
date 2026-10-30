@@ -64,6 +64,18 @@ test('unconfirmed projectile copies are display-only and yield to authoritative 
   p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.length, 1); assert.equal(p.view(accepted).projectiles[0].id, 71);
 });
+test('confirmed pending projectile retains its presentation until range or authority delivery', () => {
+  const { view, p } = fixture(); p.presentationTimeout = 100;
+  advance(p, 1, { skillEdge: true });
+  const row = p.attacks.starts.get(1);
+  row.confirmed = true;
+  p.attacks.shots.push({ id: -1, seq: 1, ownerId: 'g', abilityId: 'ember_bolt',
+    x: 0, y: 0, vx: 0, vy: 0, r: 5, range: 1000, travelled: 0, born: p.attacks.now, presentation: true });
+  p.attacks.advance(p.state, 500);
+  const pending = p.view(view).projectiles.filter(pr => pr.presentation);
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].presentationAlpha, .55);
+});
 test('completed local cast is not replayed by late confirmation and rejection removes projectile copies', () => {
   const { view, p } = fixture(); p.presentationTimeout = 1800;
   advance(p, 1, { skillEdge: true }); const acceptedAct = structuredClone(p.state.act); delete acceptedAct.presentationSeq;

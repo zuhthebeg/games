@@ -113,9 +113,9 @@ test('cast elapsed is present in decoded and predicted own acts', () => {
   assert.ok(Number.isFinite(predicted.act?.elapsed));
 });
 
-function predictionFixture() {
+function predictionFixture({ weapon = 'blade', skills = [] } = {}) {
   const world = createWorld({ seed: 18 });
-  addPlayer(world, { pid: 'local', weapon: 'blade' });
+  addPlayer(world, { pid: 'local', weapon, mods: { skills, maxMp: 200 } });
   startStage(world, 'S2');
   const view = decodeSnapshot(encodeSnapshot(world, { local: 0 }), 'local');
   const prediction = new LocalPrediction('local');
@@ -140,14 +140,52 @@ function advanceBasic(prediction, seq, attack = false) {
   prediction.advance({ seq, v: [0, 0, 1, 0], attack }, emptyInput(), T);
 }
 
-function firstCastAuthority(world, tick) {
+function advanceSkill(prediction, seq, skillEdge = false) {
+  prediction.advance({ seq, v: [0, 0, 1, 0] }, { ...emptyInput(), skillEdge }, T);
+}
+
+function firstCastAuthority(world, tick, skill = false) {
   let pawn = structuredClone(world.entities.find(entity => entity.pid === 'local'));
   const others = world.entities.filter(entity => entity.pid !== 'local');
   for (let frame = 0; frame < tick; frame++)
-    pawn = predictPlayerTick(pawn, { ...emptyInput(), attack: frame === 0 }, { arena: world.arena, others, tick: frame });
+    pawn = predictPlayerTick(pawn, { ...emptyInput(), attack: !skill && frame === 0,
+      skillEdge: skill && frame === 0 }, { arena: world.arena, others, tick: frame });
   return { ...world, tick, entities: world.entities.map(entity => entity.pid === 'local'
     ? { ...entity, ...pawn, lastInputSeq: tick } : entity) };
 }
+
+test('confirmed slash and lunge stay visible through completion; slash trail remains single', () => {
+  for (const config of [{ name: 'slash', skill: false }, { name: 'lunge', skill: true, skills: ['lunge'] }]) {
+    for (const lag of [8, 12, 16]) {
+      const fixture = predictionFixture({ skills: config.skills || [] });
+      const { prediction, world } = fixture;
+      prediction.presentationTimeout = 100;
+      if (config.skill) advanceSkill(prediction, 1, true);
+      else advanceBasic(prediction, 1, true);
+      const firstView = prediction.view(world);
+      fixture.renderer.render(firstView, 1, 1 / 60);
+      prediction.attacks.now = lag * T;
+      const authority = structuredClone(world);
+      authority.tick = 1;
+      authority.entities = authority.entities.map(entity => entity.pid === 'local'
+        ? { ...entity, lastInputSeq: 1, act: structuredClone(prediction.state.act) } : entity);
+      prediction.reconcile(authority);
+      const authoritativeView = prediction.view(authority);
+      assert.ok(authoritativeView.entities.find(entity => entity.pid === 'local').act, `${config.name}/${lag} confirmed`);
+      fixture.renderer.render(authoritativeView, 1, 1 / 60);
+      for (let seq = 2; prediction.state.act && seq < 40; seq++) {
+        if (config.skill) advanceSkill(prediction, seq);
+        else advanceBasic(prediction, seq);
+        const view = prediction.view({ ...world, tick: seq });
+        fixture.renderer.render(view, 1, 1 / 60);
+        if (prediction.state.act)
+          assert.ok(view.entities.find(entity => entity.pid === 'local').act, `${config.name}/${lag} tick ${seq}`);
+      }
+      assert.equal(prediction.state.act, null, `${config.name}/${lag} completes`);
+      assert.equal(fixture.trailCount(), config.skill ? 0 : 1, `${config.name}/${lag} trail`);
+    }
+  }
+});
 
 function secondBasicActiveTick(world) {
   let pawn = structuredClone(world.entities.find(entity => entity.pid === 'local'));
