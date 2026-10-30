@@ -97,7 +97,7 @@ test('legacy timestamps remain only for unambiguous presses, including after ove
   for (const k of TIMED_SKILL_EDGES) assert.equal(next.skillViewTicks[k], 7);
 });
 test('real CoopSession overflow delivers newest evasion press with original tick, one refund and one shot', () => {
-  const profile = { combatVersion:6, level: 1, weapon: 'bow', mods: { skills: ['evasion_shot'], maxMp: 200, mpRegen: 0 } };
+  const profile = { combatVersion:7, level: 1, weapon: 'bow', mods: { skills: ['evasion_shot'], maxMp: 200, mpRegen: 0 } };
   const events = [];
   const s = new CoopSession({ onFrame: (_, ev) => events.push(...ev), uid: 'h', host: 'h', players: ['h', 'g'], profile, config: { stageId: 'S2', threat: 1 } });
   s.begin({ config: s.config, seed: 1, profiles: { h: profile, g: profile } });

@@ -75,7 +75,7 @@ test('merchant keeps original guaranteed offer and rotates all four shield types
 test('host reconstructs new shield identity from validated save, never a guest claimed mod',async()=>{
  const {CoopSession}=await import('../js/net/session.js');const config={stageId:'S2',seed:1,threat:1};
  const trusted=saved('buckler');trusted.cleared.S1=true;
- const profiles={host:{combatVersion:6,weapon:'blade',level:30,mods:{offhand:'shield',shieldModel:model('tower_shield')},rewardSave:trusted,lineage:'human',role:'hunter'},guest:{combatVersion:6,weapon:'blade',level:1,mods:{offhand:'shield',shieldModel:model('tower_shield')}}};
+ const profiles={host:{combatVersion:7,weapon:'blade',level:30,mods:{offhand:'shield',shieldModel:model('tower_shield')},rewardSave:trusted,lineage:'human',role:'hunter'},guest:{combatVersion:7,weapon:'blade',level:1,mods:{offhand:'shield',shieldModel:model('tower_shield')}}};
  const c=new CoopSession({uid:'host',host:'host',players:['host','guest'],profile:profiles.host,config});c.begin({profiles,config,seed:1});
  assert.deepEqual(c.world.entities.find(e=>e.pid==='host').shieldModel,model('buckler'));assert.equal(c.world.entities.find(e=>e.pid==='guest').shieldModel,undefined);
 });

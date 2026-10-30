@@ -64,6 +64,8 @@ function startAct(p, abilityId, facing, tick) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const cleave=abilityId==='heavy_cleave' && p.cleave20===true;
+  if(cleave)phaseTicks.active=4;
   const volley=abilityId==='volley' && p.volley20===true;
   if(volley) phaseTicks.active=4;
   const whirl=abilityId==='whirl' && p.whirl20===true;
@@ -71,7 +73,7 @@ function startAct(p, abilityId, facing, tick) {
   const evolution = abilityId === 'lunge' && p.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(cleave ? {cleave20:true,rate,castTick:tick,fired:false} : {}), ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -103,7 +105,7 @@ function basicReachTarget(p, def, others) {
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
 export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
-  if (predictionBlocked(state)) return state.act?.volley20 || state.act?.whirl20 || state.act?.lunge20 || state.act?.ember20 ? {...state,act:null} : state;
+  if (predictionBlocked(state)) return state.act?.cleave20 || state.act?.volley20 || state.act?.whirl20 || state.act?.lunge20 || state.act?.ember20 ? {...state,act:null} : state;
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
   if (p.berserk && (p.berserk.expiresTick <= tick || !canUseSkill('berserk',p.weapon,p.weaponForm,p.lineage,p.handedness))) delete p.berserk;
@@ -188,7 +190,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const w = WEAPONS[p.weapon];
   const skillPressed = SKILL_EDGES.some(k => inp[k]);
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
-  if (skillId && !(skillId==='volley' && p.act?.volley20) && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
+  if (skillId && !(skillId==='heavy_cleave' && p.act?.cleave20) && !(skillId==='volley' && p.act?.volley20) && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
       if (p.act) endAct(p);

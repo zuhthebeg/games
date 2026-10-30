@@ -5,7 +5,7 @@ import {encodeSnapshot,decodeSnapshot,partyHpScale} from '../js/net/protocol.js'
 import {createWorld,addPlayer,startStage,emptyInput} from '../js/sim/world.js';
 import {createMemoryTransport} from '../js/net/loopback.js';
 const id='M_MINE_CART', dt=1000/30;
-const profile={combatVersion:6,level:11,weapon:'bow',mods:{maxHp:10000},threats:{[id]:1}};
+const profile={combatVersion:7,level:11,weapon:'bow',mods:{maxHp:10000},threats:{[id]:1}};
 function pair(stageId=id){
  const wire=createMemoryTransport(),frames={host:[],guest:[]};const sessions={};
  for(const uid of ['host','guest']){
@@ -46,7 +46,7 @@ test('guest roster departure releases token; late join cannot recreate character
 test('same-tick final retransmission repairs journal gap without duplicate objective event',()=>{
  const w=createWorld();addPlayer(w,{pid:'guest'});startStage(w,id);w.tick=30;w.round.state='clear';w.round.objective.state='complete';w.entities[0].terminal='clear';
  const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:id,threat:1},onFrame:(w,e)=>frames.push(e)});
- g.begin({config:{stageId:id,threat:1},seed:42,profiles:{host:profile,guest:profile}});
+ g.begin({config:{stageId:id,threat:1},seed:42,profiles:{guest:profile,host:profile}});
  const row1={seq:1,event:{type:'tokenPicked',pid:'guest'},participants:[]},row2={seq:2,event:{type:'objectiveComplete',participants:['guest']},participants:['guest']};
  const packet={...encodeSnapshot(w),eventSeq:2,events:[row2]};g.rt('host',packet);assert.equal(frames.length,0);assert.equal(g.phase,'running');
  g.rt('host',{...packet,events:[row1,row2]});assert.equal(g.phase,'ended');assert.equal(frames.flat().filter(e=>e.type==='objectiveComplete').length,1);
@@ -80,7 +80,7 @@ for(const terminal of ['death','return_scroll'])test(`QS1 ${terminal} guest reta
 });
 test('QS1 same-tick missing marker journal repaired by retransmit without duplicate settlement',()=>{
  const w=createWorld();addPlayer(w,{pid:'guest'});startStage(w,qsId);w.tick=30;w.round.state='clear';w.round.objective.state='complete';w.round.objective.visited=7;w.entities[0].terminal='clear';
- const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:qsId,threat:1},onFrame:(w,e)=>frames.push(e)});g.begin({config:{stageId:qsId,threat:1},seed:42,profiles:{host:profile,guest:profile}});
+ const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:qsId,threat:1},onFrame:(w,e)=>frames.push(e)});g.begin({config:{stageId:qsId,threat:1},seed:42,profiles:{guest:profile,host:profile}});
  const row1={seq:1,event:{type:'markerVisited',marker:2,pid:'guest'},participants:[]},row2={seq:2,event:{type:'objectiveComplete',participants:['guest']},participants:['guest']};const packet={...encodeSnapshot(w),eventSeq:2,events:[row2]};g.rt('host',packet);assert.equal(g.phase,'running');assert.equal(frames.length,0);
  g.rt('host',{...packet,events:[row1,row2]});assert.equal(g.phase,'ended');assert.equal(g.buffer.frames.at(-1).world.round.objective.visited,7);g.rt('host',{...packet,events:[row1,row2]});assert.equal(frames.flat().filter(e=>e.type==='objectiveComplete').length,1);
 });
@@ -108,7 +108,7 @@ for(const terminal of ['death','return_scroll'])test(`QC1 net ${terminal} guest 
 });
 test('QC1 final kill journal gap must be repaired before guest completes; duplicate final snapshot never repeats event',()=>{
  const w=createWorld();addPlayer(w,{pid:'guest'});startStage(w,qcId);w.tick=30;w.round.state='clear';w.round.objective.state='complete';w.round.objective.targetId=2;w.entities[0].terminal='clear';
- const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:qcId,threat:1},onFrame:(w,e)=>frames.push(e)});g.begin({config:{stageId:qcId,threat:1},seed:42,profiles:{host:profile,guest:profile}});
+ const frames=[],g=new CoopSession({uid:'guest',host:'host',players:['host','guest'],profile,config:{stageId:qcId,threat:1},onFrame:(w,e)=>frames.push(e)});g.begin({config:{stageId:qcId,threat:1},seed:42,profiles:{guest:profile,host:profile}});
  const row1={seq:1,event:{type:'kill',id:2,monster:'gargoyle',stageId:qcId,xp:36},participants:['guest']},row2={seq:2,event:{type:'objectiveComplete',questId:'QC1',participants:['guest']},participants:['guest']};const packet={...encodeSnapshot(w),eventSeq:2,events:[row2]};g.rt('host',packet);assert.equal(g.phase,'running');assert.equal(frames.length,0);
  g.rt('host',{...packet,events:[row1,row2]});assert.equal(g.phase,'ended');assert.equal(g.buffer.frames.at(-1).world.round.objective.targetId,2);g.rt('host',{...packet,events:[row1,row2]});assert.equal(frames.flat().filter(e=>e.type==='objectiveComplete').length,1);
 });
