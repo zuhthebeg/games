@@ -25,7 +25,7 @@ test('buffer interpolates the surrounding pair by host tick; newest state/telegr
   assert.deepEqual(v.telegraphs, [{ id: 9, phase: 'lock' }]);
   assert.equal(new SnapshotBuffer('g').sample(0), null);
 });
-test('arrival jitter/bursts do not move the playback clock; it advances smoothly at ~real time', () => {
+test('arrival jitter/bursts keep playback monotonic and ease near the data horizon', () => {
   const b = new SnapshotBuffer('g'); let now = 0, previous = null; const steps = [];
   // Host sends every 2 ticks; arrivals: steady 60ms latency with 0..150ms extra lag and bursts.
   const arrivals = Array.from({ length: 120 }, (_, i) => ({ tick: i * 2, at: i * 2 * T + 60 + ((i * 37) % 7 === 0 ? 150 : (i * 13) % 40) }))
@@ -34,19 +34,23 @@ test('arrival jitter/bursts do not move the playback clock; it advances smoothly
   for (; now < 120 * 2 * T; now += 1000 / 60) {
     while (next < arrivals.length && arrivals[next].at <= now) { const a = arrivals[next++]; b.push(frame(a.tick, a.tick * 4), a.at); }
     const v = b.sample(now); if (!v || now < 1500) continue;
-    if (previous !== null) steps.push(v.entities[0].x - previous); previous = v.entities[0].x;
+    if (previous !== null) {
+      const latest = b.frames.at(-1).world.tick;
+      steps.push({ step: v.entities[0].x - previous, aheadOfData: b.play > latest - 1 + 1e-9 });
+    }
+    previous = v.entities[0].x;
   }
-  // 4px per tick = 2px per 60Hz frame; playback-rate nudges stay within 8%, never a freeze/jump.
-  assert.ok(steps.every(d => d > 2 * .9 && d < 2 * 1.1), JSON.stringify(steps.filter(d => !(d > 1.8 && d < 2.2)).slice(0, 5)));
+  // 4px per tick = 2px per 60Hz frame; only easing beyond the latest tick may slow it down.
+  assert.ok(steps.every(({ step }) => step > 0 && step < 2 * 1.1));
+  assert.ok(steps.filter(({ step, aheadOfData }) => step < 2 * .9 && !aheadOfData).length === 0);
   assert.equal(b.stats.resets, 0); assert.ok(b.delay >= 80 && b.delay <= 300);
 });
-test('extrapolation from tick velocity is capped at 3 ticks, then holds; first frame/stale safe', () => {
+test('newest frame holds without extrapolation; first frame/stale packets stay safe', () => {
   const b = new SnapshotBuffer('g', 100, { adaptive: false });
   assert.equal(b.sample(0), null); b.push(frame(0, 100), 0); assert.equal(b.sample(1000).entities[0].x, 100);
   const c = new SnapshotBuffer('g', 100, { adaptive: false }); c.push(frame(0, 100), 0); c.push(frame(3, 130), 3 * T);
-  assert.ok(Math.abs(c.sample(4 * T + 100).entities[0].x - 140) < 1e-6);
-  assert.ok(Math.abs(c.sample(6 * T + 100).entities[0].x - 160) < 1e-6);
-  assert.ok(Math.abs(c.sample(9 * T + 100).entities[0].x - 160) < 1e-6);
+  assert.equal(c.sample(4 * T + 100).entities[0].x, 130);
+  assert.equal(c.sample(9 * T + 100).entities[0].x, 130);
   assert.equal(c.push(frame(2, 1), 200), false);
 });
 test('latest terminal pawn never interpolates/extrapolates', () => {
@@ -63,13 +67,15 @@ test('self prediction advances instantly, replays only unacknowledged dt without
   assert.deepEqual(p.pending.map(row => row.seq), [2]); assert.ok(Math.abs(p.state.x - (303.68 + 230 / 30)) < .01);
   assert.equal(JSON.stringify(b.frames[0].world), authoritative);
 });
-test('correction below 24px converges in 150ms, sub-0.5px ignored, exactly 24px snaps', () => {
+test('correction below 24px converges in 150ms; exactly 24px drift uses four-tick smoothing', () => {
   const p = new LocalPrediction('g'), b = new SnapshotBuffer('g'); b.push(frame(0, 300), 0); p.reconcile(b.frames[0].world);
   b.push(frame(1, 300.4), 33); p.reconcile(b.frames.at(-1).world); assert.equal(p.offset.x, 0); assert.equal(p.stats.corrections, 0);
   b.push(frame(2, 310.4), 66); p.reconcile(b.frames.at(-1).world); assert.ok(Math.abs(p.offset.x + 10) < 1e-9); assert.equal(p.stats.snaps, 0);
   p.advance(tx(1, 0), emptyInput(), 75); assert.ok(Math.abs(p.offset.x + 5) < 1e-9);
   p.advance(tx(2, 0), emptyInput(), 75); assert.equal(p.offset.x, 0);
-  b.push(frame(3, 334.4, 2), 99); p.reconcile(b.frames.at(-1).world); assert.equal(p.stats.snaps, 1); assert.equal(p.offset.x, 0);
+  b.push(frame(3, 334.4, 2), 99); p.reconcile(b.frames.at(-1).world);
+  assert.equal(p.stats.snaps, 0); assert.ok(Math.abs(p.offset.x + 24) < 1e-9);
+  assert.equal(p.smoothLeft, 4 * (1000 / 30));
 });
 // Host stepPlayer never freezes walking for these: prediction must keep replaying (no snap).
 for (const [name, override] of Object.entries({ knockback: { kx: 2 }, hurt: { hurtInvuln: 3 },

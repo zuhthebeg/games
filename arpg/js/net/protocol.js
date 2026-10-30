@@ -346,14 +346,16 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
 const TICK_MS = 1000 / 30;
 // Remote entities play back on the host's tick timeline, not on packet arrival times.
 // clock = fastest recent (arrival - tick time), i.e. base latency; later arrivals are
-// jitter, covered by an adaptive delay. Playback speed is nudged (max 8%) toward the
-// target instead of jumping, so arrival jitter/bursts do not show up as stutter.
+// jitter, covered by an adaptive delay. Playback speed is nudged toward the target
+// instead of jumping, so arrival jitter/bursts do not show up as stutter. Positions
+// never extrapolate beyond the newest authoritative frame: starvation is a hold.
 export class SnapshotBuffer {
   constructor(uid, delay = 125, { adaptive = true, pierceCapability = null, frostCapability = null, volleyCapability = null, cleaveCapability = null } = {}) {
     this.cleaveCapability=cleaveCapability; this.volleyCapability = volleyCapability; this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
-    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null;
-    this.stats = { resets: 0, extrapolatedMs: 0, heldMs: 0 };
+    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
+    this.samplePositionTick = null; this.sampleActTick = null;
+    this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
   push(packet, at) {
     const last = this.frames.at(-1);
@@ -362,12 +364,18 @@ export class SnapshotBuffer {
     if (!world || !Number.isFinite(at)) return false;
     this.frames.push({ world, at }); if (this.frames.length > 24) this.frames.shift();
     this.offsets.push(at - world.tick * TICK_MS); if (this.offsets.length > 40) this.offsets.shift();
-    this.clock = Math.min(...this.offsets);
+    const last4 = this.offsets.slice(-4);
+    if (this.offsets.length >= 8 && Math.min(...last4) - this.clock > Math.max(2 * TICK_MS, this.lateP90)) {
+      this.offsets = last4;
+      this.clock = Math.min(...last4);
+      this.stats.rebases++;
+    } else this.clock = Math.min(...this.offsets);
     if (this.adaptive && this.offsets.length >= 4) {
       const late = this.offsets.map(o => o - this.clock).sort((a, b) => a - b);
       const p90 = late[Math.min(late.length - 1, Math.floor(late.length * .9))];
+      this.lateP90 = p90;
       const interval = last ? Math.min(6, world.tick - last.world.tick) * TICK_MS : 2 * TICK_MS;
-      this.delay += (Math.max(80, Math.min(300, p90 + interval + 15)) - this.delay) * .1;
+      this.delay += (Math.max(80, Math.min(300, p90 + interval + 25)) - this.delay) * .1;
     }
     return true;
   }
@@ -381,17 +389,27 @@ export class SnapshotBuffer {
   sample(now, rtt = 0) {
     const latest = this.frames.at(-1);
     if (!latest) return null;
-    const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : now - this.lastNow;
-    if (this.play === null || elapsed < 0 || Math.abs(target - this.play) > 8) {
-      if (this.play !== null) this.stats.resets++;
-      this.play = target;
-    } else this.play += elapsed / TICK_MS * (1 + Math.max(-.08, Math.min(.08, (target - this.play) * .04)));
+    const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : Math.max(0, now - this.lastNow);
+    const horizon = latest.world.tick;
+    const gap = target - this.play;
+    if (this.play === null) this.play = Math.min(target, horizon);
+    else if (gap > 30) {
+      const next = Math.min(target, horizon);
+      if (next - this.play >= .5) this.stats.resets++;
+      this.play = next;
+    } else {
+      const maxNudge = gap <= 4 ? .08 : Math.min(.5, gap * .04);
+      let advance = elapsed / TICK_MS * (1 + Math.max(-.2, Math.min(maxNudge, gap * .04)));
+      if (this.play > latest.world.tick - 1)
+        advance *= Math.max(0, Math.min(1, latest.world.tick - this.play));
+      this.play = Math.min(horizon, this.play + advance);
+    }
     this.lastNow = now;
     const tick = this.play, first = this.frames[0];
     let a = first, b = first;
     if (tick >= latest.world.tick) {
       if (this.frames.length > 1) { a = this.frames.at(-2); b = latest; }
-      if (tick > latest.world.tick + 3) this.stats.heldMs += elapsed; else this.stats.extrapolatedMs += elapsed;
+      this.stats.heldMs += elapsed;
     } else if (tick > first.world.tick) {
       for (let i = 1; i < this.frames.length; i++) {
         b = this.frames[i];
@@ -399,17 +417,37 @@ export class SnapshotBuffer {
         a = b;
       }
     }
-    // At most 3 ticks (100ms) of extrapolation, from tick-time velocity.
     const span = b.world.tick - a.world.tick;
-    const alpha = span > 0 ? Math.max(0, (Math.min(tick, latest.world.tick + 3) - a.world.tick) / span) : 0;
+    const alpha = span > 0 ? Math.max(0, Math.min(1, (tick - a.world.tick) / span)) : 0;
     const interpolate = key => latest.world[key].map(e => {
       const from = a.world[key].find(v => v.id === e.id), to = b.world[key].find(v => v.id === e.id);
-      if (!from || !to || e.dead || e.terminal) return e;
+      if (!from || !to) return e;
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
     // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
     const positionTick = span > 0 ? a.world.tick + alpha * span : a.world.tick;
-    return currentTelegraphs({ ...latest.world, positionTick, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
+    const sampleActTick = latest.world.tick;
+    const previousSampleActTick = this.sampleActTick;
+    const passed = new Map();
+    if (Number.isFinite(previousSampleActTick) && sampleActTick > previousSampleActTick) {
+      for (const frame of this.frames) {
+        if (frame.world.tick <= previousSampleActTick || frame.world.tick > sampleActTick) continue;
+        for (const entity of frame.world.entities) {
+          const act = entity.act;
+          if (!act || !['active', 'recovery'].includes(act.phase) || !Number.isFinite(act.elapsed)) continue;
+          const castStart = Number.isFinite(act.castTick) ? act.castTick : frame.world.tick - act.elapsed;
+          const actTimelineAge = sampleActTick - frame.world.tick;
+          const positionTimelineAge = positionTick - frame.world.tick;
+          if (!Number.isFinite(castStart) || (actTimelineAge > 12 && positionTimelineAge > 12)) continue;
+          const identity = `${entity.id}|${castStart}|${act.id}|${act.step ?? 0}|${!!act.counter}`;
+          passed.set(identity, { entityId: entity.id, castStart, passedTick: frame.world.tick, act: structuredClone(act) });
+        }
+      }
+    }
+    this.samplePositionTick = positionTick;
+    this.sampleActTick = sampleActTick;
+    return currentTelegraphs({ ...latest.world, positionTick, sampleActTick, passedActs: [...passed.values()],
+      entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
 export function localView(world, uid) {

@@ -4,8 +4,8 @@ import { createWorld, addPlayer, startStage, emptyInput } from '../js/sim/world.
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { LocalPrediction } from '../js/net/prediction.js';
 const T = 1000 / 30;
-function fixture(mods = {}) {
-  const w = createWorld(); addPlayer(w, { pid: 'g', weapon: 'focus', mods: { skills: ['ember_bolt'], maxMp: 200, ...mods } }); startStage(w, 'S2');
+function fixture(mods = {}, weapon = 'focus') {
+  const w = createWorld(); addPlayer(w, { pid: 'g', weapon, mods: { skills: ['ember_bolt'], maxMp: 200, ...mods } }); startStage(w, 'S2');
   const view = decodeSnapshot(encodeSnapshot(w, { g: 0 }), 'g'), p = new LocalPrediction('g'); p.reconcile(view);
   return { w, view, p };
 }
@@ -31,22 +31,24 @@ test('insufficient MP, cooldown, death, channel and guard never invent a local a
     assert.equal(p.view(view).entities[0].act, null, JSON.stringify(patch));
   }
 });
-test('accepted act aligns to authoritative elapsed and rejected acknowledged act disappears', () => {
+test('accepted act fast-forwards its cosmetic clock without rewinding it', () => {
   const { view, p } = fixture(); advance(p, 1, { skillEdge: true });
   const accepted = structuredClone(view); accepted.tick = 3; accepted.entities[0].lastInputSeq = 1;
   accepted.entities[0].act = { ...p.state.act, elapsed: 5, left: 2 }; delete accepted.entities[0].act.presentationSeq; p.reconcile(accepted);
   assert.equal(p.view(accepted).entities[0].act.elapsed, 5);
-  const rejected = structuredClone(accepted); rejected.tick++; rejected.entities[0].act = null; rejected.entities[0].lastInputSeq = 2; p.reconcile(rejected);
-  assert.equal(p.view(rejected).entities[0].act, null);
 });
-test('unconfirmed long act expires at RTT+100ms and cannot restart from the same pending edge', () => {
+test('unbound act survives wall-clock timeout and rejects at the acknowledgement horizon', () => {
   const { view, p } = fixture({ skills: ['meteor'] }); p.presentationTimeout = 180;
   advance(p, 1, { skillEdge: true });
   assert.equal(p.view(view).entities[0].act?.id, 'meteor');
   for (let seq = 2; seq <= 7; seq++) advance(p, seq);
-  assert.equal(p.view(view).entities[0].act, null);
-  const stale = structuredClone(view); stale.tick = 1; p.reconcile(stale);
-  assert.equal(p.view(stale).entities[0].act, null);
+  assert.equal(p.view(view).entities[0].act?.id, 'meteor', 'a presentation is not hidden by its age');
+  const row = p.attacks.starts.get(1), horizon = 1 + 12 + row.windowTicks;
+  const rejected = structuredClone(view); rejected.tick = horizon;
+  rejected.entities[0].lastInputSeq = horizon; rejected.entities[0].act = null;
+  p.reconcile(rejected);
+  assert.equal(row.rejected, true);
+  assert.equal(p.view(rejected).entities[0].act, null);
 });
 
 test('unconfirmed projectile copies are display-only and yield to authoritative counterparts', () => {
@@ -62,15 +64,30 @@ test('unconfirmed projectile copies are display-only and yield to authoritative 
   p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.length, 1); assert.equal(p.view(accepted).projectiles[0].id, 71);
 });
-test('completed local cast is not replayed by late confirmation and rejection removes projectile copies', () => {
+test('confirmed pending projectile retains its presentation until range or authority delivery', () => {
+  const { view, p } = fixture(); p.presentationTimeout = 100;
+  advance(p, 1, { skillEdge: true });
+  const row = p.attacks.starts.get(1);
+  row.confirmed = true;
+  p.attacks.shots.push({ id: -1, seq: 1, ownerId: 'g', abilityId: 'ember_bolt',
+    x: 0, y: 0, vx: 0, vy: 0, r: 5, range: 1000, travelled: 0, born: p.attacks.now, presentation: true });
+  p.attacks.advance(p.state, 500);
+  const pending = p.view(view).projectiles.filter(pr => pr.presentation);
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].presentationAlpha, .55);
+});
+test('completed local cast is not replayed by late confirmation; delivery removes local projectile copies', () => {
   const { view, p } = fixture(); p.presentationTimeout = 1800;
   advance(p, 1, { skillEdge: true }); const acceptedAct = structuredClone(p.state.act); delete acceptedAct.presentationSeq;
   for (let seq = 2; seq < 30; seq++) advance(p, seq);
   assert.equal(p.view(view).entities[0].act, null);
   const accepted = structuredClone(view); accepted.tick = 10; accepted.entities[0].lastInputSeq = 29; accepted.entities[0].act = acceptedAct;
   p.reconcile(accepted); assert.equal(p.view(accepted).entities[0].act, null, 'no second windup');
-  accepted.tick++; accepted.entities[0].act = null; p.reconcile(accepted);
+  accepted.tick++; accepted.entities[0].act = null;
+  accepted.projectiles = [{ id: 71, ownerId: accepted.entities[0].id, abilityId: 'ember_bolt' }];
+  p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.filter(pr => pr.presentation).length, 0);
+  assert.equal(p.view(accepted).projectiles.filter(pr => pr.id === 71).length, 1);
 });
 
 test('an early accepted windup still presents its first projectile locally, then coalesces with authority', () => {
@@ -81,6 +98,9 @@ test('an early accepted windup still presents its first projectile locally, then
   for (let seq = 2; seq < 20 && !p.view(accepted).projectiles.some(pr=>pr.presentation); seq++) advance(p, seq);
   assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 1);
   accepted.tick++; accepted.entities[0].lastInputSeq = 20; accepted.entities[0].act = null; p.reconcile(accepted);
+  assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 1);
+  accepted.projectiles = [{ id: 72, ownerId: accepted.entities[0].id, abilityId: 'ember_bolt' }];
+  p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 0);
 });
 
@@ -104,6 +124,18 @@ test('already-predicted basics retain their original whole-tick motion and autho
   p.advance({seq:1,v:[0,0,1,0],attack:true},emptyInput(),T);
   assert.equal(p.view(view).entities[0].act?.id,'focus_pulse');
   for(let seq=2;seq<20;seq++)advance(p,seq);
-  assert.equal(p.attacks.starts.size,0,'H1 was refuted for basics: no new basic tokens');
+  assert.ok(p.attacks.starts.has(1),'basic casts receive a presentation sequence');
   assert.equal(p.view(view).projectiles.filter(pr=>pr.presentation).length,0);
+});
+
+test('basic bow and focus projectiles remain authoritative-only after presentation tracking', () => {
+  for (const weapon of ['bow', 'focus']) {
+    const { view, p } = fixture({}, weapon);
+    p.presentationTimeout = 2000;
+    p.advance({ seq: 1, v: [0, 0, 1, 0], attack: true }, emptyInput(), T);
+    for (let seq = 2; seq <= 12; seq++) p.advance({ seq, v: [0, 0, 1, 0], attack: false }, emptyInput(), T);
+    assert.ok(p.attacks.starts.has(1), `${weapon} basic receives a presentation sequence`);
+    assert.equal(p.view(view).projectiles.filter(pr => pr.presentation).length, 0,
+      `${weapon} basic projectile remains authoritative-only`);
+  }
 });

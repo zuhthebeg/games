@@ -52,13 +52,19 @@ for (const [name, override, shift] of [
 ]) test(`${name} does not borrow ordinary-hit continuity`, () => {
   const { prediction: p, next } = fixture(traces[0]); const a = next.entities.find(e => e.pid === 'g');
   Object.assign(a, override); a.x -= shift; p.reconcile(next);
-  assert.equal(p.offset.x, 0); assert.equal(p.offset.y, 0); assert.equal(p.stats.snaps, 1);
+  if (name === 'normal-drift') {
+    assert.equal(p.stats.lastCorrection.reason, 'drift'); assert.equal(p.stats.snaps, 0);
+    assert.equal(p.smoothLeft, 4 * T);
+  } else {
+    assert.equal(p.offset.x, 0); assert.equal(p.offset.y, 0); assert.equal(p.stats.snaps, 1);
+  }
   if (['death','channel','stagger'].includes(name)) { assert.equal(p.pending.length, 0); assert.equal(own(p, next).x, a.x); }
 });
 test('same authority cannot be reused as new hit; disable forgets evidence', () => {
   const { prediction: p, next } = fixture(traces[0]); p.reconcile(next);
   p.clearOffset(); p.state.x += 30; p.reconcile(next);
-  assert.equal(p.stats.snaps, 1); assert.equal(p.offset.x, 0);
+  assert.equal(p.stats.lastCorrection.reason, 'drift'); assert.equal(p.stats.snaps, 0);
+  assert.equal(p.smoothLeft, 4 * T);
   const invalid = structuredClone(next); delete invalid.entities.find(e => e.pid === 'g').lastInputSeq; p.reconcile(invalid);
   p.reconcile(next); assert.equal(p.offset.x, 0);
 });
@@ -82,10 +88,66 @@ test('two command ticks are the smallest whole-tick convergence keeping captured
 test('gross replay divergence cannot hide behind a prior render offset', () => {
   const { prediction: p, next } = fixture(traces[0]);
   // Legitimate prior small correction can oppose a subsequent gross hit divergence.
+  // Hit-evidenced corrections below 96px smooth by design.
   p.offset = { x: -23, y: 0 }; p.smoothLeft = 150;
-  const a = next.entities.find(e => e.pid === 'g'); a.x = p.state.x - 55; a.y = p.state.y; a.kx = 0; a.ky = 0;
+  const a = next.entities.find(e => e.pid === 'g'); a.x = p.state.x - 110; a.y = p.state.y; a.kx = 0; a.ky = 0;
   p.reconcile(next); assert.equal(p.stats.snaps, 1); assert.equal(p.offset.x, 0);
   assert.equal(p.stats.lastCorrection.reason, 'gross');
+});
+test('55px correction with fresh knockback evidence smooths without a large display step', () => {
+  const w = createWorld(); addPlayer(w, { pid: 'g', weapon: 'blade' }); startStage(w, 'S2');
+  w.entities = w.entities.filter(e => e.kind === 'player');
+  w.entities.find(e => e.pid === 'g').lastInputSeq = 0;
+  const p = new LocalPrediction('g'); p.reconcile(w);
+  const next = structuredClone(w), a = next.entities.find(e => e.pid === 'g');
+  next.tick++; a.x = p.state.x - 55; a.hp--; a.hurtInvuln = 8; a.kx = 2;
+  const before = own(p, w);
+  p.reconcile(next);
+  assert.equal(p.stats.lastCorrection.reason, 'authority-hit');
+  assert.equal(p.stats.snaps, 0);
+  assert.ok(Math.abs(p.stats.lastCorrection.distance - 55) < .01);
+  assert.equal(p.smoothLeft, 4 * T);
+  let previous = own(p, next), maxStep = distance(before, previous);
+  for (let seq = 1; seq <= 10; seq++) {
+    p.advance(packet(seq), emptyInput(), T / 2);
+    const current = own(p, next);
+    maxStep = Math.max(maxStep, distance(previous, current));
+    previous = current;
+  }
+  assert.ok(maxStep <= 24, `display step ${maxStep.toFixed(2)}px`);
+});
+test('55px correction without fresh hit evidence smooths as drift', () => {
+  const w = createWorld(); addPlayer(w, { pid: 'g', weapon: 'blade' }); startStage(w, 'S2');
+  w.entities = w.entities.filter(e => e.kind === 'player');
+  w.entities.find(e => e.pid === 'g').lastInputSeq = 0;
+  const p = new LocalPrediction('g'); p.reconcile(w);
+  const next = structuredClone(w), a = next.entities.find(e => e.pid === 'g');
+  next.tick++; a.x = p.state.x - 55;
+  const before = own(p, w);
+  p.reconcile(next);
+  assert.equal(p.stats.lastCorrection.reason, 'drift');
+  assert.equal(p.stats.snaps, 0);
+  assert.equal(p.smoothLeft, 4 * T);
+  let previous = own(p, next), maxStep = distance(before, previous);
+  for (let seq = 1; seq <= 10; seq++) {
+    p.advance(packet(seq), emptyInput(), T / 2);
+    const current = own(p, next);
+    maxStep = Math.max(maxStep, distance(previous, current));
+    previous = current;
+  }
+  assert.ok(maxStep <= 24, `display step ${maxStep.toFixed(2)}px`);
+});
+test('110px correction without fresh hit evidence snaps as gross', () => {
+  const w = createWorld(); addPlayer(w, { pid: 'g', weapon: 'blade' }); startStage(w, 'S2');
+  w.entities = w.entities.filter(e => e.kind === 'player');
+  w.entities.find(e => e.pid === 'g').lastInputSeq = 0;
+  const p = new LocalPrediction('g'); p.reconcile(w);
+  const next = structuredClone(w), a = next.entities.find(e => e.pid === 'g');
+  next.tick++; a.x = p.state.x - 110;
+  p.reconcile(next);
+  assert.equal(p.stats.lastCorrection.reason, 'gross');
+  assert.equal(p.stats.snaps, 1);
+  assert.equal(p.offset.x, 0);
 });
 for (const evidence of ['HP','hurt','impulse']) test(`fresh authority ${evidence} evidence alone permits bounded continuity`, () => {
   const { prediction: p, next } = fixture(traces[0]); const a = next.entities.find(e => e.pid === 'g');
@@ -101,7 +163,8 @@ test('ordinary decay of existing authority knockback/hurt is not new hit evidenc
   p.advance(packet(20), emptyInput(), 100);
   const follow = structuredClone(next), a = follow.entities.find(e => e.pid === 'g'); follow.tick += 3;
   a.x = p.state.x - 30; a.y = p.state.y; a.kx = 0; a.ky = 0; a.hurtInvuln = 4; a.lastInputSeq = 20;
-  p.reconcile(follow); assert.equal(p.stats.lastCorrection.reason, 'drift'); assert.equal(p.stats.snaps, 1);
+  p.reconcile(follow); assert.equal(p.stats.lastCorrection.reason, 'drift'); assert.equal(p.stats.snaps, 0);
+  assert.equal(p.smoothLeft, 4 * T);
 });
 
 test('leaving terminal state does not lerp a living pawn out of its old corpse', () => {

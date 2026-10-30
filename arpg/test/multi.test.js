@@ -45,10 +45,34 @@ test('snapshot interpolation clamps, ignores stale packets, and keeps newest tel
   // Playback is on the host tick clock: halfway between the two ticks = halfway position.
   assert.ok(Math.abs(buffer.sample(t0 + 150).entities[0].x - (a.entities[1].x + 50)) < 1e-6);
   assert.equal(new SnapshotBuffer('guest', 100, { adaptive: false }).sample(0), null);
-  // Bounded extrapolation: at most 3 ticks past the newest frame (here = one more 3-tick step).
+  // Starvation holds at the newest authoritative frame instead of extrapolating.
   const far = new SnapshotBuffer('guest', 100, { adaptive: false }); far.push(a, t0); far.push(b, t0 + 100);
-  assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - (b.entities[1].x + 100)) < 1e-6);
+  assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - b.entities[1].x) < 1e-6);
   assert.deepEqual(buffer.sample(t0 + 150).telegraphs, b.telegraphs);
+});
+test('snapshot sampling returns newest active/recovery copies for each passed cast', () => {
+  const world = makeWorld(), buffer = new SnapshotBuffer('guest', 0, { adaptive: false });
+  const host = world.entities.find(entity => entity.pid === 'host'), stepTicks = { windup: 5, lock: 0, active: 3, recovery: 8 };
+  const setAct = (step, phase, elapsed) => {
+    host.act = { id: 'slash', step, phase, elapsed, left: 1, total: 5, facing: 0,
+      castTick: world.tick - elapsed, phaseTicks: stepTicks, def: ABILITIES.slash };
+  };
+  const push = (tick, step, phase, elapsed) => {
+    world.tick = tick; setAct(step, phase, elapsed);
+    return buffer.push(encodeSnapshot(world), tick * 1000 / 30);
+  };
+  world.tick = 100;
+  const firstTick = world.tick;
+  setAct(1, 'windup', 4);
+  buffer.push(encodeSnapshot(world), firstTick * 1000 / 30);
+  buffer.sample(firstTick * 1000 / 30);
+  push(firstTick + 1, 1, 'active', 5);
+  push(firstTick + 5, 1, 'recovery', 9);
+  push(firstTick + 14, 2, 'active', 6);
+  const sampled = buffer.sample((firstTick + 14) * 1000 / 30);
+  assert.deepEqual(sampled.passedActs.map(row => [row.entityId, row.act.step, row.act.phase]), [
+    [host.id, 1, 'recovery'], [host.id, 2, 'active']
+  ]);
 });
 test('party size HP scale is 1.4/1.8/2.15 at stage level (cocy 10-14 softer), party mean level, single unchanged', () => {
   assert.deepEqual([1, 2, 3, 4].map(n => partyHpScale(n, 2, 'S2')), [1, 1.4, 1.8, 2.15]);

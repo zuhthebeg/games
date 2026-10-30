@@ -4,10 +4,8 @@ import { predictPlayerTick, predictionBlocked } from './player-prediction.js';
 import { bodyContactEligible, bodyWeight } from '../sim/body-contact.js';
 
 const TICK_MS = 1000 / 30;
-// Two command ticks are the shortest tested whole-tick window with <24px
-// correction steps on all six captured traces (including fractional preview).
-// Keep normal drift's 24px cutoff; only evidenced hits may use up to twice that budget.
-const HIT_WINDOW_MS = 2 * TICK_MS, HIT_LIMIT_PX = 48;
+// Evidenced corrections under 96px smooth as hits; large corrections remain gross.
+const HIT_WINDOW_MS = 2 * TICK_MS, HIT_LIMIT_PX = 48, HIT_GROSS_PX = 96;
 const lerp = (a, b, t) => a + (b - a) * t;
 // Fraction of last frame's contact displacement kept while easing back to the replayed pawn.
 const CONTACT_CARRY = .6, CONTACT_CARRY_DROP_PX = 48;
@@ -47,11 +45,15 @@ export class LocalPrediction {
     this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
     let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null, ...(p.combo ? { combo: { ...p.combo } } : {}) };
-    next.act = this.attacks.bind(next.act, p.lastInputSeq);
+    next.act = this.attacks.bind(next.act, p.lastInputSeq, world.tick);
     this.roundEnded = !!(world.round?.state && world.round.state !== 'running');
     const blocked = predictionBlocked(p) || this.roundEnded;
     if (blocked) { this.pending = []; this.attacks.clear(); }
-    else for (const row of this.pending) { next = this.attacks.track(next, predictPlayerTick(next, row.input, this), row.seq); this.tick++; }
+    else for (const row of this.pending) {
+      const after = predictPlayerTick(next, row.input, this);
+      this.tick++;
+      next = this.attacks.track(next, after, row.seq, this.tick, { replay: true });
+    }
     if (this.state) {
       const target = this.displayPawn(next);
       const dx = displayed.x + this.offset.x - target.x, dy = displayed.y + this.offset.y - target.y;
@@ -59,12 +61,13 @@ export class LocalPrediction {
       const replayDistance = Math.hypot(this.state.x - next.x, this.state.y - next.y);
       const terminal = p.dead || p.terminal || (world.round?.state && world.round.state !== 'running');
       const continuing = this.hitSmoothing && this.smoothLeft > 0;
+      const correctionDistance = Math.max(distance, replayDistance);
       const reason = terminal || this.state.dead || this.state.terminal ? 'terminal'
         : blocked || predictionBlocked(this.state) || predictionBlocked(next) ? 'blocked'
-        : Math.max(distance, replayDistance) >= HIT_LIMIT_PX ? 'gross' : hit ? 'authority-hit'
+        : correctionDistance >= HIT_GROSS_PX ? 'gross' : hit ? 'authority-hit'
         : continuing && distance < 24 ? 'hit-continuation' : 'drift';
       const smoothHit = reason === 'authority-hit' || reason === 'hit-continuation';
-      const snap = reason === 'terminal' || reason === 'blocked' || reason === 'gross' || (!smoothHit && distance >= 24);
+      const snap = reason === 'terminal' || reason === 'blocked' || reason === 'gross';
       // Sub-pixel disagreement is not worth a visible correction.
       if (distance > .5) {
         this.stats.corrections++; this.stats.totalDistance += distance;
@@ -80,7 +83,9 @@ export class LocalPrediction {
         } else {
           this.offset = { x: dx, y: dy };
           // Follow-up authority must not perpetually restart an active hit's deadline.
-          this.smoothLeft = smoothHit ? (continuing ? Math.min(this.smoothLeft, HIT_WINDOW_MS) : HIT_WINDOW_MS) : 150;
+          const hitWindow = distance > HIT_LIMIT_PX ? 4 * TICK_MS : HIT_WINDOW_MS;
+          this.smoothLeft = smoothHit ? (continuing ? Math.min(this.smoothLeft, hitWindow) : hitWindow)
+            : distance >= 24 ? 4 * TICK_MS : 150;
           this.hitSmoothing = smoothHit;
         }
         this.stats.lastCorrection = { reason, distance, replayDistance, jump: snap ? distance : 0,
@@ -108,7 +113,9 @@ export class LocalPrediction {
       if (this.pending.length > 256) { this.enabled = false; this.pending = []; this.clearOffset(); return; }
       this.attacks.timeout = this.presentationTimeout ?? 100;
       this.attacks.advance(this.state, dt);
-      this.state = this.attacks.track(this.state, predictPlayerTick(this.state, command, this), packet.seq); this.tick++;
+      const after = predictPlayerTick(this.state, command, this);
+      this.tick++;
+      this.state = this.attacks.track(this.state, after, packet.seq, this.tick);
     }
   }
   // Display-only partial tick: the not-yet-committed fraction of the current tick,
@@ -197,7 +204,8 @@ export class LocalPrediction {
     if (!world || !this.enabled || !this.state) { this.lastContactView = this.lastRawView = null; return world; }
     const p = this.displayPawn(this.state);
     return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? this.displayContact({ ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
+      ? this.displayContact({ ...e, act: this.attacks.act(p.act, world.tick) ?? (this.preview && !this.state.act
+        && p.act?.id !== WEAPONS[p.weapon]?.basic ? p.act : null), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
         x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world, p.dodge) : e) };
   }
   diagnostics() {
