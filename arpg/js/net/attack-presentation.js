@@ -25,6 +25,8 @@ export class AttackPresentation {
     this.authorityShots = new Set();
     this.authorityBinds = [];
     this.lastInputSeq = 0;
+    this.lastDisplayed = null;
+    this.lastDisplayedCosmeticStartTick = -Infinity;
   }
   alive(row) {
     const total = PHASES.reduce((sum, phase) => sum + (row.phaseTicks[phase] || 0), 0);
@@ -119,6 +121,7 @@ export class AttackPresentation {
       if (counterpart) row.delivered = true;
       if (counterpart || row.rejected) this.shots = this.shots.filter(projectile => projectile.seq !== row.seq);
       if (row.bound === null && this.lastInputSeq >= row.seq + 12 + row.windowTicks && authorityKey !== row.key) {
+        if (!row.rejected) row.rejectedAt = this.now;
         row.rejected = true;
         this.shots = this.shots.filter(projectile => projectile.seq !== row.seq);
       }
@@ -136,21 +139,31 @@ export class AttackPresentation {
       let binding = this.authorityBinds.find(row => row.key === key && Math.abs(row.start - authorityStart) <= 1);
       if (!binding) {
         let candidate = [...this.starts.values()].filter(row => row.key === key && row.bound === null
-          && !row.completedLive && this.elapsedTicks(row) < this.durationTicks(row)
-          && row.seq <= ack && (!row.rejected || Math.abs(row.predictedStartTick - authorityStart) <= row.windowTicks))
+          && row.seq <= ack && !row.completed && !row.naturalEnded && this.alive(row))
           .sort((a, b) => a.seq - b.seq)[0];
         if (!candidate) {
           candidate = [...this.starts.values()].filter(row => row.id === act.id && row.step !== (act.step ?? 0)
-            && row.bound === null && !row.rejected && row.seq <= ack && this.alive(row))
+            && row.bound === null && row.seq <= ack && !row.completed && !row.naturalEnded
+            && this.alive(row))
             .sort((a, b) => a.seq - b.seq)[0];
           // During step divergence the bound cosmetic's trail may show the mispredicted step.
           if (candidate) candidate.mispredictedStep = true;
         }
-        if (candidate) {
-          if (candidate.rejected) {
+        if (!candidate) {
+          candidate = [...this.starts.values()].filter(row => {
+            const recentEvent = Math.max(row.rejectedAt ?? -Infinity, row.supersededAt ?? -Infinity);
+            return row.id === act.id && row.bound === null && row.seq <= ack
+              && !row.completed && !row.naturalEnded
+              && (row.rejected || row.superseded) && this.now - recentEvent <= 1000;
+          }).sort((a, b) => a.seq - b.seq)[0];
+          if (candidate) {
             candidate.rejected = false;
+            candidate.lateConfirmed = true;
+            candidate.lateConfirmedAt = this.now;
             this.shots = this.shots.filter(projectile => projectile.seq !== candidate.seq);
           }
+        }
+        if (candidate) {
           candidate.bound = authorityStart;
           candidate.authorityStart = authorityStart;
           candidate.confirmed = true;
@@ -187,7 +200,9 @@ export class AttackPresentation {
     return act;
   }
   display(row) {
-    const elapsed = Math.max(0, Math.floor((this.now - row.startedAt) / TICK_MS));
+    let elapsed = this.elapsedTicks(row);
+    const identity = `seq:${row.seq}`;
+    if (this.lastDisplayed?.identity === identity) elapsed = Math.max(elapsed, this.lastDisplayed.elapsed);
     let remaining = elapsed, phase = 'recovery';
     for (const candidate of PHASES) {
       const length = row.phaseTicks[candidate] || 0;
@@ -198,45 +213,76 @@ export class AttackPresentation {
     if (elapsed >= total) return null;
     if (phase === 'active') row.shownActive = true;
     const snapshot = row.act;
-    return { ...snapshot, phase, elapsed, left: Math.max(1, (row.phaseTicks[phase] || 1) - remaining),
+    const act = { ...snapshot, phase, elapsed, left: Math.max(1, (row.phaseTicks[phase] || 1) - remaining),
       phaseTicks: { ...row.phaseTicks }, presentationSeq: row.seq,
       ...(Number.isFinite(row.bound) ? { presentationAuthorityStart: row.bound } : {}) };
+    this.lastDisplayed = { identity, startTick: row.predictedStartTick, elapsed };
+    this.lastDisplayedCosmeticStartTick = Math.max(this.lastDisplayedCosmeticStartTick,
+      row.predictedStartTick);
+    return act;
   }
   act(authorityAct, tick) {
-    if (authorityAct?.presentationSeq !== undefined) {
-      const row = this.starts.get(authorityAct.presentationSeq);
-      if (!row || row.rejected || row.completedLive) return null;
-      row.visible = true;
-      return this.display(row);
+    const authorityStart = Number.isFinite(authorityAct?.presentationAuthorityStart)
+      ? authorityAct.presentationAuthorityStart : NaN;
+    let alive = [...this.starts.values()].filter(candidate => this.alive(candidate));
+    if (Number.isFinite(authorityStart)) {
+      alive = alive.filter(candidate => {
+        if (!candidate.completed && !candidate.naturalEnded) return true;
+        const candidateStart = candidate.bound ?? candidate.predictedStartTick;
+        return !Number.isFinite(candidateStart) || authorityStart <= candidateStart;
+      });
     }
-    const cosmetic = [...this.starts.values()].filter(candidate => this.alive(candidate))
+    const cosmetic = alive.filter(candidate => !candidate.superseded
+      && candidate.predictedStartTick >= (this.lastDisplayed?.startTick ?? -Infinity))
       .sort((a, b) => b.startedAt - a.startedAt || b.seq - a.seq)[0];
-    if (!authorityAct) {
-      if (!cosmetic) return null;
+    if (cosmetic) {
+      if (!cosmetic.visible) {
+        for (const older of this.starts.values()) {
+          const precedes = older.startedAt < cosmetic.startedAt
+            || (older.startedAt === cosmetic.startedAt && older.seq < cosmetic.seq);
+          if (older !== cosmetic && precedes && !older.superseded) {
+            older.superseded = true;
+            older.supersededAt = this.now;
+          }
+        }
+      }
       cosmetic.visible = true;
       return this.display(cosmetic);
     }
-    if (Number.isFinite(authorityAct.presentationAuthorityStart)) {
-      const authorityStart = authorityAct.presentationAuthorityStart;
-      const cosmeticStart = cosmetic && (Number.isFinite(cosmetic.bound) ? cosmetic.bound : cosmetic.predictedStartTick);
-      if (cosmetic && Number.isFinite(cosmeticStart) && authorityStart < cosmeticStart) {
-        cosmetic.visible = true;
-        return this.display(cosmetic);
+    if (alive.length) return null;
+
+    if (Number.isSafeInteger(authorityAct?.presentationSeq)) return null;
+    if (!Number.isFinite(authorityAct?.presentationAuthorityStart)) return null;
+
+    const completedMatch = [...this.starts.values()].some(candidate => {
+      if (candidate.key !== castKey(authorityAct)
+        || (!candidate.completed && !candidate.naturalEnded
+          && !(candidate.lateConfirmed && this.elapsedTicks(candidate) >= this.durationTicks(candidate)))) return false;
+      const candidateStart = candidate.bound ?? candidate.predictedStartTick;
+      return Number.isFinite(candidateStart)
+        && Math.abs(candidateStart - authorityStart) <= candidate.windowTicks;
+    });
+    if (completedMatch) return null;
+
+    if (authorityStart <= this.lastDisplayedCosmeticStartTick
+      || authorityStart < (this.lastDisplayed?.startTick ?? -Infinity)) return null;
+
+    const identity = `auth:${authorityStart}`;
+    let elapsed = authorityAct.elapsed;
+    if (this.lastDisplayed?.identity === identity) elapsed = Math.max(elapsed, this.lastDisplayed.elapsed);
+    let displayed = authorityAct;
+    if (elapsed !== authorityAct.elapsed) {
+      let remaining = elapsed, phase = 'recovery';
+      for (const candidate of PHASES) {
+        const length = authorityAct.phaseTicks?.[candidate] || 0;
+        if (remaining < length) { phase = candidate; break; }
+        remaining -= length;
       }
-      const lateConfirmed = [...this.starts.values()].some(row => row.lateConfirmed && row.key === castKey(authorityAct)
-        && Number.isFinite(row.authorityStart) && Math.abs(row.authorityStart - authorityStart) <= row.windowTicks);
-      if (lateConfirmed) return null;
-      return authorityAct;
+      displayed = { ...authorityAct, phase, elapsed,
+        left: Math.max(1, (authorityAct.phaseTicks?.[phase] || 1) - remaining) };
     }
-    const key = castKey(authorityAct);
-    const matching = [...this.starts.values()].filter(row => row.key === key && !row.rejected && this.recent(row))
-      .sort((a, b) => b.startedAt - a.startedAt || b.seq - a.seq)[0];
-    if (matching) {
-      if (!this.alive(matching)) return null;
-      matching.visible = true;
-      return this.display(matching);
-    }
-    return authorityAct;
+    this.lastDisplayed = { identity, startTick: authorityStart, elapsed };
+    return displayed;
   }
   advance(pawn, dt) {
     this.now += dt;
@@ -280,5 +326,7 @@ export class AttackPresentation {
     this.shots = [];
     this.authorityBinds = [];
     this.lastInputSeq = 0;
+    this.lastDisplayed = null;
+    this.lastDisplayedCosmeticStartTick = -Infinity;
   }
 }

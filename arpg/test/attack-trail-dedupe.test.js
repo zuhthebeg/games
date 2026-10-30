@@ -175,6 +175,24 @@ function firstCastAuthority(world, tick, skill = false) {
     ? { ...entity, ...pawn, lastInputSeq: tick } : entity) };
 }
 
+function traceSlash({ step = 1, phase = 'windup', elapsed = 0, phaseTicks, presentationSeq } = {}) {
+  const ticks = phaseTicks || { windup: step === 3 ? 7 : 5, lock: 0, active: 3, recovery: 8 };
+  const length = ticks[phase] || 1;
+  return {
+    id: 'slash', step, phase, elapsed, total: Object.values(ticks).reduce((sum, value) => sum + value, 0),
+    left: Math.max(1, length - (elapsed % length)), facing: 0, phaseTicks: ticks,
+    ...(presentationSeq === undefined ? {} : { presentationSeq }),
+    def: comboDef('slash', step, 'sword')
+  };
+}
+
+function seedTraceCosmetic(fixture, { seq, tick, act }) {
+  const { prediction } = fixture;
+  const before = { ...prediction.state, act: null };
+  prediction.state = prediction.attacks.track(before, { ...before, act }, seq, tick);
+  return prediction.attacks.starts.get(seq);
+}
+
 test('confirmed slash and lunge stay visible through completion; slash trail remains single', () => {
   for (const config of [{ name: 'slash', skill: false }, { name: 'lunge', skill: true, skills: ['lunge'] }]) {
     for (const lag of [8, 12, 16]) {
@@ -631,6 +649,154 @@ test('raw replayed acts cannot regress an already presented cosmetic phase', () 
   prediction.state = { ...prediction.state, act: { ...raw, phase: 'active', elapsed: recoveryStart } };
   assert.equal(prediction.view(fixture.world).entities.find(entity => entity.pid === 'local').act, null,
     'a recent completed cosmetic cannot fall back to its raw replay act');
+});
+
+test('89b trace casts 25, 53 and 103 keep one newest cosmetic over seq-less replay acts', () => {
+  const captures = [
+    {
+      hostCast: 25, seq: 1547, step: 1, initialTick: 1593,
+      frames: [[1598, 1, 'active', 5], [1600, 1, 'windup', 4], [1602, 1, 'active', 5]]
+    },
+    {
+      hostCast: 53, seq: 1789, step: 3, initialTick: 1829,
+      frames: [[1830, 3, 'windup', 1], [1840, 1, 'recovery', 8], [1844, 3, 'recovery', 17]]
+    },
+    {
+      hostCast: 103, seq: 2240, step: 1, initialTick: 2276,
+      frames: [[2276, 1, 'windup', 0], [2284, 1, 'active', 6], [2286, 3, 'active', 8]]
+    }
+  ];
+  for (const capture of captures) {
+    const fixture = predictionFixture();
+    const { prediction, renderer, world } = fixture;
+    const initial = traceSlash({ step: capture.step, phase: 'windup', elapsed: 1 });
+    const row = seedTraceCosmetic(fixture, { seq: capture.seq, tick: capture.initialTick, act: initial });
+    for (const [tick, step, phase, elapsed] of capture.frames) {
+      prediction.attacks.now = row.startedAt + elapsed * T;
+      prediction.state = { ...prediction.state, act: traceSlash({ step, phase, elapsed }) };
+      const view = prediction.view({ ...world, tick });
+      const shown = view.entities.find(entity => entity.pid === 'local').act;
+      assert.equal(shown.presentationSeq, capture.seq, `host cast ${capture.hostCast} stays on its cosmetic`);
+      renderer.render(view, 1, 1 / 60);
+    }
+    assert.equal(fixture.trailCount(), 1, `host cast ${capture.hostCast}`);
+  }
+});
+
+test('newer seq 1937 supersedes older seq 1927 through the captured recovery interleave', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const old = seedTraceCosmetic(fixture, {
+    seq: 1927, tick: 1979, act: traceSlash({ step: 3, phase: 'active', elapsed: 7 })
+  });
+  const newer = seedTraceCosmetic(fixture, {
+    seq: 1937, tick: 1974, act: traceSlash({ step: 1, phase: 'windup', elapsed: 1 })
+  });
+
+  prediction.attacks.now = newer.startedAt + 2 * T;
+  prediction.state = { ...prediction.state, act: traceSlash({ step: 1, phase: 'windup', elapsed: 2 }) };
+  let view = prediction.view({ ...world, tick: 1974 });
+  let shown = view.entities.find(entity => entity.pid === 'local').act;
+  assert.equal(shown.presentationSeq, 1937);
+  assert.equal(old.superseded, true);
+  renderer.render(view, 1, 1 / 60);
+
+  for (const [tick, elapsed] of [[1976, 12], [1978, 16]]) {
+    prediction.attacks.now = old.startedAt + elapsed * T;
+    prediction.state = { ...prediction.state, act: traceSlash({ step: 3, phase: 'recovery', elapsed }) };
+    view = prediction.view({ ...world, tick });
+    shown = view.entities.find(entity => entity.pid === 'local').act;
+    assert.equal(shown.presentationSeq, 1937);
+    renderer.render(view, 1, 1 / 60);
+  }
+  assert.equal(fixture.trailCount(), 1);
+});
+
+test('seq 1937 late confirmation by host cast 71 revives accounting without another trail', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const row = seedTraceCosmetic(fixture, {
+    seq: 1937, tick: 1974, act: traceSlash({ step: 1, phase: 'windup', elapsed: 1 })
+  });
+  prediction.attacks.now = row.startedAt + 6 * T;
+  prediction.state = { ...prediction.state, act: traceSlash({ step: 1, phase: 'active', elapsed: 6 }) };
+  renderer.render(prediction.view({ ...world, tick: 1980 }), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+
+  const horizon = row.seq + 12 + row.windowTicks;
+  const rejected = { ...world, tick: horizon, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: horizon, act: null } : entity) };
+  prediction.reconcile(rejected);
+  assert.equal(row.rejected, true);
+
+  const accepted = { ...world, tick: 2000, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 1945, act: traceSlash({ step: 1, phase: 'recovery', elapsed: 10 }) } : entity) };
+  prediction.reconcile(accepted);
+  const shown = prediction.view(accepted).entities.find(entity => entity.pid === 'local').act;
+  assert.equal(row.lateConfirmed, true);
+  assert.equal(row.bound, 1990);
+  assert.equal(shown.presentationSeq, 1937);
+  assert.equal(shown.presentationAuthorityStart, 1990);
+  renderer.render(prediction.view(accepted), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+});
+
+test('late confirmation after the cosmetic duration binds without replaying an authority-only trail', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const row = seedTraceCosmetic(fixture, {
+    seq: 1937, tick: 1974, act: traceSlash({ step: 1, phase: 'windup', elapsed: 1 })
+  });
+  prediction.attacks.now = row.startedAt + 6 * T;
+  prediction.state = { ...prediction.state, act: traceSlash({ step: 1, phase: 'active', elapsed: 6 }) };
+  renderer.render(prediction.view({ ...world, tick: 1980 }), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+
+  row.rejected = true;
+  row.rejectedAt = prediction.attacks.now;
+  prediction.attacks.now = row.startedAt + prediction.attacks.durationTicks(row) * T;
+  const accepted = { ...world, tick: 2000, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 1945, act: traceSlash({ step: 1, phase: 'recovery', elapsed: 10 }) } : entity) };
+  prediction.reconcile(accepted);
+  assert.equal(row.lateConfirmed, true);
+  assert.equal(row.bound, 1990);
+  const view = prediction.view(accepted);
+  assert.equal(view.entities.find(entity => entity.pid === 'local').act, null);
+  renderer.render(view, 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+});
+
+test('the 11.634 second raw restart stays on the displayed active cosmetic', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const row = seedTraceCosmetic(fixture, {
+    seq: 1529, tick: 1593, act: traceSlash({ step: 1, phase: 'windup', elapsed: 1 })
+  });
+  const frames = [
+    [1598, 'active', 7],
+    [1600, 'windup', 4],
+    [1602, 'windup', 2],
+    [1602, 'active', 5]
+  ];
+  const phases = [];
+  for (const [tick, phase, elapsed] of frames) {
+    prediction.attacks.now = row.startedAt + elapsed * T;
+    prediction.state = { ...prediction.state, act: traceSlash({ step: 1, phase, elapsed }) };
+    const view = prediction.view({ ...world, tick });
+    const shown = view.entities.find(entity => entity.pid === 'local').act;
+    phases.push(shown.phase);
+    assert.equal(shown.presentationSeq, 1529);
+    renderer.render(view, 1, 1 / 60);
+  }
+  assert.deepEqual(phases, ['active', 'active', 'active', 'active']);
+  assert.equal(fixture.trailCount(), 1);
+});
+
+test('a raw own act without either presentation identity is suppressed', () => {
+  const fixture = predictionFixture();
+  const { prediction, world } = fixture;
+  prediction.state = { ...prediction.state, act: traceSlash({ step: 1, phase: 'active', elapsed: 6 }) };
+  assert.equal(prediction.view(world).entities.find(entity => entity.pid === 'local').act, null);
 });
 
 test('older authority-only casts cannot replace the currently displayed cosmetic', () => {
