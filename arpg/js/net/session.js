@@ -82,8 +82,12 @@ export class CoopSession {
   validVolleyJournal(rows,tick) {
     if(rows===undefined) return true;
     if(!Array.isArray(rows)) return false;
-    const ids=new Set();
+    const ids=new Set(),seqs=new Set();
     for(const row of rows) {
+      // Retries use the existing journal identity, never consume shot IDs twice.
+      if(Number.isSafeInteger(row?.seq) && (row.seq<=this.eventAck || seqs.has(row.seq))) continue;
+      if((row?.event?.volley20!==undefined || row?.event?.projectileIds!==undefined) && (!Number.isSafeInteger(row.seq) || row.seq<1)) return false;
+      seqs.add(row?.seq);
       if(!validVolleyEvent(row?.event,tick,id=>this.volleyCapability(id))) return false;
       if(row.event?.volley20) for(const id of row.event.projectileIds) {if(ids.has(id)) return false;ids.add(id);}
     }
