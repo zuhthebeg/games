@@ -340,14 +340,14 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
 const TICK_MS = 1000 / 30;
 // Remote entities play back on the host's tick timeline, not on packet arrival times.
 // clock = fastest recent (arrival - tick time), i.e. base latency; later arrivals are
-// jitter, covered by an adaptive delay. Playback speed is nudged toward the
-// target instead of jumping, so arrival jitter/bursts do not show up as stutter.
+// jitter, covered by an adaptive delay. Playback speed is nudged toward the target
+// instead of jumping, so arrival jitter/bursts do not show up as stutter. Positions
+// never extrapolate beyond the newest authoritative frame: starvation is a hold.
 export class SnapshotBuffer {
   constructor(uid, delay = 125, { adaptive = true, pierceCapability = null, frostCapability = null, volleyCapability = null } = {}) {
     this.volleyCapability = volleyCapability; this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
-    this.visual = new Map();
-    this.offsets = []; this.clock = 0; this.play = null; this.prevPlay = null; this.lastNow = null; this.lateP90 = 0;
+    this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
     this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
   push(packet, at) {
@@ -368,7 +368,7 @@ export class SnapshotBuffer {
       const p90 = late[Math.min(late.length - 1, Math.floor(late.length * .9))];
       this.lateP90 = p90;
       const interval = last ? Math.min(6, world.tick - last.world.tick) * TICK_MS : 2 * TICK_MS;
-      this.delay += (Math.max(80, Math.min(300, p90 + interval + 15)) - this.delay) * .1;
+      this.delay += (Math.max(80, Math.min(300, p90 + interval + 25)) - this.delay) * .1;
     }
     return true;
   }
@@ -383,7 +383,7 @@ export class SnapshotBuffer {
     const latest = this.frames.at(-1);
     if (!latest) return null;
     const target = (now - this.clock - this.delay) / TICK_MS, elapsed = this.lastNow === null ? 0 : Math.max(0, now - this.lastNow);
-    const horizon = latest.world.tick + 3;
+    const horizon = latest.world.tick;
     const gap = target - this.play;
     if (this.play === null) this.play = Math.min(target, horizon);
     else if (gap > 30) {
@@ -393,18 +393,16 @@ export class SnapshotBuffer {
     } else {
       const maxNudge = gap <= 4 ? .08 : Math.min(.5, gap * .04);
       let advance = elapsed / TICK_MS * (1 + Math.max(-.2, Math.min(maxNudge, gap * .04)));
-      if (this.play > latest.world.tick)
-        advance *= Math.max(0, Math.min(1, (horizon - this.play) / 3));
+      if (this.play > latest.world.tick - 1)
+        advance *= Math.max(0, Math.min(1, latest.world.tick - this.play));
       this.play = Math.min(horizon, this.play + advance);
     }
-    const advance = this.prevPlay === null ? 0 : Math.max(0, this.play - this.prevPlay);
-    this.prevPlay = this.play;
     this.lastNow = now;
     const tick = this.play, first = this.frames[0];
     let a = first, b = first;
     if (tick >= latest.world.tick) {
       if (this.frames.length > 1) { a = this.frames.at(-2); b = latest; }
-      if (tick > latest.world.tick + 3) this.stats.heldMs += elapsed; else this.stats.extrapolatedMs += elapsed;
+      this.stats.heldMs += elapsed;
     } else if (tick > first.world.tick) {
       for (let i = 1; i < this.frames.length; i++) {
         b = this.frames[i];
@@ -412,46 +410,16 @@ export class SnapshotBuffer {
         a = b;
       }
     }
-    // At most 3 ticks (100ms) of extrapolation, from tick-time velocity.
     const span = b.world.tick - a.world.tick;
-    const alpha = span > 0 ? Math.max(0, (Math.min(tick, horizon) - a.world.tick) / span) : 0;
+    const alpha = span > 0 ? Math.max(0, Math.min(1, (tick - a.world.tick) / span)) : 0;
     const interpolate = key => latest.world[key].map(e => {
       const from = a.world[key].find(v => v.id === e.id), to = b.world[key].find(v => v.id === e.id);
-      if (!from || !to || e.dead || e.terminal) return e;
+      if (!from || !to) return e;
       return { ...e, x: from.x + (to.x - from.x) * alpha, y: from.y + (to.y - from.y) * alpha };
     });
-    const present = new Set(), decay = Math.exp(-elapsed / 50);
-    const entities = interpolate('entities').map(e => {
-      present.add(e.id);
-      if (e.pid === this.uid || e.kind === 'projectile') {
-        this.visual.delete(e.id);
-        return e;
-      }
-      const previous = this.visual.get(e.id);
-      let ox = previous?.ox || 0, oy = previous?.oy || 0;
-      ox *= decay; oy *= decay;
-      const from = a.world.entities.find(v => v.id === e.id), to = b.world.entities.find(v => v.id === e.id);
-      const speed = span > 0 && from && to ? Math.hypot(to.x - from.x, to.y - from.y) / span : 0;
-      const dx = previous ? e.x - previous.rx : 0, dy = previous ? e.y - previous.ry : 0;
-      const rawJump = previous ? Math.hypot(dx, dy) : 0;
-      const expected = speed * advance + 12;
-      if (!previous || e.dead || e.terminal || rawJump >= 200) {
-        ox = 0; oy = 0;
-      } else if (rawJump - expected > 16) {
-        const unexpected = 1 - expected / rawJump;
-        ox -= dx * unexpected;
-        oy -= dy * unexpected;
-        const length = Math.hypot(ox, oy);
-        if (length > 120) { ox *= 120 / length; oy *= 120 / length; }
-      }
-      const x = e.x + ox, y = e.y + oy;
-      this.visual.set(e.id, { rx: e.x, ry: e.y, ox, oy });
-      return { ...e, x, y };
-    });
-    for (const id of this.visual.keys()) if (!present.has(id)) this.visual.delete(id);
     // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
     const positionTick = span > 0 ? a.world.tick + alpha * span : a.world.tick;
-    return currentTelegraphs({ ...latest.world, positionTick, entities, projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
+    return currentTelegraphs({ ...latest.world, positionTick, entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }
 export function localView(world, uid) {

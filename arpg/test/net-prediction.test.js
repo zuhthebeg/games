@@ -34,20 +34,23 @@ test('arrival jitter/bursts keep playback monotonic and ease near the data horiz
   for (; now < 120 * 2 * T; now += 1000 / 60) {
     while (next < arrivals.length && arrivals[next].at <= now) { const a = arrivals[next++]; b.push(frame(a.tick, a.tick * 4), a.at); }
     const v = b.sample(now); if (!v || now < 1500) continue;
-    if (previous !== null) steps.push({ step: v.entities[0].x - previous, aheadOfData: b.play > b.frames.at(-1).world.tick }); previous = v.entities[0].x;
+    if (previous !== null) {
+      const latest = b.frames.at(-1).world.tick;
+      steps.push({ step: v.entities[0].x - previous, aheadOfData: b.play > latest - 1 + 1e-9 });
+    }
+    previous = v.entities[0].x;
   }
   // 4px per tick = 2px per 60Hz frame; only easing beyond the latest tick may slow it down.
   assert.ok(steps.every(({ step }) => step > 0 && step < 2 * 1.1));
-  assert.ok(steps.filter(({ step }) => step < 2 * .9).every(({ aheadOfData }) => aheadOfData));
+  assert.ok(steps.filter(({ step, aheadOfData }) => step < 2 * .9 && !aheadOfData).length === 0);
   assert.equal(b.stats.resets, 0); assert.ok(b.delay >= 80 && b.delay <= 300);
 });
-test('extrapolation from tick velocity is capped at 3 ticks, then holds; first frame/stale safe', () => {
+test('newest frame holds without extrapolation; first frame/stale packets stay safe', () => {
   const b = new SnapshotBuffer('g', 100, { adaptive: false });
   assert.equal(b.sample(0), null); b.push(frame(0, 100), 0); assert.equal(b.sample(1000).entities[0].x, 100);
   const c = new SnapshotBuffer('g', 100, { adaptive: false }); c.push(frame(0, 100), 0); c.push(frame(3, 130), 3 * T);
-  assert.ok(Math.abs(c.sample(4 * T + 100).entities[0].x - 140) < 1e-6);
-  assert.ok(c.sample(6 * T + 100).entities[0].x < 160);
-  assert.ok(Math.abs(c.sample(9 * T + 100).entities[0].x - 160) < 1e-6);
+  assert.equal(c.sample(4 * T + 100).entities[0].x, 130);
+  assert.equal(c.sample(9 * T + 100).entities[0].x, 130);
   assert.equal(c.push(frame(2, 1), 200), false);
 });
 test('latest terminal pawn never interpolates/extrapolates', () => {

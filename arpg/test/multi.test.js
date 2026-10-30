@@ -45,9 +45,9 @@ test('snapshot interpolation clamps, ignores stale packets, and keeps newest tel
   // Playback is on the host tick clock: halfway between the two ticks = halfway position.
   assert.ok(Math.abs(buffer.sample(t0 + 150).entities[0].x - (a.entities[1].x + 50)) < 1e-6);
   assert.equal(new SnapshotBuffer('guest', 100, { adaptive: false }).sample(0), null);
-  // Bounded extrapolation: at most 3 ticks past the newest frame (here = one more 3-tick step).
+  // Starvation holds at the newest authoritative frame instead of extrapolating.
   const far = new SnapshotBuffer('guest', 100, { adaptive: false }); far.push(a, t0); far.push(b, t0 + 100);
-  assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - (b.entities[1].x + 100)) < 1e-6);
+  assert.ok(Math.abs(far.sample(t0 + 900).entities[0].x - b.entities[1].x) < 1e-6);
   assert.deepEqual(buffer.sample(t0 + 150).telegraphs, b.telegraphs);
 });
 test('party size HP scale is 1.4/1.8/2.15 at stage level (cocy 10-14 softer), party mean level, single unchanged', () => {
