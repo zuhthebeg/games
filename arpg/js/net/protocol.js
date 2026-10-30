@@ -202,7 +202,7 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   // Only the new authority envelope tightens global identity; legacy-only
   // packets keep their existing compatibility surface (including old fixtures).
   const volleyEnvelope=packet.entities.some(e=>e.volley20!==undefined || e.act?.volley20!==undefined) || (packet.projectiles||[]).some(p=>p.volley20!==undefined);
-  const cleaveEnvelope=!!cleaveCapability && packet.entities.some(e=>e.kind==='player' && cleaveCapability(e.id)===true) || packet.entities.some(e=>e.cleave20!==undefined || e.act?.cleave20!==undefined);
+  const cleaveEnvelope=!!cleaveCapability || packet.entities.some(e=>e.cleave20!==undefined || e.act?.cleave20!==undefined);
   if(volleyEnvelope || cleaveEnvelope) {
     const ids=[...packet.entities,...(packet.projectiles||[]),...(packet.zones||[])].map(e=>e.id);
     const players=packet.entities.filter(e=>e.kind==='player');
