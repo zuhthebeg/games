@@ -423,6 +423,56 @@ test('captured seq 820 and 940 stalls revive only when FIFO authority arrives wi
   }
 });
 
+test('a late recovery-first act still gets one trail while its cast is fresh', () => {
+  const world = createWorld({ seed: 21 });
+  addPlayer(world, { pid: 'local', weapon: 'blade' });
+  startStage(world, 'S2');
+  const renderer = makeRenderer(world);
+  const phaseTicks = { windup: 5, lock: 0, active: 3, recovery: 8 };
+  renderAct(renderer, world, { tick: 98, phase: 'recovery', elapsed: 14, castTick: 86, phaseTicks });
+  renderAct(renderer, world, { tick: 99, phase: 'recovery', elapsed: 15, castTick: 86, phaseTicks });
+  assert.equal(activeEffects(renderer), 1);
+});
+
+test('seq 669 stays visible through its cosmetic duration after live simulation ends early', () => {
+  const fixture = predictionFixture();
+  const { prediction, world, renderer } = fixture;
+  const phaseTicks = { windup: 5, lock: 0, active: 3, recovery: 8 };
+  const base = { ...prediction.state, act: null };
+  const predicted = { id: 'slash', step: 1, phase: 'windup', elapsed: 1, left: 4,
+    phaseTicks, facing: 0, def: comboDef('slash', 1, 'sword') };
+  prediction.state = prediction.attacks.track(base, { ...base, act: predicted }, 669, 754);
+  const row = prediction.attacks.starts.get(669);
+  prediction.attacks.now = row.startedAt + 6 * T;
+  prediction.state = { ...prediction.state, act: { ...predicted, phase: 'active', elapsed: 6,
+    left: 2, presentationSeq: 669 } };
+  const active = prediction.view({ ...world, tick: 759 });
+  assert.equal(active.entities.find(entity => entity.pid === 'local').act.phase, 'active');
+  renderer.render(active, 1, 1 / 60);
+  const authority = { ...world, tick: 759, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 669, act: { ...predicted, phase: 'active', elapsed: 6, left: 2 } } : entity) };
+  prediction.reconcile(authority);
+  prediction.attacks.now = row.startedAt + 11 * T;
+  const recovery = prediction.view({ ...authority, tick: 764 });
+  const recoveryAct = recovery.entities.find(entity => entity.pid === 'local').act;
+  assert.equal(recoveryAct.phase, 'recovery');
+  assert.equal(recoveryAct.elapsed, 11);
+  renderer.render(recovery, 1, 1 / 60);
+  prediction.attacks.now = row.startedAt + 14 * T;
+  const before = { ...prediction.state, act: { ...prediction.state.act, phase: 'recovery',
+    elapsed: 15, left: 1, presentationSeq: 669 } };
+  prediction.state = prediction.attacks.track(before, { ...before, act: null }, 682, 769);
+  assert.equal(row.completed, true);
+  assert.equal(row.completedLive, false);
+  const after = prediction.view({ ...authority, tick: 769 });
+  const afterAct = after.entities.find(entity => entity.pid === 'local').act;
+  assert.ok(afterAct);
+  assert.equal(afterAct.presentationSeq, 669);
+  assert.equal(afterAct.elapsed, 14);
+  renderer.render(after, 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+});
+
 test('stun clears a predicted cosmetic immediately and authority-only casts use late identity', () => {
   const stunned = predictionFixture();
   advanceBasic(stunned.prediction, 1, true);
@@ -495,6 +545,142 @@ test('frame-by-frame playback dedupes acts present in both passed frames and the
   assert.equal(trails, 2, 'each of two host casts emits once despite passed/current overlap');
 });
 
+test('normal and passed remote acts share cast tokens across one-tick start rounding', () => {
+  for (const passedStart of [100, 101]) {
+    const fixture = remoteBufferedFixture();
+    fixture.push(110, bufferedSlash(1, 'active', 10, 100));
+    const sampled = fixture.sample(110);
+    const remote = sampled.entities.find(entity => entity.pid === 'remote');
+    sampled.positionTick = 110;
+    sampled.passedActs = [{
+      entityId: remote.id, castStart: passedStart, passedTick: 109,
+      act: bufferedSlash(1, 'active', 9, 100)
+    }];
+    const renderer = makeRenderer(sampled);
+    let trails = 0;
+    const effect = renderer.effect.bind(renderer);
+    renderer.effect = (...args) => {
+      if (['slash', 'reverse', 'thrust', 'down', 'up', 'spin'].includes(args[5])) trails++;
+      effect(...args);
+    };
+    renderer.render(sampled, 1, 1 / 60);
+    assert.equal(trails, 1, `passed start ${passedStart} is deduped against the sampled act`);
+    const view = renderer.views.get(remote.id);
+    assert.ok(view.presented.size >= 1, 'the cast identity token is recorded');
+    renderer.render({ ...sampled, tick: 171, positionTick: 171, passedActs: [],
+      entities: sampled.entities.map(entity => entity.id === remote.id ? { ...entity, act: null } : entity) }, 1, 1 / 60);
+    assert.equal(view.presented.size, 0, 'cast tokens older than 60 position ticks are pruned');
+  }
+});
+
+test('authority identity remains deduped after binding to a cosmetic sequence', () => {
+  const fixture = predictionFixture();
+  const { prediction, world, renderer } = fixture;
+  let authority;
+  for (let tick = 1; tick < 30; tick++) {
+    const candidate = firstCastAuthority(world, tick);
+    if (candidate.entities.find(entity => entity.pid === 'local').act?.phase === 'active') {
+      authority = candidate;
+      break;
+    }
+  }
+  assert.ok(authority);
+  const hostAct = authority.entities.find(entity => entity.pid === 'local').act;
+  const authorityStart = authority.tick - hostAct.elapsed;
+  const early = { ...authority, entities: authority.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, act: { ...hostAct, presentationAuthorityStart: authorityStart } } : entity) };
+  renderer.render(early, 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+
+  advanceBasic(prediction, 1, true);
+  prediction.reconcile(authority);
+  const shown = prediction.view(authority).entities.find(entity => entity.pid === 'local').act;
+  assert.equal(shown.presentationSeq, 1);
+  assert.equal(shown.presentationAuthorityStart, authorityStart);
+  renderer.render(prediction.view(authority), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1, 'auth-to-seq identity change does not re-fire recovery/active trail');
+});
+
+test('raw replayed acts cannot regress an already presented cosmetic phase', () => {
+  const fixture = predictionFixture();
+  const { prediction } = fixture;
+  advanceBasic(prediction, 1, true);
+  const row = prediction.attacks.starts.get(1);
+  const recoveryStart = row.phaseTicks.windup + row.phaseTicks.lock + row.phaseTicks.active;
+  const recoveryElapsed = recoveryStart + 1;
+  prediction.attacks.now = row.startedAt + recoveryElapsed * T;
+  let raw = { ...row.act, phase: 'recovery', elapsed: recoveryElapsed, left: row.phaseTicks.recovery - 1 };
+  delete raw.presentationSeq;
+  prediction.state = { ...prediction.state, act: raw };
+  const phases = [];
+  for (const patch of [
+    { phase: 'recovery', elapsed: recoveryElapsed },
+    { phase: 'active', elapsed: recoveryStart },
+    { phase: 'recovery', elapsed: recoveryElapsed + 1 }
+  ]) {
+    prediction.state = { ...prediction.state, act: { ...raw, ...patch } };
+    const shown = prediction.view(fixture.world).entities.find(entity => entity.pid === 'local').act;
+    assert.ok(shown);
+    assert.equal(shown.presentationSeq, row.seq);
+    phases.push(shown.phase);
+    fixture.renderer.render(prediction.view(fixture.world), 1, 1 / 60);
+  }
+  assert.deepEqual(phases, ['recovery', 'recovery', 'recovery']);
+  assert.equal(fixture.trailCount(), 1, 'recovery-first fallback is presented only once');
+  prediction.attacks.complete({ presentationSeq: row.seq });
+  prediction.state = { ...prediction.state, act: { ...raw, phase: 'active', elapsed: recoveryStart } };
+  assert.equal(prediction.view(fixture.world).entities.find(entity => entity.pid === 'local').act, null,
+    'a recent completed cosmetic cannot fall back to its raw replay act');
+});
+
+test('older authority-only casts cannot replace the currently displayed cosmetic', () => {
+  const fixture = predictionFixture({ skills: ['lunge'] });
+  const { prediction, world } = fixture;
+  advanceSkill(prediction, 1, true);
+  const row = prediction.attacks.starts.get(1);
+  prediction.state = { ...prediction.state, act: {
+    id: 'slash', step: 1, phase: 'active', elapsed: 4, left: 2,
+    phaseTicks: { windup: 5, lock: 0, active: 3, recovery: 8 }, facing: 0,
+    presentationAuthorityStart: row.predictedStartTick - 1,
+    def: comboDef('slash', 1, 'sword')
+  } };
+  const shown = prediction.view(world).entities.find(entity => entity.pid === 'local').act;
+  assert.equal(shown.id, 'lunge');
+  assert.equal(shown.presentationSeq, row.seq);
+});
+
+test('combo-step divergence binds the oldest live cosmetic and prevents authority interleave', () => {
+  const fixture = predictionFixture();
+  const { prediction, world, renderer } = fixture;
+  const before = prediction.state;
+  const predictedStep = {
+    id: 'slash', step: 2, phase: 'active', elapsed: 6, left: 2, total: 16,
+    phaseTicks: { windup: 5, lock: 0, active: 3, recovery: 8 }, facing: 0,
+    def: comboDef('slash', 2, 'sword')
+  };
+  prediction.state = prediction.attacks.track(before, { ...before, act: predictedStep }, 20, 100);
+  const authorityAct = { ...predictedStep, step: 1, castTick: undefined };
+  delete authorityAct.castTick;
+  const authority = { ...world, tick: 106, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 20, act: { ...authorityAct, elapsed: 6 } } : entity) };
+  prediction.reconcile(authority);
+  const row = prediction.attacks.starts.get(20);
+  assert.equal(row.mispredictedStep, true);
+  assert.equal(row.bound, 100);
+
+  for (const tick of [106, 107, 108]) {
+    const frame = { ...authority, tick, entities: authority.entities.map(entity => entity.pid === 'local'
+      ? { ...entity, act: { ...authorityAct, elapsed: tick - 100 } } : entity) };
+    prediction.reconcile(frame);
+    const view = prediction.view(frame);
+    const shown = view.entities.find(entity => entity.pid === 'local').act;
+    assert.equal(shown.presentationSeq, 20);
+    assert.equal(shown.step, 2, 'the host step does not interleave over its bound cosmetic');
+    renderer.render(view, 1, 1 / 60);
+  }
+  assert.equal(fixture.trailCount(), 1);
+});
+
 test('a replay without a live same-cast candidate cannot create a presentation identity', () => {
   const { prediction } = predictionFixture();
   const before = { ...prediction.state, act: null };
@@ -561,7 +747,7 @@ test('same-key predicted recasts stay visible while authority still reports the 
     prediction.reconcile(authority);
     assert.equal(prediction.attacks.starts.get(1)?.confirmed, true);
     assert.equal(prediction.attacks.starts.get(1)?.completed, true);
-    assert.equal(prediction.view(authority).entities.find(entity => entity.pid === 'local').act, null);
+    assert.equal(prediction.view(authority).entities.find(entity => entity.pid === 'local').act.presentationSeq, 1);
     const firstAuthorityStart = prediction.attacks.starts.get(1).authorityStart;
 
     let activeFrames = 0, hiddenActiveFrames = 0, observedLag = null;

@@ -28,10 +28,19 @@ export class AttackPresentation {
   }
   alive(row) {
     const total = PHASES.reduce((sum, phase) => sum + (row.phaseTicks[phase] || 0), 0);
-    return !row.rejected && !row.completedLive && Math.floor((this.now - row.startedAt) / TICK_MS) < total;
+    return !row.rejected && !row.completedLive && this.elapsedTicks(row) < total;
+  }
+  elapsedTicks(row) {
+    return Math.max(0, Math.floor((this.now - row.startedAt) / TICK_MS));
+  }
+  durationTicks(row) {
+    return PHASES.reduce((sum, phase) => sum + (row.phaseTicks[phase] || 0), 0);
+  }
+  recent(row) {
+    return this.elapsedTicks(row) < this.durationTicks(row) + 12;
   }
   findAlive(key, predictedStart = NaN) {
-    return [...this.starts.values()].filter(row => row.key === key && this.alive(row))
+    return [...this.starts.values()].filter(row => row.key === key && !row.naturalEnded && this.alive(row))
       .sort((a, b) => Number.isFinite(predictedStart)
         ? Math.abs(a.predictedStartTick - predictedStart) - Math.abs(b.predictedStartTick - predictedStart) || a.seq - b.seq
         : a.seq - b.seq)[0];
@@ -45,12 +54,24 @@ export class AttackPresentation {
       row.completedAt = this.now;
     }
   }
+  endLive(act) {
+    if (!act) return;
+    const row = this.starts.get(act.presentationSeq);
+    if (row) {
+      row.naturalEnded = true;
+      row.completed = true;
+      row.completedAt = this.now;
+    }
+  }
   track(before, after, seq, tick, { replay = false } = {}) {
     const beforeAct = before.act, afterAct = after.act;
     const restart = !!beforeAct && !!afterAct && (castKey(beforeAct) !== castKey(afterAct)
       || (afterAct.elapsed ?? 0) < (beforeAct.elapsed ?? 0));
     const start = !!afterAct && (!beforeAct || restart);
-    if (!replay && beforeAct && (!afterAct || restart)) this.complete(beforeAct);
+    if (!replay && beforeAct && (!afterAct || restart)) {
+      if (afterAct && restart) this.complete(beforeAct);
+      else this.endLive(beforeAct);
+    }
     if (!afterAct) return after;
 
     const predictedStart = startTick(afterAct, tick);
@@ -67,7 +88,8 @@ export class AttackPresentation {
           phaseTicks: { ...afterAct.phaseTicks }, def: afterAct.def, facing: afterAct.facing,
           act: snapshot, predictedStartTick: predictedStart, windowTicks: windowTicks(afterAct),
           completedLive: false, completed: false, confirmed: false, rejected: false, bound: null,
-          visible: false, fired: new Set(), knownShots: new Set(this.authorityShots)
+          naturalEnded: false, shownActive: false, visible: false, fired: new Set(),
+          knownShots: new Set(this.authorityShots)
         };
         this.starts.set(seq, row);
       }
@@ -100,7 +122,7 @@ export class AttackPresentation {
         row.rejected = true;
         this.shots = this.shots.filter(projectile => projectile.seq !== row.seq);
       }
-      if (this.now - row.at > 10_000 && (row.bound !== null || row.completedLive || row.rejected)) {
+      if (this.now - row.at > 10_000 && (row.bound !== null || row.completedLive || row.naturalEnded || row.rejected)) {
         this.starts.delete(row.seq);
         this.shots = this.shots.filter(projectile => projectile.seq !== row.seq);
       }
@@ -113,9 +135,17 @@ export class AttackPresentation {
     if (Number.isFinite(authorityStart)) {
       let binding = this.authorityBinds.find(row => row.key === key && Math.abs(row.start - authorityStart) <= 1);
       if (!binding) {
-        const candidate = [...this.starts.values()].filter(row => row.key === key && row.bound === null
+        let candidate = [...this.starts.values()].filter(row => row.key === key && row.bound === null
+          && !row.completedLive && this.elapsedTicks(row) < this.durationTicks(row)
           && row.seq <= ack && (!row.rejected || Math.abs(row.predictedStartTick - authorityStart) <= row.windowTicks))
           .sort((a, b) => a.seq - b.seq)[0];
+        if (!candidate) {
+          candidate = [...this.starts.values()].filter(row => row.id === act.id && row.step !== (act.step ?? 0)
+            && row.bound === null && !row.rejected && row.seq <= ack && this.alive(row))
+            .sort((a, b) => a.seq - b.seq)[0];
+          // During step divergence the bound cosmetic's trail may show the mispredicted step.
+          if (candidate) candidate.mispredictedStep = true;
+        }
         if (candidate) {
           if (candidate.rejected) {
             candidate.rejected = false;
@@ -128,12 +158,27 @@ export class AttackPresentation {
           this.authorityBinds.push(binding);
         }
       }
+      if (!binding) {
+        const completed = [...this.starts.values()].filter(row => row.key === key && row.seq <= ack
+          && !row.rejected && (row.completedLive || row.naturalEnded || row.completed)
+          && Number.isFinite(row.predictedStartTick)
+          && Math.abs(row.predictedStartTick - authorityStart) <= row.windowTicks)
+          .sort((a, b) => a.seq - b.seq)[0];
+        if (completed) {
+          completed.confirmed = true;
+          completed.authorityStart = authorityStart;
+          completed.lateConfirmed = true;
+        }
+      }
       if (binding) {
         const bound = this.starts.get(binding.seq);
         if (bound) {
           const elapsed = Math.floor((this.now - bound.startedAt) / TICK_MS);
-          if (Number.isFinite(act.elapsed) && act.elapsed > elapsed)
-            bound.startedAt = this.now - act.elapsed * TICK_MS;
+          if (Number.isFinite(act.elapsed) && act.elapsed > elapsed) {
+            const firstActive = (bound.phaseTicks.windup || 0) + (bound.phaseTicks.lock || 0);
+            const catchup = bound.shownActive ? act.elapsed : Math.min(act.elapsed, firstActive);
+            bound.startedAt = this.now - catchup * TICK_MS;
+          }
           return { ...act, presentationSeq: binding.seq };
         }
       }
@@ -151,25 +196,47 @@ export class AttackPresentation {
     }
     const total = PHASES.reduce((sum, candidate) => sum + (row.phaseTicks[candidate] || 0), 0);
     if (elapsed >= total) return null;
+    if (phase === 'active') row.shownActive = true;
     const snapshot = row.act;
     return { ...snapshot, phase, elapsed, left: Math.max(1, (row.phaseTicks[phase] || 1) - remaining),
-      phaseTicks: { ...row.phaseTicks }, presentationSeq: row.seq };
+      phaseTicks: { ...row.phaseTicks }, presentationSeq: row.seq,
+      ...(Number.isFinite(row.bound) ? { presentationAuthorityStart: row.bound } : {}) };
   }
-  act(authorityAct) {
-    if (authorityAct?.presentationAuthorityStart !== undefined) return authorityAct;
+  act(authorityAct, tick) {
     if (authorityAct?.presentationSeq !== undefined) {
       const row = this.starts.get(authorityAct.presentationSeq);
       if (!row || row.rejected || row.completedLive) return null;
       row.visible = true;
       return this.display(row);
     }
-    const row = [...this.starts.values()].filter(candidate => this.alive(candidate))
+    const cosmetic = [...this.starts.values()].filter(candidate => this.alive(candidate))
       .sort((a, b) => b.startedAt - a.startedAt || b.seq - a.seq)[0];
-    if (row) {
-      row.visible = true;
-      return this.display(row);
+    if (!authorityAct) {
+      if (!cosmetic) return null;
+      cosmetic.visible = true;
+      return this.display(cosmetic);
     }
-    return null;
+    if (Number.isFinite(authorityAct.presentationAuthorityStart)) {
+      const authorityStart = authorityAct.presentationAuthorityStart;
+      const cosmeticStart = cosmetic && (Number.isFinite(cosmetic.bound) ? cosmetic.bound : cosmetic.predictedStartTick);
+      if (cosmetic && Number.isFinite(cosmeticStart) && authorityStart < cosmeticStart) {
+        cosmetic.visible = true;
+        return this.display(cosmetic);
+      }
+      const lateConfirmed = [...this.starts.values()].some(row => row.lateConfirmed && row.key === castKey(authorityAct)
+        && Number.isFinite(row.authorityStart) && Math.abs(row.authorityStart - authorityStart) <= row.windowTicks);
+      if (lateConfirmed) return null;
+      return authorityAct;
+    }
+    const key = castKey(authorityAct);
+    const matching = [...this.starts.values()].filter(row => row.key === key && !row.rejected && this.recent(row))
+      .sort((a, b) => b.startedAt - a.startedAt || b.seq - a.seq)[0];
+    if (matching) {
+      if (!this.alive(matching)) return null;
+      matching.visible = true;
+      return this.display(matching);
+    }
+    return authorityAct;
   }
   advance(pawn, dt) {
     this.now += dt;
