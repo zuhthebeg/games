@@ -89,7 +89,11 @@ export class CoopLobby {
     document.querySelector('#mpl-solo-start')?.remove(); // This game has no AI padding or solo relay start.
     const amHost = this.lobby._roster.hostUser === this.uid;
     let controls = card.querySelector('#arpg-party-config');
-    if (!controls) {
+    const sanctuary = this.config.stageId === 'SANCTUARY';
+    if (sanctuary) {
+      controls?.remove();
+      controls = null;
+    } else if (!controls) {
       controls = document.createElement('div'); controls.id = 'arpg-party-config';
       const stage = document.createElement('select'); stage.id = 'arpg-party-stage'; stage.setAttribute('aria-label', '협동 스테이지');
       for (const id of this.profile.stages || Object.keys(STAGES)) stage.add(new Option(`${id} · ${STAGES[id].name}`, id));
@@ -105,18 +109,23 @@ export class CoopLobby {
       stage.onchange = refresh; threat.onchange = () => { this.config.threat = Number(threat.value); };
       refresh(); controls.append(stage, threat); card.insertBefore(controls, document.querySelector('#mpl-ready'));
     }
-    controls.hidden = !amHost;
+    if (controls) controls.hidden = !amHost;
     let note = card.querySelector('#arpg-room-mode');
     if (!note) { note = document.createElement('p'); note.id = 'arpg-room-mode'; card.prepend(note); }
     const players = this.lobby._roster.players;
-    note.textContent = `같이 사냥 · 총 ${players.length}/4명 · 인간은 사냥꾼 편, 해골은 몬스터 편`;
+    const excludesSkeleton = sanctuary && Object.keys(this.partyProfiles).some(id => this.partyProfiles[id]?.lineage === 'skeleton_knight');
+    note.textContent = sanctuary
+      ? `법당 · 비전투 · 보상·저장 없음 · 총 ${players.length}/4명`
+      : `같이 사냥 · 총 ${players.length}/4명 · 인간은 사냥꾼 편, 해골은 몬스터 편`;
+    if (excludesSkeleton) note.textContent += ' · 해골은 법당에 들어갈 수 없어요';
     for (const p of players) {
       const id = p.user || p.uid, profile = this.partyProfiles[id];
-      const role = profile?.lineage === 'skeleton_knight' ? '해골 / 몬스터 편' : profile ? '인간 / 사냥꾼 편' : '캐릭터 확인 중';
+      const role = sanctuary ? '' : profile?.lineage === 'skeleton_knight' ? '해골 / 몬스터 편' : profile ? '인간 / 사냥꾼 편' : '캐릭터 확인 중';
+      if (sanctuary) continue;
       note.textContent += ` · ${p.nick || profile?.name || id}: ${role}`;
     }
     const start = card.querySelector('#mpl-start');
-    if (start) start.disabled = !canStartParty(this.lobby._roster, this.uid, this.partyProfiles);
+    if (start) start.disabled = excludesSkeleton || !canStartParty(this.lobby._roster, this.uid, this.partyProfiles);
   }
 
   started(config) {

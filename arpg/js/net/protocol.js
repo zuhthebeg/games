@@ -13,9 +13,11 @@ import { validShieldModel } from '../content/shields.js';
 import { whirlTimeline } from '../sim/whirl-evolution.js';
 import { ticks } from '../sim/core.js';
 import { BALANCE } from '../content/balance.js';
+import { SANCTUARY } from '../content/sanctuary.js';
 
 export const EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge'];
 export const TIMED_SKILL_EDGES = ['skillEdge', 'skill2Edge', 'skill3Edge'];
+const SANCTUARY_OBSTACLES = Object.freeze(SANCTUARY.obstacles.map(obstacle => Object.freeze({ ...obstacle })));
 const MAX_PENDING_EDGES = 30;
 const finite = v => Number.isFinite(v) ? v : 0;
 const q = v => Math.round(finite(v) * 100) / 100;
@@ -181,7 +183,8 @@ const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 
 const HUD = ['greenPotions', 'greenActive', 'greenMods', 'greenBase', 'effectiveAgi', 'mp', 'maxMp', 'potions', 'manaPotions', 'potionCd', 'scrolls', 'scrollRetry', 'loadRatio', 'cds', 'dodge'];
 const select = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]));
 export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
-  return { t: 'snapshot', statusVersion:1, tick: world.tick, arena: world.arena, threat: world.threat,
+  return { t: 'snapshot', statusVersion:1, tick: world.tick,
+    arena: world.arena.obstacles ? { w: world.arena.w, h: world.arena.h } : world.arena, threat: world.threat,
     round: select(world.round, ['stageId', 'state', 't', 'goal', 'timerTicks', 'threat', 'invasion', 'invasionExitAt']),
     ...(world.round.objective ? { objective: structuredClone(world.round.objective) } : {}), pending: world.round.pending.length,
     entities: world.entities.map(e => ({ ...select(e, COMMON), ...(e.poison ? {poison:{left:e.poison.left}} : {}), ...(e.burn ? { burn: select(e.burn, ['expiresTick']) } : {}), ...(e.kind === 'player' ? { ...select(e, HUD), ...select(e, MOTION), ...select(e, ['skillMasteryLevels']),
@@ -332,6 +335,8 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
     if(p.pierce20 && (owner && owner.kind!=='player' || !Number.isSafeInteger(p.ownerId) || p.ownerId<1 || !Number.isSafeInteger(p.id) || p.id<1 || packet.entities.some(e=>e.id===p.id) || (packet.projectiles||[]).filter(q=>q.id===p.id).length!==1 || (packet.zones||[]).some(z=>z.id===p.id) || ![p.x,p.y,p.vx,p.vy,p.r].every(Number.isFinite) || p.r!==8 || Math.abs(Math.hypot(p.vx,p.vy)-1000)>1e-8 || p.x<0 || p.y<0 || p.x>packet.arena?.w || p.y>packet.arena?.h)) return null;
   }
   const copy = structuredClone(packet);
+  if (copy.round?.stageId === 'SANCTUARY')
+    copy.arena = { ...copy.arena, obstacles: SANCTUARY_OBSTACLES };
   copy.zones ||= [];
   for (const e of copy.entities) if (e.act) e.act.def = e.act.counter ? ABILITIES[e.act.id] : comboDef(e.act.id, e.act.step, e.weaponForm);
   for(const e of copy.entities) if(e.act?.ember20) e.act.def=emberDef(ABILITIES.ember_bolt);
