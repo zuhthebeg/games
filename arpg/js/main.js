@@ -1,7 +1,8 @@
 import { victoryResultDelay } from './ui/victory-result-delay.js';
 import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
-import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
+import { createWorld, addPlayer, startStage, startSanctuary as startSanctuaryRound, step, setLoad } from './sim/world.js';
+import { SANCTUARY } from './content/sanctuary.js';
 import { CoopLobby, roomEntry, clearRoomInvite } from './net/lobby.js';
 import { equipmentVisual } from './render/paperdoll-state.js';
 import { emptyInput } from './sim/world.js';
@@ -9,7 +10,7 @@ import { selectThreat, unlockedThreat } from './meta/run.js';
 import { availableStages, arrivalNotice } from './content/world-map.js';
 import { STAGES } from './content/combat.js';
 import { TICK_MS } from './sim/core.js';
-import { InputLayer } from './input.js';
+import { InputLayer, movementOnlyInput } from './input.js';
 import { applyAutoUse, autoUseSettings } from './meta/auto-use.js';
 import { loadoutOf } from './meta/skills.js';
 import { masteryLevels, setMasteryLevel } from './meta/skill-mastery.js';
@@ -118,6 +119,35 @@ try {
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
     canInteract: () => !undead && !undeadStarting,
     saveLock: () => characters.active?.slot === 'human' && characters.human.locked,
+    startSanctuary: () => {
+      if (undead || undeadStarting || coop || coopSession || hub.save.lineage === 'skeleton_knight') return;
+      resultPresentation.cancel();
+      characters.assertOwner();
+      roundOwner = characters.active;
+      input.reset();
+      roundSave = structuredClone(hub.save);
+      developmentRound = false;
+      const seed = crypto.getRandomValues(new Uint32Array(1))[0];
+      world = createWorld({ seed, arena: { ...SANCTUARY.arena } });
+      const weapon = ITEMS[equippedItem(roundSave, 'weapon').id].family;
+      addPlayer(world, { pid: 'local', weapon, x: SANCTUARY.spawn.x, y: SANCTUARY.spawn.y,
+        skillMasteryLevels: masteryLevels(roundSave), mods: buildRoundMods(roundSave) });
+      startSanctuaryRound(world);
+      tracker = createTracker(seed);
+      const load = currentLoad(roundSave, tracker);
+      setLoad(world, 'local', load.ratio);
+      renderer.reset(world, matchMedia('(prefers-reduced-motion: reduce)').matches, roundSave);
+      renderer.root.visible = true;
+      renderer.warning.visible = false;
+      hub.root.hidden = true;
+      hub.root.inert = true;
+      input.enabled = true;
+      hud.begin(world, loadoutOf(roundSave));
+      hud.meta(load, tracker, roundSave);
+      running = true;
+      accumulator = 0;
+      lastTime = performance.now();
+    },
     persist: (save) => {
       if (undead || undeadStarting) throw new Error('언데드 디버그 저장 금지');
       store.save(save);
@@ -170,6 +200,22 @@ try {
       lastTime = performance.now();
     },
   });
+  function exitSanctuary() {
+    if (world?.round?.goal !== 'sanctuary') return false;
+    running = false;
+    accumulator = 0;
+    input.reset();
+    input.enabled = false;
+    renderer.leaveSanctuary();
+    renderer.root.visible = false;
+    renderer.warning.visible = false;
+    document.querySelector('#hud').hidden = true;
+    hub.root.hidden = false;
+    hub.root.inert = false;
+    world = tracker = roundSave = roundOwner = null;
+    hub.showInn();
+    return true;
+  }
   // Preserve the existing HUD nodes/listeners (including InputLayer button references).
   // Replacing innerHTML here would silently disconnect the original human controls.
   function rememberHud(node) {
@@ -664,8 +710,18 @@ try {
       while (accumulator >= TICK_MS && count < 5) {
         debug?.beforeTick();
         renderer.snapshot(world);
-        inputs.local = combatInput(world.entities[0]);
+        const sanctuary = world.round?.goal === 'sanctuary';
+        const consumed = sanctuary ? input.consume() : combatInput(world.entities[0]);
+        if (sanctuary && (consumed.escapeEdge || consumed.scrollEdge)) { exitSanctuary(); break; }
+        inputs.local = sanctuary ? movementOnlyInput(consumed) : consumed;
         const events = step(world, inputs);
+        if (sanctuary) {
+          renderer.events(world, events);
+          hud.events(events);
+          accumulator -= TICK_MS;
+          count++;
+          continue;
+        }
         const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, world.entities[0]), world, 'local');
         tracker = progress.tracker;
         setLoad(world, 'local', progress.load.ratio);

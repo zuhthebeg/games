@@ -260,3 +260,8 @@ Native clips, all **8 directions × idle/run/attack/hit/death**, complete source
 - Original project-authored copper derivatives; ember adds 16 obsidian plate/curved horn meshes, venom adds 22 neck-frill/fan-tail surface and rib meshes. Repository licensing; no external model/texture or fabricated CC0 claim.
 - Each kit: 8 directions, idle/run/attack/hit/death, 264 transparent 128px frames, fixed projected ground anchor; source and alpha/direction/budget evidence beside generator.
 - Art preparation only. No manifest, runtime, gameplay, UI, placement, effects or deployment. Original copper/shared manifest/existing frost unchanged; parent/user look approval remains pending.
+
+## 2026-10-30 — Temple sanctuary ground and occluder
+- Original procedural Blender geometry, lighting and composition authored for this project; ground and occluder delivered as q82 WebP. Reproducible generator, packer and source provenance: `tools/art/temple/`.
+- The source scene uses documented Poly Haven CC0 texture maps. These are third-party inputs; the final image is not represented as having no third-party assets. The source provenance records identifiers, URLs and hashes.
+- Runtime assets: `assets/sprites/scenery/temple/ground.webp` and `occluder.webp`, both 1400×860. Lazy-loaded only for the sanctuary.

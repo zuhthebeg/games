@@ -19,6 +19,7 @@ import {
   TEAM_PLAYER, TEAM_MONSTER,
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE, SKILL_SLOTS, canUseSkill, weaponAttackMultiplier } from '../content/combat.js';
+import { SANCTUARY } from '../content/sanctuary.js';
 
 import { MONSTER_VARIANTS } from '../content/monsters.js';
 
@@ -197,6 +198,18 @@ export function startStage(world, stageId, { playerSide = 'left' } = {}) {
       p.x = world.round.objective.entry.x; p.y = world.round.objective.entry.y;
     }
   }
+}
+
+export function startSanctuary(world) {
+  world.arena = { ...SANCTUARY.arena, obstacles: SANCTUARY.obstacles.map(obstacle => ({ ...obstacle })) };
+  for (const player of world.entities.filter(entity => entity.kind === 'player')) {
+    player.x = SANCTUARY.spawn.x;
+    player.y = SANCTUARY.spawn.y;
+  }
+  world.round = {
+    stageId: SANCTUARY.id, goal: 'sanctuary', state: 'running', t: 0,
+    threat: 1, maxConcurrent: 0, pending: [],
+  };
 }
 
 // Carry weight (design §8.3). The meta layer owns the weight math; the sim only applies the tier effects.
@@ -1289,6 +1302,7 @@ function stepRound(world, inputs) {
   const rd = world.round;
   if (!rd || rd.state !== 'running') return;
   rd.t++;
+  if (rd.goal === 'sanctuary') return;
   // Combat/death already ran: a same-tick death cannot be resurrected by success.
   const objectiveCleared = rd.objective ? stepObjective(world, inputs) : false;
   if (objectiveCleared) rd.pending = [];

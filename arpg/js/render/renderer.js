@@ -1,6 +1,6 @@
 import { createMineLift } from './mine-lift.js';
 import {BOSS_TUNING} from '../content/boss-tuning.js';
-import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
+import { Container, Graphics, Sprite, Texture, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { drawCursedGround, paintRootGrip } from './skeleton-vfx.js';
 import { getTelegraphs } from '../sim/world.js';
 import { paintDragonVfx } from './dragon-presentation.js';
@@ -18,7 +18,56 @@ import { MasterySkillVfx as SkillVfx } from './mastery-vfx.js';
 import { equipmentVisual } from './paperdoll-state.js';
 import { masteryLevels } from '../meta/skill-mastery.js';
 import { bakeBiome } from './biome-map.js';
+import { SceneAssetState } from './scene-asset-state.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
+class IncenseSmoke {
+  constructor(layer) {
+    this.particles = Array.from({ length: 24 }, () => {
+      const node = new Graphics();
+      node.visible = false;
+      layer.addChild(node);
+      return { node, left: 0, total: 0, x: 0, y: 0, drift: 0, source: 0 };
+    });
+    this.time = 0;
+    this.emission = 0;
+    this.serial = 0;
+  }
+
+  update(dt, reduced) {
+    this.time += dt;
+    this.emission -= dt;
+    const interval = reduced ? 1.1 : .24;
+    while (this.emission <= 0) {
+      const particle = this.particles.find(item => item.left <= 0);
+      if (particle) {
+        particle.source = this.serial++ % 2;
+        particle.x = (particle.source ? 1207 : 522) + ((this.serial * 17) % 9 - 4);
+        particle.y = (particle.source ? 348 : 420) + ((this.serial * 13) % 7 - 3);
+        particle.drift = ((this.serial * 19) % 11 - 5) * (reduced ? .35 : 1);
+        particle.total = particle.left = reduced ? 5.2 : 3.2;
+        particle.node.clear().circle(0, 0, 5).fill({ color: 0x9da3a1, alpha: .42 })
+          .circle(0, 0, 10).fill({ color: 0x858c8a, alpha: .12 });
+        particle.node.visible = true;
+      }
+      this.emission += interval;
+      if (particle && reduced && this.particles.filter(item => item.left > 0).length >= 4) break;
+    }
+    for (const particle of this.particles) {
+      if (particle.left <= 0) continue;
+      particle.left = Math.max(0, particle.left - dt);
+      const progress = 1 - particle.left / particle.total;
+      particle.node.position.set(particle.x + particle.drift * progress, particle.y - progress * (reduced ? 25 : 60));
+      particle.node.scale.set(.65 + progress * .4);
+      particle.node.alpha = Math.min(reduced ? .12 : .17, (progress < .18 ? progress / .18 : (1 - progress) / .45) * (reduced ? .12 : .17));
+      particle.node.visible = particle.left > 0;
+    }
+  }
+
+  destroy() {
+    for (const particle of this.particles) particle.node.destroy();
+    this.particles.length = 0;
+  }
+}
 export class ArenaRenderer {
   constructor(app, provider = new VisualProvider()) {
     this.app = app;
@@ -26,12 +75,29 @@ export class ArenaRenderer {
     this.root = new Container();
     this.root.eventMode = 'none';
     this.layers = {};
-    for (const name of ['ground', 'scenery', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'fx', 'partyHp', 'numbers']) {
+    for (const name of ['ground', 'scenery', 'skillFx', 'telegraphs', 'shadows', 'entities', 'projectiles', 'occluder', 'fx', 'partyHp', 'numbers']) {
       const layer = new Container();
       this.layers[name] = layer;
       this.root.addChild(layer);
     }
     this.mineLift = createMineLift(this.layers.scenery);
+    this.templeGround = new Sprite(Texture.EMPTY);
+    this.templeOccluder = new Sprite(Texture.EMPTY);
+    this.templeGround.visible = this.templeOccluder.visible = false;
+    this.layers.occluder.addChild(this.templeOccluder);
+    const imageAsset = file => async () => {
+      const image = new Image();
+      image.src = new URL(`../../assets/sprites/scenery/temple/${file}.webp`, import.meta.url);
+      await image.decode();
+      if (image.naturalWidth !== 1400 || image.naturalHeight !== 860) throw new Error(`Invalid temple ${file} dimensions`);
+      return { texture: Texture.from(image) };
+    };
+    const imageState = (file, sprite) => new SceneAssetState(imageAsset(file),
+      asset => asset.texture.destroy(true),
+      asset => { sprite.visible = !!asset; sprite.texture = asset?.texture || Texture.EMPTY; });
+    this.templeGroundState = imageState('ground', this.templeGround);
+    this.templeOccluderState = imageState('occluder', this.templeOccluder);
+    this.incense = null;
     this.layers.entities.sortableChildren = true;
     app.stage.addChild(this.root);
     this.warning = new Graphics();
@@ -69,6 +135,7 @@ export class ArenaRenderer {
     });
     this.ground = new Graphics();
     this.layers.ground.addChild(this.ground);
+    this.layers.ground.addChild(this.templeGround);
     for (let i = 0; i < FEEL.numbers.cap; i++) {
       const node = new Text({
         text: '',
@@ -156,10 +223,13 @@ export class ArenaRenderer {
       this.biomeMap = null;
     }
     const { w, h } = world.arena;
+    const sanctuary = world.round?.stageId === 'SANCTUARY';
     const legacy = !this.app.renderer || new URLSearchParams(globalThis.location?.search || '').get('biome') === '0';
-    this.ground.visible = legacy;
+    this.ground.visible = sanctuary || legacy;
     this.ground.clear();
-    if (!legacy) {
+    if (sanctuary) {
+      this.ground.rect(0, 0, w, h).fill(0x171b1a);
+    } else if (!legacy) {
       this.biomeMap = bakeBiome(this.app.renderer, world.round?.stageId || 'S1', w, h);
       this.layers.ground.addChild(this.biomeMap.sprite);
     } else {
@@ -180,8 +250,20 @@ export class ArenaRenderer {
       for (let x = 42; x < w; x += 120)
         graphic.circle(x, 26, 3).circle(x, h - 26, 3).fill(0xae8545);
     }
+    this.templeGroundState.reset(sanctuary);
+    this.templeOccluderState.reset(sanctuary);
+    this.incense?.destroy();
+    this.incense = sanctuary ? new IncenseSmoke(this.layers.fx) : null;
     this.mineLift.reset(world.round?.stageId);
     this.snapshot(world);
+  }
+
+  leaveSanctuary() {
+    this.templeGroundState.reset(false);
+    this.templeOccluderState.reset(false);
+    this.incense?.destroy();
+    this.incense = null;
+    this.ground.clear();
   }
 
   ensure(entity) {
@@ -439,6 +521,7 @@ export class ArenaRenderer {
     this.local = world.entities[0];
     this.time += deltaTime;
     this.mineLift.update(deltaTime, this.reduced);
+    this.incense?.update(deltaTime, this.reduced);
     const visualDelta = deltaTime * (this.slowLeft > 0 && !this.reduced ? FEEL.perfect.scale : 1);
     this.slowLeft = Math.max(0, this.slowLeft - deltaTime);
     this.trauma = Math.max(0, this.trauma - deltaTime * FEEL.shake.decay);

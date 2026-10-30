@@ -77,8 +77,43 @@ export function knockPosition(e) {
   if (Math.abs(ky) < 0.05) ky = 0;
   return { x: e.x + e.kx, y: e.y + e.ky, kx, ky };
 }
-export function arenaPosition(e, { w, h }) {
-  return { x: Math.max(e.r, Math.min(w - e.r, e.x)), y: Math.max(e.r, Math.min(h - e.r, e.y)) };
+export function arenaPosition(e, { w, h, obstacles }) {
+  const x = Math.max(e.r, Math.min(w - e.r, e.x));
+  const y = Math.max(e.r, Math.min(h - e.r, e.y));
+  if (!obstacles?.length) return { x, y };
+  const position = { x, y };
+  for (const obstacle of obstacles) {
+    if (obstacle.shape === 'circle') {
+      const dx = position.x - obstacle.x, dy = position.y - obstacle.y;
+      const distance = Math.hypot(dx, dy), penetration = e.r + obstacle.r - distance;
+      if (penetration > 0) {
+        position.x += (distance ? dx / distance : 0) * penetration;
+        position.y += (distance ? dy / distance : -1) * penetration;
+      }
+    } else if (obstacle.shape === 'rect') {
+      const left = obstacle.x, right = obstacle.x + obstacle.w;
+      const top = obstacle.y, bottom = obstacle.y + obstacle.h;
+      const closestX = Math.max(left, Math.min(right, position.x));
+      const closestY = Math.max(top, Math.min(bottom, position.y));
+      const dx = position.x - closestX, dy = position.y - closestY;
+      const distance = Math.hypot(dx, dy);
+      if (distance > 0 && distance < e.r) {
+        position.x += dx / distance * (e.r - distance);
+        position.y += dy / distance * (e.r - distance);
+      } else if (distance === 0) {
+        const faces = [
+          { distance: position.x - left, x: -1, y: 0 },
+          { distance: right - position.x, x: 1, y: 0 },
+          { distance: position.y - top, x: 0, y: -1 },
+          { distance: bottom - position.y, x: 0, y: 1 },
+        ];
+        faces.sort((a, b) => a.distance - b.distance);
+        position.x += faces[0].x * (faces[0].distance + e.r);
+        position.y += faces[0].y * (faces[0].distance + e.r);
+      }
+    }
+  }
+  return position;
 }
 // Dynamic bodies are resolved by the host's ordered separate() pass, not simulated
 // by guests. There are no static walls/obstacles in the current arena sim.
