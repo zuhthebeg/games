@@ -348,7 +348,7 @@ export class SnapshotBuffer {
     this.volleyCapability = volleyCapability; this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
     this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
-    this.samplePositionTick = null;
+    this.samplePositionTick = null; this.sampleActTick = null;
     this.stats = { resets: 0, rebases: 0, extrapolatedMs: 0, heldMs: 0 };
   }
   push(packet, at) {
@@ -420,22 +420,27 @@ export class SnapshotBuffer {
     });
     // Only positions are buffered. HP stays newest; guest action clocks advance to estimated host now.
     const positionTick = span > 0 ? a.world.tick + alpha * span : a.world.tick;
+    const sampleActTick = latest.world.tick;
+    const previousSampleActTick = this.sampleActTick;
     const passed = new Map();
-    if (Number.isFinite(this.samplePositionTick) && positionTick > this.samplePositionTick) {
+    if (Number.isFinite(previousSampleActTick) && sampleActTick > previousSampleActTick) {
       for (const frame of this.frames) {
-        if (frame.world.tick <= this.samplePositionTick || frame.world.tick > positionTick) continue;
+        if (frame.world.tick <= previousSampleActTick || frame.world.tick > sampleActTick) continue;
         for (const entity of frame.world.entities) {
           const act = entity.act;
           if (!act || !['active', 'recovery'].includes(act.phase) || !Number.isFinite(act.elapsed)) continue;
           const castStart = Number.isFinite(act.castTick) ? act.castTick : frame.world.tick - act.elapsed;
-          if (!Number.isFinite(castStart) || positionTick - frame.world.tick > 12) continue;
+          const actTimelineAge = sampleActTick - frame.world.tick;
+          const positionTimelineAge = positionTick - frame.world.tick;
+          if (!Number.isFinite(castStart) || (actTimelineAge > 12 && positionTimelineAge > 12)) continue;
           const identity = `${entity.id}|${castStart}|${act.id}|${act.step ?? 0}|${!!act.counter}`;
           passed.set(identity, { entityId: entity.id, castStart, passedTick: frame.world.tick, act: structuredClone(act) });
         }
       }
     }
     this.samplePositionTick = positionTick;
-    return currentTelegraphs({ ...latest.world, positionTick, passedActs: [...passed.values()],
+    this.sampleActTick = sampleActTick;
+    return currentTelegraphs({ ...latest.world, positionTick, sampleActTick, passedActs: [...passed.values()],
       entities: interpolate('entities'), projectiles: interpolate('projectiles') }, this.currentTick(now, rtt));
   }
 }

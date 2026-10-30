@@ -34,12 +34,12 @@ const renderAct = (renderer, world, { tick, elapsed = 1, step = 1, pid = 'local'
   renderer.render(decodeSnapshot(encodeSnapshot(snapshot), pid), 1, 1 / 60);
 };
 
-function remoteBufferedFixture() {
+function remoteBufferedFixture(delay = 0) {
   const world = createWorld({ seed: 20 });
   addPlayer(world, { pid: 'local', weapon: 'blade' });
   addPlayer(world, { pid: 'remote', weapon: 'blade' });
   startStage(world, 'S2');
-  const buffer = new SnapshotBuffer('local', 0, { adaptive: false });
+  const buffer = new SnapshotBuffer('local', delay, { adaptive: false });
   const push = (tick, act) => {
     const snapshot = structuredClone(world);
     snapshot.tick = tick;
@@ -47,7 +47,7 @@ function remoteBufferedFixture() {
     return buffer.push(encodeSnapshot(snapshot, { local: 0 }), tick * T);
   };
   const sample = tick => buffer.sample(tick * T);
-  return { world, push, sample };
+  return { world, buffer, push, sample };
 }
 
 const bufferedSlash = (step, phase, elapsed, castTick) => ({
@@ -515,6 +515,36 @@ test('stun clears a predicted cosmetic immediately and authority-only casts use 
   assert.equal(late.trailCount(), 1);
 });
 
+test('authority binds an alive cosmetic after host input skew without a duplicate trail', () => {
+  const fixture = predictionFixture();
+  const predicted = traceSlash({ phase: 'active', elapsed: 7 });
+  const row = seedTraceCosmetic(fixture, { seq: 1463, tick: 1508, act: predicted });
+  assert.equal(row.predictedStartTick, 1501);
+  fixture.renderer.render(fixture.prediction.view({ ...fixture.world, tick: 1508 }), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+
+  const hostAct = traceSlash({ phase: 'recovery', elapsed: 12 });
+  const bound = fixture.prediction.attacks.bind(hostAct, 1450, 1526);
+  assert.equal(row.bound, 1514, 'the alive cosmetic binds despite seq being newer than the host ack');
+  fixture.prediction.state = { ...fixture.prediction.state, act: bound };
+  fixture.renderer.render(fixture.prediction.view({ ...fixture.world, tick: 1526 }), 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1, 'binding adds the authority token without replaying the trail');
+});
+
+test('an alive unbound same-id cosmetic blocks authority-only display regardless of start order', () => {
+  const fixture = predictionFixture();
+  const row = seedTraceCosmetic(fixture, { seq: 1463, tick: 1508,
+    act: traceSlash({ phase: 'recovery', elapsed: 12 }) });
+  row.completed = true;
+  row.naturalEnded = true;
+  row.authorityStart = 1490;
+  row.superseded = true;
+
+  const authority = { ...traceSlash({ phase: 'recovery', elapsed: 12 }),
+    presentationAuthorityStart: 1514 };
+  assert.equal(fixture.prediction.attacks.act(authority, 1526), null);
+});
+
 test('snapshot sampling preserves trails for casts skipped between sampled frames', () => {
   const fixture = remoteBufferedFixture();
   fixture.push(100, bufferedSlash(1, 'windup', 4, 96));
@@ -538,6 +568,32 @@ test('snapshot sampling preserves trails for casts skipped between sampled frame
   ]);
   renderer.render(jumped, 1, 1 / 60);
   assert.equal(trails, 2, 'the skipped cast and sampled next cast each emit once');
+});
+
+test('passed acts follow the source timeline when positions remain on older frames', () => {
+  const fixture = remoteBufferedFixture(18.5 * T);
+  fixture.push(2072, bufferedSlash(1, 'windup', 6, 2066));
+  const first = fixture.buffer.sample(2090.5 * T);
+  assert.equal(first.positionTick, 2072);
+  assert.equal(first.sampleActTick, 2072);
+
+  fixture.push(2074, bufferedSlash(1, 'active', 6, 2068));
+  fixture.push(2092, bufferedSlash(2, 'active', 6, 2086));
+  const jumped = fixture.buffer.sample(2092 * T);
+  assert.ok(jumped.positionTick > 2073 && jumped.positionTick < 2074);
+  assert.equal(jumped.sampleActTick, 2092);
+  assert.ok(jumped.passedActs.some(row => row.passedTick === 2074 && row.act.step === 1));
+
+  const renderer = makeRenderer(first);
+  let trails = 0;
+  const effect = renderer.effect.bind(renderer);
+  renderer.effect = (...args) => {
+    if (['slash', 'reverse', 'thrust', 'down', 'up', 'spin'].includes(args[5])) trails++;
+    effect(...args);
+  };
+  renderer.render(first, 1, 1 / 60);
+  renderer.render(jumped, 1, 1 / 60);
+  assert.equal(trails, 2, 'the passed cast and current cast each emit once');
 });
 
 test('frame-by-frame playback dedupes acts present in both passed frames and the sampled frame', () => {

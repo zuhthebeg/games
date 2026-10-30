@@ -139,16 +139,26 @@ export class AttackPresentation {
     if (Number.isFinite(authorityStart)) {
       let binding = this.authorityBinds.find(row => row.key === key && Math.abs(row.start - authorityStart) <= 1);
       if (!binding) {
-        let candidate = [...this.starts.values()].filter(row => row.key === key && row.bound === null
-          && row.seq <= ack && !row.completed && !row.naturalEnded && this.alive(row))
+        const eligible = row => row.bound === null && !row.rejected && !row.completed
+          && !row.naturalEnded && this.alive(row);
+        let candidate = [...this.starts.values()].filter(row => row.key === key
+          && row.seq <= ack && eligible(row))
           .sort((a, b) => a.seq - b.seq)[0];
         if (!candidate) {
-          candidate = [...this.starts.values()].filter(row => row.id === act.id && row.step !== (act.step ?? 0)
-            && row.bound === null && row.seq <= ack && !row.completed && !row.naturalEnded
-            && this.alive(row))
+          candidate = [...this.starts.values()].filter(row => row.id === act.id
+            && row.step !== (act.step ?? 0) && row.seq <= ack && eligible(row))
             .sort((a, b) => a.seq - b.seq)[0];
           // During step divergence the bound cosmetic's trail may show the mispredicted step.
           if (candidate) candidate.mispredictedStep = true;
+        }
+        if (!candidate) {
+          candidate = [...this.starts.values()].filter(row => row.key === key && eligible(row))
+            .sort((a, b) => a.seq - b.seq)[0];
+        }
+        if (!candidate) {
+          candidate = [...this.starts.values()].filter(row => row.id === act.id && eligible(row))
+            .sort((a, b) => a.seq - b.seq)[0];
+          if (candidate && candidate.key !== key) candidate.mispredictedStep = true;
         }
         if (!candidate) {
           candidate = [...this.starts.values()].filter(row => {
@@ -235,6 +245,8 @@ export class AttackPresentation {
     let alive = [...this.starts.values()].filter(candidate => this.alive(candidate));
     if (Number.isFinite(authorityStart)) {
       alive = alive.filter(candidate => {
+        if (candidate.id === authorityAct?.id && candidate.bound === null
+          && !candidate.lateConfirmed && !candidate.rejected) return true;
         if (!candidate.completed && !candidate.naturalEnded) return true;
         const candidateStart = Number.isFinite(candidate.bound) ? candidate.bound
           : candidate.lateConfirmed ? candidate.authorityStart : NaN;
