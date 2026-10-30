@@ -1,3 +1,4 @@
+import {cleaveFront,cleaveShape} from '../sim/cleave-evolution.js';
 import {VOLLEY_WAVES} from '../sim/volley-evolution.js';
 import {PLAYER_BASE} from '../content/combat.js';
 import { whirlFrame } from '../sim/whirl-evolution.js';
@@ -474,6 +475,23 @@ export class SkillVfx {
       }
     }
     slot.seen = true;
+    if(act.cleave20) {
+      const front=cleaveFront(act),g=slot.node;
+      slot.guide.visible=false;slot.motes.forEach(n=>n.visible=false);if(slot.baked)slot.baked.visible=false;
+      g.clear();g.scale.set(1);g.position.set(act.ox,act.oy);g.rotation=act.facing;g.alpha=reduced?.65:.9;
+      g.visible=front>=0 && (act.phase==='active'||act.elapsed===act.total+4);
+      if(g.visible){
+        const r=cleaveShape(front).range,a=35*Math.PI/180;
+        // Inset strokes leave the visible boundary inside the authoritative cone.
+        g.moveTo(0,0).lineTo(Math.cos(a)*(r-2),-Math.sin(a)*(r-2))
+          .arc(0,0,r-2,-a,a).lineTo(0,0).stroke({color:profile.color,width:2,alpha:.8});
+        g.moveTo(0,0).lineTo(r-1,0).stroke({color:profile.accent,width:1,alpha:.95});
+        for(const sign of [-1,1])g.moveTo(r*.3,0).lineTo(r*.6,sign*r*.14).lineTo(r*.82,sign*r*.12).stroke({color:profile.accent,width:1,alpha:.8});
+      } else if(front<0){
+        g.visible=true;g.moveTo(0,-22).lineTo(0,4).stroke({color:profile.accent,width:3,alpha:.8});
+      }
+      return true;
+    }
     if(act.whirl20) {
       const frame=whirlFrame(act),radius=act.def.shape.radius,g=slot.node;
       slot.guide.visible=false;slot.motes.forEach(n=>n.visible=false);if(slot.baked)slot.baked.visible=false;
