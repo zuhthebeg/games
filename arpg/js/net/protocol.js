@@ -213,7 +213,7 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   const pointValid=(x,y,ox,oy)=>[x,y,ox,oy].every(Number.isFinite) && x>=0 && y>=0 && x<=packet.arena?.w && y<=packet.arena?.h && ox>=0 && oy>=0 && ox<=packet.arena?.w && oy<=packet.arena?.h && Math.hypot(x-ox,y-oy)<=560+1e-10;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
-    if(cleaveEnvelope && e.kind==='player' && cleaveCapability && (cleaveCapability(e.id,e.pid)===undefined || !!e.cleave20!==cleaveCapability(e.id,e.pid))) return null;
+    if(cleaveEnvelope && e.kind==='player' && cleaveCapability && (typeof e.pid!=='string' || e.pid.length===0 || cleaveCapability(e.id,e.pid)===undefined || !!e.cleave20!==cleaveCapability(e.id,e.pid))) return null;
     if(e.cleave20!==undefined && (e.cleave20!==true || e.kind!=='player' || ![e.x,e.y,e.r,e.facing].every(Number.isFinite)||e.r<=0)) return null;
     if(e.act?.id==='heavy_cleave' && !!e.cleave20!==!!e.act.cleave20) return null;
     if(e.act?.cleave20!==undefined && (!e.cleave20 || !validCleaveAct(e.act,packet.arena,packet.tick)))return null;
