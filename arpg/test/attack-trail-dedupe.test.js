@@ -619,6 +619,40 @@ test('authority identity remains deduped after binding to a cosmetic sequence', 
   assert.equal(fixture.trailCount(), 1, 'auth-to-seq identity change does not re-fire recovery/active trail');
 });
 
+test('authority-only recovery compares host starts after a cosmetic binds to an older cast', () => {
+  const fixture = predictionFixture();
+  const { prediction, world, renderer } = fixture;
+  const row = seedTraceCosmetic(fixture, {
+    seq: 2534, tick: 2591, act: traceSlash({ step: 1, phase: 'active', elapsed: 6 })
+  });
+  assert.equal(row.predictedStartTick, 2585);
+
+  let view = prediction.view({ ...world, tick: 2591 });
+  assert.equal(view.entities.find(entity => entity.pid === 'local').act.presentationSeq, 2534);
+  assert.equal(prediction.attacks.lastDisplayedAuthorityStart, -Infinity);
+  renderer.render(view, 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 1);
+
+  const firstHostAct = prediction.attacks.bind(traceSlash({ phase: 'active', elapsed: 6 }), 2534, 2573);
+  assert.equal(row.bound, 2567);
+  assert.equal(prediction.attacks.lastDisplayedAuthorityStart, 2567,
+    'binding a displayed cosmetic records the authority-base start');
+  prediction.state = { ...prediction.state, act: firstHostAct };
+  prediction.attacks.complete({ presentationSeq: 2534 });
+
+  const laterHostAct = prediction.attacks.bind(traceSlash({ phase: 'recovery', elapsed: 12 }), 2534, 2597);
+  assert.equal(laterHostAct.presentationAuthorityStart, 2585);
+  assert.equal(row.authorityStart, 2567, 'a completed bound row is not rebound by a coincidental predicted tick');
+  assert.notEqual(row.lateConfirmed, true);
+  prediction.state = { ...prediction.state, act: laterHostAct };
+  view = prediction.view({ ...world, tick: 2597 });
+  const shown = view.entities.find(entity => entity.pid === 'local').act;
+  assert.equal(shown.phase, 'recovery');
+  assert.equal(shown.presentationAuthorityStart, 2585);
+  renderer.render(view, 1, 1 / 60);
+  assert.equal(fixture.trailCount(), 2, 'the authority-only cast gets exactly one additional trail');
+});
+
 test('raw replayed acts cannot regress an already presented cosmetic phase', () => {
   const fixture = predictionFixture();
   const { prediction } = fixture;

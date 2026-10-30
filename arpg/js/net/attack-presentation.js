@@ -27,6 +27,7 @@ export class AttackPresentation {
     this.lastInputSeq = 0;
     this.lastDisplayed = null;
     this.lastDisplayedCosmeticStartTick = -Infinity;
+    this.lastDisplayedAuthorityStart = -Infinity;
   }
   alive(row) {
     const total = PHASES.reduce((sum, phase) => sum + (row.phaseTicks[phase] || 0), 0);
@@ -167,13 +168,16 @@ export class AttackPresentation {
           candidate.bound = authorityStart;
           candidate.authorityStart = authorityStart;
           candidate.confirmed = true;
+          if (candidate.visible) this.lastDisplayedAuthorityStart = Math.max(
+            this.lastDisplayedAuthorityStart, authorityStart);
           binding = { key, start: authorityStart, seq: candidate.seq };
           this.authorityBinds.push(binding);
         }
       }
       if (!binding) {
         const completed = [...this.starts.values()].filter(row => row.key === key && row.seq <= ack
-          && !row.rejected && (row.completedLive || row.naturalEnded || row.completed)
+          && row.bound === null && !row.lateConfirmed && !row.rejected
+          && (row.completedLive || row.naturalEnded || row.completed)
           && Number.isFinite(row.predictedStartTick)
           && Math.abs(row.predictedStartTick - authorityStart) <= row.windowTicks)
           .sort((a, b) => a.seq - b.seq)[0];
@@ -181,6 +185,8 @@ export class AttackPresentation {
           completed.confirmed = true;
           completed.authorityStart = authorityStart;
           completed.lateConfirmed = true;
+          if (completed.visible) this.lastDisplayedAuthorityStart = Math.max(
+            this.lastDisplayedAuthorityStart, authorityStart);
         }
       }
       if (binding) {
@@ -219,6 +225,8 @@ export class AttackPresentation {
     this.lastDisplayed = { identity, startTick: row.predictedStartTick, elapsed };
     this.lastDisplayedCosmeticStartTick = Math.max(this.lastDisplayedCosmeticStartTick,
       row.predictedStartTick);
+    if (Number.isFinite(row.bound)) this.lastDisplayedAuthorityStart = Math.max(
+      this.lastDisplayedAuthorityStart, row.bound);
     return act;
   }
   act(authorityAct, tick) {
@@ -228,12 +236,13 @@ export class AttackPresentation {
     if (Number.isFinite(authorityStart)) {
       alive = alive.filter(candidate => {
         if (!candidate.completed && !candidate.naturalEnded) return true;
-        const candidateStart = candidate.bound ?? candidate.predictedStartTick;
+        const candidateStart = Number.isFinite(candidate.bound) ? candidate.bound
+          : candidate.lateConfirmed ? candidate.authorityStart : NaN;
         return !Number.isFinite(candidateStart) || authorityStart <= candidateStart;
       });
     }
     const cosmetic = alive.filter(candidate => !candidate.superseded
-      && candidate.predictedStartTick >= (this.lastDisplayed?.startTick ?? -Infinity))
+      && candidate.predictedStartTick >= this.lastDisplayedCosmeticStartTick)
       .sort((a, b) => b.startedAt - a.startedAt || b.seq - a.seq)[0];
     if (cosmetic) {
       if (!cosmetic.visible) {
@@ -254,18 +263,12 @@ export class AttackPresentation {
     if (Number.isSafeInteger(authorityAct?.presentationSeq)) return null;
     if (!Number.isFinite(authorityAct?.presentationAuthorityStart)) return null;
 
-    const completedMatch = [...this.starts.values()].some(candidate => {
-      if (candidate.key !== castKey(authorityAct)
-        || (!candidate.completed && !candidate.naturalEnded
-          && !(candidate.lateConfirmed && this.elapsedTicks(candidate) >= this.durationTicks(candidate)))) return false;
-      const candidateStart = candidate.bound ?? candidate.predictedStartTick;
-      return Number.isFinite(candidateStart)
-        && Math.abs(candidateStart - authorityStart) <= candidate.windowTicks;
+    const knownAuthorityMatch = [...this.starts.values()].some(candidate => {
+      const candidateStart = Number.isFinite(candidate.bound) ? candidate.bound
+        : candidate.lateConfirmed ? candidate.authorityStart : NaN;
+      return Number.isFinite(candidateStart) && Math.abs(candidateStart - authorityStart) <= 1;
     });
-    if (completedMatch) return null;
-
-    if (authorityStart <= this.lastDisplayedCosmeticStartTick
-      || authorityStart < (this.lastDisplayed?.startTick ?? -Infinity)) return null;
+    if (knownAuthorityMatch || authorityStart < this.lastDisplayedAuthorityStart) return null;
 
     const identity = `auth:${authorityStart}`;
     let elapsed = authorityAct.elapsed;
@@ -282,6 +285,7 @@ export class AttackPresentation {
         left: Math.max(1, (authorityAct.phaseTicks?.[phase] || 1) - remaining) };
     }
     this.lastDisplayed = { identity, startTick: authorityStart, elapsed };
+    this.lastDisplayedAuthorityStart = Math.max(this.lastDisplayedAuthorityStart, authorityStart);
     return displayed;
   }
   advance(pawn, dt) {
@@ -328,5 +332,6 @@ export class AttackPresentation {
     this.lastInputSeq = 0;
     this.lastDisplayed = null;
     this.lastDisplayedCosmeticStartTick = -Infinity;
+    this.lastDisplayedAuthorityStart = -Infinity;
   }
 }

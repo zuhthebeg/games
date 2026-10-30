@@ -445,6 +445,8 @@ export class ArenaRenderer {
   castIdentity(act, world, castStartOverride) {
     if (!act) return null;
     const key = `${act.id}|${act.step ?? 0}|${!!act.counter}`;
+    const domain = act.presentationSeq !== undefined && act.presentationSeq !== null
+      && !Number.isFinite(act.presentationAuthorityStart) ? 'predicted' : 'authority';
     const castStart = Number.isFinite(act.presentationAuthorityStart) ? act.presentationAuthorityStart
       : Number.isFinite(castStartOverride) ? castStartOverride
         : Number.isFinite(act.castTick) ? act.castTick
@@ -452,22 +454,23 @@ export class ArenaRenderer {
     const tokens = [];
     if (act.presentationSeq !== undefined && act.presentationSeq !== null) tokens.push(`seq:${act.presentationSeq}`);
     if (Number.isFinite(act.presentationAuthorityStart)) tokens.push(`auth:${act.presentationAuthorityStart}`);
-    tokens.push(`cast:${key}@${castStart}`);
-    return { key, castStart, tokens, positionTick: world.positionTick ?? world.tick ?? 0 };
+    tokens.push(`cast:${key}@${domain}:${castStart}`);
+    return { key, domain, castStart, tokens, positionTick: world.positionTick ?? world.tick ?? 0 };
   }
   sameCastIdentity(first, second) {
-    return !!first && !!second && first.key === second.key
+    return !!first && !!second && first.key === second.key && first.domain === second.domain
       && Math.abs(first.castStart - second.castStart) <= 2;
   }
   hasPresentedCast(view, identity) {
     if (!identity) return false;
     if (identity.tokens.some(token => view.presented.has(token))) return true;
-    return [...view.presented.values()].some(row => row.key === identity.key
+    return [...view.presented.values()].some(row => row.key === identity.key && row.domain === identity.domain
       && Math.abs(row.castStart - identity.castStart) <= 2);
   }
   rememberPresentedCast(view, identity) {
     for (const token of identity.tokens)
-      view.presented.set(token, { key: identity.key, castStart: identity.castStart, positionTick: identity.positionTick });
+      view.presented.set(token, { key: identity.key, domain: identity.domain, castStart: identity.castStart,
+        positionTick: identity.positionTick });
   }
   prunePresentedCasts(view, world) {
     const positionTick = world.positionTick ?? world.tick ?? 0;
