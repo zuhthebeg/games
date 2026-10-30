@@ -459,7 +459,7 @@ export class ArenaRenderer {
     const superArmor = target.kind === 'monster' && MONSTERS[target.type]?.heavyPoise && !target.dead;
     if (!superArmor) view.anim.hurt = FEEL.hurtLife;
     if (this.reduced) return;
-    if (!superArmor) view.stopLeft = Math.max(view.stopLeft, tier.stop);
+    if (!superArmor && !target.predictedLocal) view.stopLeft = Math.max(view.stopLeft, tier.stop);
     view.flashLeft = tier === FEEL.impact.kill ? FEEL.flash.killLife : FEEL.flash.life;
     view.flashAlpha = tier === FEEL.impact.kill ? FEEL.flash.killAlpha : FEEL.flash.alpha;
     const angle = source ? Math.atan2(target.y - source.y, target.x - source.x) : target.facing;
@@ -468,7 +468,8 @@ export class ArenaRenderer {
     view.kickY = Math.sin(angle) * tier.kick;
     if (source) {
       const attacker = this.ensure(source);
-      attacker.stopLeft = Math.max(attacker.stopLeft, tier.stop);
+      // Late authority hitstop must not freeze an already moving predicted pawn.
+      if (!source.predictedLocal) attacker.stopLeft = Math.max(attacker.stopLeft, tier.stop);
     }
     const received = target.kind === 'player' ? FEEL.shake.received : 1;
     this.trauma = Math.min(1, this.trauma + tier.trauma * received);

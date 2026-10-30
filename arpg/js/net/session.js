@@ -140,6 +140,7 @@ export class CoopSession {
     if (!view) return null;
     return { ...view, ...(this.config.invasion ? { invasionAccount: this.isHost ? this.lootLedger?.state(this.uid) : this.invasionAccount,
       lootDrops: this.isHost ? this.lootLedger?.dropsView() : this.lootDrops || [] } : {}), entities: view.entities.map(p => p.kind === 'player' ? { ...p,
+      ...(!this.isHost && this.prediction.enabled && p.pid === this.uid ? { predictedLocal: true } : {}),
       equipmentVisual: this.profiles[p.pid]?.equipmentVisual, name: this.profiles[p.pid]?.name,
       skillMasteryLevels: this.isHost ? this.profiles[p.pid]?.skillMasteryLevels : p.skillMasteryLevels ?? this.profiles[p.pid]?.skillMasteryLevels } : p) };
   }
