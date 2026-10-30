@@ -1,10 +1,20 @@
 // Edges survive key-up and pointer-up until consume() at the next fixed tick.
+export function movementOnlyInput(input) {
+  return {
+    mx: input.mx || 0, my: input.my || 0, aimX: 0, aimY: 0,
+    attack: false, autoAttack: false, escapeEdge: false, skillEdge: false, skill2Edge: false, skill3Edge: false,
+    dodgeEdge: false, dodgeHeld: false, potionEdge: false, manaEdge: false,
+    greenEdge: false, scrollEdge: false,
+  };
+}
+
 export class InputLayer {
   constructor(surface, actions, aimVector) {
     this.enabled = true;
     this.keys = new Set();
     this.pointers = new Map();
     this.edges = {};
+    this.escapeEdge = false;
     this.buttons = new Map();
     this.joy = null;
     this.jx = 0;
@@ -34,6 +44,11 @@ export class InputLayer {
       'KeyJ', ...Object.keys(edgeKeys),
     ]);
     window.addEventListener('keydown', (event) => {
+      if (this.enabled && event.code === 'Escape' && !event.repeat) {
+        event.preventDefault();
+        this.escapeEdge = true;
+        return;
+      }
       if (this.enabled && event.code === 'KeyT' && !event.repeat && !event.target.closest('select,input,form')) this.setAutoAttack(!this.autoAttack);
       if (!this.enabled || !allowed.has(event.code) || event.target.closest('select,input,form')) return;
       event.preventDefault();
@@ -185,6 +200,7 @@ export class InputLayer {
     this.releaseMovePad();
     this.mouseAim = false;
     this.mouseAttack = false;
+    this.escapeEdge = false;
     this.pad.hidden = true;
     for (const button of this.buttons.values()) button.classList.remove('held');
   }
@@ -202,6 +218,8 @@ export class InputLayer {
     for (const action of this.pointers.values()) if (action === 'attack') held = true;
     value.attack = keys.has('KeyJ') || held || !!this.edges.attackTap;
     value.autoAttack = this.autoAttack;
+    value.escapeEdge = this.escapeEdge;
+    this.escapeEdge = false;
     value.dodgeHeld = this.enabled && (keys.has('Space') || keys.has('ShiftLeft') || keys.has('ShiftRight') || [...this.pointers.values()].includes('dodgeEdge'));
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
     for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge']) {

@@ -98,7 +98,7 @@ export function weightDescription(weight, limit) {
 }
 
 export class HubUI {
-  constructor({ save, persist, startRound, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null, saveLock = null }) {
+  constructor({ save, persist, startRound, startSanctuary, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null, saveLock = null }) {
     this.initialCharacters = initialCharacters;
     this.saveLock = saveLock;
     this.lockDiscardStep = 0;
@@ -108,6 +108,7 @@ export class HubUI {
     this.save = save;
     this.persist = persist;
     this.startRound = startRound;
+    this.startSanctuary = startSanctuary;
     this.resetSave = resetSave;
     this.onOverlay = onOverlay;
     this.recoverVitals = recoverVitals;
@@ -417,8 +418,9 @@ export class HubUI {
       <label>무기<select id="dev-weapon">${FAMILIES.map(family => `<option value="${family}">${family}</option>`).join('')}</select></label>
       <label>스테이지<select id="dev-stage">${Object.keys(STAGES).map(id => `<option>${id}</option>`).join('')}</select></label>
       ${button('개발 전투 확인', 'dev-start')}</details>` : '';
+    const sanctuary = this.save.lineage === 'skeleton_knight' ? '' : button('법당 · 쉬어가기', 'sanctuary');
     const content = `<h1 class="${this.hubCopy('sr-only', 'section-title')}">${this.hubCopy('잿빛 여관', '잊힌 묘지')}</h1>${this.equipmentNotice ? `<p class="equipment-notice" role="status">${escape(this.equipmentNotice)}</p>` : ''}${room}${this.cloudOffersHtml()}${activeSetsHtml(this.save)}
-      ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${devMenu}`;
+      ${this.save.retiredScrolls?.length ? `<details class="retired-scrolls"><summary>폐지된 주문서 보관 기록 · 사용·교환 불가</summary><ul>${this.save.retiredScrolls.map(entry => `<li>${escape(RETIRED_SCROLLS[entry.id])} ${amount(entry.count)}개 · ${entry.source === 'stacks' ? '소지품' : entry.source === 'lootKept' ? '직전 전투 획득 기록' : '직전 전투 손실 기록'}</li>`).join('')}</ul></details>` : ''}<nav class="npc-grid" aria-label="${this.hubCopy('여관 사람들', '묘지의 조력자들')}">${npcs}</nav>${sanctuary}${devMenu}`;
     this.show(this.shellHtml(this.topBar(), content, button(`${innImage('map', 'board-art', 56)}<span>${this.hubCopy('퀘스트 고르기', '묘지 밖으로 출정')}</span>${icon('depart')}`, 'board', 'class="primary"')), 'inn', { shell: true });
   }
 
@@ -1206,6 +1208,9 @@ export class HubUI {
     if (this.enchantFx?.active) return;
     if (this.pendingEquipment && !['weapon-confirm', 'weapon-cancel', 'close-sheet'].includes(action)) this.cancelEquipment(false);
     switch (action) {
+      case 'sanctuary':
+        if (this.save.lineage === 'skeleton_knight') return;
+        return this.startSanctuary?.();
       case 'character-choice': return this.showCharacterChoice();
       case 'cloud-ranking': return this.showCloudRanking();
       case 'cloud-restore': { this.onCloudRestore(data.slot); return; }

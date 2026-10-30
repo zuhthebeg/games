@@ -58,10 +58,11 @@ export class HUD {
 
   // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
   begin(world, loadout = []) {
+    this.sanctuary = world.round?.goal === 'sanctuary';
     this.graveyard = world.round?.presentation?.lineage === 'skeleton_knight';
     if (this.graveyard) document.body.dataset.theme = 'graveyard';
     else delete document.body.dataset.theme;
-    this.stage = STAGES[world.round?.stageId]?.name || '언데드 · 해골 · 저장 안 됨';
+    this.stage = this.sanctuary ? '법당' : STAGES[world.round?.stageId]?.name || '언데드 · 해골 · 저장 안 됨';
     if (world.round?.presentation?.lineage === 'skeleton_knight') this.stage += world.round.presentation.form === 'death_knight' ? ' · 데스나이트' : ' · 해골';
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
@@ -80,10 +81,17 @@ export class HUD {
       label.textContent = name;
       if (!skills[i]) node.insertAdjacentHTML('afterbegin', '<i class="slot-blocked" aria-hidden="true">✕</i>');
     });
+    for (const key of [...SLOT_NODES, 'dodge', 'attack', 'green', 'green-active', 'potion', 'mana']) this.nodes[key].hidden = this.sanctuary;
     $('#hud').hidden = false;
     $('#pause').hidden = true;
     this.nodes.notice.textContent = '';
     this.noticeLeft = 0;
+    if (this.sanctuary) {
+      this.nodes.notice.textContent = '비전투 공간 · 보상·저장 없음';
+      this.noticeLeft = Infinity;
+      this.nodes.scroll.setAttribute('aria-label', '여관으로 돌아가기');
+      this.nodes.scroll.title = '여관으로 돌아가기 · R';
+    }
     this.nodes['stage-name'].textContent = this.stage;
     this.update(world, 0);
   }
@@ -183,7 +191,7 @@ export class HUD {
     this.text(nodes['mp-text'], `${this.graveyard ? 'MP ' : ''}${Math.floor(player.mp)}/${Math.ceil(player.maxMp)}`);
     const alive = world.entities.filter((entity) => entity.kind === 'monster' && !entity.dead).length;
     const objective = world.round?.objective;
-    this.text(nodes.objective, !world.round ? `상대: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
+    this.text(nodes.objective, this.sanctuary ? '비전투 공간 · 보상·저장 없음' : !world.round ? `상대: ${alive}/1 · 보상 없음` : objective?.kind === 'kill-target' ? `가고일 처치: ${objective.state === 'complete' ? 1 : 0}/1` : objective?.kind === 'visit-markers' ? `길 표식: ${objective.markers.filter((_,i)=>objective.visited & (1 << i)).length}/${objective.markers.length} · 체류: ${Math.max(0,...Object.values(objective.progress))}/${objective.dwellTicks}` : objective ? `목표: ${objective.state === 'complete' ? '완료' : objective.carrier !== null ? '장부→입구' : '장부 회수'} · 체류: ${Math.max(0, ...Object.values(objective.progress))}/15` : world.round.goal === 'timer'
       ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
       : `◇ ${remainingMonsters(world)}`);
     this.text(nodes.green.lastElementChild, player.greenPotions ?? 0);
@@ -193,7 +201,7 @@ export class HUD {
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
     this.text(nodes.potion.lastElementChild, `${player.potions}${potionCooldown}`);
     this.text(nodes.mana.lastElementChild, `${player.manaPotions}${potionCooldown}`);
-    this.text(nodes.scroll.lastElementChild, player.channel > 0 ? seconds(player.channel)
+    this.text(nodes.scroll.lastElementChild, this.sanctuary ? '나가기' : player.channel > 0 ? seconds(player.channel)
       : `${player.scrolls}${player.scrollRetry > 0 ? ` · ${seconds(player.scrollRetry)}` : ''}`);
     nodes.scroll.style.setProperty('--progress',
       `${player.channel > 0 ? (1 - player.channel / ticks(PLAYER_BASE.scroll.channelMs)) * 100 : 0}%`);
@@ -221,7 +229,7 @@ export class HUD {
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;
     nodes.mana.disabled = player.manaPotions === 0 || player.potionCd > 0 || player.mp === player.maxMp;
-    nodes.scroll.disabled = player.scrolls === 0 || player.scrollRetry > 0 || player.channel > 0 || !!player.act;
+    nodes.scroll.disabled = this.sanctuary ? false : player.scrolls === 0 || player.scrollRetry > 0 || player.channel > 0 || !!player.act;
     if (this.noticeLeft > 0) {
       this.noticeLeft -= dt;
       if (this.noticeLeft <= 0) nodes.notice.textContent = '';

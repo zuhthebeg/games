@@ -1,0 +1,27 @@
+// Generated from arpg/tools/art/temple/generate.py's screen-space walkable.json export.
+export const SANCTUARY = {
+  id: 'SANCTUARY',
+  name: '법당',
+  arena: { w: 1400, h: 860 },
+  spawn: { x: 700, y: 720 },
+  obstacles: [
+    { shape: 'rect', x: 268.98, y: 147.36, w: 862.04, h: 21.94 },
+    { shape: 'circle', x: 355.18, y: 291.55, r: 24.03 },
+    { shape: 'circle', x: 585.06, y: 291.55, r: 24.03 },
+    { shape: 'circle', x: 814.94, y: 291.55, r: 24.03 },
+    { shape: 'circle', x: 1044.82, y: 291.55, r: 24.03 },
+    { shape: 'rect', x: 585.06, y: 287.63, w: 229.88, h: 54.86 },
+    { shape: 'rect', x: -10.53, y: -43.34, w: 1421.06, h: 32.39 },
+    { shape: 'rect', x: 107.02, y: 61.67, w: 104.49, h: 376.16 },
+    { shape: 'rect', x: 207.33, y: 61.67, w: 15.67, h: 376.16 },
+    { shape: 'rect', x: 1188.49, y: 61.67, w: 104.49, h: 376.16 },
+    { shape: 'rect', x: 1177, y: 61.67, w: 15.67, h: 376.16 },
+    { shape: 'circle', x: 522.37, y: 539.71, r: 45.71 },
+    { shape: 'rect', x: 1121.88, y: 482.24, w: 107.1, h: 94.04 },
+    { shape: 'rect', x: 256, y: 108.72, w: 18.81, h: 355.27 },
+    { shape: 'rect', x: 1125.36, y: 108.72, w: 18.81, h: 355.27 },
+    { shape: 'rect', x: 256, y: 99.31, w: 888.16, h: 18.81 },
+    { shape: 'rect', x: 256, y: 445.18, w: 203.76, h: 18.81 },
+    { shape: 'rect', x: 940.41, y: 445.18, w: 203.76, h: 18.81 },
+  ],
+};
