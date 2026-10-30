@@ -1,3 +1,5 @@
+import {volley20} from '../sim/volley-evolution.js';
+import {validVolleyEvent} from './volley-protocol.js';
 import {frost20} from '../sim/frost-evolution.js';
 import {pierce20} from '../sim/pierce-evolution.js';
 import { whirl20 } from '../sim/whirl-evolution.js';
@@ -7,7 +9,7 @@ import { validParty, invasionProfile, partyConfig, validLobbyProfile } from './i
 import { TEAM_MONSTER } from '../sim/core.js';
 import { enableGuestAttackLag } from '../sim/attack-lag.js';
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
-import { createWorld, addPlayer, startStage, step, setLoad } from '../sim/world.js';
+import { createWorld, addPlayer, startStage, step, setLoad, cancelVolley } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
 import { masteryLevels } from '../meta/skill-mastery.js';
@@ -57,9 +59,9 @@ const mergeInput = (held, input) => {
 export class CoopSession {
   constructor({ uid, host, players, profile, config, sendRt = () => {}, sendAction = () => {},
     onBegin = () => {}, onBeforeTick = () => {}, onFrame = () => {}, onEvents = null, onResync = () => {}, onTransportStale = () => {}, onLost = () => {}, onStatus = () => {} }) {
-    Object.assign(this, { uid, host, profile: {...profile, combatVersion:5}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
+    Object.assign(this, { uid, host, profile: {...profile, combatVersion:6}, config, sendRt, sendAction, onBegin, onBeforeTick, onFrame, onEvents, onResync, onTransportStale, onLost, onStatus });
     this.isHost = uid === host; this.players = new Set(players); this.profiles = { [uid]: this.profile };
-    this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id)});
+    this.phase = 'prepare'; this.world = null; this.buffer = new SnapshotBuffer(uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id),volleyCapability:(id,pid)=>this.volleyCapability(id,pid)});
     this.prediction = new LocalPrediction(uid, { multiplayerDodge: true }); this.appliedInputSeqs = {};
     this.sender = new InputSender(); this.latches = {}; this.journal = []; this.deathTicks = new Map(); this.eventSeq = 0; this.eventAck = 0; this.acks = {};
     this.tickLeft = 0; this.tickInput = null; this.helloLeft = 0; this.now = 0; this.lastHostAt = 0; this.pingLeft = 0; this.inputLeft = 0; this.rtt = null;
@@ -72,6 +74,25 @@ export class CoopSession {
   }
   // Players are allocated first, in departure-profile order. This is the frozen
   // admission, not a live-owner registry: departed owners retain released shots.
+  volleyCapability(id,pid) {
+    if(!Number.isSafeInteger(id) || id<1) return undefined;
+    const entry=this.volleyOwners?.[id-1];
+    return entry && (pid===undefined || entry.pid===pid) ? entry.admitted : undefined;
+  }
+  validVolleyJournal(rows,tick) {
+    if(rows===undefined) return true;
+    if(!Array.isArray(rows)) return false;
+    const ids=new Set(),seqs=new Set();
+    for(const row of rows) {
+      // Retries use the existing journal identity, never consume shot IDs twice.
+      if(Number.isSafeInteger(row?.seq) && (row.seq<=this.eventAck || seqs.has(row.seq))) continue;
+      if((row?.event?.volley20!==undefined || row?.event?.projectileIds!==undefined) && (!Number.isSafeInteger(row.seq) || row.seq<1)) return false;
+      seqs.add(row?.seq);
+      if(!validVolleyEvent(row?.event,tick,id=>this.volleyCapability(id))) return false;
+      if(row.event?.volley20) for(const id of row.event.projectileIds) {if(ids.has(id)) return false;ids.add(id);}
+    }
+    return true;
+  }
   frostCapability(id) {
     if(!Number.isSafeInteger(id) || id<1) return undefined;
     return this.frostCapabilities?.[Object.keys(this.frostCapabilities||{})[id-1]];
@@ -127,7 +148,7 @@ export class CoopSession {
   }
   negotiate(profiles) {
     if (this.phase !== 'prepare' || !profiles?.[this.uid]
-      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==5 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
+      || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==6 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
     const config = partyConfig(this.config, profiles);
     if (!validParty(config, profiles)
       || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
@@ -142,7 +163,7 @@ export class CoopSession {
     if (!!data.config?.invasion !== !!this.config.invasion
       || this.negotiatedProfiles && JSON.stringify(data.profiles) !== this.negotiatedProfiles
       || !validParty(data.config, data.profiles)
-      || Object.values(data.profiles).some(p=>p.combatVersion!==5 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
+      || Object.values(data.profiles).some(p=>p.combatVersion!==6 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))
       || (data.profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
       || (data.profiles[this.uid].role || 'hunter') !== (this.profile.role || 'hunter')
       || Object.keys(data.profiles).some(id => !this.players.has(id)) || Object.keys(data.profiles).length !== this.players.size
@@ -150,6 +171,7 @@ export class CoopSession {
         || typeof data.runId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.runId))) {
       this.onStatus('동료의 캐릭터·역할·퀘스트 조건을 확인하세요.'); return;
     }
+    this.volleyOwners=Object.freeze(Object.entries(data.profiles).map(([pid,p])=>Object.freeze({pid,admitted:validLobbyProfile(p) && volley20(masteryLevels(p.rewardSave))})));
     this.frostCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && frost20(masteryLevels(p.rewardSave))])));
     this.pierceCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && pierce20(masteryLevels(p.rewardSave))])));
     this.whirlCapabilities=Object.freeze(Object.fromEntries(Object.entries(data.profiles).map(([pid,p])=>[pid,validLobbyProfile(p) && whirl20(masteryLevels(p.rewardSave))])));
@@ -164,7 +186,7 @@ export class CoopSession {
         partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
-        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,frost_lance:this.frostCapabilities[pid] ? 20 : 1,pierce_shot:this.pierceCapabilities[pid] ? 20 : 1,whirl:this.whirlCapabilities[pid] ? 20 : 1,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
+        const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,volley:this.volleyOwners.find(e=>e.pid===pid)?.admitted ? 20 : 1,frost_lance:this.frostCapabilities[pid] ? 20 : 1,pierce_shot:this.pierceCapabilities[pid] ? 20 : 1,whirl:this.whirlCapabilities[pid] ? 20 : 1,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
         // Admission authority is frozen on creation; live mastery remains display metadata.
         if (p.skillMasteryLevels) player.skillMasteryLevels=boundedMasteryLevels(p.skillMasteryLevels);
         else delete player.skillMasteryLevels;
@@ -219,8 +241,8 @@ export class CoopSession {
       this.profiles[from] = { ...this.profiles[from], skillMasteryLevels: { ...data.levels } };
       const pawn = this.world?.entities.find(e => e.pid === from); if (pawn) pawn.skillMasteryLevels = boundedMasteryLevels(data.levels);
     } else if (data.t === 'profile' && this.isHost && this.phase === 'prepare') {
-      if (data.profile?.combatVersion!==5) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
-      if (!data.profile || data.profile.combatVersion!==5
+      if (data.profile?.combatVersion!==6) {this.onStatus('게임 버전이 다릅니다. 모두 새로고침하세요.');return;}
+      if (!data.profile || data.profile.combatVersion!==6
         || data.profile.skillMasteryLevels && !validLevels(data.profile.skillMasteryLevels)
         || Object.hasOwn(data.profile, 'team')
         || data.profile.rewardSave && !validLobbyProfile(data.profile)
@@ -239,6 +261,7 @@ export class CoopSession {
         if (!this.lootLedger) setLoad(this.world, from, Math.max(0, Number.isFinite(data.load) ? data.load : 0));
       }
     } else if (data.t === 'events' && !this.isHost && from === this.host && this.phase === 'running') {
+      if(!this.validVolleyJournal(data.events,data.tick)) return;
       const view = this.buffer.frames.at(-1)?.world;
       if (!view || !this.onEvents || this.suspended || this.awaitingResync) return;
       const events = [];
@@ -251,6 +274,8 @@ export class CoopSession {
       this.lastHostAt = now;
       if (this.phase === 'prepare' && this.negotiatedProfiles && data.start) this.begin(data.start);
       if (this.phase === 'prepare') return;
+      if(!this.validVolleyJournal(data.events,data.tick)) return;
+      if(Array.isArray(data.entities) && data.entities.some(e=>e.kind==='player' && !!e.volley20!==!!this.volleyOwners?.find(p=>p.pid===e.pid)?.admitted)) return;
       // Snapshots can represent the frozen admission, never create a new power.
       if (data.projectiles!==undefined && !Array.isArray(data.projectiles)) return;
       if (!Array.isArray(data.entities) || data.entities.some(e=>e.kind==='player' && (!!e.frost20!==!!this.frostCapabilities?.[e.pid] || !!e.whirl20!==!!this.whirlCapabilities?.[e.pid] || !!e.pierce20!==!!this.pierceCapabilities?.[e.pid]))) return;
@@ -261,7 +286,7 @@ export class CoopSession {
       const resumed = this.awaitingResync && data.resync?.to === this.uid && data.resync.nonce === this.resyncNonce;
       const silent = this.suspended || this.awaitingResync;
       // A fresh host reply is the barrier: earlier queued packets cannot seed playback.
-      if (resumed) { this.buffer = new SnapshotBuffer(this.uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id)}); this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true }); }
+      if (resumed) { this.buffer = new SnapshotBuffer(this.uid,125,{pierceCapability:id=>this.pierceCapability(id),frostCapability:id=>this.frostCapability(id),volleyCapability:(id,pid)=>this.volleyCapability(id,pid)}); this.prediction = new LocalPrediction(this.uid, { multiplayerDodge: true }); }
       const fresh = this.buffer.push(data, now);
       // A retransmitted final objective packet can repair a journal gap at the same tick.
       if (!fresh && !((data.objective || this.config.invasion) && data.tick === this.buffer.frames.at(-1)?.world.tick && this.eventAck < data.eventSeq)) return;
@@ -305,7 +330,7 @@ export class CoopSession {
       this.players.delete(pid); delete this.latches[pid]; delete this.acks[pid];
       if (this.world) {
         const player = this.world.entities.find(e => e.kind === 'player' && e.pid === pid);
-        if (player) releaseCarrier(this.world, player);
+        if (player) {cancelVolley(this.world,player);releaseCarrier(this.world, player);}
         this.world.entities = this.world.entities.filter(e => e.kind !== 'player' || e.pid !== pid);
       }
     }
@@ -380,6 +405,10 @@ export class CoopSession {
       this.onBeforeTick(this.decorate(localView(this.world, this.uid)));
       const owners = new Map(this.world.projectiles.map(p => [p.id, p.ownerId]));
       const events = presentSkillEvents(step(this.world, inputs), this.world, owners);
+      for(const event of events) if(event.type==='hit' && event.ability==='volley' && this.volleyCapability(event.src)===true && !event.masteryPid) {
+        event.masteryPid=this.volleyOwners[event.src-1].pid;
+        if(this.world.entities.find(e=>e.id===event.dst)?.kind==='monster') event.masteryEnemy=true;
+      }
       this.lootLedger?.tick(this.world, events, participants);
       if (this.lootLedger) {
         for (const pid of this.players) {

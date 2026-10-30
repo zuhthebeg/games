@@ -1,3 +1,5 @@
+import {VOLLEY_WAVES} from '../sim/volley-evolution.js';
+import {PLAYER_BASE} from '../content/combat.js';
 import { whirlFrame } from '../sim/whirl-evolution.js';
 import { lungeFrame } from "../sim/lunge-evolution.js";
 import { QuarksVfx } from './quarks-vfx.js';
@@ -377,6 +379,15 @@ export class SkillVfx {
     return spawned;
   }
   event(event, world, reduced = false) {
+    if(event.type==='projectile' && event.volley20) {
+      const profile=this.profile('volley');
+      // Journal identity survives missing actors, owner leave and same-tick expiry.
+      for(const degrees of VOLLEY_WAVES[event.wave-1]) {
+        const facing=event.facing+degrees*Math.PI/180;
+        this.effect(profile,'active',event.ox+Math.cos(facing)*(PLAYER_BASE.r+4),event.oy+Math.sin(facing)*(PLAYER_BASE.r+4),facing,profile.projectileRadius,null,reduced);
+      }
+      return true;
+    }
     if(this.quarksRequested && !reduced)this.quarks.event(event,world);
     if (event.type === 'turnUndead') { this.holy.event(event, world, reduced); return false; }
     const profile = this.profile(event.ability);
@@ -481,8 +492,8 @@ export class SkillVfx {
     if(slot.guide.visible){slot.guide.position.set(entity.x,entity.y);slot.guide.rotation=act.facing;}
     const completedLunge=act.lunge20 ? lungeFrame(act) : null;
     const charging = act.phase === 'windup' || act.phase === 'lock' || !!(completedLunge && act.elapsed===act.phaseTicks.windup+act.phaseTicks.lock), p = windupProgress(act);
-    const x = entity.x + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
-    const y = entity.y + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
+    const x = (act.volley20 ? act.ox : entity.x) + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.cos(act.facing) * (entity.r + 6));
+    const y = (act.volley20 ? act.oy : entity.y) + (profile.style === 'heal' || profile.style === 'ring' ? 0 : Math.sin(act.facing) * (entity.r + 6) - 20);
     slot.node.visible = charging; slot.node.position.set(x, y);
     if (profile.windup === 'blade' || profile.windup === 'bow' || profile.windup === 'crystal') slot.node.rotation = act.facing;
     slot.node.alpha = (reduced ? .35 : 1) * (.25 + p * .75);
@@ -491,7 +502,7 @@ export class SkillVfx {
     else if (profile.style === 'ring' && !reduced) slot.node.rotation = p * 2.4;
     for (let i = 0; i < slot.motes.length; i++) {
       const node = slot.motes[i];
-      node.visible = charging && profile.style !== 'cleave' && i < (reduced ? 2 : 8);
+      node.visible = !(act.volley20 && reduced) && charging && profile.style !== 'cleave' && i < (reduced ? 2 : 8);
       if (!node.visible) continue;
       const a = i * Math.PI / 4 + (reduced ? 0 : p * .8);
       const r = profile.style === 'ember' ? 26 * (1 - p) + 3 : 22;
@@ -500,7 +511,7 @@ export class SkillVfx {
     }
     // Recovery also covers an active phase omitted by a guest snapshot; stable
     // tick-elapsed identity prevents repeated waves when snapshots replace act objects.
-    if (!charging && !slot.fired) {
+    if (!act.volley20 && !charging && !slot.fired) {
       slot.fired = true;
       if (profile.style === 'ring') {
         this.effect(profile, 'active', entity.x + Math.cos(act.facing)*(act.def.shape.offset||0), entity.y + Math.sin(act.facing)*(act.def.shape.offset||0), act.facing, act.def.shape.radius, {...act.def.shape,offset:0}, reduced);
@@ -602,7 +613,7 @@ export class SkillVfx {
     for (let i = 0; i < slot.tail.length; i++) {
       const drop=slot.drops[i];drop.visible=false;
       const node = slot.tail[i], hx = slot.history[i * 2], hy = slot.history[i * 2 + 1];
-      node.visible = i < slot.count && i < (reduced ? 1 : VFX_CAPS.trail);
+      node.visible = !(particle.volley20 && reduced) && i < slot.count && i < (reduced ? 1 : VFX_CAPS.trail);
       if (!node.visible) continue;
       node.position.set(lastX, lastY); node.rotation = Math.atan2(hy - lastY, hx - lastX);
       node.scale.set(Math.hypot(hx - lastX, hy - lastY), 1);

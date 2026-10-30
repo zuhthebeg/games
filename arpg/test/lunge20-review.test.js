@@ -9,7 +9,7 @@ import {lungeFrame,nextLungeFrame} from '../js/sim/lunge-evolution.js';
 const fixture=(speed=0)=>{const w=createWorld();const p=addPlayer(w,{pid:'p',x:300,y:400,skillMasteryLevels:{lunge:20},mods:{attackSpeedBonus:speed,mpRegen:0}});startStage(w,'S2');w.entities=[p];Object.assign(w.round,{pending:[],goal:'timer',timerTicks:10000});return {w,p};};
 test('unvalidated self/guest profiles cannot claim evolution; legacy lunge remains usable',()=>{
  for(const invalid of [undefined,{},null]){
-  const profile={combatVersion:5,weapon:'blade',skillMasteryLevels:{lunge:30},...(invalid!==undefined?{rewardSave:invalid}:{})};
+  const profile={combatVersion:6,weapon:'blade',skillMasteryLevels:{lunge:30},...(invalid!==undefined?{rewardSave:invalid}:{})};
   const s=new CoopSession({uid:'h',host:'h',players:['h','g'],profile,config:{stageId:'S2',threat:1,seed:1}});
   s.rt('g',{t:'profile',profile});
   if(s.world){for(const p of s.world.entities)assert.notEqual(p.lunge20,true);const h=s.world.entities[0];s.world.round.pending=[];s.update(34,{...emptyInput(),skillEdge:true});assert.equal(h.act?.id,'lunge');assert.notEqual(h.act?.lunge20,true);}
