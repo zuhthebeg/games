@@ -4,11 +4,13 @@ import { ABILITIES } from '../content/combat.js';
 // host's shot journal + monotonically allocated projectile ids recover it exactly,
 // including shots created and expired between the two guest snapshots.
 export function presentSkillEvents(events, world, owners) {
+  const explicit=new Set();
+  for(const e of events) if(e.type==='projectile' && e.volley20 && Array.isArray(e.projectileIds)) for(const id of e.projectileIds) {explicit.add(id);owners.set(id,e.id);}
   const newIds = [...new Set([...world.projectiles.map(p => p.id),
     ...events.filter(e => e.type === 'projectileEnd').map(e => e.id)])]
-    .filter(id => !owners.has(id)).sort((a, b) => a - b);
+    .filter(id => !explicit.has(id) && !owners.has(id)).sort((a, b) => a - b);
   let index = 0;
-  for (const event of events) if (event.type === 'projectile') {
+  for (const event of events) if (event.type === 'projectile' && !event.volley20) {
     for (let i = 0; i < ABILITIES[event.ability].projectile.count; i++) {
       const id = newIds[index++];
       if (id !== undefined) owners.set(id, event.id);

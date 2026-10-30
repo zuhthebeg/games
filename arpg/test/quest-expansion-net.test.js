@@ -5,7 +5,7 @@ import {encodeSnapshot,decodeSnapshot,partyHpScale} from '../js/net/protocol.js'
 import {createWorld,addPlayer,startStage,emptyInput} from '../js/sim/world.js';
 import {createMemoryTransport} from '../js/net/loopback.js';
 const id='M_MINE_CART', dt=1000/30;
-const profile={combatVersion:5,level:11,weapon:'bow',mods:{maxHp:10000},threats:{[id]:1}};
+const profile={combatVersion:6,level:11,weapon:'bow',mods:{maxHp:10000},threats:{[id]:1}};
 function pair(stageId=id){
  const wire=createMemoryTransport(),frames={host:[],guest:[]};const sessions={};
  for(const uid of ['host','guest']){
