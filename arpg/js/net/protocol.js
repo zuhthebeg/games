@@ -202,12 +202,12 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   // Only the new authority envelope tightens global identity; legacy-only
   // packets keep their existing compatibility surface (including old fixtures).
   const volleyEnvelope=packet.entities.some(e=>e.volley20!==undefined || e.act?.volley20!==undefined) || (packet.projectiles||[]).some(p=>p.volley20!==undefined);
-  const cleaveEnvelope=!!cleaveCapability || packet.entities.some(e=>e.cleave20!==undefined || e.act?.cleave20!==undefined);
+  const cleaveEnvelope=!!cleaveCapability && packet.entities.some(e=>e.kind==='player' && cleaveCapability(e.id)===true) || packet.entities.some(e=>e.cleave20!==undefined || e.act?.cleave20!==undefined);
   if(volleyEnvelope || cleaveEnvelope) {
     const ids=[...packet.entities,...(packet.projectiles||[]),...(packet.zones||[])].map(e=>e.id);
     const players=packet.entities.filter(e=>e.kind==='player');
     if(ids.some(id=>!Number.isSafeInteger(id)||id<1) || new Set(ids).size!==ids.length || new Set(players.map(e=>e.pid)).size!==players.length
-      || volleyCapability && players.some(e=>volleyCapability(e.id,e.pid)===undefined)) return null;
+      || volleyEnvelope && volleyCapability && players.some(e=>volleyCapability(e.id,e.pid)===undefined)) return null;
   }
   // Ember origin/point are unquantized on the wire: no range-increasing rounding allowance.
   const pointValid=(x,y,ox,oy)=>[x,y,ox,oy].every(Number.isFinite) && x>=0 && y>=0 && x<=packet.arena?.w && y<=packet.arena?.h && ox>=0 && oy>=0 && ox<=packet.arena?.w && oy<=packet.arena?.h && Math.hypot(x-ox,y-oy)<=560+1e-10;
