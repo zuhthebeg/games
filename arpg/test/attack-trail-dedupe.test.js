@@ -7,6 +7,9 @@ import { createWorld, addPlayer, startStage, emptyInput } from '../js/sim/world.
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { comboDef } from '../js/sim/basic-combo.js';
 import { predictPlayerTick } from '../js/net/player-prediction.js';
+import { LocalPrediction } from '../js/net/prediction.js';
+
+const T = 1000 / 30;
 
 const makeRenderer = (world, reduced = false) => {
   const renderer = new ArenaRenderer({ stage: new Container(), screen: { width: 390, height: 844 } },
@@ -104,4 +107,116 @@ test('cast elapsed is present in decoded and predicted own acts', () => {
   const predicted = predictPlayerTick({ ...player, act: null }, { ...emptyInput(), attack: true },
     { arena: world.arena, others: [], tick: world.tick });
   assert.ok(Number.isFinite(predicted.act?.elapsed));
+});
+
+function predictionFixture() {
+  const world = createWorld({ seed: 18 });
+  addPlayer(world, { pid: 'local', weapon: 'blade' });
+  startStage(world, 'S2');
+  const view = decodeSnapshot(encodeSnapshot(world, { local: 0 }), 'local');
+  const prediction = new LocalPrediction('local');
+  prediction.presentationTimeout = 2000;
+  prediction.reconcile(view);
+  const renderer = makeRenderer(view);
+  let trails = 0;
+  const effect = renderer.effect.bind(renderer);
+  renderer.effect = (...args) => {
+    if (['slash', 'reverse', 'thrust', 'down', 'up', 'spin'].includes(args[5])) trails++;
+    effect(...args);
+  };
+  return { world: view, prediction, renderer, trailCount: () => trails };
+}
+
+function renderPrediction({ prediction, renderer, world }, tick) {
+  const frame = { ...world, tick };
+  renderer.render(prediction.view(frame), 1, 1 / 60);
+}
+
+function advanceBasic(prediction, seq, attack = false) {
+  prediction.advance({ seq, v: [0, 0, 1, 0], attack }, emptyInput(), T);
+}
+
+function castAct(template, patch) {
+  return patch ? { ...template, ...patch, def: template.def, phaseTicks: template.phaseTicks } : null;
+}
+
+test('one predicted basic cast keeps one trail through authority replay phase resets', () => {
+  const replays = [
+    [
+      { phase: 'active', elapsed: 5, left: 100, castTick: 753 },
+      null,
+      { phase: 'windup', elapsed: 1, left: 3, castTick: 761 },
+      { phase: 'active', elapsed: 5, left: 100, castTick: 761 }
+    ],
+    [
+      { phase: 'active', elapsed: 12, left: 100, castTick: 769 },
+      { phase: 'recovery', elapsed: 12, left: 8, castTick: 771 },
+      { phase: 'active', elapsed: 7, left: 100, castTick: 775 }
+    ],
+    [
+      { phase: 'active', elapsed: 8, left: 100, castTick: 887 },
+      { phase: 'windup', elapsed: 2, left: 3, castTick: 894 },
+      { phase: 'active', elapsed: 2, left: 100, castTick: 891 }
+    ]
+  ];
+
+  const counts = [];
+  for (const replay of replays) {
+    const fixture = predictionFixture();
+    const { prediction, renderer, world } = fixture;
+    for (let seq = 1; seq <= 10; seq++) {
+      advanceBasic(prediction, seq, seq === 1);
+      const waiting = { ...world, tick: seq, entities: world.entities.map(entity => ({ ...entity, act: null, lastInputSeq: 0 })) };
+      prediction.reconcile(waiting);
+      renderer.render(prediction.view(waiting), 1, 1 / 60);
+    }
+
+    const template = structuredClone(prediction.state.act);
+    const accepted = { ...world, tick: 11, entities: world.entities.map(entity => ({
+      ...entity, lastInputSeq: 1, act: castAct(template, replay[0])
+    })) };
+    prediction.reconcile(accepted);
+    renderer.render(prediction.view(accepted), 1, 1 / 60);
+    let tick = 12;
+    for (const patch of replay.slice(1)) {
+      const before = prediction.state;
+      const after = { ...before, act: castAct(template, patch) };
+      prediction.state = prediction.attacks.track(before, after, 1);
+      renderPrediction(fixture, tick++);
+    }
+
+    counts.push(fixture.trailCount());
+  }
+  assert.deepEqual(counts, [1, 1, 1]);
+});
+
+test('two distinct predicted basic presses each produce a trail', () => {
+  const fixture = predictionFixture();
+  for (let seq = 1; seq <= 16; seq++) {
+    advanceBasic(fixture.prediction, seq, seq === 1);
+    renderPrediction(fixture, seq);
+  }
+  for (let seq = 17; seq <= 22; seq++) {
+    advanceBasic(fixture.prediction, seq, seq === 17);
+    renderPrediction(fixture, seq);
+  }
+  assert.equal(fixture.trailCount(), 2);
+});
+
+test('rejected predicted basic cast does not leave another trail or stall prediction', () => {
+  const fixture = predictionFixture();
+  for (let seq = 1; seq <= 7; seq++) {
+    advanceBasic(fixture.prediction, seq, seq === 1);
+    renderPrediction(fixture, seq);
+  }
+  const rejected = { ...fixture.world, tick: 8, entities: fixture.world.entities.map(entity => ({
+    ...entity, lastInputSeq: 1, act: null
+  })) };
+  fixture.prediction.reconcile(rejected);
+  fixture.renderer.render(fixture.prediction.view(rejected), 1, 1 / 60);
+  advanceBasic(fixture.prediction, 8);
+  renderPrediction(fixture, 9);
+  assert.equal(fixture.trailCount(), 1);
+  assert.equal(fixture.prediction.attacks.starts.size, 0);
+  assert.equal(fixture.prediction.state.act, null);
 });

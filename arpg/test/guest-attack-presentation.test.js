@@ -4,8 +4,8 @@ import { createWorld, addPlayer, startStage, emptyInput } from '../js/sim/world.
 import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { LocalPrediction } from '../js/net/prediction.js';
 const T = 1000 / 30;
-function fixture(mods = {}) {
-  const w = createWorld(); addPlayer(w, { pid: 'g', weapon: 'focus', mods: { skills: ['ember_bolt'], maxMp: 200, ...mods } }); startStage(w, 'S2');
+function fixture(mods = {}, weapon = 'focus') {
+  const w = createWorld(); addPlayer(w, { pid: 'g', weapon, mods: { skills: ['ember_bolt'], maxMp: 200, ...mods } }); startStage(w, 'S2');
   const view = decodeSnapshot(encodeSnapshot(w, { g: 0 }), 'g'), p = new LocalPrediction('g'); p.reconcile(view);
   return { w, view, p };
 }
@@ -104,6 +104,18 @@ test('already-predicted basics retain their original whole-tick motion and autho
   p.advance({seq:1,v:[0,0,1,0],attack:true},emptyInput(),T);
   assert.equal(p.view(view).entities[0].act?.id,'focus_pulse');
   for(let seq=2;seq<20;seq++)advance(p,seq);
-  assert.equal(p.attacks.starts.size,0,'H1 was refuted for basics: no new basic tokens');
+  assert.ok(p.attacks.starts.has(1),'basic casts receive a presentation sequence');
   assert.equal(p.view(view).projectiles.filter(pr=>pr.presentation).length,0);
+});
+
+test('basic bow and focus projectiles remain authoritative-only after presentation tracking', () => {
+  for (const weapon of ['bow', 'focus']) {
+    const { view, p } = fixture({}, weapon);
+    p.presentationTimeout = 2000;
+    p.advance({ seq: 1, v: [0, 0, 1, 0], attack: true }, emptyInput(), T);
+    for (let seq = 2; seq <= 12; seq++) p.advance({ seq, v: [0, 0, 1, 0], attack: false }, emptyInput(), T);
+    assert.ok(p.attacks.starts.has(1), `${weapon} basic receives a presentation sequence`);
+    assert.equal(p.view(view).projectiles.filter(pr => pr.presentation).length, 0,
+      `${weapon} basic projectile remains authoritative-only`);
+  }
 });

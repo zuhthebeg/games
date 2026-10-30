@@ -5,9 +5,17 @@ const matches = (row, act) => act && row.id === act.id && row.step === (act.step
 export class AttackPresentation {
   constructor() { this.now = 0; this.timeout = 100; this.starts = new Map(); this.shots = []; this.nextId = -1; this.authorityShots = new Set(); }
   track(before, after, seq) {
-    if (after.act && after.act.id !== WEAPONS[after.weapon]?.basic && (!before.act || before.act.id !== after.act.id || after.act.elapsed < before.act.elapsed)) {
-      if (!this.starts.has(seq)) this.starts.set(seq, { at: this.now, id: after.act.id, step: after.act.step ?? 0, counter: !!after.act.counter, completed: false, fired: new Set(), knownShots: new Set(this.authorityShots) });
-      after.act.presentationSeq = seq;
+    if (after.act) {
+      const start = !before.act || before.act.id !== after.act.id || after.act.elapsed < before.act.elapsed;
+      const row = this.starts.get(seq);
+      if (row && matches(row, after.act)) after.act.presentationSeq = seq;
+      else if (start) {
+        const confirmed = [...this.starts].find(([, candidate]) => candidate.confirmed && !candidate.rejected && matches(candidate, after.act));
+        const presentationSeq = confirmed?.[0] ?? seq;
+        if (!this.starts.has(presentationSeq))
+          this.starts.set(presentationSeq, { at: this.now, id: after.act.id, step: after.act.step ?? 0, counter: !!after.act.counter, completed: false, fired: new Set(), knownShots: new Set(this.authorityShots) });
+        after.act.presentationSeq = presentationSeq;
+      }
     }
     if (before.act?.presentationSeq !== undefined && !after.act) {
       const row = this.starts.get(before.act.presentationSeq); if (row) row.completed = true;
@@ -38,7 +46,8 @@ export class AttackPresentation {
     if (!act) return null;
     if (act.presentationSeq !== undefined) {
       const row = this.starts.get(act.presentationSeq);
-      return row && !row.rejected && (row.confirmed || this.now - row.at <= this.timeout) ? act : null;
+      return row && !row.rejected && !(row.confirmed && row.completed)
+        && (row.confirmed || this.now - row.at <= this.timeout) ? act : null;
     }
     if ([...this.starts.values()].some(row => matches(row, act) && row.confirmed && row.completed)) return null;
     return act;
@@ -51,7 +60,8 @@ export class AttackPresentation {
       return row && !row.rejected && p.travelled < p.range && (row.confirmed ? this.now - p.born : this.now - row.at) <= this.timeout;
     });
     const act = pawn.act, row = this.starts.get(act?.presentationSeq);
-    if (!row || row.rejected || row.delivered || (!row.confirmed && this.now - row.at > this.timeout) || act.phase !== 'active' || act.def.delivery !== 'projectile') return;
+    if (!row || row.rejected || row.delivered || (!row.confirmed && this.now - row.at > this.timeout)
+      || act.id === WEAPONS[pawn.weapon]?.basic || act.phase !== 'active' || act.def.delivery !== 'projectile') return;
     const def = act.def, activeTick = act.phaseTicks.active - act.left;
     const count = act.growth?.count ?? def.burst?.count ?? 1;
     const shot = def.burst ? act.growth ? Math.floor(activeTick * count / act.phaseTicks.active) : Math.floor(activeTick / Math.max(1,Math.round(def.burst.intervalMs / TICK_MS))) : 0;

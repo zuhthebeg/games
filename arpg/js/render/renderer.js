@@ -587,13 +587,17 @@ export class ArenaRenderer {
         view.bluntCharge.alpha = Math.min(1, .65 * visual.brightness);
       }
       const active = entity.act?.phase === 'active';
-      const activeKey = active ? `${entity.act.id}|${entity.act.step ?? 0}` : null;
+      const presentationSeq = active ? entity.act.presentationSeq : undefined;
+      const activeKey = active
+        ? (presentationSeq !== undefined ? `seq:${presentationSeq}` : `${entity.act.id}|${entity.act.step ?? 0}`)
+        : null;
       const elapsed = active && Number.isFinite(entity.act.elapsed) ? entity.act.elapsed : 0;
       const castStart = active
         ? (Number.isFinite(entity.act.castTick) ? entity.act.castTick : world.tick - elapsed)
         : null;
       const sameCast = active && view.lastCast && view.lastCast.key === activeKey
-        && elapsed >= view.lastCast.elapsed && Math.abs(castStart - view.lastCast.castStart) <= 4;
+        && (presentationSeq !== undefined
+          || (elapsed >= view.lastCast.elapsed && Math.abs(castStart - view.lastCast.castStart) <= 4));
       if (entity.kind === 'player' && activeKey && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && !sameCast) {
         const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
         this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, entity.act.def.comboTrail || (blunt ? 'blunt' : 'slash'), entity.act.def.shape, entity.act.facing, visual);
