@@ -7,6 +7,14 @@ import {STAGES} from '../content/combat.js';
 export const validBoneParts = parts => Array.isArray(parts) && parts.length === 5
   && ['weapon','head','body','hands','feet'].every(slot => parts.filter(id=>ITEMS[id]?.boneSet && ITEMS[id].slot === slot).length === 1);
 export function validParty(config, profiles) {
+  if (config?.stageId === 'SANCTUARY') {
+    if (config.invasion || config.threat !== 1
+      || config.invasion !== undefined && typeof config.invasion !== 'boolean') return false;
+    const list = Object.values(profiles || {});
+    return list.length >= 2 && list.length <= 4 && list.every(p => p
+      && p.lineage === 'human' && p.role === 'hunter' && !Object.hasOwn(p, 'team')
+      && (!p.rewardSave || validLobbyProfile(p)));
+  }
   if (!config || !STAGES[config.stageId] || !Number.isInteger(config.threat) || config.threat < 1 || config.threat > 3
     || config.invasion !== undefined && typeof config.invasion !== 'boolean') return false;
   const list = Object.values(profiles);

@@ -202,8 +202,10 @@ export function startStage(world, stageId, { playerSide = 'left' } = {}) {
 
 export function startSanctuary(world) {
   world.arena = { ...SANCTUARY.arena, obstacles: SANCTUARY.obstacles.map(obstacle => ({ ...obstacle })) };
-  for (const player of world.entities.filter(entity => entity.kind === 'player')) {
-    player.x = SANCTUARY.spawn.x;
+  const players = world.entities.filter(entity => entity.kind === 'player');
+  const firstX = SANCTUARY.spawn.x - (players.length - 1) * 22;
+  for (const [index, player] of players.entries()) {
+    player.x = firstX + index * 44;
     player.y = SANCTUARY.spawn.y;
   }
   world.round = {
@@ -226,6 +228,14 @@ function cancelBlockedVolley(world,p) {if((p.act?.cleave20 || p.act?.volley20) &
 
 export function step(world, inputs = {}) {
   world.events = [];
+  if (world.round?.goal === 'sanctuary') {
+    inputs = Object.fromEntries(world.entities.filter(entity => entity.kind === 'player').map(player => {
+      const input = inputs[player.pid] || {};
+      return [player.pid, { ...emptyInput(),
+        mx: Number.isFinite(input.mx) ? input.mx : 0,
+        my: Number.isFinite(input.my) ? input.my : 0 }];
+    }));
+  }
   for(const p of world.entities) cancelBlockedVolley(world,p);
   for (const p of world.entities) if (p.kind === 'player' && (p.dead || p.terminal || world.round?.state !== 'running')) clearGreenPotion(p);
   for(const p of world.entities) if((p.act?.cleave20 || p.act?.whirl20 || p.act?.ember20) && (p.dead||p.terminal||p.channel>0||world.round?.state!=='running')) endAct(world,p,true);

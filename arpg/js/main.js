@@ -108,6 +108,19 @@ try {
     const prediction = coopSession.prediction;
     return prediction.enabled && prediction.state ? prediction.state : own(coopSession.buffer.frames.at(-1)?.world);
   };
+  const coopSanctuary = () => !!coopSession && (coopSession.world?.round?.goal === 'sanctuary'
+    || coopSession.buffer?.frames?.at(-1)?.world?.round?.goal === 'sanctuary'
+    || world?.round?.goal === 'sanctuary'
+    || coopSession.phase === 'running' && coopSession.config.stageId === SANCTUARY.id);
+  const coopInput = () => {
+    if (!coopSanctuary()) return combatInput(coopLocalPlayer());
+    const consumed = input.consume();
+    if (consumed.escapeEdge || consumed.scrollEdge) {
+      exitCoopSanctuary();
+      return emptyInput();
+    }
+    return movementOnlyInput(consumed);
+  };
   const hud = new HUD();
   const audio = new CombatAudio();
   bindAudioControls(audio, document);
@@ -214,6 +227,31 @@ try {
     hub.root.inert = false;
     world = tracker = roundSave = roundOwner = null;
     hub.showInn();
+    return true;
+  }
+  function exitCoopSanctuary(note = '') {
+    if (!coopSanctuary()) return false;
+    resultPresentation.cancel();
+    running = false;
+    accumulator = 0;
+    input.reset();
+    input.enabled = false;
+    audio.stop();
+    closeCoop();
+    renderer.leaveSanctuary();
+    renderer.root.visible = false;
+    renderer.warning.visible = false;
+    document.querySelector('#hud').hidden = true;
+    hub.root.hidden = false;
+    hub.root.inert = false;
+    world = tracker = roundSave = roundOwner = null;
+    hub.showInn();
+    if (note) {
+      const status = document.createElement('p');
+      status.className = 'risk-note';
+      status.textContent = note;
+      hub.root.prepend(status);
+    }
     return true;
   }
   // Preserve the existing HUD nodes/listeners (including InputLayer button references).
@@ -363,7 +401,7 @@ try {
     document.querySelector('#coop-status').hidden = true;
   }
   function settleCoopPlayer() {
-    if (coopResult || !world) return;
+    if (coopResult || !world || world.round?.goal === 'sanctuary') return;
     const player = world.entities[0];
     if (!player.terminal) return;
     if (world.round.invasion && !world.invasionAccount?.terminal) return;
@@ -376,7 +414,7 @@ try {
     input.reset(); input.enabled = false;
   }
   function finishCoop() {
-    if (coopFinished) return;
+    if (coopFinished || world?.round?.goal === 'sanctuary') return;
     if (!coopResult) settleCoopPlayer();
     if (!coopResult) return;
     coopFinished = true;
@@ -394,6 +432,7 @@ try {
   // Presentation only; no new sim event or save schema. Cleared maps retain historical replay state.
   const arrivedMaps = new Set();
   function showArrival(save, stageId) {
+    if (stageId === SANCTUARY.id) return;
     const seen = arrivedMaps.has(stageId);
     arrivedMaps.add(stageId);
     hud.nodes.notice.textContent = arrivalNotice(seen ? { cleared: { [stageId]: true } } : save, stageId);
@@ -401,6 +440,7 @@ try {
   }
   function startCoop(stageId, threat) {
     if (undead || undeadStarting) throw new Error('먼저 인간으로 돌아가세요. 언데드 디버그는 솔로 전용입니다.');
+    if (stageId === 'SANCTUARY' && hub.save?.lineage === 'skeleton_knight') throw new Error('해골은 법당에 들어갈 수 없어요');
     closeCoop();
     if (!hub.save) return;
     characters.assertOwner();
@@ -422,7 +462,7 @@ try {
     const profileOwner = characters.active;
     let lobby;
     const ownsLobby = () => characters.active === profileOwner && coop === lobby;
-    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'S1' ? 1 : threat },
+    coop = lobby = new CoopLobby({ profile, config: { stageId, threat: stageId === 'SANCTUARY' || stageId === 'S1' ? 1 : threat },
       onSession: session => {
         if (!ownsLobby()) return;
         coopSession = session; guestTime = performance.now();
@@ -438,7 +478,7 @@ try {
         if (!ownsLobby()) return;
         if (config.invasion) { characters.persist(localSave, roundOwner); hub.save = localSave; cloud.changed(localSave); }
         else delete localSave.activeInvasion;
-        roundSave = selectThreat(localSave, config.stageId, config.threat);
+        roundSave = config.stageId === SANCTUARY.id ? structuredClone(localSave) : selectThreat(localSave, config.stageId, config.threat);
         tracker = createTracker(crypto.getRandomValues(new Uint32Array(1))[0]);
         coopLoad = currentLoad(roundSave, tracker).ratio;
         hub.root.hidden = true; audio.stop(); input.reset(); running = true;
@@ -462,6 +502,11 @@ try {
           renderer.root.visible = renderer.warning.visible = true;
           hud.begin(view, loadoutOf(roundSave)); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
         }
+        if (view.round.goal === 'sanctuary') {
+          if (!silent && !hidden) renderer.events(view, presentation);
+          if (!silent && !hidden) hud.events(presentation.filter(e => e.id === view.entities[0].id));
+          return;
+        }
         let progress;
         if (view.round.invasion) {
           const account = view.invasionAccount;
@@ -480,6 +525,10 @@ try {
       },
       onLost: message => {
         if (!ownsLobby()) return;
+        if (coopSanctuary()) {
+          exitCoopSanctuary('방장이 법당을 떠났어요');
+          return;
+        }
         if (!world || !tracker) {
           closeCoop(); hub.showBoard();
           const note = document.createElement('p'); note.className = 'risk-note'; note.textContent = message; hub.root.prepend(note);
@@ -509,7 +558,7 @@ try {
   let netTime = performance.now(), guestTime = netTime;
   setInterval(() => {
     const now = performance.now(), elapsed = now - netTime; netTime = now;
-    if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad);
+    if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : coopInput(), coopLoad);
     else if (coopSession && hidden) {
       coopSession.update(now - guestTime, emptyInput(), coopLoad); guestTime = now;
     }
@@ -691,7 +740,7 @@ try {
     }
     resultPresentation.update(now);
     if (coopSession && !coopSession.isHost && !hidden) {
-      coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : combatInput(coopLocalPlayer()), coopLoad); guestTime = now;
+      coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : coopInput(), coopLoad); guestTime = now;
     }
     if (coopSession && running && coopRenderReady && !hidden) {
       const renderNow = coopSession.isHost ? coopSession.now + Math.max(0, now - netTime) : coopSession.now;

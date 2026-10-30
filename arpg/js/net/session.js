@@ -10,7 +10,7 @@ import { validParty, invasionProfile, partyConfig, validLobbyProfile } from './i
 import { TEAM_MONSTER } from '../sim/core.js';
 import { enableGuestAttackLag } from '../sim/attack-lag.js';
 import { enableGuestDodgeLag } from '../sim/dodge-lag.js';
-import { createWorld, addPlayer, startStage, step, setLoad, cancelVolley } from '../sim/world.js';
+import { createWorld, addPlayer, startStage, startSanctuary, step, setLoad, cancelVolley } from '../sim/world.js';
 import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL_EDGES, encodeSnapshot, localView, partyHpScale } from './protocol.js';
 
 import { masteryLevels } from '../meta/skill-mastery.js';
@@ -155,6 +155,10 @@ export class CoopSession {
     if (this.phase !== 'prepare' || !profiles?.[this.uid]
       || Object.values(profiles).some(p => !p || typeof p !== 'object' || p.combatVersion!==7 || p.skillMasteryLevels && !validLevels(p.skillMasteryLevels))) return false;
     const config = partyConfig(this.config, profiles);
+    if (config.stageId === 'SANCTUARY' && Object.values(profiles).some(p => p.lineage === 'skeleton_knight')) {
+      this.onStatus('해골은 법당에 들어갈 수 없어요');
+      return false;
+    }
     if (!validParty(config, profiles)
       || Object.keys(profiles).length !== this.players.size || Object.keys(profiles).some(id => !this.players.has(id))
       || (profiles[this.uid].lineage || 'human') !== (this.profile.lineage || 'human')
@@ -189,7 +193,7 @@ export class CoopSession {
       const levels = party.map(p => p.level || 1);
       const partyLevel = Math.round(levels.reduce((a, b) => a + b, 0) / levels.length);
       this.world = createWorld({ seed: data.seed, threat: data.config.threat, multiplayerDodge: true,
-        partyHpMult: partyHpScale(party.length, partyLevel, data.config.stageId) });
+        partyHpMult: data.config.stageId === 'SANCTUARY' ? 1 : partyHpScale(party.length, partyLevel, data.config.stageId) });
       let i = 0;
       for (const [pid, p] of Object.entries(this.profiles)) {
         const player = addPlayer(this.world, { pid, weapon: p.weapon, skillMasteryLevels: boundedMasteryLevels({...p.skillMasteryLevels,heavy_cleave:this.cleaveOwners.find(e=>e.pid===pid)?.admitted ? 20 : 1,volley:this.volleyOwners.find(e=>e.pid===pid)?.admitted ? 20 : 1,frost_lance:this.frostCapabilities[pid] ? 20 : 1,pierce_shot:this.pierceCapabilities[pid] ? 20 : 1,whirl:this.whirlCapabilities[pid] ? 20 : 1,ember_bolt:validLobbyProfile(data.profiles[pid]) ? masteryLevels(data.profiles[pid].rewardSave).ember_bolt : 1}), y: 380 + i++ * 35, mods: { ...hostMods(p), threat: data.config.threat } });
@@ -205,7 +209,8 @@ export class CoopSession {
         this.latches[pid] = pid === this.uid ? new InputLatch() : new InputQueue();
         if (pid !== this.uid) { enableGuestDodgeLag(this.world, pid); enableGuestAttackLag(this.world, pid); }
       }
-      startStage(this.world, data.config.stageId);
+      if (data.config.stageId === 'SANCTUARY') startSanctuary(this.world);
+      else startStage(this.world, data.config.stageId);
       if (data.config.invasion) {
         this.world.round.invasion = true;
         this.lootLedger = new InvasionLoot(this.profiles, data.seed, data.runId, data.config.stageId, data.config.threat);

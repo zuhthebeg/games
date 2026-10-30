@@ -22,43 +22,70 @@ import { SceneAssetState } from './scene-asset-state.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 class IncenseSmoke {
   constructor(layer) {
-    this.particles = Array.from({ length: 24 }, () => {
-      const node = new Graphics();
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(.45, 'rgba(255,255,255,.7)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 64, 64);
+    this.texture = Texture.from(canvas);
+    this.particles = Array.from({ length: 96 }, (_, index) => {
+      const node = new Sprite(this.texture);
       node.visible = false;
       layer.addChild(node);
-      return { node, left: 0, total: 0, x: 0, y: 0, drift: 0, source: 0 };
+      return {
+        node, poolSource: index < 48 ? 0 : 1, left: 0, total: 0,
+        x: 0, y: 0, drift: 0, rise: 0, wobble: 0, rotation: 0
+      };
     });
     this.time = 0;
-    this.emission = 0;
+    this.emission = [0, 0];
     this.serial = 0;
   }
 
   update(dt, reduced) {
     this.time += dt;
-    this.emission -= dt;
-    const interval = reduced ? 1.1 : .24;
-    while (this.emission <= 0) {
-      const particle = this.particles.find(item => item.left <= 0);
-      if (particle) {
-        particle.source = this.serial++ % 2;
-        particle.x = (particle.source ? 1207 : 522) + ((this.serial * 17) % 9 - 4);
-        particle.y = (particle.source ? 348 : 420) + ((this.serial * 13) % 7 - 3);
-        particle.drift = ((this.serial * 19) % 11 - 5) * (reduced ? .35 : 1);
-        particle.total = particle.left = reduced ? 5.2 : 3.2;
-        particle.node.clear().circle(0, 0, 5).fill({ color: 0x9da3a1, alpha: .42 })
-          .circle(0, 0, 10).fill({ color: 0x858c8a, alpha: .12 });
+    const interval = reduced ? .65 : .07;
+    for (let source = 0; source < 2; source++) {
+      this.emission[source] -= dt;
+      while (this.emission[source] <= 0) {
+        const active = this.particles.filter(item => item.left > 0).length;
+        const particle = this.particles.find(item => item.poolSource === source && item.left <= 0);
+        if (!particle || (reduced && active >= 8)) {
+          this.emission[source] += interval;
+          if (!particle) break;
+          continue;
+        }
+        const serial = this.serial++;
+        particle.x = (source ? 1207 : 522) + ((serial * 17) % 9 - 4);
+        particle.y = (source ? 348 : 420) + ((serial * 13) % 7 - 3);
+        particle.drift = (Math.random() * 2 - 1) * (reduced ? 4 : 18);
+        particle.rise = reduced ? 58 : 120 + Math.random() * 30;
+        particle.wobble = Math.random() * Math.PI * 2;
+        particle.rotation = (Math.random() * 2 - 1) * .12;
+        particle.total = particle.left = reduced ? 6 : 4;
         particle.node.visible = true;
+        this.emission[source] += interval;
       }
-      this.emission += interval;
-      if (particle && reduced && this.particles.filter(item => item.left > 0).length >= 4) break;
     }
     for (const particle of this.particles) {
       if (particle.left <= 0) continue;
       particle.left = Math.max(0, particle.left - dt);
       const progress = 1 - particle.left / particle.total;
-      particle.node.position.set(particle.x + particle.drift * progress, particle.y - progress * (reduced ? 25 : 60));
-      particle.node.scale.set(.65 + progress * .4);
-      particle.node.alpha = Math.min(reduced ? .12 : .17, (progress < .18 ? progress / .18 : (1 - progress) / .45) * (reduced ? .12 : .17));
+      const fade = Math.max(0, Math.min(1, progress / .22, (1 - progress) / .25));
+      const wobble = Math.sin(this.time * (reduced ? .5 : 1.8) + particle.wobble) * (reduced ? 1 : 5);
+      const size = 14 + progress * 50;
+      particle.node.position.set(particle.x + particle.drift * progress + wobble, particle.y - progress * particle.rise);
+      particle.node.rotation = particle.rotation + Math.sin(this.time + particle.wobble) * .025;
+      particle.node.scale.set(size / 64 * (particle.poolSource ? 1.28 : 1), size / 64);
+      const r = Math.round(0xb4 + (0x8f - 0xb4) * progress);
+      const g = Math.round(0xb8 + (0x95 - 0xb8) * progress);
+      const b = Math.round(0xb5 + (0x93 - 0xb5) * progress);
+      particle.node.tint = (r << 16) | (g << 8) | b;
+      particle.node.alpha = fade * (reduced ? .3 : particle.poolSource ? .38 : .42);
       particle.node.visible = particle.left > 0;
     }
   }
@@ -66,6 +93,7 @@ class IncenseSmoke {
   destroy() {
     for (const particle of this.particles) particle.node.destroy();
     this.particles.length = 0;
+    this.texture.destroy(true);
   }
 }
 export class ArenaRenderer {
