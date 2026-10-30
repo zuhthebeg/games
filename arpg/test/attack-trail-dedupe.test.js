@@ -709,6 +709,89 @@ test('authority-only recovery compares host starts after a cosmetic binds to an 
   assert.equal(fixture.trailCount(), 2, 'the authority-only cast gets exactly one additional trail');
 });
 
+test('authority-only display cannot bind a later different-step press', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const hostStepTwo = traceSlash({ step: 2, phase: 'recovery', elapsed: 12 });
+  const firstHostFrame = { ...world, tick: 1988, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 1934, act: hostStepTwo } : entity) };
+  prediction.reconcile(firstHostFrame);
+  let view = prediction.view(firstHostFrame);
+  let shown = view.entities.find(entity => entity.pid === 'local').act;
+  assert.equal(shown.presentationAuthorityStart, 1976);
+  assert.equal(shown.presentationSeq, undefined);
+  assert.equal(shown.phase, 'recovery');
+  renderer.render(view, 1, 1 / 60);
+  assert.ok(prediction.attacks.displayedAuthorityStarts.has(1976));
+
+  const row = seedTraceCosmetic(fixture, {
+    seq: 1935, tick: 2001, act: traceSlash({ step: 3, phase: 'windup', elapsed: 0 })
+  });
+  for (const ack of [1934, 1935]) {
+    const repeatedHostCast = prediction.attacks.bind(hostStepTwo, ack, 1988);
+    assert.equal(repeatedHostCast.presentationSeq, undefined);
+    assert.equal(repeatedHostCast.presentationAuthorityStart, 1976);
+    assert.equal(row.bound, null, 'a displayed authority cast cannot acquire a later cosmetic');
+  }
+
+  const nextHostCast = prediction.attacks.bind(
+    traceSlash({ step: 3, phase: 'active', elapsed: 8 }), 1935, 2020
+  );
+  assert.equal(row.bound, 2012);
+  assert.equal(nextHostCast.presentationSeq, row.seq);
+  assert.equal(row.mispredictedStep, undefined);
+});
+
+test('shown active cosmetics ease into authority catch-up without skipping phases', () => {
+  const fixture = predictionFixture();
+  const { prediction, renderer, world } = fixture;
+  const row = seedTraceCosmetic(fixture, {
+    seq: 1, tick: 200, act: traceSlash({ phase: 'active', elapsed: 6 })
+  });
+  const initialView = prediction.view({ ...world, tick: 200 });
+  const initial = initialView.entities.find(entity => entity.pid === 'local').act;
+  assert.equal(initial.phase, 'active');
+  assert.equal(initial.left, 2);
+  renderer.render(initialView, 1, 1 / 60);
+
+  const authority = { ...world, tick: 215, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, lastInputSeq: 1, act: traceSlash({ phase: 'recovery', elapsed: 15 }) } : entity) };
+  prediction.reconcile(authority);
+  assert.ok(Number.isFinite(row.catchupTargetStartedAt));
+
+  let previous = initial, previousStart = row.startedAt;
+  let sawRecovery = false, endedNaturally = false;
+  for (let frame = 1; frame <= 30; frame++) {
+    prediction.attacks.now += 22;
+    const view = prediction.view({ ...authority, tick: authority.tick + frame });
+    const shown = view.entities.find(entity => entity.pid === 'local').act;
+    const catchup = previousStart - row.startedAt;
+    assert.ok(catchup >= -1e-6 && catchup <= T * .5 + 1e-6,
+      'startedAt advances toward authority by at most half a tick per rendered frame');
+    previousStart = row.startedAt;
+    if (!shown) {
+      assert.ok(prediction.attacks.elapsedTicks(row) >= prediction.attacks.durationTicks(row),
+        'the cosmetic ends only after playing through its duration');
+      endedNaturally = true;
+      break;
+    }
+    assert.equal(shown.presentationSeq, row.seq);
+    assert.ok(shown.elapsed - previous.elapsed <= 1.5 + 1e-6,
+      'display elapsed advances no faster than 1.5 ticks per frame');
+    assert.ok(shown.elapsed >= previous.elapsed);
+    if (frame === 1) assert.equal(shown.phase, 'active');
+    if (frame === 2) {
+      assert.equal(shown.phase, 'recovery');
+      sawRecovery = true;
+    }
+    renderer.render(view, 1, 1 / 60);
+    previous = shown;
+  }
+  assert.equal(sawRecovery, true);
+  assert.equal(endedNaturally, true);
+  assert.equal(fixture.trailCount(), 1);
+});
+
 test('raw replayed acts cannot regress an already presented cosmetic phase', () => {
   const fixture = predictionFixture();
   const { prediction } = fixture;
@@ -1037,6 +1120,67 @@ test('same-key predicted recasts stay visible while authority still reports the 
   assert.ok(results.every(result => result.observedLag === result.lag
     && result.activeFrames > 0 && result.hiddenActiveFrames === 0 && result.trails === 2), JSON.stringify(results));
 }));
+
+test('held 1-2-3 combo keeps same-step bindings across 8-16 tick host lag', () => {
+  for (const lag of [8, 12, 16]) {
+    const fixture = predictionFixture();
+    const { prediction, world } = fixture;
+    const hostOthers = world.entities.filter(entity => entity.pid !== 'local');
+    let hostPawn = structuredClone(world.entities.find(entity => entity.pid === 'local'));
+    const hostStates = [hostPawn];
+    for (let seq = 1; seq <= 80; seq++) {
+      hostPawn = predictPlayerTick(hostPawn, { ...emptyInput(), attack: true }, {
+        arena: world.arena, others: hostOthers, tick: seq
+      });
+      hostStates.push(structuredClone(hostPawn));
+    }
+
+    const firstStarts = new Map();
+    let thirdEndedAt = null, sawThird = false;
+    for (let seq = 1; seq < hostStates.length; seq++) {
+      const act = hostStates[seq].act;
+      if (act?.id === 'slash' && [1, 2, 3].includes(act.step)) {
+        if (!firstStarts.has(act.step)) firstStarts.set(act.step, seq - act.elapsed);
+        if (act.step === 3) sawThird = true;
+      } else if (sawThird) {
+        thirdEndedAt = seq;
+        break;
+      }
+    }
+    assert.ok([1, 2, 3].every(step => firstStarts.has(step)));
+    assert.ok(thirdEndedAt);
+
+    let lastHostSeq = 0;
+    for (let seq = 1; seq <= thirdEndedAt + lag; seq++) {
+      advanceBasic(prediction, seq, true);
+      const hostSeq = seq - lag;
+      if (hostSeq <= lastHostSeq) continue;
+      const host = hostStates[hostSeq];
+      const authority = { ...world, tick: hostSeq, entities: world.entities.map(entity => entity.pid === 'local'
+        ? { ...entity, ...host, lastInputSeq: hostSeq } : entity) };
+      prediction.reconcile(authority);
+      lastHostSeq = hostSeq;
+      for (const binding of prediction.attacks.authorityBinds) {
+        const row = prediction.attacks.starts.get(binding.seq);
+        assert.equal(row.key, binding.key, `lag ${lag}: cast ${binding.start} stays on its step`);
+      }
+    }
+
+    for (const step of [1, 2, 3]) {
+      const expectedStart = firstStarts.get(step);
+      const row = [...prediction.attacks.starts.values()]
+        .filter(candidate => candidate.step === step)
+        .sort((a, b) => Math.abs(a.predictedStartTick - expectedStart)
+          - Math.abs(b.predictedStartTick - expectedStart))[0];
+      assert.ok(row, `lag ${lag}: predicted step ${step} exists`);
+      const associatedStart = Number.isFinite(row.bound) ? row.bound : row.authorityStart;
+      assert.ok(Number.isFinite(associatedStart), `lag ${lag}: step ${step} associates with authority`);
+      assert.ok(Math.abs(associatedStart - expectedStart) <= 1,
+        `lag ${lag}: step ${step} binds its own host cast`);
+      assert.equal(row.key, `slash|${step}|false`);
+    }
+  }
+});
 
 test('a skill recast from recovery receives a fresh live cosmetic identity', () => {
   const fixture = predictionFixture({ skills: ['lunge'] });

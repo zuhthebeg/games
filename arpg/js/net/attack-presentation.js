@@ -24,6 +24,7 @@ export class AttackPresentation {
     this.nextId = -1;
     this.authorityShots = new Set();
     this.authorityBinds = [];
+    this.displayedAuthorityStarts = new Set();
     this.lastInputSeq = 0;
     this.lastDisplayed = null;
     this.lastDisplayedCosmeticStartTick = -Infinity;
@@ -136,7 +137,9 @@ export class AttackPresentation {
   bind(act, ack, tick) {
     if (!act) return act;
     const key = castKey(act), authorityStart = startTick(act, tick);
-    if (Number.isFinite(authorityStart)) {
+    const alreadyDisplayed = Number.isFinite(authorityStart)
+      && [...this.displayedAuthorityStarts].some(start => Math.abs(start - authorityStart) <= 1);
+    if (Number.isFinite(authorityStart) && !alreadyDisplayed) {
       let binding = this.authorityBinds.find(row => row.key === key && Math.abs(row.start - authorityStart) <= 1);
       if (!binding) {
         const eligible = row => row.bound === null && !row.rejected && !row.completed
@@ -154,11 +157,6 @@ export class AttackPresentation {
         if (!candidate) {
           candidate = [...this.starts.values()].filter(row => row.key === key && eligible(row))
             .sort((a, b) => a.seq - b.seq)[0];
-        }
-        if (!candidate) {
-          candidate = [...this.starts.values()].filter(row => row.id === act.id && eligible(row))
-            .sort((a, b) => a.seq - b.seq)[0];
-          if (candidate && candidate.key !== key) candidate.mispredictedStep = true;
         }
         if (!candidate) {
           candidate = [...this.starts.values()].filter(row => {
@@ -205,8 +203,13 @@ export class AttackPresentation {
           const elapsed = Math.floor((this.now - bound.startedAt) / TICK_MS);
           if (Number.isFinite(act.elapsed) && act.elapsed > elapsed) {
             const firstActive = (bound.phaseTicks.windup || 0) + (bound.phaseTicks.lock || 0);
-            const catchup = bound.shownActive ? act.elapsed : Math.min(act.elapsed, firstActive);
-            bound.startedAt = this.now - catchup * TICK_MS;
+            if (bound.shownActive) {
+              bound.catchupTargetStartedAt = Math.min(bound.catchupTargetStartedAt ?? bound.startedAt,
+                this.now - act.elapsed * TICK_MS);
+            } else {
+              const catchup = Math.min(act.elapsed, firstActive);
+              bound.startedAt = this.now - catchup * TICK_MS;
+            }
           }
           return { ...act, presentationSeq: binding.seq };
         }
@@ -216,9 +219,18 @@ export class AttackPresentation {
     return act;
   }
   display(row) {
+    const catchupTarget = row.catchupTargetStartedAt;
+    if (row.shownActive && Number.isFinite(catchupTarget)) {
+      row.startedAt = Math.max(catchupTarget, row.startedAt - TICK_MS * .5);
+      if (row.startedAt <= catchupTarget + 1e-6) delete row.catchupTargetStartedAt;
+    }
     let elapsed = this.elapsedTicks(row);
     const identity = `seq:${row.seq}`;
-    if (this.lastDisplayed?.identity === identity) elapsed = Math.max(elapsed, this.lastDisplayed.elapsed);
+    if (this.lastDisplayed?.identity === identity) {
+      elapsed = Math.max(elapsed, this.lastDisplayed.elapsed);
+      if (row.shownActive && Number.isFinite(catchupTarget))
+        elapsed = Math.min(elapsed, this.lastDisplayed.elapsed + 1.5);
+    }
     let remaining = elapsed, phase = 'recovery';
     for (const candidate of PHASES) {
       const length = row.phaseTicks[candidate] || 0;
@@ -298,6 +310,7 @@ export class AttackPresentation {
     }
     this.lastDisplayed = { identity, startTick: authorityStart, elapsed };
     this.lastDisplayedAuthorityStart = Math.max(this.lastDisplayedAuthorityStart, authorityStart);
+    this.displayedAuthorityStarts.add(authorityStart);
     return displayed;
   }
   advance(pawn, dt) {
@@ -341,6 +354,7 @@ export class AttackPresentation {
     this.starts.clear();
     this.shots = [];
     this.authorityBinds = [];
+    this.displayedAuthorityStarts.clear();
     this.lastInputSeq = 0;
     this.lastDisplayed = null;
     this.lastDisplayedCosmeticStartTick = -Infinity;
