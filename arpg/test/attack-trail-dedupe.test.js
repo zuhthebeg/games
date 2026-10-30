@@ -8,6 +8,7 @@ import { encodeSnapshot, decodeSnapshot } from '../js/net/protocol.js';
 import { comboDef } from '../js/sim/basic-combo.js';
 import { predictPlayerTick } from '../js/net/player-prediction.js';
 import { LocalPrediction } from '../js/net/prediction.js';
+import { withoutCombos } from './av1-dps.mjs';
 
 const T = 1000 / 30;
 
@@ -136,6 +137,28 @@ function advanceBasic(prediction, seq, attack = false) {
   prediction.advance({ seq, v: [0, 0, 1, 0], attack }, emptyInput(), T);
 }
 
+function firstCastAuthority(world, tick) {
+  let pawn = structuredClone(world.entities.find(entity => entity.pid === 'local'));
+  const others = world.entities.filter(entity => entity.pid !== 'local');
+  for (let frame = 0; frame < tick; frame++)
+    pawn = predictPlayerTick(pawn, { ...emptyInput(), attack: frame === 0 }, { arena: world.arena, others, tick: frame });
+  return { ...world, tick, entities: world.entities.map(entity => entity.pid === 'local'
+    ? { ...entity, ...pawn, lastInputSeq: tick } : entity) };
+}
+
+function secondBasicActiveTick(world) {
+  let pawn = structuredClone(world.entities.find(entity => entity.pid === 'local'));
+  const others = world.entities.filter(entity => entity.pid !== 'local');
+  let firstEnded = false;
+  for (let tick = 0; tick < 64; tick++) {
+    const hadAct = !!pawn.act;
+    pawn = predictPlayerTick(pawn, { ...emptyInput(), attack: true }, { arena: world.arena, others, tick });
+    if (hadAct && !pawn.act) firstEnded = true;
+    if (firstEnded && pawn.act?.phase === 'active') return tick + 1;
+  }
+  throw new Error('second basic cast did not become active');
+}
+
 function castAct(template, patch) {
   return patch ? { ...template, ...patch, def: template.def, phaseTicks: template.phaseTicks } : null;
 }
@@ -177,11 +200,12 @@ test('one predicted basic cast keeps one trail through authority replay phase re
     })) };
     prediction.reconcile(accepted);
     renderer.render(prediction.view(accepted), 1, 1 / 60);
-    let tick = 12;
+    const authorityStart = accepted.tick - replay[0].elapsed;
+    let tick = 12, seq = 2;
     for (const patch of replay.slice(1)) {
       const before = prediction.state;
-      const after = { ...before, act: castAct(template, patch) };
-      prediction.state = prediction.attacks.track(before, after, 1);
+      const after = { ...before, act: castAct(before.act ?? template, patch) };
+      prediction.state = prediction.attacks.track(before, after, seq++, patch ? authorityStart + patch.elapsed : authorityStart);
       renderPrediction(fixture, tick++);
     }
 
@@ -202,6 +226,63 @@ test('two distinct predicted basic presses each produce a trail', () => {
   }
   assert.equal(fixture.trailCount(), 2);
 });
+
+test('same-key predicted recasts stay visible while authority still reports the previous cast', () => withoutCombos(() => {
+  const results = [];
+  const activeTick = secondBasicActiveTick(predictionFixture().world);
+  for (const mode of ['held', 'quick']) for (const lag of [8, 12, 16]) {
+    const fixture = predictionFixture();
+    const { prediction, renderer, world } = fixture;
+    for (let seq = 1; seq <= 16; seq++) {
+      advanceBasic(prediction, seq, mode === 'held' || seq === 1);
+      renderPrediction(fixture, seq);
+    }
+    assert.equal(prediction.state.act, null);
+    assert.equal(prediction.attacks.starts.get(1)?.completed, true);
+
+    const hostTick = activeTick - lag;
+    assert.ok(hostTick > 0);
+    const authority = firstCastAuthority(world, hostTick);
+    const hostAct = authority.entities.find(entity => entity.pid === 'local').act;
+    assert.equal(hostAct?.id, 'slash');
+    assert.equal(hostAct?.step ?? 0, 0);
+    prediction.reconcile(authority);
+    assert.equal(prediction.attacks.starts.get(1)?.confirmed, true);
+    assert.equal(prediction.attacks.starts.get(1)?.completed, true);
+    assert.equal(prediction.state.act, null);
+    const firstAuthorityStart = prediction.attacks.starts.get(1).authorityStart;
+
+    let activeFrames = 0, hiddenActiveFrames = 0, observedLag = null;
+    let seq = 17;
+    for (; seq < 40; seq++) {
+      advanceBasic(prediction, seq, mode === 'held' || seq === 17);
+      const view = prediction.view({ ...authority, tick: prediction.tick });
+      const displayed = view.entities.find(entity => entity.pid === 'local').act;
+      if (prediction.state.act?.phase === 'active') {
+        if (observedLag === null) observedLag = prediction.tick - authority.tick;
+        activeFrames++;
+        if (!displayed) hiddenActiveFrames++;
+        else assert.notEqual(displayed.presentationSeq, 1);
+      }
+      renderer.render(view, 1, 1 / 60);
+      if (activeFrames && prediction.state.act?.phase !== 'active') break;
+    }
+    const secondSeq = prediction.state.act?.presentationSeq;
+    const secondAct = { ...prediction.state.act };
+    delete secondAct.presentationSeq;
+    const secondAuthority = { ...authority, tick: prediction.tick, entities: authority.entities.map(entity => entity.pid === 'local'
+      ? { ...entity, lastInputSeq: seq, act: secondAct } : entity) };
+    prediction.reconcile(secondAuthority);
+    const secondAuthorityStart = secondAuthority.tick - secondAct.elapsed;
+    assert.equal(prediction.attacks.starts.get(1).authorityStart, firstAuthorityStart);
+    assert.equal(prediction.attacks.starts.get(secondSeq).authorityStart, secondAuthorityStart);
+    assert.equal(prediction.view(secondAuthority).entities.find(entity => entity.pid === 'local').act.presentationSeq, secondSeq);
+    results.push({ mode, lag, observedLag, activeFrames, hiddenActiveFrames, trails: fixture.trailCount() });
+  }
+
+  assert.ok(results.every(result => result.observedLag === result.lag
+    && result.activeFrames > 0 && result.hiddenActiveFrames === 0 && result.trails === 2), JSON.stringify(results));
+}));
 
 test('rejected predicted basic cast does not leave another trail or stall prediction', () => {
   const fixture = predictionFixture();

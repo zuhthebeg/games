@@ -4,13 +4,16 @@ const TICK_MS = 1000 / 30;
 const matches = (row, act) => act && row.id === act.id && row.step === (act.step ?? 0) && row.counter === !!act.counter;
 export class AttackPresentation {
   constructor() { this.now = 0; this.timeout = 100; this.starts = new Map(); this.shots = []; this.nextId = -1; this.authorityShots = new Set(); }
-  track(before, after, seq) {
+  track(before, after, seq, tick) {
     if (after.act) {
       const start = !before.act || before.act.id !== after.act.id || after.act.elapsed < before.act.elapsed;
       const row = this.starts.get(seq);
       if (row && matches(row, after.act)) after.act.presentationSeq = seq;
       else if (start) {
-        const confirmed = [...this.starts].find(([, candidate]) => candidate.confirmed && !candidate.rejected && matches(candidate, after.act));
+        const startTick = Number.isFinite(tick) && Number.isFinite(after.act.elapsed) ? tick - after.act.elapsed : NaN;
+        const confirmed = [...this.starts].find(([, candidate]) => candidate.confirmed && !candidate.rejected
+          && matches(candidate, after.act) && Number.isFinite(candidate.authorityStart)
+          && Number.isFinite(startTick) && Math.abs(candidate.authorityStart - startTick) <= 4);
         const presentationSeq = confirmed?.[0] ?? seq;
         if (!this.starts.has(presentationSeq))
           this.starts.set(presentationSeq, { at: this.now, id: after.act.id, step: after.act.step ?? 0, counter: !!after.act.counter, completed: false, fired: new Set(), knownShots: new Set(this.authorityShots) });
@@ -27,7 +30,14 @@ export class AttackPresentation {
     for (const [seq, row] of this.starts) {
       if (seq <= pawn.lastInputSeq) {
         row.acknowledged = true;
-        if (matches(row, pawn.act)) row.confirmed = true;
+        if (matches(row, pawn.act)) {
+          row.confirmed = true;
+          if (Number.isFinite(world.tick) && Number.isFinite(pawn.act.elapsed)) {
+            const authorityStart = world.tick - pawn.act.elapsed;
+            if (!Number.isFinite(row.authorityStart) || Math.abs(row.authorityStart - authorityStart) <= 4)
+              row.authorityStart = authorityStart;
+          }
+        }
         else row.rejected = true;
       }
       const counterpart = world.projectiles.some(p => p.ownerId === pawn.id && p.abilityId === row.id && !row.knownShots.has(p.id));

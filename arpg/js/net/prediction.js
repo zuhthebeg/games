@@ -49,7 +49,11 @@ export class LocalPrediction {
     this.roundEnded = !!(world.round?.state && world.round.state !== 'running');
     const blocked = predictionBlocked(p) || this.roundEnded;
     if (blocked) { this.pending = []; this.attacks.clear(); }
-    else for (const row of this.pending) { next = this.attacks.track(next, predictPlayerTick(next, row.input, this), row.seq); this.tick++; }
+    else for (const row of this.pending) {
+      const after = predictPlayerTick(next, row.input, this);
+      this.tick++;
+      next = this.attacks.track(next, after, row.seq, this.tick);
+    }
     if (this.state) {
       const target = this.displayPawn(next);
       const dx = displayed.x + this.offset.x - target.x, dy = displayed.y + this.offset.y - target.y;
@@ -109,7 +113,9 @@ export class LocalPrediction {
       if (this.pending.length > 256) { this.enabled = false; this.pending = []; this.clearOffset(); return; }
       this.attacks.timeout = this.presentationTimeout ?? 100;
       this.attacks.advance(this.state, dt);
-      this.state = this.attacks.track(this.state, predictPlayerTick(this.state, command, this), packet.seq); this.tick++;
+      const after = predictPlayerTick(this.state, command, this);
+      this.tick++;
+      this.state = this.attacks.track(this.state, after, packet.seq, this.tick);
     }
   }
   // Display-only partial tick: the not-yet-committed fraction of the current tick,
