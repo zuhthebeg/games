@@ -586,24 +586,43 @@ export class ArenaRenderer {
         this.skillVfx.decorate(view.bluntCharge, visual, entity.act.def.shape, 0, 0xe88e50, 0xffdf9c);
         view.bluntCharge.alpha = Math.min(1, .65 * visual.brightness);
       }
-      const active = entity.act?.phase === 'active';
-      const presentationSeq = active ? entity.act.presentationSeq : undefined;
-      const activeKey = active
-        ? (presentationSeq !== undefined ? `seq:${presentationSeq}` : `${entity.act.id}|${entity.act.step ?? 0}`)
+      const act = entity.act, active = act?.phase === 'active';
+      const presentationSeq = act?.presentationSeq;
+      const activeKey = act
+        ? (presentationSeq !== undefined ? `seq:${presentationSeq}` : `${act.id}|${act.step ?? 0}`)
         : null;
-      const elapsed = active && Number.isFinite(entity.act.elapsed) ? entity.act.elapsed : 0;
-      const castStart = active
-        ? (Number.isFinite(entity.act.castTick) ? entity.act.castTick : world.tick - elapsed)
+      const elapsed = Number.isFinite(act?.elapsed) ? act.elapsed : 0;
+      const castStart = act
+        ? (Number.isFinite(act.castTick) ? act.castTick : world.tick - elapsed)
         : null;
-      const sameCast = active && view.lastCast && view.lastCast.key === activeKey
+      const sameCast = !!act && view.lastCast && view.lastCast.key === activeKey
         && (presentationSeq !== undefined
           || (elapsed >= view.lastCast.elapsed && Math.abs(castStart - view.lastCast.castStart) <= 4));
-      if (entity.kind === 'player' && activeKey && entity.act.def.shape && !entity.act.def.heal && !SKILL_VFX[entity.act.id] && !sameCast) {
-        const visual = this.skillVfx.visual(this.skillVfx.level(entity, entity.act.id), entity.act.id, this.reduced);
-        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life, entity.act.def.comboTrail || (blunt ? 'blunt' : 'slash'), entity.act.def.shape, entity.act.facing, visual);
-        if (visual.extraParticles) this.burst(entity.x, entity.y, { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, entity.act.facing);
+      let cast = sameCast ? view.lastCast : null;
+      if (act && !cast) cast = { key: activeKey, castStart, elapsed, seenActive: false, trailFired: false };
+      const canTrail = entity.kind === 'player' && !!activeKey && act.def.shape && !act.def.heal && !SKILL_VFX[act.id];
+      const fireTrail = () => {
+        const visual = this.skillVfx.visual(this.skillVfx.level(entity, act.id), act.id, this.reduced);
+        this.effect(entity.x, entity.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life,
+          act.def.comboTrail || (blunt ? 'blunt' : 'slash'), act.def.shape, act.facing, visual);
+        if (visual.extraParticles) this.burst(entity.x, entity.y,
+          { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, act.facing);
+        cast.trailFired = true;
+      };
+      if (act) {
+        if (active) {
+          if (canTrail && !cast.trailFired) fireTrail();
+          cast.seenActive = true;
+        } else if (act.phase === 'recovery' && canTrail && !cast.seenActive && !cast.trailFired) {
+          const phases = act.phaseTicks || {};
+          const recoveryElapsed = elapsed - (phases.windup || 0) - (phases.lock || 0) - (phases.active || 0);
+          if (recoveryElapsed >= 0 && recoveryElapsed <= 3) fireTrail();
+        }
+        cast.key = activeKey;
+        cast.castStart = castStart;
+        cast.elapsed = elapsed;
+        view.lastCast = cast;
       }
-      if (active) view.lastCast = { key: activeKey, castStart, elapsed };
     }
     // Roster departures remove views, not just the authoritative entity.
     const liveIds = new Set(world.entities.map(e => e.id));

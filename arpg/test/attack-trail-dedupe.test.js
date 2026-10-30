@@ -19,13 +19,16 @@ const makeRenderer = (world, reduced = false) => {
   return renderer;
 };
 
-const renderAct = (renderer, world, { tick, elapsed = 1, step = 1, pid = 'local', active = true, castTick } = {}) => {
+const renderAct = (renderer, world, { tick, elapsed = 1, step = 1, pid = 'local', active = true,
+  phase = 'active', castTick, presentationSeq, phaseTicks } = {}) => {
   const snapshot = structuredClone(world);
   snapshot.tick = tick;
   snapshot.entities[0].pid = pid;
   snapshot.entities[0].act = active ? {
-    id: 'slash', step, phase: 'active', elapsed, total: 3, left: 2, facing: 0,
+    id: 'slash', step, phase, elapsed, total: 3, left: 2, facing: 0,
     ...(castTick === undefined ? {} : { castTick }),
+    ...(presentationSeq === undefined ? {} : { presentationSeq }),
+    ...(phaseTicks ? { phaseTicks } : {}),
     def: comboDef('slash', step, 'sword')
   } : null;
   renderer.render(decodeSnapshot(encodeSnapshot(snapshot), pid), 1, 1 / 60);
@@ -205,13 +208,86 @@ test('one predicted basic cast keeps one trail through authority replay phase re
     for (const patch of replay.slice(1)) {
       const before = prediction.state;
       const after = { ...before, act: castAct(before.act ?? template, patch) };
-      prediction.state = prediction.attacks.track(before, after, seq++, patch ? authorityStart + patch.elapsed : authorityStart);
+      prediction.state = prediction.attacks.track(before, after, seq++, patch ? authorityStart + patch.elapsed : authorityStart, { replay: true });
       renderPrediction(fixture, tick++);
     }
 
     counts.push(fixture.trailCount());
   }
   assert.deepEqual(counts, [1, 1, 1]);
+});
+
+test('captured duplicate cast replays rebind to one identity and preserve cast 25 recovery trail', () => {
+  const captures = [
+    { cast: 8, step: 2, start: [524, 5, 468], replays: [[526, 'active', 6, 468, 'active', 5, 469]] },
+    { cast: 18, step: 1, start: [606, 5, 551], replays: [[610, 'active', 5, 551, 'windup', 4, 552]] },
+    { cast: 27, step: 2, start: [720, 5, 672], replays: [[728, 'recovery', 12, 672, 'active', 6, 678]] },
+    { cast: 29, step: 3, start: [744, 8, 694], replays: [[746, 'active', 9, 694, 'active', 8, 695]] },
+    { cast: 41, step: 3, start: [840, 8, 795], replays: [
+      [844, 'recovery', 10, 795, 'windup', 5, 799],
+      [846, 'windup', 6, 799, 'windup', 5, 800]
+    ] },
+    { cast: 55, step: 3, start: [950, 7, 914], replays: [[952, 'active', 7, 914, 'windup', 6, 915]] }
+  ];
+  const capturedAct = (step, phase, elapsed, presentationSeq) => ({
+    id: 'slash', step, phase, elapsed, total: 3, left: 2, facing: 0,
+    phaseTicks: { windup: step === 3 ? 7 : 5, lock: 0, active: 3, recovery: 8 },
+    presentationSeq, def: comboDef('slash', step, 'sword')
+  });
+  for (const capture of captures) {
+    const fixture = predictionFixture();
+    const { prediction, world } = fixture;
+    const [tick, elapsed, initialSeq] = capture.start;
+    const initial = capturedAct(capture.step, 'active', elapsed, undefined);
+    prediction.state = prediction.attacks.track(
+      { ...prediction.state, act: null },
+      { ...prediction.state, act: initial },
+      initialSeq, tick
+    );
+    renderPrediction(fixture, tick);
+    for (const [replayTick, beforePhase, beforeElapsed, beforeSeq, afterPhase, afterElapsed, seq] of capture.replays) {
+      const before = { ...prediction.state, act: capturedAct(capture.step, beforePhase, beforeElapsed, beforeSeq) };
+      const after = { ...prediction.state, act: capturedAct(capture.step, afterPhase, afterElapsed, undefined) };
+      prediction.state = prediction.attacks.track(before, after, seq, replayTick, { replay: true });
+      renderPrediction(fixture, replayTick);
+      assert.equal(prediction.state.act.presentationSeq, initialSeq, `cast ${capture.cast}`);
+    }
+    assert.equal(fixture.trailCount(), 1, `host cast ${capture.cast}`);
+  }
+
+  const world = createWorld({ seed: 19 });
+  addPlayer(world, { pid: 'remote', weapon: 'blade' });
+  startStage(world, 'S2');
+  const renderer = makeRenderer(world);
+  const phaseTicks = { windup: 5, lock: 0, active: 3, recovery: 8 };
+  renderAct(renderer, world, { tick: 718, elapsed: 3, phase: 'windup', castTick: 715, pid: 'remote', phaseTicks });
+  renderAct(renderer, world, { tick: 726, elapsed: 11, phase: 'recovery', castTick: 715, pid: 'remote', phaseTicks });
+  assert.equal(activeEffects(renderer), 1, 'cast 25 emits once when recovery is first sampled at elapsed 11');
+});
+
+test('a replay without a live same-cast candidate cannot create a presentation identity', () => {
+  const { prediction } = predictionFixture();
+  const before = { ...prediction.state, act: null };
+  const after = { ...prediction.state, act: {
+    id: 'slash', phase: 'active', elapsed: 1, step: 1, total: 3, left: 2, facing: 0,
+    phaseTicks: { windup: 5, lock: 0, active: 3, recovery: 8 }, def: comboDef('slash', 1, 'sword')
+  } };
+  prediction.attacks.track(before, after, 99, 10, { replay: true });
+  assert.equal(after.act.presentationSeq, undefined);
+  assert.equal(prediction.attacks.starts.size, 0);
+});
+
+test('a visible unconfirmed act survives its timeout until completion or the hard cap', () => {
+  const fixture = predictionFixture();
+  const { prediction, world } = fixture;
+  prediction.presentationTimeout = 100;
+  advanceBasic(prediction, 1, true);
+  assert.ok(prediction.view(world).entities[0].act, 'the first displayed windup marks the row visible');
+  const row = prediction.attacks.starts.get(1);
+  prediction.attacks.now = row.at + 150;
+  assert.ok(prediction.view(world).entities[0].act, 'shown presentation survives the ordinary timeout');
+  prediction.attacks.now = row.at + 201;
+  assert.equal(prediction.view(world).entities[0].act, null, 'the hard cap still releases a stalled act');
 });
 
 test('two distinct predicted basic presses each produce a trail', () => {
@@ -249,7 +325,7 @@ test('same-key predicted recasts stay visible while authority still reports the 
     prediction.reconcile(authority);
     assert.equal(prediction.attacks.starts.get(1)?.confirmed, true);
     assert.equal(prediction.attacks.starts.get(1)?.completed, true);
-    assert.equal(prediction.state.act, null);
+    assert.equal(prediction.view(authority).entities.find(entity => entity.pid === 'local').act, null);
     const firstAuthorityStart = prediction.attacks.starts.get(1).authorityStart;
 
     let activeFrames = 0, hiddenActiveFrames = 0, observedLag = null;
@@ -284,6 +360,26 @@ test('same-key predicted recasts stay visible while authority still reports the 
     && result.activeFrames > 0 && result.hiddenActiveFrames === 0 && result.trails === 2), JSON.stringify(results));
 }));
 
+test('a later same-key authority cast does not inherit an older completed identity', () => withoutCombos(() => {
+  const fixture = predictionFixture();
+  const { prediction, world } = fixture;
+  for (let seq = 1; seq <= 16; seq++) advanceBasic(prediction, seq, seq === 1);
+  const authority = firstCastAuthority(world, secondBasicActiveTick(world) - 8);
+  prediction.reconcile(authority);
+  const previous = prediction.attacks.starts.get(1);
+  assert.equal(previous?.confirmed, true);
+  assert.equal(previous?.completed, true);
+  const nextStart = previous.authorityStart + previous.windowTicks + 1;
+  const nextTick = nextStart + 3;
+  const nextAct = { ...authority.entities.find(entity => entity.pid === 'local').act,
+    phase: 'active', elapsed: 3 };
+  delete nextAct.presentationSeq;
+  const bound = prediction.attacks.bind(nextAct, 1, nextTick);
+  assert.equal(bound.presentationSeq, undefined);
+  assert.equal(prediction.attacks.act(bound, nextTick), bound);
+  assert.equal(prediction.attacks.starts.size, 1);
+}));
+
 test('rejected predicted basic cast does not leave another trail or stall prediction', () => {
   const fixture = predictionFixture();
   for (let seq = 1; seq <= 7; seq++) {
@@ -298,6 +394,28 @@ test('rejected predicted basic cast does not leave another trail or stall predic
   advanceBasic(fixture.prediction, 8);
   renderPrediction(fixture, 9);
   assert.equal(fixture.trailCount(), 1);
-  assert.equal(fixture.prediction.attacks.starts.size, 0);
+  assert.equal(fixture.prediction.attacks.starts.get(1)?.rejected, true);
   assert.equal(fixture.prediction.state.act, null);
+  fixture.prediction.reconcile({ ...rejected, tick: 20 });
+  assert.equal(fixture.prediction.attacks.starts.has(1), false);
+});
+
+test('a rejected row is revived when authority later confirms its same cast within the startup window', () => {
+  const fixture = predictionFixture();
+  advanceBasic(fixture.prediction, 1, true);
+  const predicted = structuredClone(fixture.prediction.state.act);
+  const rejected = { ...fixture.world, tick: 2, entities: fixture.world.entities.map(entity => ({
+    ...entity, lastInputSeq: 1, act: null
+  })) };
+  fixture.prediction.reconcile(rejected);
+  assert.equal(fixture.prediction.attacks.starts.get(1)?.rejected, true);
+  const authorityAct = { ...predicted, phase: 'active', elapsed: 6, left: 1 };
+  delete authorityAct.presentationSeq;
+  const accepted = { ...fixture.world, tick: 6, entities: fixture.world.entities.map(entity => ({
+    ...entity, lastInputSeq: 1, act: authorityAct
+  })) };
+  fixture.prediction.reconcile(accepted);
+  assert.equal(fixture.prediction.attacks.starts.get(1)?.confirmed, true);
+  assert.equal(fixture.prediction.attacks.starts.get(1)?.rejected, false);
+  assert.equal(fixture.prediction.view(accepted).entities.find(entity => entity.pid === 'local').act.presentationSeq, 1);
 });

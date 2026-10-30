@@ -39,11 +39,13 @@ test('accepted act aligns to authoritative elapsed and rejected acknowledged act
   const rejected = structuredClone(accepted); rejected.tick++; rejected.entities[0].act = null; rejected.entities[0].lastInputSeq = 2; p.reconcile(rejected);
   assert.equal(p.view(rejected).entities[0].act, null);
 });
-test('unconfirmed long act expires at RTT+100ms and cannot restart from the same pending edge', () => {
+test('visible unconfirmed act survives its timeout but expires at the hard cap', () => {
   const { view, p } = fixture({ skills: ['meteor'] }); p.presentationTimeout = 180;
   advance(p, 1, { skillEdge: true });
   assert.equal(p.view(view).entities[0].act?.id, 'meteor');
   for (let seq = 2; seq <= 7; seq++) advance(p, seq);
+  assert.equal(p.view(view).entities[0].act?.id, 'meteor', 'visible act survives the ordinary timeout');
+  for (let seq = 8; seq <= 12; seq++) advance(p, seq);
   assert.equal(p.view(view).entities[0].act, null);
   const stale = structuredClone(view); stale.tick = 1; p.reconcile(stale);
   assert.equal(p.view(stale).entities[0].act, null);

@@ -45,14 +45,14 @@ export class LocalPrediction {
     this.others = world.entities.filter(e => e !== p);
     this.pending = this.pending.filter(row => row.seq > p.lastInputSeq);
     let next = { ...p, dodge: { ...p.dodge }, cds: { ...p.cds }, act: p.act ? { ...p.act } : null, ...(p.combo ? { combo: { ...p.combo } } : {}) };
-    next.act = this.attacks.bind(next.act, p.lastInputSeq);
+    next.act = this.attacks.bind(next.act, p.lastInputSeq, world.tick);
     this.roundEnded = !!(world.round?.state && world.round.state !== 'running');
     const blocked = predictionBlocked(p) || this.roundEnded;
     if (blocked) { this.pending = []; this.attacks.clear(); }
     else for (const row of this.pending) {
       const after = predictPlayerTick(next, row.input, this);
       this.tick++;
-      next = this.attacks.track(next, after, row.seq, this.tick);
+      next = this.attacks.track(next, after, row.seq, this.tick, { replay: true });
     }
     if (this.state) {
       const target = this.displayPawn(next);
@@ -204,7 +204,7 @@ export class LocalPrediction {
     if (!world || !this.enabled || !this.state) { this.lastContactView = this.lastRawView = null; return world; }
     const p = this.displayPawn(this.state);
     return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? this.displayContact({ ...e, act: this.attacks.act(p.act), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
+      ? this.displayContact({ ...e, act: this.attacks.act(p.act, world.tick), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
         x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world, p.dodge) : e) };
   }
   diagnostics() {
