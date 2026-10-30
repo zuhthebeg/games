@@ -104,7 +104,7 @@ function basicReachTarget(p, def, others) {
 }
 
 // One host tick for the guest's own pawn. `others` = latest known entities (auto-aim only).
-export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false } = {}) {
+export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, multiplayerDodge = false, onAutoAttack } = {}) {
   if (predictionBlocked(state)) return state.act?.cleave20 || state.act?.volley20 || state.act?.whirl20 || state.act?.lunge20 || state.act?.ember20 ? {...state,act:null} : state;
   const p = { ...state, ...(state.shieldGuard ? {shieldGuard:{...state.shieldGuard}} : {}), dodge: { ...state.dodge }, cds: { ...state.cds }, act: state.act ? { ...state.act } : null, ...(state.combo ? { combo: { ...state.combo } } : {}) };
   if (p.invisibleUntil && p.invisibleUntil <= tick) delete p.invisibleUntil;
@@ -203,11 +203,13 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
       else if (def.zone || def.groundTarget) p.act.zonePoint = lockSpellPoint(p, p.act.facing, others, arena, Math.hypot(inp.aimX || 0, inp.aimY || 0), def.zone || def.groundTarget);
     }
   }
-  const autoTarget = !p.invisibleUntil && !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
+  const autoTarget = !p.invisibleUntil && !inp.attack && typeof inp.autoStart !== 'boolean' && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
     ? basicReachTarget(p, comboDef(w.basic, nextComboStep(p), p.weaponForm), others) : null;
-  if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
+  if (!p.act && (inp.attack || inp.autoStart || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
-    startAct(p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(p, inp, mlen, others), tick);
+    const facing = autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(p, inp, mlen, others);
+    if (autoTarget) onAutoAttack?.(facing);
+    startAct(p, w.basic, facing, tick);
   }
   if (p.act) {
     const act = p.act;
@@ -230,4 +232,19 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   }
   if (!rooted) Object.assign(p, walkingPosition(p, inp));
   return finish();
+}
+
+// Decide automatic basic starts on the same tick/order as replay (cooldowns,
+// dodge, potions and skills included). autoStart is an edge, not held attack.
+// Keep autoAttack for old hosts; new hosts use the explicit autoStart contract.
+// Without a live prediction the host keeps deciding auto starts.
+export function guestTickInput(state, input, context) {
+  if (!state || !context?.enabled || context.roundEnded) return input;
+  const command = { ...input, autoStart: false };
+  if (!input.autoAttack || input.attack) return command;
+  predictPlayerTick(state, input, { ...context, onAutoAttack(facing) {
+    command.autoStart = true;
+    if (!input.aimX && !input.aimY) { command.aimX = Math.cos(facing); command.aimY = Math.sin(facing); }
+  } });
+  return command;
 }

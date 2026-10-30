@@ -16,6 +16,7 @@ import { InputSender, InputLatch, InputQueue, SnapshotBuffer, EDGES, TIMED_SKILL
 import { masteryLevels } from '../meta/skill-mastery.js';
 import { releaseCarrier } from '../sim/quest-objectives.js';
 import { LocalPrediction } from './prediction.js';
+import { guestTickInput } from './player-prediction.js';
 import { presentSkillEvents } from './skill-presentation.js';
 import { boundedMasteryLevels, validMasteryLevels } from '../content/skill-growth.js';
 const validLevels = validMasteryLevels;
@@ -390,8 +391,10 @@ export class CoopSession {
       this.inputLeft = Math.min(this.inputLeft + dt, 8 * TICK_MS);
       while (this.inputLeft >= TICK_MS) {
         this.inputLeft -= TICK_MS;
-        const packet = this.sender.packet(this.tickInput, load, this.eventAck);
-        if (this.phase === 'running' && !this.suspended) this.prediction.advance(packet, this.tickInput, TICK_MS);
+        const live = this.phase === 'running' && !this.suspended;
+        const command = live ? guestTickInput(this.prediction.state, this.tickInput, this.prediction) : this.tickInput;
+        const packet = this.sender.packet(command, load, this.eventAck);
+        if (live) this.prediction.advance(packet, command, TICK_MS);
         this.sendRt(packet);
         this.tickInput = mergeInput(null, this.tickInput);
         for (const k of EDGES) this.tickInput[k] = false;

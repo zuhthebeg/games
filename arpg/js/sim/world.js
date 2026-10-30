@@ -461,9 +461,9 @@ function stepPlayer(world, p, inp) {
 
   // Auto attack (cocy 10-11 option): the basic attack is held for the player only while a
   // hostile is inside its real reach, aimed at that hostile. Dodge and skills stay manual.
-  const autoTarget = !p.invisibleUntil && !inp.attack && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
+  const autoTarget = !p.invisibleUntil && !inp.attack && typeof inp.autoStart !== 'boolean' && inp.autoAttack && !p.act && !(p.cds[w.basic] > 0)
     ? basicReachTarget(world, p, comboDef(w.basic, nextComboStep(p), p.weaponForm)) : null;
-  if (!p.act && (inp.attack || autoTarget) && !(p.cds[w.basic] > 0)
+  if (!p.act && (inp.attack || inp.autoStart || autoTarget) && !(p.cds[w.basic] > 0)
     && (!p.pendingCounter || p.bufferDodge > 0 || skillPressed || inp.scrollEdge)) {
     startAct(world, p, w.basic, autoTarget ? Math.atan2(autoTarget.y - p.y, autoTarget.x - p.x) : resolveAim(world, p, inp, mlen));
     bindAttackPose(world, p, p.act, inp);

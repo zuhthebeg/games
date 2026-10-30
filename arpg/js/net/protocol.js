@@ -24,10 +24,25 @@ const q = v => Math.round(finite(v) * 100) / 100;
 // Cumulative edge counters survive dropped RT packets; receiver queues each press once.
 // Guests send one packet per 30Hz sim tick; `prev` repeats the two prior movement
 // commands so a dropped relay message does not lose a tick of movement.
+// Separate cumulative edge: held attack and legacy autoAttack keep their meanings.
+function applyAutoStart(rx, cmd) {
+  rx.value.autoStart = typeof cmd.autoStart === 'boolean' ? false : undefined;
+  const n = cmd.edges?.autoStart;
+  if (Number.isSafeInteger(n) && n >= rx.autoStartSeen) {
+    rx.autoStartPending = Math.min(MAX_PENDING_EDGES, rx.autoStartPending + (n - rx.autoStartSeen));
+    rx.autoStartSeen = n;
+  }
+}
+function consumeAutoStart(rx, input) {
+  if (typeof input.autoStart !== 'boolean') return;
+  input.autoStart = rx.autoStartPending > 0;
+  if (input.autoStart) rx.autoStartPending--;
+}
 export class InputSender {
-  constructor() { this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; this.skillViews = {}; }
+  constructor() { this.autoStarts = 0; this.seq = 0; this.edges = Object.fromEntries(EDGES.map(k => [k, 0])); this.history = []; this.dodgeViews = []; this.skillViews = {}; }
   packet(input = {}, load = 0, ack = 0) {
     for (const k of EDGES) if (input[k]) this.edges[k]++;
+    if (input.autoStart) this.autoStarts++;
     const poseTick = Number.isFinite(input.poseTick) && input.poseTick >= 0 ? input.poseTick : undefined;
     const viewTick = Number.isSafeInteger(input.viewTick) && input.viewTick >= 0 ? input.viewTick : undefined;
     if (input.dodgeEdge) this.dodgeViews = [...this.dodgeViews, [this.edges.dodgeEdge, viewTick]].slice(-4);
@@ -37,10 +52,10 @@ export class InputSender {
     }
     const v = ['mx', 'my', 'aimX', 'aimY'].map(k => q(input[k]));
     const packet = { t: 'input', seq: ++this.seq, v, prev: this.history.slice(),
-      ...(poseTick !== undefined ? { poseTick } : {}), attack: !!input.attack, autoAttack: !!input.autoAttack, dodgeHeld:!!input.dodgeHeld, edges: { ...this.edges }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
+      ...(poseTick !== undefined ? { poseTick } : {}), ...(typeof input.autoStart === 'boolean' ? { autoStart: input.autoStart } : {}), attack: !!input.attack, autoAttack: !!input.autoAttack, dodgeHeld:!!input.dodgeHeld, edges: { ...this.edges, autoStart: this.autoStarts }, load, ack, ...(viewTick !== undefined ? { viewTick } : {}),
       ...(this.dodgeViews.length ? { dodgeViews: this.dodgeViews.map(row => [...row]) } : {}),
       ...(Object.keys(this.skillViews).length ? { skillViews: Object.fromEntries(Object.entries(this.skillViews).map(([k, rows]) => [k, rows.map(row => [...row])])) } : {}) };
-    this.history = [...this.history, [packet.seq, v, { edges: { ...packet.edges }, viewTick, poseTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
+    this.history = [...this.history, [packet.seq, v, { autoStart: packet.autoStart, attack: packet.attack, autoAttack: packet.autoAttack, edges: { ...packet.edges }, viewTick, poseTick, dodgeViews: packet.dodgeViews, skillViews: packet.skillViews }]].slice(-2);
     return packet;
   }
 }
@@ -50,7 +65,7 @@ export class InputSender {
 // command per tick (bounded latency) instead of growing after a burst.
 export class InputQueue {
   constructor() {
-    this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
+    this.autoStartSeen = 0; this.autoStartPending = 0; this.seq = 0; this.last = 0; this.at = 0; this.queue = []; this.primed = false; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0])); this.pending = { ...this.seen };
     this.skillPoseTicks = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
@@ -60,11 +75,11 @@ export class InputQueue {
   receive(p, now = 0) {
     if (p?.t !== 'input' || !Number.isSafeInteger(p.seq) || p.seq <= this.last || !Array.isArray(p.v)) return false;
     this.newestDodgeHeld=!!p.dodgeHeld;
-    const held = { attack: !!p.attack, autoAttack: !!p.autoAttack };
+    const held = { autoStart: typeof p.autoStart === 'boolean' ? p.autoStart : undefined, attack: !!p.attack, autoAttack: !!p.autoAttack };
     for (const row of Array.isArray(p.prev) ? p.prev : []) {
       const [seq, v, metadata] = Array.isArray(row) ? row : [];
       if (Number.isSafeInteger(seq) && seq > this.last && seq < p.seq && Array.isArray(v)) {
-        this.queue.push({ seq, v, ...held, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, poseTick: metadata?.poseTick, dodgeViews: metadata?.dodgeViews, skillViews: metadata?.skillViews, arrived: now }); this.last = seq;
+        this.queue.push({ seq, v, autoStart: metadata?.autoStart ?? held.autoStart, attack: metadata?.attack ?? held.attack, autoAttack: metadata?.autoAttack ?? held.autoAttack, edges: metadata?.edges ?? null, viewTick: metadata?.viewTick, poseTick: metadata?.poseTick, dodgeViews: metadata?.dodgeViews, skillViews: metadata?.skillViews, arrived: now }); this.last = seq;
       }
     }
     this.queue.push({ seq: p.seq, v: p.v, ...held, edges: p.edges, viewTick: p.viewTick, poseTick: p.poseTick, dodgeViews: p.dodgeViews, skillViews: p.skillViews, arrived: now }); this.last = p.seq; this.at = now;
@@ -73,6 +88,7 @@ export class InputQueue {
   }
   apply(cmd) {
     this.seq = cmd.seq;
+    applyAutoStart(this, cmd);
     ['mx', 'my', 'aimX', 'aimY'].forEach((k, i) => { this.value[k] = finite(cmd.v[i]); });
     this.value.viewTick = cmd.viewTick; this.value.poseTick = cmd.poseTick;
     this.value.attack = cmd.attack; this.value.autoAttack = cmd.autoAttack;
@@ -103,6 +119,7 @@ export class InputQueue {
     if (packet && !this.receive(packet, now)) return false;
     for (const cmd of this.queue) this.apply(cmd);
     this.queue = []; this.primed = false;
+    this.autoStartPending = 0;
     this.pending = Object.fromEntries(EDGES.map(k => [k, 0]));
     this.skillPoseTicks = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
     this.dodgeViews = []; this.skillViews = Object.fromEntries(TIMED_SKILL_EDGES.map(k => [k, []]));
@@ -123,10 +140,12 @@ export class InputQueue {
       this.primed = false; this.stats.starved++;
       const input = { ...this.value, mx: 0, my: 0, dodgeHeld:this.newestDodgeHeld };
       for (const k of EDGES) input[k] = false;
+      if (typeof input.autoStart === 'boolean') input.autoStart = false;
       return input;
     }
     const input = { ...this.value, dodgeHeld:now-this.at<=1000 && this.newestDodgeHeld };
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
+    consumeAutoStart(this, input);
     if (input.dodgeEdge) input.viewTick = this.dodgeViews.shift();
     input.skillViewTicks = {}; input.skillPoseTicks = {};
     for (const k of TIMED_SKILL_EDGES) if (input[k]) { input.skillViewTicks[k] = this.skillViews[k].shift(); input.skillPoseTicks[k] = this.skillPoseTicks[k].shift(); }
@@ -135,13 +154,14 @@ export class InputQueue {
 }
 export class InputLatch {
   constructor() {
-    this.seq = 0; this.at = 0; this.value = emptyInput();
+    this.autoStartSeen = 0; this.autoStartPending = 0; this.seq = 0; this.at = 0; this.value = emptyInput();
     this.seen = Object.fromEntries(EDGES.map(k => [k, 0]));
     this.pending = { ...this.seen };
   }
   receive(p, now = 0) {
     if (p?.t !== 'input' || !Number.isSafeInteger(p.seq) || p.seq <= this.seq || !Array.isArray(p.v)) return false;
     this.seq = p.seq; this.at = now;
+    applyAutoStart(this, p);
     ['mx', 'my', 'aimX', 'aimY'].forEach((k, i) => { this.value[k] = finite(p.v[i]); });
     this.value.attack = !!p.attack; this.value.autoAttack = !!p.autoAttack; this.value.dodgeHeld=!!p.dodgeHeld;
     for (const k of EDGES) {
@@ -154,6 +174,7 @@ export class InputLatch {
   }
   discard(packet, now = this.at) {
     if (packet && !this.receive(packet, now)) return false;
+    this.autoStartPending = 0;
     this.pending = Object.fromEntries(EDGES.map(k => [k, 0])); this.value = emptyInput();
     return true;
   }
@@ -162,6 +183,7 @@ export class InputLatch {
     // A hidden/disconnected tab cannot leave movement or auto-attack held indefinitely.
     if (now - this.at > 1000) Object.assign(input, { mx: 0, my: 0, attack: false, autoAttack: false, dodgeHeld:false });
     for (const k of EDGES) { input[k] = this.pending[k] > 0; if (input[k]) this.pending[k]--; }
+    consumeAutoStart(this, input);
     return input;
   }
 }
