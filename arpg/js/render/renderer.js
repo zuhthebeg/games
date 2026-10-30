@@ -189,6 +189,7 @@ export class ArenaRenderer {
     const ownerKey = `${entity.kind}|${entity.pid ?? ''}`;
     if (view && view.ownerKey !== ownerKey) {
       view.lastCast = null;
+      view.passedCastStarts?.clear();
       view.ownerKey = ownerKey;
     }
     if (view && !!view.skeletal !== !!entity.skeletal) {
@@ -240,7 +241,8 @@ export class ArenaRenderer {
       stopLeft: 0, flashLeft: 0, flashAlpha: 0, kickAge: FEEL.kick.life,
       kickX: 0, kickY: 0, trailLeft: 0,
       ownerKey,
-      lastCast: null
+      lastCast: null,
+      passedCastStarts: new Map()
     };
     this.views.set(entity.id, view);
     return view;
@@ -440,6 +442,29 @@ export class ArenaRenderer {
     vector.aimY = (y - this.root.y) / this.scale - particle.y;
   }
 
+  presentPassedActs(world, entity, view) {
+    if (entity.id === this.local?.id) return;
+    for (const passed of world.passedActs || []) {
+      if (passed.entityId !== entity.id) continue;
+      const act = passed.act;
+      const castStart = Number.isFinite(passed.castStart) ? passed.castStart
+        : Number.isFinite(act?.castTick) ? act.castTick : world.tick - (act?.elapsed || 0);
+      const identity = `${act?.id}|${act?.step ?? 0}|${!!act?.counter}|${castStart}`;
+      if (view.passedCastStarts.has(identity)) continue;
+      view.passedCastStarts.set(identity, { castStart, passedTick: passed.passedTick ?? world.positionTick ?? world.tick });
+      const canTrail = entity.kind === 'player' && act?.def?.shape && !act.def.heal && !SKILL_VFX[act.id];
+      if (!canTrail) continue;
+      const blunt = entity.kind === 'player' && (act.def.requiresForm === 'blunt' || (act.step && entity.weaponForm === 'blunt'));
+      const visual = this.skillVfx.visual(this.skillVfx.level(entity, act.id), act.id, this.reduced);
+      this.effect(view.x, view.y, 0, blunt ? 0xe88e50 : 0xc9ece3, FEEL.trail.life,
+        act.def.comboTrail || (blunt ? 'blunt' : 'slash'), act.def.shape, act.facing, visual);
+      if (visual.extraParticles) this.burst(view.x, view.y,
+        { ...FEEL.impact.normal, sparks: visual.extraParticles }, 0xe88e50, act.facing);
+    }
+    for (const [identity, passed] of view.passedCastStarts)
+      if ((world.positionTick ?? world.tick) - passed.passedTick > 12) view.passedCastStarts.delete(identity);
+  }
+
   render(world, alpha, deltaTime) {
     world=presentationWorld(world);
     this.local = world.entities[0];
@@ -507,6 +532,7 @@ export class ArenaRenderer {
         view.x = view.prevX + (entity.x - view.prevX) * alpha;
         view.y = view.prevY + (entity.y - view.prevY) * alpha;
       }
+      this.presentPassedActs(world, entity, view);
       const kick = this.reduced ? 0 : kickEnvelope(view.kickAge);
       if (!frozen) view.kickAge = Math.min(FEEL.kick.life, view.kickAge + visualDelta);
       view.visual.container.position.set(view.x + view.kickX * kick, view.y + view.kickY * kick);
@@ -589,17 +615,23 @@ export class ArenaRenderer {
       const act = entity.act, active = act?.phase === 'active';
       const presentationSeq = act?.presentationSeq;
       const activeKey = act
-        ? (presentationSeq !== undefined ? `seq:${presentationSeq}` : `${act.id}|${act.step ?? 0}`)
+        ? (presentationSeq !== undefined ? `seq:${presentationSeq}`
+          : Number.isFinite(act.presentationAuthorityStart) ? `auth:${act.presentationAuthorityStart}` : `${act.id}|${act.step ?? 0}`)
         : null;
       const elapsed = Number.isFinite(act?.elapsed) ? act.elapsed : 0;
       const castStart = act
-        ? (Number.isFinite(act.castTick) ? act.castTick : world.tick - elapsed)
+        ? (Number.isFinite(act.presentationAuthorityStart) ? act.presentationAuthorityStart
+          : Number.isFinite(act.castTick) ? act.castTick : world.tick - elapsed)
         : null;
       const sameCast = !!act && view.lastCast && view.lastCast.key === activeKey
         && (presentationSeq !== undefined
           || (elapsed >= view.lastCast.elapsed && Math.abs(castStart - view.lastCast.castStart) <= 4));
       let cast = sameCast ? view.lastCast : null;
       if (act && !cast) cast = { key: activeKey, castStart, elapsed, seenActive: false, trailFired: false };
+      if (act && view.passedCastStarts.has(`${act.id}|${act.step ?? 0}|${!!act.counter}|${castStart}`)) {
+        cast.seenActive = true;
+        cast.trailFired = true;
+      }
       const canTrail = entity.kind === 'player' && !!activeKey && act.def.shape && !act.def.heal && !SKILL_VFX[act.id];
       const fireTrail = () => {
         const visual = this.skillVfx.visual(this.skillVfx.level(entity, act.id), act.id, this.reduced);

@@ -31,24 +31,24 @@ test('insufficient MP, cooldown, death, channel and guard never invent a local a
     assert.equal(p.view(view).entities[0].act, null, JSON.stringify(patch));
   }
 });
-test('accepted act aligns to authoritative elapsed and rejected acknowledged act disappears', () => {
+test('accepted act fast-forwards its cosmetic clock without rewinding it', () => {
   const { view, p } = fixture(); advance(p, 1, { skillEdge: true });
   const accepted = structuredClone(view); accepted.tick = 3; accepted.entities[0].lastInputSeq = 1;
   accepted.entities[0].act = { ...p.state.act, elapsed: 5, left: 2 }; delete accepted.entities[0].act.presentationSeq; p.reconcile(accepted);
   assert.equal(p.view(accepted).entities[0].act.elapsed, 5);
-  const rejected = structuredClone(accepted); rejected.tick++; rejected.entities[0].act = null; rejected.entities[0].lastInputSeq = 2; p.reconcile(rejected);
-  assert.equal(p.view(rejected).entities[0].act, null);
 });
-test('visible unconfirmed act survives its timeout but expires at the hard cap', () => {
+test('unbound act survives wall-clock timeout and rejects at the acknowledgement horizon', () => {
   const { view, p } = fixture({ skills: ['meteor'] }); p.presentationTimeout = 180;
   advance(p, 1, { skillEdge: true });
   assert.equal(p.view(view).entities[0].act?.id, 'meteor');
   for (let seq = 2; seq <= 7; seq++) advance(p, seq);
-  assert.equal(p.view(view).entities[0].act?.id, 'meteor', 'visible act survives the ordinary timeout');
-  for (let seq = 8; seq <= 12; seq++) advance(p, seq);
-  assert.equal(p.view(view).entities[0].act, null);
-  const stale = structuredClone(view); stale.tick = 1; p.reconcile(stale);
-  assert.equal(p.view(stale).entities[0].act, null);
+  assert.equal(p.view(view).entities[0].act?.id, 'meteor', 'a presentation is not hidden by its age');
+  const row = p.attacks.starts.get(1), horizon = 1 + 12 + row.windowTicks;
+  const rejected = structuredClone(view); rejected.tick = horizon;
+  rejected.entities[0].lastInputSeq = horizon; rejected.entities[0].act = null;
+  p.reconcile(rejected);
+  assert.equal(row.rejected, true);
+  assert.equal(p.view(rejected).entities[0].act, null);
 });
 
 test('unconfirmed projectile copies are display-only and yield to authoritative counterparts', () => {
@@ -76,15 +76,18 @@ test('confirmed pending projectile retains its presentation until range or autho
   assert.equal(pending.length, 1);
   assert.equal(pending[0].presentationAlpha, .55);
 });
-test('completed local cast is not replayed by late confirmation and rejection removes projectile copies', () => {
+test('completed local cast is not replayed by late confirmation; delivery removes local projectile copies', () => {
   const { view, p } = fixture(); p.presentationTimeout = 1800;
   advance(p, 1, { skillEdge: true }); const acceptedAct = structuredClone(p.state.act); delete acceptedAct.presentationSeq;
   for (let seq = 2; seq < 30; seq++) advance(p, seq);
   assert.equal(p.view(view).entities[0].act, null);
   const accepted = structuredClone(view); accepted.tick = 10; accepted.entities[0].lastInputSeq = 29; accepted.entities[0].act = acceptedAct;
   p.reconcile(accepted); assert.equal(p.view(accepted).entities[0].act, null, 'no second windup');
-  accepted.tick++; accepted.entities[0].act = null; p.reconcile(accepted);
+  accepted.tick++; accepted.entities[0].act = null;
+  accepted.projectiles = [{ id: 71, ownerId: accepted.entities[0].id, abilityId: 'ember_bolt' }];
+  p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.filter(pr => pr.presentation).length, 0);
+  assert.equal(p.view(accepted).projectiles.filter(pr => pr.id === 71).length, 1);
 });
 
 test('an early accepted windup still presents its first projectile locally, then coalesces with authority', () => {
@@ -95,6 +98,9 @@ test('an early accepted windup still presents its first projectile locally, then
   for (let seq = 2; seq < 20 && !p.view(accepted).projectiles.some(pr=>pr.presentation); seq++) advance(p, seq);
   assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 1);
   accepted.tick++; accepted.entities[0].lastInputSeq = 20; accepted.entities[0].act = null; p.reconcile(accepted);
+  assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 1);
+  accepted.projectiles = [{ id: 72, ownerId: accepted.entities[0].id, abilityId: 'ember_bolt' }];
+  p.reconcile(accepted);
   assert.equal(p.view(accepted).projectiles.filter(pr=>pr.presentation).length, 0);
 });
 
