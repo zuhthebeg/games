@@ -15,17 +15,21 @@ function drawBlock(block, phase) {
   block.face = face;
   block.body.clear();
   block.faceNode.clear();
+  const flat = face === 'flat';
   block.body.moveTo(-15, 0).quadraticCurveTo(-12, -9, -4, -9)
     .quadraticCurveTo(1, -9, 3, -4).quadraticCurveTo(6, -1, 13, -2)
     .quadraticCurveTo(16, 0, 13, 2).quadraticCurveTo(6, 1, 3, 4)
     .quadraticCurveTo(1, 9, -4, 9).quadraticCurveTo(-12, 9, -15, 0)
-    .fill({ color: face === 'flat' ? 0xb84743 : 0x7f242c, alpha: .98 })
-    .stroke({ color: 0x431b1e, width: 1.5, alpha: .95 });
-  if (face === 'flat') {
-    block.faceNode.roundRect(-10, -4, 20, 8, 3).fill({ color: 0xd8786b, alpha: .55 });
+    .fill({ color: flat ? 0xc0614f : 0x8a1f2a, alpha: .98 })
+    .stroke({ color: flat ? 0x61362f : 0x3c1018, width: flat ? .85 : 1.2, alpha: .95 });
+  if (flat) {
+    block.faceNode.roundRect(-10, -4, 20, 8, 2).fill({ color: 0xd17a67, alpha: .8 })
+      .stroke({ color: 0x8e4b3e, width: .75, alpha: .8 });
   } else {
-    block.faceNode.ellipse(-4, -2, 7, 4).fill({ color: 0xd45d51, alpha: .45 });
-    block.faceNode.ellipse(-5, -3, 3, 1.5).fill({ color: 0xf0a08b, alpha: .55 });
+    block.faceNode.ellipse(-3, -1, 7, 4).fill({ color: 0xb24349, alpha: .82 });
+    block.faceNode.moveTo(-10, -1).quadraticCurveTo(-5, -7, 3, -5)
+      .stroke({ color: 0xe77b6e, width: 1.4, alpha: .9 });
+    block.faceNode.ellipse(-6, -4, 2.4, 1.2).fill({ color: 0xffb09d, alpha: .7 });
   }
 }
 
@@ -74,9 +78,9 @@ export class RitualVfx {
       const reveal = Math.min(1, age / 1.2);
       [-7, 0, 7].forEach((offset, index) => {
         const node = this.sticks[index];
-        node.clear().moveTo(offset, 4).lineTo(offset + (index - 1) * 1.2, -23)
-          .stroke({ color: 0x9a5038, width: 2.2, alpha: .95 })
-          .circle(offset + (index - 1) * 1.2, -25, 3.2).fill({ color: 0xd77c3e, alpha: .35 + reveal * .2 });
+        node.clear().moveTo(offset, 4).lineTo(offset + (index - 1) * 1.2, -32)
+          .stroke({ color: 0x9a5038, width: 3, alpha: .95 })
+          .circle(offset + (index - 1) * 1.2, -34, 3.2).fill({ color: 0xff8a3d, alpha: .85 });
         node.position.set(INCENSE_POINT.target.x, INCENSE_POINT.target.y);
         node.alpha = reveal;
         node.visible = true;
@@ -117,7 +121,7 @@ export class RitualVfx {
       drawBlock(block, phase);
       block.node.position.set(x, y);
       block.node.rotation = Math.sin(progress * Math.PI) * .25;
-      block.node.scale.set(1, .25 + Math.abs(Math.cos(phase)) * .75);
+      block.node.scale.set(1.7, (0.25 + Math.abs(Math.cos(phase)) * .75) * 1.7);
       block.node.alpha = reduced && active.phase === 'settled' ? Math.min(1, active.elapsed / .32) : 1;
       block.node.visible = true;
       if (flight) for (const impact of plan.impactTimes) {
