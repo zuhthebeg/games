@@ -4,7 +4,7 @@ import { SANCTUARY } from '../js/content/sanctuary.js';
 import { movementOnlyInput } from '../js/input.js';
 import {
   RITUAL_CAPS, RITUAL_POINTS, CHIAO_RESULTS, advanceRitual, cancelRitual, chiaoPlan, createRitualState,
-  faceAtPhase, nearestRitual, resultForFaces, ritualMovement, startRitual, throwChiao,
+  faceAtPhase, nearestRitual, resetRitual, resultForFaces, ritualMovement, startRitual, throwChiao,
 } from '../js/render/ritual-state.js';
 
 test('all four face combinations map to the authored result names', () => {
@@ -26,14 +26,30 @@ test('chiao plans always finish on their decided faces', () => {
   }
 });
 
-test('busy ritual starts are ignored and cancel resets presentation state', () => {
+test('busy ritual starts are ignored and cancellation preserves incense sticks', () => {
   const state = createRitualState();
   assert.equal(startRitual(state, 'incense', { origin: { x: 522, y: 602 } }), true);
   for (let i = 0; i < 1000; i++) assert.equal(startRitual(state, 'burn'), false);
   assert.equal(state.sticksLeft, 20);
   cancelRitual(state);
   assert.equal(state.active, null);
+  assert.equal(state.sticksLeft, 20);
+  resetRitual(state);
   assert.equal(state.sticksLeft, 0);
+});
+
+test('cancelling chiao and burn preserves incense sticks while reset clears them', () => {
+  for (const id of ['chiao', 'burn']) {
+    const state = createRitualState();
+    startRitual(state, 'incense', { origin: { x: 522, y: 602 } });
+    advanceRitual(state, 1.2);
+    assert.ok(state.sticksLeft > 0);
+    startRitual(state, id, { origin: { x: 700, y: 400 } });
+    cancelRitual(state);
+    assert.ok(state.sticksLeft > 0, `${id} cancellation should preserve the incense`);
+    resetRitual(state);
+    assert.equal(state.sticksLeft, 0);
+  }
 });
 
 test('fixed ritual pools remain bounded after rapid starts', () => {
@@ -88,4 +104,34 @@ test('chiao throw decides before entering its animation', () => {
   assert.equal(throwChiao(state, ['flat', 'convex'], 7), true);
   assert.deepEqual(state.active.faces, ['flat', 'convex']);
   assert.equal(state.active.result.name, '聖筊 성교');
+});
+
+test('chiao impact tokens include the final bounce at different frame sizes', () => {
+  const steps = [1 / 60, 0.1, 0.25, 5];
+  for (const seed of [0, 1, 7, 19, 73]) {
+    for (const step of steps) {
+      const state = createRitualState();
+      startRitual(state, 'chiao', { origin: { x: 700, y: 400 } });
+      throwChiao(state, ['flat', 'convex'], seed);
+      const expected = state.active.plan.reduce((sum, plan) => sum + plan.impactTimes.length, 0);
+      while (state.active?.phase === 'flight') advanceRitual(state, step);
+      assert.equal(state.pendingToks, expected, `seed ${seed}, step ${step}`);
+    }
+  }
+});
+
+test('cancelling chiao mid-flight clears queued impact tokens', () => {
+  const state = createRitualState();
+  startRitual(state, 'chiao', { origin: { x: 700, y: 400 } });
+  throwChiao(state, ['flat', 'convex'], 0);
+  advanceRitual(state, 0.6);
+  assert.ok(state.pendingToks > 0);
+  cancelRitual(state);
+  assert.equal(state.pendingToks, 0);
+  startRitual(state, 'chiao', { origin: { x: 700, y: 400 } });
+  throwChiao(state, ['flat', 'convex'], 0);
+  advanceRitual(state, 0.6);
+  assert.ok(state.pendingToks > 0);
+  resetRitual(state);
+  assert.equal(state.pendingToks, 0);
 });
