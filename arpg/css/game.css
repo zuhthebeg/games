@@ -200,9 +200,9 @@ button[aria-pressed="true"] {
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 50%;
-  width: min(430px, calc(100% - 32px));
-  transform: translate(-50%, -50%);
+  bottom: 96px;
+  width: min(560px, calc(100% - 32px));
+  transform: translateX(-50%);
   padding: 20px;
   border: 1px solid #806b48;
   border-radius: 8px;
@@ -213,11 +213,26 @@ button[aria-pressed="true"] {
 
 .ritual-panel h2, .ritual-panel h3 { margin: 0 0 10px; }
 .ritual-panel p { margin: 8px 0; }
+.ritual-panel > :last-child { margin-bottom: 0; }
 .ritual-panel button {
   width: 100%;
   margin-top: 8px;
   padding: 10px;
   background: #654a2f;
+}
+
+@media (max-width: 600px) {
+  .ritual-panel {
+    left: 12px;
+    right: 12px;
+    bottom: calc(190px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 12px;
+  }
+  .ritual-panel h2, .ritual-panel h3 { margin-bottom: 6px; }
+  .ritual-panel p { margin: 6px 0; font-size: 13px; line-height: 1.35; }
 }
 
 .ritual-feedback {
