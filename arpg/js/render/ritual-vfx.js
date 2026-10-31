@@ -42,7 +42,7 @@ export class RitualVfx {
       const node = new Container(), body = new Graphics(), faceNode = new Graphics();
       node.addChild(body, faceNode); layer.addChild(node);
       node.visible = false;
-      return { node, body, faceNode, face: null, played: [] };
+      return { node, body, faceNode, face: null };
     });
     this.sticks = Array.from({ length: RITUAL_CAPS.sticks }, () => {
       const node = new Graphics(); node.visible = false; layer.addChild(node); return node;
@@ -51,8 +51,6 @@ export class RitualVfx {
       const node = new Graphics(); node.visible = false; layer.addChild(node); return { node, index };
     });
     this.paper = new Graphics(); this.paper.visible = false; layer.addChild(this.paper);
-    this.activeSeq = 0;
-    this.lastElapsed = 0;
   }
 
   resetNodes(stopAudio = false) {
@@ -65,13 +63,14 @@ export class RitualVfx {
 
   clear() {
     this.resetNodes(true);
-    this.activeSeq = 0;
-    this.lastElapsed = 0;
   }
 
   update(state, player, reduced) {
     this.resetNodes(false);
     if (!state) return;
+    const pendingToks = Number.isFinite(state.pendingToks) ? Math.max(0, Math.floor(state.pendingToks)) : 0;
+    for (let i = 0; i < Math.min(4, pendingToks); i++) this.onTok();
+    state.pendingToks = 0;
     const active = state.active;
     const age = Math.max(0, 20 - state.sticksLeft);
     if (state.sticksLeft > 0 || active?.id === 'incense') {
@@ -92,11 +91,6 @@ export class RitualVfx {
   }
 
   updateChiao(active, reduced) {
-    if (active.seq !== this.activeSeq) {
-      this.activeSeq = active.seq;
-      this.lastElapsed = 0;
-      this.blocks.forEach(block => { block.face = null; block.played = []; });
-    }
     const flight = active.phase === 'flight';
     this.blocks.forEach((block, index) => {
       const plan = active.plan[index];
@@ -124,13 +118,7 @@ export class RitualVfx {
       block.node.scale.set(1.7, (0.25 + Math.abs(Math.cos(phase)) * .75) * 1.7);
       block.node.alpha = reduced && active.phase === 'settled' ? Math.min(1, active.elapsed / .32) : 1;
       block.node.visible = true;
-      if (flight) for (const impact of plan.impactTimes) {
-        if (this.lastElapsed < impact && active.elapsed >= impact && !block.played.includes(impact)) {
-          block.played.push(impact); this.onTok();
-        }
-      }
     });
-    this.lastElapsed = active.elapsed;
   }
 
   updateBurn(active, reduced) {

@@ -20,7 +20,7 @@ import { masteryLevels } from '../meta/skill-mastery.js';
 import { bakeBiome } from './biome-map.js';
 import { SceneAssetState } from './scene-asset-state.js';
 import { RitualVfx } from './ritual-vfx.js';
-import { cancelRitual } from './ritual-state.js';
+import { resetRitual } from './ritual-state.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 class IncenseSmoke {
   constructor(layer) {
@@ -214,7 +214,7 @@ export class ArenaRenderer {
   }
 
   reset(world, reduced = false, equipmentSave) {
-    if (this.ritualState) cancelRitual(this.ritualState);
+    if (this.ritualState) resetRitual(this.ritualState);
     this.ritualAudio.stopAudio?.();
     this.ritualFx?.destroy();
     this.ritualFx = null;
@@ -307,7 +307,7 @@ export class ArenaRenderer {
   }
 
   leaveSanctuary() {
-    if (this.ritualState) cancelRitual(this.ritualState);
+    if (this.ritualState) resetRitual(this.ritualState);
     this.ritualAudio.stopAudio?.();
     this.ritualFx?.destroy();
     this.ritualFx = null;

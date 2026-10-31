@@ -26,7 +26,7 @@ import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, OR
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, settleInvasion, emptyLoot, currentLoad } from './meta/run.js';
 import {
-  advanceRitual, cancelRitual, createRitualState, nearestRitual, ritualMovement,
+  advanceRitual, cancelRitual, createRitualState, nearestRitual, resetRitual, ritualMovement,
   startRitual, throwChiao,
 } from './render/ritual-state.js';
 
@@ -143,8 +143,13 @@ try {
   const query = new URLSearchParams(location.search);
   const forcedFaces = query.get('dev') === '1' ? query.get('ritualFace')?.split(',').filter(face => face === 'flat' || face === 'convex') : null;
   const ritualFaces = () => forcedFaces?.length === 2 ? forcedFaces : [...crypto.getRandomValues(new Uint8Array(2))].map(value => value < 128 ? 'flat' : 'convex');
-  function clearRitual() {
+  function cancelActiveRitual() {
     cancelRitual(ritualState);
+    renderer.clearRitual();
+    hud.syncRitual(ritualState, null);
+  }
+  function resetRituals() {
+    resetRitual(ritualState);
     renderer.clearRitual();
     hud.syncRitual(ritualState, null);
   }
@@ -152,7 +157,7 @@ try {
     const nearby = player ? nearestRitual(player.x, player.y) : null;
     ritualState.nearby = nearby;
     if (ritualState.active && (consumed.escapeEdge || consumed.scrollEdge)) {
-      clearRitual();
+      cancelActiveRitual();
       return true;
     }
     if (!ritualState.active && consumed.ritualEdge && nearby) {
@@ -168,7 +173,7 @@ try {
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     if (throwChiao(ritualState, ritualFaces(), seed) && ritualState.active.reduced) audio.playWoodTok();
   });
-  document.addEventListener('arpg:ritual-cancel', clearRitual);
+  document.addEventListener('arpg:ritual-cancel', cancelActiveRitual);
   const resultPresentation = victoryResultDelay({ onClear: () => hud.showClear(), onCancel: () => hud.hideClear() });
   window.addEventListener('pagehide', () => resultPresentation.cancel());
   const hub = new HubUI({
@@ -265,7 +270,7 @@ try {
     input.reset();
     input.ritualMode = false;
     input.enabled = false;
-    clearRitual();
+    resetRituals();
     renderer.leaveSanctuary();
     renderer.root.visible = false;
     renderer.warning.visible = false;
@@ -284,7 +289,7 @@ try {
     input.reset();
     input.ritualMode = false;
     input.enabled = false;
-    clearRitual();
+    resetRituals();
     audio.stop();
     closeCoop();
     renderer.leaveSanctuary();

@@ -54,6 +54,7 @@ export function createRitualState() {
     active: null,
     nearby: null,
     feedback: null,
+    pendingToks: 0,
     sticksLeft: 0,
     serial: 0,
   };
@@ -119,6 +120,11 @@ export function throwChiao(state, faces, seed = 0) {
 export function cancelRitual(state) {
   state.active = null;
   state.feedback = null;
+  state.pendingToks = 0;
+}
+
+export function resetRitual(state) {
+  cancelRitual(state);
   state.sticksLeft = 0;
 }
 
@@ -131,11 +137,19 @@ export function advanceRitual(state, dt) {
   }
   const active = state.active;
   if (!active) return;
+  const previousElapsed = active.elapsed;
   active.elapsed += seconds;
   if (active.id === 'chiao') {
-    if (active.phase === 'flight' && active.elapsed >= Math.max(...active.plan.map(plan => plan.duration))) {
-      active.phase = 'settled';
-      active.elapsed = 0;
+    if (active.phase === 'flight') {
+      for (const plan of active.plan) {
+        for (const impact of plan.impactTimes) {
+          if (previousElapsed < impact && impact <= active.elapsed) state.pendingToks++;
+        }
+      }
+      if (active.elapsed >= Math.max(...active.plan.map(plan => plan.duration))) {
+        active.phase = 'settled';
+        active.elapsed = 0;
+      }
     } else if (active.phase === 'settled' && active.elapsed >= 8) {
       state.active = null;
     }
