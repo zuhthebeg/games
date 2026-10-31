@@ -5,6 +5,7 @@ import { MAX_LEVEL, xpSpan } from '../meta/progression.js';
 import { MONSTER_NAMES } from '../content/monsters.js';
 import { icon } from './icons.js';
 import { skillIcon } from './skill-view.js';
+import { CHIAO_FOOTER, RITUAL_CANCEL_HINT } from '../render/ritual-state.js';
 
 const $ = (selector) => document.querySelector(selector);
 const PATTERN_NAMES = {
@@ -36,8 +37,12 @@ export class HUD {
     for (const id of [
       'hp-fill', 'hp-text', 'mp-fill', 'mp-text', 'stage-name', 'objective', 'potion', 'mana',
       'green', 'green-active', 'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
-      'lv-text', 'xp-fill', 'xp-pending',
+      'lv-text', 'xp-fill', 'xp-pending', 'ritual',
     ]) this.nodes[id] = $(`#${id}`);
+    this.ritualFeedback = document.createElement('div');
+    this.ritualFeedback.className = 'ritual-feedback';
+    this.ritualFeedback.hidden = true;
+    $('#hud').append(this.ritualFeedback);
     this.party = document.createElement('section');
     this.party.id = 'party-vitals';
     this.party.setAttribute('aria-label', '파티원 HP');
@@ -81,7 +86,12 @@ export class HUD {
       label.textContent = name;
       if (!skills[i]) node.insertAdjacentHTML('afterbegin', '<i class="slot-blocked" aria-hidden="true">✕</i>');
     });
-    for (const key of [...SLOT_NODES, 'dodge', 'attack', 'green', 'green-active', 'potion', 'mana']) this.nodes[key].hidden = this.sanctuary;
+    for (const key of [...SLOT_NODES, 'dodge', 'attack', 'green', 'green-active', 'potion', 'mana', 'ritual']) this.nodes[key].hidden = this.sanctuary;
+    this.nodes.ritual.hidden = true;
+    this.ritualPanel?.remove();
+    this.ritualPanel = null;
+    this.ritualPanelState = null;
+    this.ritualFeedback.hidden = true;
     $('#hud').hidden = false;
     $('#pause').hidden = true;
     this.nodes.notice.textContent = '';
@@ -94,6 +104,79 @@ export class HUD {
     }
     this.nodes['stage-name'].textContent = this.stage;
     this.update(world, 0);
+  }
+
+  syncRitual(state, nearby) {
+    if (!this.sanctuary) {
+      if (this.nodes.ritual) this.nodes.ritual.hidden = true;
+      this.ritualFeedback.hidden = true;
+      this.ritualPanel?.remove(); this.ritualPanel = null; this.ritualPanelState = null;
+      return;
+    }
+    const active = state?.active;
+    const feedback = state?.feedback;
+    const point = nearby || null;
+    state.nearby = point || null;
+    this.nodes.ritual.hidden = !point;
+    if (point) {
+      this.nodes.ritual.querySelector('.ritual-label').textContent = point.prompt;
+      this.nodes.ritual.setAttribute('aria-label', point.prompt);
+      this.nodes.ritual.title = point.prompt;
+    }
+    this.ritualFeedback.hidden = !feedback;
+    this.ritualFeedback.textContent = feedback ? [feedback.text, feedback.note].filter(Boolean).join(' ') : '';
+    if (active) {
+      this.nodes.notice.textContent = RITUAL_CANCEL_HINT;
+      this.noticeLeft = Infinity;
+    } else if (point) {
+      this.nodes.notice.textContent = point.prompt;
+      this.noticeLeft = Infinity;
+    } else {
+      this.nodes.notice.textContent = '비전투 공간 · 보상·저장 없음';
+      this.noticeLeft = Infinity;
+    }
+    if (active?.id !== 'chiao') {
+      this.ritualPanel?.remove(); this.ritualPanel = null; this.ritualPanelState = null;
+      return;
+    }
+    if (!this.ritualPanel) {
+      this.ritualPanel = document.createElement('section');
+      this.ritualPanel.className = 'ritual-panel';
+      this.ritualPanel.setAttribute('role', 'dialog');
+      this.ritualPanel.setAttribute('aria-label', '척교');
+      $('#hud').append(this.ritualPanel);
+    }
+    const panelState = `${active.seq}:${active.phase}`;
+    if (panelState === this.ritualPanelState) return;
+    this.ritualPanelState = panelState;
+    this.ritualPanel.replaceChildren();
+    const title = document.createElement('h2');
+    title.textContent = '척교';
+    this.ritualPanel.append(title);
+    if (active.phase === 'intro') {
+      const intro = document.createElement('p');
+      intro.textContent = '마음속으로 질문 하나를 정하세요. 질문은 입력하지 않으며 저장·전송되지 않아요.';
+      const throwButton = document.createElement('button');
+      throwButton.type = 'button'; throwButton.textContent = '패 던지기';
+      throwButton.addEventListener('click', () => document.dispatchEvent(new CustomEvent('arpg:ritual-throw')));
+      const cancel = document.createElement('button');
+      cancel.type = 'button'; cancel.className = 'secondary'; cancel.textContent = RITUAL_CANCEL_HINT;
+      cancel.addEventListener('click', () => document.dispatchEvent(new CustomEvent('arpg:ritual-cancel')));
+      this.ritualPanel.append(intro, throwButton, cancel);
+    } else if (active.phase === 'settled' && active.result) {
+      const name = document.createElement('h3');
+      name.textContent = active.result.name;
+      const description = document.createElement('p');
+      description.textContent = active.result.description;
+      const footer = document.createElement('p');
+      footer.className = 'muted'; footer.textContent = CHIAO_FOOTER;
+      this.ritualPanel.append(name, description, footer);
+    } else {
+      const cancel = document.createElement('p');
+      cancel.textContent = RITUAL_CANCEL_HINT;
+      this.ritualPanel.append(cancel);
+    }
+    this.ritualPanel.hidden = false;
   }
 
   showUndeadResult(state, { next, restart, leave }) {

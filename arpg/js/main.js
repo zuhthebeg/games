@@ -25,6 +25,10 @@ import { reloadIfStale } from './build-freshness.js';
 import { installKnightPresentation, showKnightArtStatus, HUMAN_PRESENTATIONS, ORIGINAL_PRESENTATIONS } from './solo/knight-presentation.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, settleInvasion, emptyLoot, currentLoad } from './meta/run.js';
+import {
+  advanceRitual, cancelRitual, createRitualState, nearestRitual, ritualMovement,
+  startRitual, throwChiao,
+} from './render/ritual-state.js';
 
 let world = null;
 let running = false;
@@ -99,6 +103,7 @@ try {
     (x, y, vector) => renderer.aim(x, y, vector),
   );
   input.setAutoAttack(input.autoAttack);
+  const ritualState = createRitualState();
   // Auto potions/return become ordinary edges for the local pawn; manual input still wins.
   const combatInput = player => applyAutoUse(input.consume(), player, autoUseSettings(hub.save));
   const coopLocalPlayer = () => {
@@ -113,18 +118,57 @@ try {
     || world?.round?.goal === 'sanctuary'
     || coopSession.phase === 'running' && coopSession.config.stageId === SANCTUARY.id);
   const coopInput = () => {
-    if (!coopSanctuary()) return combatInput(coopLocalPlayer());
+    if (!coopSanctuary()) {
+      input.ritualMode = false;
+      return combatInput(coopLocalPlayer());
+    }
+    input.ritualMode = true;
     const consumed = input.consume();
-    if (consumed.escapeEdge || consumed.scrollEdge) {
+    const player = coopLocalPlayer();
+    const cancelled = handleRitualInput(consumed, player);
+    if (!cancelled && (consumed.escapeEdge || consumed.scrollEdge)) {
       exitCoopSanctuary();
       return emptyInput();
     }
-    return movementOnlyInput(consumed);
+    return ritualMovement(ritualState, movementOnlyInput(consumed));
   };
   const hud = new HUD();
   const audio = new CombatAudio();
+  renderer.setRitualState(ritualState, {
+    onTok: () => audio.playWoodTok(),
+    stopAudio: () => audio.stopRitual(),
+  });
   bindAudioControls(audio, document);
   bindBattleSettings(document, input);
+  const query = new URLSearchParams(location.search);
+  const forcedFaces = query.get('dev') === '1' ? query.get('ritualFace')?.split(',').filter(face => face === 'flat' || face === 'convex') : null;
+  const ritualFaces = () => forcedFaces?.length === 2 ? forcedFaces : [...crypto.getRandomValues(new Uint8Array(2))].map(value => value < 128 ? 'flat' : 'convex');
+  function clearRitual() {
+    cancelRitual(ritualState);
+    renderer.clearRitual();
+    hud.syncRitual(ritualState, null);
+  }
+  function handleRitualInput(consumed, player) {
+    const nearby = player ? nearestRitual(player.x, player.y) : null;
+    ritualState.nearby = nearby;
+    if (ritualState.active && (consumed.escapeEdge || consumed.scrollEdge)) {
+      clearRitual();
+      return true;
+    }
+    if (!ritualState.active && consumed.ritualEdge && nearby) {
+      startRitual(ritualState, nearby.id, {
+        origin: player,
+        reduced: renderer.reduced,
+      });
+    }
+    return false;
+  }
+  document.addEventListener('arpg:ritual-throw', () => {
+    if (!ritualState.active || ritualState.active.id !== 'chiao') return;
+    const seed = crypto.getRandomValues(new Uint32Array(1))[0];
+    if (throwChiao(ritualState, ritualFaces(), seed) && ritualState.active.reduced) audio.playWoodTok();
+  });
+  document.addEventListener('arpg:ritual-cancel', clearRitual);
   const resultPresentation = victoryResultDelay({ onClear: () => hud.showClear(), onCancel: () => hud.hideClear() });
   window.addEventListener('pagehide', () => resultPresentation.cancel());
   const hub = new HubUI({
@@ -155,6 +199,7 @@ try {
       hub.root.hidden = true;
       hub.root.inert = true;
       input.enabled = true;
+      input.ritualMode = true;
       hud.begin(world, loadoutOf(roundSave));
       hud.meta(load, tracker, roundSave);
       running = true;
@@ -218,7 +263,9 @@ try {
     running = false;
     accumulator = 0;
     input.reset();
+    input.ritualMode = false;
     input.enabled = false;
+    clearRitual();
     renderer.leaveSanctuary();
     renderer.root.visible = false;
     renderer.warning.visible = false;
@@ -235,7 +282,9 @@ try {
     running = false;
     accumulator = 0;
     input.reset();
+    input.ritualMode = false;
     input.enabled = false;
+    clearRitual();
     audio.stop();
     closeCoop();
     renderer.leaveSanctuary();
@@ -739,6 +788,7 @@ try {
       return;
     }
     resultPresentation.update(now);
+    if (!hidden) advanceRitual(ritualState, elapsed / 1000);
     if (coopSession && !coopSession.isHost && !hidden) {
       coopSession.update(Math.max(0, now - guestTime), !input.enabled ? emptyInput() : coopInput(), coopLoad); guestTime = now;
     }
@@ -749,6 +799,8 @@ try {
         if (!coopSession.isHost) renderer.snapshot(view);
         renderer.render(view, coopSession.isHost ? Math.min(1, (coopSession.tickLeft + Math.max(0, now - netTime)) / TICK_MS) : 1, elapsed / 1000);
         hud.update(world, elapsed / 1000);
+        const ritualPlayer = coopLocalPlayer();
+        hud.syncRitual(ritualState, ritualPlayer ? nearestRitual(ritualPlayer.x, ritualPlayer.y) : null);
         coopStatus.hidden = false;
         const player = world.entities[0];
         coopStatus.textContent = `${player.terminal ? '관전 · 개인 정산 완료 · ' : ''}${[...coopSession.players].length}인 · ${coopSession.isHost ? '방장' : `RTT ${coopSession.rtt === null ? '—' : Math.round(coopSession.rtt) + 'ms'}`}`;
@@ -760,9 +812,11 @@ try {
         debug?.beforeTick();
         renderer.snapshot(world);
         const sanctuary = world.round?.goal === 'sanctuary';
+        input.ritualMode = sanctuary;
         const consumed = sanctuary ? input.consume() : combatInput(world.entities[0]);
-        if (sanctuary && (consumed.escapeEdge || consumed.scrollEdge)) { exitSanctuary(); break; }
-        inputs.local = sanctuary ? movementOnlyInput(consumed) : consumed;
+        const cancelled = sanctuary && handleRitualInput(consumed, world.entities[0]);
+        if (sanctuary && !cancelled && (consumed.escapeEdge || consumed.scrollEdge)) { exitSanctuary(); break; }
+        inputs.local = sanctuary ? ritualMovement(ritualState, movementOnlyInput(consumed)) : consumed;
         const events = step(world, inputs);
         if (sanctuary) {
           renderer.events(world, events);
@@ -792,7 +846,10 @@ try {
       }
       if (count === 5 && accumulator >= TICK_MS) accumulator %= TICK_MS;
       renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
-      if (running) hud.update(world, elapsed / 1000);
+      if (running) {
+        hud.update(world, elapsed / 1000);
+        hud.syncRitual(ritualState, world.entities[0] ? nearestRitual(world.entities[0].x, world.entities[0].y) : null);
+      }
       showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
     } else if (!hidden && world && (resultPresentation.pending || (!coopSession && world.entities[0].terminal
       && ['death_knight','skeleton_knight'].includes(renderer.views.get(world.entities[0].id)?.visual.debug.presentation)))) {

@@ -12,3 +12,7 @@ All files below are Poly Haven CC0 textures. Poly Haven's license page states th
 | `clay_roof_tiles_02` (Amal Kumar) | Roughness | https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/clay_roof_tiles_02/clay_roof_tiles_02_rough_2k.jpg | `a70d571203b80f763a6bcd4463330d8e2a5480ee6e29b559d1a05f1a61d5a81e` |
 | `brick_floor_02` (Charlotte Baglioni) | Diffuse | https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brick_floor_02/brick_floor_02_diff_2k.jpg | `839c8d1a3628412097b900f05fa8221edeb119da35f33a5a88b6f8bf89d7f08a` |
 | `brick_floor_02` (Charlotte Baglioni) | Normal, OpenGL | https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brick_floor_02/brick_floor_02_nor_gl_2k.png | `fee64e18d8ca09cff0c9149803d6d4d0e6d7682758aed8bce8ce026a964ac74f` |
+
+Ritual copy sources:
+- 위키백과 중국어판 「擲筊」 https://zh.wikipedia.org/wiki/擲筊 (聖筊=一平一凸, 笑筊=兩平面, 陰筊=兩凸面)
+- 위키백과 중국어판 「紙錢」 https://zh.wikipedia.org/wiki/紙錢

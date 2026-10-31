@@ -19,6 +19,7 @@ export class CombatAudio {
     this.context = null;
     this.buffers = new Map();
     this.voices = new Set();
+    this.ritualVoices = new Set();
     this.lastPlayed = new Map();
     this.muted = false;
     try { this.muted = storage?.getItem(MUTED_KEY) === '1'; } catch { /* Private mode: session preference only. */ }
@@ -70,7 +71,36 @@ export class CombatAudio {
   stop() {
     for (const voice of this.voices) voice.stop();
     this.voices.clear();
+    this.ritualVoices.clear();
     this.lastPlayed.clear();
+  }
+
+  stopRitual() {
+    for (const voice of this.ritualVoices) voice.stop();
+    this.ritualVoices.clear();
+  }
+
+  playWoodTok() {
+    const context = this.context;
+    if (this.muted || context?.state !== 'running' || !context.createOscillator
+      || this.voices.size >= FEEL.audio.voices) return false;
+    const now = context.currentTime;
+    const voice = context.createOscillator(), level = context.createGain();
+    voice.type = 'triangle';
+    voice.frequency.setValueAtTime(185, now);
+    voice.frequency.exponentialRampToValueAtTime(82, now + .12);
+    level.gain.setValueAtTime(.24, now);
+    level.gain.exponentialRampToValueAtTime(.001, now + .14);
+    voice.connect(level); level.connect(this.master);
+    const finish = () => {
+      this.voices.delete(voice);
+      this.ritualVoices.delete(voice);
+      voice.disconnect(); level.disconnect();
+    };
+    voice.onended = finish;
+    this.voices.add(voice); this.ritualVoices.add(voice);
+    voice.start(now); voice.stop(now + .15);
+    return true;
   }
 
   play(name, { fallback = null, pitch = 1, gain = 1, key = name, cooldown = FEEL.audio.cooldown } = {}) {

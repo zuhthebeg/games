@@ -19,6 +19,8 @@ import { equipmentVisual } from './paperdoll-state.js';
 import { masteryLevels } from '../meta/skill-mastery.js';
 import { bakeBiome } from './biome-map.js';
 import { SceneAssetState } from './scene-asset-state.js';
+import { RitualVfx } from './ritual-vfx.js';
+import { cancelRitual } from './ritual-state.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 class IncenseSmoke {
   constructor(layer) {
@@ -46,10 +48,10 @@ class IncenseSmoke {
     this.serial = 0;
   }
 
-  update(dt, reduced) {
+  update(dt, reduced, boosted = false) {
     this.time += dt;
-    const interval = reduced ? .65 : .07;
     for (let source = 0; source < 2; source++) {
+      const interval = reduced ? .65 : source === 0 && boosted ? .035 : .07;
       this.emission[source] -= dt;
       while (this.emission[source] <= 0) {
         const active = this.particles.filter(item => item.left > 0).length;
@@ -126,6 +128,9 @@ export class ArenaRenderer {
     this.templeGroundState = imageState('ground', this.templeGround);
     this.templeOccluderState = imageState('occluder', this.templeOccluder);
     this.incense = null;
+    this.ritualState = null;
+    this.ritualFx = null;
+    this.ritualAudio = { onTok: () => {}, stopAudio: () => {} };
     this.layers.entities.sortableChildren = true;
     app.stage.addChild(this.root);
     this.warning = new Graphics();
@@ -198,7 +203,21 @@ export class ArenaRenderer {
     }
   }
 
+  setRitualState(state, audio = {}) {
+    this.ritualState = state;
+    this.ritualAudio = { ...this.ritualAudio, ...audio };
+  }
+
+  clearRitual() {
+    this.ritualFx?.clear();
+    this.ritualAudio.stopAudio?.();
+  }
+
   reset(world, reduced = false, equipmentSave) {
+    if (this.ritualState) cancelRitual(this.ritualState);
+    this.ritualAudio.stopAudio?.();
+    this.ritualFx?.destroy();
+    this.ritualFx = null;
     this.skillVfx.reset();
     this.holyWash.clear(); this.holyWash.visible = false; this.holyWashLeft = 0;
     this.spellZones.clear();
@@ -282,11 +301,16 @@ export class ArenaRenderer {
     this.templeOccluderState.reset(sanctuary);
     this.incense?.destroy();
     this.incense = sanctuary ? new IncenseSmoke(this.layers.fx) : null;
+    if (sanctuary) this.ritualFx = new RitualVfx(this.layers.fx, this.ritualAudio);
     this.mineLift.reset(world.round?.stageId);
     this.snapshot(world);
   }
 
   leaveSanctuary() {
+    if (this.ritualState) cancelRitual(this.ritualState);
+    this.ritualAudio.stopAudio?.();
+    this.ritualFx?.destroy();
+    this.ritualFx = null;
     this.templeGroundState.reset(false);
     this.templeOccluderState.reset(false);
     this.incense?.destroy();
@@ -621,7 +645,8 @@ export class ArenaRenderer {
     this.local = world.entities[0];
     this.time += deltaTime;
     this.mineLift.update(deltaTime, this.reduced);
-    this.incense?.update(deltaTime, this.reduced);
+    this.incense?.update(deltaTime, this.reduced, this.ritualState?.sticksLeft > 0);
+    this.ritualFx?.update(this.ritualState, this.local, this.reduced);
     const visualDelta = deltaTime * (this.slowLeft > 0 && !this.reduced ? FEEL.perfect.scale : 1);
     this.slowLeft = Math.max(0, this.slowLeft - deltaTime);
     this.trauma = Math.max(0, this.trauma - deltaTime * FEEL.shake.decay);
