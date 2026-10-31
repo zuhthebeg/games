@@ -1,3 +1,4 @@
+import {flameFront,flameShape} from '../sim/flame-evolution.js';
 import {cleaveFront,cleaveShape} from '../sim/cleave-evolution.js';
 import {VOLLEY_WAVES} from '../sim/volley-evolution.js';
 import {PLAYER_BASE} from '../content/combat.js';
@@ -475,6 +476,15 @@ export class SkillVfx {
       }
     }
     slot.seen = true;
+    if(act.flame20) {
+      const front=flameFront(act),g=slot.node;
+      slot.guide.visible=false;slot.motes.forEach(n=>n.visible=false);if(slot.baked)slot.baked.visible=false;
+      g.mask=null;if(slot.bodyMask)slot.bodyMask.visible=false;slot.mastery=null;
+      g.clear();g.scale.set(1);g.position.set(act.ox,act.oy);g.rotation=0;g.alpha=reduced ? .65 : .9;
+      g.visible=front>=0 && (act.phase==='active'||act.elapsed===act.total+4);
+      if(g.visible){const r=flameShape(front).radius;g.circle(0,0,r).fill({color:profile.color,alpha:.12});g.circle(0,0,r-1).stroke({color:profile.accent,width:2,alpha:.8});}
+      return true;
+    }
     if(act.cleave20) {
       const front=cleaveFront(act),g=slot.node;
       slot.guide.visible=false;slot.motes.forEach(n=>n.visible=false);if(slot.baked)slot.baked.visible=false;

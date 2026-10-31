@@ -132,6 +132,7 @@ export class MasterySkillVfx extends SkillVfx {
   event(event, world, reduced = false) {
     let owner = world.entities.find(e => e.id === (event.src ?? event.id));
     if (event.type === 'explode') owner = world.entities.find(e => e.id === event.presentationOwner);
+    if(owner?.flame20 && event.ability==='flame_ring') return super.event(event,world,reduced);
     return this.withLevel(this.level(owner,event.ability),event.ability,reduced,()=>{
       const result = super.event(event,world,reduced), profile = this.profile(event.ability);
       // Hit coordinates describe a contact glow, not a cast-origin cone. Cleave's
@@ -141,6 +142,7 @@ export class MasterySkillVfx extends SkillVfx {
     },this.enhancement(owner));
   }
   actor(entity, tick, reduced) {
+    if(entity.act?.flame20) return super.actor(entity,tick,reduced);
     const level = this.level(entity,entity.act?.id);
     const key = `${entity.act?.id}:${tick - (entity.act?.elapsed || 0)}`;
     const prior = this.actors.find(s=>s.id===entity.id && s.key===key);

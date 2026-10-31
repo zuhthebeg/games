@@ -204,7 +204,7 @@ export class LocalPrediction {
     if (!world || !this.enabled || !this.state) { this.lastContactView = this.lastRawView = null; return world; }
     const p = this.displayPawn(this.state);
     return { ...world, projectiles: [...world.projectiles, ...this.attacks.projectiles()], entities: world.entities.map(e => e.pid === this.uid && e.kind === 'player'
-      ? this.displayContact({ ...e, act: this.attacks.act(p.act, world.tick) ?? (this.preview && !this.state.act
+      ? this.displayContact({ ...e, act: e.act?.flame20 ? e.act : p.act?.flame20 ? e.act : this.attacks.act(p.act, world.tick) ?? (this.preview && !this.state.act
         && p.act?.id !== WEAPONS[p.weapon]?.basic ? p.act : null), ...(p.shieldGuard ? {shieldGuard:{...p.shieldGuard}} : {}), ...(p.combo ? { combo: { ...p.combo } } : {}),
         x: p.x + this.offset.x, y: p.y + this.offset.y, facing: p.facing, moving: p.moving }, world, p.dodge) : e) };
   }

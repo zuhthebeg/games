@@ -32,7 +32,7 @@ test('downgrade and unchanged never dispatch a success cue; inn sockets show act
 
 test('+20 host/guest profile survives JSON wire, restart handshake and finite pawn stats without guest authority',async()=>{
  const {buildRoundMods}=await import('../js/meta/run.js'),{CoopSession}=await import('../js/net/session.js'),{validLobbyProfile}=await import('../js/net/invasion.js');
- const profile=name=>{const rewardSave=fixture(20);rewardSave.name=name;rewardSave.cleared.S1=true;return JSON.parse(JSON.stringify({combatVersion:7,name,level:1,lineage:'human',role:'hunter',rewardSave,weapon:'blade',mods:buildRoundMods(rewardSave),threats:{S2:1}}));};
+ const profile=name=>{const rewardSave=fixture(20);rewardSave.name=name;rewardSave.cleared.S1=true;return JSON.parse(JSON.stringify({combatVersion:8,name,level:1,lineage:'human',role:'hunter',rewardSave,weapon:'blade',mods:buildRoundMods(rewardSave),threats:{S2:1}}));};
  const h=profile('Host'),g=profile('Guest'),packets=[];assert.ok(validLobbyProfile(h)&&validLobbyProfile(g));
  const host=new CoopSession({uid:'h',host:'h',players:['h','g'],profile:h,config:{stageId:'S2',threat:1},sendRt:p=>packets.push(JSON.parse(JSON.stringify(p)))});
  host.rt('g',{t:'profile',profile:g});assert.equal(host.phase,'running');
