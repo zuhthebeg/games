@@ -131,7 +131,7 @@ test('movement-only input blocks combat and every consumable edge', () => {
   assert.deepEqual(movementOnlyInput({ mx: 1, my: -1, attack: true, scrollEdge: true, greenEdge: true, skillEdge: true, dodgeHeld: true }), {
     mx: 1, my: -1, aimX: 0, aimY: 0, attack: false, autoAttack: false, skillEdge: false,
     escapeEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, dodgeHeld: false, potionEdge: false,
-    manaEdge: false, greenEdge: false, scrollEdge: false,
+    manaEdge: false, greenEdge: false, scrollEdge: false, ritualEdge: false,
   });
 });
 

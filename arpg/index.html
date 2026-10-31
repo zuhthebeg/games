@@ -23,7 +23,7 @@
     {
       "imports": {
         "./js/audio-profile.js": "./js/audio-profile.js?v=52bce5aecc",
-        "./js/audio.js": "./js/audio.js?v=97b7907732",
+        "./js/audio.js": "./js/audio.js?v=085c7e18db",
         "./js/build-freshness.js": "./js/build-freshness.js?v=5c1f85ead2",
         "./js/content/balance.js": "./js/content/balance.js?v=8e3525441e",
         "./js/content/biomes.js": "./js/content/biomes.js?v=c164a2a059",
@@ -44,8 +44,8 @@
         "./js/debug/undead-art.js": "./js/debug/undead-art.js?v=c524c84511",
         "./js/debug/undead-encounter.js": "./js/debug/undead-encounter.js?v=a067da7044",
         "./js/debug/undead-start.js": "./js/debug/undead-start.js?v=c33fb00825",
-        "./js/input.js": "./js/input.js?v=2acb37844e",
-        "./js/main.js": "./js/main.js?v=848a17d00a",
+        "./js/input.js": "./js/input.js?v=23d14bca6c",
+        "./js/main.js": "./js/main.js?v=381da4c3b0",
         "./js/meta/affixes.js": "./js/meta/affixes.js?v=b43d715aee",
         "./js/meta/auto-use.js": "./js/meta/auto-use.js?v=9a17dad2b0",
         "./js/meta/character-creation.js": "./js/meta/character-creation.js?v=a2d4f6560f",
@@ -103,7 +103,9 @@
         "./js/render/physical-shield.js": "./js/render/physical-shield.js?v=bb27208ff3",
         "./js/render/portrait-shield.js": "./js/render/portrait-shield.js?v=6cb3791c8f",
         "./js/render/quarks-vfx.js": "./js/render/quarks-vfx.js?v=6a8af0faa0",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=9e5209a52e",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=ca7ea16c3b",
+        "./js/render/ritual-state.js": "./js/render/ritual-state.js?v=57213be05d",
+        "./js/render/ritual-vfx.js": "./js/render/ritual-vfx.js?v=b8e17cfe38",
         "./js/render/scene-asset-state.js": "./js/render/scene-asset-state.js?v=b402e68ba1",
         "./js/render/shapes.js": "./js/render/shapes.js?v=1f3d9c4a35",
         "./js/render/shield-hand-anchors.js": "./js/render/shield-hand-anchors.js?v=4fc18aa514",
@@ -146,7 +148,7 @@
         "./js/ui/enchant-fx.js": "./js/ui/enchant-fx.js?v=89c99d0475",
         "./js/ui/gear-view.js": "./js/ui/gear-view.js?v=6bd5e4e752",
         "./js/ui/hub.js": "./js/ui/hub.js?v=94c2ae9219",
-        "./js/ui/hud.js": "./js/ui/hud.js?v=fb64347c23",
+        "./js/ui/hud.js": "./js/ui/hud.js?v=79f57f79d7",
         "./js/ui/icons.js": "./js/ui/icons.js?v=d1cd67a978",
         "./js/ui/item-art.js": "./js/ui/item-art.js?v=ea74f53a85",
         "./js/ui/shop-view.js": "./js/ui/shop-view.js?v=eff3fb1260",
@@ -157,7 +159,7 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=0f1642602d">
+    <link rel="stylesheet" href="css/game.css?v=0292729e83">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -181,6 +183,7 @@
         <button data-input="potionEdge" class="small" id="potion" aria-label="물약" title="물약 · Q"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/></svg><kbd>Q</kbd><small></small></button>
         <button data-input="greenEdge" class="small" id="green" aria-label="초록물약" title="초록물약 · F"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-4 14 4-5h-3l3-3"/></svg><kbd>F</kbd><span id="green-active" hidden>민첩 +20</span><small></small></button>
         <button data-input="manaEdge" class="small" id="mana" aria-label="마나" title="마나 · E"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/></svg><kbd>E</kbd><small></small></button>
+        <button data-input="ritualEdge" class="small ritual-action" id="ritual" hidden><span class="ritual-label"></span></button>
         <button data-input="scrollEdge" class="small ring" id="scroll" aria-label="귀환" title="귀환 · R"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 12h6m-3-3-3 3 3 3"/></svg><kbd>R</kbd><small></small></button>
         <button data-input="skill2Edge" class="ring skill-slot" id="skill2" aria-label="스킬 2" title="스킬 2 · L" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>L</kbd><small></small></button>
         <button data-input="skill3Edge" class="ring skill-slot" id="skill3" aria-label="스킬 3" title="스킬 3 · ;" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>;</kbd><small></small></button>
@@ -200,6 +203,6 @@
     </section>
     <script src="/lib/multiplayer.js?v=20260927rt"></script>
     <script src="/lib/mp-lobby.js?v=20260927"></script>
-    <script type="module" src="js/main.js?v=848a17d00a"></script>
+    <script type="module" src="js/main.js?v=381da4c3b0"></script>
   </body>
 </html>

@@ -59,6 +59,17 @@ test('input: short key/button taps persist until consumed once', () => {
   assert.equal(input.consume().skillEdge, true);
   assert.equal(input.consume().skillEdge, false);
 });
+test('input: sanctuary E is a ritual edge while ordinary E remains mana', () => {
+  const { input } = fixture();
+  input.ritualMode = true;
+  fire(window, 'keydown', { code: 'KeyE' });
+  fire(window, 'keyup', { code: 'KeyE' });
+  assert.equal(input.consume().ritualEdge, true);
+  input.ritualMode = false;
+  fire(window, 'keydown', { code: 'KeyE' });
+  fire(window, 'keyup', { code: 'KeyE' });
+  assert.equal(input.consume().manaEdge, true);
+});
 test('input: mouse chords, attack hold, touch auto-aim and reset', () => {
   const { input, surface, buttons } = fixture();
   fire(surface, 'mousedown', { button: 0, clientX: 100, clientY: 200 });

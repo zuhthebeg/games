@@ -182,6 +182,62 @@ button[aria-pressed="true"] {
   font-size: 12px;
 }
 
+#ritual {
+  grid-column: 1 / span 3;
+  grid-row: 3;
+  min-width: 170px;
+  color: #f4d59b;
+}
+
+.ritual-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ritual-panel {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  width: min(430px, calc(100% - 32px));
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border: 1px solid #806b48;
+  border-radius: 8px;
+  background: #171c18ed;
+  box-shadow: 0 16px 48px #000b;
+  pointer-events: auto;
+}
+
+.ritual-panel h2, .ritual-panel h3 { margin: 0 0 10px; }
+.ritual-panel p { margin: 8px 0; }
+.ritual-panel button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  background: #654a2f;
+}
+
+.ritual-feedback {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 160px;
+  width: min(520px, calc(100% - 32px));
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border: 1px solid #66543b;
+  border-radius: 4px;
+  background: #171c18e8;
+  color: #e5d2a7;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
 #potion {
   grid-column: 1;
   grid-row: 1;

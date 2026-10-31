@@ -4,7 +4,7 @@ export function movementOnlyInput(input) {
     mx: input.mx || 0, my: input.my || 0, aimX: 0, aimY: 0,
     attack: false, autoAttack: false, escapeEdge: false, skillEdge: false, skill2Edge: false, skill3Edge: false,
     dodgeEdge: false, dodgeHeld: false, potionEdge: false, manaEdge: false,
-    greenEdge: false, scrollEdge: false,
+    greenEdge: false, scrollEdge: false, ritualEdge: false,
   };
 }
 
@@ -33,12 +33,13 @@ export class InputLayer {
     this.py = 0;
     this.value = {
       mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, autoAttack: false,
-      skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, dodgeHeld:false, potionEdge: false, manaEdge: false, scrollEdge: false,
+      skillEdge: false, skill2Edge: false, skill3Edge: false, dodgeEdge: false, dodgeHeld:false, potionEdge: false, manaEdge: false, scrollEdge: false, ritualEdge: false,
     };
     const edgeKeys = {
       Space: 'dodgeEdge', ShiftLeft: 'dodgeEdge', ShiftRight: 'dodgeEdge',
       KeyK: 'skillEdge', KeyL: 'skill2Edge', Semicolon: 'skill3Edge', KeyQ: 'potionEdge', KeyE: 'manaEdge', KeyR: 'scrollEdge', KeyF: 'greenEdge',
     };
+    this.ritualMode = false;
     const allowed = new Set([
       'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight',
       'KeyJ', ...Object.keys(edgeKeys),
@@ -52,7 +53,8 @@ export class InputLayer {
       if (this.enabled && event.code === 'KeyT' && !event.repeat && !event.target.closest('select,input,form')) this.setAutoAttack(!this.autoAttack);
       if (!this.enabled || !allowed.has(event.code) || event.target.closest('select,input,form')) return;
       event.preventDefault();
-      if (!this.keys.has(event.code) && edgeKeys[event.code]) this.latch(edgeKeys[event.code]);
+      const action = this.ritualMode && event.code === 'KeyE' ? 'ritualEdge' : edgeKeys[event.code];
+      if (!this.keys.has(event.code) && action) this.latch(action);
       this.keys.add(event.code);
     });
     window.addEventListener('keyup', (event) => this.keys.delete(event.code));
@@ -222,7 +224,7 @@ export class InputLayer {
     this.escapeEdge = false;
     value.dodgeHeld = this.enabled && (keys.has('Space') || keys.has('ShiftLeft') || keys.has('ShiftRight') || [...this.pointers.values()].includes('dodgeEdge'));
     if (this.mouseAim) this.aimVector(this.mouseX, this.mouseY, value);
-    for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge']) {
+    for (const action of ['skillEdge', 'skill2Edge', 'skill3Edge', 'dodgeEdge', 'potionEdge', 'manaEdge', 'scrollEdge', 'greenEdge', 'ritualEdge']) {
       value[action] = !!this.edges[action];
     }
     for (const action in this.edges) this.edges[action] = false;
