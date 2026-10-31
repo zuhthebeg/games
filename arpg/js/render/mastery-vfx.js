@@ -106,7 +106,7 @@ export class MasterySkillVfx extends SkillVfx {
     }
   }
   effect(...args) {
-    if(args[0]?.blast20)return super.effect(...args);
+    if(args[0]?.blast20){const free=this.effects.find(s=>s.left<=0);if(free)free.mastery=null;return super.effect(...args);}
     args[0] = this.accentProfile(args[0]);
     const free = this.effects.find(slot => slot.left <= 0), result = super.effect(...args);
     if (result && free) {
