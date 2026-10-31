@@ -1,3 +1,4 @@
+import {validBlastAct,validBlastShot,validBlastEvent} from './blast-protocol.js';
 import {validFlameAct} from './flame-protocol.js';
 import {validCleaveAct} from './cleave-protocol.js';
 import {validVolleyAct,validVolleyShot} from './volley-protocol.js';
@@ -198,7 +199,7 @@ export function partyHpScale(count, partyLevel, stageId) {
   return base * 1.04 ** Math.max(0, Math.min(30, highestLevel) - recommended);
 }
 import {emberDef} from '../sim/ember-evolution.js';
-const COMMON = ['flame20','cleave20','volley20', 'frost20', 'pierce20', 'whirl20', 'ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
+const COMMON = ['blast20','flame20','cleave20','volley20', 'frost20', 'pierce20', 'whirl20', 'ember20', 'lunge20', 'skeletal', 'boneRevivalReady', 'invasionRole', 'id', 'kind', 'pid', 'type', 'team', 'x', 'y', 'r', 'facing', 'moving', 'hp', 'maxHp', 'dead', 'terminal',
   'rootUntil', 'lineage', 'invisibleUntil', 'curse', 'berserk', 'handedness', 'offhand', 'shieldModel', 'shieldGuard', 'focusResetUntil', 'weapon', 'weaponForm', 'combo', 'slow', 'sunder', 'frozenUntil', 'shieldUntil', 'shieldCharges', 'skills', 'sizeScale', 'eliteVariant', 'spawnLeft', 'staggerLeft', 'channel', 'deathCause'];
 const MOTION = ['speed', 'dodgeDisabled', 'dodgeCdMult', 'iframeBonusMs', 'kx', 'ky', 'hurtInvuln',
   // Own-pawn prediction inputs (act timing, cooldowns, buffered dodge, mana gate).
@@ -215,13 +216,13 @@ export function encodeSnapshot(world, inputSeqs = null, profiles = {}) {
         ...(profiles[e.pid]?.skillMasteryLevels ? { skillMasteryLevels: { ...profiles[e.pid].skillMasteryLevels } } : {}),
         ...(inputSeqs ? { lastInputSeq: inputSeqs[e.pid] ?? 0 } : {}) } : {}),
       x: q(e.x), y: q(e.y), hp: q(e.hp),
-      act: e.act ? select(e.act, ['id', 'flame20', ...(e.act.flame20 ? ['rate'] : []), 'cleave20', ...(e.act.cleave20 ? ['rate'] : []), 'volley20', ...(e.act.volley20 ? ['rate'] : []), 'frost20', ...(e.act.frost20 ? ['rate'] : []), 'pierce20', ...(e.act.pierce20 ? ['rate'] : []), 'whirl20', ...(e.act.whirl20 ? ['rate'] : []), 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
+      act: e.act ? select(e.act, ['id', 'blast20', ...(e.act.blast20 ? ['rate'] : []), 'flame20', ...(e.act.flame20 ? ['rate'] : []), 'cleave20', ...(e.act.cleave20 ? ['rate'] : []), 'volley20', ...(e.act.volley20 ? ['rate'] : []), 'frost20', ...(e.act.frost20 ? ['rate'] : []), 'pierce20', ...(e.act.pierce20 ? ['rate'] : []), 'whirl20', ...(e.act.whirl20 ? ['rate'] : []), 'ember20', 'castTick', 'lunge20', 'growth', 'zonePoint', 'step', 'executionSuccess', 'phase', 'elapsed', 'total', 'facing', 'ox', 'oy', 'counter', 'counterSecond', 'doubleCounter', 'counterTarget', 'firstCounterDamage',
         ...(e.kind === 'player' ? ['left', 'phaseTicks', 'dashStep', 'shotsFired', 'fired'] : [])]) : null })),
     ...(world.zones?.length ? { zones: world.zones.map(z => select(z, ['id', 'ownerId', 'team', 'abilityId', 'x', 'y', 'ox', 'oy', 'castTick', 'facing', 'startTick', 'activeTick', 'endTick', 'nextTick', 'intervalTicks', 'pulsesLeft', 'radius'])) } : {}),
-    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'ownerId', 'abilityId', 'volley20', 'frost20', 'pierce20', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
+    projectiles: world.projectiles.map(p => ({ ...select(p, ['id', 'blast20', 'ownerId', 'abilityId', 'volley20', 'frost20', 'pierce20', 'step', 'x', 'y', 'r', 'vx', 'vy']), x: q(p.x), y: q(p.y) })),
     telegraphs: getTelegraphs(world) };
 }
-export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapability = null, volleyCapability = null, cleaveCapability = null, flameCapability = null) {
+export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapability = null, volleyCapability = null, cleaveCapability = null, flameCapability = null, blastCapability = null) {
   if (packet?.t !== 'snapshot' || !Number.isSafeInteger(packet.tick) || !Array.isArray(packet.entities)) return null;
   if (packet.projectiles!==undefined && !Array.isArray(packet.projectiles)) return null;
   if (!validZones(packet.zones)) return null;
@@ -230,7 +231,9 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   const volleyEnvelope=packet.entities.some(e=>e.volley20!==undefined || e.act?.volley20!==undefined) || (packet.projectiles||[]).some(p=>p.volley20!==undefined);
   const flameEnvelope=!!flameCapability || packet.entities.some(e=>e.flame20!==undefined || e.act?.flame20!==undefined);
   const cleaveEnvelope=!!cleaveCapability || packet.entities.some(e=>e.cleave20!==undefined || e.act?.cleave20!==undefined);
-  if(flameEnvelope || volleyEnvelope || cleaveEnvelope) {
+  const blastEnvelope=!!blastCapability||packet.entities.some(e=>e.blast20!==undefined||e.act?.blast20!==undefined)||(packet.projectiles||[]).some(p=>p.blast20!==undefined);
+  if(blastEnvelope && packet.events && (!Array.isArray(packet.events)||packet.events.some(row=>!validBlastEvent(row?.event,blastCapability))))return null;
+  if(blastEnvelope || flameEnvelope || volleyEnvelope || cleaveEnvelope) {
     const ids=[...packet.entities,...(packet.projectiles||[]),...(packet.zones||[])].map(e=>e.id);
     const players=packet.entities.filter(e=>e.kind==='player');
     if(ids.some(id=>!Number.isSafeInteger(id)||id<1) || new Set(ids).size!==ids.length || new Set(players.map(e=>e.pid)).size!==players.length
@@ -240,6 +243,10 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   const pointValid=(x,y,ox,oy)=>[x,y,ox,oy].every(Number.isFinite) && x>=0 && y>=0 && x<=packet.arena?.w && y<=packet.arena?.h && ox>=0 && oy>=0 && ox<=packet.arena?.w && oy<=packet.arena?.h && Math.hypot(x-ox,y-oy)<=560+1e-10;
   const expires = (n,cap) => Number.isSafeInteger(n) && n>=0 && n<=packet.tick+cap;
   for (const e of packet.entities) {
+    if(blastEnvelope && e.kind==='player' && blastCapability && (typeof e.pid!=='string'||!e.pid||blastCapability(e.id,e.pid)===undefined||!!e.blast20!==blastCapability(e.id,e.pid)))return null;
+    if(e.blast20!==undefined&&(e.blast20!==true||e.kind!=='player'||![e.x,e.y,e.r,e.facing].every(Number.isFinite)||e.r<=0))return null;
+    if(e.act?.id==='blast_arrow'&&!!e.blast20!==!!e.act.blast20)return null;
+    if(e.act?.blast20!==undefined&&(!e.blast20||!validBlastAct(e.act,packet.arena,packet.tick)))return null;
     if(flameEnvelope && e.kind==='player' && flameCapability && (typeof e.pid!=='string' || e.pid.length===0 || flameCapability(e.id,e.pid)===undefined || !!e.flame20!==flameCapability(e.id,e.pid))) return null;
     if(e.flame20!==undefined && (e.flame20!==true || e.kind!=='player' || ![e.x,e.y,e.r,e.facing].every(Number.isFinite)||e.r<=0)) return null;
     if(e.act?.id==='flame_ring' && !!e.flame20!==!!e.act.flame20) return null;
@@ -348,6 +355,10 @@ export function decodeSnapshot(packet, uid, pierceCapability = null, frostCapabi
   }
   for(const p of packet.projectiles||[]) {
     const owner=packet.entities.find(e=>e.id===p.ownerId);
+    const blastAdmitted=blastCapability?blastCapability(p.ownerId):owner?!!owner.blast20:undefined;
+    if(p.blast20!==undefined&&(p.blast20!==true||p.abilityId!=='blast_arrow'))return null;
+    if(p.abilityId==='blast_arrow'&&((blastAdmitted===undefined&&p.blast20)||(blastAdmitted!==undefined&&!!p.blast20!==blastAdmitted)))return null;
+    if(p.blast20&&!validBlastShot(p,packet,owner))return null;
     const volleyAdmitted=volleyCapability ? volleyCapability(p.ownerId) : owner ? !!owner.volley20 : undefined;
     if(p.volley20!==undefined && (p.volley20!==true || p.abilityId!=='volley')) return null;
     if(p.abilityId==='volley' && ((volleyAdmitted===undefined && p.volley20) || (volleyAdmitted!==undefined && !!p.volley20!==volleyAdmitted))) return null;
@@ -383,8 +394,8 @@ const TICK_MS = 1000 / 30;
 // instead of jumping, so arrival jitter/bursts do not show up as stutter. Positions
 // never extrapolate beyond the newest authoritative frame: starvation is a hold.
 export class SnapshotBuffer {
-  constructor(uid, delay = 125, { adaptive = true, pierceCapability = null, frostCapability = null, volleyCapability = null, cleaveCapability = null, flameCapability = null } = {}) {
-    this.flameCapability=flameCapability; this.cleaveCapability=cleaveCapability; this.volleyCapability = volleyCapability; this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
+  constructor(uid, delay = 125, { adaptive = true, pierceCapability = null, frostCapability = null, volleyCapability = null, cleaveCapability = null, flameCapability = null, blastCapability = null } = {}) {
+    this.blastCapability=blastCapability; this.flameCapability=flameCapability; this.cleaveCapability=cleaveCapability; this.volleyCapability = volleyCapability; this.pierceCapability = pierceCapability; this.frostCapability = frostCapability;
     this.uid = uid; this.delay = delay; this.adaptive = adaptive; this.frames = [];
     this.offsets = []; this.clock = 0; this.play = null; this.lastNow = null; this.lateP90 = 0;
     this.samplePositionTick = null; this.sampleActTick = null;
@@ -393,7 +404,7 @@ export class SnapshotBuffer {
   push(packet, at) {
     const last = this.frames.at(-1);
     if (last && packet.tick <= last.world.tick) return false;
-    const world = decodeSnapshot(packet, this.uid, this.pierceCapability, this.frostCapability, this.volleyCapability, this.cleaveCapability, this.flameCapability);
+    const world = decodeSnapshot(packet, this.uid, this.pierceCapability, this.frostCapability, this.volleyCapability, this.cleaveCapability, this.flameCapability, this.blastCapability);
     if (!world || !Number.isFinite(at)) return false;
     this.frames.push({ world, at }); if (this.frames.length > 24) this.frames.shift();
     this.offsets.push(at - world.tick * TICK_MS); if (this.offsets.length > 40) this.offsets.shift();

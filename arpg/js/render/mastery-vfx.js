@@ -106,6 +106,7 @@ export class MasterySkillVfx extends SkillVfx {
     }
   }
   effect(...args) {
+    if(args[0]?.blast20)return super.effect(...args);
     args[0] = this.accentProfile(args[0]);
     const free = this.effects.find(slot => slot.left <= 0), result = super.effect(...args);
     if (result && free) {
@@ -130,6 +131,7 @@ export class MasterySkillVfx extends SkillVfx {
     return count;
   }
   event(event, world, reduced = false) {
+    if(event.blast20===true || event.ability==='blast_arrow'&&world.entities.find(e=>e.id===event.src)?.blast20)return super.event(event,world,reduced);
     let owner = world.entities.find(e => e.id === (event.src ?? event.id));
     if (event.type === 'explode') owner = world.entities.find(e => e.id === event.presentationOwner);
     if(owner?.flame20 && event.ability==='flame_ring') return super.event(event,world,reduced);

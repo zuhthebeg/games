@@ -75,7 +75,7 @@ function startAct(p, abilityId, facing, tick) {
   const evolution = abilityId === 'lunge' && p.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(flame ? {flame20:true,rate,castTick:tick,fired:false} : {}), ...(cleave ? {cleave20:true,rate,castTick:tick,fired:false} : {}), ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(abilityId==='blast_arrow' && p.blast20 ? {blast20:true,rate,castTick:tick,fired:false} : {}), ...(flame ? {flame20:true,rate,castTick:tick,fired:false} : {}), ...(cleave ? {cleave20:true,rate,castTick:tick,fired:false} : {}), ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -192,7 +192,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   const w = WEAPONS[p.weapon];
   const skillPressed = SKILL_EDGES.some(k => inp[k]);
   const skillId = p.skills?.[SKILL_EDGES.findIndex(k => inp[k])];
-  if (skillId && !(skillId==='flame_ring' && p.act?.flame20) && !(skillId==='heavy_cleave' && p.act?.cleave20) && !(skillId==='volley' && p.act?.volley20) && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
+  if (skillId && !(skillId==='blast_arrow' && p.act?.blast20) && !(skillId==='flame_ring' && p.act?.flame20) && !(skillId==='heavy_cleave' && p.act?.cleave20) && !(skillId==='volley' && p.act?.volley20) && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.zone || def.status || skillId === 'sword_wave') && p.act?.id === skillId)) {
       if (p.act) endAct(p);
@@ -216,6 +216,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   if (p.act) {
     const act = p.act;
     p.facing = act.facing;
+    if(act.blast20 && act.phase==='active')act.fired=true;
     if(act.volley20 && act.phase==='active') {const wave=volleyWave(act.phaseTicks.active-act.left);if(wave) {act.shotsFired=wave;act.fired=true;}}
     if (act.phase === 'active' && act.def.status && !act.fired) {
       act.fired=true;

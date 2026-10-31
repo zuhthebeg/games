@@ -1,3 +1,4 @@
+import {blast20,blastComponent,BLAST_CIRCLE} from './blast-evolution.js';
 import {flame20,flameShape} from './flame-evolution.js';
 import {cleave20,cleaveShape} from './cleave-evolution.js';
 import {volley20,VOLLEY_WAVES,volleyWave} from './volley-evolution.js';
@@ -89,6 +90,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
     ...(ember20(skillMasteryLevels) ? {ember20:true} : {}),
+    ...(blast20(skillMasteryLevels) ? {blast20:true} : {}),
     ...(flame20(skillMasteryLevels) ? {flame20:true} : {}),
     ...(cleave20(skillMasteryLevels) ? {cleave20:true} : {}),
     ...(volley20(skillMasteryLevels) ? {volley20:true} : {}),
@@ -164,10 +166,11 @@ export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite
 
 export function startStage(world, stageId, { playerSide = 'left' } = {}) {
   for (const p of world.entities) cancelVolley(world,p);
+  cancelBlastShots(world);
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
   if (world.zones) world.zones = [];
-  for (const p of world.entities) if (p.act?.flame20 || p.act?.cleave20 || p.act?.whirl20 || p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
+  for (const p of world.entities) if (p.act?.blast20 || p.act?.flame20 || p.act?.cleave20 || p.act?.whirl20 || p.act?.def.zone || p.act?.def.spin) endAct(world, p, true);
   if (world.projectiles.some(pr => ABILITIES[pr.abilityId]?.spin)) world.projectiles = world.projectiles.filter(pr => !ABILITIES[pr.abilityId]?.spin);
   for (const p of world.entities) if (p.kind === 'player') {resetGuestDodgeHits(p);if(p.shieldGuard)p.shieldGuard.left=0;delete p.invisibleUntil;delete p.berserk;delete p.curse;delete p.rootUntil;if(p.poison)p.poison=null;}
   if (st.arena) {
@@ -225,11 +228,16 @@ export function setLoad(world, pid, ratio) {
 const alive = (e) => !e.dead && !e.terminal;
 const isTargetable = (e) => alive(e) && !(e.spawnLeft > 0);
 
+export function cancelBlastShots(world,ownerId=null) {
+ world.projectiles=world.projectiles.filter(pr=>{if(!pr.blast20 || ownerId!==null&&pr.ownerId!==ownerId)return true;world.events.push({type:'projectileEnd',id:pr.id,x:pr.x,y:pr.y,ability:pr.abilityId});return false;});
+}
 export function cancelVolley(world, ent) {if(ent.act?.flame20 || ent.act?.cleave20 || ent.act?.volley20) endAct(world,ent,true);}
 function cancelBlockedVolley(world,p) {if((p.act?.flame20 || p.act?.cleave20 || p.act?.volley20) && (!alive(p)||p.hp<=0||p.terminal||p.channel>0||p.staggerLeft>0||world.round?.state!=='running')) cancelVolley(world,p);}
 
 export function step(world, inputs = {}) {
   world.events = [];
+  if(world.round?.state!=='running')cancelBlastShots(world);
+  for(const pr of [...world.projectiles])if(pr.blast20&&!world.entities.some(e=>e.id===pr.ownerId&&!e.terminal))cancelBlastShots(world,pr.ownerId);
   if (world.round?.goal === 'sanctuary') {
     inputs = Object.fromEntries(world.entities.filter(entity => entity.kind === 'player').map(player => {
       const input = inputs[player.pid] || {};
@@ -269,6 +277,8 @@ export function step(world, inputs = {}) {
   if (world.zones && world.round && world.round.state !== 'running') world.zones = [];
   if (world.round && world.round.state !== 'running') for (const e of world.entities) {delete e.invisibleUntil;delete e.berserk;delete e.curse;delete e.rootUntil;if(e.poison)e.poison=null;}
   for(const p of world.entities) if(p.act?.whirl20 && (!alive(p) || p.channel>0 || world.round?.state!=='running')) endAct(world,p,true);
+  if(world.round?.state!=='running')cancelBlastShots(world);
+  for(const pr of [...world.projectiles])if(pr.blast20&&world.entities.some(e=>e.id===pr.ownerId&&e.terminal))cancelBlastShots(world,pr.ownerId);
   world.tick++;
   return world.events;
 }
@@ -419,7 +429,7 @@ function stepPlayer(world, p, inp) {
   // First pressed slot wins this tick; an empty slot is a no-op.
   const skillPressed = SKILL_EDGES.some((k) => inp[k]);
   const skillId = p.skills[SKILL_EDGES.findIndex((k) => inp[k])];
-  if (skillId && !(skillId==='flame_ring' && p.act?.flame20) && !(skillId==='heavy_cleave' && p.act?.cleave20) && !(skillId==='volley' && p.volley20 && (world.round?.state!=='running' || p.act?.volley20)) && !(skillId==='whirl' && p.whirl20 && world.round?.state!=='running') && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
+  if (skillId && !(skillId==='blast_arrow' && p.act?.blast20) && !(skillId==='flame_ring' && p.act?.flame20) && !(skillId==='heavy_cleave' && p.act?.cleave20) && !(skillId==='volley' && p.volley20 && (world.round?.state!=='running' || p.act?.volley20)) && !(skillId==='whirl' && p.whirl20 && world.round?.state!=='running') && !ABILITIES[skillId]?.dodgeShot && canUseSkill(skillId, p.weapon, p.weaponForm, p.lineage, p.handedness) && canCancel(p.act)) {
     const def = skillId==='ember_bolt' && p.ember20 ? emberDef(ABILITIES[skillId]) : ABILITIES[skillId];
     if (!(p.cds[skillId] > 0) && p.mp >= (def.manaCost || 0) && (!def.minHp || p.hp >= def.minHp) && !((def.burst || def.status || skillId === 'sword_wave') && p.act?.id === skillId) && (!def.zone || p.act?.id !== skillId && (world.zones?.length || 0) + world.entities.filter(e => e !== p && e.act?.def.zone && !e.act.fired).length < MAX_ZONES)) {
       if (p.act) endAct(world, p, true);
@@ -613,6 +623,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / (def.burst && phase === 'active' ? 1 : rate))) : 0];
   }));
+  const blast=abilityId==='blast_arrow' && ent.blast20===true;
   const flame=abilityId==='flame_ring' && ent.flame20===true;
   if(flame) phaseTicks.active=4;
   const cleave=abilityId==='heavy_cleave' && ent.cleave20===true;
@@ -625,6 +636,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
+    ...(blast ? {blast20:true,castTick:world.tick,blastDamage:sourceMult(ent,def),blastPoise:ent.poiseMult??1} : {}),
     ...(flame ? {flame20:true,castTick:world.tick,flameDamage:sourceMult(ent,def),flamePoise:ent.poiseMult??1} : {}),
     ...(cleave ? {cleave20:true,castTick:world.tick,cleaveDamage:sourceMult(ent,def),cleavePoise:ent.poiseMult??1} : {}),
     ...(volley ? {volley20:true,castTick:world.tick,shotsFired:0,volleyMuzzle:ent.r+4,volleyDamage:sourceMult(ent,def),volleyPoise:ent.poiseMult??1} : {}),
@@ -833,6 +845,7 @@ function doActive(world, ent, act) {
       const a = act.facing + spread + (def.spin ? Math.PI * 2 * (act.growth ? (act.shotsFired - 1) / act.growth.count : activeTick / act.phaseTicks.active) : 0);
       projectileIds.push(world.nextId);
       world.projectiles.push({
+        ...(act.blast20 ? {blast20:true} : {}),
         ...(act.volley20 ? {volley20:true} : {}),
         id: world.nextId++, team: ent.team, ownerId: ent.id, ownerKind: ent.kind,
         ownerType: ent.type || ent.weapon, abilityId: act.id,
@@ -842,8 +855,8 @@ function doActive(world, ent, act) {
         x: (act.volley20?act.ox:ent.x) + Math.cos(a) * (act.volley20?act.volleyMuzzle:ent.r+4), y: (act.volley20?act.oy:ent.y) + Math.sin(a) * (act.volley20?act.volleyMuzzle:ent.r+4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,
         travelled: 0, range: pr.rangePx, pierce: pr.pierce, hit: [],
-        dmgMult: (act.volley20?act.volleyDamage:sourceMult(ent, def)) * (act.counter ? BALANCE.counter.damage : 1),
-        poiseMult: (act.volley20?act.volleyPoise:(ent.poiseMult ?? 1)) * (act.counter ? BALANCE.counter.poise : 1), counter: !!act.counter,
+        dmgMult: (act.blast20?act.blastDamage:act.volley20?act.volleyDamage:sourceMult(ent, def)) * (act.counter ? BALANCE.counter.damage : 1),
+        poiseMult: (act.blast20?act.blastPoise:act.volley20?act.volleyPoise:(ent.poiseMult ?? 1)) * (act.counter ? BALANCE.counter.poise : 1), counter: !!act.counter,
       });
     }
     world.events.push({ type: 'projectile', id: ent.id, ability: act.id, ...(act.volley20 ? {volley20:true,castTick:act.castTick,wave,ox:act.ox,oy:act.oy,facing:act.facing,projectileIds} : {}), ...(act.step ? { step: act.step } : {}) });
@@ -1273,15 +1286,16 @@ function stepProjectiles(world) {
 
 function explode(world, pr, def) {
   const radius = def.projectile.explode.radius;
-  world.events.push({ type: 'explode', x: pr.x, y: pr.y, radius, ability: pr.abilityId, ...(pr.step ? { step: pr.step } : {}) });
+  world.events.push({ type: 'explode', x: pr.x, y: pr.y, radius, ability: pr.abilityId, ...(pr.blast20 ? {blast20:true,ownerId:pr.ownerId,facing:Math.atan2(pr.vy,pr.vx)} : {}), ...(pr.step ? { step: pr.step } : {}) });
   for (const t of world.entities) {
     if (t.team === pr.team || !isTargetable(t) || pr.hit.includes(t.id)) continue;
-    if (dist2(pr.x, pr.y, t.x, t.y) > (radius + t.r) ** 2) continue;
+    const component=pr.blast20 ? blastComponent(pr.x,pr.y,Math.atan2(pr.vy,pr.vx),t) : null;
+    if (pr.blast20 ? !component : dist2(pr.x, pr.y, t.x, t.y) > (radius + t.r) ** 2) continue;
     pr.hit.push(t.id);
     applyHit(world, t, {
       srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId,
       counter: !!pr.counter, ...(pr.step ? { step: pr.step } : {}), def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
-      cause: { shape: { type: 'circle', radius, offset: 0 }, ox: pr.x, oy: pr.y, facing: 0 },
+      cause: { shape: component || { type: 'circle', radius, offset: 0 }, ox: pr.x, oy: pr.y, facing: component && component!==BLAST_CIRCLE ? Math.atan2(pr.vy,pr.vx) : 0 },
     });
   }
 }

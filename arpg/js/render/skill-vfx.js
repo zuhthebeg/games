@@ -1,3 +1,4 @@
+import {BLAST_CIRCLE,BLAST_CONE} from '../sim/blast-evolution.js';
 import {flameFront,flameShape} from '../sim/flame-evolution.js';
 import {cleaveFront,cleaveShape} from '../sim/cleave-evolution.js';
 import {VOLLEY_WAVES} from '../sim/volley-evolution.js';
@@ -389,6 +390,10 @@ export class SkillVfx {
         this.effect(profile,'active',event.ox+Math.cos(facing)*(PLAYER_BASE.r+4),event.oy+Math.sin(facing)*(PLAYER_BASE.r+4),facing,profile.projectileRadius,null,reduced);
       }
       return true;
+    }
+    if(event.type==='explode'&&event.ability==='blast_arrow'&&event.blast20===true){
+      const profile={...this.profile('blast_arrow'),blast20:true,drawEffect(v,slot){const g=slot.node;slot.kind='blast20';g.circle(0,0,BLAST_CIRCLE.radius).stroke({color:0xffb35c,width:1,alignment:1,alpha:.8});g.moveTo(0,0).lineTo(BLAST_CONE.range*Math.cos(-BLAST_CONE.arc*Math.PI/360),BLAST_CONE.range*Math.sin(-BLAST_CONE.arc*Math.PI/360)).arc(0,0,BLAST_CONE.range,-BLAST_CONE.arc*Math.PI/360,BLAST_CONE.arc*Math.PI/360).closePath().stroke({color:0xffb35c,width:1,alignment:1,alpha:.8});}};
+      return this.effect(profile,'blast20',event.x,event.y,event.facing,BLAST_CONE.range,null,reduced);
     }
     if(this.quarksRequested && !reduced)this.quarks.event(event,world);
     if (event.type === 'turnUndead') { this.holy.event(event, world, reduced); return false; }

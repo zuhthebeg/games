@@ -26,6 +26,7 @@ export function presentSkillEvents(events, world, owners) {
     // Attribution is per event: explicit/host-decorated explosions must not
     // suppress neighboring shots or be reassigned after their journal retires.
     // An own undefined owner also records an already-attempted unknown fallback.
+    if(event.type==='explode'&&event.blast20===true)return {...event,presentationOwner:event.ownerId};
     if (event.type !== 'explode' || Object.hasOwn(event, 'presentationOwner')) return event;
     const end = events.slice(i + 1).find(e => e.type === 'projectileEnd');
     return { ...event, presentationOwner: event.presentationOwner ?? owners.get(end?.id) };
