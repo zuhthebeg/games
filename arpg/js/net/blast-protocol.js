@@ -1,7 +1,7 @@
 import {ticks} from '../sim/core.js';
 import {STAGES} from '../content/combat.js';
 const maxW=Math.max(1280,...Object.values(STAGES).map(s=>s.arena?.w||0)),maxH=Math.max(720,...Object.values(STAGES).map(s=>s.arena?.h||0));
-const exact=(v,keys)=>v&&Reflect.ownKeys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
+const exact=(v,keys)=>v!==null&&typeof v==='object'&&!Array.isArray(v)&&Reflect.ownKeys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 export function validBlastAct(a,arena,tick){
  const phases=['windup','lock','active','recovery'],keys=['id','blast20','rate','castTick','phase','elapsed','total','facing','ox','oy','left','phaseTicks','dashStep','fired'];
  if(!exact(a,keys)||a.id!=='blast_arrow'||a.blast20!==true||![a.rate,a.ox,a.oy,a.facing,arena?.w,arena?.h].every(Number.isFinite)||a.rate<=0||a.rate>100||a.ox<0||a.oy<0||a.ox>arena.w||a.oy>arena.h)return false;
