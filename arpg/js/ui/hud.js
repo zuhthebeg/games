@@ -290,12 +290,13 @@ export class HUD {
       `${player.channel > 0 ? (1 - player.channel / ticks(PLAYER_BASE.scroll.channelMs)) * 100 : 0}%`);
     SLOT_NODES.forEach((key, i) => {
       const node = nodes[key], skill = player.skills[i];
-      if (!skill) { node.disabled = true; return; }
+      if (!skill) { node.classList.remove('needs-mana'); node.disabled = true; return; }
       const cooldown = player.cds[skill] || 0;
       const skillAct = player.act?.id === skill;
       const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);
       const needsDodge = ABILITIES[skill].dodgeShot && (player.dodgeDisabled || player.dodge.cdLeft > 0 || player.dodge.dashLeft > 0);
-      this.text(node.lastElementChild, cooldown > 0 ? seconds(cooldown) : skillAct ? '…' : needsMana ? '−' : '');
+      node.classList.toggle('needs-mana', needsMana && cooldown <= 0 && !skillAct);
+      this.text(node.lastElementChild, cooldown > 0 ? seconds(cooldown) : skillAct ? '…' : needsMana ? `MP ${ABILITIES[skill].manaCost}` : '');
       node.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
       node.disabled = player.shieldGuard?.left > 0 || cooldown > 0 || skillAct || player.channel > 0 || needsMana || !!needsDodge;
     });
