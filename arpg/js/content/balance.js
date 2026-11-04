@@ -90,7 +90,7 @@ export const BALANCE = {
     M_MARSH_MARKERS: { hp:4.2, damage:2.16, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:13, sizeRank:13, rec:[12,'rare',2] },
     M_MINE_CART: { hp:3.5, damage:1.92, eliteChance:0, waves:1, waveMs:0, concurrent:3, huntTier:3, rewardRank:12, sizeRank:12, rec:[11,'fine',3] },
     S1: { hp:1, damage:0.8, eliteChance:0, waves:1, waveMs:0, concurrent:2 },
-    S2: { hp:4, damage:1.28, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
+    S2: { hp:1, damage:1.28, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
     S3: { hp:3, damage:1.44, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },
     S4: { hp:2.5, bossHp:6, damage:0.92, eliteChance:.10, waves:9, waveMs:16000, concurrent:3 },
     S5: { hp:5, damage:3.36, eliteChance:.10, waves:14, waveMs:12000, concurrent:4 },
