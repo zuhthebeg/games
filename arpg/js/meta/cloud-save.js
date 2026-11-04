@@ -47,6 +47,7 @@ export class CloudSave {
   constructor({ storage, fetcher = (...args) => fetch(...args), now = () => Date.now(), timer = (fn, delay) => setTimeout(fn, delay), cancelTimer = id => clearTimeout(id) } = {}) {
     this.storage = storage; this.fetcher = fetcher; this.now = now; this.timer = timer; this.cancelTimer = cancelTimer;
     this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map(); this.uploading = new Set();
+    this.wakeups = new Map(); this.retryAt = new Map();
   }
   async token() {
     const stored = this.storage.getItem('relay_token');
@@ -105,29 +106,56 @@ export class CloudSave {
     if (remote && compareProgress(remote.save, save) > 0) return;
     let data; try { data = snapshot(save); } catch { return; }
     const hash = JSON.stringify(data), slot = data.charId;
-    if (hash === this.lastHash.get(slot)) return;
+    if (hash === this.lastHash.get(slot) && !this.pending.has(slot)) return;
     this.pending.set(slot, { data, hash });
-    const delay = Math.max(0, (this.lastSent.get(slot) || 0) + 60000 - this.now());
-    if (this.scheduled) this.cancelTimer(this.scheduled);
-    this.scheduled = this.timer(() => { this.scheduled = null; this.flush(); }, Math.max(delay, 300));
+    if (!this.uploading.has(slot)) this.schedule(slot, this.now() + 300);
   }
-  async flush({ hidden = false } = {}) {
+  schedule(slot, at) {
+    this.clearWakeup(slot);
+    if (!this.pending.has(slot) || this.uploading.has(slot)) return;
+    at = Math.max(at, this.retryAt.get(slot) ?? 0, this.lastSent.has(slot) ? this.lastSent.get(slot) + 60000 : 0);
+    const wakeup = {};
+    this.wakeups.set(slot, wakeup);
+    wakeup.id = this.timer(() => {
+      if (this.wakeups.get(slot) !== wakeup) return;
+      this.wakeups.delete(slot);
+      this.flush({ slot });
+    }, Math.min(2147483647, Math.max(0, at - this.now())));
+  }
+  clearWakeup(slot) {
+    const wakeup = this.wakeups.get(slot);
+    if (wakeup) { this.cancelTimer(wakeup.id); this.wakeups.delete(slot); }
+  }
+  async flush({ hidden = false, slot: onlySlot } = {}) {
     for (const [slot, entry] of [...this.pending]) {
+      if (onlySlot !== undefined && slot !== onlySlot) continue;
       if (this.uploading.has(slot)) continue;
-      if (this.now() - (this.lastSent.get(slot) || 0) < 60000 && !hidden) { this.retry(slot, 60000 - (this.now() - this.lastSent.get(slot))); continue; }
+      const allowedAt = Math.max(this.retryAt.get(slot) ?? 0,
+        !hidden && this.lastSent.has(slot) ? this.lastSent.get(slot) + 60000 : 0);
+      if (this.now() < allowedAt) { this.schedule(slot, allowedAt); continue; }
+      this.clearWakeup(slot);
       this.uploading.add(slot);
       try {
         const token = await this.token();
         const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(entry.data), keepalive: hidden });
-        if (response.status === 429) { this.retry(slot, 31000); continue; }
+        if (response.status === 429) {
+          const value = response.headers?.get('Retry-After')?.trim();
+          const delay = value && /^\d+$/.test(value) ? Number(value) * 1000 : value?.endsWith(' GMT') ? Date.parse(value) - this.now() : NaN;
+          this.retry(slot, Number.isFinite(delay) ? Math.max(31000, delay) : 31000);
+          continue;
+        }
         if (!response.ok) throw new Error(`Cloud PUT ${response.status}`);
         if (this.pending.get(slot) === entry) this.pending.delete(slot);
         this.lastHash.set(slot, entry.hash); this.lastSent.set(slot, this.now());
+        this.retryAt.delete(slot);
       } catch { this.retry(slot, 30000); }
-      finally { this.uploading.delete(slot); }
+      finally {
+        this.uploading.delete(slot);
+        if (this.pending.has(slot)) this.schedule(slot, this.now());
+      }
     }
   }
-  retry(slot, delay) { this.timer(() => { if (this.pending.has(slot)) this.flush(); }, delay); }
+  retry(slot, delay) { this.retryAt.set(slot, this.now() + delay); }
   async rankings() {
     const response = await this.fetcher('https://relay.cocy.io/api/rankings/arpg');
     if (!response.ok) throw new Error('Ranking unavailable');

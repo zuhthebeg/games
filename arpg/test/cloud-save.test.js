@@ -41,3 +41,136 @@ test('newer cloud save is offered but local bytes remain until restore', async (
   cloud.restore('human'); assert.equal(JSON.parse(map.get('arpg.save.v1')).xp, 10);
   assert.ok([...map.keys()].some(k => k.startsWith('arpg.save.v1.cloud-backup.')));
 });
+
+// CS1: deterministic clock starts at zero and the first timeout handle is zero.
+const settle = () => new Promise(resolve => setImmediate(resolve));
+const success = () => ({ ok: true, status: 200 });
+const limited = value => ({ ok: false, status: 429, headers: new Headers(value === undefined ? {} : { 'Retry-After': value }) });
+const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+function schedulerHarness(transport = async () => success(), start = 100000) {
+  let now = start, id = 0;
+  const tasks = new Map(), callbacks = [], calls = [], bytes = new Map();
+  const cloud = new CloudSave({ storage: { getItem: k => bytes.get(k) ?? null, setItem: (k,v) => bytes.set(k,v) },
+    now: () => now, timer: (fn, delay) => { callbacks.push(fn); tasks.set(id, { fn, at: now + delay }); return id++; },
+    cancelTimer: key => tasks.delete(key), fetcher: async (url, init) => {
+      calls.push({ at: now, data: init?.body && JSON.parse(init.body), init });
+      return transport(url, init);
+    } });
+  cloud.token = async () => 'synthetic-owner-A';
+  async function advance(ms) {
+    const target = now + ms; let count = 0;
+    while (true) {
+      const next = [...tasks].sort((a,b) => a[1].at - b[1].at)[0];
+      if (!next || next[1].at > target) break;
+      assert.ok(++count < 1000, 'finite wakeups');
+      now = next[1].at; tasks.delete(next[0]); next[1].fn(); await settle();
+    }
+    now = target; await settle();
+  }
+  return { cloud, tasks, callbacks, calls, bytes, advance, get now() { return now; } };
+}
+test('CS1 zero clock debounce, handle zero cancellation and stale callbacks', async () => {
+  const h = schedulerHarness(undefined, 0), s = human();
+  h.cloud.changed(s); const stale = h.callbacks[0];
+  await h.advance(100); s.gold++; h.cloud.changed(s);
+  assert.equal(h.tasks.size, 1); stale(); await settle();
+  assert.equal(h.calls.length, 0); await h.advance(299); assert.equal(h.calls.length, 0);
+  await h.advance(1); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].data.gold, s.gold);
+  assert.equal(h.tasks.size, 0); h.cloud.changed(s); assert.equal(h.tasks.size, 0);
+});
+test('CS1 acceptance1 100 changes and hidden flushes cannot bypass 429 deadline', async () => {
+  let n = 0; const h = schedulerHarness(async () => ++n === 1 ? limited() : success()), s = human();
+  h.cloud.changed(s); await h.advance(300); assert.equal(h.calls.length, 1);
+  for (let i = 0; i < 100; i++) {
+    s.gold++; h.cloud.changed(s); await h.cloud.flush({ hidden: true });
+    assert.ok(h.tasks.size <= 1); await h.advance(10);
+  }
+  await h.advance(29999); assert.equal(h.calls.length, 1);
+  await h.advance(1); assert.equal(h.calls.length, 2); assert.equal(h.calls[1].at, 131300);
+  assert.equal(h.calls[1].data.gold, s.gold); assert.equal(h.cloud.pending.size, 0); assert.equal(h.tasks.size, 0);
+});
+test('CS1 acceptance2 delta/date Retry-After and invalid values use exact lower bound', async () => {
+  for (const [header, delay] of [['120',120000], [new Date(220000).toUTCString(),119700],
+    [undefined,31000], ['invalid',31000], [new Date(0).toUTCString(),31000], ['-2',31000], ['1',31000]]) {
+    let n = 0; const h = schedulerHarness(async () => ++n === 1 ? limited(header) : success()), s = human();
+    h.cloud.changed(s); await h.advance(300); s.gold++; h.cloud.changed(s);
+    await h.cloud.flush({ hidden: true }); await h.advance(delay - 1); assert.equal(h.calls.length,1, String(header));
+    await h.advance(1); assert.equal(h.calls.length,2, String(header)); assert.equal(h.calls[1].data.gold,s.gold);
+    assert.equal(h.tasks.size,0);
+  }
+});
+test('CS1 acceptance3 deferred retry fetch preserves latest pending and wakes after success throttle', async () => {
+  let n = 0; const reply = deferred();
+  const h = schedulerHarness(async () => ++n === 1 ? limited() : n === 2 ? reply.promise : success()), s = human();
+  h.cloud.changed(s); await h.advance(300); await h.advance(31000); assert.equal(h.calls.length,2);
+  s.gold++; h.cloud.changed(s); await h.advance(300);
+  await h.cloud.flush({ hidden: true }); assert.equal(h.calls.length,2);
+  reply.resolve(success()); await settle();
+  assert.equal(h.cloud.pending.get('human').data.gold,s.gold); assert.equal(h.tasks.size,1);
+  await h.advance(59999); assert.equal(h.calls.length,2); await h.advance(1);
+  assert.equal(h.calls.length,3); assert.equal(h.calls[2].data.gold,s.gold);
+  assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+});
+test('CS1 acceptance4 repeated429 and generic network retry have one non-bypassable wakeup', async () => {
+  for (const [delay, failure] of [[31000, () => limited()], [30000, () => { throw new Error('offline'); }],
+    [30000, () => ({ ok:false, status:503 })]]) {
+    let n = 0; const h = schedulerHarness(async () => ++n <= 3 ? failure() : success()), s = human();
+    h.cloud.changed(s); await h.advance(300);
+    for (let round = 0; round < 3; round++) {
+      for (let i = 0; i < 5; i++) { s.gold++; h.cloud.changed(s); await h.cloud.flush({ hidden:true }); assert.equal(h.tasks.size,1); }
+      await h.advance(delay - 1); assert.equal(h.calls.length,round + 1);
+      await h.advance(1); assert.equal(h.calls.length,round + 2);
+    }
+    assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+    await h.advance(600000); assert.equal(h.calls.length,4);
+  }
+});
+test('CS1 acceptance5 slots have independent timers, deadlines and in-flight exclusion', async () => {
+  const held = deferred(); let humanCalls = 0;
+  const h = schedulerHarness(async (url, init) => {
+    const slot = JSON.parse(init.body).charId;
+    return slot === 'human' && ++humanCalls === 1 ? limited('120') : slot === 'human' && humanCalls === 2 ? held.promise : success();
+  });
+  const a = human(), b = createSkeletonSave({ lineage:'skeleton_knight',name:'Bone',answers:[0,0,0,0,0],createdAt:12345 });
+  h.cloud.changed(a); await h.advance(100); h.cloud.changed(b); assert.equal(h.tasks.size,2);
+  await h.advance(200); assert.equal(h.calls.length,1); await h.advance(100); assert.equal(h.calls.length,2);
+  b.gold++; h.cloud.changed(b); a.gold++; h.cloud.changed(a); assert.equal(h.tasks.size,2);
+  await h.advance(60000); assert.equal(h.calls.length,3); assert.equal(h.calls[2].data.charId,'skeleton_knight');
+  await h.advance(59900); assert.equal(h.calls.length,4);
+  a.gold++; h.cloud.changed(a); await h.cloud.flush({hidden:true}); assert.equal(h.calls.length,4);
+  held.resolve(success()); await settle(); await h.advance(60000);
+  assert.equal(h.calls.length,5); assert.equal(h.calls[4].data.gold,a.gold); assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+});
+test('CS1 visible success throttle and hidden exception are separate from backoff', async () => {
+  const h = schedulerHarness(), s = human(); h.cloud.changed(s);
+  await h.advance(300); s.gold++; h.cloud.changed(s); await h.cloud.flush();
+  await h.advance(59999); assert.equal(h.calls.length,1); await h.advance(1); assert.equal(h.calls.length,2);
+  s.gold++; h.cloud.changed(s); await h.cloud.flush({ hidden:true }); assert.equal(h.calls.length,3);
+  assert.equal(h.calls[2].init.keepalive,true); assert.equal(h.tasks.size,0);
+  // A success at clock zero is still a real success, not an absent timestamp.
+  const z = schedulerHarness(undefined, 0); z.cloud.changed(human()); await z.cloud.flush({ hidden:true });
+  const next = human(); next.gold++; z.cloud.changed(next); await z.advance(59999); assert.equal(z.calls.length,1);
+  await z.advance(1); assert.equal(z.calls.length,2);
+});
+test('CS1 acceptance6 deferred synthetic auth retains flow and current identity on retry', async () => {
+  const h = schedulerHarness(); delete h.cloud.token;
+  const original = globalThis.window; const auth = deferred(); let authCalls = 0;
+  const client = { token:'synthetic-A', ensureAuth: () => { authCalls++; return auth.promise; } };
+  globalThis.window = { MultiplayerClient:{ getInstance: () => client } };
+  try {
+    const s = human(); h.cloud.changed(s); await h.advance(300);
+    s.gold++; h.cloud.changed(s); await h.advance(300); await h.cloud.flush({hidden:true});
+    assert.equal(authCalls,1); assert.equal(h.calls.length,0);
+    auth.resolve(); await settle(); assert.equal(h.calls.length,1); assert.equal(h.tasks.size,1);
+    await h.advance(60000); assert.equal(h.calls.length,2); assert.equal(h.calls[1].data.gold,s.gold);
+    const fake = 'x.' + Buffer.from(JSON.stringify({ sub:'synthetic',exp:Math.floor(Date.now()/1000)+3600 })).toString('base64url') + '.fake';
+    h.bytes.set('relay_token',fake); assert.equal(await h.cloud.token(),fake); assert.equal(authCalls,2);
+    h.bytes.set('cocy_auth_token','synthetic-main'); client.token='synthetic-B';
+    assert.equal(await h.cloud.token(),'synthetic-B'); assert.equal(authCalls,3);
+    let n = 0, owner = 'A'; const r = schedulerHarness(async () => ++n === 1 ? limited() : success());
+    r.cloud.token = async () => 'synthetic-' + owner; r.cloud.changed(human()); await r.advance(300);
+    owner = 'B'; await r.advance(31000);
+    assert.equal(r.calls[0].init.headers.Authorization,'Bearer synthetic-A');
+    assert.equal(r.calls[1].init.headers.Authorization,'Bearer synthetic-B'); assert.equal(r.cloud.pending.size,0);
+  } finally { globalThis.window = original; }
+});
