@@ -75,7 +75,7 @@ function startAct(p, abilityId, facing, tick) {
   const evolution = abilityId === 'lunge' && p.lunge20 === true;
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, p.skillMasteryLevels?.[abilityId]);
-  p.act = { ...(abilityId==='blast_arrow' && p.blast20 ? {blast20:true,rate,castTick:tick,fired:false} : {}), ...(flame ? {flame20:true,rate,castTick:tick,fired:false} : {}), ...(cleave ? {cleave20:true,rate,castTick:tick,fired:false} : {}), ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
+  p.act = { ...(abilityId==='healing_light' && p.heal20 ? {heal20:true,rate,castTick:tick,fired:false} : {}), ...(abilityId==='blast_arrow' && p.blast20 ? {blast20:true,rate,castTick:tick,fired:false} : {}), ...(flame ? {flame20:true,rate,castTick:tick,fired:false} : {}), ...(cleave ? {cleave20:true,rate,castTick:tick,fired:false} : {}), ...(volley ? {volley20:true,rate,castTick:tick,shotsFired:0,fired:false} : {}), ...(abilityId==='frost_lance' && p.frost20 ? {frost20:true,rate,castTick:tick} : {}), ...(abilityId==='pierce_shot' && p.pierce20 ? {pierce20:true,rate,castTick:tick} : {}), ...(whirl ? {whirl20:true,rate,castTick:tick} : {}), ...(abilityId==='ember_bolt' && p.ember20 ? {ember20:true} : {}), ...(growth && (ABILITIES[abilityId].requiresSkeleton || abilityId === 'protective_shield' || abilityId === 'berserk' || abilityId === 'sword_wave' || growth.count !== skillGrowth(abilityId).count) ? { growth } : {}), ...(evolution ? {lunge20:true} : {}), ...(step ? { step } : {}), id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0, phaseTicks, total: phaseTicks.windup + phaseTicks.lock, facing, ox: p.x, oy: p.y, dashStep: 0 };
   p.facing = facing;
   skipEmptyPhases(p);
 }
@@ -216,7 +216,7 @@ export function predictPlayerTick(state, inp, { arena, others = [], tick = 0, mu
   if (p.act) {
     const act = p.act;
     p.facing = act.facing;
-    if(act.blast20 && act.phase==='active')act.fired=true;
+    if((act.heal20 || act.blast20) && act.phase==='active')act.fired=true;
     if(act.volley20 && act.phase==='active') {const wave=volleyWave(act.phaseTicks.active-act.left);if(wave) {act.shotsFired=wave;act.fired=true;}}
     if (act.phase === 'active' && act.def.status && !act.fired) {
       act.fired=true;

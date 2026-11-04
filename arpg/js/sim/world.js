@@ -1,3 +1,4 @@
+import {heal20,HEAL_OUTER_RADIUS,HEAL_OUTER_FRAC} from './heal-evolution.js';
 import {blast20,blastComponent,BLAST_CIRCLE} from './blast-evolution.js';
 import {flame20,flameShape} from './flame-evolution.js';
 import {cleave20,cleaveShape} from './cleave-evolution.js';
@@ -90,6 +91,7 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, facing = 0, dodg
     id: world.nextId++, kind: 'player', pid, team: TEAM_PLAYER,
     ...(['skeleton_knight','skeleton_mage','skeleton_archer'].includes(mods.lineage) ? {lineage:mods.lineage} : {}),
     ...(ember20(skillMasteryLevels) ? {ember20:true} : {}),
+    ...(heal20(skillMasteryLevels) ? {heal20:true} : {}),
     ...(blast20(skillMasteryLevels) ? {blast20:true} : {}),
     ...(flame20(skillMasteryLevels) ? {flame20:true} : {}),
     ...(cleave20(skillMasteryLevels) ? {cleave20:true} : {}),
@@ -636,6 +638,7 @@ function startAct(world, ent, abilityId, facing, counter = false) {
   if (evolution) phaseTicks.active=lungeTimeline(phaseTicks.active).total;
   const growth = skillGrowth(abilityId, ent.skillMasteryLevels?.[abilityId]);
   ent.act = {
+    ...(abilityId==='healing_light' && ent.heal20 ? {heal20:true,castTick:world.tick} : {}),
     ...(blast ? {blast20:true,castTick:world.tick,blastDamage:sourceMult(ent,def),blastPoise:ent.poiseMult??1} : {}),
     ...(flame ? {flame20:true,castTick:world.tick,flameDamage:sourceMult(ent,def),flamePoise:ent.poiseMult??1} : {}),
     ...(cleave ? {cleave20:true,castTick:world.tick,cleaveDamage:sourceMult(ent,def),cleavePoise:ent.poiseMult??1} : {}),
@@ -785,6 +788,30 @@ function doActive(world, ent, act) {
       target.shieldUntil = world.tick + ticks(act.growth.durationMs);
       target.shieldCharges = act.growth.charges;
       world.events.push({ type: 'shield', src: ent.id, dst: target.id, ability: act.id, x: target.x, y: target.y });
+    }
+  } else if (def.heal && act.heal20) {
+    if (act.fired) return;
+    act.fired = true;
+    // Release-time center and healing factors; legacy path below is untouched.
+    const rx=ent.x,ry=ent.y;
+    const healInt=1 + BALANCE.stats.focusDamage * statEffect(ent.effectiveInt ?? BALANCE.stats.base);
+    const healHoly=ent.staffAffinity === 'holy' ? 1.2 : 1;
+    world.events.push({ type: 'healCast', id: ent.id, ability: act.id,
+      x: rx, y: ry, radius: def.heal.radius, heal20:true, outerRadius:HEAL_OUTER_RADIUS });
+    for (const target of world.entities) {
+      const d2=dist2(rx,ry,target.x,target.y);
+      if ((target.kind === 'monster' && MONSTERS[target.type]?.lifeState === 'undead' || target.kind === 'player' && target.skeletal)
+        && target.team !== ent.team && isTargetable(target) && target.hp > 0 && d2 <= def.heal.radius ** 2) {
+        applyHit(world, target, { srcId: ent.id, srcKind: ent.kind, srcType: ent.weapon, abilityId: act.id,
+          def: { ...def, damage: 48 }, mult: sourceMult(ent, def), poiseMult: 1, fromX: rx, fromY: ry });
+      }
+      if (target.kind !== 'player' || target.team !== ent.team || !alive(target) || target.hp <= 0
+        || d2 > HEAL_OUTER_RADIUS ** 2) continue;
+      const heal = Math.min(target.maxHp - target.hp, Math.round(target.maxHp * (d2 <= def.heal.radius ** 2 ? def.heal.maxHpFrac : HEAL_OUTER_FRAC) * healInt * healHoly));
+      if (heal <= 0) continue;
+      target.hp += heal;
+      world.events.push({ type: 'heal', src: ent.id, dst: target.id, pid: target.pid, ability: act.id,
+        heal, hp: target.hp, maxHp: target.maxHp, x: target.x, y: target.y });
     }
   } else if (def.heal) {
     if (act.fired) return;
