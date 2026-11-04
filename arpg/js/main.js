@@ -1,3 +1,4 @@
+import { startNetworkTicks, suspendHiddenSession, hostWaitingLabel } from './net/host-tick.js';
 import { victoryResultDelay } from './ui/victory-result-delay.js';
 import { playerForm } from './content/player-lineages.js';
 import { Application } from '../vendor/pixi-8.22.0.min.mjs';
@@ -608,12 +609,15 @@ try {
   window.addEventListener('pageshow', event => { if (event.persisted && coopSession) resumeCoop(); else if (event.persisted && coopPageHidden) { coopPageHidden = false; hub.showInn(); } });
   const coopStatus = document.createElement('div'); coopStatus.id = 'coop-status'; coopStatus.hidden = true;
   document.querySelector('#hud').append(coopStatus);
-  // Network ticks continue while a phone/tab is backgrounded. Single-player pause remains unchanged.
+  // Worker wakes the desktop host even while hidden; guests retain their old timer/RAF paths.
   let netTime = performance.now(), guestTime = netTime;
-  setInterval(() => {
+  startNetworkTicks(() => {
     const now = performance.now(), elapsed = now - netTime; netTime = now;
     if (coopSession?.isHost) coopSession.update(elapsed, hidden || !input.enabled ? emptyInput() : coopInput(), coopLoad);
-    else if (coopSession && hidden) {
+  });
+  setInterval(() => {
+    if (coopSession && !coopSession.isHost && hidden) {
+      const now = performance.now();
       coopSession.update(now - guestTime, emptyInput(), coopLoad); guestTime = now;
     }
   }, TICK_MS);
@@ -751,8 +755,8 @@ try {
     accumulator = 0;
     lastTime = performance.now();
     input.reset();
-    if (hidden) { audio.stop(); coopSession?.suspend(); cloud.flush({ hidden: true }); }
-    else if (coopSession) resumeCoop();
+    if (hidden) { audio.stop(); suspendHiddenSession(coopSession); cloud.flush({ hidden: true }); }
+    else if (coopSession && !coopSession.isHost) resumeCoop();
     hud.pause(hidden && running && !coopSession);
   });
 
@@ -808,7 +812,7 @@ try {
         hud.syncRitual(ritualState, ritualPlayer ? nearestRitual(ritualPlayer.x, ritualPlayer.y) : null);
         coopStatus.hidden = false;
         const player = world.entities[0];
-        coopStatus.textContent = `${player.terminal ? '관전 · 개인 정산 완료 · ' : ''}${[...coopSession.players].length}인 · ${coopSession.isHost ? '방장' : `RTT ${coopSession.rtt === null ? '—' : Math.round(coopSession.rtt) + 'ms'}`}`;
+        coopStatus.textContent = `${hostWaitingLabel(coopSession) ? hostWaitingLabel(coopSession) + ' · ' : ''}${player.terminal ? '관전 · 개인 정산 완료 · ' : ''}${[...coopSession.players].length}인 · ${coopSession.isHost ? '방장' : `RTT ${coopSession.rtt === null ? '—' : Math.round(coopSession.rtt) + 'ms'}`}`;
       }
     } else if (!coopSession && !hidden && world && running) {
       accumulator += elapsed * (debug?.speed || 1);
