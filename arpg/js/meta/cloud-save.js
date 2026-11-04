@@ -127,7 +127,9 @@ export class CloudSave {
     if (wakeup) { this.cancelTimer(wakeup.id); this.wakeups.delete(slot); }
   }
   async flush({ hidden = false, slot: onlySlot } = {}) {
-    for (const [slot, entry] of [...this.pending]) {
+    for (const slot of [...this.pending.keys()]) {
+      const entry = this.pending.get(slot);
+      if (!entry) continue;
       if (onlySlot !== undefined && slot !== onlySlot) continue;
       if (this.uploading.has(slot)) continue;
       const allowedAt = Math.max(this.retryAt.get(slot) ?? 0,
@@ -140,7 +142,11 @@ export class CloudSave {
         const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(entry.data), keepalive: hidden });
         if (response.status === 429) {
           const value = response.headers?.get('Retry-After')?.trim();
-          const delay = value && /^\d+$/.test(value) ? Number(value) * 1000 : value?.endsWith(' GMT') ? Date.parse(value) - this.now() : NaN;
+          // HTTP-date accepts IMF-fixdate, RFC850 and asctime, all in UTC.
+          const gmt = /^(?:[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4}|[A-Za-z]+, \d{2}-[A-Za-z]{3}-\d{2}) \d{2}:\d{2}:\d{2} GMT$/;
+          const asctime = /^[A-Za-z]{3} [A-Za-z]{3} (?: \d|\d{2}) \d{2}:\d{2}:\d{2} \d{4}$/;
+          const date = gmt.test(value) ? value : asctime.test(value) ? `${value} GMT` : undefined;
+          const delay = value && /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(date) - this.now();
           this.retry(slot, Number.isFinite(delay) ? Math.max(31000, delay) : 31000);
           continue;
         }

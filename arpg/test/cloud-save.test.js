@@ -174,3 +174,41 @@ test('CS1 acceptance6 deferred synthetic auth retains flow and current identity 
     assert.equal(r.calls[1].init.headers.Authorization,'Bearer synthetic-B'); assert.equal(r.cloud.pending.size,0);
   } finally { globalThis.window = original; }
 });
+
+test('CS1 P1 hidden global flush cannot overwrite latest other-slot success after 31 seconds', async () => {
+  const held = deferred(); let remoteGold, lastKnight = -Infinity;
+  const h = schedulerHarness(async (url, init) => {
+    const data = JSON.parse(init.body);
+    if (data.charId === 'human') return held.promise;
+    if (h.now - lastKnight < 30000) return limited();
+    lastKnight = h.now; remoteGold = data.gold; return success();
+  });
+  const a = human(), b = createSkeletonSave({ lineage:'skeleton_knight',name:'Bone',answers:[0,0,0,0,0],createdAt:12345 });
+  h.cloud.changed(a); h.cloud.changed(b); const flushing = h.cloud.flush({hidden:true}); await settle();
+  b.gold += 5; h.cloud.changed(b); await h.advance(300);
+  assert.equal(h.calls.length,2); assert.equal(h.cloud.pending.has('skeleton_knight'),false);
+  await h.advance(31000); held.resolve(success()); await flushing;
+  assert.equal(h.calls.length,2); assert.equal(remoteGold,b.gold);
+  assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+});
+test('CS1 P1 visible global flush re-reads latest other-slot pending after await', async () => {
+  const held = deferred();
+  const h = schedulerHarness(async (url, init) => JSON.parse(init.body).charId === 'human' ? held.promise : success());
+  const a = human(), b = createSkeletonSave({ lineage:'skeleton_knight',name:'Bone',answers:[0,0,0,0,0],createdAt:12345 });
+  h.cloud.changed(a); h.cloud.changed(b); const flushing = h.cloud.flush(); await settle();
+  b.gold += 5; h.cloud.changed(b); held.resolve(success()); await flushing;
+  const calls = h.calls.filter(c => c.data.charId === 'skeleton_knight');
+  assert.equal(calls.length,1); assert.equal(calls[0].data.gold,b.gold);
+  assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+});
+test('CS1 P2 all three HTTP-date forms mean UTC even in a non-UTC process timezone', async () => {
+  const oldTZ = process.env.TZ; process.env.TZ = 'Pacific/Honolulu';
+  try {
+    for (const header of ['Thu, 01 Jan 1970 00:02:00 GMT','Thursday, 01-Jan-70 00:02:00 GMT','Thu Jan  1 00:02:00 1970']) {
+      let n = 0; const h = schedulerHarness(async () => ++n === 1 ? limited(header) : success(),0);
+      h.cloud.changed(human()); await h.advance(300);
+      await h.advance(119699); assert.equal(h.calls.length,1,header);
+      await h.advance(1); assert.equal(h.calls.length,2,header); assert.equal(h.calls[1].at,120000);
+    }
+  } finally { if (oldTZ === undefined) delete process.env.TZ; else process.env.TZ = oldTZ; }
+});
