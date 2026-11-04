@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { startNetworkTicks, suspendHiddenSession, hostWaitingLabel } from '../js/net/host-tick.js';
 import { TICK_MS } from '../js/sim/core.js';
+import { pair } from './fixtures/invasion-party.js';
+import { emptyInput } from '../js/sim/world.js';
 
 function fixture(fail = false) {
   let now = 0, callback, interval, terminated = 0;
@@ -47,4 +49,19 @@ test('main routes network ticks and visibility while retaining clamp and empty i
  const main = readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  for (const needle of ['startNetworkTicks(', 'suspendHiddenSession(coopSession)', 'hidden || !input.enabled ? emptyInput()', 'hostWaitingLabel(coopSession)', 'else if (coopSession && !coopSession.isHost) resumeCoop()']) assert.ok(main.includes(needle),needle);
  assert.ok(readFileSync(new URL('../js/net/session.js',import.meta.url),'utf8').includes('Math.min(250, dt)'));
+});
+
+test('real hidden host advances and broadcasts for ten seconds without suspending or resuming', () => {
+  const {s}=pair({invasion:false,guestLineage:'human',guestRole:'hunter',guestConsent:false});
+  const host=s.host, f=fixture();
+  assert.equal(host.phase,'running');
+  host.world.round.goal='timer';host.world.round.timerTicks=1e7;
+  let suspends=0; const original=host.suspend.bind(host);host.suspend=()=>{suspends++;original();};
+  const start=host.world.tick, snaps=host.snapshots, resumes=host.resumeStats.count;
+  const stop=startNetworkTicks(dt=>host.update(dt,emptyInput()),f.options);
+  suspendHiddenSession(host);
+  for(let i=0;i<300;i++)f.fire(TICK_MS);
+  assert.equal(suspends,0);assert.equal(host.suspended,false);assert.equal(host.resumeStats.count,resumes);
+  assert.ok(host.world.tick-start>=299);assert.ok(host.snapshots-snaps>=149);
+  stop();
 });
