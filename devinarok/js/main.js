@@ -5,10 +5,11 @@ import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import { AFFIXES } from './content/affixes.js';
 import { ITEMS, RARITIES } from './content/items.js';
+import { rekeySettlementItems } from './save/ops.js';
 import { HUB_ARENA, STAGE_LIST } from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, calculatePlayerStats, completeStage, createHubWorld,
-  createStageWorld, retreatStage, step,
+  createStageWorld, retreatStage, rollStageItem, step,
 } from './sim/world.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -128,18 +129,76 @@ function itemName(item) {
   return ITEMS[item.itemId]?.name ?? item.itemId;
 }
 
+const STAT_NAMES = {
+  attack: '공격력',
+  attackPercent: '공격력',
+  defense: '방어력',
+  maxHp: '최대 체력',
+  critChance: '치명타 확률',
+  critDamage: '치명타 피해',
+  attackSpeed: '공격 속도',
+  moveSpeed: '이동 속도',
+  dodgeCooldownReduction: '회피 재사용 대기시간 감소',
+  skillCooldownReduction: '기술 재사용 대기시간 감소',
+  lifesteal: '흡혈',
+  goldGain: '골드 획득',
+  xpGain: '경험치 획득',
+  spinCooldownSeconds: '회전 기술 재사용 대기시간',
+};
+
+function formatStat(stat, value, unit = '') {
+  return `${STAT_NAMES[stat] ?? AFFIXES[stat]?.name ?? stat} ${value > 0 ? '+' : ''}${value}${unit}`;
+}
+
 function itemStat(item) {
   const base = ITEMS[item.itemId];
   if (!base) return '알 수 없는 장비';
-  const value = base.value + item.enhance * Math.max(1, Math.round(base.value * 0.08));
-  return `${base.stat} +${value} · 강화 +${item.enhance} · ${RARITIES[item.rarity]?.name ?? item.rarity}`;
+  const enhance = item.enhance ?? 0;
+  const value = base.value + enhance * Math.max(1, Math.round(base.value * 0.08));
+  return `${formatStat(base.stat, value)} · 강화 +${enhance} · 요구 Lv.${item.requiredLevel ?? base.requiredLevel} · ${RARITIES[item.rarity]?.name ?? item.rarity}`;
+}
+
+function itemDetails(item) {
+  const affixes = (item.affixes ?? []).map((affix) => {
+    const definition = AFFIXES[affix.id];
+    const unit = definition?.unit ?? (affix.id === 'spinCooldownSeconds' ? '초' : '');
+    return `<small class="affix-line">${formatStat(affix.id, affix.value, unit)}</small>`;
+  }).join('');
+  return `<strong class="item-name rarity-${item.rarity}">${itemName(item)}</strong><small>${itemStat(item)}</small>${affixes || '<small>추가 옵션 없음</small>'}`;
+}
+
+function compareDeltas(item) {
+  const slot = ITEMS[item.itemId]?.slot ?? 'weapon';
+  const current = calculatePlayerStats(character.level, equippedItems());
+  const replaced = equippedItems().filter((equipped) => equipped.slot !== slot);
+  const next = calculatePlayerStats(character.level, [...replaced, item]);
+  const stats = [
+    ['attack', '공격력', (value) => Math.round(value)],
+    ['defense', '방어력', (value) => Math.round(value)],
+    ['maxHp', '최대 체력', (value) => Math.round(value)],
+    ['critChance', '치명타 확률', (value) => `${value.toFixed(1)}%`],
+    ['critDamage', '치명타 피해', (value) => `${Math.round(value * 100)}%`],
+    ['attackSpeed', '공격 속도', (value) => `${value}%`],
+    ['moveSpeed', '이동 속도', (value) => value.toFixed(1)],
+    ['dodgeCooldownReduction', '회피 재사용 대기시간 감소', (value) => `${value}%`],
+    ['skillCooldownReduction', '기술 재사용 대기시간 감소', (value) => `${value}%`],
+    ['lifesteal', '흡혈', (value) => `${value}%`],
+    ['goldGain', '골드 획득', (value) => `${value}%`],
+    ['xpGain', '경험치 획득', (value) => `${value}%`],
+    ['spinCooldownSeconds', '회전 기술 재사용 대기시간', (value) => `${value.toFixed(1)}초`],
+  ];
+  return `<div class="compare-deltas">${stats.map(([key, label, format]) => {
+    const delta = next[key] - current[key];
+    const sign = delta > 0 ? '+' : '';
+    return `<span class="${delta > 0 ? 'delta-up' : delta < 0 ? 'delta-down' : ''}">${label} ${sign}${format(delta)}</span>`;
+  }).join('')}</div>`;
 }
 
 function renderBoard() {
   const rows = STAGE_LIST.map((stage) => {
     const unlocked = stageIsUnlocked(stage.id);
     const cleared = character.clearedStages.includes(stage.id);
-    return `<div class="hub-row"><span>${stage.name}<small>${stage.id} · 권장 Lv.${stage.recommendedLevel} · ${cleared ? '클리어' : unlocked ? '도전 가능' : '잠김'}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
+    return `<div class="hub-row"><span>${stage.name}<small>권장 Lv.${stage.recommendedLevel} · ${cleared ? '클리어' : unlocked ? '도전 가능' : '잠김'}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
   }).join('');
   hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-close>닫기</button>`;
 }
@@ -149,8 +208,8 @@ function renderInventory(compareUid = '') {
     const base = ITEMS[item.itemId];
     const slot = base?.slot ?? 'weapon';
     const equipped = Boolean(item.slot);
-    const compare = compareUid === item.uid ? `<small>${item.affixes.map((affix) => `${AFFIXES[affix.id]?.name ?? affix.id} +${affix.value}${AFFIXES[affix.id]?.unit ?? ''}`).join(' · ') || '추가 옵션 없음'} · 착용 시 능력치 변화를 비교하세요.</small>` : '';
-    return `<div class="hub-row"><span>${itemName(item)}<small>${itemStat(item)}${compare}</small></span><span><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${item.requiredLevel > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></span></div>`;
+    const compare = compareUid === item.uid ? compareDeltas(item) : '';
+    return `<div class="item-row ${compare ? 'selected' : ''}"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${item.requiredLevel > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></div>${compare}</div>`;
   }).join('');
   hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2><p>무기 · 머리 · 몸 · 손 · 발 슬롯을 비교합니다.</p>${rows || '<p>보관 중인 장비가 없습니다.</p>'}<button data-close>닫기</button>`;
 }
@@ -161,7 +220,7 @@ function renderPanel(kind, compareUid = '') {
   if (kind === 'board') renderBoard();
   if (kind === 'inventory') renderInventory(compareUid);
   if (kind === 'blacksmith') {
-    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>강화 +${item.enhance} · 다음 비용 ${40 * (item.enhance + 1) ** 2}G</small></span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 ? 'disabled' : ''}>강화</button></div>`).join('');
+    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 ? 'disabled' : ''}>강화</button></div></div>`).join('');
     hubPanel.innerHTML = `<h2>대장장이 · 강화</h2><p>실패해도 장비는 파괴되거나 하락하지 않습니다. 보유 골드 ${character.gold}G</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
   }
   if (kind === 'merchant') {
@@ -196,7 +255,7 @@ async function startStage(stageId) {
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('combat-bgm');
-  $('#stage-name').textContent = `${world.arena.name} · ${stageId}`;
+  $('#stage-name').textContent = world.arena.name;
   if (DEV_MODE) $('#toast').textContent = `${world.arena.name} · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
   if (stageId === 'CB') {
     $('#boss-intro').hidden = false;
@@ -237,7 +296,7 @@ function updateHud(current) {
     $('#hud-name').textContent = `${character.name} · Lv.${character.level}`;
     $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
     $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
-    $('#potion-count').textContent = `물약 ${hero.potions}`;
+    $('#potion-count').textContent = String(hero.potions);
     for (const [id, buttonValue, max] of [[1, 4, 180], [2, 8, 240], [3, 16, 360]]) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
@@ -261,7 +320,8 @@ async function settleStage(outcome = world?.outcome) {
   let autoSold = 0;
   if (outcome === 'clear') {
     const capacity = Math.max(0, 40 - inventory.length);
-    result.items.forEach((item, index) => {
+    const uniqueItems = rekeySettlementItems(result.items, inventory);
+    uniqueItems.forEach((item, index) => {
       if (index < capacity) {
         ops.push({ type: 'grantItem', uid: item.uid, itemId: item.itemId, rarity: item.rarity, enhance: item.enhance, ilvl: item.ilvl, affixes: item.affixes, legendaryId: item.legendaryId });
       } else {
@@ -338,6 +398,15 @@ $('#hub-ui').addEventListener('click', async (event) => {
     renderPanel('merchant');
   }
 });
+gameScreen.addEventListener('click', (event) => {
+  const station = event.target.closest('.npc-hotspot');
+  if (!station || world?.mode !== 'hub') return;
+  audio.play('click');
+  renderPanel(station.dataset.panel);
+});
+window.addEventListener('pointerdown', (event) => {
+  if (event.pointerType === 'touch') document.documentElement.classList.add('touch-mode');
+}, { passive: true });
 window.addEventListener('keydown', (event) => {
   if (!loop || world?.mode !== 'stage' || !['Escape', 'KeyR'].includes(event.code)) return;
   if (pauseMenu.hidden) {
@@ -369,7 +438,17 @@ if (DEV_MODE) {
     render(previous = world) { if (renderer && world) renderer.render(previous, world, 1); },
     async grantDevItem(item = {}) {
       const uid = item.uid ?? `dev:${character.rev}:${inventory.length}`;
-      await applyOps([{ type: 'grantItem', uid, itemId: item.itemId ?? 'rusted-sword', rarity: item.rarity ?? 'rare', ilvl: item.ilvl ?? 1, affixes: item.affixes ?? [] }]);
+      const rolled = rollStageItem(world, { stageLevel: item.ilvl ?? 1, forcedRarity: item.rarity ?? 'rare' });
+      await applyOps([{
+        type: 'grantItem',
+        uid,
+        itemId: item.itemId ?? rolled.itemId,
+        rarity: item.rarity ?? rolled.rarity,
+        ilvl: item.ilvl ?? rolled.ilvl,
+        enhance: item.enhance ?? 0,
+        affixes: item.affixes ?? rolled.affixes,
+        legendaryId: rolled.legendaryId,
+      }]);
       return uid;
     },
     async grantDevGold(amount = 500) { await applyOps([{ type: 'grantGold', amount }]); return character.gold; },

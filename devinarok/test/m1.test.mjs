@@ -5,8 +5,8 @@ import { AFFIXES } from '../js/content/affixes.js';
 import { ITEM_BASES, RARITIES } from '../js/content/items.js';
 import { SKILLS } from '../js/content/skills.js';
 import { HUB_ARENA, STAGE_LIST, STAGES } from '../js/content/stages.js';
-import { BUTTONS, calculateDamage, calculatePlayerStats, completeStage, createStageWorld, rarityForRoll, rollStageItem, step, xpToNextLevel } from '../js/sim/world.js';
-import { applyOperations } from '../js/save/ops.js';
+import { BUTTONS, calculateDamage, calculatePlayerStats, completeStage, createLootUid, createStageWorld, rarityForRoll, rollStageItem, step, xpToNextLevel } from '../js/sim/world.js';
+import { applyOperations, rekeySettlementItems } from '../js/save/ops.js';
 
 test('M1 content references valid KayKit models and settled combat ranges', () => {
   assert.deepEqual(Object.keys(ENEMIES).sort(), ['commander', 'mage', 'minion', 'rogue', 'warrior']);
@@ -30,6 +30,15 @@ test('M1 content references valid KayKit models and settled combat ranges', () =
       assert.ok(prop, `${stage.id}: obstacle ${obstacle.id} has no GLB`);
       assert.equal(prop.x, obstacle.x);
       assert.equal(prop.z, obstacle.z);
+    }
+  }
+  for (const stage of STAGE_LIST.map((entry) => STAGES[entry.id])) {
+    for (const room of stage.rooms) {
+      const props = stage.props.filter((prop) => prop.roomId === room.id);
+      assert.ok(new Set(props.map((prop) => prop.model)).size >= 6, `${stage.id}/${room.id}: room dressing is too repetitive`);
+      assert.equal(props.filter((prop) => prop.model === 'assets/env/torch_mounted.glb').length, 2, `${stage.id}/${room.id}: expected two wall torches`);
+      assert.ok(props.some((prop) => prop.wallSide), `${stage.id}/${room.id}: side walls are missing`);
+      assert.ok(props.some((prop) => prop.z === room.centerZ - stage.depth / stage.rooms.length / 2 - 0.5), `${stage.id}/${room.id}: back wall is missing`);
     }
   }
 });
@@ -74,6 +83,19 @@ test('M1 stage loot is deterministic and death/retreat settlement retains half g
     assert.equal(settled.items.length, 0);
     assert.equal(settled.lostItems.length, 1);
   }
+});
+
+test('loot ids include stage and settlement deterministically rekeys saved uid collisions', () => {
+  assert.equal(createLootUid(77, 'C2', 19), '77:C2:19');
+  const items = [{ uid: '77:C2:19' }, { uid: '77:C2:19' }, { uid: '77:C2:19' }];
+  const rekeyed = rekeySettlementItems(items, [{ uid: '77:C2:19' }]);
+  assert.deepEqual(rekeyed.map((item) => item.uid), ['77:C2:19:1', '77:C2:19:2', '77:C2:19:3']);
+});
+
+test('forced rarity dev rolls still generate rarity-appropriate affixes', () => {
+  const world = createStageWorld({ seed: 79, stageId: 'C1', playerId: 'a' });
+  assert.equal(rollStageItem(world, { stageLevel: 1, forcedRarity: 'rare' }).affixes.length, 2);
+  assert.equal(rollStageItem(world, { stageLevel: 1, forcedRarity: 'legendary' }).affixes.length, 4);
 });
 
 test('doors stay closed until every enemy in the room is defeated', () => {

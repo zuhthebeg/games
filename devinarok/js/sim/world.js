@@ -752,8 +752,9 @@ function rollAffix(world, ilvl) {
   return { id, value };
 }
 
-export function rollStageItem(world, { stageLevel = 1, elite = false, boss = false } = {}) {
-  const rarity = rarityForRoll(random(world), { elite, boss });
+export function rollStageItem(world, { stageLevel = 1, elite = false, boss = false, forcedRarity = null } = {}) {
+  const rarity = forcedRarity ?? rarityForRoll(random(world), { elite, boss });
+  if (!RARITIES[rarity]) throw new TypeError(`Unknown item rarity: ${rarity}`);
   const ilvl = stageLevel + (boss ? 2 : 0);
   const bases = ITEM_BASES.filter((item) => item.requiredLevel <= stageLevel);
   const base = bases[Math.floor(random(world) * bases.length)];
@@ -923,8 +924,12 @@ function spawnLoot(world, x, z, loot) {
   };
   world.entities.push(entity);
   emit(world, 'lootSpawn', { lootId: entity.id, x, z, rarity: entity.item?.rarity ?? null, gold: entity.gold ?? 0 });
-  if (entity.item) entity.item.uid = `${world.seed}:${world.nextEventId - 1}`;
+  if (entity.item) entity.item.uid = createLootUid(world.seed, world.stageId, world.nextEventId - 1);
   return entity;
+}
+
+export function createLootUid(seed, stageId, eventId) {
+  return `${seed}:${stageId}:${eventId}`;
 }
 
 function dropRewards(world, enemy) {

@@ -14,6 +14,20 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+export function rekeySettlementItems(items, existingItems = []) {
+  const occupied = new Set(existingItems.map((item) => typeof item === 'string' ? item : item.uid));
+  return items.map((item) => {
+    let uid = item.uid;
+    let suffix = 1;
+    while (occupied.has(uid)) {
+      uid = `${item.uid}:${suffix}`;
+      suffix += 1;
+    }
+    occupied.add(uid);
+    return { ...item, uid };
+  });
+}
+
 export function applyOperations(character, itemMap, operations, characterId) {
   let nextCharacter = character ? clone(character) : null;
   const nextItems = clone(itemMap);
