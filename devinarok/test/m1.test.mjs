@@ -19,7 +19,7 @@ test('M1 content references valid KayKit models and settled combat ranges', () =
   assert.equal(SKILLS.spin.windupTicks, 5);
   assert.equal(SKILLS.dash.dashDistance, 4);
   assert.equal(SKILLS.guard.durationTicks, 45);
-  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon').length, 3);
+  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon').length, 9);
   assert.equal(Object.keys(AFFIXES).length, 12);
   assert.deepEqual(Object.values(RARITIES).map((rarity) => rarity.weight), [60, 30, 9, 1]);
   assert.deepEqual(STAGE_LIST.map((stage) => stage.id), ['C1', 'C2', 'C3', 'CB']);
@@ -217,10 +217,12 @@ test('all phase-two boss patterns telegraph for at least 12 ticks', () => {
   boss.invulnerable = false;
   boss.attackCooldownTicks = 0;
   const player = world.entities.find((entity) => entity.kind === 'player');
+  player.x = boss.x + 6;
+  player.z = boss.z;
   player.hp = 100000;
   player.maxHp = 100000;
   const windups = new Map();
-  for (let tick = 0; tick < 1800 && windups.size < 4; tick += 1) {
+  for (let tick = 0; tick < 1800 && windups.size < 5; tick += 1) {
     const firstEventId = world.nextEventId;
     step(world, { a: { seq: tick + 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0 } });
     for (const event of world.events) {
@@ -230,9 +232,10 @@ test('all phase-two boss patterns telegraph for at least 12 ticks', () => {
     }
   }
   const telegraphs = world.events.filter((event) => event.type === 'telegraph');
-  assert.deepEqual([...windups.keys()].sort(), ['charge', 'circles', 'combo', 'slam']);
+  assert.deepEqual([...windups.keys()].sort(), ['bone-spear', 'charge', 'circles', 'combo', 'slam']);
   assert.ok([...windups.values()].every((ticks) => ticks >= 12));
   assert.ok(telegraphs.some((event) => event.shape?.type === 'circles'));
+  assert.ok(telegraphs.some((event) => event.pattern === 'bone-spear' && event.shape?.type === 'line' && event.shape.length === 14 && event.shape.width === 1));
 });
 
 test('a frontal perfect guard stuns an enemy and reduces its incoming damage', () => {

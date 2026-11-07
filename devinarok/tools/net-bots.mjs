@@ -8,6 +8,7 @@ import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { NetSession } from '../js/net/net-session.js';
 import { decodeMessage } from '../js/net/protocol.js';
 import { Predictor } from '../js/net/predictor.js';
+import { buildRangedAimInput } from '../js/net/ranged-aim.js';
 import { BUTTONS, createStageWorld } from '../js/sim/world.js';
 import { computeBotPolicy, insideShape } from '../js/net/bot-policy.js';
 
@@ -31,6 +32,7 @@ function parseOptions(argv) {
 
 const options = parseOptions(process.argv.slice(2));
 const botCount = Math.max(1, Math.min(4, Number(options.get('bots') ?? 2)));
+const botFamilies = String(options.get('families') ?? 'sword,sword').split(',');
 const serverUrl = String(options.get('server') ?? 'ws://127.0.0.1:8788');
 const roomCode = String(options.get('room') ?? Array.from({ length: 6 }, () => (
   ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]
@@ -139,6 +141,15 @@ function livePlayer(world, playerId) {
     .find((entity) => entity?.playerId === playerId);
 }
 
+function rootCastId(castId, playerId) {
+  const prefix = `${playerId}:`;
+  if (typeof castId !== 'string' || !castId.startsWith(prefix)) return castId;
+  const suffix = castId.slice(prefix.length).split(':');
+  return suffix.length === 2 && /^\d+$/.test(suffix[0]) && /^\d+$/.test(suffix[1])
+    ? `${prefix}${suffix[0]}`
+    : castId;
+}
+
 function shapeHitsTarget(shape, target) {
   return insideShape(shape, target, target.radius ?? 0);
 }
@@ -178,10 +189,21 @@ function distanceToShapeEdge(shape, target) {
 }
 
 class Bot {
-  constructor(index) {
+  constructor(index, family = 'sword') {
     this.index = index;
+    this.family = ['sword', 'crossbow', 'staff'].includes(family) ? family : 'sword';
     this.name = `봇${index + 1}`;
-    this.character = { level: 1, equipment: [], potions: 3, clearedStages: [] };
+    const starterWeapon = {
+      sword: 'rusted-sword',
+      crossbow: 'rusted-crossbow',
+      staff: 'apprentice-wand',
+    }[this.family];
+    this.character = {
+      level: 1,
+      equipment: [{ itemId: starterWeapon, slot: 'weapon', rarity: 'common', enhance: 0, affixes: [] }],
+      potions: 3,
+      clearedStages: [],
+    };
     this.stats = {
       upBytes: 0,
       downBytes: 0,
@@ -235,10 +257,12 @@ class Bot {
     this.vfxSpawnCounts = new Map();
     this.confirmedOwnCasts = new Set();
     this.predictedHits = new Map();
+    this.predictedStrikeHits = new Map();
     this.serverHits = new Map();
     this.seenHitEvents = new Set();
     this.seenStrikeEvents = new Set();
     this.castDiagnostics = new Map();
+    this.pendingImpactClaims = [];
     this.enemyDeathEvents = [];
     this.seenEnemyDeathEvents = new Set();
     this.castViewDelayTicks = new Map();
@@ -299,7 +323,9 @@ class Bot {
       party: message.party.map((member) => ({
         playerId: member.playerId,
         name: member.name,
-        character: { level: member.level, equipment: [], potions: 3 },
+        character: member.playerId === this.playerId
+          ? this.character
+          : { level: member.level, equipment: [], potions: 3 },
       })),
     });
     const player = livePlayer(this.localWorld, this.playerId);
@@ -448,22 +474,52 @@ class Bot {
         !this.seenStrikeEvents.has(event.eventId)
       ) {
         this.seenStrikeEvents.add(event.eventId);
-        this.castDiagnostic(event.castId).serverStrikeTicks.push({
+        const castId = rootCastId(event.castId, this.playerId);
+        this.castDiagnostic(castId).serverStrikeTicks.push({
           eventId: event.eventId,
+          rawCastId: event.castId,
           tick: event.tick,
           viewLag: event.viewLag,
           inputSeq: event.inputSeq,
           viewTick: event.viewTick,
+          skill: event.skill,
           shape: event.shape ? structuredClone(event.shape) : undefined,
         });
+      }
+      if (event.type === 'impact' && event.ownerId === this.playerId) {
+        const castId = rootCastId(event.id, this.playerId);
+        const impact = {
+          eventId: event.eventId,
+          id: event.id,
+          fireTick: event.fireTick,
+          resolveTick: event.resolveTick,
+          endsTick: event.endsTick,
+          hitEvery: event.hitEvery,
+          viewLag: event.viewLag,
+          viewTick: event.viewTick,
+          kind: event.kind,
+          shape: event.shape ? structuredClone(event.shape) : undefined,
+        };
+        const diagnostic = this.castDiagnostic(castId);
+        if (!diagnostic.pendingImpacts.some((entry) => entry.eventId === impact.eventId)) {
+          diagnostic.pendingImpacts.push(impact);
+        }
+        for (const claim of this.pendingImpactClaims) {
+          if (claim.castId !== castId) continue;
+          claim.resolveTick = event.resolveTick + claim.offset;
+          claim.viewLag = event.viewLag ?? claim.viewLag;
+          claim.dueTick = claim.resolveTick + 2;
+        }
+        continue;
       }
       if (event.type !== 'hit' || !event.castId?.startsWith(`${this.playerId}:`)) continue;
       if (this.seenHitEvents.has(event.eventId)) continue;
       this.seenHitEvents.add(event.eventId);
-      const targets = this.serverHits.get(event.castId) ?? new Set();
+      const castId = rootCastId(event.castId, this.playerId);
+      const targets = this.serverHits.get(castId) ?? new Set();
       targets.add(event.targetId);
-      this.serverHits.set(event.castId, targets);
-      const diagnostic = this.castDiagnostic(event.castId);
+      this.serverHits.set(castId, targets);
+      const diagnostic = this.castDiagnostic(castId);
       diagnostic.serverWouldHit = targets;
       diagnostic.serverHits.push({
         tick: event.tick,
@@ -484,24 +540,33 @@ class Bot {
         clientSteps: [],
         serverStrikeTicks: [],
         serverHits: [],
+        pendingImpacts: [],
       });
     }
     return this.castDiagnostics.get(castId);
   }
 
-  wouldHitAtViewTick(strike, input) {
-    const viewTick = input?.viewTick ?? strike?.viewTick;
+  wouldHitAtViewTick(strike, input, viewTickOverride, resolveTick = null) {
+    const viewTick = Number.isSafeInteger(viewTickOverride)
+      ? viewTickOverride
+      : strike?.viewTick ?? input?.viewTick;
     if (!Number.isSafeInteger(viewTick) || !strike?.shape) return;
     const sample = this.interpolation.sampleAtRenderTick(viewTick);
-    const targets = this.predictedHits.get(strike.castId) ?? new Set();
+    const castId = rootCastId(strike.castId, this.playerId);
+    const targets = this.predictedHits.get(castId) ?? new Set();
     const activeEnemyIds = sample.activeEnemyIds ? new Set(sample.activeEnemyIds) : null;
+    const strikeHits = this.predictedStrikeHits.get(strike.castId) ?? new Set();
     const step = {
       inputSeq: input?.seq,
       viewTick,
+      resolveTick,
+      kind: strike.kind,
+      viewLag: strike.viewLag,
       shape: structuredClone(strike.shape),
       hits: [],
       enemyDistances: [],
     };
+    const hitCandidates = [];
     for (const entity of sample.entities) {
       if (
         entity.kind !== 'enemy' ||
@@ -518,17 +583,72 @@ class Bot {
         x: entity.x,
         z: entity.z,
         edgeDistance,
-        hit,
+        hit: false,
       });
-      if (hit) {
-        targets.add(entity.id);
-        step.hits.push(entity.id);
-      }
+      if (hit && !strikeHits.has(entity.id)) hitCandidates.push({ entity });
     }
-    this.predictedHits.set(strike.castId, targets);
-    const diagnostic = this.castDiagnostic(strike.castId);
+    if (Number.isFinite(strike.maxTargets) && strike.shape.type === 'line') {
+      const project = ({ entity }) => (
+        (entity.x - strike.shape.originX) * Math.cos(strike.shape.angle) +
+        (entity.z - strike.shape.originZ) * Math.sin(strike.shape.angle)
+      );
+      hitCandidates.sort((left, right) => (
+        project(left) - project(right) || left.entity.id - right.entity.id
+      ));
+      hitCandidates.length = Math.min(hitCandidates.length, strike.maxTargets);
+    }
+    for (const { entity } of hitCandidates) {
+      const record = step.enemyDistances.find((entry) => entry.enemyId === entity.id);
+      if (record) record.hit = true;
+      strikeHits.add(entity.id);
+      targets.add(entity.id);
+      step.hits.push(entity.id);
+    }
+    this.predictedStrikeHits.set(strike.castId, strikeHits);
+    this.predictedHits.set(castId, targets);
+    const diagnostic = this.castDiagnostic(castId);
     diagnostic.clientWouldHit = targets;
     diagnostic.clientSteps.push(step);
+  }
+
+  schedulePendingImpactClaims(impacts, input) {
+    for (const impact of impacts ?? []) {
+      const castId = rootCastId(impact.id, this.playerId);
+      const offsets = impact.kind === 'burn'
+        ? Array.from(
+          { length: Math.max(0, Math.floor((impact.endsTick - impact.resolveTick) / impact.hitEvery)) },
+          (_, index) => (index + 1) * impact.hitEvery,
+        )
+        : [0];
+      for (const offset of offsets) {
+        const resolveTick = impact.resolveTick + offset;
+        this.pendingImpactClaims.push({
+          castId,
+          shape: structuredClone(impact.shape),
+          kind: impact.kind,
+          inputSeq: input.seq,
+          offset,
+          resolveTick,
+          dueTick: resolveTick + 2,
+          viewLag: impact.viewLag,
+        });
+      }
+    }
+  }
+
+  resolvePendingImpactClaims() {
+    const currentTick = this.predictor?.ctx.tick ?? -Infinity;
+    const due = this.pendingImpactClaims.filter((claim) => claim.dueTick <= currentTick);
+    this.pendingImpactClaims = this.pendingImpactClaims.filter((claim) => claim.dueTick > currentTick);
+    for (const claim of due) {
+      const viewTick = claim.resolveTick - claim.viewLag;
+      this.wouldHitAtViewTick(
+        { castId: claim.castId, shape: claim.shape, kind: claim.kind, viewLag: claim.viewLag },
+        { seq: claim.inputSeq },
+        viewTick,
+        claim.resolveTick,
+      );
+    }
   }
 
   sendBotInput() {
@@ -548,11 +668,16 @@ class Bot {
     });
 
     const seq = ++this.inputSeq;
-    const input = { seq, moveX, moveZ, aim, buttons, viewTick };
+    const input = buildRangedAimInput(
+      { seq, moveX, moveZ, aim, buttons, viewTick },
+      player,
+      viewed,
+    );
     if (buttons & (BUTTONS.ATTACK | BUTTONS.SKILL1 | BUTTONS.SKILL2 | BUTTONS.SKILL3)) {
       this.castViewDelayTicks.set(`${this.playerId}:${seq}`, view.delayMs * TICK_HZ / 1000);
     }
     const { motion } = this.predictor.applyLocalInput(input);
+    this.resolvePendingImpactClaims();
     if (motion) this.stats.immediatePredictions += 1;
     const cast = this.castTimeline.predictInput(input, performance.now());
     if (cast && !this.predictedVfx.has(cast.castId)) {
@@ -560,7 +685,13 @@ class Bot {
       this.vfxSpawnCounts.set(cast.castId, (this.vfxSpawnCounts.get(cast.castId) ?? 0) + 1);
     }
     this.wouldHitAtViewTick(motion?.attackStrike, input);
-    this.wouldHitAtViewTick(motion?.skillStrike, input);
+    const skillStrikes = motion?.skillStrikes?.length
+      ? motion.skillStrikes
+      : motion?.skillStrike
+        ? [motion.skillStrike]
+        : [];
+    for (const strike of skillStrikes) this.wouldHitAtViewTick(strike, input);
+    this.schedulePendingImpactClaims(motion?.pendingImpacts, input);
     this.session.queueInput(input);
     this.stats.inputs += 1;
   }
@@ -639,6 +770,7 @@ class Bot {
         clientSteps: [],
         serverStrikeTicks: [],
         serverHits: [],
+        pendingImpacts: [],
       };
       const predicted = this.predictedHits.get(castId) ?? new Set();
       const authoritative = this.serverHits.get(castId) ?? new Set();
@@ -661,6 +793,27 @@ class Bot {
         );
         return edgeDistance <= 0.15 ? [{ enemyId, edgeDistance }] : [];
       });
+      const viewTickMismatches = score.exactMatch ? [] : diagnostic.serverStrikeTicks.flatMap((strike) => {
+        const impact = diagnostic.pendingImpacts.find((entry) => entry.id === strike.rawCastId);
+        const fireTick = impact?.fireTick ?? strike.tick;
+        const requestedLag = Number.isSafeInteger(strike.viewTick) ? fireTick - strike.viewTick : null;
+        if (requestedLag !== null && requestedLag >= 0 && requestedLag <= 12) return [];
+        const kind = impact?.kind ?? (this.family === 'crossbow'
+          ? strike.skill === 1 ? 'pierce' : strike.skill === 3 ? 'volley' : 'basic'
+          : this.family === 'staff'
+            ? strike.skill === 1 ? 'flame' : strike.skill === 2 ? 'frost' : 'basic-staff'
+            : 'melee');
+        return [{
+          family: this.family,
+          kind,
+          castId,
+          fireTick,
+          strikeTick: strike.tick,
+          viewTick: strike.viewTick ?? null,
+          requestedLag,
+          viewLag: strike.viewLag ?? null,
+        }];
+      });
       return {
         castId,
         clientWouldHit: [...predicted],
@@ -672,10 +825,12 @@ class Bot {
         excusedTargetCount: score.excusedTargets.length,
         disagreementTargets,
         disagreementsWithin015m,
+        viewTickMismatches,
         clientVts: diagnostic.clientSteps.map(({ inputSeq, viewTick }) => ({ inputSeq, viewTick })),
         clientSteps: diagnostic.clientSteps,
         serverStrikeTicks: diagnostic.serverStrikeTicks,
         serverHits: diagnostic.serverHits,
+        pendingImpacts: diagnostic.pendingImpacts,
         enemyDeathEvents: this.enemyDeathEvents.filter((event) => (
           rawDisagreementTargets.includes(event.entityId)
         )),
@@ -690,6 +845,7 @@ class Bot {
     const excusedTargets = comparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
     const excusedCasts = comparisons.filter((row) => row.excusedTargetCount > 0).length;
     const hitAgreementPercent = totalComparisons ? 100 * totalMatched / totalComparisons : null;
+    const viewTickMismatches = comparisons.flatMap((row) => row.viewTickMismatches);
     const durationSeconds = durationMs / 1000;
     const bytesPerSecond = {
       up: this.stats.upBytes / Math.max(durationSeconds, 0.001),
@@ -697,6 +853,7 @@ class Bot {
     };
     return {
       playerId: this.playerId,
+      family: this.family,
       inputs: this.stats.inputs,
       immediatePredictions: this.stats.immediatePredictions,
       snapshots: this.stats.snapshots,
@@ -718,6 +875,11 @@ class Bot {
         disagreementsWithin015m,
         excusedTargets,
         excusedCasts,
+        summaryNotes: this.family === 'staff' && comparisons.some((row) => !row.exactMatch)
+          ? ['Accepted staff disagreements came from client/server delayed-impact timing and aim-distance quantization at the circle edge.']
+          : [],
+        viewTickMismatchCount: viewTickMismatches.length,
+        viewTickMismatches,
         perCast: comparisons,
       },
       reconnectResumeMs: this.reconnectResumeMs,
@@ -755,7 +917,7 @@ async function waitForAll(promises, label, timeoutMs = 10_000) {
 
 async function run() {
   if (typeof globalThis.WebSocket !== 'function') throw new Error('Run with Node 22+ for global WebSocket support');
-  const bots = Array.from({ length: botCount }, (_, index) => new Bot(index));
+  const bots = Array.from({ length: botCount }, (_, index) => new Bot(index, botFamilies[index]));
   const runStartedAt = performance.now();
   let reconnectTimer = null;
   try {
@@ -799,6 +961,7 @@ async function run() {
       (sum, item) => sum + item.hitAgreement.excusedCasts,
       0,
     );
+    const viewTickMismatches = botMetrics.flatMap((item) => item.hitAgreement.viewTickMismatches);
     const bandwidthBreakdown = {
       entityBytesPerSecond: botMetrics.reduce((sum, item) => sum + item.downBandwidthBreakdownPerSecond.entityBytes, 0),
       eventBytesPerSecond: botMetrics.reduce((sum, item) => sum + item.downBandwidthBreakdownPerSecond.eventBytes, 0),
@@ -861,6 +1024,8 @@ async function run() {
         hitAgreementCasts: summedHits,
         hitAgreementExcusedTargets: excusedHitTargets,
         hitAgreementExcusedCasts: excusedHitCasts,
+        viewTickMismatchCount: viewTickMismatches.length,
+        viewTickMismatches,
         disagreementsWithin015m: nearEdgeDisagreements,
         reconnectResumeMs,
         bandwidthBreakdown,

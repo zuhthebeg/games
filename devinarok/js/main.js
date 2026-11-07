@@ -6,10 +6,13 @@ import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
 import { escapeHtml } from './ui/escape-html.js';
+import { applyHubEquipmentLook } from './ui/hub-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
 import { computeBotPolicy } from './net/bot-policy.js';
+import { buildRangedAimInput } from './net/ranged-aim.js';
 import { AFFIXES } from './content/affixes.js';
-import { equipmentLook, ITEMS, RARITIES } from './content/items.js';
+import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
+import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
 import { HUB_ARENA, STAGE_LIST } from './content/stages.js';
 import {
@@ -137,10 +140,9 @@ function refreshHubPlayer() {
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const stats = calculatePlayerStats(character.level, equipment);
+  const look = applyHubEquipmentLook(player, equipment);
   Object.assign(player, {
     level: character.level,
-    equipment,
-    look: equipmentLook(equipment),
     stats,
     maxHp: stats.maxHp,
     hp: stats.maxHp,
@@ -239,6 +241,36 @@ const STAT_NAMES = {
   spinCooldownSeconds: '회전 기술 재사용 대기시간',
 };
 
+const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
+const FAMILY_ICONS = { sword: '🛡️', crossbow: '🏹', staff: '🔮' };
+const FAMILY_SKILL_COPY = {
+  sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.'],
+  crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.'],
+  staff: ['지점에 화염 장판을 남깁니다.', '주변에 냉기 파동을 퍼뜨려 둔화시킵니다.', '이동 방향으로 순간이동합니다.'],
+};
+
+function updateFamilySkillControls(family) {
+  const names = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+  names.forEach((name, index) => {
+    const button = $(`#controls [data-button="${4 << index}"]`);
+    if (button) button.textContent = SKILLS[name].name;
+  });
+  $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · Q 물약`;
+}
+
+function showFamilyChangeToast(family) {
+  const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((name) => SKILLS[name].name).join(' · ');
+  const message = `${FAMILY_NAMES[family]} 계열로 바뀌었어요 · 스킬: ${skills}`;
+  if (world?.mode === 'hub' && !hubPanel.hidden) {
+    hubPanel.querySelector('.family-change-toast')?.remove();
+    const status = document.createElement('p');
+    status.className = 'family-change-toast';
+    status.setAttribute('role', 'status');
+    status.textContent = message;
+    hubPanel.prepend(status);
+  } else $('#toast').textContent = message;
+}
+
 function formatStat(stat, value, unit = '') {
   return `${STAT_NAMES[stat] ?? AFFIXES[stat]?.name ?? stat} ${value > 0 ? '+' : ''}${value}${unit}`;
 }
@@ -248,7 +280,8 @@ function itemStat(item) {
   if (!base) return '알 수 없는 장비';
   const enhance = item.enhance ?? 0;
   const value = base.value + enhance * Math.max(1, Math.round(base.value * 0.08));
-  return `${formatStat(base.stat, value)} · 강화 +${enhance} · 요구 Lv.${item.requiredLevel ?? base.requiredLevel} · ${RARITIES[item.rarity]?.name ?? item.rarity}`;
+  const family = base.family ? `${FAMILY_NAMES[base.family]} 계열 · ` : '';
+  return `${family}${formatStat(base.stat, value)} · 강화 +${enhance} · 요구 Lv.${item.requiredLevel ?? base.requiredLevel} · ${RARITIES[item.rarity]?.name ?? item.rarity}`;
 }
 
 function itemDetails(item) {
@@ -513,7 +546,8 @@ function renderPartyLobby() {
   const members = party.map((member) => {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
-    return `<div class="party-lobby-member"><span>${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
+    const family = ['sword', 'crossbow', 'staff'].includes(member.family) ? member.family : 'sword';
+    return `<div class="party-lobby-member"><span>${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
   }).join('');
   const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
   hubPanel.dataset.kind = 'party';
@@ -628,6 +662,7 @@ async function startPartyStage(message) {
   $('#party-hud').hidden = false;
   $('#party-rtt').hidden = false;
   $('#boss-hud').hidden = message.stageId !== 'CB';
+  updateFamilySkillControls(equipmentLook(equippedItems()).family);
   $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
   world = partyClient.viewWorld() ?? partyClient.stageWorld;
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
@@ -646,7 +681,8 @@ async function startPartyStage(message) {
 function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
   const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
-  $('#party-hud').innerHTML = partyPlayers.map((member) => {
+  const partyHud = $('#party-hud');
+  partyHud.innerHTML = partyPlayers.map((member) => {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const hp = Math.max(0, Number(member.hp) || 0);
@@ -654,6 +690,11 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
     const label = `${name} · Lv.${level}`;
     return `<div class="party-member"><div class="party-member-row"><span>${label}</span><span>${hp}/${maxHp}</span></div><div class="hp-track"><i style="width:${Math.min(100, hp / maxHp * 100)}%"></i></div></div>`;
   }).join('');
+  const gameTop = gameScreen.getBoundingClientRect().top;
+  $('#toast').style.setProperty(
+    '--party-toast-top',
+    `${Math.ceil(partyHud.getBoundingClientRect().bottom - gameTop + 8)}px`,
+  );
   const rtt = Math.round(client.session?.clock.rttMs ?? 0);
   const badge = $('#party-rtt');
   badge.textContent = `${rtt} ms`;
@@ -815,13 +856,14 @@ function getNetBotInput() {
   const roomIndex = client.lastSnapshot.roomIndex ?? client.stageWorld.roomIndex;
   const room = client.stageWorld.arena.rooms[roomIndex];
   const door = client.stageWorld.arena.doors.find((entry) => entry.fromRoom === room?.id);
+  const policy = computeBotPolicy({
+    player,
+    viewed,
+    roomCleared: Boolean(client.lastSnapshot.roomCleared),
+    door,
+  });
   return {
-    ...computeBotPolicy({
-      player,
-      viewed,
-      roomCleared: Boolean(client.lastSnapshot.roomCleared),
-      door,
-    }),
+    ...buildRangedAimInput({ ...policy, viewTick }, player, viewed),
     viewTick,
   };
 }
@@ -850,9 +892,17 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   }).join('');
   const slotCards = EQUIPMENT_SLOTS.map((slot) => {
     const equipped = inventory.find((item) => item.slot === slot.key);
-    const cardText = equipped
-      ? `<strong class="rarity-${equipped.rarity}">${escapeHtml(itemName(equipped))}</strong><small>+${equipped.enhance ?? 0} · ${escapeHtml(itemStat(equipped).split(' · ')[0])}</small>`
-      : '<strong>비어 있음</strong>';
+    let cardText = '<strong>비어 있음</strong>';
+    if (equipped) {
+      const base = ITEMS[equipped.itemId];
+      const statParts = itemStat(equipped).split(' · ');
+      const stat = statParts[base?.family ? 1 : 0];
+      const family = base?.family;
+      const familyTag = family
+        ? `<span class="equipment-family-tag">${escapeHtml(FAMILY_NAMES[family])}</span>`
+        : '';
+      cardText = `<strong class="rarity-${equipped.rarity}">${escapeHtml(itemName(equipped))}</strong>${familyTag}<small>+${equipped.enhance ?? 0} · ${escapeHtml(stat)}</small>`;
+    }
     return `<article class="equipment-slot-card ${equipped ? `rarity-border-${equipped.rarity}` : ''}" data-slot-filter="${slot.key}" tabindex="0" role="button"><div class="slot-glyph">${slot.glyph}<small>${slot.label}</small></div><div class="equipment-slot-info">${cardText}</div><button data-unequip="${slot.key}" ${equipped ? '' : 'hidden'}>해제</button></article>`;
   }).join('');
   const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (
@@ -875,15 +925,23 @@ function renderPanel(kind, compareUid = '') {
   }
   if (kind === 'merchant') {
     const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
-    hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button>${rows}<button data-close>닫기</button>`;
+    const familyWeapons = FAMILY_STARTER_WEAPONS.map(({ itemId, price }) => (
+      `<div class="hub-row"><span>${escapeHtml(ITEMS[itemId].name)}<small>체험 · 공용 · ${price}G</small></span><button data-buy-family-weapon="${itemId}" ${character.gold < price || inventory.length >= 40 ? 'disabled' : ''}>구매</button></div>`
+    )).join('');
+    hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>계열 체험 무기</h3>${familyWeapons}${rows}<button data-close>닫기</button>`;
   }
   if (kind === 'character') {
     const stats = calculatePlayerStats(character.level, equippedItems());
+    const family = equipmentLook(equippedItems()).family;
+    const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+    const skillDescriptions = skillNames.map((name, index) => (
+      `<li><strong>${SKILLS[name].name}</strong> · ${FAMILY_SKILL_COPY[family][index]}</li>`
+    )).join('');
     const gear = EQUIPMENT_SLOTS.map((slot) => {
       const item = inventory.find((entry) => entry.slot === slot.key);
       return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
     }).join('');
-    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · 기사 Lv.${character.level}</h2><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
   }
 }
 
@@ -903,6 +961,7 @@ async function startStage(stageId) {
   $('#boss-hud').hidden = stageId !== 'CB';
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
+  updateFamilySkillControls(equipmentLook(equippedItems()).family);
   world = createStageWorld({
     seed: crypto.getRandomValues(new Uint32Array(1))[0],
     stageId,
@@ -925,6 +984,10 @@ async function startStage(stageId) {
     world,
     playerId: character.id,
     input,
+    buildInput: (rawInput, current) => {
+      const player = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+      return buildRangedAimInput(rawInput, player, current);
+    },
     render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
     onTick: (current) => {
       updateHud(current);
@@ -1151,9 +1214,13 @@ $('#hub-ui').addEventListener('click', async (event) => {
   if (button.dataset.sortie) startStage(button.dataset.sortie);
   if (button.dataset.compare) renderPanel('inventory', button.dataset.compare);
   if (button.dataset.equip) {
+    const equippedItem = inventory.find((item) => item.uid === button.dataset.equip);
+    const previousFamily = equipmentLook(equippedItems()).family;
     await applyOps([{ type: 'equip', uid: button.dataset.equip, slot: button.dataset.slot }]);
     refreshHubPlayer();
     renderPanel(hubPanel.dataset.kind);
+    const nextFamily = equipmentLook(equippedItems()).family;
+    if (ITEMS[equippedItem?.itemId]?.slot === 'weapon' && previousFamily !== nextFamily) showFamilyChangeToast(nextFamily);
   }
   if (button.dataset.unequip) {
     await applyOps([{ type: 'unequip', slot: button.dataset.unequip }]);
@@ -1173,6 +1240,15 @@ $('#hub-ui').addEventListener('click', async (event) => {
   }
   if (button.hasAttribute('data-buy-potion')) {
     await applyOps([{ type: 'buyPotion', count: 1 }]);
+    renderPanel('merchant');
+  }
+  if (button.dataset.buyFamilyWeapon) {
+    const starter = FAMILY_STARTER_WEAPONS.find(({ itemId }) => itemId === button.dataset.buyFamilyWeapon);
+    if (!starter || character.gold < starter.price || inventory.length >= 40) return;
+    await applyOps([
+      { type: 'spendGold', amount: starter.price },
+      { type: 'grantItem', uid: crypto.randomUUID(), itemId: starter.itemId, rarity: 'common', ilvl: 1, enhance: 0, affixes: [] },
+    ]);
     renderPanel('merchant');
   }
 });
