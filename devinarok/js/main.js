@@ -386,7 +386,7 @@ function renderPartyFinder() {
   if (codeInput) codeInput.disabled = partyQuickJoining;
   if (codeSubmit) codeSubmit.disabled = partyQuickJoining;
   const lookupActions = finder.querySelector('[data-party-lookup-actions]');
-  lookupActions.hidden = !partyQuickLookupFailed;
+  lookupActions.hidden = !partyQuickLookupFailed || partyFinderState === 'error';
   syncPartyFeedback();
 }
 
