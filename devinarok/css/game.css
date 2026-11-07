@@ -192,6 +192,11 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .party-finder-actions form { display: flex; gap: 6px; margin-top: 8px; }
 .party-finder-actions form input { min-width: 0; flex: 1; }
 .party-finder-actions form button { width: auto; margin: 0; }
+.party-feedback { margin: 0; color: #e3c28a; font: 12px/1.35 system-ui, sans-serif; }
+.party-feedback.is-error { color: #ffaaa0; }
+.party-feedback[hidden], .party-lookup-actions[hidden] { display: none; }
+.party-lookup-actions { display: flex; gap: 6px; }
+.party-lookup-actions button { flex: 1; min-height: 42px; margin: 0; }
 .party-invite { display: flex; align-items: center; gap: 8px; }
 .party-invite strong { flex: 1; color: #e3c28a; font: 700 20px system-ui, sans-serif; letter-spacing: .14em; }
 .party-invite button { width: auto; margin: 0; padding: 8px 10px; font-size: 12px; }

@@ -61,7 +61,10 @@ let partyFinderRooms = [];
 let partyFinderState = 'loading';
 let partyFinderLastRefresh = 0;
 let partyQuickJoining = false;
+let partyQuickLookupFailed = false;
 let partyQuickAbortController = null;
+let partyFeedbackMessage = '';
+let partyFeedbackIsError = false;
 
 async function reloadCharacter() {
   character = await saves.loadCharacter(character.id);
@@ -197,7 +200,7 @@ async function enterHub() {
   if (inviteCode && !inviteRoomHandled) {
     inviteRoomHandled = true;
     void connectParty(inviteCode).catch((error) => {
-      setPartyToast(partyJoinErrorMessage(error));
+      setPartyToast(partyJoinErrorMessage(error), { error: true });
       renderPanel('party-finder');
     });
   }
@@ -351,15 +354,40 @@ function renderPartyFinder() {
     ? `${Math.max(0, Math.floor((Date.now() - partyFinderLastRefresh) / 1000))}초 전 갱신`
     : '갱신 전';
   hubPanel.dataset.kind = 'party-finder';
-  hubPanel.innerHTML = `<section class="party-finder">
-    <h2>같이 출정</h2>
-    <button data-party-quick class="primary party-quick-button" ${partyQuickJoining ? 'disabled' : ''}>${quickLabel}</button>
-    <div class="party-room-heading"><strong>열린 방 · ${rooms.length}</strong><span>${updated}</span><button data-party-refresh ${busy} aria-label="방 목록 새로고침">↻</button></div>
-    <div class="party-room-list">${list}</div>
-    <div class="party-finder-actions"><button data-party-create ${busy}>방 만들기</button>
-      <details><summary>코드로 참가</summary><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드" ${busy}><button type="submit" ${busy}>참가</button></form></details>
-    </div><button data-close>닫기</button>
-  </section>`;
+  const roomRegion = `<div class="party-room-heading"><strong>열린 방 · ${rooms.length}</strong><span>${updated}</span><button data-party-refresh ${busy} aria-label="방 목록 새로고침">↻</button></div>
+    <div class="party-room-list">${list}</div>`;
+  let finder = hubPanel.querySelector('.party-finder');
+  if (!finder) {
+    hubPanel.innerHTML = `<section class="party-finder">
+      <h2>같이 출정</h2>
+      <button data-party-quick class="primary party-quick-button" ${partyQuickJoining ? 'disabled' : ''}>${quickLabel}</button>
+      <p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p>
+      <div class="party-lookup-actions" data-party-lookup-actions hidden>
+        <button data-party-lookup-retry>다시 시도</button>
+        <button data-party-lookup-create>새 방 만들기</button>
+      </div>
+      <div class="party-room-region">${roomRegion}</div>
+      <div class="party-finder-actions"><button data-party-create ${busy}>방 만들기</button>
+        <details><summary>코드로 참가</summary><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드" ${busy}><button type="submit" ${busy}>참가</button></form></details>
+      </div><button data-close>닫기</button>
+    </section>`;
+    finder = hubPanel.querySelector('.party-finder');
+  } else {
+    finder.querySelector('.party-room-region').innerHTML = roomRegion;
+  }
+  const quickButton = finder.querySelector('[data-party-quick]');
+  quickButton.disabled = partyQuickJoining;
+  quickButton.innerHTML = quickLabel;
+  for (const button of finder.querySelectorAll('[data-party-create], [data-party-refresh], [data-party-lookup-retry], [data-party-lookup-create]')) {
+    button.disabled = partyQuickJoining;
+  }
+  const codeInput = finder.querySelector('#party-code');
+  const codeSubmit = finder.querySelector('#party-join-form button[type="submit"]');
+  if (codeInput) codeInput.disabled = partyQuickJoining;
+  if (codeSubmit) codeSubmit.disabled = partyQuickJoining;
+  const lookupActions = finder.querySelector('[data-party-lookup-actions]');
+  lookupActions.hidden = !partyQuickLookupFailed;
+  syncPartyFeedback();
 }
 
 async function refreshPartyRooms({ loading = false } = {}) {
@@ -389,6 +417,8 @@ function openPartyFinder() {
   partyFinderState = 'loading';
   partyFinderLastRefresh = 0;
   partyQuickJoining = false;
+  partyQuickLookupFailed = false;
+  setPartyToast('');
   renderPartyFinder();
   void refreshPartyRooms({ loading: true });
   partyFinderTimer = setInterval(() => {
@@ -400,8 +430,19 @@ function openPartyFinder() {
   }, 5000);
 }
 
-function setPartyToast(message) {
-  $('#toast').textContent = message;
+function syncPartyFeedback() {
+  const status = hubPanel.querySelector('[data-party-feedback]');
+  if (!status) return;
+  status.textContent = partyFeedbackMessage;
+  status.hidden = !partyFeedbackMessage;
+  status.classList.toggle('is-error', partyFeedbackIsError);
+}
+
+function setPartyToast(message, { error = false } = {}) {
+  partyFeedbackMessage = String(message ?? '');
+  partyFeedbackIsError = Boolean(error);
+  $('#toast').textContent = partyFeedbackMessage;
+  syncPartyFeedback();
 }
 
 function partyJoinErrorMessage(error) {
@@ -416,6 +457,8 @@ function partyJoinErrorMessage(error) {
 async function quickJoinFromFinder() {
   if (partyQuickJoining) return;
   stopPartyFinderPolling();
+  partyQuickLookupFailed = false;
+  setPartyToast('');
   partyQuickJoining = true;
   const abortController = new AbortController();
   partyQuickAbortController = abortController;
@@ -431,19 +474,21 @@ async function quickJoinFromFinder() {
       },
     });
     if (abortController.signal.aborted) return;
-    if (result.created) setPartyToast('열린 방이 없어 새 방을 만들었어요. 동료를 기다리는 중이에요');
+    setPartyToast(result.created
+      ? '열린 방이 없어 새 방을 만들었어요. 동료를 기다리는 중이에요'
+      : '열린 방에 참가했어요');
   } catch (error) {
     if (abortController.signal.aborted) return;
-    partyQuickJoining = false;
-    setPartyToast(partyJoinErrorMessage(error));
-    partyFinderState = 'error';
+    partyQuickLookupFailed = error?.code === 'match-lookup-failed';
+    if (partyQuickLookupFailed) setPartyToast('방 목록을 불러오지 못했어요', { error: true });
+    else setPartyToast(partyJoinErrorMessage(error), { error: true });
     renderPartyFinder();
-    void refreshPartyRooms({ loading: true });
-    partyFinderTimer = setInterval(() => void refreshPartyRooms(), 5000);
+    if (partyFinderTimer === null) partyFinderTimer = setInterval(() => void refreshPartyRooms(), 5000);
   } finally {
     if (partyQuickAbortController === abortController) {
       partyQuickAbortController = null;
       partyQuickJoining = false;
+      if (hubPanel.dataset.kind === 'party-finder') renderPartyFinder();
     }
   }
 }
@@ -474,7 +519,8 @@ function renderPartyLobby() {
   hubPanel.dataset.kind = 'party';
   const isPublic = partyClient.lobby?.public !== false;
   const startLabel = allReady ? '출정' : '모두 준비하면 출정할 수 있어요';
-  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
+  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
+  syncPartyFeedback();
 }
 
 function connectParty(code = null) {
@@ -543,12 +589,12 @@ function connectParty(code = null) {
       error.code = 'room-gone';
       rejectLobby(error);
       if (hubPanel.dataset.kind === 'party-finder') {
-        setPartyToast(partyJoinErrorMessage(error));
+        setPartyToast(partyJoinErrorMessage(error), { error: true });
         void refreshPartyRooms({ loading: true });
         return;
       }
       $('#party-network-overlay').hidden = true;
-      setPartyToast('방이 종료되어 여관으로 돌아갑니다.');
+      setPartyToast('방이 종료되어 여관으로 돌아갑니다.', { error: true });
       void enterHub();
     },
     onError: (error) => {
@@ -557,7 +603,7 @@ function connectParty(code = null) {
         clearTimeout(timeout);
         partyClient?.close();
         rejectLobby(error);
-      } else setPartyToast(partyJoinErrorMessage(error));
+      } else setPartyToast(partyJoinErrorMessage(error), { error: true });
     },
   });
   if (code) partyClient.joinRoom(code);
@@ -1032,12 +1078,24 @@ $('#hub-ui').addEventListener('click', async (event) => {
   if (button.dataset.slotFilter) { renderInventory('', button.dataset.slotFilter); return; }
   if (button.hasAttribute('data-party-finder')) { openPartyFinder(); return; }
   if (button.hasAttribute('data-party-quick')) { await quickJoinFromFinder(); return; }
+  if (button.hasAttribute('data-party-lookup-retry')) {
+    partyQuickLookupFailed = false;
+    setPartyToast('');
+    await quickJoinFromFinder();
+    return;
+  }
+  if (button.hasAttribute('data-party-lookup-create')) {
+    partyQuickLookupFailed = false;
+    setPartyToast('');
+    try { await connectParty(); } catch (error) { setPartyToast(partyJoinErrorMessage(error), { error: true }); }
+    return;
+  }
   if (button.hasAttribute('data-party-refresh')) { await refreshPartyRooms({ loading: true }); return; }
   if (button.dataset.partyJoin) {
     try {
       await connectParty(button.dataset.partyJoin);
     } catch (error) {
-      setPartyToast(partyJoinErrorMessage(error));
+      setPartyToast(partyJoinErrorMessage(error), { error: true });
       partyFinderState = 'list';
       renderPartyFinder();
       void refreshPartyRooms({ loading: true });
@@ -1046,7 +1104,7 @@ $('#hub-ui').addEventListener('click', async (event) => {
     return;
   }
   if (button.hasAttribute('data-party-create')) {
-    try { await connectParty(); } catch (error) { setPartyToast(partyJoinErrorMessage(error)); }
+    try { await connectParty(); } catch (error) { setPartyToast(partyJoinErrorMessage(error), { error: true }); }
     return;
   }
   if (button.hasAttribute('data-party-share')) {
@@ -1133,8 +1191,8 @@ hubUi.addEventListener('submit', (event) => {
   if (event.target.id !== 'party-join-form') return;
   event.preventDefault();
   try {
-    void connectParty($('#party-code').value).catch((error) => setPartyToast(partyJoinErrorMessage(error)));
-  } catch (error) { setPartyToast(error.message); }
+    void connectParty($('#party-code').value).catch((error) => setPartyToast(partyJoinErrorMessage(error), { error: true }));
+  } catch (error) { setPartyToast(error.message, { error: true }); }
 });
 hubPanel.addEventListener('change', (event) => {
   if (event.target.id === 'party-stage-select') partyClient?.selectStage(event.target.value);
