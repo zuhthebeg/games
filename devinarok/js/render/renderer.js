@@ -5,6 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { ARENA } from '../sim/arena.js';
 import { COMBO_TIMELINES } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
+import { playerLookKey, playerModelKey } from './player-look.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const M0_MODELS = {
@@ -17,6 +18,51 @@ const M0_MODELS = {
   Skeleton_Mage: 'assets/chars/Skeleton_Mage.glb',
   Skeleton_Rogue: 'assets/chars/Skeleton_Rogue.glb',
 };
+const PLAYER_PARTS = new Set([
+  '1H_Sword_Offhand',
+  'Badge_Shield',
+  'Rectangle_Shield',
+  'Round_Shield',
+  'Spike_Shield',
+  '1H_Sword',
+  '2H_Sword',
+  'Knight_Helmet',
+  'Knight_Cape',
+]);
+const WEAPON_TINTS = {
+  magic: 0x2a4dff,
+  rare: 0xb8901a,
+  legendary: 0xff6a1a,
+};
+
+function isolateWeaponMaterials(root, materials) {
+  root.traverse((node) => {
+    if (!node.isMesh || !['1H_Sword', '2H_Sword'].includes(node.name)) return;
+    const clone = (material) => {
+      const isolated = material.clone();
+      materials.push(isolated);
+      return isolated;
+    };
+    node.material = Array.isArray(node.material) ? node.material.map(clone) : clone(node.material);
+  });
+}
+
+function applyPlayerLook(root, look = {}) {
+  const weapon = look.weapon ?? '1H_Sword';
+  root.traverse((node) => {
+    if (!PLAYER_PARTS.has(node.name)) return;
+    node.visible = node.name === weapon
+      || (node.name === 'Round_Shield' && weapon === '1H_Sword')
+      || (node.name === 'Knight_Helmet' && Boolean(look.helmet))
+      || (node.name === 'Knight_Cape' && Boolean(look.cape));
+  });
+  const weaponMaterials = new Set();
+  root.getObjectByName(weapon)?.traverse((node) => {
+    if (!node.isMesh) return;
+    for (const material of [node.material].flat()) weaponMaterials.add(material);
+  });
+  return weaponMaterials;
+}
 
 function disposeSceneResources(scene) {
   const geometries = new Set();
@@ -301,11 +347,12 @@ export class ArenaRenderer {
   }
 
   createEntity(entity) {
-    const key = entity.kind === 'player' ? entity.characterKind : entity.model ?? entity.enemyKind;
+    const key = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
     const modelKey = key === 'knight' ? 'knight' : key;
     const source = this.models.get(modelKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
+    if (entity.kind === 'player') isolateWeaponMaterials(root, materials);
     root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
     const screenCenterY = modelBounds && !modelBounds.isEmpty()
@@ -378,6 +425,8 @@ export class ArenaRenderer {
       materialState,
       screenCenterY,
       lootResources,
+      lookKey: entity.kind === 'player' ? playerLookKey(entity.look) : '',
+      weaponMaterials: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Set(),
     };
     this.entities.set(entity.id, visual);
     return visual;
@@ -649,6 +698,9 @@ export class ArenaRenderer {
       } else if (invulnerable) {
         material.emissive.setHex(0x6298c4);
         material.emissiveIntensity = 0.65;
+      } else if (visual.weaponMaterials.has(material) && WEAPON_TINTS[entity.look?.weaponRarity]) {
+        material.emissive.setHex(WEAPON_TINTS[entity.look.weaponRarity]);
+        material.emissiveIntensity = 0.35;
       } else {
         material.emissive.copy(original.emissive);
         material.emissiveIntensity = original.emissiveIntensity;
@@ -854,6 +906,13 @@ export class ArenaRenderer {
       activeIds.add(entity.id);
       let visual = this.entities.get(entity.id);
       if (!visual) visual = this.createEntity(entity);
+      if (entity.kind === 'player') {
+        const lookKey = playerLookKey(entity.look);
+        if (lookKey !== visual.lookKey) {
+          visual.lookKey = lookKey;
+          visual.weaponMaterials = applyPlayerLook(visual.root, entity.look);
+        }
+      }
       const old = before.get(entity.id) ?? entity;
       if (!hitstop) {
         visual.root.position.set(old.x + (entity.x - old.x) * alpha, 0, old.z + (entity.z - old.z) * alpha);
