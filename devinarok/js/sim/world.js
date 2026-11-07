@@ -1212,7 +1212,11 @@ function stepStageEnemy(world, enemy, players) {
       return;
     }
     enemy.attackPhase = 'active';
-    enemy.attackRemaining = enemy.attackPattern === 'charge' ? 9 : enemy.attackPattern === 'combo' ? 3 : 3;
+    enemy.attackRemaining = enemy.attackPattern === 'charge'
+      ? 9
+      : enemy.attackPattern === 'line-dash'
+        ? ENEMIES[enemy.enemyKind].activeTicks
+        : 3;
     enemy.attackHit = false;
     return;
   }
@@ -1220,6 +1224,20 @@ function stepStageEnemy(world, enemy, players) {
     if (enemy.attackPattern === 'charge') {
       moveEntity(world, enemy, Math.cos(enemy.chargeAngle) * 1, Math.sin(enemy.chargeAngle) * 1);
       enemy.lineTravelled += 1;
+    } else if (enemy.attackPattern === 'line-dash') {
+      const shape = enemy.attackShape;
+      const directionX = Math.cos(shape.angle);
+      const directionZ = Math.sin(shape.angle);
+      const distance = Math.min(
+        shape.length / Math.max(1, ENEMIES[enemy.enemyKind].activeTicks),
+        Math.max(0, shape.length - enemy.lineTravelled),
+      );
+      const startX = enemy.x;
+      const startZ = enemy.z;
+      moveEntity(world, enemy, directionX * distance, directionZ * distance);
+      const travelled = Math.max(0, (enemy.x - startX) * directionX + (enemy.z - startZ) * directionZ);
+      enemy.lineTravelled += Math.min(distance, travelled);
+      if (travelled < distance - 0.001) enemy.attackRemaining = 1;
     }
     activeEnemyAttack(world, enemy, target);
     enemy.attackRemaining -= 1;

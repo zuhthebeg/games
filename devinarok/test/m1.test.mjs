@@ -81,6 +81,33 @@ test('boss kill collects both guaranteed item drops before final-room settlement
   assert.equal(world.events.filter((event) => event.type === 'pickup' && event.lootType === 'item').length, 2);
 });
 
+test('rogue line dash moves five meters along its stored attack line', () => {
+  const world = createStageWorld({ seed: 75, stageId: 'C1', playerId: 'a' });
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  const rogue = world.entities.find((entity) => entity.kind === 'enemy');
+  world.entities = [player, rogue];
+  world.roomEnemyIds = [rogue.id];
+  player.x = 0;
+  player.z = 4.8;
+  player.iFrames = 1000;
+  rogue.enemyKind = 'rogue';
+  rogue.x = 0;
+  rogue.z = 0;
+  rogue.spawnTicksLeft = 0;
+  rogue.invulnerable = false;
+  rogue.attackCooldownTicks = 0;
+  const startZ = rogue.z;
+  for (let seq = 1; seq <= 40 && rogue.recoverTicks === 0; seq += 1) {
+    step(world, { a: { seq, moveX: 0, moveZ: 0, aim: 64, buttons: 0 } });
+  }
+  assert.equal(rogue.attackPattern, 'line-dash');
+  assert.ok(Math.abs(rogue.z - startZ - 5) < 0.01);
+  const hit = world.events.find((event) => event.type === 'hit' && event.sourceId === rogue.id);
+  assert.equal(hit.shape.type, 'line');
+  assert.equal(hit.shape.originZ, startZ);
+  assert.equal(hit.shape.length, 5);
+});
+
 test('10,000 rarity rolls reproduce the declared distribution and boss items are rare+', () => {
   const counts = { common: 0, magic: 0, rare: 0, legendary: 0 };
   for (let index = 0; index < 10000; index += 1) counts[rarityForRoll(index / 10000)] += 1;
