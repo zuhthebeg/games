@@ -575,7 +575,7 @@ export class ArenaRenderer {
     const active = new Set();
     const rect = this.canvas.getBoundingClientRect();
     for (const player of world.entities.filter((entity) => (
-      entity.kind === 'player' && entity.playerId !== world.localPlayerId
+      entity.kind === 'player' && world.localPlayerId && entity.playerId !== world.localPlayerId
     ))) {
       active.add(player.id);
       let marker = this.partyMarkers.get(player.id);
