@@ -59,6 +59,7 @@ function copyArena(arena) {
     playerSpawn: { ...arena.playerSpawn },
     spawnPoints: arena.spawnPoints.map((point) => ({ ...point })),
     obstacles: arena.obstacles.map((obstacle) => ({ ...obstacle })),
+    props: (arena.props ?? []).map((prop) => ({ ...prop })),
   };
 }
 
@@ -556,10 +557,6 @@ function clearEnemyAttack(enemy, rules) {
 }
 
 function stepEnemy(world, enemy, players) {
-  if (enemy.dead) {
-    enemy.deathTicks = Math.max(0, enemy.deathTicks - 1);
-    return;
-  }
   if (enemy.spawnTicksLeft > 0) {
     enemy.spawnTicksLeft -= 1;
     enemy.invulnerable = enemy.spawnTicksLeft > 0;
@@ -646,6 +643,9 @@ function stableStringify(value) {
 
 export function step(world, inputsByPlayerId = {}) {
   world.tick += 1;
+  for (const entity of world.entities) {
+    if (entity.kind === 'enemy' && entity.dead) entity.deathTicks = Math.max(0, entity.deathTicks - 1);
+  }
   const playerEntities = world.players
     .map((entityId) => world.entities.find((entity) => entity.id === entityId))
     .filter(Boolean)

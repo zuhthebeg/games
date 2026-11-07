@@ -1,11 +1,12 @@
 import { createSaveRepository } from './save/repository.js';
 import { ARENA } from './sim/arena.js';
-import { addPlayer, createWorld } from './sim/world.js';
+import { addPlayer, BUTTONS, COMBO_TIMELINES, createWorld, spawnEnemy, step } from './sim/world.js';
 import { InputLayer } from './core/input.js';
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 
 const $ = (selector) => document.querySelector(selector);
+const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
 const titleScreen = $('#title-screen');
 const gameScreen = $('#game-screen');
 const createForm = $('#create-form');
@@ -56,7 +57,7 @@ async function startArena() {
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'));
   await renderer.ready;
-  $('#toast').textContent = `시험의 방 · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
+  if (DEV_MODE) $('#toast').textContent = `시험의 방 · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
   let seenEventId = world.nextEventId - 1;
   loop = new FixedStepLoop({
     world,
@@ -130,3 +131,22 @@ window.addEventListener('keydown', (event) => {
 
 saves = await createSaveRepository();
 await refreshTitle();
+if (DEV_MODE) {
+  window.__devinarok = {
+    get world() { return world; },
+    get renderer() { return renderer; },
+    get loop() { return loop; },
+    buttons: BUTTONS,
+    comboTimelines: COMBO_TIMELINES,
+    spawnEnemy(enemyKind) { return world && spawnEnemy(world, enemyKind); },
+    step(inputsByPlayerId) { return world && step(world, inputsByPlayerId); },
+    render(previous = world) {
+      if (!renderer || !world) return false;
+      renderer.render(previous, world, 1);
+      return true;
+    },
+    setEnemyClipPreview(source, clipName) {
+      return renderer?.setEnemyClipPreview(source, clipName) ?? false;
+    },
+  };
+}

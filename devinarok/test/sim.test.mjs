@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { ARENA } from '../js/sim/arena.js';
 import {
   BUTTONS,
   COMBO_TIMELINES,
@@ -78,6 +79,20 @@ test('simulation source is isolated from browser, clock, and random globals', as
   }
 });
 
+test('every simulation obstacle has a GLB prop at the same position', () => {
+  const propsByObstacle = new Map(
+    ARENA.props.filter((prop) => prop.obstacleId).map((prop) => [prop.obstacleId, prop]),
+  );
+  assert.equal(propsByObstacle.size, ARENA.obstacles.length);
+  for (const obstacle of ARENA.obstacles) {
+    const prop = propsByObstacle.get(obstacle.id);
+    assert.ok(prop, `${obstacle.id} has a rendered prop`);
+    assert.ok(prop.model.endsWith('.glb'));
+    assert.equal(prop.x, obstacle.x);
+    assert.equal(prop.z, obstacle.z);
+  }
+});
+
 test('seeded worlds match after 900 ticks and continue identically after a structured clone', () => {
   const world = createWorld({ seed: 2741 });
   addPlayer(world, { playerId: 'hero', characterKind: 'knight' });
@@ -126,6 +141,38 @@ test('attack edges start one three-step combo and each step keeps its initiating
   while (player.attack?.step !== 3) send(++seq, 0);
   assert.equal(player.attack.castId, `hero:${thirdSeq}`);
   assert.deepEqual(casts.map((event) => event.castId), ['hero:1', `hero:${secondSeq}`, `hero:${thirdSeq}`]);
+});
+
+test('a three-step combo kills a Skeleton_Minion', () => {
+  const world = createWorld({ seed: 81 });
+  const player = addPlayer(world, { playerId: 'hero' });
+  const minion = world.entities.find((entity) => entity.kind === 'enemy' && entity.enemyKind === 'Skeleton_Minion');
+  player.x = 0;
+  player.z = 8;
+  player.facing = -Math.PI / 2;
+  minion.x = 0;
+  minion.z = 6.8;
+  minion.spawnTicksLeft = 0;
+  minion.invulnerable = false;
+  let seq = 1;
+  const send = (buttons) => {
+    tick(world, 'hero', { seq: seq++, moveX: 0, moveZ: 0, aim: 192, buttons });
+  };
+  send(BUTTONS.ATTACK);
+  for (let step = 1; step < COMBO_TIMELINES.length; step += 1) {
+    seq = advanceToChainWindow(world, player, seq);
+    send(BUTTONS.ATTACK);
+    while (player.attack?.step === step) send(0);
+  }
+  while (player.attack && !minion.dead) send(0);
+  const hits = world.events.filter((event) => event.type === 'hit' && event.targetId === minion.id);
+  const death = world.events.find((event) => event.type === 'death' && event.entityId === minion.id);
+  assert.equal(hits.length, 3);
+  assert.deepEqual(hits.map((event) => event.damage), [1, 1, 2]);
+  assert.equal(minion.dead, true);
+  assert.equal(death.castId, hits.at(-1).castId);
+  for (let count = 0; count < 24; count += 1) tick(world, 'hero', { seq: seq++, moveX: 0, moveZ: 0, aim: 192, buttons: 0 });
+  assert.equal(world.entities.some((entity) => entity.id === minion.id), false);
 });
 
 test('dodging through an active enemy shape blocks damage during its i-frames', () => {
