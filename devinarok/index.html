@@ -6,18 +6,24 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=c95284362a">
+  <link rel="stylesheet" href="css/game.css?v=4da045daf6">
   <script type="importmap">
     {
       "imports": {
-        "./js/core/input.js": "./js/core/input.js?v=9c8d8116b7",
+        "./js/content/affixes.js": "./js/content/affixes.js?v=023ce75224",
+        "./js/content/enemies.js": "./js/content/enemies.js?v=01bca72f31",
+        "./js/content/items.js": "./js/content/items.js?v=449b51b760",
+        "./js/content/skills.js": "./js/content/skills.js?v=6b8c30fb8e",
+        "./js/content/stages.js": "./js/content/stages.js?v=bf3e4efa47",
+        "./js/core/input.js": "./js/core/input.js?v=939ca67791",
         "./js/core/loop.js": "./js/core/loop.js?v=bd86126599",
-        "./js/main.js": "./js/main.js?v=ed982d1786",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=e1dc7f1e6b",
-        "./js/save/ops.js": "./js/save/ops.js?v=1a6cf05c59",
-        "./js/save/repository.js": "./js/save/repository.js?v=ff06f6883f",
+        "./js/main.js": "./js/main.js?v=bf0f94c68e",
+        "./js/render/audio.js": "./js/render/audio.js?v=73802c0627",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=ea63454027",
+        "./js/save/ops.js": "./js/save/ops.js?v=13523559ec",
+        "./js/save/repository.js": "./js/save/repository.js?v=81dd15a324",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=d866f8de92",
+        "./js/sim/world.js": "./js/sim/world.js?v=a9513ffbda",
         "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
         "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
         "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
@@ -37,9 +43,9 @@
 <body>
   <main id="app">
     <section id="title-screen" class="screen">
-      <div class="title-mark">DEV · M0</div>
+      <div class="title-mark">D E V · M1</div>
       <h1>데비나로크</h1>
-      <p class="subtitle">어둠 속에서, 검을 들다</p>
+      <p class="subtitle">무너진 지하묘지의 부름</p>
       <div id="save-warning" class="warning" hidden></div>
       <form id="create-form" class="panel" hidden>
         <label>기사의 이름<input name="name" maxlength="12" minlength="1" required placeholder="이름 (1–12자)"></label>
@@ -50,16 +56,26 @@
         <div class="eyebrow">기록된 모험가</div>
         <h2 id="character-name"></h2>
         <p id="character-level"></p>
-        <button id="start-button" class="primary">시험의 방</button>
+        <button id="start-button" class="primary">여관으로</button>
       </div>
     </section>
     <section id="game-screen" hidden>
       <canvas id="scene"></canvas>
       <header class="hud">
-        <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div></div>
-        <div class="counter"><span>처치</span><b id="kill-count">0</b></div>
+        <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
+        <div class="counter"><span id="stage-name">여관</span></div>
+        <div id="boss-hud" hidden><span id="boss-name">해골 기사단장</span><div class="hp-track"><i id="boss-fill"></i></div></div>
         <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
       </header>
+      <div id="hub-ui" class="hub-ui" hidden>
+        <div class="hub-title">무너진 지하묘지 · 거점 여관</div>
+        <div class="hub-hotspots">
+          <button data-panel="board">주인 · 게시판</button><button data-panel="blacksmith">대장장이</button>
+          <button data-panel="merchant">상인</button><button data-panel="inventory">장비함</button>
+          <button data-panel="character">모험가</button>
+        </div>
+        <section id="hub-panel" class="panel hub-panel" hidden></section>
+      </div>
       <div id="controls" class="controls">
         <div class="joystick" data-joystick><span data-joystick-knob></span></div>
         <div class="buttons">
@@ -68,19 +84,24 @@
           <button data-button="4">기술 1</button>
           <button data-button="8">기술 2</button>
           <button data-button="16">기술 3</button>
+          <button class="potion-button" data-button="64"><span>물약 Q</span><b id="potion-count">0</b></button>
         </div>
       </div>
+      <div id="key-hints" class="key-hints">J 공격 · K 회피 · 1/2/3 기술 · Q 물약</div>
       <div id="pause-menu" class="overlay" hidden>
         <div class="panel">
-          <div class="eyebrow">시험의 방</div>
+          <div class="eyebrow">모험 중</div>
           <h2>숨을 고르세요</h2>
           <button id="continue-button" class="primary">계속</button>
-          <button id="leave-button">여관으로</button>
+          <button id="retreat-button">후퇴하고 여관으로</button>
+          <button id="mute-button">소리 끄기</button>
         </div>
       </div>
+      <div id="boss-intro" class="boss-intro" hidden><div><span>무너진 지하묘지</span><strong>해골 기사단장</strong></div></div>
+      <div id="result-panel" class="overlay" hidden><div class="panel"></div></div>
       <div id="toast" role="status"></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=ed982d1786"></script>
+  <script type="module" src="js/main.js?v=bf0f94c68e"></script>
 </body>
 </html>

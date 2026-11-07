@@ -4,12 +4,18 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { ARENA } from '../sim/arena.js';
 import { COMBO_TIMELINES } from '../sim/world.js';
+import { ITEMS, RARITIES } from '../content/items.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const M0_MODELS = {
   knight: 'assets/chars/Knight.glb',
+  Barbarian: 'assets/chars/Barbarian.glb',
+  Rogue_Hooded: 'assets/chars/Rogue_Hooded.glb',
+  Mage: 'assets/chars/Mage.glb',
   Skeleton_Minion: 'assets/chars/Skeleton_Minion.glb',
   Skeleton_Warrior: 'assets/chars/Skeleton_Warrior.glb',
+  Skeleton_Mage: 'assets/chars/Skeleton_Mage.glb',
+  Skeleton_Rogue: 'assets/chars/Skeleton_Rogue.glb',
 };
 
 function disposeSceneResources(scene) {
@@ -47,38 +53,47 @@ function shortestAngleDelta(from, to) {
 }
 
 export class ArenaRenderer {
-  constructor(canvas, onReady = () => {}) {
+  constructor(canvas, onReady = () => {}, arena = ARENA) {
     this.canvas = canvas;
+    this.arena = arena;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x17141a);
-    this.scene.fog = new THREE.Fog(0x17141a, 34, 58);
+    this.scene.fog = new THREE.Fog(0x17141a, 42, 78);
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
-    this.camera.position.set(0, 16, 11.2);
+    this.camera.position.set(0, 15.5, 10.85);
     this.camera.lookAt(0, 0, 0);
-    this.cameraOffsetZ = 11.2;
-    this.frustumHeight = 11;
+    this.cameraHeight = 15.5;
+    this.cameraOffsetZ = 10.85;
+    this.cameraFollowOffsetZ = 8;
+    this.frustumHeight = 19;
+    this.mobileCameraOverlayKey = '';
+    this.mobileCameraTargetShift = 0;
+    this.mobileCameraTargetScreenY = null;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
-    this.scene.add(new THREE.HemisphereLight(0xbeb0c0, 0x493438, 1.45));
-    const key = new THREE.DirectionalLight(0xffd9ab, 1.8);
+    this.renderer.toneMappingExposure = 0.9;
+    this.scene.add(new THREE.HemisphereLight(0xc5b6c8, 0x34242b, 1.05));
+    const key = new THREE.DirectionalLight(0xffd6ad, 1.35);
     key.position.set(-4, 14, 5);
     this.scene.add(key);
-    this.scene.add(new THREE.AmbientLight(0x6f5660, 0.38));
+    this.scene.add(new THREE.AmbientLight(0x786775, 0.3));
     this.entities = new Map();
     this.telegraphs = new Map();
     this.models = new Map();
     this.gltfs = new Map();
     this.clips = { humanoid: [], skeleton: [] };
     this.sideWalls = [];
+    this.doorVisuals = [];
     this.seenEventIds = new Set();
     this.seenCastIds = new Set();
     this.slashes = new Map();
     this.damageNumbers = [];
     this.deathPuffs = [];
+    this.torchLights = [];
+    this.hubNpcs = [];
     this.hitstopUntil = 0;
     this.hitstopStartedAt = 0;
     this.shakeUntil = 0;
@@ -87,6 +102,9 @@ export class ArenaRenderer {
     this.vfxLayer = document.createElement('div');
     this.vfxLayer.className = 'combat-vfx-layer';
     canvas.parentElement?.appendChild(this.vfxLayer);
+    this.npcLayer = document.createElement('div');
+    this.npcLayer.className = 'npc-hotspots-layer';
+    canvas.parentElement?.appendChild(this.npcLayer);
     this.lastRender = performance.now();
     this.averageMs = 16;
     this.resolutionScale = 1;
@@ -101,13 +119,16 @@ export class ArenaRenderer {
   }
 
   buildRoom() {
-    const lightProps = ARENA.props.filter((prop) => (
-      prop.model === 'assets/env/torch_lit.glb' || prop.model === 'assets/env/candle_lit.glb'
+    const lightProps = this.arena.props.filter((prop) => (
+      prop.model === 'assets/env/torch_lit.glb'
+      || prop.model === 'assets/env/candle_lit.glb'
+      || prop.model === 'assets/env/torch_mounted.glb'
     ));
     for (const prop of lightProps) {
-      const light = new THREE.PointLight(0xffac68, 28, 8, 2);
-      light.position.set(prop.x, 2.4, prop.z);
+      const light = new THREE.PointLight(0xffae63, prop.model.includes('candle') ? 7 : 13, prop.model.includes('candle') ? 4.5 : 8, 2);
+      light.position.set(prop.x, prop.wallLight ? 2.7 : 2.1, prop.z);
       this.scene.add(light);
+      this.torchLights.push({ light, phase: this.torchLights.length * 1.71, base: light.intensity });
     }
   }
 
@@ -120,8 +141,11 @@ export class ArenaRenderer {
       return this.gltfs.get(path);
     };
     const manifest = await fetch(ASSET('assets/manifest.json')).then((response) => response.json());
-    this.loadedBytes = manifest.m0LoadedBytes;
-    const propModels = [...new Set(ARENA.props.map((prop) => prop.model))];
+    this.loadedBytes = manifest.m1StageLoadedBytes?.[this.arena.id] ?? manifest.m0LoadedBytes;
+    const propModels = [...new Set([
+      ...this.arena.props.map((prop) => prop.model),
+      ...(this.arena.npcs ?? []).map((npc) => M0_MODELS[npc.model]),
+    ])];
     const modelPaths = [...new Set([...Object.values(M0_MODELS), ...propModels])];
     const loaded = await Promise.all(modelPaths.map(async (path) => [path, await load(path)]));
     const loadedByPath = new Map(loaded);
@@ -134,14 +158,20 @@ export class ArenaRenderer {
       'assets/env/floor_tile_large.glb',
       'assets/env/floor_tile_large_rocks.glb',
       'assets/env/floor_tile_small.glb',
+      'assets/env/floor_tile_small_broken_A.glb',
+      'assets/env/floor_dirt_large.glb',
+      'assets/env/floor_dirt_large_rocky.glb',
+      'assets/env/floor_wood_large.glb',
+      'assets/env/floor_wood_large_dark.glb',
     ]);
     for (const path of instancedModels) {
       const gltf = loadedByPath.get(path);
+      if (!gltf) continue;
       gltf.scene.updateMatrixWorld(true);
       let tileMesh;
       gltf.scene.traverse((node) => { if (!tileMesh && node.isMesh) tileMesh = node; });
       if (!tileMesh) continue;
-      const tileProps = ARENA.props.filter((prop) => prop.model === path);
+      const tileProps = this.arena.props.filter((prop) => prop.model === path);
       const material = Array.isArray(tileMesh.material)
         ? tileMesh.material.map((source) => source.clone())
         : tileMesh.material.clone();
@@ -150,23 +180,29 @@ export class ArenaRenderer {
       const rotation = new THREE.Matrix4();
       const matrix = new THREE.Matrix4();
       tileProps.forEach((prop, index) => {
-        translation.makeTranslation(prop.x, 0, prop.z);
+        translation.makeTranslation(prop.x, prop.y ?? 0, prop.z);
         rotation.makeRotationY(prop.rotY);
-        matrix.multiplyMatrices(translation, rotation).multiply(tileMesh.matrixWorld);
+        const scale = new THREE.Matrix4().makeScale(prop.scaleX ?? prop.scale ?? 1, prop.scaleY ?? prop.scale ?? 1, prop.scaleZ ?? prop.scale ?? 1);
+        matrix.multiplyMatrices(translation, rotation).multiply(scale).multiply(tileMesh.matrixWorld);
         instances.setMatrixAt(index, matrix);
       });
       instances.instanceMatrix.needsUpdate = true;
       const materials = Array.isArray(material) ? material : [material];
       for (const item of materials) {
-        if (item.color) item.color.multiplyScalar(0.98);
+        if (item.color) item.color.multiplyScalar(path.includes('wood') ? 0.84 : 0.76);
       }
       this.scene.add(instances);
     }
-    for (const placement of ARENA.props) {
+    for (const placement of this.arena.props) {
       if (instancedModels.has(placement.model)) continue;
       const prop = SkeletonUtils.clone(loadedByPath.get(placement.model).scene);
       prop.position.set(placement.x, 0, placement.z);
       prop.rotation.y = placement.rotY;
+      prop.scale.set(
+        placement.scaleX ?? placement.scale ?? 1,
+        placement.scaleY ?? placement.scale ?? 1,
+        placement.scaleZ ?? placement.scale ?? 1,
+      );
       if (placement.wallSide) {
         const materials = cloneMaterials(prop);
         for (const material of materials) {
@@ -175,25 +211,102 @@ export class ArenaRenderer {
         }
         this.sideWalls.push({ z: placement.wallCenterZ, materials });
       }
+      if (placement.doorId) this.doorVisuals.push({ doorId: placement.doorId, root: prop });
       this.scene.add(prop);
+    }
+    this.createHubNpcs(loadedByPath);
+  }
+
+  createHubNpcs(loadedByPath) {
+    for (const npc of this.arena.npcs ?? []) {
+      const source = loadedByPath.get(M0_MODELS[npc.model])?.scene;
+      if (!source) continue;
+      const root = SkeletonUtils.clone(source);
+      const materials = cloneMaterials(root);
+      root.position.set(npc.x, 0, npc.z);
+      root.rotation.y = npc.rotY;
+      root.scale.setScalar(0.85);
+      this.scene.add(root);
+      const mixer = new THREE.AnimationMixer(root);
+      const idle = this.clips.humanoid.find((clip) => clip.name === 'Unarmed_Idle') ?? this.clips.humanoid.find((clip) => clip.name === 'Idle');
+      const action = idle ? mixer.clipAction(idle).play() : null;
+      const button = document.createElement('button');
+      button.className = 'npc-hotspot';
+      button.type = 'button';
+      button.dataset.panel = npc.panel;
+      button.textContent = npc.name;
+      this.npcLayer.appendChild(button);
+      this.hubNpcs.push({ npc, root, mixer, action, button, materials });
     }
   }
 
   updateWallFade(playerZ) {
     for (const wall of this.sideWalls) {
       const ahead = wall.z - playerZ;
-      const opacity = THREE.MathUtils.clamp(1 - Math.max(0, ahead + 1) * 0.28, 0.16, 1);
+      const opacity = THREE.MathUtils.clamp(1 - Math.max(0, ahead + 1) * 0.24, 0.18, 1);
       for (const material of wall.materials) material.opacity = opacity;
     }
   }
 
+  updateNpcHotspots(dt) {
+    const rect = this.canvas.getBoundingClientRect();
+    for (const { npc, root, mixer, button } of this.hubNpcs) {
+      mixer.update(Math.min(dt, 0.05));
+      const point = new THREE.Vector3(npc.x, 2.2, npc.z).project(this.camera);
+      button.style.left = `${(point.x + 1) * rect.width / 2}px`;
+      button.style.top = `${(1 - point.y) * rect.height / 2}px`;
+      button.hidden = point.z < -1 || point.z > 1 || Math.abs(point.x) > 1.1 || Math.abs(point.y) > 1.1;
+      root.visible = point.z >= -1 && point.z <= 1;
+    }
+  }
+
   createEntity(entity) {
-    const key = entity.kind === 'player' ? entity.characterKind : entity.enemyKind;
+    const key = entity.kind === 'player' ? entity.characterKind : entity.model ?? entity.enemyKind;
     const modelKey = key === 'knight' ? 'knight' : key;
     const source = this.models.get(modelKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
-    root.scale.setScalar(0.85);
+    root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
+    const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
+    const screenCenterY = modelBounds && !modelBounds.isEmpty()
+      ? (modelBounds.min.y + modelBounds.max.y) / 2
+      : 0.9;
+    const lootResources = [];
+    if (entity.kind === 'loot') {
+      const beamGeometry = new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true);
+      const beamMaterial = new THREE.MeshBasicMaterial({ color: entity.item?.rarity === 'legendary' ? 0xff8b38 : entity.item?.rarity === 'rare' ? 0xf0c64f : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef, transparent: true, opacity: 0.72, depthWrite: false });
+      const beam = new THREE.Mesh(
+        beamGeometry,
+        beamMaterial,
+      );
+      lootResources.push(beamGeometry, beamMaterial);
+      beam.position.y = 0.75;
+      root.add(beam);
+      const orbGeometry = new THREE.OctahedronGeometry(0.22, 0);
+      const orbMaterial = new THREE.MeshBasicMaterial({ color: 0xffdf94 });
+      const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+      lootResources.push(orbGeometry, orbMaterial);
+      orb.position.y = 0.18;
+      root.add(orb);
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 320;
+      labelCanvas.height = 64;
+      const labelContext = labelCanvas.getContext('2d');
+      labelContext.fillStyle = '#171219d9';
+      labelContext.fillRect(2, 2, 316, 60);
+      labelContext.font = 'bold 28px sans-serif';
+      labelContext.textAlign = 'center';
+      labelContext.fillStyle = entity.lootType === 'gold' ? '#f5d17d' : '#ffffff';
+      labelContext.fillText(entity.lootType === 'gold' ? `+${entity.gold} G` : ITEMS[entity.item?.itemId]?.name ?? `${RARITIES[entity.item?.rarity]?.name ?? '장비'} 아이템`, 160, 42);
+      const labelTexture = new THREE.CanvasTexture(labelCanvas);
+      labelTexture.colorSpace = THREE.SRGBColorSpace;
+      const labelMaterial = new THREE.SpriteMaterial({ map: labelTexture, transparent: true, depthTest: false });
+      const label = new THREE.Sprite(labelMaterial);
+      lootResources.push(labelTexture, labelMaterial);
+      label.position.y = 1.7;
+      label.scale.set(1.7, 0.35, 1);
+      root.add(label);
+    }
     this.scene.add(root);
     const mixer = new THREE.AnimationMixer(root);
     const actions = new Map();
@@ -223,6 +336,8 @@ export class ArenaRenderer {
       shadow,
       materials,
       materialState,
+      screenCenterY,
+      lootResources,
     };
     this.entities.set(entity.id, visual);
     return visual;
@@ -232,7 +347,7 @@ export class ArenaRenderer {
     if (entity.dead) return entity.kind === 'enemy' ? 'Death_C_Skeletons' : 'Death_A';
     if (entity.spawnTicksLeft > 0) return 'Spawn_Ground_Skeletons';
     if (entity.dodgeTicks > 0) return 'Dodge_Forward';
-    if (entity.attack) {
+    if (entity.kind === 'player' && entity.attack?.step) {
       const clips = ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Slice_Horizontal', '1H_Melee_Attack_Chop'];
       return clips[entity.attack.step - 1];
     }
@@ -276,17 +391,29 @@ export class ArenaRenderer {
   createSlash(event) {
     if (!event.castId || this.seenCastIds.has(event.castId)) return;
     this.seenCastIds.add(event.castId);
+    const skillId = event.skill;
     const timeline = COMBO_TIMELINES[event.step - 1];
-    if (!timeline) return;
+    const duration = skillId === 1 ? 6 : skillId === 2 ? 6 : skillId === 3 ? 45 : timeline?.activeTicks;
+    if (!duration) return;
     const points = [];
-    for (let index = 0; index <= 24; index += 1) {
-      const angle = -0.95 + (index / 24) * 1.9;
-      points.push(new THREE.Vector3(Math.cos(angle) * 1.1, 0, Math.sin(angle) * 1.1));
+    if (skillId === 1) {
+      for (let index = 0; index <= 32; index += 1) {
+        const angle = index / 32 * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(angle) * 2.2, 0, Math.sin(angle) * 2.2));
+      }
+    } else {
+      const startAngle = skillId === 3 ? -0.9 : -0.95;
+      const endAngle = skillId === 3 ? 0.9 : 0.95;
+      const radius = skillId === 3 ? 1.35 : 1.1;
+      for (let index = 0; index <= 24; index += 1) {
+        const angle = startAngle + (index / 24) * (endAngle - startAngle);
+        points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
+      }
     }
-    const curve = new THREE.CatmullRomCurve3(points);
-    const geometry = new THREE.TubeGeometry(curve, 28, 0.065, 6, false);
+    const curve = new THREE.CatmullRomCurve3(points, skillId === 1);
+    const geometry = new THREE.TubeGeometry(curve, skillId === 1 ? 40 : 28, skillId === 3 ? 0.085 : skillId === 1 ? 0.05 : 0.065, 6, skillId === 1);
     const material = new THREE.MeshBasicMaterial({
-      color: 0xff8b43,
+      color: skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
       transparent: true,
       opacity: 0.96,
       depthTest: false,
@@ -297,12 +424,12 @@ export class ArenaRenderer {
     mesh.renderOrder = 2;
     mesh.visible = false;
     this.scene.add(mesh);
-    const startTick = event.tick + timeline.windupTicks;
+    const startTick = event.tick + (timeline?.windupTicks ?? (skillId === 1 ? 5 : 0));
     this.slashes.set(event.castId, {
       castId: event.castId,
       entityId: event.entityId,
       startTick,
-      endTick: startTick + timeline.activeTicks,
+      endTick: startTick + duration,
       facing: this.worldEntity(event.entityId)?.facing ?? 0,
       mesh,
     });
@@ -464,6 +591,7 @@ export class ArenaRenderer {
     for (const material of visual.materials) material.dispose();
     visual.shadow.geometry.dispose();
     visual.shadow.material.dispose();
+    for (const resource of visual.lootResources) resource.dispose();
     this.entities.delete(id);
   }
 
@@ -474,29 +602,163 @@ export class ArenaRenderer {
       if (enemy.kind !== 'enemy' || !shape || enemy.attackPhase !== 'windup') continue;
       active.add(enemy.id);
       let decal = this.telegraphs.get(enemy.id);
-      if (!decal) {
-        const geometry = new THREE.CircleGeometry(shape.range, 24, -shape.halfAngle, shape.halfAngle * 2);
-        const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xe84842, transparent: true, opacity: 0.68, side: THREE.DoubleSide, depthTest: false, depthWrite: false, fog: false }));
-        mesh.rotation.x = -Math.PI / 2;
-        mesh.position.y = 0.08;
-        mesh.renderOrder = 1;
-        this.scene.add(mesh);
-        decal = { mesh, shape, maxTicks: enemy.attackWindupTicks };
+      const signature = JSON.stringify(shape);
+      if (!decal || decal.signature !== signature) {
+        if (decal) {
+          this.scene.remove(decal.mesh);
+          decal.mesh.traverse((node) => {
+            node.geometry?.dispose();
+            if (node.material) for (const material of [node.material].flat()) material.dispose();
+          });
+        }
+        const group = new THREE.Group();
+        const parts = [];
+        const addPart = (geometry, type, x = 0, z = 0, scaleX = 1) => {
+          const fillMaterial = new THREE.MeshBasicMaterial({
+            color: 0xe84842,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide,
+            depthTest: true,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2,
+            fog: false,
+          });
+          const fill = new THREE.Mesh(geometry, fillMaterial);
+          fill.rotation.x = -Math.PI / 2;
+          fill.position.set(x, 0.025, z);
+          const outline = new THREE.LineSegments(
+            new THREE.EdgesGeometry(geometry),
+            new THREE.LineBasicMaterial({ color: 0xff7770, transparent: true, opacity: 0.96, depthTest: true, depthWrite: false, fog: false }),
+          );
+          outline.rotation.x = -Math.PI / 2;
+          outline.position.set(x, 0.035, z);
+          group.add(fill, outline);
+          parts.push({ fill, outline, type, scaleX });
+        };
+        const circleGeometry = (radius, sector = false) => (
+          sector
+            ? new THREE.CircleGeometry(radius, 48, -shape.halfAngle, shape.halfAngle * 2)
+            : new THREE.CircleGeometry(radius, 48)
+        );
+        if (shape.type === 'sector') addPart(circleGeometry(shape.range, true), 'radial');
+        else if (shape.type === 'circle') {
+          if (shape.innerRadius > 0) addPart(new THREE.RingGeometry(shape.innerRadius, shape.radius, 48), 'radial');
+          else addPart(circleGeometry(shape.radius), 'radial');
+        } else if (shape.type === 'ring') {
+          addPart(new THREE.RingGeometry(shape.innerRadius ?? shape.radius * 0.66, shape.radius, 48), 'radial');
+        } else if (shape.type === 'circles') {
+          for (const circle of shape.circles ?? []) {
+            addPart(
+              circle.innerRadius > 0
+                ? new THREE.RingGeometry(circle.innerRadius, circle.radius, 48)
+                : circleGeometry(circle.radius),
+              'radial',
+              circle.x,
+              circle.z,
+            );
+          }
+        } else if (shape.type === 'line') {
+          const geometry = new THREE.PlaneGeometry(shape.length, shape.width);
+          addPart(geometry, 'linear', shape.length / 2, 0);
+        }
+        group.renderOrder = 0;
+        this.scene.add(group);
+        decal = { mesh: group, shape, signature, parts };
         this.telegraphs.set(enemy.id, decal);
       }
-      decal.mesh.position.set(shape.originX, 0.08, shape.originZ);
-      decal.mesh.rotation.set(-Math.PI / 2, 0, -shape.angle);
-      const progress = 1 - enemy.attackRemaining / Math.max(1, enemy.attackWindupTicks);
-      decal.mesh.scale.setScalar(0.22 + Math.max(0, Math.min(1, progress)) * 0.78);
+      if (shape.type === 'circles') {
+        decal.mesh.position.set(0, 0, 0);
+        decal.mesh.rotation.y = 0;
+      } else {
+        decal.mesh.position.set(shape.originX, 0, shape.originZ);
+        decal.mesh.rotation.y = shape.type === 'line' || shape.type === 'sector' ? -shape.angle : 0;
+      }
+      if (shape.type === 'ring') decal.mesh.rotation.y = 0;
+      const progress = THREE.MathUtils.clamp(1 - enemy.attackRemaining / Math.max(1, enemy.attackWindupTicks), 0, 1);
+      for (const part of decal.parts) {
+        if (part.type === 'linear') part.fill.scale.set(Math.max(0.001, progress), 1, 1);
+        else part.fill.scale.setScalar(Math.max(0.001, progress));
+      }
     }
     for (const [id, decal] of this.telegraphs) {
       if (!active.has(id)) {
         this.scene.remove(decal.mesh);
-        decal.mesh.geometry.dispose();
-        decal.mesh.material.dispose();
+        decal.mesh.traverse((node) => {
+          node.geometry?.dispose();
+          if (node.material) for (const material of [node.material].flat()) material.dispose();
+        });
         this.telegraphs.delete(id);
       }
     }
+  }
+
+  mobileVisibleArea(canvasRect) {
+    const elements = [['controls', this.canvas.ownerDocument.querySelector('#controls')]];
+    if (canvasRect.width < 700) {
+      elements.push(['hub-buttons', this.canvas.ownerDocument.querySelector('#hub-ui:not([hidden]) .hub-hotspots')]);
+    }
+    const overlays = elements.flatMap(([id, element]) => {
+      if (!element || element.hidden) return [];
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') return [];
+      const rect = element.getBoundingClientRect();
+      const overlaps = rect.height > 0
+        && rect.width > 0
+        && rect.left < canvasRect.right
+        && rect.right > canvasRect.left
+        && rect.top < canvasRect.bottom
+        && rect.bottom > canvasRect.top + canvasRect.height / 2;
+      return overlaps ? [{ id, rect }] : [];
+    });
+    if (!overlays.length) return null;
+    const bottom = Math.min(canvasRect.bottom, ...overlays.map(({ rect }) => rect.top));
+    return {
+      top: canvasRect.top,
+      bottom,
+      key: overlays.map(({ id, rect }) => `${id}:${Math.round(rect.top)}:${Math.round(rect.height)}`).join('|'),
+    };
+  }
+
+  mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea) {
+    if (!visibleArea) {
+      this.mobileCameraOverlayKey = '';
+      this.mobileCameraTargetShift = 0;
+      this.mobileCameraTargetScreenY = null;
+      return 0;
+    }
+    const desiredY = THREE.MathUtils.clamp(
+      (visibleArea.top + visibleArea.bottom) / 2,
+      canvasRect.top + canvasRect.height * 0.45,
+      canvasRect.top + canvasRect.height * 0.5,
+    );
+    const overlayKey = `${Math.round(canvasRect.width)}x${Math.round(canvasRect.height)}:${visibleArea.key}`;
+    this.mobileCameraTargetScreenY = desiredY;
+    if (overlayKey !== this.mobileCameraOverlayKey) {
+      const visual = this.entities.get(player.id);
+      if (visual) {
+        const projectionCamera = this.camera.clone();
+        projectionCamera.position.set(0, this.cameraHeight, baseTargetZ + this.cameraOffsetZ);
+        projectionCamera.lookAt(0, 0, baseTargetZ);
+        projectionCamera.updateMatrixWorld(true);
+        const center = new THREE.Vector3(
+          visual.root.position.x,
+          visual.root.position.y + visual.screenCenterY,
+          visual.root.position.z,
+        ).project(projectionCamera);
+        const screenY = canvasRect.top + (1 - center.y) * canvasRect.height / 2;
+        const cameraUpZ = new THREE.Vector3(0, 1, 0).applyQuaternion(projectionCamera.quaternion).z;
+        const pixelsPerWorldUnit = canvasRect.height / this.frustumHeight;
+        const pixelsPerTargetMeter = cameraUpZ * pixelsPerWorldUnit;
+        this.mobileCameraTargetShift = Math.abs(pixelsPerTargetMeter) > 0.01
+          ? (desiredY - screenY) / pixelsPerTargetMeter
+          : 0;
+      }
+      this.mobileCameraOverlayKey = overlayKey;
+    }
+    return this.mobileCameraTargetShift;
   }
 
   render(previous, world, alpha) {
@@ -504,6 +766,10 @@ export class ArenaRenderer {
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);
     this.lastRender = now;
     this.consumeEvents(world, now);
+    for (const torch of this.torchLights) {
+      torch.light.intensity = torch.base * (0.9 + Math.sin(now * 0.009 + torch.phase) * 0.055 + Math.sin(now * 0.023 + torch.phase * 1.7) * 0.035);
+    }
+    for (const door of this.doorVisuals) door.root.visible = !world.openDoors?.[door.doorId];
     this.averageMs = this.averageMs * 0.92 + dt * 1000 * 0.08;
     if (this.averageMs > 22 && this.resolutionScale > 0.7) {
       this.resolutionScale = Math.max(0.7, this.resolutionScale - 0.05);
@@ -519,7 +785,9 @@ export class ArenaRenderer {
       const old = before.get(entity.id) ?? entity;
       if (!hitstop) {
         visual.root.position.set(old.x + (entity.x - old.x) * alpha, 0, old.z + (entity.z - old.z) * alpha);
-        const facing = old.facing + shortestAngleDelta(old.facing, entity.facing) * alpha;
+        const oldFacing = Number.isFinite(old.facing) ? old.facing : 0;
+        const entityFacing = Number.isFinite(entity.facing) ? entity.facing : oldFacing;
+        const facing = oldFacing + shortestAngleDelta(oldFacing, entityFacing) * alpha;
         visual.root.rotation.y = -facing;
         this.updateAnimation(entity, visual, dt);
       }
@@ -533,10 +801,25 @@ export class ArenaRenderer {
     this.updateTelegraphs(world);
     const player = world.entities.find((entity) => entity.kind === 'player');
     if (player) {
-      const targetX = player.x;
-      const targetZ = player.z - 0.6;
-      this.camera.position.x += (targetX - this.camera.position.x) * 0.06;
-      this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * 0.06;
+      const room = world.arena.rooms?.[world.roomIndex];
+      const roomCenterZ = room?.centerZ ?? 0;
+      const roomDepth = room ? world.arena.depth / Math.max(1, world.arena.rooms.length) : world.arena.depth;
+      const minCameraZ = roomCenterZ - roomDepth / 2 + 1.6;
+      const maxCameraZ = roomCenterZ + roomDepth / 2 - 1.6;
+      const baseTargetZ = THREE.MathUtils.clamp(player.z - this.cameraFollowOffsetZ, minCameraZ, maxCameraZ);
+      const canvasRect = this.canvas.getBoundingClientRect();
+      const visibleArea = this.mobileVisibleArea(canvasRect);
+      const targetShift = this.mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea);
+      const targetMinZ = minCameraZ + Math.min(0, targetShift);
+      const targetMaxZ = maxCameraZ + Math.max(0, targetShift);
+      const targetZ = THREE.MathUtils.clamp(
+        player.z - this.cameraFollowOffsetZ + targetShift,
+        targetMinZ,
+        targetMaxZ,
+      );
+      this.camera.position.x += (0 - this.camera.position.x) * 0.06;
+      const followAlpha = visibleArea ? 0.16 : 0.06;
+      this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * followAlpha;
       let shakeX = 0;
       let shakeZ = 0;
       if (!this.reducedMotion && now < this.shakeUntil) {
@@ -544,9 +827,10 @@ export class ArenaRenderer {
         shakeX = Math.sin(now * 0.11) * 0.08 * strength;
         shakeZ = Math.cos(now * 0.13) * 0.05 * strength;
       }
-      this.camera.lookAt(targetX + shakeX, 0, targetZ + shakeZ);
+      this.camera.lookAt(shakeX, 0, targetZ + shakeZ);
       this.updateWallFade(targetZ);
     }
+    this.updateNpcHotspots(dt);
     this.updatePresentation(world, now);
     this.renderer.render(this.scene, this.camera);
   }
@@ -570,6 +854,13 @@ export class ArenaRenderer {
 
   destroy() {
     this.resize.disconnect();
+    for (const { root, mixer, action } of this.hubNpcs) {
+      action?.stop();
+      mixer.stopAllAction();
+      mixer.uncacheRoot(root);
+    }
+    this.hubNpcs = [];
+    this.npcLayer.remove();
     for (const [id, visual] of this.entities) this.removeEntityVisual(id, visual);
     this.entities.clear();
     for (const effect of this.slashes.values()) {
@@ -583,8 +874,10 @@ export class ArenaRenderer {
     for (let index = this.deathPuffs.length - 1; index >= 0; index -= 1) this.removeDeathPuff(index);
     for (const decal of this.telegraphs.values()) {
       this.scene.remove(decal.mesh);
-      decal.mesh.geometry.dispose();
-      decal.mesh.material.dispose();
+      decal.mesh.traverse((node) => {
+        node.geometry?.dispose();
+        if (node.material) for (const material of [node.material].flat()) material.dispose();
+      });
     }
     this.telegraphs.clear();
     this.vfxLayer.remove();
