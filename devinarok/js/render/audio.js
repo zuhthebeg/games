@@ -29,9 +29,13 @@ export class AudioManager {
   async loadAll() {
     if (!this.context) return;
     await Promise.all(Object.entries(SOUND_FILES).map(async ([name, file]) => {
-      const response = await fetch(new URL(`../../assets/audio/${file}`, import.meta.url));
-      if (!response.ok) throw new Error(`Audio fetch failed: ${file}`);
-      this.buffers.set(name, await this.context.decodeAudioData(await response.arrayBuffer()));
+      try {
+        const response = await fetch(new URL(`../../assets/audio/${file}`, import.meta.url));
+        if (!response.ok) throw new Error(`Audio fetch failed: ${file}`);
+        this.buffers.set(name, await this.context.decodeAudioData(await response.arrayBuffer()));
+      } catch (error) {
+        console.warn(`Audio load skipped (${name})`, error);
+      }
     }));
   }
 
@@ -53,6 +57,7 @@ export class AudioManager {
   }
 
   setMusic(name) {
+    if (!this.buffers.has(name)) return;
     this.music?.stop();
     this.music = this.play(name, { loop: true, gain: 0.28 });
   }
