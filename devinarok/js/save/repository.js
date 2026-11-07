@@ -33,8 +33,11 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function commitToData(data, { characterId, baseRev, ops }, now) {
+function commitToData(data, { characterId, baseRev, ops, idempotencyKey }, now) {
   const current = data.characters[characterId] ?? null;
+  if (idempotencyKey && data.ledger.some((entry) => entry.characterId === characterId && entry.idempotencyKey === idempotencyKey)) {
+    return clone(current);
+  }
   if ((current?.rev ?? 0) !== baseRev) throw new ConflictError();
   const result = applyOperations(current, data.items, ops, characterId);
   result.character.rev = baseRev + 1;
@@ -47,6 +50,7 @@ function commitToData(data, { characterId, baseRev, ops }, now) {
     rev: result.character.rev,
     ops: clone(ops),
     source: 'local',
+    ...(idempotencyKey ? { idempotencyKey } : {}),
   });
   return clone(result.character);
 }

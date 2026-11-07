@@ -50,6 +50,27 @@ test('save commits validate currency, item ownership, slots, and revisions', asy
   assert.equal((await repo.backend.readData()).ledger.at(-1).rev, 2);
 });
 
+test('settlement commits are idempotent across a retry after an uncertain response', async () => {
+  const repo = await repository();
+  await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '재시도', kind: 'knight' }] });
+  const first = await repo.commit({
+    characterId: 'hero',
+    baseRev: 1,
+    idempotencyKey: 'sortie-1',
+    ops: [{ type: 'grantGold', amount: 75 }, { type: 'gainXp', amount: 12 }],
+  });
+  const retry = await repo.commit({
+    characterId: 'hero',
+    baseRev: first.rev,
+    idempotencyKey: 'sortie-1',
+    ops: [{ type: 'grantGold', amount: 75 }, { type: 'gainXp', amount: 12 }],
+  });
+  assert.equal(retry.rev, first.rev);
+  assert.equal(retry.gold, 75);
+  assert.equal(retry.xp, 12);
+  assert.equal((await repo.backend.readData()).ledger.filter((entry) => entry.idempotencyKey === 'sortie-1').length, 1);
+});
+
 test('legacy schema migration backs up source and import/export verifies checksum', async () => {
   const legacy = {
     meta: { schemaVersion: 0, localAccountId: 'local-old' },

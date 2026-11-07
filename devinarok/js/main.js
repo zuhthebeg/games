@@ -31,6 +31,7 @@ let input;
 let loop;
 let frame;
 let settled = false;
+let settlementId = null;
 let soundMuted = false;
 let audioLoaded = false;
 const audio = new AudioManager();
@@ -307,11 +308,7 @@ function updateHud(current) {
   if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
 }
 
-async function settleStage(outcome = world?.outcome) {
-  if (!world || !world.result || settled) return;
-  settled = true;
-  loop?.pause();
-  const result = world.result;
+function buildSettlement(outcome, result) {
   const ops = [
     { type: 'gainXp', amount: result.xp },
     { type: 'grantGold', amount: result.gold },
@@ -331,17 +328,49 @@ async function settleStage(outcome = world?.outcome) {
     if (autoSold) ops.push({ type: 'grantGold', amount: autoSold });
     ops.push({ type: 'clearStage', stageId: currentStageId });
   }
+  return { ops, autoSold };
+}
+
+function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) {
+  const saved = !error;
+  const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  if (!saved) {
+    resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
+    $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
+    $('#result-discard').addEventListener('click', enterHub, { once: true });
+  } else {
+    $('#result-return').addEventListener('click', enterHub, { once: true });
+  }
+  resultPanel.hidden = false;
+}
+
+async function attemptSettlement(outcome, result, settlementId) {
+  let autoSold = 0;
   try {
-    character = await commit(ops);
+    await reloadCharacter();
+    const settlement = buildSettlement(outcome, result);
+    autoSold = settlement.autoSold;
+    character = await saves.commit({
+      characterId: character.id,
+      baseRev: character.rev,
+      ops: settlement.ops,
+      idempotencyKey: settlementId,
+    });
     inventory = await saves.listItems(character.id);
+    renderSettlement(outcome, result, { autoSold });
   } catch (error) {
     console.error('Settlement failed', error);
-    $('#toast').textContent = '정산에 실패했습니다. 다시 시도해 주세요.';
+    renderSettlement(outcome, result, { autoSold, error });
   }
-  const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>`;
-  resultPanel.hidden = false;
-  $('#result-return').addEventListener('click', enterHub, { once: true });
+}
+
+async function settleStage(outcome = world?.outcome) {
+  if (!world || !world.result || settled) return;
+  settled = true;
+  loop?.pause();
+  settlementId = crypto.randomUUID();
+  await attemptSettlement(outcome, world.result, settlementId);
 }
 
 createForm.addEventListener('submit', async (event) => {
