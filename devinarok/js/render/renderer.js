@@ -12,6 +12,21 @@ const M0_MODELS = {
   Skeleton_Warrior: 'assets/chars/Skeleton_Warrior.glb',
 };
 
+function disposeSceneResources(scene) {
+  const geometries = new Set();
+  const materials = new Set();
+  scene.traverse((node) => {
+    if (node.geometry) geometries.add(node.geometry);
+    if (node.material) for (const material of [node.material].flat()) materials.add(material);
+  });
+  for (const geometry of geometries) geometry.dispose();
+  for (const material of materials) {
+    for (const value of Object.values(material)) if (value?.isTexture) value.dispose();
+    material.dispose();
+  }
+  scene.clear();
+}
+
 function cloneMaterials(root) {
   const clones = new Map();
   root.traverse((node) => {
@@ -573,6 +588,7 @@ export class ArenaRenderer {
     }
     this.telegraphs.clear();
     this.vfxLayer.remove();
+    disposeSceneResources(this.scene);
     this.renderer.dispose();
   }
 }
