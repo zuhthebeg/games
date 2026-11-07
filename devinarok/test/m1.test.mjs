@@ -89,7 +89,6 @@ test('rogue line dash moves five meters along its stored attack line', () => {
   world.roomEnemyIds = [rogue.id];
   player.x = 0;
   player.z = 4.8;
-  player.iFrames = 1000;
   rogue.enemyKind = 'rogue';
   rogue.x = 0;
   rogue.z = 0;
