@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#100e13">
+  <title>데비나로크</title>
+  <link rel="icon" href="icon.svg">
+  <link rel="stylesheet" href="css/game.css?v=b983218db6">
+  <script type="importmap">
+    {
+      "imports": {
+        "./js/core/input.js": "./js/core/input.js?v=ac05270789",
+        "./js/core/loop.js": "./js/core/loop.js?v=bd86126599",
+        "./js/main.js": "./js/main.js?v=01ca8a29c1",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=53789075e7",
+        "./js/save/ops.js": "./js/save/ops.js?v=1a6cf05c59",
+        "./js/save/repository.js": "./js/save/repository.js?v=ff06f6883f",
+        "./js/sim/arena.js": "./js/sim/arena.js?v=0564587353",
+        "./js/sim/world.js": "./js/sim/world.js?v=3378604d50",
+        "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
+        "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
+        "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
+        "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js": "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js?v=b1632a7032",
+        "./vendor/three-0.187.0/three.core.min.js": "./vendor/three-0.187.0/three.core.min.js?v=978d509554",
+        "./vendor/three-0.187.0/three.module.min.js": "./vendor/three-0.187.0/three.module.min.js?v=6a09a8b135",
+        "three": "./vendor/three-0.187.0/three.module.min.js?v=6a09a8b135",
+        "three/addons/": "./vendor/three-0.187.0/addons/",
+        "three/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
+        "three/addons/utils/SkeletonUtils.js": "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js?v=b1632a7032",
+        "three/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
+        "three/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00"
+      }
+    }
+    </script>
+</head>
+<body>
+  <main id="app">
+    <section id="title-screen" class="screen">
+      <div class="title-mark">DEV · M0</div>
+      <h1>데비나로크</h1>
+      <p class="subtitle">어둠 속에서, 검을 들다</p>
+      <div id="save-warning" class="warning" hidden></div>
+      <form id="create-form" class="panel" hidden>
+        <label>기사의 이름<input name="name" maxlength="12" minlength="1" required placeholder="이름 (1–12자)"></label>
+        <p>남은 클래스 선택은 다음 여정에서 열립니다.</p>
+        <button class="primary" type="submit">기사 · 검으로 시작</button>
+      </form>
+      <div id="character-card" class="panel" hidden>
+        <div class="eyebrow">기록된 모험가</div>
+        <h2 id="character-name"></h2>
+        <p id="character-level"></p>
+        <button id="start-button" class="primary">시험의 방</button>
+      </div>
+    </section>
+    <section id="game-screen" hidden>
+      <canvas id="scene"></canvas>
+      <header class="hud">
+        <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div></div>
+        <div class="counter"><span>처치</span><b id="kill-count">0</b></div>
+        <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
+      </header>
+      <div id="controls" class="controls">
+        <div class="joystick" data-joystick><span data-joystick-knob></span></div>
+        <div class="buttons">
+          <button class="attack-button" data-button="1">공격</button>
+          <button data-button="2">회피</button>
+          <button data-button="4">기술 1</button>
+          <button data-button="8">기술 2</button>
+          <button data-button="16">기술 3</button>
+        </div>
+      </div>
+      <div id="pause-menu" class="overlay" hidden>
+        <div class="panel">
+          <div class="eyebrow">시험의 방</div>
+          <h2>숨을 고르세요</h2>
+          <button id="continue-button" class="primary">계속</button>
+          <button id="leave-button">여관으로</button>
+        </div>
+      </div>
+      <div id="toast" role="status"></div>
+    </section>
+  </main>
+  <script type="module" src="js/main.js?v=01ca8a29c1"></script>
+</body>
+</html>

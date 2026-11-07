@@ -1,0 +1,49 @@
+:root { color-scheme: dark; font-family: Georgia, "Malgun Gothic", serif; background: #100e13; color: #f2ece5; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100svh; background: radial-gradient(ellipse at 50% 30%, #29202a, #100e13 68%); }
+button, input { font: inherit; }
+button { color: #f2ece5; background: #28232b; border: 1px solid #66535a; border-radius: 12px; padding: 13px 20px; cursor: pointer; }
+button:active { transform: translateY(1px); }
+button.primary { background: linear-gradient(135deg, #9f562e, #633324); border-color: #d49a61; font-weight: 700; }
+[hidden] { display: none !important; }
+#app { min-height: 100svh; }
+.screen { min-height: 100svh; display: grid; place-content: center; text-align: center; padding: 24px; }
+.title-mark, .eyebrow { color: #d29560; letter-spacing: .2em; font: 600 11px/1.6 system-ui, sans-serif; }
+h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em; text-shadow: 0 5px 40px #a45b3e55; }
+.subtitle { color: #b5a7a2; margin: 4px 0 34px; }
+.panel { width: min(440px, calc(100vw - 32px)); padding: 24px; border: 1px solid #58454d; border-radius: 20px; background: #19161dcc; box-shadow: 0 20px 70px #0008; text-align: left; }
+.panel h2 { margin: 4px 0 12px; }
+.panel p { color: #b9adb0; font-size: 14px; }
+.panel button { width: 100%; margin-top: 10px; }
+.panel label { display: grid; gap: 8px; }
+.panel input { border: 1px solid #66535a; border-radius: 10px; background: #100e13; color: white; padding: 12px; }
+.warning { max-width: 440px; margin: 0 auto 18px; color: #f0c27d; background: #543e253b; border: 1px solid #956e40; padding: 12px; border-radius: 12px; font: 13px/1.6 system-ui, sans-serif; }
+#game-screen { position: fixed; inset: 0; overflow: hidden; background: #100e13; }
+#scene { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud { position: absolute; inset: max(12px, env(safe-area-inset-top)) 14px auto; display: flex; align-items: center; gap: 16px; pointer-events: none; font: 600 13px/1.4 system-ui, sans-serif; text-shadow: 0 2px 8px #000; }
+.hero-readout { width: min(270px, 45vw); }
+.hero-readout span { margin-right: 12px; }
+.hp-track { margin-top: 5px; height: 8px; background: #281b20; border: 1px solid #87625a; border-radius: 8px; overflow: hidden; }
+.hp-track i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #a63838, #e38d55); }
+.counter { display: grid; text-align: center; color: #d9c9b3; }
+.counter b { font-size: 20px; }
+.icon-button { margin-left: auto; pointer-events: auto; width: 46px; height: 46px; padding: 0; font-size: 22px; background: #17131ac9; }
+.controls { position: absolute; inset: auto 0 max(16px, env(safe-area-inset-bottom)) 0; display: flex; justify-content: space-between; align-items: end; padding: 0 18px; pointer-events: none; }
+.joystick { width: 116px; height: 116px; border-radius: 50%; border: 1px solid #c9a17c66; background: #19151c99; pointer-events: auto; touch-action: none; display: grid; place-items: center; }
+.joystick.floating { position: fixed; z-index: 4; margin: 0; transform: translate(-50%, -50%); }
+.joystick span { display: block; width: 48px; height: 48px; border-radius: 50%; background: #c39b7566; border: 1px solid #d8b995; }
+.buttons { display: grid; grid-template-columns: repeat(2, 62px); gap: 7px; pointer-events: auto; }
+.buttons button { padding: 0 5px; min-height: 47px; font: 12px system-ui, sans-serif; background: #211b22dd; touch-action: none; }
+.buttons .attack-button { grid-row: span 2; min-height: 101px; border-color: #d49564; background: #6b332ddf; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #09080bcc; padding: 18px; }
+.overlay .panel { text-align: center; }
+#toast { position: absolute; top: 82px; left: 50%; transform: translateX(-50%); color: #f4d29a; font: 13px system-ui, sans-serif; text-shadow: 0 2px 10px #000; }
+@media (min-width: 700px) {
+  .controls { justify-content: end; }
+  .joystick { display: none; }
+  .buttons { grid-template-columns: repeat(5, 72px); }
+  .buttons button, .buttons .attack-button { min-height: 54px; grid-row: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
