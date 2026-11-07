@@ -1,1 +1,1 @@
-export const SIM_HASH = 'ace049c1c0ceca34a3ccb2e2ec90ee3630c8a9d1615aee6f6847d69c0a383c8a';
+export const SIM_HASH = '075d98c993e5569f6d114edda8b33b5444f6c85816cc41ef05c3961a0a1b81c0';

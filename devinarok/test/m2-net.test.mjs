@@ -36,35 +36,61 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.v, PROTOCOL_VERSION);
 });
 
-test('input queue drops duplicates and old sequences, waits for gaps, and clears held buttons', () => {
+test('protocol omits default fields in full keyframes and restores them on decode', () => {
+  const fullWire = JSON.parse(encodeMessage({
+    t: 'snap',
+    full: true,
+    ents: [{ id: 1, dead: false, attackRemaining: 0, dodge: false }],
+  }));
+  assert.equal(JSON.stringify(fullWire.ents[0]).includes('false'), false);
+  const decodedFull = decodeMessage(JSON.stringify(fullWire));
+  assert.equal(decodedFull.ents[0].dead, false);
+  assert.equal(decodedFull.ents[0].attackRemaining, 0);
+
+  const delta = decodeMessage(encodeMessage({
+    t: 'snap',
+    full: false,
+    ents: [{ id: 1, dead: false, attackRemaining: 0 }],
+  }));
+  assert.equal(delta.ents[0].dead, false);
+  assert.equal(delta.ents[0].attackRemaining, 0);
+});
+
+test('input queue waits for gaps without repeating or skipping inputs', () => {
   const queue = new InputQueue({ lastAppliedSeq: 0 });
   assert.equal(queue.enqueue({ seq: 2, mx: 22, mz: 0, b: BUTTONS.ATTACK }), true);
   assert.equal(queue.enqueue({ seq: 2, mx: 99 }), false);
-  const gap = queue.consume();
-  assert.equal(gap.ack, 0);
-  assert.equal(gap.repeated, true);
-  assert.equal(gap.input.buttons, 0);
+  assert.deepEqual(queue.consumeForTick().inputs, []);
 
   assert.equal(queue.enqueue({ seq: 1, mx: 11, mz: 0, b: 0 }), true);
-  assert.equal(queue.consume().input.seq, 1);
-  assert.equal(queue.consume().input.seq, 2);
+  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [1]);
+  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [2]);
   assert.equal(queue.enqueue({ seq: 2, mx: 0 }), false);
-  for (let tick = 0; tick < 4; tick += 1) {
-    const repeated = queue.consume();
-    assert.equal(repeated.repeated, true);
-    assert.equal(repeated.input.moveX, 22);
-    assert.equal(repeated.input.buttons, 0);
-  }
-  const idle = queue.consume();
-  assert.equal(idle.idle, true);
-  assert.equal(idle.input.moveX, 0);
+  assert.deepEqual(queue.consumeForTick().inputs, []);
+});
 
-  const overflow = new InputQueue({ lastAppliedSeq: 0, maxPending: 6 });
-  for (let seq = 1; seq <= 7; seq += 1) overflow.enqueue({ seq, mx: seq });
-  assert.equal(overflow.pendingCount, 6);
-  assert.equal(overflow.skipped, 1);
-  assert.equal(overflow.lastAppliedSeq, 1);
-  assert.equal(overflow.consume().input.seq, 2);
+test('input queue drains two inputs per tick while backlog exceeds two', () => {
+  const queue = new InputQueue();
+  for (let seq = 1; seq <= 5; seq += 1) queue.enqueue({ seq, mx: seq });
+
+  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [1, 2]);
+  assert.equal(queue.pendingCount, 3);
+  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [3, 4]);
+  assert.equal(queue.pendingCount, 1);
+  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [5]);
+  assert.equal(queue.pendingCount, 0);
+});
+
+test('input queue hard cap drops the oldest input and requests a full resync', () => {
+  const queue = new InputQueue({ maxPending: 90 });
+  for (let seq = 1; seq <= 91; seq += 1) queue.enqueue({ seq, mx: seq });
+
+  assert.equal(queue.pendingCount, 90);
+  assert.equal(queue.skipped, 1);
+  assert.equal(queue.lastAppliedSeq, 1);
+  assert.equal(queue.consumeForTick().fullResync, true);
+  assert.equal(queue.takeFullResyncRequest(), true);
+  assert.equal(queue.takeFullResyncRequest(), false);
 });
 
 test('server clock EWMA tracks RTT and offset, schedules startup pings, and never moves backward', () => {
@@ -92,11 +118,26 @@ test('server clock EWMA tracks RTT and offset, schedules startup pings, and neve
 
 test('interpolation adapts to jitter, interpolates facing, extrapolates for at most 100ms, and snaps teleports', () => {
   const buffer = new InterpolationBuffer();
-  buffer.addSnapshot({ tick: 0, receivedAt: 0, entities: [{ id: 1, x: 0, z: 0, facing: 3.1 }] });
-  buffer.addSnapshot({ tick: 2, receivedAt: 70, entities: [{ id: 1, x: 2, z: 0, facing: -3.1 }] });
+  buffer.addSnapshot({
+    tick: 0,
+    receivedAt: 0,
+    activeEnemyIds: [1],
+    entities: [{ id: 1, kind: 'enemy', x: 0, z: 0, facing: 3.1 }],
+  });
+  buffer.addSnapshot({
+    tick: 2,
+    receivedAt: 70,
+    activeEnemyIds: [2],
+    entities: [{ id: 1, kind: 'enemy', x: 2, z: 0, facing: -3.1 }],
+  });
   const middle = buffer.sample(5);
   assert.ok(Math.abs(middle.entities[0].x - 1) < 0.1);
   assert.ok(Math.abs(Math.abs(middle.entities[0].facing) - Math.PI) < 0.1);
+  assert.deepEqual(middle.activeEnemyIds, [1]);
+  assert.deepEqual(buffer.sampleAtRenderTick(2).activeEnemyIds, [2]);
+  const atRenderTick = buffer.sampleAtRenderTick(1);
+  assert.equal(atRenderTick.renderTick, 1);
+  assert.ok(Math.abs(atRenderTick.entities[0].x - 1) < 0.1);
 
   buffer.addSnapshot({ tick: 4, receivedAt: 180, entities: [{ id: 1, x: 4, z: 0, facing: -3.0 }] });
   buffer.addSnapshot({ tick: 6, receivedAt: 300, entities: [{ id: 1, x: 6, z: 0, facing: -2.9 }] });
@@ -240,6 +281,25 @@ test('net session reconnects with exponential backoff and resumes using the same
   assert.equal(timers.timers.size, 0);
 });
 
+test('net session reads the authoritative tick from the pong tick field', () => {
+  FakeSocket.instances = [];
+  let now = 100;
+  const session = new NetSession({
+    url: 'ws://example.invalid/room',
+    WebSocketCtor: FakeSocket,
+    now: () => now,
+    autoFlushInputs: false,
+    autoPing: false,
+  });
+  const socket = session.connect();
+  socket.open();
+  now = 200;
+  socket.receive({ t: 'pong', c: 100, tick: 6 });
+  assert.equal(session.clock.samples, 1);
+  assert.equal(session.clock.rttMs, 100);
+  session.close();
+});
+
 test('net session increases reconnect delay when connection attempts keep failing', () => {
   FakeSocket.instances = [];
   const timers = fakeTimers();
@@ -264,7 +324,7 @@ test('net session increases reconnect delay when connection attempts keep failin
   session.close();
 });
 
-test('net session retains the newest six compact inputs and sends them in sequence order', () => {
+test('net session retains unacknowledged inputs and sends them in sequence order', () => {
   FakeSocket.instances = [];
   const session = new NetSession({
     url: 'ws://example.invalid/room',
@@ -277,11 +337,87 @@ test('net session retains the newest six compact inputs and sends them in sequen
   for (let seq = 1; seq <= 8; seq += 1) {
     session.queueInput({ seq, moveX: seq, moveZ: -seq, buttons: BUTTONS.ATTACK });
   }
-  session.setEventAck(17);
+  for (let eventId = 1; eventId <= 17; eventId += 1) session.setEventAck(eventId);
   assert.equal(session.flushInputs(), true);
   const sent = decodeMessage(socket.sent.at(-1));
   assert.equal(sent.t, 'in');
   assert.equal(sent.ae, 17);
-  assert.deepEqual(sent.inputs.map((input) => input.seq), [3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(sent.inputs.map((input) => input.seq), [1, 2, 3, 4, 5, 6, 7, 8]);
+  socket.receive({ t: 'snap', tick: 0, ack: 4, full: true, ents: [] });
+  assert.deepEqual([...session.inputs.keys()].sort((a, b) => a - b), [5, 6, 7, 8]);
+  session.close();
+});
+
+test('net session acknowledges only contiguous authoritative event ids', () => {
+  const session = new NetSession();
+  session.setEventAck(1);
+  session.setEventAck(3);
+  assert.equal(session.eventAck, 1);
+  session.setEventAck(2);
+  assert.equal(session.eventAck, 3);
+  session.setEventAck(3);
+  assert.equal(session.eventAck, 3);
+});
+
+test('net session reconstructs acknowledged snapshot deltas and requests a full resync without the baseline', () => {
+  FakeSocket.instances = [];
+  const received = [];
+  const session = new NetSession({
+    url: 'ws://example.invalid/room',
+    WebSocketCtor: FakeSocket,
+    autoFlushInputs: false,
+    autoPing: false,
+    onMessage: (message) => received.push(message),
+  });
+  const socket = session.connect();
+  socket.open();
+  socket.receive({
+    t: 'snap',
+    tick: 0,
+    ack: 0,
+    full: true,
+    roomIndex: 1,
+    roomCleared: false,
+    doorCountdown: null,
+    openDoors: {},
+    activeEnemyIds: [4, 5],
+    ents: [{ id: 1, kind: 'player', x: 1, z: 2, dead: false }],
+  });
+  socket.receive({
+    t: 'snap',
+    tick: 2,
+    ack: 0,
+    full: false,
+    baseTick: 0,
+    activeEnemyIds: [6],
+    ents: [{ id: 1, x: 3 }],
+    removed: [],
+  });
+  assert.equal(received.at(-1).ents[0].x, 3);
+  assert.equal(received.at(-1).ents[0].z, 2);
+  assert.equal(received.at(-1).ents[0].dead, false);
+  assert.equal(received.at(-1).roomIndex, 1);
+  assert.equal(received.at(-1).roomCleared, false);
+  assert.deepEqual(received.at(-1).activeEnemyIds, [6]);
+  assert.deepEqual(received.at(-1).openDoors, {});
+  assert.equal(session.snapshotAck, 2);
+  session.snapshotStates.clear();
+  session.snapshotMetadataStates.clear();
+  const receivedCount = received.length;
+  socket.receive({
+    t: 'snap',
+    tick: 4,
+    ack: 0,
+    full: false,
+    baseTick: 2,
+    ents: [{ id: 1, x: 4 }],
+    removed: [],
+  });
+  assert.equal(received.length, receivedCount);
+  assert.equal(session.snapshotResyncRequested, true);
+  assert.equal(session.flushInputs(), true);
+  const resyncRequest = decodeMessage(socket.sent.at(-1));
+  assert.equal(resyncRequest.sa, 2);
+  assert.equal(resyncRequest.sr, true);
   session.close();
 });

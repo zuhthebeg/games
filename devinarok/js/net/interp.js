@@ -87,6 +87,7 @@ export class InterpolationBuffer {
     const entry = {
       tick,
       entities: list.map(cloneEntity),
+      activeEnemyIds: Array.isArray(value.activeEnemyIds) ? [...value.activeEnemyIds] : null,
       teleport: Boolean(value.teleport || value.roomChanged),
       receivedAt,
     };
@@ -105,14 +106,25 @@ export class InterpolationBuffer {
   }
 
   sample(estimatedServerTick) {
-    if (!this.snapshots.length) return { renderTick: estimatedServerTick, delayMs: this.delayMs, entities: [] };
     const delayTicks = this.delayMs * this.tickRate / 1000;
-    const renderTick = estimatedServerTick - delayTicks;
+    return this.sampleAtRenderTick(estimatedServerTick - delayTicks);
+  }
+
+  sampleAtRenderTick(renderTick) {
+    if (!this.snapshots.length) {
+      return {
+        renderTick,
+        delayMs: this.delayMs,
+        entities: [],
+        activeEnemyIds: null,
+      };
+    }
     if (this.snapshots.length === 1 || renderTick <= this.snapshots[0].tick) {
       return {
         renderTick,
         delayMs: this.delayMs,
         entities: this.snapshots[0].entities.map(cloneEntity),
+        activeEnemyIds: this.snapshots[0].activeEnemyIds,
       };
     }
 
@@ -124,6 +136,7 @@ export class InterpolationBuffer {
         renderTick,
         delayMs: this.delayMs,
         entities: this.extrapolate(previous, latest, renderTick),
+        activeEnemyIds: latest.activeEnemyIds,
       };
     }
 
@@ -131,7 +144,12 @@ export class InterpolationBuffer {
     const right = this.snapshots[rightIndex];
     const teleportAtRight = renderTick >= right.tick && right.teleport;
     if (teleportAtRight) {
-      return { renderTick, delayMs: this.delayMs, entities: right.entities.map(cloneEntity) };
+      return {
+        renderTick,
+        delayMs: this.delayMs,
+        entities: right.entities.map(cloneEntity),
+        activeEnemyIds: right.activeEnemyIds,
+      };
     }
     const amount = clamp((renderTick - left.tick) / Math.max(1e-9, right.tick - left.tick), 0, 1);
     const leftEntities = entityMap(left.entities);
@@ -146,7 +164,12 @@ export class InterpolationBuffer {
       else if (before) entities.push(cloneEntity(before));
       else if (amount >= 1) entities.push(cloneEntity(after));
     }
-    return { renderTick, delayMs: this.delayMs, entities };
+    return {
+      renderTick,
+      delayMs: this.delayMs,
+      entities,
+      activeEnemyIds: amount >= 1 ? right.activeEnemyIds : left.activeEnemyIds,
+    };
   }
 
   extrapolate(previous, latest, renderTick) {

@@ -123,7 +123,6 @@ function normalizeInput(player, rawInput) {
       moveZ: previous.moveZ,
       aim: previous.aim,
       buttons: 0,
-      ...(previous.viewTick === undefined ? {} : { viewTick: previous.viewTick }),
     };
   }
   return {
@@ -426,6 +425,7 @@ export function addPlayer(world, {
     skillCooldowns: { 1: 0, 2: 0, 3: 0 },
     skillCast: null,
     guardTicks: 0,
+    viewLag: 0,
     potions: world.mode === 'stage' ? Math.max(0, Math.min(POTION.maxCarry, character.potions ?? 0)) : 0,
     potionTicks: 0,
     potionCooldownTicks: 0,
@@ -441,7 +441,7 @@ export function addPlayer(world, {
   return player;
 }
 
-function startPlayerAttackMotion(player, step, seq, viewTick = undefined) {
+function startPlayerAttackMotion(player, step, seq) {
   const castId = `${player.playerId}:${seq}`;
   player.attack = {
     step,
@@ -451,8 +451,6 @@ function startPlayerAttackMotion(player, step, seq, viewTick = undefined) {
     phaseTick: 0,
     queued: false,
     queuedSeq: null,
-    queuedViewTick: null,
-    ...(Number.isSafeInteger(viewTick) ? { viewTick } : {}),
     hitTargets: [],
     shape: null,
   };
@@ -464,8 +462,8 @@ function startPlayerAttackMotion(player, step, seq, viewTick = undefined) {
   };
 }
 
-function beginPlayerAttack(world, player, step, seq, viewTick = undefined) {
-  emit(world, 'cast', startPlayerAttackMotion(player, step, seq, viewTick));
+function beginPlayerAttack(world, player, step, seq) {
+  emit(world, 'cast', startPlayerAttackMotion(player, step, seq));
 }
 
 function comboTimeline(player, step) {
@@ -478,7 +476,7 @@ function comboTimeline(player, step) {
   };
 }
 
-function queueCombo(player, seq, viewTick) {
+function queueCombo(player, seq) {
   const attack = player.attack;
   if (!attack || attack.step >= COMBO_TIMELINES.length || attack.queued) return;
   const timeline = comboTimeline(player, attack.step);
@@ -488,7 +486,6 @@ function queueCombo(player, seq, viewTick) {
   ) {
     attack.queued = true;
     attack.queuedSeq = seq;
-    attack.queuedViewTick = Number.isSafeInteger(viewTick) ? viewTick : null;
   }
 }
 
@@ -551,7 +548,7 @@ function advancePlayerAttack(world, player) {
     return;
   }
   if (attack.queued && attack.step < COMBO_TIMELINES.length) {
-    beginPlayerAttack(world, player, attack.step + 1, attack.queuedSeq, attack.queuedViewTick);
+    beginPlayerAttack(world, player, attack.step + 1, attack.queuedSeq);
   } else {
     player.attack = null;
   }
@@ -608,8 +605,8 @@ function stepPlayer(world, player, rawInput) {
   }
 
   if (pressed & BUTTONS.ATTACK) {
-    if (!player.attack) beginPlayerAttack(world, player, 1, input.seq, input.viewTick);
-    else queueCombo(player, input.seq, input.viewTick);
+    if (!player.attack) beginPlayerAttack(world, player, 1, input.seq);
+    else queueCombo(player, input.seq);
   }
   advancePlayerAttack(world, player);
 }
@@ -887,6 +884,7 @@ export function createStageWorld({
   playerId = 'hero',
   character = {},
   party,
+  inputDriven = false,
 } = {}) {
   const stage = STAGES[stageId];
   if (!stage) throw new TypeError(`Unknown stage: ${stageId}`);
@@ -899,6 +897,7 @@ export function createStageWorld({
   world.stageId = stageId;
   world.stageLevel = stage.stageLevel;
   world.partySize = members.length;
+  world.inputDriven = Boolean(inputDriven || members.length > 1);
   world.roomIndex = 0;
   world.roomEnemyIds = [];
   world.roomCleared = false;
@@ -1025,9 +1024,9 @@ function attackShapeHit(shape, target, targetRadius = 0) {
   return false;
 }
 
-function enemyHistoryFrame(world, viewTick) {
-  if (!Number.isSafeInteger(viewTick)) return null;
-  const clampedTick = clamp(viewTick, Math.max(0, world.tick - 8), world.tick);
+function enemyHistoryFrame(world, viewLag) {
+  if (!Number.isFinite(viewLag)) return null;
+  const clampedTick = world.tick - clamp(Math.trunc(viewLag), 0, 8);
   if (clampedTick >= world.tick) return null;
   return world.enemyHistory.find((frame) => frame.tick === clampedTick) ?? null;
 }
@@ -1124,7 +1123,7 @@ function dropRewards(world, enemy) {
   }
 }
 
-function killStageEnemy(world, source, enemy, damage, castId, critical = false, skillId = source.skillCast?.id ?? 0) {
+function killStageEnemy(world, source, enemy, damage, castId, critical = false, skillId = source.skillCast?.id ?? 0, viewLag = 0) {
   if (enemy.dead) return;
   enemy.hp = Math.max(0, enemy.hp - damage);
   enemy.hitFlashTicks = 9;
@@ -1134,7 +1133,17 @@ function killStageEnemy(world, source, enemy, damage, castId, critical = false, 
     const distance = Math.hypot(dx, dz) || 1;
     moveEntity(world, enemy, dx / distance * 0.18, dz / distance * 0.18);
   }
-  emit(world, 'hit', { sourceId: source.id, targetId: enemy.id, damage, castId, critical, skill: skillId });
+  emit(world, 'hit', {
+    sourceId: source.id,
+    targetId: enemy.id,
+    damage,
+    castId,
+    critical,
+    skill: skillId,
+    viewLag,
+    inputSeq: source.lastInput?.seq,
+    ...(Number.isSafeInteger(source.lastInput?.viewTick) ? { viewTick: source.lastInput.viewTick } : {}),
+  });
   if (enemy.hp > 0) return;
   enemy.dead = true;
   enemy.deathTicks = 24;
@@ -1145,8 +1154,17 @@ function killStageEnemy(world, source, enemy, damage, castId, critical = false, 
   if (enemy.boss) emit(world, 'bossDefeated', { entityId: enemy.id });
 }
 
-function playerStrike(world, player, shape, motionMult, castId, hitTargets, viewTick = undefined, skillId = undefined) {
-  const history = enemyHistoryFrame(world, viewTick);
+function playerStrike(world, player, shape, motionMult, castId, hitTargets, skillId = undefined) {
+  const history = enemyHistoryFrame(world, player.viewLag);
+  emit(world, 'strike', {
+    sourceId: player.id,
+    castId,
+    skill: skillId,
+    shape: structuredClone(shape),
+    viewLag: player.viewLag,
+    inputSeq: player.lastInput?.seq,
+    ...(Number.isSafeInteger(player.lastInput?.viewTick) ? { viewTick: player.lastInput.viewTick } : {}),
+  });
   for (const enemy of stageActiveEnemies(world)) {
     if (hitTargets.includes(enemy.id) || enemy.invulnerable || enemy.spawnTicksLeft > 0) continue;
     if (enemy.dead) continue;
@@ -1157,13 +1175,13 @@ function playerStrike(world, player, shape, motionMult, castId, hitTargets, view
     hitTargets.push(enemy.id);
     const critical = random(world) * 100 < player.stats.critChance;
     const damage = calculateDamage(player.stats.attack, motionMult, critical, player.stats.critDamage, enemy.defense ?? 0);
-    killStageEnemy(world, player, enemy, damage, castId, critical, skillId ?? player.skillCast?.id ?? 0);
+    killStageEnemy(world, player, enemy, damage, castId, critical, skillId ?? player.skillCast?.id ?? 0, player.viewLag);
     const heal = Math.floor(damage * player.stats.lifesteal / 100);
     if (heal) player.hp = Math.min(player.maxHp, player.hp + heal);
   }
 }
 
-function startSkillMotion(ctx, player, id, seq, viewTick = undefined) {
+function startSkillMotion(ctx, player, id, seq) {
   const skill = Object.values(SKILLS).find((entry) => entry.id === id);
   if (!skill) return null;
   const castId = `${player.playerId}:${seq}`;
@@ -1177,18 +1195,15 @@ function startSkillMotion(ctx, player, id, seq, viewTick = undefined) {
     originX: player.x,
     originZ: player.z,
     angle: player.facing,
-    ...(Number.isSafeInteger(viewTick) ? { viewTick } : {}),
   };
   return { entityId: player.id, playerId: player.playerId, castId, skill: id, skillName: skill.name };
 }
 
 function applyPotion(world, player, seq) {
-  if (player.potions <= 0 || player.potionCooldownTicks > 0 || player.potionTicks > 0) return;
-  player.potions -= 1;
+  if (player.potionTicks > 0) return;
   player.potionTicks = POTION.durationTicks;
   player.potionHealTicks = POTION.durationTicks;
   player.potionHealRemaining = Math.round(player.maxHp * POTION.healFraction);
-  player.potionCooldownTicks = POTION.cooldownTicks;
   emit(world, 'potion', { entityId: player.id, playerId: player.playerId, seq });
 }
 
@@ -1197,6 +1212,10 @@ export function stepPlayerMotion(ctx, player, rawInput) {
   const pressed = input.buttons & ~player.previousButtons;
   player.previousButtons = input.buttons;
   player.lastInput = input;
+  const viewTick = Number.isSafeInteger(rawInput?.viewTick) ? rawInput.viewTick : undefined;
+  player.viewLag = viewTick === undefined
+    ? 0
+    : clamp((Number.isSafeInteger(ctx.tick) ? ctx.tick : 0) - viewTick, 0, 8);
   const events = [];
   let skillStrike = null;
   let attackStrike = null;
@@ -1211,14 +1230,20 @@ export function stepPlayerMotion(ctx, player, rawInput) {
 
   const skillId = pressed & BUTTONS.SKILL1 ? 1 : pressed & BUTTONS.SKILL2 ? 2 : pressed & BUTTONS.SKILL3 ? 3 : 0;
   if (skillId && !player.skillCast && player.skillCooldowns[skillId] === 0) {
-    const payload = startSkillMotion(ctx, player, skillId, input.seq, input.viewTick);
+    const payload = startSkillMotion(ctx, player, skillId, input.seq);
     if (payload) {
       const skill = Object.values(SKILLS).find((entry) => entry.id === skillId);
       const cooldownTicks = Math.max(1, Math.round(skill.cooldownTicks * (
         1 - Math.min(60, player.stats.skillCooldownReduction) / 100
       )));
+      player.skillCooldowns[skillId] = cooldownTicks;
       events.push({ type: 'skill', payload, cooldownTicks });
     }
+  }
+  if ((pressed & BUTTONS.POTION) && player.potions > 0 && player.potionCooldownTicks === 0 && player.potionTicks === 0) {
+    player.potions -= 1;
+    player.potionCooldownTicks = POTION.cooldownTicks;
+    events.push({ type: 'potion', seq: input.seq });
   }
 
   const moveSpeed = player.stats.moveSpeed / TICK_HZ;
@@ -1234,7 +1259,7 @@ export function stepPlayerMotion(ctx, player, rawInput) {
       motionMult: SKILLS.dash.motionMult,
       castId: cast.castId,
       hitTargets: cast.hitTargets,
-      viewTick: cast.viewTick,
+      viewTick: input.viewTick,
       skillId: cast.id,
     };
   } else if (!player.skillCast) {
@@ -1243,9 +1268,11 @@ export function stepPlayerMotion(ctx, player, rawInput) {
       player.dodgeVectorZ = player.moving ? directionZ : Math.sin(player.facing);
       player.dodgeTicks = DODGE_DURATION_TICKS;
       player.iFrames = DODGE_IFRAME_TICKS;
+      const cooldownTicks = Math.round(DODGE_COOLDOWN_TICKS * (1 - player.stats.dodgeCooldownReduction / 100));
+      player.dodgeCooldownTicks = cooldownTicks;
       events.push({
         type: 'dodge',
-        cooldownTicks: Math.round(DODGE_COOLDOWN_TICKS * (1 - player.stats.dodgeCooldownReduction / 100)),
+        cooldownTicks,
       });
     }
     if (player.dodgeTicks > 0) moveEntity(ctx, player, player.dodgeVectorX * 8.5 / TICK_HZ, player.dodgeVectorZ * 8.5 / TICK_HZ);
@@ -1261,7 +1288,7 @@ export function stepPlayerMotion(ctx, player, rawInput) {
         motionMult: SKILLS.spin.motionMult,
         castId: cast.castId,
         hitTargets: cast.hitTargets,
-        viewTick: cast.viewTick,
+        viewTick: input.viewTick,
         skillId: cast.id,
       };
     }
@@ -1274,9 +1301,9 @@ export function stepPlayerMotion(ctx, player, rawInput) {
   if (pressed & BUTTONS.ATTACK) {
     if (!player.attack) events.push({
       type: 'attack',
-      payload: startPlayerAttackMotion(player, 1, input.seq, input.viewTick),
+      payload: startPlayerAttackMotion(player, 1, input.seq),
     });
-    else queueCombo(player, input.seq, input.viewTick);
+    else queueCombo(player, input.seq);
   }
   if (player.attack) {
     const attack = player.attack;
@@ -1288,7 +1315,7 @@ export function stepPlayerMotion(ctx, player, rawInput) {
         motionMult: [1, 1.1, 1.8][attack.step - 1],
         castId: attack.castId,
         hitTargets: attack.hitTargets,
-        viewTick: attack.viewTick,
+        viewTick: input.viewTick,
       };
     }
     attack.phaseTick += 1;
@@ -1308,7 +1335,7 @@ export function stepPlayerMotion(ctx, player, rawInput) {
       } else if (attack.queued && attack.step < COMBO_TIMELINES.length) {
         events.push({
           type: 'attack',
-          payload: startPlayerAttackMotion(player, attack.step + 1, attack.queuedSeq, attack.queuedViewTick),
+          payload: startPlayerAttackMotion(player, attack.step + 1, attack.queuedSeq),
         });
       } else player.attack = null;
     }
@@ -1316,41 +1343,47 @@ export function stepPlayerMotion(ctx, player, rawInput) {
 
   player.dodgeTicks = Math.max(0, player.dodgeTicks - 1);
   player.iFrames = Math.max(0, player.iFrames - 1);
-  return { input, pressed, events, skillStrike, attackStrike };
+  player.dodgeCooldownTicks = Math.max(0, player.dodgeCooldownTicks - 1);
+  player.hitFlashTicks = Math.max(0, player.hitFlashTicks - 1);
+  player.potionCooldownTicks = Math.max(0, player.potionCooldownTicks - 1);
+  for (const id of [1, 2, 3]) player.skillCooldowns[id] = Math.max(0, player.skillCooldowns[id] - 1);
+  let potionHeal = 0;
+  if (player.potionTicks > 0) {
+    potionHeal = Math.ceil(player.potionHealRemaining / player.potionHealTicks);
+    player.potionHealRemaining = Math.max(0, player.potionHealRemaining - potionHeal);
+    player.potionHealTicks -= 1;
+    player.potionTicks -= 1;
+  }
+  return { input, pressed, events, skillStrike, attackStrike, potionHeal };
 }
 
 function advanceStagePlayer(world, player, rawInput) {
-  const motion = stepPlayerMotion({
-    arena: world.arena,
-    openDoors: world.openDoors,
-    tick: world.tick,
-  }, player, rawInput);
-  if (motion.pressed & BUTTONS.POTION) applyPotion(world, player, motion.input.seq);
-  for (const event of motion.events) {
-    if (event.type === 'skill') {
-      const skill = Object.values(SKILLS).find((entry) => entry.id === event.payload.skill);
-      player.skillCooldowns[skill.id] = event.cooldownTicks;
-      emit(world, 'cast', event.payload);
-    } else if (event.type === 'dodge') {
-      player.dodgeCooldownTicks = event.cooldownTicks;
-      emit(world, 'dodge', { entityId: player.id, playerId: player.playerId });
-    } else emit(world, 'cast', event.payload);
-  }
-  if (motion.skillStrike) {
-    const strike = motion.skillStrike;
-    playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets, strike.viewTick, strike.skillId);
-  }
-  if (motion.attackStrike) {
-    const strike = motion.attackStrike;
-    playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets, strike.viewTick);
-  }
-  if (player.potionTicks > 0) {
-    const heal = Math.ceil(player.potionHealRemaining / player.potionHealTicks);
-    const applied = Math.min(heal, player.maxHp - player.hp);
-    player.hp += applied;
-    player.potionHealRemaining = Math.max(0, player.potionHealRemaining - heal);
-    player.potionHealTicks -= 1;
-    player.potionTicks -= 1;
+  const inputs = Array.isArray(rawInput) ? rawInput : rawInput == null ? [] : [rawInput];
+  if (!inputs.length && !world.inputDriven) inputs.push(null);
+  for (const input of inputs) {
+    if (player.downed || player.dead || !player.connected) continue;
+    const motion = stepPlayerMotion({
+      arena: world.arena,
+      openDoors: world.openDoors,
+      tick: world.tick,
+    }, player, input);
+    for (const event of motion.events) {
+      if (event.type === 'skill') emit(world, 'cast', event.payload);
+      else if (event.type === 'dodge') emit(world, 'dodge', { entityId: player.id, playerId: player.playerId });
+      else if (event.type === 'potion') applyPotion(world, player, event.seq);
+      else emit(world, 'cast', event.payload);
+    }
+    if (motion.skillStrike) {
+      const strike = motion.skillStrike;
+      playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets, strike.skillId);
+    }
+    if (motion.attackStrike) {
+      const strike = motion.attackStrike;
+      playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets);
+    }
+    if (motion.potionHeal > 0) {
+      player.hp = Math.min(player.maxHp, player.hp + motion.potionHeal);
+    }
   }
 }
 
@@ -1726,12 +1759,12 @@ function stageStep(world, inputsByPlayerId) {
   }
   const players = activePlayers(world).sort((a, b) => a.id - b.id);
   const iFramesAtTickStart = new Map(players.map((player) => [player.id, player.iFrames]));
-  for (const player of players) advanceStagePlayer(world, player, inputsByPlayerId[player.playerId] ?? null);
   for (const player of players) {
-    player.dodgeCooldownTicks = Math.max(0, player.dodgeCooldownTicks - 1);
-    player.potionCooldownTicks = Math.max(0, player.potionCooldownTicks - 1);
-    for (const id of [1, 2, 3]) player.skillCooldowns[id] = Math.max(0, player.skillCooldowns[id] - 1);
-    player.hitFlashTicks = Math.max(0, player.hitFlashTicks - 1);
+    if (Object.hasOwn(inputsByPlayerId, player.playerId)) {
+      advanceStagePlayer(world, player, inputsByPlayerId[player.playerId]);
+    } else if (!world.inputDriven) advanceStagePlayer(world, player, null);
+  }
+  for (const player of players) {
     pickupLoot(world, player);
   }
   resolvePendingHits(world, iFramesAtTickStart);

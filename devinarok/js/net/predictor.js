@@ -19,17 +19,6 @@ function normalizeInput(input) {
   return normalized;
 }
 
-function predictedCooldowns(player, events) {
-  for (const event of events) {
-    if (event.type === 'skill') player.skillCooldowns[event.payload.skill] = event.cooldownTicks;
-    if (event.type === 'dodge') player.dodgeCooldownTicks = event.cooldownTicks;
-  }
-  player.dodgeCooldownTicks = Math.max(0, (player.dodgeCooldownTicks ?? 0) - 1);
-  for (const id of [1, 2, 3]) {
-    player.skillCooldowns[id] = Math.max(0, (player.skillCooldowns[id] ?? 0) - 1);
-  }
-}
-
 function ownPlayerFromSnapshot(snapshot, playerId) {
   if (snapshot.player) return snapshot.player;
   if (snapshot.ownPlayer) return snapshot.ownPlayer;
@@ -71,9 +60,7 @@ export class Predictor {
 
   simulate(input) {
     this.ctx.tick += 1;
-    const motion = stepPlayerMotion(this.ctx, this.player, normalizeInput(input));
-    predictedCooldowns(this.player, motion.events);
-    return motion;
+    return stepPlayerMotion(this.ctx, this.player, normalizeInput(input));
   }
 
   applyLocalInput(input) {
@@ -102,7 +89,8 @@ export class Predictor {
     this.pendingInputs = pending;
     this.seenSeqs = new Set(pending.map((input) => input.seq));
     this.player = clone(authoritative);
-    if (Number.isSafeInteger(snapshot.t)) this.ctx.tick = snapshot.t;
+    const snapshotTick = snapshot.tick ?? snapshot.serverTick ?? snapshot.t;
+    if (Number.isSafeInteger(snapshotTick)) this.ctx.tick = snapshotTick;
     if (snapshot.openDoors) this.ctx.openDoors = clone(snapshot.openDoors);
     for (const input of pending) this.simulate(input);
 

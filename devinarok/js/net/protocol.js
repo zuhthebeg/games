@@ -27,6 +27,25 @@ const ENTITY_FIELDS = [
 const ENTITY_FIELD_SET = new Set(ENTITY_FIELDS);
 const POSITION_KEYS = new Set(['x', 'z', 'originX', 'originZ']);
 const ANGLE_KEYS = new Set(['angle', 'facing']);
+const ENTITY_DEFAULTS = {
+  x: 0,
+  z: 0,
+  facing: 0,
+  hp: 0,
+  state: 'idle',
+  anim: 'idle',
+  dead: false,
+  invulnerable: false,
+  spawnTicksLeft: 0,
+  attackPhase: null,
+  attackShape: null,
+  attackRemaining: 0,
+  skill: null,
+  dodge: false,
+  downed: false,
+  teleport: false,
+  roomChanged: false,
+};
 
 export function roundToHundredth(value) {
   return Math.round(value * 100) / 100;
@@ -45,7 +64,7 @@ function quantizeSpatialValues(value, key = '') {
   )));
 }
 
-export function compactEntity(entity) {
+export function compactEntity(entity, omitDefaults = false) {
   if (!entity || typeof entity !== 'object' || Array.isArray(entity)) {
     throw new TypeError('Entity must be an object');
   }
@@ -54,6 +73,7 @@ export function compactEntity(entity) {
   const values = [];
   const extras = {};
   for (const [key, value] of Object.entries(rounded)) {
+    if (omitDefaults && Object.hasOwn(ENTITY_DEFAULTS, key) && value === ENTITY_DEFAULTS[key]) continue;
     const index = ENTITY_FIELDS.indexOf(key);
     if (index < 0) {
       extras[key] = value;
@@ -88,7 +108,7 @@ export function encodeMessage(message) {
   }
   const rounded = quantizeSpatialValues(message);
   if (rounded.t === 'snap' && Array.isArray(rounded.ents)) {
-    rounded.ents = rounded.ents.map(compactEntity);
+    rounded.ents = rounded.ents.map((entity) => compactEntity(entity, rounded.full === true));
   }
   return JSON.stringify(rounded);
 }
@@ -101,6 +121,9 @@ export function decodeMessage(frame) {
   }
   if (message.t === 'snap' && Array.isArray(message.ents)) {
     message.ents = message.ents.map(expandEntity);
+    if (message.full) {
+      message.ents = message.ents.map((entity) => ({ ...ENTITY_DEFAULTS, ...entity }));
+    }
   }
   return message;
 }

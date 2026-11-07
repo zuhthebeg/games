@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BUTTONS, completeStage, createStageWorld, hashWorld, leaveStage, setPlayerConnected, step } from '../js/sim/world.js';
+import { InputQueue } from '../js/net/input-queue.js';
 import { createPredictor } from '../js/net/predictor.js';
 
 function makeParty(count = 2) {
@@ -221,39 +222,121 @@ test('queued enemy hits allow one tick for dodge i-frames', () => {
   assert.equal(world.pendingHits.length, 0);
 });
 
-test('lag compensation clamps viewTick to eight ticks and uses historical enemy position', () => {
-  const world = createStageWorld({ seed: 120, stageId: 'C1', playerId: 'a' });
+test('viewLag rewinds each strike to the enemy history at server tick minus lag', () => {
+  const world = createStageWorld({ seed: 120, stageId: 'C1', playerId: 'a', inputDriven: true });
   const player = playersOf(world)[0];
   const enemy = isolateEnemy(world);
   player.x = 0;
   player.z = 0;
+  player.facing = 0;
+  player.attack = {
+    step: 1,
+    seq: 1,
+    castId: 'a:1',
+    phase: 'active',
+    phaseTick: 0,
+    queued: false,
+    queuedSeq: null,
+    hitTargets: [],
+    shape: null,
+  };
   enemy.x = 4;
   enemy.z = 0;
   enemy.hp = enemy.maxHp = 20;
   world.tick = 20;
   world.enemyHistory = [{
-    tick: 19,
+    tick: 20,
     enemies: [{ id: enemy.id, x: 1.2, z: 0, radius: enemy.radius, dead: false }],
   }];
 
-  for (let seq = 1; seq <= 8; seq += 1) {
-    step(world, { a: neutral(seq, seq === 1 ? BUTTONS.ATTACK : 0, { viewTick: -100 }) });
-  }
-  assert.ok(enemy.hp < enemy.maxHp, 'clamped historical position is hit despite current position being out of range');
-  assert.ok(world.events.some((event) => event.type === 'hit' && event.targetId === enemy.id));
+  step(world, { a: neutral(1, 0, { moveX: 127, viewTick: 20 }) });
+  assert.equal(player.viewLag, 1);
+  assert.ok(enemy.hp < enemy.maxHp, 'historical position at T - viewLag is hit');
+  assert.ok(world.events.some((event) => (
+    event.type === 'hit' && event.targetId === enemy.id && event.viewLag === 1 && event.tick === 21
+  )));
 
-  const currentOnly = createStageWorld({ seed: 121, stageId: 'C1', playerId: 'a' });
+  const currentOnly = createStageWorld({ seed: 121, stageId: 'C1', playerId: 'a', inputDriven: true });
   const currentPlayer = playersOf(currentOnly)[0];
   const currentEnemy = isolateEnemy(currentOnly);
   currentPlayer.x = 0;
   currentPlayer.z = 0;
+  currentPlayer.facing = 0;
+  currentPlayer.attack = {
+    step: 1,
+    seq: 1,
+    castId: 'a:1',
+    phase: 'active',
+    phaseTick: 0,
+    queued: false,
+    queuedSeq: null,
+    hitTargets: [],
+    shape: null,
+  };
   currentEnemy.x = 4;
   currentEnemy.z = 0;
   currentEnemy.hp = currentEnemy.maxHp = 20;
-  for (let seq = 1; seq <= 8; seq += 1) {
-    step(currentOnly, { a: neutral(seq, seq === 1 ? BUTTONS.ATTACK : 0) });
+  currentOnly.tick = 20;
+  currentOnly.enemyHistory = [{
+    tick: 20,
+    enemies: [{ id: currentEnemy.id, x: 1.2, z: 0, radius: currentEnemy.radius, dead: false }],
+  }];
+  step(currentOnly, { a: neutral(1, 0, { moveX: 127, viewTick: 21 }) });
+  assert.equal(currentPlayer.viewLag, 0);
+  assert.equal(currentEnemy.hp, currentEnemy.maxHp, 'zero lag tests the current enemy position');
+});
+
+test('a delayed input burst yields the same final player state as on-time inputs', () => {
+  const makeInputDrivenWorld = (seed) => {
+    const world = createStageWorld({ seed, stageId: 'C1', playerId: 'a', inputDriven: true });
+    const player = playersOf(world)[0];
+    world.entities = [player];
+    world.roomEnemyIds = [];
+    world.roomCleared = true;
+    world.openDoors = Object.fromEntries(world.arena.doors.map((door) => [door.id, true]));
+    return { world, player };
+  };
+  const inputs = [
+    neutral(1, 0, { moveX: 127 }),
+    neutral(2, BUTTONS.DODGE, { moveX: 127 }),
+    neutral(3, 0, { moveX: 0, moveZ: 127 }),
+    neutral(4, BUTTONS.ATTACK, { moveX: 0, moveZ: 0 }),
+    neutral(5, 0),
+    neutral(6, 0),
+    neutral(7, BUTTONS.ATTACK),
+    neutral(8, 0),
+    neutral(9, 0),
+    neutral(10, 0),
+  ];
+  const onTime = makeInputDrivenWorld(124);
+  const delayed = makeInputDrivenWorld(124);
+  const startingTimers = {
+    dodgeTicks: 2,
+    iFrames: 2,
+    dodgeCooldownTicks: 3,
+    hitFlashTicks: 4,
+    skillCooldowns: { 1: 3, 2: 2, 3: 1 },
+    potionCooldownTicks: 3,
+    potionTicks: 2,
+    potionHealRemaining: 8,
+    potionHealTicks: 2,
+  };
+  for (const world of [onTime, delayed]) {
+    world.player.hp = 50;
+    Object.assign(world.player, structuredClone(startingTimers));
   }
-  assert.equal(currentEnemy.hp, currentEnemy.maxHp);
+  for (const input of inputs) step(onTime.world, { a: input });
+
+  const queue = new InputQueue();
+  for (const input of inputs) queue.enqueue(input);
+  const waitingPlayer = structuredClone(delayed.player);
+  for (let tick = 0; tick < 4; tick += 1) step(delayed.world, {});
+  assert.deepEqual(delayed.player, waitingPlayer, 'player motion and timers pause without an input');
+  while (queue.pendingCount) {
+    step(delayed.world, { a: queue.consumeForTick().inputs });
+  }
+
+  assert.deepEqual(delayed.player, onTime.player);
 });
 
 test('two-player simulations produce the same deterministic world hash', () => {
@@ -321,7 +404,8 @@ test('predictor fades small corrections and resets from the next full snapshot a
   });
   const corrected = structuredClone(player);
   corrected.x += 0.4;
-  const correction = predictor.reconcile({ player: corrected, ack: -1, t: 0 }, 0);
+  const correction = predictor.reconcile({ player: corrected, ack: -1, tick: 30 }, 0);
+  assert.equal(predictor.ctx.tick, 30);
   assert.equal(correction.snapped, false);
   assert.equal(predictor.metrics.correctionsOver03m, 1);
   assert.equal(predictor.getVisualPosition(0).x, player.x);
@@ -329,7 +413,7 @@ test('predictor fades small corrections and resets from the next full snapshot a
 
   predictor.onVisibilityResume();
   corrected.x += 0.1;
-  const full = predictor.reconcile({ player: corrected, ack: -1, t: 0, full: true }, 130);
+  const full = predictor.reconcile({ player: corrected, ack: -1, tick: 32, full: true }, 130);
   assert.equal(full.snapped, true);
   assert.equal(predictor.metrics.snaps, 1);
 });
@@ -344,7 +428,7 @@ test('predictor snaps errors above two meters without counting them as small cor
   });
   const authoritative = structuredClone(player);
   authoritative.x += 2.1;
-  const correction = predictor.reconcile({ player: authoritative, ack: -1, t: 0 }, 0);
+  const correction = predictor.reconcile({ player: authoritative, ack: -1, tick: 30 }, 0);
   assert.equal(correction.snapped, true);
   assert.equal(predictor.metrics.snaps, 1);
   assert.equal(predictor.metrics.correctionsOver03m, 0);
