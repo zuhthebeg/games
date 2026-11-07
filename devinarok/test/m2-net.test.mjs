@@ -3,8 +3,10 @@ import test from 'node:test';
 import { ServerClock } from '../js/net/clock.js';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
+import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
+import { partyServerUrl } from '../js/ui/party.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS } from '../js/sim/world.js';
 
@@ -34,6 +36,47 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.ents[0].playerId, 'hero');
   assert.equal(result.events[0].shape.angle, roundToHundredth(message.events[0].shape.angle));
   assert.equal(result.v, PROTOCOL_VERSION);
+});
+
+test('hit agreement excuses client targets dead by the last authoritative strike only', () => {
+  const score = scoreCastHitAgreement({
+    clientWouldHit: [1, 2, 3],
+    serverHitSet: [2, 4],
+    serverStrikeTicks: [{ tick: 10 }, { tick: 12 }],
+    enemyDeathEvents: [
+      { entityId: 1, tick: 12 },
+      { entityId: 3, tick: 13 },
+      { entityId: 4, tick: 9 },
+    ],
+  });
+  assert.equal(score.lastServerStrikeTick, 12);
+  assert.deepEqual(score.rawDisagreementTargets, [1, 3, 4]);
+  assert.deepEqual(score.excusedTargets, [1]);
+  assert.deepEqual(score.disagreementTargets, [3, 4]);
+  assert.equal(score.exactMatch, false);
+
+  const noStrikes = scoreCastHitAgreement({
+    clientWouldHit: [1],
+    serverHitSet: [],
+    enemyDeathEvents: [{ entityId: 1, tick: 1 }],
+  });
+  assert.deepEqual(noStrikes.excusedTargets, []);
+  assert.equal(noStrikes.lastServerStrikeTick, null);
+});
+
+test('party server URL appends the room path and honors local overrides', () => {
+  assert.equal(
+    partyServerUrl('ABC234', ''),
+    'wss://relay-do-poc.zuhejbeg.workers.dev/devinarok/ABC234',
+  );
+  assert.equal(
+    partyServerUrl('ABC234', '?server=ws%3A%2F%2F127.0.0.1%3A8788'),
+    'ws://127.0.0.1:8788/devinarok/ABC234',
+  );
+  assert.equal(
+    partyServerUrl('ABC234', '?server=ws%3A%2F%2Flocalhost%2Fdevinarok'),
+    'ws://localhost/devinarok/ABC234',
+  );
 });
 
 test('protocol omits default fields in full keyframes and restores them on decode', () => {

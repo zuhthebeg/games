@@ -18,6 +18,7 @@ const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const simDir = resolve(projectDir, 'js/sim');
 const contentDir = resolve(projectDir, 'js/content');
 const protocolFile = resolve(projectDir, 'js/net/protocol.js');
+const hitAgreementFile = resolve(projectDir, 'js/net/hit-agreement.js');
 
 async function sourceFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -64,7 +65,7 @@ function advanceToChainWindow(world, player, startSeq) {
 }
 
 test('simulation and protocol source are isolated from browser, clock, and random globals', async () => {
-  const files = [...await sourceFiles(simDir), ...await sourceFiles(contentDir), protocolFile];
+  const files = [...await sourceFiles(simDir), ...await sourceFiles(contentDir), protocolFile, hitAgreementFile];
   const forbidden = /\b(?:window|document|performance|Date|requestAnimationFrame|localStorage|indexedDB)\b|Math\.random/;
   const importPattern = /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?['"]([^'"]+)['"]/g;
 

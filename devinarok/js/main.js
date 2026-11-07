@@ -3,6 +3,7 @@ import { InputLayer } from './core/input.js';
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
+import { PartyClient } from './ui/party.js';
 import { AFFIXES } from './content/affixes.js';
 import { ITEMS, RARITIES } from './content/items.js';
 import { rekeySettlementItems } from './save/ops.js';
@@ -36,6 +37,13 @@ let soundMuted = false;
 let audioLoaded = false;
 const audio = new AudioManager();
 let currentStageId = null;
+let partyClient = null;
+let partyFrame = null;
+let partyPreviousWorld = null;
+let partyLastTime = 0;
+let partyAccumulator = 0;
+let inviteRoomHandled = false;
+let reviveText = new Map();
 
 async function reloadCharacter() {
   character = await saves.loadCharacter(character.id);
@@ -57,7 +65,12 @@ async function refreshTitle() {
 
 function stopWorld() {
   if (frame) cancelAnimationFrame(frame);
+  if (partyFrame) cancelAnimationFrame(partyFrame);
   frame = null;
+  partyFrame = null;
+  partyPreviousWorld = null;
+  partyLastTime = 0;
+  partyAccumulator = 0;
   loop?.stop();
   input?.destroy();
   renderer?.destroy();
@@ -66,6 +79,8 @@ function stopWorld() {
 
 function showTitle() {
   stopWorld();
+  partyClient?.close();
+  partyClient = null;
   titleScreen.hidden = false;
   gameScreen.hidden = true;
   resultPanel.hidden = true;
@@ -101,6 +116,8 @@ function drawHub() {
 
 async function enterHub() {
   stopWorld();
+  partyClient?.close();
+  partyClient = null;
   titleScreen.hidden = true;
   gameScreen.hidden = false;
   hubUi.hidden = false;
@@ -109,6 +126,11 @@ async function enterHub() {
   resultPanel.hidden = true;
   $('#controls').hidden = true;
   $('#boss-hud').hidden = true;
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
+  $('#party-door-countdown').hidden = true;
+  $('#party-downed').hidden = true;
+  $('#party-network-overlay').hidden = true;
   $('#stage-name').textContent = '거점 여관';
   $('#hud-name').textContent = character.name;
   world = createHubWorld({ seed: 724103, playerId: character.id });
@@ -118,6 +140,11 @@ async function enterHub() {
   audio.setMusic('hub-bgm');
   if (DEV_MODE) $('#toast').textContent = `거점 여관 · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
   frame = requestAnimationFrame(drawHub);
+  const inviteCode = new URLSearchParams(location.search).get('room');
+  if (inviteCode && !inviteRoomHandled) {
+    inviteRoomHandled = true;
+    connectParty(inviteCode);
+  }
 }
 
 async function loadAudio() {
@@ -203,7 +230,144 @@ function renderBoard() {
     const cleared = character.clearedStages.includes(stage.id);
     return `<div class="hub-row"><span>${stage.name}<small>권장 Lv.${stage.recommendedLevel} · ${cleared ? '클리어' : unlocked ? '도전 가능' : '잠김'}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
   }).join('');
-  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-close>닫기</button>`;
+  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<div class="party-entry"><strong>같이 출정</strong><p>동료와 함께 지하묘지로 떠납니다.</p><button data-party-create class="primary">방 만들기</button><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드"><button type="submit">코드로 참가</button></form></div><button data-close>닫기</button>`;
+}
+
+function inviteLink(code) {
+  const url = new URL(location.href);
+  url.searchParams.set('room', code);
+  return url.toString();
+}
+
+function renderPartyLobby() {
+  if (!partyClient?.roomCode || hubPanel.hidden) return;
+  const party = partyClient.lobby?.players ?? [];
+  const local = party.find((member) => member.playerId === partyClient.playerId);
+  const isHost = partyClient.lobby?.hostId === partyClient.playerId;
+  const allReady = party.length > 0 && party.every((member) => member.connected && member.ready);
+  const stage = partyClient.lobby?.stageId ?? 'C1';
+  const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id) : entry.id === stage)
+    .map((entry) => `<option value="${entry.id}" ${entry.id === stage ? 'selected' : ''}>${entry.name}</option>`).join('');
+  const members = party.map((member) => `<div class="party-lobby-member"><span>${member.name} · Lv.${member.level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`).join('');
+  const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
+  hubPanel.dataset.kind = 'party';
+  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실 · ${partyClient.roomCode}</h2><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><p class="invite-link">초대 링크<br>${inviteLink(partyClient.roomCode)}</p><button data-party-ready>${local?.ready ? '준비 취소' : '준비 완료'}</button><button data-party-start class="primary" ${isHost && allReady ? '' : 'disabled'}>시작</button><button data-party-close>나가기</button></section>`;
+}
+
+function connectParty(code = null) {
+  partyClient?.close();
+  partyClient = new PartyClient({
+    character,
+    equipment: equippedItems(),
+    onLobby: () => renderPartyLobby(),
+    onStatus: () => renderPartyLobby(),
+    onStart: (message) => { void startPartyStage(message); },
+    onSnapshot: (message, client) => updatePartyHud(client, message),
+    onEvents: (events) => {
+      for (const event of events) {
+        if (event.type === 'reviveProgress') reviveText.set(event.entityId, event);
+        if (event.type === 'revived' || event.type === 'roomEnter') reviveText.clear();
+        if (event.type === 'cast') audio.play(event.skill === 3 ? 'impact' : 'sword-swing');
+        if (event.type === 'hit') audio.play('impact');
+        if (event.type === 'pickup') audio.play(event.lootType === 'gold' ? 'coins' : 'confirm');
+        if (event.type === 'death') audio.play('enemy-death');
+      }
+    },
+    onResult: ({ result, roomCode, runId, playerId }) => {
+      void settleStage(result.outcome, result, `${roomCode}:${runId}:${playerId}`);
+    },
+    onRoomGone: () => {
+      $('#party-network-overlay').hidden = true;
+      $('#toast').textContent = '방이 종료되어 여관으로 돌아갑니다.';
+      void enterHub();
+    },
+    onError: (error) => { console.error('Party connection failed', error); },
+  });
+  if (code) partyClient.joinRoom(code);
+  else partyClient.createRoom();
+  renderPartyLobby();
+}
+
+async function startPartyStage(message) {
+  if (!partyClient) return;
+  stopWorld();
+  currentStageId = message.stageId;
+  settled = false;
+  settlementId = `${partyClient.roomCode}:${message.runId}:${partyClient.playerId}`;
+  hubUi.hidden = true;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#controls').hidden = false;
+  $('#party-hud').hidden = false;
+  $('#party-rtt').hidden = false;
+  $('#boss-hud').hidden = message.stageId !== 'CB';
+  $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
+  world = partyClient.viewWorld() ?? partyClient.stageWorld;
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
+  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena);
+  await Promise.all([renderer.ready, loadAudio()]);
+  await audio.unlock();
+  audio.setMusic('combat-bgm');
+  partyPreviousWorld = world;
+  partyLastTime = 0;
+  partyAccumulator = 0;
+  partyFrame = requestAnimationFrame(partyLoop);
+}
+
+function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
+  if (!client || !client.stageWorld || !snapshot) return;
+  const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
+  $('#party-hud').innerHTML = partyPlayers.map((member) => {
+    const label = `${member.name ?? member.playerId} · Lv.${member.level ?? 1}`;
+    return `<div class="party-member"><div class="party-member-row"><span>${label}</span><span>${member.hp}/${member.maxHp}</span></div><div class="hp-track"><i style="width:${member.hp / Math.max(1, member.maxHp) * 100}%"></i></div></div>`;
+  }).join('');
+  const rtt = Math.round(client.session?.clock.rttMs ?? 0);
+  const badge = $('#party-rtt');
+  badge.textContent = `${rtt} ms`;
+  badge.dataset.state = rtt < 100 ? 'green' : rtt < 200 ? 'yellow' : 'red';
+  const own = partyPlayers.find((entry) => entry.playerId === client.playerId);
+  $('#party-downed').hidden = !own?.downed;
+  $('#party-downed').textContent = own?.downed
+    ? `쓰러짐 · 부활 진행 ${own.reviveProgress ?? reviveText.get(own.id)?.progress ?? 0}/60`
+    : '';
+  const countdown = snapshot.doorCountdown;
+  $('#party-door-countdown').hidden = !countdown;
+  if (countdown) $('#party-door-countdown').textContent = `다음 방으로 이동 ${Math.max(0, Math.ceil((countdown.endsTick - snapshot.tick) / 30))}초`;
+}
+
+function partyLoop(time) {
+  if (!partyClient || !renderer || !input) return;
+  if (!partyLastTime) partyLastTime = time;
+  partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
+  partyLastTime = time;
+  let steps = 0;
+  while (partyAccumulator >= 1 / 30 && steps < 5) {
+    const next = DEV_MODE && typeof window.__devinarok?.partyInputProvider === 'function'
+      ? window.__devinarok.partyInputProvider()
+      : input.nextTick();
+    const queued = pauseMenu.hidden ? next : { ...next, moveX: 0, moveZ: 0, buttons: 0 };
+    partyClient.sendInput(queued);
+    partyAccumulator -= 1 / 30;
+    steps += 1;
+  }
+  const nextWorld = partyClient.viewWorld(time) ?? world;
+  if (nextWorld) {
+    renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+    partyPreviousWorld = nextWorld;
+    world = nextWorld;
+    updateHud(nextWorld);
+    updatePartyHud();
+  }
+  const overlay = $('#party-network-overlay');
+  if (partyClient.versionMismatch) {
+    overlay.textContent = '새 버전이 있어요. 새로고침해 주세요';
+    overlay.hidden = false;
+  } else if (partyClient.status === 'reconnecting') {
+    overlay.textContent = '재연결 중…';
+    overlay.hidden = false;
+  } else overlay.hidden = true;
+  partyFrame = requestAnimationFrame(partyLoop);
 }
 
 function renderInventory(compareUid = '') {
@@ -239,6 +403,8 @@ function renderPanel(kind, compareUid = '') {
 async function startStage(stageId) {
   if (!stageIsUnlocked(stageId) && !DEV_MODE) return;
   stopWorld();
+  partyClient?.close();
+  partyClient = null;
   currentStageId = stageId;
   settled = false;
   hubUi.hidden = true;
@@ -247,6 +413,8 @@ async function startStage(stageId) {
   resultPanel.hidden = true;
   $('#controls').hidden = false;
   $('#boss-hud').hidden = stageId !== 'CB';
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
   world = createStageWorld({
     seed: crypto.getRandomValues(new Uint32Array(1))[0],
     stageId,
@@ -294,7 +462,8 @@ async function startStage(stageId) {
 }
 
 function updateHud(current) {
-  const hero = current.entities.find((entity) => entity.kind === 'player');
+  const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id)
+    ?? current.entities.find((entity) => entity.kind === 'player');
   if (hero) {
     $('#hud-name').textContent = `${character.name} · Lv.${character.level}`;
     $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
@@ -370,12 +539,12 @@ async function attemptSettlement(outcome, result, settlementId) {
   }
 }
 
-async function settleStage(outcome = world?.outcome) {
-  if (!world || !world.result || settled) return;
+async function settleStage(outcome = world?.outcome, result = world?.result, idempotencyKey = null) {
+  if (!world || !result || settled) return;
   settled = true;
   loop?.pause();
-  settlementId = crypto.randomUUID();
-  await attemptSettlement(outcome, world.result, settlementId);
+  settlementId = idempotencyKey ?? crypto.randomUUID();
+  await attemptSettlement(outcome, result, settlementId);
 }
 
 createForm.addEventListener('submit', async (event) => {
@@ -388,12 +557,17 @@ createForm.addEventListener('submit', async (event) => {
 $('#start-button').addEventListener('click', () => enterHub().catch((error) => { console.error(error); $('#toast').textContent = '여관을 열지 못했습니다.'; }));
 $('#pause-button').addEventListener('click', () => {
   if (world?.mode !== 'stage') return;
-  loop?.pause();
   pauseMenu.hidden = false;
+  if (!partyClient) loop?.pause();
 });
 $('#continue-button').addEventListener('click', () => { pauseMenu.hidden = true; loop?.resume(); });
 $('#retreat-button').addEventListener('click', () => {
   if (world?.mode !== 'stage') return;
+  if (partyClient) {
+    partyClient.leave();
+    pauseMenu.hidden = true;
+    return;
+  }
   retreatStage(world);
   settleStage('retreat');
 });
@@ -406,6 +580,19 @@ $('#hub-ui').addEventListener('click', async (event) => {
   const button = event.target.closest('button');
   if (!button) return;
   audio.play('click');
+  if (button.hasAttribute('data-party-create')) { connectParty(); return; }
+  if (button.hasAttribute('data-party-ready')) {
+    const local = partyClient?.lobby?.players?.find((member) => member.playerId === partyClient.playerId);
+    partyClient?.setReady(!local?.ready);
+    return;
+  }
+  if (button.hasAttribute('data-party-start')) { partyClient?.start(); return; }
+  if (button.hasAttribute('data-party-close')) {
+    partyClient?.close();
+    partyClient = null;
+    renderPanel('board');
+    return;
+  }
   if (button.dataset.panel) renderPanel(button.dataset.panel);
   if (button.hasAttribute('data-close')) hubPanel.hidden = true;
   if (button.dataset.sortie) startStage(button.dataset.sortie);
@@ -432,6 +619,14 @@ $('#hub-ui').addEventListener('click', async (event) => {
     renderPanel('merchant');
   }
 });
+hubUi.addEventListener('submit', (event) => {
+  if (event.target.id !== 'party-join-form') return;
+  event.preventDefault();
+  try { connectParty($('#party-code').value); } catch (error) { $('#toast').textContent = error.message; }
+});
+hubPanel.addEventListener('change', (event) => {
+  if (event.target.id === 'party-stage-select') partyClient?.selectStage(event.target.value);
+});
 gameScreen.addEventListener('click', (event) => {
   const station = event.target.closest('.npc-hotspot');
   if (!station || world?.mode !== 'hub') return;
@@ -442,9 +637,9 @@ window.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'touch') document.documentElement.classList.add('touch-mode');
 }, { passive: true });
 window.addEventListener('keydown', (event) => {
-  if (!loop || world?.mode !== 'stage' || !['Escape', 'KeyR'].includes(event.code)) return;
+  if ((!loop && !partyClient) || world?.mode !== 'stage' || !['Escape', 'KeyR'].includes(event.code)) return;
   if (pauseMenu.hidden) {
-    loop.pause();
+    if (!partyClient) loop.pause();
     pauseMenu.hidden = false;
   } else {
     pauseMenu.hidden = true;
@@ -461,10 +656,15 @@ if (DEV_MODE) {
     get loop() { return loop; },
     get character() { return character; },
     get inventory() { return inventory; },
+    get party() { return partyClient; },
     buttons: BUTTONS,
     comboTimelines: COMBO_TIMELINES,
     stages: STAGE_LIST,
     startStage,
+    createParty: () => connectParty(),
+    joinParty: (code) => connectParty(code),
+    enterPartyCode(code) { return connectParty(code); },
+    getPartyWorld() { return partyClient?.viewWorld(); },
     enterHub,
     settleStage,
     forceOutcome(outcome = 'clear') { completeStage(world, outcome); return settleStage(outcome); },

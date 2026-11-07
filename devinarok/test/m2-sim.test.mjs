@@ -286,6 +286,46 @@ test('viewLag rewinds each strike to the enemy history at server tick minus lag'
   assert.equal(currentEnemy.hp, currentEnemy.maxHp, 'zero lag tests the current enemy position');
 });
 
+test('viewLag caps at 12 ticks and enemy history retains 13 frames', () => {
+  const world = createStageWorld({ seed: 122, stageId: 'C1', playerId: 'a', inputDriven: true });
+  const player = playersOf(world)[0];
+  const enemy = isolateEnemy(world);
+  player.x = 0;
+  player.z = 0;
+  player.facing = 0;
+  player.attack = {
+    step: 1,
+    seq: 1,
+    castId: 'a:1',
+    phase: 'active',
+    phaseTick: 0,
+    queued: false,
+    queuedSeq: null,
+    hitTargets: [],
+    shape: null,
+  };
+  enemy.x = 4;
+  enemy.z = 0;
+  enemy.hp = enemy.maxHp = 20;
+  world.tick = 20;
+  world.enemyHistory = Array.from({ length: 13 }, (_, index) => ({
+    tick: index + 8,
+    enemies: [{
+      id: enemy.id,
+      x: index === 1 ? 1.2 : 4,
+      z: 0,
+      radius: enemy.radius,
+      dead: false,
+    }],
+  }));
+
+  step(world, { a: neutral(1, 0, { moveX: 127, viewTick: 0 }) });
+  assert.equal(player.viewLag, 12);
+  assert.ok(enemy.hp < enemy.maxHp, 'the strike uses the frame at tick T − 12');
+  assert.equal(world.enemyHistory.length, 13);
+  assert.equal(world.enemyHistory[0].tick, 9);
+});
+
 test('a delayed input burst yields the same final player state as on-time inputs', () => {
   const makeInputDrivenWorld = (seed) => {
     const world = createStageWorld({ seed, stageId: 'C1', playerId: 'a', inputDriven: true });

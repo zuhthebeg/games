@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { randomInt } from 'node:crypto';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
+import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { NetSession } from '../js/net/net-session.js';
 import { decodeMessage } from '../js/net/protocol.js';
 import { Predictor } from '../js/net/predictor.js';
@@ -728,8 +729,14 @@ class Bot {
       };
       const predicted = this.predictedHits.get(castId) ?? new Set();
       const authoritative = this.serverHits.get(castId) ?? new Set();
-      const disagreementTargets = [...new Set([...predicted, ...authoritative])]
-        .filter((id) => predicted.has(id) !== authoritative.has(id));
+      const score = scoreCastHitAgreement({
+        clientWouldHit: [...predicted],
+        serverHitSet: [...authoritative],
+        serverStrikeTicks: diagnostic.serverStrikeTicks,
+        enemyDeathEvents: this.enemyDeathEvents,
+      });
+      const rawDisagreementTargets = score.rawDisagreementTargets;
+      const disagreementTargets = score.disagreementTargets;
       const disagreementsWithin015m = disagreementTargets.flatMap((enemyId) => {
         const edgeDistance = Math.min(
           Infinity,
@@ -741,12 +748,15 @@ class Bot {
         );
         return edgeDistance <= 0.15 ? [{ enemyId, edgeDistance }] : [];
       });
-      const exactMatch = disagreementTargets.length === 0;
       return {
         castId,
         clientWouldHit: [...predicted],
         serverHitSet: [...authoritative],
-        exactMatch,
+        exactMatch: score.exactMatch,
+        lastServerStrikeTick: score.lastServerStrikeTick,
+        rawDisagreementTargets,
+        excusedTargets: score.excusedTargets,
+        excusedTargetCount: score.excusedTargets.length,
         disagreementTargets,
         disagreementsWithin015m,
         clientVts: diagnostic.clientSteps.map(({ inputSeq, viewTick }) => ({ inputSeq, viewTick })),
@@ -754,7 +764,7 @@ class Bot {
         serverStrikeTicks: diagnostic.serverStrikeTicks,
         serverHits: diagnostic.serverHits,
         enemyDeathEvents: this.enemyDeathEvents.filter((event) => (
-          disagreementTargets.includes(event.entityId)
+          rawDisagreementTargets.includes(event.entityId)
         )),
       };
     });
@@ -764,6 +774,8 @@ class Bot {
       (sum, row) => sum + row.disagreementsWithin015m.length,
       0,
     );
+    const excusedTargets = comparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
+    const excusedCasts = comparisons.filter((row) => row.excusedTargetCount > 0).length;
     const hitAgreementPercent = totalComparisons ? 100 * totalMatched / totalComparisons : null;
     const durationSeconds = durationMs / 1000;
     const bytesPerSecond = {
@@ -791,6 +803,8 @@ class Bot {
         comparisons: totalComparisons,
         percent: hitAgreementPercent,
         disagreementsWithin015m,
+        excusedTargets,
+        excusedCasts,
         perCast: comparisons,
       },
       reconnectResumeMs: this.reconnectResumeMs,
@@ -864,6 +878,14 @@ async function run() {
       (sum, item) => sum + item.hitAgreement.disagreementsWithin015m,
       0,
     );
+    const excusedHitTargets = botMetrics.reduce(
+      (sum, item) => sum + item.hitAgreement.excusedTargets,
+      0,
+    );
+    const excusedHitCasts = botMetrics.reduce(
+      (sum, item) => sum + item.hitAgreement.excusedCasts,
+      0,
+    );
     const bandwidthBreakdown = {
       entityBytesPerSecond: botMetrics.reduce((sum, item) => sum + item.downBandwidthBreakdownPerSecond.entityBytes, 0),
       eventBytesPerSecond: botMetrics.reduce((sum, item) => sum + item.downBandwidthBreakdownPerSecond.eventBytes, 0),
@@ -924,6 +946,8 @@ async function run() {
         hitAgreementComparisons: summedHits,
         hitAgreementExactMatchCasts: summedMatches,
         hitAgreementCasts: summedHits,
+        hitAgreementExcusedTargets: excusedHitTargets,
+        hitAgreementExcusedCasts: excusedHitCasts,
         disagreementsWithin015m: nearEdgeDisagreements,
         reconnectResumeMs,
         bandwidthBreakdown,
