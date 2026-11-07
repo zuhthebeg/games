@@ -182,9 +182,17 @@ export class ArenaRenderer {
     this.canvas = canvas;
     this.arena = arena;
     this.isForest = arena.theme === 'forest';
+    this.isCastle = arena.theme === 'castle';
+    this.isSanctuary = arena.theme === 'sanctuary';
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(this.isForest ? 0x484f43 : 0x17141a);
-    this.scene.fog = new THREE.Fog(this.isForest ? 0x777663 : 0x17141a, this.isForest ? 12 : 42, this.isForest ? 36 : 78);
+    this.scene.background = new THREE.Color(
+      this.isForest ? 0x484f43 : this.isCastle ? 0x202238 : this.isSanctuary ? 0x2b1918 : 0x17141a,
+    );
+    this.scene.fog = new THREE.Fog(
+      this.isForest ? 0x777663 : this.isCastle ? 0x384164 : this.isSanctuary ? 0x55362a : 0x17141a,
+      this.isForest || this.isCastle ? 12 : this.isSanctuary ? 18 : 42,
+      this.isForest ? 36 : this.isCastle ? 44 : this.isSanctuary ? 32 : 78,
+    );
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
     this.camera.position.set(0, 15.5, 10.85);
     this.camera.lookAt(0, 0, 0);
@@ -201,11 +209,18 @@ export class ArenaRenderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.9;
-    this.scene.add(new THREE.HemisphereLight(0xc5b6c8, 0x34242b, 1.05));
-    const key = new THREE.DirectionalLight(0xffd6ad, 1.35);
+    this.scene.add(new THREE.HemisphereLight(
+      this.isCastle ? 0x97a6e5 : this.isSanctuary ? 0xffd7a1 : 0xc5b6c8,
+      this.isCastle ? 0x20263f : this.isSanctuary ? 0x49261c : 0x34242b,
+      1.05,
+    ));
+    const key = new THREE.DirectionalLight(
+      this.isCastle ? 0x99aaff : this.isSanctuary ? 0xffbd72 : 0xffd6ad,
+      1.35,
+    );
     key.position.set(-4, 14, 5);
     this.scene.add(key);
-    this.scene.add(new THREE.AmbientLight(0x786775, 0.3));
+    this.scene.add(new THREE.AmbientLight(this.isCastle ? 0x6573bd : this.isSanctuary ? 0xd78e56 : 0x786775, 0.3));
     this.entities = new Map();
     this.telegraphs = new Map();
     this.models = new Map();
@@ -257,17 +272,117 @@ export class ArenaRenderer {
   }
 
   buildRoom() {
+    if (this.isSanctuary) {
+      this.buildSanctuaryRoom();
+      return;
+    }
     const lightProps = this.arena.props.filter((prop) => (
       prop.model === 'assets/env/torch_lit.glb'
       || prop.model === 'assets/env/candle_lit.glb'
       || prop.model === 'assets/env/torch_mounted.glb'
     ));
     for (const prop of lightProps) {
-      const light = new THREE.PointLight(0xffae63, prop.model.includes('candle') ? 7 : 13, prop.model.includes('candle') ? 4.5 : 8, 2);
+      const light = new THREE.PointLight(
+        this.isCastle ? 0x6783ff : 0xffae63,
+        prop.model.includes('candle') ? 7 : 13,
+        prop.model.includes('candle') ? 4.5 : 8,
+        2,
+      );
       light.position.set(prop.x, prop.wallLight ? 2.7 : 2.1, prop.z);
       this.scene.add(light);
       this.torchLights.push({ light, phase: this.torchLights.length * 1.71, base: light.intensity });
     }
+  }
+
+  buildSanctuaryRoom() {
+    const { width, depth } = this.arena;
+    const floorCanvas = document.createElement('canvas');
+    floorCanvas.width = 512;
+    floorCanvas.height = 512;
+    const context = floorCanvas.getContext('2d');
+    context.fillStyle = '#6c4536';
+    context.fillRect(0, 0, 512, 512);
+    for (let row = 0; row < 12; row += 1) {
+      const y = row * 44;
+      context.fillStyle = row % 2 ? '#7d5040' : '#885a46';
+      context.fillRect(0, y, 512, 42);
+      context.fillStyle = '#482d26';
+      context.fillRect(0, y + 41, 512, 3);
+      for (let seam = row % 2 ? 0 : 96; seam < 512; seam += 192) {
+        context.fillRect(seam, y, 2, 42);
+        context.fillStyle = '#a06b4e';
+        context.fillRect(seam + 4, y + 8, 42, 1);
+        context.fillStyle = '#482d26';
+      }
+    }
+    const floorTexture = new THREE.CanvasTexture(floorCanvas);
+    floorTexture.colorSpace = THREE.SRGBColorSpace;
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(3.5, 2.5);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, depth),
+      new THREE.MeshStandardMaterial({ map: floorTexture, color: 0xe8c19a, roughness: 0.88 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.04;
+    this.scene.add(floor);
+
+    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x492d28, roughness: 0.92 });
+    const trimMaterial = new THREE.MeshStandardMaterial({ color: 0xb88a4c, metalness: 0.28, roughness: 0.62 });
+    const addBox = (size, position, material, target = this.scene) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+      mesh.position.set(...position);
+      target.add(mesh);
+      return mesh;
+    };
+    addBox([width, 4.6, 0.28], [0, 2.25, -depth / 2], wallMaterial);
+    addBox([0.28, 4.6, depth], [-width / 2, 2.25, 0], wallMaterial);
+    addBox([0.28, 4.6, depth], [width / 2, 2.25, 0], wallMaterial);
+    addBox([width, 0.22, 0.38], [0, 4.45, -depth / 2 + 0.16], trimMaterial);
+
+    const backPanel = new THREE.MeshStandardMaterial({ color: 0x8f312d, roughness: 0.76 });
+    addBox([2.5, 3.2, 0.18], [0, 2.1, -depth / 2 + 0.2], backPanel);
+    addBox([2.8, 0.14, 0.28], [0, 3.78, -depth / 2 + 0.2], trimMaterial);
+    addBox([0.14, 3.35, 0.28], [-1.35, 2.05, -depth / 2 + 0.2], trimMaterial);
+    addBox([0.14, 3.35, 0.28], [1.35, 2.05, -depth / 2 + 0.2], trimMaterial);
+
+    const columnMaterial = new THREE.MeshStandardMaterial({ color: 0xb39a73, roughness: 0.82 });
+    const columnCapMaterial = new THREE.MeshStandardMaterial({ color: 0xd0ab64, metalness: 0.18, roughness: 0.66 });
+    for (const x of [-5.7, 5.7]) {
+      for (const z of [-3.2, 0, 3.2]) {
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.52, 0.26, 8), columnCapMaterial);
+        base.position.set(x, 0.13, z);
+        this.scene.add(base);
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 3.0, 8), columnMaterial);
+        column.position.set(x, 1.75, z);
+        this.scene.add(column);
+        const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.42, 0.28, 8), columnCapMaterial);
+        capital.position.set(x, 3.39, z);
+        this.scene.add(capital);
+      }
+    }
+
+    const lanternMaterial = new THREE.MeshStandardMaterial({ color: 0xa93630, emissive: 0x48130c, roughness: 0.48 });
+    const lanternLightColor = 0xffb34d;
+    for (const x of [-3.2, 3.2]) {
+      addBox([0.35, 0.52, 0.35], [x, 3.45, -3.6], lanternMaterial);
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.22, 4), trimMaterial);
+      cap.position.set(x, 3.82, -3.6);
+      this.scene.add(cap);
+      const light = new THREE.PointLight(lanternLightColor, 6.5, 8, 2);
+      light.position.set(x, 3.3, -3.6);
+      this.scene.add(light);
+      this.torchLights.push({ light, phase: x * 0.7, base: light.intensity });
+    }
+
+    const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x4a251b, roughness: 0.84 });
+    addBox([1.45, 2.7, 0.18], [0, 1.35, depth / 2 - 0.12], doorMaterial);
+    addBox([1.62, 0.13, 0.26], [0, 2.78, depth / 2 - 0.1], trimMaterial);
+    const doorLight = new THREE.PointLight(0xffb34d, 3.8, 5, 2);
+    doorLight.position.set(0, 2.2, depth / 2 - 1.1);
+    this.scene.add(doorLight);
+    this.torchLights.push({ light: doorLight, phase: 1.4, base: doorLight.intensity });
   }
 
   createAshParticles() {
@@ -369,7 +484,7 @@ export class ArenaRenderer {
     assetHashes = manifest.sha256 ?? {};
     this.loadedBytes = manifest.m1StageLoadedBytes?.[this.arena.id] ?? manifest.m0LoadedBytes;
     const propModels = [...new Set([
-      ...this.arena.props.map((prop) => prop.model),
+      ...this.arena.props.map((prop) => prop.model).filter(Boolean),
       ...(this.arena.npcs ?? []).map((npc) => M0_MODELS[npc.model]),
     ])];
     const modelPaths = [...new Set([...Object.values(M0_MODELS), ...propModels])];
@@ -433,6 +548,9 @@ export class ArenaRenderer {
           if (this.isForest) {
             item.color.multiplyScalar(path.includes('wood') ? 0.9 : 0.95);
             item.color.lerp(new THREE.Color(path.includes('wood') ? 0x6d5c40 : 0xb3a078), path.includes('wood') ? 0.5 : 0.78);
+          } else if (this.isCastle) {
+            item.color.multiplyScalar(path.includes('wood') ? 0.9 : 0.82);
+            item.color.lerp(new THREE.Color(path.includes('wood') ? 0x363044 : 0x717da9), 0.38);
           } else {
             item.color.multiplyScalar(path.includes('wood') ? 0.84 : 0.76);
           }
@@ -471,6 +589,25 @@ export class ArenaRenderer {
       }
     }
     for (const placement of this.arena.props) {
+      if (placement.decal === 'red-carpet') {
+        const geometry = new THREE.PlaneGeometry(placement.decalWidth ?? 1.8, placement.decalLength ?? 16);
+        const material = new THREE.MeshStandardMaterial({
+          color: 0x79252e,
+          roughness: 0.92,
+          metalness: 0.02,
+          side: THREE.DoubleSide,
+        });
+        const carpet = new THREE.Mesh(geometry, material);
+        carpet.rotation.x = -Math.PI / 2;
+        carpet.position.set(placement.x, placement.y ?? 0.055, placement.z);
+        carpet.renderOrder = 1;
+        this.scene.add(carpet);
+        continue;
+      }
+      if (placement.procedural) {
+        this.createSanctuaryProp(placement);
+        continue;
+      }
       if (instancedModels.has(placement.model)) continue;
       if (placement.bogPool) {
         const geometry = new THREE.CircleGeometry(1, 12);
@@ -490,10 +627,15 @@ export class ArenaRenderer {
       }
       const prop = SkeletonUtils.clone(loadedByPath.get(placement.model).scene);
       const normalizedScale = this.forestModelScales.get(placement.model);
-      if (this.isForest) {
+      if (this.isForest || Number.isInteger(placement.tint) || placement.blueFlame) {
         for (const material of cloneMaterials(prop)) {
-          if (material.color) {
+          if (this.isForest && material.color) {
             material.color.multiplyScalar(0.88).lerp(new THREE.Color(0x69735e), 0.2);
+          }
+          if (Number.isInteger(placement.tint) && material.color) material.color.lerp(new THREE.Color(placement.tint), 0.35);
+          if (placement.blueFlame && material.emissive) {
+            material.emissive.setHex(0x405dff);
+            material.emissiveIntensity = 0.75;
           }
         }
       }
@@ -516,6 +658,99 @@ export class ArenaRenderer {
       this.scene.add(prop);
     }
     this.createHubNpcs(loadedByPath);
+  }
+
+  createSanctuaryProp(placement) {
+    const group = new THREE.Group();
+    group.position.set(placement.x, 0, placement.z);
+    const wood = new THREE.MeshStandardMaterial({ color: 0x684334, roughness: 0.84 });
+    const darkWood = new THREE.MeshStandardMaterial({ color: 0x3e2925, roughness: 0.9 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xc39a52, metalness: 0.32, roughness: 0.58 });
+    const red = new THREE.MeshStandardMaterial({ color: 0x8e282d, roughness: 0.74 });
+    const bronze = new THREE.MeshStandardMaterial({ color: 0x976b3e, metalness: 0.45, roughness: 0.48 });
+    const addBox = (size, position, material) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+      mesh.position.set(...position);
+      group.add(mesh);
+      return mesh;
+    };
+    if (placement.procedural === 'altar') {
+      addBox([2.05, 0.16, 0.78], [0, 0.92, 0], wood);
+      addBox([1.9, 0.06, 0.82], [0, 1.03, 0], red);
+      addBox([1.25, 0.72, 0.56], [0, 0.49, 0], darkWood);
+      for (const x of [-0.84, 0.84]) {
+        for (const z of [-0.28, 0.28]) addBox([0.15, 0.78, 0.15], [x, 0.48, z], wood);
+      }
+      addBox([0.14, 0.56, 0.83], [0, 0.72, 0.43], red);
+      addBox([0.14, 0.56, 0.83], [0, 0.72, -0.43], red);
+      for (const x of [-0.74, 0.74]) {
+        const incenseCandle = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.28, 6), gold);
+        incenseCandle.position.set(x, 1.23, 0);
+        group.add(incenseCandle);
+        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffaa43 }));
+        flame.position.set(x, 1.42, 0);
+        group.add(flame);
+      }
+    } else if (placement.procedural === 'statue') {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.48, 0.62), darkWood);
+      plinth.position.set(0, 0.24, 0.16);
+      group.add(plinth);
+      const statueMaterial = new THREE.MeshStandardMaterial({ color: 0xd1b57b, metalness: 0.22, roughness: 0.65 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 1.15, 8), statueMaterial);
+      body.position.set(0, 1.08, 0.12);
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), statueMaterial);
+      head.position.set(0, 1.82, 0.12);
+      group.add(head);
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.035, 6, 18), gold);
+      halo.position.set(0, 1.82, -0.06);
+      group.add(halo);
+      const backdrop = new THREE.MeshBasicMaterial({ color: 0xf0b95a, transparent: true, opacity: 0.18 });
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), backdrop);
+      glow.position.set(0, 1.85, -0.18);
+      group.add(glow);
+      const light = new THREE.PointLight(0xffc875, 5, 4.5, 2);
+      light.position.set(0, 2.2, 0.4);
+      group.add(light);
+    } else if (placement.procedural === 'incense-burner') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.28, 8), bronze);
+      base.position.y = 0.14;
+      group.add(base);
+      const profile = [
+        new THREE.Vector2(0.17, 0.2),
+        new THREE.Vector2(0.3, 0.28),
+        new THREE.Vector2(0.34, 0.48),
+        new THREE.Vector2(0.27, 0.55),
+        new THREE.Vector2(0.24, 0.47),
+        new THREE.Vector2(0.18, 0.4),
+      ];
+      const bowl = new THREE.Mesh(new THREE.LatheGeometry(profile, 10), bronze);
+      bowl.position.y = 0.18;
+      group.add(bowl);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.035, 5, 12), gold);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.68;
+      group.add(rim);
+      for (const x of [-0.12, 0, 0.12]) {
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.42, 5), darkWood);
+        stick.position.set(x, 0.83, 0);
+        group.add(stick);
+      }
+    } else if (placement.procedural === 'furnace') {
+      addBox([1.0, 0.92, 0.76], [0, 0.46, 0], darkWood);
+      addBox([1.16, 0.16, 0.88], [0, 0.94, 0], gold);
+      addBox([0.54, 0.52, 0.12], [0, 0.47, 0.4], bronze);
+      addBox([0.36, 0.34, 0.06], [0, 0.42, 0.48], new THREE.MeshBasicMaterial({ color: 0x260f0c }));
+      for (const x of [-0.44, 0.44]) {
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.04, 0.08), gold);
+        trim.position.set(x, 0.52, 0.42);
+        group.add(trim);
+      }
+      const top = new THREE.Mesh(new THREE.ConeGeometry(0.58, 0.38, 4), red);
+      top.position.set(0, 1.18, 0);
+      group.add(top);
+    }
+    this.scene.add(group);
   }
 
   createHubNpcs(loadedByPath) {
@@ -585,6 +820,19 @@ export class ArenaRenderer {
       ? (modelBounds.min.y + modelBounds.max.y) / 2
       : 0.9;
     const lootResources = [];
+    if (entity.kind === 'enemy' && entity.enemyKind === 'shieldbearer') {
+      const shieldGeometry = new THREE.BoxGeometry(0.48, 0.68, 0.14);
+      const shieldMaterial = new THREE.MeshStandardMaterial({ color: 0x79818e, metalness: 0.48, roughness: 0.52 });
+      const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+      shield.position.set(0.42, 0.8, 0.25);
+      root.add(shield);
+      const bossGeometry = new THREE.SphereGeometry(0.095, 6, 4);
+      const bossMaterial = new THREE.MeshStandardMaterial({ color: 0xd2bd7b, metalness: 0.42, roughness: 0.45 });
+      const shieldBoss = new THREE.Mesh(bossGeometry, bossMaterial);
+      shieldBoss.position.set(0.42, 0.8, 0.33);
+      root.add(shieldBoss);
+      lootResources.push(shieldGeometry, shieldMaterial, bossGeometry, bossMaterial);
+    }
     if (entity.kind === 'loot') {
       const beamGeometry = new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true);
       const beamMaterial = new THREE.MeshBasicMaterial({ color: entity.item?.rarity === 'legendary' ? 0xff8b38 : entity.item?.rarity === 'rare' ? 0xf0c64f : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef, transparent: true, opacity: 0.72, depthWrite: false });
@@ -771,8 +1019,8 @@ export class ArenaRenderer {
   createDamageNumber(event) {
     if (event.damage <= 0) return;
     const element = document.createElement('span');
-    element.className = 'damage-number';
-    element.textContent = `−${event.damage}`;
+    element.className = event.guarded ? 'damage-number guarded' : 'damage-number';
+    element.textContent = event.guarded ? `막음 −${event.damage}` : `−${event.damage}`;
     this.vfxLayer.appendChild(element);
     this.damageNumbers.push({
       element,
@@ -781,6 +1029,29 @@ export class ArenaRenderer {
       duration: 850,
     });
     while (this.damageNumbers.length > 24) this.removeDamageNumber(0);
+  }
+
+  createGuardSpark(event, world, now) {
+    const target = world.entities.find((entity) => entity.id === event.targetId);
+    if (!target) return;
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-0.2, 0, 0), new THREE.Vector3(0.2, 0, 0),
+      new THREE.Vector3(0, 0, -0.2), new THREE.Vector3(0, 0, 0.2),
+      new THREE.Vector3(-0.15, 0.13, -0.15), new THREE.Vector3(0.15, -0.13, 0.15),
+    ]);
+    const material = new THREE.LineBasicMaterial({ color: 0xcbd7e8, transparent: true, opacity: 1, fog: false });
+    const spark = new THREE.LineSegments(geometry, material);
+    spark.position.set(target.x, 0.86, target.z);
+    this.scene.add(spark);
+    this.addTransient(spark, geometry, material, {
+      startTime: now,
+      durationMs: 180,
+      update: (effect, tick, elapsed) => {
+        const progress = THREE.MathUtils.clamp(elapsed / 180, 0, 1);
+        effect.mesh.scale.setScalar(0.6 + progress * 0.8);
+        material.opacity = 1 - progress;
+      },
+    });
   }
 
   removeDamageNumber(index) {
@@ -950,6 +1221,7 @@ export class ArenaRenderer {
       if (event.type === 'blink' || event.type === 'bossBlink') this.createBlink(event, now);
       if (event.type === 'hit') {
         this.createDamageNumber(event);
+        if (event.guarded) this.createGuardSpark(event, world, now);
         if (event.damage > 0) {
           if (!this.reducedMotion) {
             if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
@@ -1140,6 +1412,8 @@ export class ArenaRenderer {
           else addPart(circleGeometry(shape.radius), 'radial');
         } else if (shape.type === 'ring') {
           addPart(new THREE.RingGeometry(shape.innerRadius ?? shape.radius * 0.66, shape.radius, 48), 'radial');
+        } else if (shape.type === 'annulus') {
+          addPart(new THREE.RingGeometry(shape.innerRadius, shape.outerRadius, 48), 'radial');
         } else if (shape.type === 'circles') {
           for (const circle of shape.circles ?? []) {
             addPart(
@@ -1151,7 +1425,7 @@ export class ArenaRenderer {
               circle.z,
             );
           }
-        } else if (shape.type === 'line') {
+        } else if (shape.type === 'line' || shape.type === 'rect') {
           const geometry = new THREE.PlaneGeometry(shape.length, shape.width);
           addPart(geometry, 'linear', shape.length / 2, 0);
         }
@@ -1165,7 +1439,7 @@ export class ArenaRenderer {
         decal.mesh.rotation.y = 0;
       } else {
         decal.mesh.position.set(shape.originX, 0, shape.originZ);
-        decal.mesh.rotation.y = shape.type === 'line' || shape.type === 'sector' ? -shape.angle : 0;
+        decal.mesh.rotation.y = ['line', 'rect', 'sector'].includes(shape.type) ? -shape.angle : 0;
       }
       if (shape.type === 'ring') decal.mesh.rotation.y = 0;
       const progress = THREE.MathUtils.clamp(1 - enemy.attackRemaining / Math.max(1, enemy.attackWindupTicks), 0, 1);

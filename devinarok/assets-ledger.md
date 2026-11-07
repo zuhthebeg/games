@@ -10,8 +10,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 - Source license SHA-256: `ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629`
 
 ```text
-
-	KayKit : Adventurers Character Pack (1.0)
+KayKit : Adventurers Character Pack (1.0)
 
 	Created/distributed by Kay Lousberg (www.kaylousberg.com)
 	Creation date: 13/03/2023 09:00
@@ -60,8 +59,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 - Source license SHA-256: `5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954`
 
 ```text
-
-	KayKit Character Pack : Skeletons (1.0)
+KayKit Character Pack : Skeletons (1.0)
 
 	Created/distributed by Kay Lousberg (www.kaylousberg.com)
 	Creation date: 02/02/2024 09:00
@@ -115,8 +113,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 - Source license SHA-256: `c5f17abf619731f57f6bbff450f6484214605c13aa96bb75bbcfc70930941ff7`
 
 ```text
-
-	KayKit : Dungeon Remastered (1.0)
+KayKit : Dungeon Remastered (1.0)
 
 	Created/distributed by Kay Lousberg (www.kaylousberg.com)
 	Creation date: 13/03/2023 09:00
@@ -204,9 +201,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 - Source license SHA-256: `cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d`
 
 ```text
-
-
-	Nature Kit (2.1)
+Nature Kit (2.1)
 
 	Created/distributed by Kenney (www.kenney.nl)
 	Creation date: 29-04-2020 01:02
@@ -217,6 +212,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 	http://creativecommons.org/publicdomain/zero/1.0/
 
 	This content is free to use in personal, educational and commercial projects.
+
 	Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
 
 			------------------------------
@@ -250,6 +246,64 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 | `Models/GLTF format/campfire_logs.glb` | `98d87cdcf9095b94fd348d0946e911dd4ca6c0956bac3318cfd2b0030b86055a` | `assets/env/forest/campfire_logs.glb` | `4abd4f1a225b217544bcee444f509d7ada1660214c6cc5e63dcf45b47c2f88e0` | 4224 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `Models/GLTF format/ground_pathStraight.glb` | `86a1e88aaa028ccdfb98b6653c282c6aadb0fbccf9c4de00a834516b9bf79d37` | `assets/env/forest/ground_pathStraight.glb` | `da177acca724982025ad14b135f97d588e808cdf6875a08ebd1b2c9d3184431d` | 4472 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `Models/GLTF format/ground_grass.glb` | `da741e8ab34ca70c0c85ccda21538558a798188db2f1e265885bcdd226a5cca2` | `assets/env/forest/ground_grass.glb` | `5149072905b9cf343dd8e0786c488256a9cd0075dddaceb6413d2977028b8c8f` | 1844 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+## KayKit-Halloween-Bits-1.0
+- Repository: https://github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0
+- Pinned default-branch commit: `6dc69bf6b2fa766a985754f35ec6a0324090e6c6`
+- License evidence: the official KayKit Halloween Bits asset page lists CC0; the pinned official GitHub archive `Assets/LICENSE.txt` states “License: (Creative Commons Zero, CC0).”
+- Download date: 2026-11-07
+- License copy: [`assets/licenses/kaykit-halloween-bits-LICENSE.txt`](./assets/licenses/kaykit-halloween-bits-LICENSE.txt)
+- Source license SHA-256: `a514c41d8d5f2a07c94c55acd29ba94f50b86837f972e37edb4cbdeb7ba0e0e0`
+
+```text
+KayKit : Halloween Bits (1.0)
+
+	Created/distributed by Kay Lousberg (www.kaylousberg.com)
+	Creation date: 06/10/2023 09:00
+
+			------------------------------
+
+	License: (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	This content is free to use in personal, educational and commercial projects.
+
+	Support me by crediting Kay Lousberg, www.kaylousberg.com (this is not mandatory)
+
+			------------------------------
+
+	This asset pack is here thanks to all the wonderful people who support KayKit on Patreon and those who buy our EXTRA or SOURCE packs on itch.io.
+
+	And a big, special thank you to my Super Supporters:
+
+	- Brian McBarron
+	- Silva
+	- Eric Allamby
+	- Joseph Preston
+	- Kyle Maynard
+
+
+
+			------------------------------
+
+
+	Patreon:  http://patreon.com/kaylousberg
+
+	Follow on Twitter for updates:
+	http://twitter.com/KayLousberg
+```
+
+| Source path | Source SHA-256 | Output path | Output SHA-256 | Bytes | Modifications |
+| --- | --- | --- | --- | ---: | --- |
+| `addons/kaykit_halloween_bits/Assets/gltf/grave_A.gltf` | `52bdfcb650333861b1743ebaea418deb952a0cf72d719f5299a6de587d56971b` | `assets/env/castle/grave_A.glb` | `91793fd3d2577d93a006f879f7dd93cdf28bae547ccc479171f85009c9fb4926` | 22012 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/gravestone.gltf` | `9c82f5161bdd4f06391f174ef92b82b21f18a6e5a00d386b254ed3cd124f1c21` | `assets/env/castle/gravestone.glb` | `30101954189e1a1e3daab79be608e940271f82aa78bf764206b023947229e30a` | 21108 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/fence.gltf` | `341bdb0bc8c4d6895a7184daebf76522866677909992701efbd3a719b348d4a7` | `assets/env/castle/fence.glb` | `fc324ffdfcc0d0bd613cccd757329a933ba3c24d2eb87e6a5ebb2d97ead5a735` | 24532 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/bone_A.gltf` | `c6b8c11d07feb98d777d7327c7634f2b40c2d23e0d27018f2477f9d6eca02c00` | `assets/env/castle/bone_A.glb` | `ab90e11303c7b5846d496f451d79407c245e56e76079a577a39b6776bb0800a1` | 20036 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/bone_B.gltf` | `5889565817ed466dfe80c2952e5e983f190ab6690de57993b700dee2e664911a` | `assets/env/castle/bone_B.glb` | `61ea6033e36e35e04cd2ed64cde61f5e6a5bc7874b880031aa5df7a7c84d3571` | 19588 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/bone_C.gltf` | `09c0af1e0805eedddea6029a8a24aceb8a3a4570f66df6f629ca82928829d90d` | `assets/env/castle/bone_C.glb` | `72f901bb2c66ce862a8e6ac61375693ce7df79162b2f7022d515092c50d578e6` | 19980 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/ribcage.gltf` | `ff40320e576fe686a815c43aea656fcd9202a6a944d047182c821300a0aaec6e` | `assets/env/castle/ribcage.glb` | `b1fc25be2208169a5c8f8436bc90e7cca93e31712841eb64651975c4b7ef3da1` | 33604 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/skull.gltf` | `d8660d809db38d5b8279e01b1014eb58a2302e3d18316dd4ce784eb7431ef36e` | `assets/env/castle/skull.glb` | `267b92cb2e2c46bc8b4dda3adfc9c54c14e1b6b48afb1a09911dd4752d1311ac` | 21800 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/coffin.gltf` | `cde76bb035c737376745b0285b2fdf8306c716bcd03945aff9cf9c85fa3713cb` | `assets/env/castle/coffin.glb` | `dbf0c170632b585e7ac177097ac109e1a71bf6ba76b79d77667f558cab1fa7c8` | 23856 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_halloween_bits/Assets/gltf/candle_triple.gltf` | `e7b0f28c03e4b19fde8af713f952660ad786bd3a80932a2bbe48dfe0d0edede5` | `assets/env/castle/candle_triple.glb` | `d9b636500d5bd259e0dcab478278c63adb21c20ced2c2565109e62b381ef5eea` | 20708 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 ## Three.js
 - License: MIT (license text at [`vendor/three-0.187.0/LICENSE`](./vendor/three-0.187.0/LICENSE)).
 - Version: `0.187.0`.
@@ -291,11 +345,11 @@ The M0 GLB load set totals **1,104,100 bytes** (1.05 MiB) against a 5 MiB budget
 
 ## M1 stage asset budget
 
-Loaded runtime assets: inn-hub 3,633,490 bytes; C1 3,681,986 bytes; C2 3,630,918 bytes; C3 3,726,446 bytes; CB 3,398,942 bytes; F1 3,112,658 bytes; F2 3,125,666 bytes; F3 3,109,294 bytes; FB 3,082,166 bytes. The per-stage limit is 6,291,456 bytes.
+Loaded runtime assets: inn-hub 3,656,274 bytes; C1 3,704,770 bytes; C2 3,653,702 bytes; C3 3,749,230 bytes; CB 3,421,726 bytes; F1 3,137,318 bytes; F2 3,137,394 bytes; F3 3,124,294 bytes; FB 3,117,154 bytes; K1 3,325,946 bytes; K2 3,409,990 bytes; K3 3,359,926 bytes; KB 3,334,070 bytes. The per-stage limit is 6,291,456 bytes.
 
 ## M3b forest stage asset budget
 
-Loaded runtime assets: F1 3,112,658 bytes; F2 3,125,666 bytes; F3 3,109,294 bytes; FB 3,082,166 bytes. The per-stage limit is 4.5 MiB.
+Loaded runtime assets: F1 3,137,318 bytes; F2 3,137,394 bytes; F3 3,124,294 bytes; FB 3,117,154 bytes. The per-stage limit is 4.5 MiB.
 ## Vendored M1 audio
 
 Download date: 2026-11-07. Kenney sound files are extracted without modification from locally vendored ZIP archives. The archive SHA-256 is the pinned source artifact hash; each output hash is recorded separately. The OpenGameArt source pages explicitly identify both music tracks as CC0.
@@ -314,3 +368,21 @@ Download date: 2026-11-07. Kenney sound files are extracted without modification
 | Same Kenney Interface pack and CC0 evidence | Same archive SHA-256 | `Audio/confirmation_001.ogg` → `assets/audio/confirm.ogg` | `063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a` | 8,968 |
 | OpenGameArt, [Dungeon Ambience](https://opengameart.org/content/dungeon-ambience), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/dungeon002.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | `dungeon002.ogg` → `assets/audio/hub-bgm.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | 1,202,848 |
 | OpenGameArt, [Whispers in the Fog](https://opengameart.org/content/whispers-in-the-fog), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/whispers_in_the_fog.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | `whispers_in_the_fog.ogg` → `assets/audio/combat-bgm.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | 204,349 |
+
+## M3c sanctuary audio
+
+| Source and license evidence | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| OpenGameArt, [Fire Crackling](https://opengameart.org/content/fire-crackling), source page lists CC0; evidence copy [`assets/licenses/opengameart-fire-crackling-license.txt`](./assets/licenses/opengameart-fire-crackling-license.txt) | `fire-1.ogg` → `assets/audio/fire-crackle.ogg` | `f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb` | 22,784 |
+
+## M3c sanctuary audio
+
+| Source and license evidence | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| OpenGameArt, [Fire Crackling](https://opengameart.org/content/fire-crackling), source page lists CC0; evidence copy [`assets/licenses/opengameart-fire-crackling-license.txt`](./assets/licenses/opengameart-fire-crackling-license.txt) | `fire-1.ogg` → `assets/audio/fire-crackle.ogg` | `f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb` | 22,784 |
+
+## M3c sanctuary audio
+
+| Source and license evidence | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| OpenGameArt, [Fire Crackling](https://opengameart.org/content/fire-crackling), source page lists CC0; evidence copy [`assets/licenses/opengameart-fire-crackling-license.txt`](./assets/licenses/opengameart-fire-crackling-license.txt) | `fire-1.ogg` → `assets/audio/fire-crackle.ogg` | `f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb` | 22,784 |

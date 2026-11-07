@@ -53,6 +53,19 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 #game-screen:has(#party-hud:not([hidden])) #toast { top: var(--party-toast-top, 166px); width: min(320px, calc(100% - 16px)); box-sizing: border-box; padding: 6px 10px; border: 1px solid #9a785955; border-radius: 9px; background: #17131ad9; line-height: 1.35; text-align: center; overflow-wrap: anywhere; }
 .combat-vfx-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
 .damage-number { position: absolute; color: #ffd29a; font: 800 24px/1 system-ui, sans-serif; text-shadow: 0 2px 3px #1b0d0a, 0 0 12px #ff8c47; white-space: nowrap; will-change: transform, opacity; }
+.damage-number.guarded { color: #ccd3dc; text-shadow: 0 2px 3px #10141b, 0 0 10px #71839a; }
+.sanctuary-mode #controls .buttons > button:not(#sanctuary-interact) { display: none; }
+.sanctuary-mode #sanctuary-interact { display: block; min-width: 142px; padding: 12px 15px; border-color: #e1b65d; background: #6b301fe8; color: #ffedc4; font-weight: 800; }
+.sanctuary-hud { position: absolute; z-index: 4; inset: 74px 12px auto; display: flex; justify-content: flex-end; gap: 8px; pointer-events: none; }
+.sanctuary-hud > button { pointer-events: auto; min-width: 76px; padding: 8px 12px; border: 1px solid #c9a05d; border-radius: 10px; background: #291a18e8; color: #ffe7bd; font: 700 13px system-ui, sans-serif; }
+.sanctuary-feedback { position: absolute; top: 31vh; left: 50%; width: min(330px, calc(100vw - 28px)); transform: translateX(-50%); padding: 16px; border: 1px solid #c59b57; border-radius: 14px; background: #211513ed; color: #f7e5c8; text-align: center; box-shadow: 0 10px 32px #0009; }
+.sanctuary-feedback h2 { margin: 0 0 8px; color: #f2ca7b; font: 700 18px/1.3 system-ui, sans-serif; }
+.sanctuary-feedback p { margin: 6px 0; font: 13px/1.5 system-ui, sans-serif; }
+.sanctuary-party-disabled { display: block; margin-top: 0.45rem; color: #ffcf9d; font-size: 0.74rem; }
+.sanctuary-party-message { color: #ffcf9d; font-size: 0.84rem; text-align: center; }
+.sanctuary-feedback small { display: block; margin-top: 10px; color: #c4b5a2; font: 11px/1.45 system-ui, sans-serif; }
+.sanctuary-mode #boss-hud, .sanctuary-mode #party-hud, .sanctuary-mode #party-rtt,
+.sanctuary-mode #party-door-countdown, .sanctuary-mode #party-downed { display: none !important; }
 .hud, .overlay, #toast { z-index: 2; }
 @media (pointer: coarse) {
   .controls { display: flex; }

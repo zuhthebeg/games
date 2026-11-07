@@ -8,6 +8,13 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
+import { SANCTUARY_ARENA } from './sanctuary/arena.js';
+import { SanctuaryVfx } from './sanctuary/vfx.js';
+import {
+  BURN_DONE, BURN_NOTE, CHIAO_FOOTER, INCENSE_DONE, RITUAL_CANCEL_HINT,
+  advanceRitual, cancelRitual, createRitualState, nearestRitual, resetRitual,
+  ritualMovement, startRitual, throwChiao,
+} from './sanctuary/state.js';
 import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
 import { AFFIXES } from './content/affixes.js';
@@ -69,6 +76,9 @@ let partyQuickLookupFailed = false;
 let partyQuickAbortController = null;
 let partyFeedbackMessage = '';
 let partyFeedbackIsError = false;
+let sanctuaryState = null;
+let sanctuaryVfx = null;
+let sanctuaryBurnAudio = null;
 
 async function reloadCharacter() {
   character = await saves.loadCharacter(character.id);
@@ -105,6 +115,12 @@ function stopWorld() {
   partyInputAccumulator = 0;
   loop?.stop();
   input?.destroy();
+  if (sanctuaryState) resetRitual(sanctuaryState);
+  sanctuaryState = null;
+  sanctuaryVfx?.destroy();
+  sanctuaryVfx = null;
+  sanctuaryBurnAudio?.stop();
+  sanctuaryBurnAudio = null;
   renderer?.destroy();
   loop = input = renderer = null;
 }
@@ -169,6 +185,13 @@ async function enterHub() {
   partyClient?.close();
   partyClient = null;
   $('#hub-party-button').hidden = false;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = false;
+  $('#sanctuary-party-disabled').hidden = true;
+  gameScreen.classList.remove('sanctuary-mode');
+  $('#sanctuary-hud').hidden = true;
+  $('#sanctuary-interact').hidden = true;
+  $('#sanctuary-feedback').hidden = true;
+  $('#key-hints').textContent = 'J 공격 · K 회피 · 1/2/3 기술 · Q 물약';
   titleScreen.hidden = true;
   gameScreen.hidden = false;
   hubUi.hidden = false;
@@ -211,6 +234,135 @@ async function enterHub() {
   }
 }
 
+function renderSanctuaryHud(current) {
+  const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  sanctuaryState.nearby = hero ? nearestRitual(hero.x, hero.z) : null;
+  const interact = $('#sanctuary-interact');
+  interact.hidden = Boolean(sanctuaryState.active) || !sanctuaryState.nearby;
+  interact.textContent = sanctuaryState.nearby
+    ? `상호작용 · ${sanctuaryState.nearby.prompt}`
+    : '상호작용';
+  $('#sanctuary-cancel').hidden = !sanctuaryState.active;
+  const feedback = $('#sanctuary-feedback');
+  const result = sanctuaryState.active?.id === 'chiao' && sanctuaryState.active.phase === 'settled'
+    ? sanctuaryState.active.result
+    : null;
+  const message = sanctuaryState.feedback;
+  if (result) {
+    feedback.innerHTML = `<h2>${result.name}</h2><p>${result.description}</p><small>${CHIAO_FOOTER}</small><small>${RITUAL_CANCEL_HINT}</small>`;
+    feedback.hidden = false;
+  } else if (message) {
+    const note = message.text === BURN_DONE ? `<small>${BURN_NOTE}</small>` : '';
+    feedback.innerHTML = `<p>${message.text}</p>${note}<small>${RITUAL_CANCEL_HINT}</small>`;
+    feedback.hidden = false;
+  } else {
+    feedback.hidden = true;
+    feedback.replaceChildren();
+  }
+}
+
+function updateSanctuary(current) {
+  if (!sanctuaryState || !sanctuaryVfx) return;
+  const wasBurning = sanctuaryState.active?.id === 'burn';
+  advanceRitual(sanctuaryState, 1 / 30);
+  if (wasBurning && sanctuaryState.active?.id !== 'burn') {
+    sanctuaryBurnAudio?.stop();
+    sanctuaryBurnAudio = null;
+  }
+  sanctuaryVfx.update(sanctuaryState);
+  renderSanctuaryHud(current);
+}
+
+function interactSanctuary() {
+  if (partyClient) {
+    setPartyToast('파티 중에는 들어갈 수 없어요');
+    return;
+  }
+  const ritual = sanctuaryState?.nearby;
+  if (!ritual || sanctuaryState.active) return;
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  const origin = { x: hero?.x ?? 0, z: hero?.z ?? 0 };
+  if (!startRitual(sanctuaryState, ritual.id, { origin })) return;
+  audio.play('confirm');
+  if (ritual.id === 'chiao') {
+    const random = (Math.imul((world.seed + sanctuaryState.serial) >>> 0, 0x45d9f3b) ^ 0x9e3779b9) >>> 0;
+    const faces = [random & 1 ? 'convex' : 'flat', random & 2 ? 'convex' : 'flat'];
+    throwChiao(sanctuaryState, faces, random);
+  } else if (ritual.id === 'burn') {
+    sanctuaryBurnAudio?.stop();
+    sanctuaryBurnAudio = audio.play('fire-crackle', { loop: true, gain: 0.42 });
+  }
+}
+
+function cancelSanctuary() {
+  if (!sanctuaryState?.active) return false;
+  cancelRitual(sanctuaryState);
+  sanctuaryBurnAudio?.stop();
+  sanctuaryBurnAudio = null;
+  renderSanctuaryHud(world);
+  sanctuaryVfx?.update(sanctuaryState);
+  return true;
+}
+
+async function enterSanctuary() {
+  if (partyClient) {
+    setPartyToast('파티 중에는 들어갈 수 없어요');
+    return;
+  }
+  stopWorld();
+  sanctuaryState = createRitualState();
+  titleScreen.hidden = true;
+  gameScreen.hidden = false;
+  hubUi.hidden = true;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#boss-hud').hidden = true;
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
+  $('#party-door-countdown').hidden = true;
+  $('#party-downed').hidden = true;
+  $('#party-network-overlay').hidden = true;
+  $('#controls').hidden = false;
+  $('#sanctuary-hud').hidden = false;
+  $('#sanctuary-interact').hidden = true;
+  $('#sanctuary-feedback').hidden = true;
+  $('#stage-name').textContent = '법당';
+  $('#hud-name').textContent = `${character.name} · 법당`;
+  $('#key-hints').textContent = '이동 · E 상호작용 · Esc 나가기';
+  gameScreen.classList.add('sanctuary-mode');
+  world = createHubWorld({
+    seed: 724103,
+    playerId: character.id,
+    level: character.level,
+    equipment: equippedItems(),
+  });
+  world.arena = SANCTUARY_ARENA;
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (hero) {
+    Object.assign(hero, equipmentLook(equippedItems()));
+    hero.x = SANCTUARY_ARENA.playerSpawn.x;
+    hero.z = SANCTUARY_ARENA.playerSpawn.z;
+    hero.facing = -Math.PI / 2;
+  }
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
+  renderer = new ArenaRenderer($('#scene'), () => {}, SANCTUARY_ARENA, DEV_COLLISION_OVERLAY);
+  await Promise.all([renderer.ready, loadAudio()]);
+  await audio.unlock();
+  audio.setMusic('hub-bgm');
+  sanctuaryVfx = new SanctuaryVfx(renderer.scene, { onTok: () => audio.play('impact', { rate: 0.72, gain: 0.48 }) });
+  renderSanctuaryHud(world);
+  loop = new FixedStepLoop({
+    world,
+    playerId: character.id,
+    input,
+    buildInput: (rawInput) => ({ ...ritualMovement(sanctuaryState, rawInput), buttons: 0 }),
+    render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
+    onTick: updateSanctuary,
+  });
+  loop.start();
+}
+
 function updateDebugZone(areaName) {
   const label = $('#debug-zone');
   label.hidden = !DEV_MODE;
@@ -219,8 +371,10 @@ function updateDebugZone(areaName) {
 
 function updateBossIntro(stageId) {
   const region = STAGE_LIST.find((stage) => stage.id === stageId)?.region ?? 1;
-  $('#boss-intro-region').textContent = region === 2 ? '잿빛 숲' : '무너진 지하묘지';
-  $('#boss-intro-name').textContent = region === 2 ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  $('#boss-intro-region').textContent = region === 3 ? '해골 왕의 성채' : region === 2 ? '잿빛 숲' : '무너진 지하묘지';
+  $('#boss-intro-name').textContent = stageId === 'KB'
+    ? '해골 왕'
+    : region === 2 ? '잿빛 숲의 사령술사' : '해골 기사단장';
 }
 
 async function loadAudio() {
@@ -371,7 +525,8 @@ function renderBoard() {
     const unlocked = stageIsUnlocked(stage.id);
     const cleared = character.clearedStages.includes(stage.id);
     const section = stage.id === 'C1' ? '<h3>1지역 · 무너진 지하묘지</h3>'
-      : stage.id === 'F1' ? '<h3>2지역 · 잿빛 숲</h3>' : '';
+      : stage.id === 'F1' ? '<h3>2지역 · 잿빛 숲</h3>'
+        : stage.id === 'K1' ? '<h3>3지역 · 해골 왕의 성채</h3>' : '';
     const newBadge = stage.id === 'F1' && character.clearedStages.includes('CB')
       && !localStorage.getItem('devinarok.f1-entered') ? '<b class="stage-new">NEW</b>' : '';
     const lockText = !unlocked && stage.region === 2 && !character.clearedStages.includes('CB')
@@ -482,6 +637,13 @@ function openPartyFinder() {
 }
 
 function syncPartyFeedback() {
+  const lobby = hubPanel.querySelector('.party-lobby');
+  if (lobby && !lobby.querySelector('.sanctuary-party-message')) {
+    const notice = document.createElement('p');
+    notice.className = 'sanctuary-party-message';
+    notice.textContent = '파티 중에는 들어갈 수 없어요';
+    lobby.append(notice);
+  }
   const status = hubPanel.querySelector('[data-party-feedback]');
   if (!status) return;
   status.textContent = partyFeedbackMessage;
@@ -553,6 +715,8 @@ function inviteLink(code) {
 function renderPartyLobby() {
   if (!partyClient?.roomCode || !partyClient.lobby || hubPanel.hidden) return;
   $('#hub-party-button').hidden = true;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = true;
+  $('#sanctuary-party-disabled').hidden = false;
   stopPartyFinderPolling();
   const party = partyClient.lobby?.players ?? [];
   const local = party.find((member) => member.playerId === partyClient.playerId);
@@ -578,6 +742,8 @@ function renderPartyLobby() {
 function connectParty(code = null) {
   partyClient?.close();
   $('#hub-party-button').hidden = true;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = true;
+  $('#sanctuary-party-disabled').hidden = false;
   if (hubPanel.hidden) {
     hubPanel.hidden = false;
     hubPanel.dataset.kind = 'party';
@@ -682,8 +848,10 @@ async function startPartyStage(message) {
   $('#controls').hidden = false;
   $('#party-hud').hidden = false;
   $('#party-rtt').hidden = false;
-  $('#boss-hud').hidden = !['CB', 'FB'].includes(message.stageId);
-  $('#boss-name').textContent = message.stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(message.stageId);
+  $('#boss-name').textContent = message.stageId === 'KB'
+    ? '해골 왕'
+    : message.stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
   updateBossIntro(message.stageId);
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
   $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
@@ -973,6 +1141,7 @@ async function startStage(stageId) {
   const selectedStage = STAGE_LIST.find((entry) => entry.id === stageId);
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
   if (stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
+  if (stageId === 'K1') localStorage.setItem('devinarok.k1-entered', '1');
   stopWorld();
   partyClient?.close();
   partyClient = null;
@@ -984,8 +1153,10 @@ async function startStage(stageId) {
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
   $('#controls').hidden = false;
-  $('#boss-hud').hidden = !['CB', 'FB'].includes(stageId);
-  $('#boss-name').textContent = stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageId);
+  $('#boss-name').textContent = stageId === 'KB'
+    ? '해골 왕'
+    : stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
   updateBossIntro(stageId);
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
@@ -1003,7 +1174,7 @@ async function startStage(stageId) {
   audio.setMusic('combat-bgm');
   $('#stage-name').textContent = world.arena.name;
   updateDebugZone(world.arena.name);
-  if (['CB', 'FB'].includes(stageId)) {
+  if (['CB', 'FB', 'KB'].includes(stageId)) {
     $('#boss-intro').hidden = false;
     setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
   }
@@ -1053,7 +1224,7 @@ function updateHud(current) {
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
     }
   }
-  $('#boss-hud').hidden = !['CB', 'FB'].includes(current.stageId);
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(current.stageId);
   const boss = current.entities.find((entity) => entity.boss);
   if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
 }
@@ -1088,11 +1259,13 @@ function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) 
   const earnedItems = outcome === 'clear' && result.items.length
     ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
     : '';
-  const progression = outcome === 'clear' && firstForestUnlock
-    ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
+  const progression = outcome === 'clear' && currentStageId === 'KB'
+    ? '<p>모든 지역을 정복했어요</p>'
     : outcome === 'clear' && currentStageId === 'FB'
-      ? '<p>3지역은 준비 중이에요</p>'
-      : '';
+      ? '<p>3지역 · 해골 왕의 성채가 열렸어요</p>'
+      : outcome === 'clear' && firstForestUnlock
+        ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
+        : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
   resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {
@@ -1170,6 +1343,11 @@ $('#hub-ui').addEventListener('click', async (event) => {
   const button = event.target.closest('button');
   if (!button) return;
   audio.play('click');
+  if (button.dataset.panel === 'sanctuary') {
+    if (partyClient) setPartyToast('파티 중에는 들어갈 수 없어요');
+    else await enterSanctuary();
+    return;
+  }
   if (button.dataset.slotFilter) { renderInventory('', button.dataset.slotFilter); return; }
   if (button.hasAttribute('data-party-finder')) { openPartyFinder(); return; }
   if (button.hasAttribute('data-party-quick')) { await quickJoinFromFinder(); return; }
@@ -1225,6 +1403,8 @@ $('#hub-ui').addEventListener('click', async (event) => {
     partyClient?.close();
     partyClient = null;
     $('#hub-party-button').hidden = false;
+    $('#hub-ui [data-panel="sanctuary"]').disabled = false;
+    $('#sanctuary-party-disabled').hidden = true;
     renderPanel('board');
     return;
   }
@@ -1310,12 +1490,39 @@ gameScreen.addEventListener('click', (event) => {
   const station = event.target.closest('.npc-hotspot');
   if (!station || world?.mode !== 'hub') return;
   audio.play('click');
+  if (station.dataset.panel === 'sanctuary') {
+    if (partyClient) setPartyToast('파티 중에는 들어갈 수 없어요');
+    else void enterSanctuary();
+    return;
+  }
   renderPanel(station.dataset.panel);
+});
+$('#sanctuary-interact').addEventListener('click', interactSanctuary);
+$('#sanctuary-cancel').addEventListener('click', cancelSanctuary);
+$('#sanctuary-exit').addEventListener('click', async () => {
+  resetRitual(sanctuaryState ?? createRitualState());
+  sanctuaryState = null;
+  stopWorld();
+  await enterHub();
 });
 window.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'touch') document.documentElement.classList.add('touch-mode');
 }, { passive: true });
 window.addEventListener('keydown', (event) => {
+  if (sanctuaryState && world?.arena === SANCTUARY_ARENA) {
+    if (event.code === 'KeyE') {
+      event.preventDefault();
+      interactSanctuary();
+      return;
+    }
+    if (event.code === 'KeyR' || event.code === 'Escape') {
+      event.preventDefault();
+      if (!cancelSanctuary() && event.code === 'Escape') {
+        $('#sanctuary-exit').click();
+      }
+      return;
+    }
+  }
   handlePauseKey(event.code, { loop, partyClient, world, pauseMenu });
 });
 

@@ -56,11 +56,11 @@ export function applyOperations(character, itemMap, operations, characterId) {
     switch (operation.type) {
       case 'gainXp': {
         nextCharacter.xp += integer(operation.amount, 'XP');
-        while (nextCharacter.level < 15 && nextCharacter.xp >= Math.round(60 * Math.pow(nextCharacter.level, 1.6))) {
+        while (nextCharacter.level < 20 && nextCharacter.xp >= Math.round(60 * Math.pow(nextCharacter.level, 1.6))) {
           nextCharacter.xp -= Math.round(60 * Math.pow(nextCharacter.level, 1.6));
           nextCharacter.level += 1;
         }
-        if (nextCharacter.level >= 15) nextCharacter.xp = 0;
+        if (nextCharacter.level >= 20) nextCharacter.xp = 0;
         break;
       }
       case 'grantGold':
