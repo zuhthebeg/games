@@ -7,6 +7,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, meshopt, prune, resample, weld } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 import { HUB_ARENA, STAGES } from '../../js/content/stages.js';
+import { ARENA } from '../../js/sim/arena.js';
 
 const toolsDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const gameDir = resolve(toolsDir, '..');
@@ -121,10 +122,40 @@ const environment = [
   ['barrel_large', '7a88d9bcca79d21b2033a1681b71577fe06e8717'],
   ['crates_stacked', '7f273be5ebd143b58135ecc1d061d22a633cad92'],
   ['banner_red', 'aa438c0140ed09f613e3334264d0df58e83f0575'],
+  ['banner_patternA_red', 'e7185427cdfadf0c560b162bd5147acba99d8174'],
+  ['banner_patternB_blue', '6c3e364454cd882307bf2cf94e9d51c363c1f58e'],
+  ['banner_shield_red', '7e81382d8c57efce6fa89a0c8785eab15ab9576b'],
+  ['column', 'a4b5779f50f006cb49524742d489b49ae2249c66'],
+  ['chair', 'd714e3eace33b64d3a2190025a57dd9762e50a6f'],
+  ['chest', '534c76a794d4b531a91619871845e92e3ca6e432'],
+  ['chest_gold', '8dd05d691d4954009c94b9bb052e56db5c4f3432'],
+  ['floor_dirt_large', '9e0cd900a8fe185ab171279d075e374ce2549c2c'],
+  ['floor_dirt_large_rocky', '280dd6f91bef8de1f60b1d5cab0e887bd1c43635'],
+  ['floor_tile_small_broken_A', '11bcf371ced6a99a8011fce08b9d180af8946c62'],
+  ['floor_wood_large', '8a883f18915f071f9057a46a21844140019ed968'],
+  ['floor_wood_large_dark', '613aa0855869461836c3b6c12fcb45aee070e9a1'],
+  ['keg', '47a84fa90788c644a022c2394fe16c2b4e912706'],
+  ['keg_decorated', '6420a0e39f8d76005cdbf3471e6de799099937b3'],
+  ['rubble_half', '4a4c48135629764469ab6570a2f118cb92df532c'],
+  ['rubble_large', '4ddb08100ba5203d1ef7427c54d0ceb3868f170c'],
+  ['shelf_large', 'e1b7e9752aa4b2b7cc14106bbfb417a33396e432'],
+  ['shelf_small_candles', '8d4603c8fbeb547052f11458b82e0e7afb49700f'],
+  ['stairs_wide', '71189ad7b883e8a9a218280c79d843b887dd68b8'],
+  ['stool', 'cbac1e0ebbafad7dbc9761fbbeedc3cef801eb3e'],
+  ['table_long_decorated_A', 'ad1b253c1e159203c260fa8568109a1dd5ee49f2'],
+  ['table_medium_decorated_A', '7f03c5737c14557db5ceaf8fcb032011482490f1'],
+  ['table_small_decorated_A', 'b9cc0649c28efca90df08cfd0ab1dbc8310bffe8'],
+  ['torch_mounted', '5c3892703d75e029192aa63b9cbfb1c1f11efa01'],
+  ['wall_arched', 'd049ace889b606edb5d638b9996aeb580f095387'],
+  ['wall_archedwindow_open', '14621d09869ab624bbfdd63e251cd55a0fa58097'],
+  ['wall_broken', 'c67687c36ed383eed5708580cd7c80977f6ace3f'],
+  ['wall_corner_gated', 'd83efd31ce75306473647086960a6fd68bbdc410'],
+  ['wall_cracked', '13440aaa23012aa42554c683e92b5c31ed319352'],
+  ['wall_shelves', 'a9c0c666da9a5b1815fd47d8529bbf14907fb3e7'],
 ].map(([name, blob]) => ({
   kind: 'environment',
   repo: 'dungeon',
-  path: `addons/kaykit_dungeon_remastered/Assets/gltf/${name}${name === 'wall_doorway' ? '.glb' : '.gltf.glb'}`,
+  path: `addons/kaykit_dungeon_remastered/Assets/gltf/${name}${['wall_doorway', 'chest', 'chest_gold'].includes(name) ? '.glb' : '.gltf.glb'}`,
   blob,
   output: `assets/env/${name}.glb`,
 }));
@@ -341,14 +372,17 @@ const m0LoadedFiles = [
   'assets/chars/Skeleton_Warrior.glb',
   'assets/anims/humanoid.glb',
   'assets/anims/skeleton.glb',
-  ...environment.map((job) => job.output),
-];
+  ...ARENA.props.map((prop) => prop.model),
+].filter((file, index, files) => files.indexOf(file) === index);
 const m0LoadedBytes = m0LoadedFiles.reduce((sum, file) => sum + outputRecords.get(file).bytes, 0);
 if (m0LoadedBytes > budgetBytes) {
   throw new Error(`M0 assets exceed budget: ${m0LoadedBytes} > ${budgetBytes}`);
 }
 const m1CommonFiles = [
   'assets/chars/Knight.glb',
+  'assets/chars/Barbarian.glb',
+  'assets/chars/Rogue_Hooded.glb',
+  'assets/chars/Mage.glb',
   'assets/chars/Skeleton_Minion.glb',
   'assets/chars/Skeleton_Warrior.glb',
   'assets/chars/Skeleton_Mage.glb',

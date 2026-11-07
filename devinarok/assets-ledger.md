@@ -165,6 +165,36 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 | `addons/kaykit_dungeon_remastered/Assets/gltf/barrel_large.gltf.glb` | `9fae6a79056241baf253fe9272dc7a7ddb174e1caf153eb5013c58a596722148` | `assets/env/barrel_large.glb` | `5ad42ca8d6a3d243e50afb07d50353e5ae9eacced38bbc780b1da49d8d94bcd2` | 25908 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `addons/kaykit_dungeon_remastered/Assets/gltf/crates_stacked.gltf.glb` | `43182b077ead9b033804300ef453b7402bdc979f00cfce2d7f0c91dcf6bb5d3c` | `assets/env/crates_stacked.glb` | `7204c4457beec6cb955a4cfeb00f1a2172da6b22cb1184ab3521605a20bf2e68` | 43068 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `addons/kaykit_dungeon_remastered/Assets/gltf/banner_red.gltf.glb` | `c69c6eaffc834d6dcc7d19f8fd87145af4323265755588bf5bde85d71e0e3ff3` | `assets/env/banner_red.glb` | `e8df8a33fec6fbb5d00c5301d7cc3139290e39d4b4f754612f95856a31e83e28` | 20268 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/banner_patternA_red.gltf.glb` | `64243b0a8110bbc6e5a02f5c0acbe447dc7ea65319123319c402dd26486dad25` | `assets/env/banner_patternA_red.glb` | `8e044a268f37c13a7a2a4c0b1a6f878d06761d04bc16350a75165c46619d030a` | 20608 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/banner_patternB_blue.gltf.glb` | `a86be2d4bc01207ab694b614a9bb9e358ed498467a8e8bcd695c838be0f4f88a` | `assets/env/banner_patternB_blue.glb` | `ab41c8244103a1f9458bce2f1cb22b4728bb188b0875fc6e84d7162701ed59dc` | 20372 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/banner_shield_red.gltf.glb` | `d332133c940fa9dc6bea1668f2f8f2c07b5dce5db23b865ade5d035c8dc8e949` | `assets/env/banner_shield_red.glb` | `4532191afa8ec095163108c82bee7f419fef510bb2183f3e843c031aa686d76b` | 29760 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/column.gltf.glb` | `761adf0fcc1a86ab1c42740b7a8ad340d73982f94257e7892b2c7998f98c304e` | `assets/env/column.glb` | `433657d0a709b453f14d55267eb4e0d3469a5c4cfca30c8058d92f4830a6e996` | 19184 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/chair.gltf.glb` | `5f133281686d398304c0a458c4d407dd483eeea8aba67220b585ceb89366efa2` | `assets/env/chair.glb` | `095998a158a6f2f90af894da4945ae73fcc8ef0657edb6af47a591f9593bd204` | 23656 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/chest.glb` | `f72fd2201cd42ad399928a0b7bcc34d5b0e6d0624aeaf824fef81852109955f8` | `assets/env/chest.glb` | `4aba7818991a27e307908aae5a177198ec1ca00d1fe6ed99396c5b263c5568cc` | 32024 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/chest_gold.glb` | `04708d5f88ed59d361c8a6cec1efe8b7028dbc641dfae0a1467f272e14a94b6e` | `assets/env/chest_gold.glb` | `d2bfdc0f8299862658da7cd92f046eae68bd6e68f15a528239e677853a930a43` | 45116 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/floor_dirt_large.gltf.glb` | `48cc8018237fbdca3f7fccef95c93ef32e877d8fc59f481b9369fed71fec895b` | `assets/env/floor_dirt_large.glb` | `79f224b8b000634ddd9cd084af954dd330babc92015065fe9ab6f6b076038810` | 20544 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/floor_dirt_large_rocky.gltf.glb` | `f83d503c0ab16aaaa48b4e1680a2aaf7f975a63e376b6dc8e48032c702521d8f` | `assets/env/floor_dirt_large_rocky.glb` | `ae1a9029dc0cc4627704d805a4da151f9b77f9d8b5a53f5663e3b3428d531ddf` | 22268 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/floor_tile_small_broken_A.gltf.glb` | `d1acc3407f941623b3b01ec9a1751c36a5ca82bb14721fc8f28e5559317edad4` | `assets/env/floor_tile_small_broken_A.glb` | `c344807288ebf0c77e521e66080ea4cea44ca33a9dceecdeaee47cc88b3b6c62` | 19624 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/floor_wood_large.gltf.glb` | `d22eb1c1fb6ab434e8c9599ecb2cd00c2e34a713783603ba7a3e2cbb1611709d` | `assets/env/floor_wood_large.glb` | `432a3c20f329a93edcf8e1e2e40d1e99a35c8c37792da700833ff29719199b9a` | 23232 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/floor_wood_large_dark.gltf.glb` | `be6a700b4d089d79da7d45ce80451cadced9a61763b6b0e49c4023488a75e3f5` | `assets/env/floor_wood_large_dark.glb` | `029a91a00733b90145ceaf9a5f493b353a5af8e703b6269f2a7c4877ad3ad0a7` | 23264 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/keg.gltf.glb` | `cc620e27439ab8dbbf93b1c4bd94d1d634798757c0314b2c9f12bb445afd0f51` | `assets/env/keg.glb` | `2140515085c022d68e90a2b3cceeff2e36cd7a42a7e94f6363447a6b309d41a9` | 30200 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/keg_decorated.gltf.glb` | `02a31f44f66de39375510cd1ef35c5d19cee4cf910d78f38bc5f89093a6a2670` | `assets/env/keg_decorated.glb` | `3dd91eef859a5bc388413f5d482fa75df7e50b7b88363cd04312efedd69d8223` | 52264 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/rubble_half.gltf.glb` | `7514ccbda643c13d5a782579e4f01ee6402eec5519590d3f048d396cdaedec24` | `assets/env/rubble_half.glb` | `1c7d2032732aa221d874f008ec759ddab1d0f93f9983d9f13eba844dedaaec00` | 24652 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/rubble_large.gltf.glb` | `0292da1b5788a5a52b616d5d27d3270c676a5fbf9e921b6dd3dc30364d355b54` | `assets/env/rubble_large.glb` | `011c53711a96bf118d4edaf2f69e8be76cc24ff5c8a747d363f36e4efe5eae2f` | 30572 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/shelf_large.gltf.glb` | `886feece503686307dd041c986b1ea6f1fd63792c7e4217eb16f95904e6a9767` | `assets/env/shelf_large.glb` | `1081ca87ba2b5df1d3384957b8f4399202b8b47b80d912184c1020a1a07812cb` | 19636 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/shelf_small_candles.gltf.glb` | `d6f6a809c1e4635b143fd3c6e790331aa049d625abd390429c1e5887f77cbb96` | `assets/env/shelf_small_candles.glb` | `34d918e125ce98f93a50725f5e8021f7278095ed5c8d66644812ad883fe3f289` | 22044 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/stairs_wide.gltf.glb` | `f3301f11a6bb6d9e64fbe625fbc2f0b61ba4f7e1de1ceba348d53c93325d4754` | `assets/env/stairs_wide.glb` | `339692e06387b959ab5c95f342e256446f78bf6c6345d79c70ac942a8a8d4fb6` | 26044 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/stool.gltf.glb` | `f9170499ea599e6283d35be600150d2171d9a7af1ae0e8a1ccbe98ef29b71d8e` | `assets/env/stool.glb` | `d44a62c14f917b293c589ff8099a71db46318867ac7ad4b5ae1081e6a67e2408` | 21588 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/table_long_decorated_A.gltf.glb` | `47564d874e79f04212c05487d88ac8cbe9bb50b1865a8eeb1178bcb711aa444d` | `assets/env/table_long_decorated_A.glb` | `f6193b7fc36767e015de70978218b2e044c0edd6edc0fc11c7b960485a1a695d` | 44476 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/table_medium_decorated_A.gltf.glb` | `dc5beae322011acbce5c3dccb3c5cbaffae9757ad67d6ab0cf574c11b7ce014c` | `assets/env/table_medium_decorated_A.glb` | `877c0cd6ef3d9cf46dc8b903cf3389284406bab3b07633bd066156a1b94df5bf` | 35312 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/table_small_decorated_A.gltf.glb` | `8b079b22cc25ae79241ab29f94d3118d0214eadfa2c5711da88852ffdd554223` | `assets/env/table_small_decorated_A.glb` | `494c40ed59648a462fdaf3a3df8f64d22ebbfaf47c758420ea32423ba0312952` | 32188 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/torch_mounted.gltf.glb` | `a617c159e02932db48ca81ec46f1f100acc8904fb6ece43e919d2f93c13950e9` | `assets/env/torch_mounted.glb` | `27e260e916a2d5b2bed60ce24b3d1cb5d86c55697e0aee4e32c19b62e6159a03` | 22828 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_arched.gltf.glb` | `916a7d81b8d6ebddb069440a0f9ecb14c9c2a1e5cd7769acf2218d630bd56cb8` | `assets/env/wall_arched.glb` | `8b2be93accd96bea7a067926d27ef86faf1c11c0fc9e31c716c746ae1eeff32a` | 34104 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_archedwindow_open.gltf.glb` | `8c75cb77edc51c94b91c5625828391fb56c70bf31e2235cf5abf718eae0d842a` | `assets/env/wall_archedwindow_open.glb` | `ae9261ae2367c46fb5ebe9e2ce6073acc294aba423b57bcf5c204960dee3b99b` | 30160 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_broken.gltf.glb` | `ee7598ef2b88aaeb7b61e46d5f1da1a059de3860b080b38b7a507ca2f461302c` | `assets/env/wall_broken.glb` | `2e8f2484909ea23fa66da2453632b3d1b3cc8bbf9402d506d2efcd1dd01333ce` | 34132 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_corner_gated.gltf.glb` | `289cd2fb7a23c4fecdfe7832d505f33b168dc6114c106a2945ea7b5d2e1318bc` | `assets/env/wall_corner_gated.glb` | `1a0d2af628a3be8e64121587e6ad41cbf6cf4cc065eaffe486775dcc81ea048b` | 27332 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_cracked.gltf.glb` | `344fb9a709a51b7f04131fded75a5ad38e829d74fcf1784d848f3df0703f804c` | `assets/env/wall_cracked.glb` | `32580469ef9c13c7d52da4ed322c6607002258fd66be9576e386b0e1a2fe2226` | 49796 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `addons/kaykit_dungeon_remastered/Assets/gltf/wall_shelves.gltf.glb` | `8c794dfbc320af9f18c9d04d555fb1e8dce3c4cb4c2b4de01ddd2b95d1f85e9c` | `assets/env/wall_shelves.glb` | `a9736f2edcee2ff6fb6df1198e2edc21e9b6849ff3894a7c4106d56f5e385a16` | 48252 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 ## Three.js
 - License: MIT (license text at [`vendor/three-0.187.0/LICENSE`](./vendor/three-0.187.0/LICENSE)).
 - Version: `0.187.0`.
@@ -184,7 +214,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 
 ## M0 arena load budget
 
-The M0 GLB load set totals **1,167,856 bytes** (1.11 MiB) against a 5 MiB budget.
+The M0 GLB load set totals **1,104,100 bytes** (1.05 MiB) against a 5 MiB budget.
 
 - `assets/chars/Knight.glb`: 155,500 bytes
 - `assets/chars/Skeleton_Minion.glb`: 128,416 bytes
@@ -194,17 +224,19 @@ The M0 GLB load set totals **1,167,856 bytes** (1.11 MiB) against a 5 MiB budget
 - `assets/env/floor_tile_large.glb`: 21,080 bytes
 - `assets/env/floor_tile_large_rocks.glb`: 24,388 bytes
 - `assets/env/floor_tile_small.glb`: 19,196 bytes
-- `assets/env/wall.glb`: 29,180 bytes
-- `assets/env/wall_corner.glb`: 27,796 bytes
-- `assets/env/wall_half.glb`: 24,252 bytes
-- `assets/env/wall_doorway.glb`: 35,960 bytes
 - `assets/env/pillar.glb`: 20,652 bytes
+- `assets/env/crates_stacked.glb`: 43,068 bytes
+- `assets/env/barrel_large.glb`: 25,908 bytes
 - `assets/env/torch_lit.glb`: 22,084 bytes
 - `assets/env/candle_lit.glb`: 19,688 bytes
-- `assets/env/barrel_large.glb`: 25,908 bytes
-- `assets/env/crates_stacked.glb`: 43,068 bytes
 - `assets/env/banner_red.glb`: 20,268 bytes
+- `assets/env/wall.glb`: 29,180 bytes
+- `assets/env/wall_half.glb`: 24,252 bytes
 
+
+## M1 stage asset budget
+
+Loaded runtime assets: inn-hub 3,633,490 bytes; C1 3,681,986 bytes; C2 3,630,918 bytes; C3 3,726,446 bytes; CB 3,398,942 bytes. The per-stage limit is 6,291,456 bytes.
 ## Vendored M1 audio
 
 Download date: 2026-11-07. Kenney sound files are extracted without modification from locally vendored ZIP archives. The archive SHA-256 is the pinned source artifact hash; each output hash is recorded separately. The OpenGameArt source pages explicitly identify both music tracks as CC0.
@@ -223,7 +255,3 @@ Download date: 2026-11-07. Kenney sound files are extracted without modification
 | Same Kenney Interface pack and CC0 evidence | Same archive SHA-256 | `Audio/confirmation_001.ogg` → `assets/audio/confirm.ogg` | `063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a` | 8,968 |
 | OpenGameArt, [Dungeon Ambience](https://opengameart.org/content/dungeon-ambience), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/dungeon002.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | `dungeon002.ogg` → `assets/audio/hub-bgm.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | 1,202,848 |
 | OpenGameArt, [Whispers in the Fog](https://opengameart.org/content/whispers-in-the-fog), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/whispers_in_the_fog.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | `whispers_in_the_fog.ogg` → `assets/audio/combat-bgm.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | 204,349 |
-
-## M1 stage asset budget
-
-The renderer loads 1,082,932 bytes of shared character models and animation libraries plus each arena's unique KayKit props. The Web Audio manager loads all 12 locally vendored effects/tracks (1,532,950 bytes). Including those, actual per-stage totals are **2,866,450 bytes (inn-hub), 2,882,722 (C1), 2,882,722 (C2), 2,876,502 (C3), and 2,818,458 (CB)**, each under the 6 MiB budget. The separately vendored Three.js runtime is not part of the stage-asset manifest.
