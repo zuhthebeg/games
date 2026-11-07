@@ -198,6 +198,38 @@ test('quick join joins a match, creates when empty, and retries a failed room on
   assert.equal(attempts, 2);
 });
 
+test('quick join reports lookup failures instead of creating a room', async () => {
+  const failures = [
+    ['HTTP error', async () => ({ ok: false, status: 503 })],
+    ['network error', async () => { throw new Error('offline'); }],
+    ['invalid JSON', async () => ({ ok: true, json: async () => { throw new SyntaxError('bad JSON'); } })],
+  ];
+  for (const [label, fetchImpl] of failures) {
+    let created = false;
+    await assert.rejects(quickJoinParty({
+      httpBase: 'http://local',
+      fetchImpl,
+      joinRoom: async () => assert.fail(`${label} must not join a room`),
+      createRoom: async () => { created = true; return 'NEW234'; },
+    }), { code: 'match-lookup-failed' });
+    assert.equal(created, false, `${label} must not create a room`);
+  }
+});
+
+test('quick join does not create after an unrelated room-join failure', async () => {
+  let created = false;
+  await assert.rejects(quickJoinParty({
+    httpBase: 'http://local',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({ roomId: 'devinarok:ABC234' }),
+    }),
+    joinRoom: async () => { throw new Error('connect-failed'); },
+    createRoom: async () => { created = true; return 'NEW234'; },
+  }), { message: 'connect-failed' });
+  assert.equal(created, false);
+});
+
 test('quick join cancellation does not create a room', async () => {
   const controller = new AbortController();
   let created = false;

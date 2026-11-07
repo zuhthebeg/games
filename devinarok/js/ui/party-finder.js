@@ -33,9 +33,9 @@ export async function quickJoinParty({
     error.name = 'AbortError';
     throw error;
   };
-  let match = null;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     assertNotAborted();
+    let match;
     try {
       const response = await fetchImpl(`${httpBase.replace(/\/+$/, '')}/coord/match?g=devinarok`, {
         cache: 'no-store',
@@ -43,9 +43,11 @@ export async function quickJoinParty({
       });
       if (!response.ok) throw new Error(`match-http-${response.status}`);
       match = await response.json();
-    } catch {
+    } catch (cause) {
       assertNotAborted();
-      match = null;
+      const error = new Error('match-lookup-failed', { cause });
+      error.code = 'match-lookup-failed';
+      throw error;
     }
     if (!match?.roomId) break;
     const code = match.meta?.code ?? match.roomId.split(':').at(-1);
@@ -53,9 +55,9 @@ export async function quickJoinParty({
       assertNotAborted();
       await joinRoom(code);
       return { code, created: false };
-    } catch {
+    } catch (error) {
       assertNotAborted();
-      match = null;
+      if (!['room-full', 'room-started'].includes(error?.code ?? error?.message)) throw error;
     }
   }
   assertNotAborted();
