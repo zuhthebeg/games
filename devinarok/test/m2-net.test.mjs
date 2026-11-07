@@ -185,6 +185,26 @@ test('party resets run prediction state to each first full snapshot', () => {
   client.session.close();
 });
 
+test('party clears queued inputs and blocks submission after reconnect expiry', () => {
+  const client = Object.create(PartyClient.prototype);
+  client.status = 'connected';
+  client.inputTerminated = false;
+  client.versionMismatch = false;
+  client.runSnapshotReady = true;
+  client.result = null;
+  client.session = {
+    inputs: new Map([[1, { seq: 1 }]]),
+    clock: { samples: 1 },
+  };
+  client.onStatus = () => {};
+
+  client.handleStatus('disconnected');
+  assert.equal(client.inputReady, false);
+  assert.equal(client.session.inputs.size, 0);
+  assert.equal(client.sendInput({ seq: 2, buttons: BUTTONS.ATTACK }), null);
+  assert.equal(client.session.inputs.size, 0);
+});
+
 test('shared bot policy targets, dodges telegraphs, and enters cleared-room doors', () => {
   const player = {
     x: 0,

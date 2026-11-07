@@ -59,6 +59,7 @@ export class PartyClient {
     this.lobby = null;
     this.status = 'disconnected';
     this.versionMismatch = false;
+    this.inputTerminated = false;
     this.stageWorld = null;
     this.predictor = null;
     this.interpolation = null;
@@ -80,6 +81,8 @@ export class PartyClient {
     const roomCode = String(code ?? '').trim().toUpperCase();
     if (!ROOM_CODE_PATTERN.test(roomCode)) throw new RangeError('방 코드는 영문 대문자와 숫자 6자리여야 합니다.');
     this.close();
+    this.inputTerminated = false;
+    this.versionMismatch = false;
     this.roomCode = roomCode;
     this.session = new NetSession({
       url: partyServerUrl(roomCode),
@@ -91,14 +94,11 @@ export class PartyClient {
         clearedStages: this.character.clearedStages,
       },
       onMessage: (message) => this.handleMessage(message),
-      onStatus: (status) => {
-        this.status = status;
-        this.onStatus(status, this);
-      },
+      onStatus: (status) => this.handleStatus(status),
       onError: (error) => this.onError(error),
       onVersionMismatch: () => {
         this.versionMismatch = true;
-        this.onStatus('version', this);
+        this.handleStatus('version');
       },
     });
     this.session.connect();
@@ -137,13 +137,26 @@ export class PartyClient {
     }
     if (message.t === 'error') {
       if (message.code === 'room-gone') {
+        this.stopInputs();
         this.close();
         this.onRoomGone(message, this);
       } else if (message.code === 'version') {
         this.versionMismatch = true;
-        this.onStatus('version', this);
+        this.handleStatus('version');
       } else this.onError(new Error(message.code));
     }
+  }
+
+  handleStatus(status) {
+    this.status = status;
+    if (status === 'connected' && !this.versionMismatch) this.inputTerminated = false;
+    if (status === 'disconnected' || status === 'closed' || status === 'version') this.stopInputs();
+    this.onStatus(status, this);
+  }
+
+  stopInputs() {
+    this.inputTerminated = true;
+    this.session?.inputs.clear();
   }
 
   startRun(message) {
@@ -249,6 +262,9 @@ export class PartyClient {
     return Boolean(
       this.runSnapshotReady &&
       this.session?.clock.samples > 0 &&
+      this.status === 'connected' &&
+      !this.inputTerminated &&
+      !this.versionMismatch &&
       !this.result,
     );
   }
@@ -313,6 +329,7 @@ export class PartyClient {
   }
 
   close() {
+    this.stopInputs();
     this.session?.close();
     this.session = null;
   }
