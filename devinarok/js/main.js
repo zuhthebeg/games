@@ -1203,7 +1203,7 @@ $('#hub-ui').addEventListener('click', async (event) => {
     refreshHubPlayer();
     renderPanel(hubPanel.dataset.kind);
     const nextFamily = equipmentLook(equippedItems()).family;
-    if (equippedItem?.slot === 'weapon' && previousFamily !== nextFamily) showFamilyChangeToast(nextFamily);
+    if (ITEMS[equippedItem?.itemId]?.slot === 'weapon' && previousFamily !== nextFamily) showFamilyChangeToast(nextFamily);
   }
   if (button.dataset.unequip) {
     await applyOps([{ type: 'unequip', slot: button.dataset.unequip }]);
