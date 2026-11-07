@@ -668,6 +668,18 @@ test('interpolation snaps to newer samples across room changes and large jumps',
   assert.equal(entities.get(3).x, 1);
 });
 
+test('interpolation frame sampling reuses its output and entity objects', () => {
+  const buffer = new InterpolationBuffer();
+  buffer.addSnapshot({ tick: 0, entities: [{ id: 1, kind: 'player', x: 0, z: 0 }] });
+  buffer.addSnapshot({ tick: 2, entities: [{ id: 1, kind: 'player', x: 2, z: 0 }] });
+  const first = buffer.sampleInto(1);
+  const entity = first.entities[0];
+  const second = buffer.sampleInto(1.5);
+  assert.equal(second, first);
+  assert.equal(second.entities[0], entity);
+  assert.equal(second.entities[0].x, 1.5);
+});
+
 test('cast timeline deduplicates predicted and server casts and only emits authoritative effects', () => {
   const timeline = new CastTimeline({ playerId: 'hero' });
   const predicted = timeline.predictInput({ seq: 1, buttons: BUTTONS.ATTACK }, 0);

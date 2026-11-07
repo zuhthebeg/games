@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AudioManager } from '../js/render/audio.js';
+import { AUDIO_NAMES, AudioManager, SHARED_SFX_NAMES } from '../js/render/audio.js';
 
 test('audio files fail independently and missing buffers do not affect music playback', async () => {
   const audioContextDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
@@ -32,7 +32,7 @@ test('audio files fail independently and missing buffers do not affect music pla
   try {
     const audio = new AudioManager();
     await assert.doesNotReject(audio.loadAll());
-    assert.equal(audio.buffers.size, 12);
+    assert.equal(audio.buffers.size, AUDIO_NAMES.length - 1);
     assert.ok(!audio.buffers.has('impact'));
     assert.ok(audio.buffers.has('fire-crackle'));
     assert.equal(warnings.length, 1);
@@ -48,6 +48,33 @@ test('audio files fail independently and missing buffers do not affect music pla
     if (audioContextDescriptor) Object.defineProperty(globalThis, 'AudioContext', audioContextDescriptor);
     else delete globalThis.AudioContext;
     if (fetchDescriptor) Object.defineProperty(globalThis, 'fetch', fetchDescriptor);
+  }
+});
+
+test('scene audio loads shared effects and only the requested regional loop', async () => {
+  const audio = new AudioManager();
+  const requests = [];
+  audio.context = {
+    decodeAudioData: async () => ({}),
+  };
+  const fetchDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch');
+  Object.defineProperty(globalThis, 'fetch', {
+    configurable: true,
+    value: async (url) => {
+      requests.push(url.href);
+      return { ok: true, arrayBuffer: async () => new ArrayBuffer(0) };
+    },
+  });
+  try {
+    await audio.loadScene('forest-bgm');
+    assert.ok(SHARED_SFX_NAMES.every((name) => audio.buffers.has(name)));
+    assert.ok(audio.buffers.has('forest-bgm'));
+    assert.ok(!audio.buffers.has('castle-bgm'));
+    assert.ok(!audio.buffers.has('sanctuary-bgm'));
+    assert.ok(!requests.some((url) => url.includes('castle-bgm.ogg')));
+  } finally {
+    if (fetchDescriptor) Object.defineProperty(globalThis, 'fetch', fetchDescriptor);
+    else delete globalThis.fetch;
   }
 });
 
@@ -86,4 +113,30 @@ test('muted music changes resume the desired track once on unmute', () => {
   audio.setMuted(false);
   audio.setMusic('combat-bgm');
   assert.equal(starts, 2);
+});
+
+test('identical non-looping effects are throttled to four active sources', () => {
+  const audio = new AudioManager();
+  const sources = [];
+  audio.context = {
+    createBufferSource() {
+      const source = {
+        playbackRate: { value: 1 },
+        connect(target) { return target; },
+        start() { sources.push(this); },
+        stop() {},
+      };
+      return source;
+    },
+    createGain() {
+      return { gain: { value: 1 }, connect(target) { return target; } };
+    },
+  };
+  audio.sfxBus = {};
+  audio.buffers.set('impact', {});
+  for (let index = 0; index < 5; index += 1) audio.play('impact');
+  assert.equal(sources.length, 4);
+  sources[0].onended();
+  audio.play('impact');
+  assert.equal(sources.length, 5);
 });

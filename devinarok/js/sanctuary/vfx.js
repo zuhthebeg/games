@@ -47,9 +47,10 @@ function makeBlock() {
 }
 
 export class SanctuaryVfx {
-  constructor(scene, { onTok = () => {} } = {}) {
+  constructor(scene, { onTok = () => {}, reducedMotion = false } = {}) {
     this.scene = scene;
     this.onTok = onTok;
+    this.reducedMotion = Boolean(reducedMotion);
     this.root = new THREE.Group();
     scene.add(this.root);
     this.blocks = Array.from({ length: RITUAL_CAPS.blocks }, () => {
@@ -154,12 +155,12 @@ export class SanctuaryVfx {
       let x = lerp(startX, targetX, ease(travel));
       let y = lerp(startY, 0.08, ease(travel));
       if (flight) {
-        y += Math.sin(Math.PI * travel) * 0.58;
+        y += Math.sin(Math.PI * travel) * (this.reducedMotion ? 0.22 : 0.58);
         const bounceTime = Math.max(0, active.elapsed - 0.58);
         let bounceLift = 0;
         for (let bounce = 0; bounce < plan.bounceCount; bounce += 1) {
           const local = Math.max(0, Math.min(1, (bounceTime - bounce * 0.28) / 0.28));
-          bounceLift = Math.max(bounceLift, Math.sin(Math.PI * local) * (0.2 / (bounce + 1)));
+          bounceLift = Math.max(bounceLift, Math.sin(Math.PI * local) * ((this.reducedMotion ? 0.06 : 0.2) / (bounce + 1)));
         }
         y += bounceLift;
       }
@@ -169,7 +170,7 @@ export class SanctuaryVfx {
       block.flatMark.visible = face === 'flat';
       block.convexMark.visible = face === 'convex';
       block.node.position.set(x, y, targetZ);
-      block.node.rotation.z = Math.sin(progress * Math.PI) * 0.25;
+      block.node.rotation.z = Math.sin(progress * Math.PI) * (this.reducedMotion ? 0.08 : 0.25);
       block.node.scale.set(1.7, 1.7 * (0.25 + Math.abs(Math.cos(phase)) * 0.75), 1);
       block.node.visible = true;
     });

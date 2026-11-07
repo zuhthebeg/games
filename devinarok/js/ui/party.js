@@ -72,6 +72,9 @@ export class PartyClient {
     this.reviveProgress = new Map();
     this.eventIds = new Set();
     this.seenEventIds = new Set();
+    this.viewWorldBuffer = null;
+    this.viewLocalPlayer = {};
+    this.viewEntityPool = new Map();
   }
 
   createRoom() {
@@ -85,6 +88,9 @@ export class PartyClient {
     this.inputTerminated = false;
     this.versionMismatch = false;
     this.roomCode = roomCode;
+    this.viewWorldBuffer = null;
+    this.viewLocalPlayer = {};
+    this.viewEntityPool = new Map();
     this.session = new NetSession({
       url: partyServerUrl(roomCode),
       name: this.character.name,
@@ -308,22 +314,27 @@ export class PartyClient {
     if (!this.stageWorld || !this.predictor || !this.session) return this.stageWorld;
     const snapshot = this.lastSnapshot;
     const estimate = this.session.clock.getEstimate(now);
-    const sample = this.interpolation.sample(estimate);
-    const local = { ...this.predictor.getPlayer() };
+    const sample = this.interpolation.sampleInto?.(estimate) ?? this.interpolation.sample(estimate);
+    this.viewLocalPlayer ??= {};
+    this.viewEntityPool ??= new Map();
+    const local = Object.assign(this.viewLocalPlayer, this.predictor.getPlayer());
     const visualPosition = this.predictor.getVisualPosition(now);
     local.x = visualPosition.x;
     local.z = visualPosition.z;
     local.reviveProgress = this.reviveProgress.get(local.id)?.progress ?? local.reviveProgress ?? 0;
-    const entities = sample.entities
-      .filter((entity) => entity.playerId !== this.playerId)
-      .filter((entity) => entity.kind !== 'loot' || entity.ownerId === this.playerId)
-      .map((entity) => ({
-        ...entity,
-        reviveProgress: this.reviveProgress.get(entity.id)?.progress ?? entity.reviveProgress ?? 0,
-      }));
+    const output = this.viewWorldBuffer ??= { ...this.stageWorld, entities: [] };
+    const entities = output.entities;
+    entities.length = 0;
     entities.unshift(local);
-    return {
-      ...this.stageWorld,
+    for (const entity of sample.entities) {
+      if (entity.playerId === this.playerId || (entity.kind === 'loot' && entity.ownerId !== this.playerId)) continue;
+      let view = this.viewEntityPool.get(entity.id);
+      if (!view) this.viewEntityPool.set(entity.id, view = {});
+      Object.assign(view, entity);
+      view.reviveProgress = this.reviveProgress.get(entity.id)?.progress ?? entity.reviveProgress ?? 0;
+      entities.push(view);
+    }
+    return Object.assign(output, this.stageWorld, {
       tick: snapshot?.tick ?? this.stageWorld.tick,
       entities,
       events: snapshot?.ev ?? [],
@@ -333,7 +344,7 @@ export class PartyClient {
       openDoors: snapshot?.openDoors ?? this.stageWorld.openDoors,
       activeEnemyIds: snapshot?.activeEnemyIds ?? null,
       localPlayerId: this.playerId,
-    };
+    });
   }
 
   setReady(ready) {
