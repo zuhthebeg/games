@@ -190,7 +190,7 @@ function compareDeltas(item) {
   ];
   const deltas = stats.flatMap(([key, label, format]) => {
     const delta = next[key] - current[key];
-    if (delta === 0) return [];
+    if (Math.abs(delta) < 1e-9) return [];
     const sign = delta > 0 ? '+' : '';
     return [`<span class="${delta > 0 ? 'delta-up' : 'delta-down'}">${label} ${sign}${format(delta)}</span>`];
   });
