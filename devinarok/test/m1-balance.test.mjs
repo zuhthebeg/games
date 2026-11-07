@@ -77,16 +77,16 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
   return { outcome: world.outcome, tick: world.tick, seconds: world.tick / 30, hp: world.entities.find((entity) => entity.kind === 'player')?.hp ?? 0 };
 }
 
-test('scripted input-record bot clears C1 at level 1 within three minutes in at least eight of ten seeds', () => {
+test('scripted input-record bot keeps C1 level-1 clears within one of the M1 baseline', () => {
   const runs = Array.from({ length: 10 }, (_, index) => runBot({ seed: 101 + index, stageId: 'C1', level: 1 }));
   const clears = runs.filter((run) => run.outcome === 'clear');
   const averageSeconds = clears.length ? clears.reduce((sum, run) => sum + run.seconds, 0) / clears.length : 0;
   console.log(`M1 bot C1 L1: ${clears.length}/10 clears; mean clear time ${averageSeconds.toFixed(1)}s`);
-  assert.ok(clears.length >= 8);
+  assert.ok(clears.length >= 9);
   assert.ok(clears.every((run) => run.seconds <= 180));
 });
 
-test('scripted input-record bot has mixed outcomes against the level-7 boss with rare gear', () => {
+test('scripted input-record bot keeps level-7 boss wins within one of the M1 baseline', () => {
   const equipment = [
     { itemId: 'grave-greatsword', enhance: 0, affixes: [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }] },
     { itemId: 'ossuary-helm', enhance: 0, affixes: [{ id: 'defense', value: 3 }, { id: 'maxHp', value: 20 }] },
@@ -98,6 +98,6 @@ test('scripted input-record bot has mixed outcomes against the level-7 boss with
   const wins = runs.filter((run) => run.outcome === 'clear');
   const deaths = runs.filter((run) => run.outcome === 'death');
   console.log(`M1 bot CB L7 rare gear: ${wins.length}/10 wins; ${deaths.length}/10 deaths`);
-  assert.ok(wins.length >= 5);
-  assert.ok(deaths.length > 0);
+  assert.ok(wins.length >= 7 && wins.length <= 9);
+  assert.ok(deaths.length >= 1 && deaths.length <= 3);
 });

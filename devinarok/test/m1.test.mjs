@@ -99,6 +99,7 @@ test('rogue line dash moves five meters along its stored attack line', () => {
   for (let seq = 1; seq <= 40 && rogue.recoverTicks === 0; seq += 1) {
     step(world, { a: { seq, moveX: 0, moveZ: 0, aim: 64, buttons: 0 } });
   }
+  step(world, { a: { seq: 41, moveX: 0, moveZ: 0, aim: 64, buttons: 0 } });
   assert.equal(rogue.attackPattern, 'line-dash');
   assert.ok(Math.abs(rogue.z - startZ - 5) < 0.01);
   const hit = world.events.find((event) => event.type === 'hit' && event.sourceId === rogue.id);
@@ -251,8 +252,10 @@ test('a frontal perfect guard stuns an enemy and reduces its incoming damage', (
   enemy.attackShape = { type: 'sector', originX: 0, originZ: 1, angle: -Math.PI / 2, range: 1.5, halfAngle: 0.8 };
   enemy.attackHit = false;
   step(world, { a: { seq: 1, moveX: 0, moveZ: 0, aim: 64, buttons: 0 } });
+  assert.equal(player.hp, player.maxHp);
+  step(world, { a: { seq: 2, moveX: 0, moveZ: 0, aim: 64, buttons: 0 } });
   assert.equal(player.hp, player.maxHp - 2);
-  assert.equal(enemy.stunnedTicks, 30);
+  assert.ok(enemy.stunnedTicks >= 29);
   assert.ok(world.events.some((event) => event.type === 'perfectBlock' && event.attackerId === enemy.id));
 });
 

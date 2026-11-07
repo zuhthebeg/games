@@ -123,6 +123,7 @@ function normalizeInput(player, rawInput) {
       moveZ: previous.moveZ,
       aim: previous.aim,
       buttons: 0,
+      ...(previous.viewTick === undefined ? {} : { viewTick: previous.viewTick }),
     };
   }
   return {
@@ -131,6 +132,7 @@ function normalizeInput(player, rawInput) {
     moveZ: clampInput(rawInput.moveZ, -127, 127, previous.moveZ),
     aim: clampInput(rawInput.aim, 0, 255, previous.aim),
     buttons: clampInput(rawInput.buttons, 0, 127, 0),
+    ...(Number.isSafeInteger(rawInput.viewTick) ? { viewTick: rawInput.viewTick } : {}),
   };
 }
 
@@ -228,12 +230,8 @@ function createAttackShape(entity, angle, range, halfAngle) {
 
 function copyShape(shape) {
   return {
-    type: shape.type,
-    originX: shape.originX,
-    originZ: shape.originZ,
-    angle: shape.angle,
-    range: shape.range,
-    halfAngle: shape.halfAngle,
+    ...shape,
+    ...(shape.circles ? { circles: shape.circles.map((circle) => ({ ...circle })) } : {}),
   };
 }
 
@@ -242,7 +240,16 @@ function activeEnemies(world) {
 }
 
 function activePlayers(world) {
-  return world.entities.filter((entity) => entity.kind === 'player' && !entity.dead);
+  return world.entities.filter((entity) => (
+    entity.kind === 'player' && !entity.dead && !entity.downed && entity.connected !== false
+  ));
+}
+
+function stagePlayers(world) {
+  return world.players
+    .map((entityId) => world.entities.find((entity) => entity.id === entityId))
+    .filter((entity) => entity?.kind === 'player')
+    .sort((a, b) => a.id - b.id);
 }
 
 function chooseSpawnPoint(world) {
@@ -330,6 +337,11 @@ export function createWorld({ seed = 1, arena = ARENA } = {}) {
     arena: copyArena(arena),
     entities: [],
     players: [],
+    rewards: {},
+    results: {},
+    pendingHits: [],
+    enemyHistory: [],
+    doorCountdown: null,
     events: [],
     nextEntityId: 1,
     nextEventId: 1,
@@ -337,7 +349,36 @@ export function createWorld({ seed = 1, arena = ARENA } = {}) {
   };
 }
 
-export function addPlayer(world, { playerId, characterKind = 'knight' } = {}) {
+function defineSoloAliases(world, playerId) {
+  Object.defineProperties(world, {
+    result: {
+      configurable: true,
+      get() {
+        return world.results[playerId] ?? null;
+      },
+      set(value) {
+        if (value == null) delete world.results[playerId];
+        else world.results[playerId] = value;
+      },
+    },
+    reward: {
+      configurable: true,
+      get() {
+        return world.rewards[playerId];
+      },
+      set(value) {
+        world.rewards[playerId] = value;
+      },
+    },
+  });
+}
+
+export function addPlayer(world, {
+  playerId,
+  name = playerId,
+  characterKind = 'knight',
+  character = {},
+} = {}) {
   const id = String(playerId ?? '').trim();
   if (!id) throw new TypeError('playerId is required');
   if (world.players.some((entityId) => world.entities.find((entity) => entity.id === entityId)?.playerId === id)) {
@@ -345,13 +386,20 @@ export function addPlayer(world, { playerId, characterKind = 'knight' } = {}) {
   }
 
   const spawn = world.arena.playerSpawn;
-  const level = world.mode === 'stage' ? world.characterLevel : 1;
-  const stats = world.mode === 'stage' ? calculatePlayerStats(level, world.equipment ?? []) : null;
+  const level = world.mode === 'stage' ? Math.max(1, Math.min(15, character.level ?? 1)) : 1;
+  const equipment = (character.equipment ?? []).map((item) => ({
+    ...item,
+    affixes: [...(item.affixes ?? [])],
+  }));
+  const stats = world.mode === 'stage' ? calculatePlayerStats(level, equipment) : null;
+  const reward = { xp: 0, gold: 0, items: [] };
   const player = {
     id: nextEntityId(world),
     kind: 'player',
     playerId: id,
+    name: String(name ?? id).slice(0, 32),
     characterKind,
+    equipment,
     x: spawn.x,
     z: spawn.z,
     facing: -Math.PI / 2,
@@ -360,6 +408,9 @@ export function addPlayer(world, { playerId, characterKind = 'knight' } = {}) {
     maxHp: stats?.maxHp ?? PLAYER_MAX_HP,
     level,
     stats,
+    connected: true,
+    downed: false,
+    reviveProgress: 0,
     dead: false,
     respawnTick: 0,
     previousButtons: 0,
@@ -375,7 +426,7 @@ export function addPlayer(world, { playerId, characterKind = 'knight' } = {}) {
     skillCooldowns: { 1: 0, 2: 0, 3: 0 },
     skillCast: null,
     guardTicks: 0,
-    potions: world.mode === 'stage' ? world.potions : 0,
+    potions: world.mode === 'stage' ? Math.max(0, Math.min(POTION.maxCarry, character.potions ?? 0)) : 0,
     potionTicks: 0,
     potionCooldownTicks: 0,
     potionHealRemaining: 0,
@@ -385,11 +436,12 @@ export function addPlayer(world, { playerId, characterKind = 'knight' } = {}) {
   moveEntity(world, player, 0, 0);
   world.entities.push(player);
   world.players.push(player.id);
+  world.rewards[id] = reward;
   if (world.mode !== 'stage' && world.mode !== 'hub') ensureWave(world);
   return player;
 }
 
-function beginPlayerAttack(world, player, step, seq) {
+function startPlayerAttackMotion(player, step, seq, viewTick = undefined) {
   const castId = `${player.playerId}:${seq}`;
   player.attack = {
     step,
@@ -399,15 +451,21 @@ function beginPlayerAttack(world, player, step, seq) {
     phaseTick: 0,
     queued: false,
     queuedSeq: null,
+    queuedViewTick: null,
+    ...(Number.isSafeInteger(viewTick) ? { viewTick } : {}),
     hitTargets: [],
     shape: null,
   };
-  emit(world, 'cast', {
+  return {
     entityId: player.id,
     playerId: player.playerId,
     castId,
     step,
-  });
+  };
+}
+
+function beginPlayerAttack(world, player, step, seq, viewTick = undefined) {
+  emit(world, 'cast', startPlayerAttackMotion(player, step, seq, viewTick));
 }
 
 function comboTimeline(player, step) {
@@ -420,7 +478,7 @@ function comboTimeline(player, step) {
   };
 }
 
-function queueCombo(player, seq) {
+function queueCombo(player, seq, viewTick) {
   const attack = player.attack;
   if (!attack || attack.step >= COMBO_TIMELINES.length || attack.queued) return;
   const timeline = comboTimeline(player, attack.step);
@@ -430,6 +488,7 @@ function queueCombo(player, seq) {
   ) {
     attack.queued = true;
     attack.queuedSeq = seq;
+    attack.queuedViewTick = Number.isSafeInteger(viewTick) ? viewTick : null;
   }
 }
 
@@ -492,7 +551,7 @@ function advancePlayerAttack(world, player) {
     return;
   }
   if (attack.queued && attack.step < COMBO_TIMELINES.length) {
-    beginPlayerAttack(world, player, attack.step + 1, attack.queuedSeq);
+    beginPlayerAttack(world, player, attack.step + 1, attack.queuedSeq, attack.queuedViewTick);
   } else {
     player.attack = null;
   }
@@ -549,8 +608,8 @@ function stepPlayer(world, player, rawInput) {
   }
 
   if (pressed & BUTTONS.ATTACK) {
-    if (!player.attack) beginPlayerAttack(world, player, 1, input.seq);
-    else queueCombo(player, input.seq);
+    if (!player.attack) beginPlayerAttack(world, player, 1, input.seq, input.viewTick);
+    else queueCombo(player, input.seq, input.viewTick);
   }
   advancePlayerAttack(world, player);
 }
@@ -592,6 +651,40 @@ function damagePlayer(world, enemy, player, shape, damage) {
   });
 }
 
+function queueEnemyHit(world, enemy, player, shape, damage = null) {
+  world.pendingHits.push({
+    resolveTick: world.tick + 1,
+    sourceId: enemy.id,
+    targetId: player.id,
+    shape: copyShape(shape),
+    damage,
+  });
+}
+
+function resolvePendingHits(world, iFramesAtTickStart = new Map()) {
+  const due = [];
+  world.pendingHits = world.pendingHits.filter((hit) => {
+    if (hit.resolveTick > world.tick) return true;
+    due.push(hit);
+    return false;
+  });
+  for (const hit of due) {
+    const enemy = world.entities.find((entity) => entity.id === hit.sourceId);
+    const player = world.entities.find((entity) => entity.id === hit.targetId);
+    if (
+      !enemy ||
+      !player ||
+      player.dead ||
+      player.downed ||
+      !player.connected ||
+      player.iFrames > 0 ||
+      (iFramesAtTickStart.get(player.id) ?? 0) > 0
+    ) continue;
+    if (world.mode === 'stage') damagePlayerM1(world, enemy, player, hit.shape);
+    else damagePlayer(world, enemy, player, hit.shape, hit.damage ?? enemy.attack);
+  }
+}
+
 function clearEnemyAttack(enemy, rules) {
   enemy.attackShape = null;
   enemy.attackPhase = null;
@@ -626,7 +719,7 @@ function stepEnemy(world, enemy, players) {
     if (!enemy.attackHit) {
       enemy.attackHit = true;
       if (inSector(enemy.attackShape, target, target.radius)) {
-        damagePlayer(world, enemy, target, enemy.attackShape, rules.damage);
+        queueEnemyHit(world, enemy, target, enemy.attackShape, rules.damage);
       }
     }
     enemy.attackRemaining -= 1;
@@ -788,26 +881,44 @@ export function rollStageItem(world, { stageLevel = 1, elite = false, boss = fal
   };
 }
 
-export function createStageWorld({ seed = 1, stageId = 'C1', playerId = 'hero', character = {} } = {}) {
+export function createStageWorld({
+  seed = 1,
+  stageId = 'C1',
+  playerId = 'hero',
+  character = {},
+  party,
+} = {}) {
   const stage = STAGES[stageId];
   if (!stage) throw new TypeError(`Unknown stage: ${stageId}`);
+  const members = party ?? [{ playerId, character }];
+  if (!Array.isArray(members) || members.length < 1 || members.length > 4) {
+    throw new RangeError('A stage party must contain one to four players');
+  }
   const world = createWorld({ seed, arena: stage });
   world.mode = 'stage';
   world.stageId = stageId;
   world.stageLevel = stage.stageLevel;
-  world.characterLevel = Math.max(1, Math.min(15, character.level ?? 1));
-  world.equipment = (character.equipment ?? []).map((item) => ({ ...item, affixes: [...(item.affixes ?? [])] }));
-  world.potions = Math.max(0, Math.min(POTION.maxCarry, character.potions ?? 0));
+  world.partySize = members.length;
   world.roomIndex = 0;
   world.roomEnemyIds = [];
   world.roomCleared = false;
   world.openDoors = {};
   world.outcome = null;
-  world.result = null;
-  world.reward = { xp: 0, gold: 0, items: [] };
   world.bossThresholds = {};
-  addPlayer(world, { playerId, characterKind: 'knight' });
+  for (const member of members) {
+    addPlayer(world, {
+      playerId: member.playerId,
+      name: member.name,
+      characterKind: member.characterKind ?? 'knight',
+      character: member.character ?? {},
+    });
+  }
+  if (members.length === 1) {
+    world.soloPlayerId = world.entities.find((entity) => entity.kind === 'player').playerId;
+    defineSoloAliases(world, world.soloPlayerId);
+  }
   spawnRoom(world);
+  recordEnemyHistory(world);
   return world;
 }
 
@@ -828,7 +939,9 @@ function spawnStageEnemy(world, enemyType, index, elite = false) {
   if (!rule) throw new TypeError(`Unknown enemy type: ${enemyType}`);
   const point = stagePoint(world, index);
   const scale = 1 + 0.12 * (world.stageLevel - 1);
-  const maxHp = Math.max(1, Math.round(rule.hp * scale * (elite ? 2.5 : 1)));
+  const partyScale = 1 + 0.75 * ((world.partySize ?? 1) - 1);
+  const soloMaxHp = Math.max(1, Math.round(rule.hp * scale * (elite ? 2.5 : 1)));
+  const maxHp = Math.max(1, Math.round(soloMaxHp * partyScale));
   const enemy = {
     id: nextEntityId(world),
     kind: 'enemy',
@@ -912,14 +1025,40 @@ function attackShapeHit(shape, target, targetRadius = 0) {
   return false;
 }
 
+function enemyHistoryFrame(world, viewTick) {
+  if (!Number.isSafeInteger(viewTick)) return null;
+  const clampedTick = clamp(viewTick, Math.max(0, world.tick - 8), world.tick);
+  if (clampedTick >= world.tick) return null;
+  return world.enemyHistory.find((frame) => frame.tick === clampedTick) ?? null;
+}
+
+function recordEnemyHistory(world) {
+  const frame = {
+    tick: world.tick,
+    enemies: world.entities
+      .filter((entity) => entity.kind === 'enemy')
+      .map((enemy) => ({
+        id: enemy.id,
+        x: enemy.x,
+        z: enemy.z,
+        radius: enemy.radius,
+        dead: enemy.dead,
+      }))
+      .sort((a, b) => a.id - b.id),
+  };
+  const previous = world.enemyHistory.at(-1);
+  if (previous?.tick === world.tick) world.enemyHistory[world.enemyHistory.length - 1] = frame;
+  else world.enemyHistory.push(frame);
+  if (world.enemyHistory.length > 9) world.enemyHistory.splice(0, world.enemyHistory.length - 9);
+}
+
 function makeLineShape(x, z, angle, length, width) {
   return { type: 'line', originX: x, originZ: z, angle, length, width };
 }
 
-function randomGold(world, stageLevel) {
+function randomGold(world, stageLevel, player) {
   const rule = { min: 2, max: 5 };
   const amount = (rule.min + Math.floor(random(world) * (rule.max - rule.min + 1))) * stageLevel;
-  const player = world.entities.find((entity) => entity.kind === 'player');
   return Math.max(1, Math.round(amount * (1 + (player?.stats.goldGain ?? 0) / 100)));
 }
 
@@ -931,9 +1070,17 @@ function spawnLoot(world, x, z, loot) {
     z,
     radius: 0.18,
     ...loot,
+    ownerId: loot.ownerId ?? stagePlayers(world)[0]?.playerId ?? null,
   };
   world.entities.push(entity);
-  emit(world, 'lootSpawn', { lootId: entity.id, x, z, rarity: entity.item?.rarity ?? null, gold: entity.gold ?? 0 });
+  emit(world, 'lootSpawn', {
+    lootId: entity.id,
+    ownerId: entity.ownerId,
+    x,
+    z,
+    rarity: entity.item?.rarity ?? null,
+    gold: entity.gold ?? 0,
+  });
   if (entity.item) entity.item.uid = createLootUid(world.seed, world.stageId, world.nextEventId - 1);
   return entity;
 }
@@ -944,26 +1091,40 @@ export function createLootUid(seed, stageId, eventId) {
 
 function dropRewards(world, enemy) {
   const rule = ENEMIES[enemy.enemyKind];
-  const player = world.entities.find((entity) => entity.kind === 'player');
-  const xp = Math.round(rule.xp * (1 + (player?.stats.xpGain ?? 0) / 100));
-  world.reward.xp += xp;
-  emit(world, 'xp', { amount: xp, entityId: enemy.id });
-  spawnLoot(world, enemy.x, enemy.z, { lootType: 'gold', gold: randomGold(world, world.stageLevel) });
-
   const guaranteedCount = enemy.boss ? 2 : enemy.elite ? 1 : 0;
   const chance = enemy.elite || enemy.boss ? 1 : rule.dropChance;
-  if (guaranteedCount) {
-    for (let index = 0; index < guaranteedCount; index += 1) {
-      const item = rollStageItem(world, { stageLevel: world.stageLevel, elite: enemy.elite, boss: enemy.boss });
-      spawnLoot(world, enemy.x + (index ? 0.3 : -0.3), enemy.z, { lootType: 'item', item });
+  for (const player of stagePlayers(world)) {
+    const reward = world.rewards[player.playerId];
+    const xp = Math.round(rule.xp * (1 + (player.stats.xpGain ?? 0) / 100));
+    reward.xp += xp;
+    emit(world, 'xp', { amount: xp, entityId: enemy.id, playerId: player.playerId });
+    spawnLoot(world, enemy.x, enemy.z, {
+      ownerId: player.playerId,
+      lootType: 'gold',
+      gold: randomGold(world, world.stageLevel, player),
+    });
+
+    if (guaranteedCount) {
+      for (let index = 0; index < guaranteedCount; index += 1) {
+        const item = rollStageItem(world, { stageLevel: world.stageLevel, elite: enemy.elite, boss: enemy.boss });
+        spawnLoot(world, enemy.x + (index ? 0.3 : -0.3), enemy.z, {
+          ownerId: player.playerId,
+          lootType: 'item',
+          item,
+        });
+      }
+    } else if (random(world) < chance) {
+      const item = rollStageItem(world, { stageLevel: world.stageLevel, elite: enemy.elite });
+      spawnLoot(world, enemy.x + (random(world) - 0.5) * 0.5, enemy.z + (random(world) - 0.5) * 0.5, {
+        ownerId: player.playerId,
+        lootType: 'item',
+        item,
+      });
     }
-  } else if (random(world) < chance) {
-    const item = rollStageItem(world, { stageLevel: world.stageLevel, elite: enemy.elite });
-    spawnLoot(world, enemy.x + (random(world) - 0.5) * 0.5, enemy.z + (random(world) - 0.5) * 0.5, { lootType: 'item', item });
   }
 }
 
-function killStageEnemy(world, source, enemy, damage, castId, critical = false) {
+function killStageEnemy(world, source, enemy, damage, castId, critical = false, skillId = source.skillCast?.id ?? 0) {
   if (enemy.dead) return;
   enemy.hp = Math.max(0, enemy.hp - damage);
   enemy.hitFlashTicks = 9;
@@ -973,7 +1134,7 @@ function killStageEnemy(world, source, enemy, damage, castId, critical = false) 
     const distance = Math.hypot(dx, dz) || 1;
     moveEntity(world, enemy, dx / distance * 0.18, dz / distance * 0.18);
   }
-  emit(world, 'hit', { sourceId: source.id, targetId: enemy.id, damage, castId, critical, skill: source.skillCast?.id ?? 0 });
+  emit(world, 'hit', { sourceId: source.id, targetId: enemy.id, damage, castId, critical, skill: skillId });
   if (enemy.hp > 0) return;
   enemy.dead = true;
   enemy.deathTicks = 24;
@@ -984,28 +1145,41 @@ function killStageEnemy(world, source, enemy, damage, castId, critical = false) 
   if (enemy.boss) emit(world, 'bossDefeated', { entityId: enemy.id });
 }
 
-function playerStrike(world, player, shape, motionMult, castId, hitTargets) {
+function playerStrike(world, player, shape, motionMult, castId, hitTargets, viewTick = undefined, skillId = undefined) {
+  const history = enemyHistoryFrame(world, viewTick);
   for (const enemy of stageActiveEnemies(world)) {
     if (hitTargets.includes(enemy.id) || enemy.invulnerable || enemy.spawnTicksLeft > 0) continue;
-    if (!attackShapeHit(shape, enemy, enemy.radius)) continue;
+    if (enemy.dead) continue;
+    const historical = history?.enemies.find((entry) => entry.id === enemy.id);
+    if (history && (!historical || historical.dead)) continue;
+    const target = historical ?? enemy;
+    if (!attackShapeHit(shape, target, target.radius)) continue;
     hitTargets.push(enemy.id);
     const critical = random(world) * 100 < player.stats.critChance;
     const damage = calculateDamage(player.stats.attack, motionMult, critical, player.stats.critDamage, enemy.defense ?? 0);
-    killStageEnemy(world, player, enemy, damage, castId, critical);
+    killStageEnemy(world, player, enemy, damage, castId, critical, skillId ?? player.skillCast?.id ?? 0);
     const heal = Math.floor(damage * player.stats.lifesteal / 100);
     if (heal) player.hp = Math.min(player.maxHp, player.hp + heal);
   }
 }
 
-function beginSkill(world, player, id, seq) {
+function startSkillMotion(ctx, player, id, seq, viewTick = undefined) {
   const skill = Object.values(SKILLS).find((entry) => entry.id === id);
-  if (!skill || player.skillCooldowns[id] > 0 || player.skillCast) return false;
-  const cooldown = Math.max(1, Math.round(skill.cooldownTicks * (1 - Math.min(60, player.stats.skillCooldownReduction) / 100)));
-  player.skillCooldowns[id] = cooldown;
+  if (!skill) return null;
   const castId = `${player.playerId}:${seq}`;
-  player.skillCast = { id, castId, startedTick: world.tick, ticks: id === 1 ? skill.windupTicks : id === 2 ? skill.dashTicks : skill.durationTicks, tick: 0, hitTargets: [], originX: player.x, originZ: player.z, angle: player.facing };
-  emit(world, 'cast', { entityId: player.id, playerId: player.playerId, castId, skill: id, skillName: skill.name });
-  return true;
+  player.skillCast = {
+    id,
+    castId,
+    startedTick: ctx.tick,
+    ticks: id === 1 ? skill.windupTicks : id === 2 ? skill.dashTicks : skill.durationTicks,
+    tick: 0,
+    hitTargets: [],
+    originX: player.x,
+    originZ: player.z,
+    angle: player.facing,
+    ...(Number.isSafeInteger(viewTick) ? { viewTick } : {}),
+  };
+  return { entityId: player.id, playerId: player.playerId, castId, skill: id, skillName: skill.name };
 }
 
 function applyPotion(world, player, seq) {
@@ -1018,11 +1192,14 @@ function applyPotion(world, player, seq) {
   emit(world, 'potion', { entityId: player.id, playerId: player.playerId, seq });
 }
 
-function advanceStagePlayer(world, player, rawInput) {
+export function stepPlayerMotion(ctx, player, rawInput) {
   const input = normalizeInput(player, rawInput);
   const pressed = input.buttons & ~player.previousButtons;
   player.previousButtons = input.buttons;
   player.lastInput = input;
+  const events = [];
+  let skillStrike = null;
+  let attackStrike = null;
   const moveX = input.moveX / 127;
   const moveZ = input.moveZ / 127;
   const magnitude = Math.hypot(moveX, moveZ);
@@ -1032,10 +1209,17 @@ function advanceStagePlayer(world, player, rawInput) {
   if (player.moving && player.guardTicks <= 0) player.facing = Math.atan2(directionZ, directionX);
   else if (!player.moving) player.facing = angleFromAim(input.aim);
 
-  if (pressed & BUTTONS.POTION) applyPotion(world, player, input.seq);
-  if (pressed & BUTTONS.SKILL1) beginSkill(world, player, 1, input.seq);
-  else if (pressed & BUTTONS.SKILL2) beginSkill(world, player, 2, input.seq);
-  else if (pressed & BUTTONS.SKILL3) beginSkill(world, player, 3, input.seq);
+  const skillId = pressed & BUTTONS.SKILL1 ? 1 : pressed & BUTTONS.SKILL2 ? 2 : pressed & BUTTONS.SKILL3 ? 3 : 0;
+  if (skillId && !player.skillCast && player.skillCooldowns[skillId] === 0) {
+    const payload = startSkillMotion(ctx, player, skillId, input.seq, input.viewTick);
+    if (payload) {
+      const skill = Object.values(SKILLS).find((entry) => entry.id === skillId);
+      const cooldownTicks = Math.max(1, Math.round(skill.cooldownTicks * (
+        1 - Math.min(60, player.stats.skillCooldownReduction) / 100
+      )));
+      events.push({ type: 'skill', payload, cooldownTicks });
+    }
+  }
 
   const moveSpeed = player.stats.moveSpeed / TICK_HZ;
   if (player.guardTicks > 0) {
@@ -1044,27 +1228,42 @@ function advanceStagePlayer(world, player, rawInput) {
   } else if (player.skillCast?.id === 2) {
     const cast = player.skillCast;
     const stepDistance = SKILLS.dash.dashDistance / SKILLS.dash.dashTicks;
-    moveEntity(world, player, Math.cos(cast.angle) * stepDistance, Math.sin(cast.angle) * stepDistance);
-    playerStrike(world, player, makeLineShape(cast.originX, cast.originZ, cast.angle, SKILLS.dash.length, SKILLS.dash.width), SKILLS.dash.motionMult, cast.castId, cast.hitTargets);
+    moveEntity(ctx, player, Math.cos(cast.angle) * stepDistance, Math.sin(cast.angle) * stepDistance);
+    skillStrike = {
+      shape: makeLineShape(cast.originX, cast.originZ, cast.angle, SKILLS.dash.length, SKILLS.dash.width),
+      motionMult: SKILLS.dash.motionMult,
+      castId: cast.castId,
+      hitTargets: cast.hitTargets,
+      viewTick: cast.viewTick,
+      skillId: cast.id,
+    };
   } else if (!player.skillCast) {
     if ((pressed & BUTTONS.DODGE) && player.dodgeCooldownTicks === 0) {
       player.dodgeVectorX = player.moving ? directionX : Math.cos(player.facing);
       player.dodgeVectorZ = player.moving ? directionZ : Math.sin(player.facing);
       player.dodgeTicks = DODGE_DURATION_TICKS;
       player.iFrames = DODGE_IFRAME_TICKS;
-      player.dodgeCooldownTicks = Math.round(DODGE_COOLDOWN_TICKS * (1 - player.stats.dodgeCooldownReduction / 100));
-      emit(world, 'dodge', { entityId: player.id, playerId: player.playerId });
+      events.push({
+        type: 'dodge',
+        cooldownTicks: Math.round(DODGE_COOLDOWN_TICKS * (1 - player.stats.dodgeCooldownReduction / 100)),
+      });
     }
-    if (player.dodgeTicks > 0) moveEntity(world, player, player.dodgeVectorX * 8.5 / TICK_HZ, player.dodgeVectorZ * 8.5 / TICK_HZ);
-    else moveEntity(world, player, directionX * moveSpeed, directionZ * moveSpeed);
+    if (player.dodgeTicks > 0) moveEntity(ctx, player, player.dodgeVectorX * 8.5 / TICK_HZ, player.dodgeVectorZ * 8.5 / TICK_HZ);
+    else moveEntity(ctx, player, directionX * moveSpeed, directionZ * moveSpeed);
   }
 
   if (player.skillCast) {
     const cast = player.skillCast;
     cast.tick += 1;
     if (cast.id === 1 && cast.tick >= SKILLS.spin.windupTicks) {
-      const spin = { type: 'circle', originX: cast.originX, originZ: cast.originZ, radius: SKILLS.spin.range };
-      playerStrike(world, player, spin, SKILLS.spin.motionMult, cast.castId, cast.hitTargets);
+      skillStrike = {
+        shape: { type: 'circle', originX: cast.originX, originZ: cast.originZ, radius: SKILLS.spin.range },
+        motionMult: SKILLS.spin.motionMult,
+        castId: cast.castId,
+        hitTargets: cast.hitTargets,
+        viewTick: cast.viewTick,
+        skillId: cast.id,
+      };
     }
     if (cast.id === 3 && cast.tick === 1) player.guardTicks = SKILLS.guard.durationTicks;
     if (cast.tick >= (cast.id === 1 ? SKILLS.spin.windupTicks + SKILLS.spin.activeTicks + SKILLS.spin.recoveryTicks : cast.id === 2 ? SKILLS.dash.dashTicks : SKILLS.guard.durationTicks)) {
@@ -1073,20 +1272,78 @@ function advanceStagePlayer(world, player, rawInput) {
   }
 
   if (pressed & BUTTONS.ATTACK) {
-    if (!player.attack) beginPlayerAttack(world, player, 1, input.seq);
-    else queueCombo(player, input.seq);
+    if (!player.attack) events.push({
+      type: 'attack',
+      payload: startPlayerAttackMotion(player, 1, input.seq, input.viewTick),
+    });
+    else queueCombo(player, input.seq, input.viewTick);
   }
   if (player.attack) {
-    const before = player.attack;
-    const timeline = COMBO_TIMELINES[before.step - 1];
-    if (before.phase === 'active') {
+    const attack = player.attack;
+    const timeline = comboTimeline(player, attack.step);
+    if (attack.phase === 'active') {
       const shape = createAttackShape(player, player.facing, timeline.range, timeline.halfAngle);
-      const motion = [1, 1.1, 1.8][before.step - 1];
-      playerStrike(world, player, { ...shape, type: 'sector' }, motion, before.castId, before.hitTargets);
+      attackStrike = {
+        shape: { ...shape, type: 'sector' },
+        motionMult: [1, 1.1, 1.8][attack.step - 1],
+        castId: attack.castId,
+        hitTargets: attack.hitTargets,
+        viewTick: attack.viewTick,
+      };
     }
-    advancePlayerAttack(world, player);
+    attack.phaseTick += 1;
+    const phaseLength = attack.phase === 'windup'
+      ? timeline.windupTicks
+      : attack.phase === 'active'
+        ? timeline.activeTicks
+        : timeline.recoveryTicks;
+    if (attack.phaseTick >= phaseLength) {
+      if (attack.phase === 'windup') {
+        attack.phase = 'active';
+        attack.phaseTick = 0;
+      } else if (attack.phase === 'active') {
+        attack.phase = 'recovery';
+        attack.phaseTick = 0;
+        attack.shape = null;
+      } else if (attack.queued && attack.step < COMBO_TIMELINES.length) {
+        events.push({
+          type: 'attack',
+          payload: startPlayerAttackMotion(player, attack.step + 1, attack.queuedSeq, attack.queuedViewTick),
+        });
+      } else player.attack = null;
+    }
   }
 
+  player.dodgeTicks = Math.max(0, player.dodgeTicks - 1);
+  player.iFrames = Math.max(0, player.iFrames - 1);
+  return { input, pressed, events, skillStrike, attackStrike };
+}
+
+function advanceStagePlayer(world, player, rawInput) {
+  const motion = stepPlayerMotion({
+    arena: world.arena,
+    openDoors: world.openDoors,
+    tick: world.tick,
+  }, player, rawInput);
+  if (motion.pressed & BUTTONS.POTION) applyPotion(world, player, motion.input.seq);
+  for (const event of motion.events) {
+    if (event.type === 'skill') {
+      const skill = Object.values(SKILLS).find((entry) => entry.id === event.payload.skill);
+      player.skillCooldowns[skill.id] = event.cooldownTicks;
+      emit(world, 'cast', event.payload);
+    } else if (event.type === 'dodge') {
+      player.dodgeCooldownTicks = event.cooldownTicks;
+      emit(world, 'dodge', { entityId: player.id, playerId: player.playerId });
+    } else emit(world, 'cast', event.payload);
+  }
+  if (motion.skillStrike) {
+    const strike = motion.skillStrike;
+    playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets, strike.viewTick, strike.skillId);
+  }
+  if (motion.attackStrike) {
+    const strike = motion.attackStrike;
+    playerStrike(world, player, strike.shape, strike.motionMult, strike.castId, strike.hitTargets, strike.viewTick);
+  }
   if (player.potionTicks > 0) {
     const heal = Math.ceil(player.potionHealRemaining / player.potionHealTicks);
     const applied = Math.min(heal, player.maxHp - player.hp);
@@ -1118,11 +1375,18 @@ function damagePlayerM1(world, enemy, player, shape) {
   player.hitFlashTicks = 8;
   emit(world, 'hit', { sourceId: enemy.id, targetId: player.id, damage, blocked: guarding, shape });
   if (player.hp === 0) {
-    player.dead = true;
-    world.outcome = 'death';
-    world.result = settlementResult(world, 'death');
-    emit(world, 'death', { entityId: player.id, playerId: player.playerId });
-    emit(world, 'stageEnd', { outcome: 'death' });
+    if (world.partySize > 1) {
+      player.downed = true;
+      player.reviveProgress = 0;
+      player.attack = null;
+      player.skillCast = null;
+      player.dodgeTicks = 0;
+      emit(world, 'downed', { entityId: player.id, playerId: player.playerId });
+    } else {
+      player.dead = true;
+      emit(world, 'death', { entityId: player.id, playerId: player.playerId });
+      finishStage(world, 'death');
+    }
   }
   return true;
 }
@@ -1191,7 +1455,7 @@ function startBossPattern(world, boss, target) {
 function activeEnemyAttack(world, enemy, target) {
   if (enemy.attackHit || !attackShapeHit(enemy.attackShape, target, target.radius)) return;
   enemy.attackHit = true;
-  damagePlayerM1(world, enemy, target, enemy.attackShape);
+  queueEnemyHit(world, enemy, target, enemy.attackShape);
 }
 
 function stepStageEnemy(world, enemy, players) {
@@ -1305,33 +1569,98 @@ function stepStageEnemy(world, enemy, players) {
   }
 }
 
-function settlementResult(world, outcome) {
-  const retainedGold = outcome === 'clear' ? world.reward.gold : Math.floor(world.reward.gold / 2);
+function settlementResult(world, player, outcome) {
+  const reward = world.rewards[player.playerId];
+  const retainedGold = outcome === 'clear' ? reward.gold : Math.floor(reward.gold / 2);
   return {
     outcome,
-    xp: world.reward.xp,
+    playerId: player.playerId,
+    xp: reward.xp,
     gold: retainedGold,
-    goldLost: world.reward.gold - retainedGold,
-    items: outcome === 'clear' ? world.reward.items.map((item) => ({ ...item })) : [],
-    lostItems: outcome === 'clear' ? [] : world.reward.items.map((item) => ({ ...item })),
+    goldLost: reward.gold - retainedGold,
+    items: outcome === 'clear' ? reward.items.map((item) => ({ ...item })) : [],
+    lostItems: outcome === 'clear' ? [] : reward.items.map((item) => ({ ...item })),
     stageId: world.stageId,
-    potions: world.entities.find((entity) => entity.kind === 'player')?.potions ?? 0,
+    potions: player.potions,
   };
 }
 
 function finishStage(world, outcome) {
   if (world.outcome) return;
   if (outcome === 'clear') {
-    const player = world.entities.find((entity) => entity.kind === 'player');
-    if (player) pickupLoot(world, player, true);
+    for (const player of stagePlayers(world)) pickupLoot(world, player, true);
   }
   world.outcome = outcome;
-  world.result = settlementResult(world, outcome);
-  emit(world, 'stageEnd', { outcome, stageId: world.stageId, result: world.result });
+  for (const player of stagePlayers(world)) {
+    world.results[player.playerId] = settlementResult(world, player, outcome);
+  }
+  if (world.partySize === 1) world.result = world.results[world.soloPlayerId];
+  emit(world, 'stageEnd', {
+    outcome,
+    stageId: world.stageId,
+    result: world.result ?? null,
+    results: { ...world.results },
+  });
+}
+
+function enterNextRoom(world, door) {
+  const players = stagePlayers(world);
+  const nextIndex = world.roomIndex + 1;
+  if (nextIndex >= world.arena.rooms.length) {
+    finishStage(world, 'clear');
+    return;
+  }
+  world.roomIndex = nextIndex;
+  world.roomCleared = false;
+  world.doorCountdown = null;
+  players.forEach((player, index) => {
+    player.x = door.x + (index - (players.length - 1) / 2) * 0.9;
+    player.z = door.z - 1.7;
+    if (player.downed) {
+      player.downed = false;
+      player.reviveProgress = 0;
+      player.hp = Math.max(1, Math.round(player.maxHp * 0.3));
+      emit(world, 'revived', { entityId: player.id, playerId: player.playerId, roomEnter: true });
+    } else player.hp = Math.max(1, player.hp);
+  });
+  emit(world, 'roomEnter', {
+    roomIndex: nextIndex,
+    roomId: world.arena.rooms[nextIndex].id,
+    playerIds: players.map((player) => player.playerId),
+  });
+  spawnRoom(world);
+}
+
+function stepRevives(world, players) {
+  const downedPlayers = stagePlayers(world).filter((player) => player.downed);
+  for (const downed of downedPlayers) {
+    const canRevive = players.some((ally) => (
+      ally.id !== downed.id && Math.hypot(ally.x - downed.x, ally.z - downed.z) <= 1.5
+    ));
+    downed.reviveProgress = Math.max(0, downed.reviveProgress + (canRevive ? 1 : -2));
+    if (downed.reviveProgress > 0 && world.tick % 15 === 0) {
+      emit(world, 'reviveProgress', {
+        entityId: downed.id,
+        playerId: downed.playerId,
+        progress: downed.reviveProgress,
+        required: 60,
+      });
+    }
+    if (downed.reviveProgress < 60) continue;
+    downed.downed = false;
+    downed.reviveProgress = 0;
+    downed.hp = Math.max(1, Math.round(downed.maxHp * 0.3));
+    emit(world, 'revived', { entityId: downed.id, playerId: downed.playerId });
+  }
 }
 
 function updateStageProgress(world) {
   if (world.outcome) return;
+  const connected = stagePlayers(world).filter((player) => player.connected);
+  if (connected.length && connected.every((player) => player.downed || player.dead)) {
+    finishStage(world, 'death');
+    return;
+  }
   const living = stageActiveEnemies(world);
   if (!living.length && !world.roomCleared) {
     world.roomCleared = true;
@@ -1346,29 +1675,43 @@ function updateStageProgress(world) {
   }
   if (!world.roomCleared) return;
   const door = world.arena.doors.find((entry) => entry.fromRoom === world.arena.rooms[world.roomIndex]?.id);
-  const player = world.entities.find((entity) => entity.kind === 'player');
-  if (!door || !player || Math.hypot(player.x - door.x, player.z - door.z) > 1.7) return;
-  const nextIndex = world.roomIndex + 1;
-  if (nextIndex >= world.arena.rooms.length) {
+  if (!door) {
     finishStage(world, 'clear');
     return;
   }
-  world.roomIndex = nextIndex;
-  player.x = door.x;
-  player.z = door.z - 1.7;
-  player.hp = Math.max(1, player.hp);
-  emit(world, 'roomEnter', { roomIndex: nextIndex, roomId: world.arena.rooms[nextIndex].id });
-  spawnRoom(world);
+  const players = stagePlayers(world);
+  if (world.partySize === 1) {
+    const player = players.find((entry) => entry.connected && !entry.downed && !entry.dead);
+    if (player && Math.hypot(player.x - door.x, player.z - door.z) <= 1.7) enterNextRoom(world, door);
+    return;
+  }
+  if (world.doorCountdown) {
+    if (world.tick >= world.doorCountdown.endsTick) enterNextRoom(world, door);
+    return;
+  }
+  const nearDoor = players.some((player) => (
+    player.connected && !player.downed && !player.dead &&
+    Math.hypot(player.x - door.x, player.z - door.z) <= 1.7
+  ));
+  if (!nearDoor) return;
+  world.doorCountdown = { doorId: door.id, endsTick: world.tick + 90 };
+  emit(world, 'doorCountdown', { doorId: door.id, endsTick: world.doorCountdown.endsTick });
 }
 
 function pickupLoot(world, player, collectAll = false) {
   for (const loot of [...world.entities]) {
-    if (loot.kind !== 'loot' || (!collectAll && Math.hypot(player.x - loot.x, player.z - loot.z) > 1)) continue;
+    if (
+      loot.kind !== 'loot' ||
+      loot.ownerId !== player.playerId ||
+      (!collectAll && Math.hypot(player.x - loot.x, player.z - loot.z) > 1)
+    ) continue;
     world.entities = world.entities.filter((entity) => entity.id !== loot.id);
-    if (loot.lootType === 'gold') world.reward.gold += loot.gold;
-    else world.reward.items.push({ ...loot.item, lootId: loot.id });
+    const reward = world.rewards[player.playerId];
+    if (loot.lootType === 'gold') reward.gold += loot.gold;
+    else reward.items.push({ ...loot.item, lootId: loot.id });
     emit(world, 'pickup', {
       entityId: player.id,
+      playerId: player.playerId,
       lootId: loot.id,
       lootType: loot.lootType,
       gold: loot.gold ?? 0,
@@ -1382,29 +1725,31 @@ function stageStep(world, inputsByPlayerId) {
     if (entity.kind === 'enemy' && entity.dead) entity.deathTicks = Math.max(0, entity.deathTicks - 1);
   }
   const players = activePlayers(world).sort((a, b) => a.id - b.id);
+  const iFramesAtTickStart = new Map(players.map((player) => [player.id, player.iFrames]));
   for (const player of players) advanceStagePlayer(world, player, inputsByPlayerId[player.playerId] ?? null);
   for (const player of players) {
-    player.dodgeTicks = Math.max(0, player.dodgeTicks - 1);
-    player.iFrames = Math.max(0, player.iFrames - 1);
     player.dodgeCooldownTicks = Math.max(0, player.dodgeCooldownTicks - 1);
     player.potionCooldownTicks = Math.max(0, player.potionCooldownTicks - 1);
     for (const id of [1, 2, 3]) player.skillCooldowns[id] = Math.max(0, player.skillCooldowns[id] - 1);
     player.hitFlashTicks = Math.max(0, player.hitFlashTicks - 1);
     pickupLoot(world, player);
   }
+  resolvePendingHits(world, iFramesAtTickStart);
+  if (world.partySize > 1) stepRevives(world, players);
   for (const enemy of stageActiveEnemies(world)) stepStageEnemy(world, enemy, players);
   for (const enemy of world.entities) {
     if (enemy.kind === 'enemy') enemy.hitFlashTicks = Math.max(0, enemy.hitFlashTicks - 1);
   }
   cleanupEntities(world);
   updateStageProgress(world);
+  recordEnemyHistory(world);
   return world;
 }
 
 export function retreatStage(world) {
   if (world.mode !== 'stage') throw new Error('Retreat is only available during a sortie');
   finishStage(world, 'retreat');
-  return world.result;
+  return world.result ?? world.results;
 }
 
 export function completeStage(world, outcome = 'clear') {
@@ -1412,7 +1757,38 @@ export function completeStage(world, outcome = 'clear') {
     throw new TypeError('Invalid stage outcome');
   }
   finishStage(world, outcome);
-  return world.result;
+  return world.result ?? world.results;
+}
+
+export function setPlayerConnected(world, playerId, connected) {
+  const player = stagePlayers(world).find((entry) => entry.playerId === playerId);
+  if (!player) return false;
+  const nextConnected = Boolean(connected);
+  if (player.connected === nextConnected) return true;
+  player.connected = nextConnected;
+  if (!player.connected) {
+    player.lastInput.moveX = 0;
+    player.lastInput.moveZ = 0;
+    player.lastInput.buttons = 0;
+    player.previousButtons = 0;
+    player.moving = false;
+  }
+  emit(world, 'playerConnection', { playerId, connected: player.connected });
+  return true;
+}
+
+export function leaveStage(world, playerId) {
+  if (world.mode !== 'stage') throw new Error('Leaving is only available during a sortie');
+  if (world.outcome) return world.results[playerId] ?? null;
+  const player = stagePlayers(world).find((entry) => entry.playerId === playerId);
+  if (!player) return world.results[playerId] ?? null;
+  world.results[playerId] = settlementResult(world, player, 'retreat');
+  if (world.partySize === 1 && world.soloPlayerId === playerId) world.result = world.results[playerId];
+  world.entities = world.entities.filter((entity) => entity.id !== player.id);
+  world.players = world.players.filter((entityId) => entityId !== player.id);
+  emit(world, 'playerLeave', { playerId });
+  if (!stagePlayers(world).some((entry) => entry.connected)) finishStage(world, 'retreat');
+  return world.results[playerId];
 }
 
 function stableStringify(value) {
@@ -1433,6 +1809,7 @@ export function step(world, inputsByPlayerId = {}) {
     .map((entityId) => world.entities.find((entity) => entity.id === entityId))
     .filter(Boolean)
     .sort((a, b) => a.id - b.id);
+  const iFramesAtTickStart = new Map(playerEntities.map((player) => [player.id, player.iFrames]));
   for (const player of playerEntities) {
     const hasInput = Object.hasOwn(inputsByPlayerId, player.playerId);
     stepPlayer(world, player, hasInput ? inputsByPlayerId[player.playerId] : null);
@@ -1449,6 +1826,7 @@ export function step(world, inputsByPlayerId = {}) {
     player.dodgeCooldownTicks = Math.max(0, player.dodgeCooldownTicks - 1);
     player.hitFlashTicks = Math.max(0, player.hitFlashTicks - 1);
   }
+  resolvePendingHits(world, iFramesAtTickStart);
   for (const enemy of world.entities) {
     if (enemy.kind === 'enemy') enemy.hitFlashTicks = Math.max(0, enemy.hitFlashTicks - 1);
   }
