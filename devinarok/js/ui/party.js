@@ -2,6 +2,7 @@ import { CastTimeline } from '../net/cast-timeline.js';
 import { InterpolationBuffer } from '../net/interp.js';
 import { NetSession } from '../net/net-session.js';
 import { Predictor } from '../net/predictor.js';
+import { buildRangedAimInput } from '../net/ranged-aim.js';
 import { createStageWorld } from '../sim/world.js';
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -282,7 +283,8 @@ export class PartyClient {
     if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
     const estimate = this.session.clock.getEstimate(performance.now());
     const view = this.interpolation.sample(estimate);
-    const input = { ...rawInput, viewTick: Math.round(view.renderTick) };
+    const viewTick = Math.round(view.renderTick);
+    let input = { ...rawInput, viewTick };
     if (this.predictor.getPlayer().downed) {
       input.moveX = 0;
       input.moveZ = 0;
@@ -291,6 +293,11 @@ export class PartyClient {
       input.buttons = 0;
       input.b = 0;
     }
+    input = buildRangedAimInput(
+      input,
+      this.predictor.getPlayer(),
+      this.interpolation.sampleAtRenderTick(viewTick),
+    );
     this.predictor.applyLocalInput(input);
     this.castTimeline.predictInput(input, performance.now());
     this.session.queueInput(input);

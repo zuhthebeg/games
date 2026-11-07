@@ -14,6 +14,7 @@ function normalizeInput(input) {
     aim: Number(input.aim ?? 0),
     buttons: Number(input.buttons ?? input.b ?? 0),
   };
+  if (Number.isFinite(input.ad)) normalized.ad = Math.max(0, Math.round(input.ad * 10) / 10);
   const viewTick = input.viewTick ?? input.vt;
   if (Number.isSafeInteger(viewTick)) normalized.viewTick = viewTick;
   return normalized;

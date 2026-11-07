@@ -27,6 +27,7 @@ function compactInput(input) {
     aim: Number(input.aim ?? 0),
     b: Number(input.b ?? input.buttons ?? 0),
   };
+  if (Number.isFinite(input.ad)) result.ad = Math.max(0, Math.round(input.ad * 10) / 10);
   const viewTick = input.vt ?? input.viewTick;
   if (Number.isSafeInteger(viewTick)) result.vt = viewTick;
   return result;

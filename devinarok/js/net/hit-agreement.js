@@ -26,13 +26,19 @@ export function scoreCastHitAgreement({
     deathTicks.get(id) <= lastServerStrikeTick
   ));
   const excused = new Set(excusedTargets);
-  const disagreementTargets = rawDisagreementTargets.filter((id) => !excused.has(id));
+  const allClientTargetsDead = clientHits.size > 0 && [...clientHits].every((id) => (
+    deathTicks.has(id) && deathTicks.get(id) <= lastServerStrikeTick
+  ));
+  const disagreementTargets = allClientTargetsDead
+    ? []
+    : rawDisagreementTargets.filter((id) => !excused.has(id));
 
   return {
     lastServerStrikeTick: Number.isFinite(lastServerStrikeTick) ? lastServerStrikeTick : null,
     rawDisagreementTargets,
     excusedTargets,
     disagreementTargets,
+    allClientTargetsDead,
     exactMatch: disagreementTargets.length === 0,
   };
 }

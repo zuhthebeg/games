@@ -119,6 +119,18 @@ test('hit agreement excuses client targets dead by the last authoritative strike
   assert.equal(noStrikes.lastServerStrikeTick, null);
 });
 
+test('hit agreement excuses a single-target line when every client target died before the strike', () => {
+  const score = scoreCastHitAgreement({
+    clientWouldHit: [22],
+    serverHitSet: [27],
+    serverStrikeTicks: [{ tick: 100 }],
+    enemyDeathEvents: [{ entityId: 22, tick: 99 }],
+  });
+  assert.equal(score.allClientTargetsDead, true);
+  assert.deepEqual(score.disagreementTargets, []);
+  assert.equal(score.exactMatch, true);
+});
+
 test('party server URL appends the room path and honors local overrides', () => {
   assert.equal(
     partyServerUrl('ABC234', ''),
@@ -526,13 +538,15 @@ test('protocol omits default fields in full keyframes and restores them on decod
 
 test('input queue waits for gaps without repeating or skipping inputs', () => {
   const queue = new InputQueue({ lastAppliedSeq: 0 });
-  assert.equal(queue.enqueue({ seq: 2, mx: 22, mz: 0, b: BUTTONS.ATTACK }), true);
+  assert.equal(queue.enqueue({ seq: 2, mx: 22, mz: 0, b: BUTTONS.ATTACK, ad: 3.26 }), true);
   assert.equal(queue.enqueue({ seq: 2, mx: 99 }), false);
   assert.deepEqual(queue.consumeForTick().inputs, []);
 
   assert.equal(queue.enqueue({ seq: 1, mx: 11, mz: 0, b: 0 }), true);
   assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [1]);
-  assert.deepEqual(queue.consumeForTick().inputs.map((input) => input.seq), [2]);
+  const second = queue.consumeForTick().inputs[0];
+  assert.equal(second.seq, 2);
+  assert.equal(second.ad, 3.3);
   assert.equal(queue.enqueue({ seq: 2, mx: 0 }), false);
   assert.deepEqual(queue.consumeForTick().inputs, []);
 });
@@ -904,7 +918,14 @@ test('net session retains unacknowledged inputs and sends them in sequence order
   const socket = session.connect();
   socket.open();
   for (let seq = 1; seq <= 8; seq += 1) {
-    session.queueInput({ seq, moveX: seq, moveZ: -seq, buttons: BUTTONS.ATTACK });
+    session.queueInput({
+      seq,
+      moveX: seq,
+      moveZ: -seq,
+      aim: 64,
+      ...(seq === 1 ? { ad: 3.26 } : {}),
+      buttons: BUTTONS.ATTACK,
+    });
   }
   for (let eventId = 1; eventId <= 17; eventId += 1) session.setEventAck(eventId);
   assert.equal(session.flushInputs(), true);
@@ -912,6 +933,8 @@ test('net session retains unacknowledged inputs and sends them in sequence order
   assert.equal(sent.t, 'in');
   assert.equal(sent.ae, 17);
   assert.deepEqual(sent.inputs.map((input) => input.seq), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.equal(sent.inputs[0].ad, 3.3);
+  assert.equal(Object.hasOwn(sent.inputs[1], 'ad'), false);
   socket.receive({ t: 'snap', tick: 0, ack: 4, full: true, ents: [] });
   assert.deepEqual([...session.inputs.keys()].sort((a, b) => a - b), [5, 6, 7, 8]);
   session.close();

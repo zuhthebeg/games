@@ -4,10 +4,11 @@ const STEP_SECONDS = 1 / TICK_HZ;
 const MAX_STEPS = 5;
 
 export class FixedStepLoop {
-  constructor({ world, playerId, input, render, onTick }) {
+  constructor({ world, playerId, input, render, onTick, buildInput = (rawInput) => rawInput }) {
     this.world = world;
     this.playerId = playerId;
     this.input = input;
+    this.buildInput = buildInput;
     this.render = render;
     this.onTick = onTick;
     this.previous = structuredClone(world);
@@ -61,7 +62,8 @@ export class FixedStepLoop {
     let steps = 0;
     while (this.accumulator >= STEP_SECONDS && steps < MAX_STEPS) {
       this.previous = structuredClone(this.world);
-      step(this.world, { [this.playerId]: this.input.nextTick() });
+      const rawInput = this.input.nextTick();
+      step(this.world, { [this.playerId]: this.buildInput(rawInput, this.world) });
       this.accumulator -= STEP_SECONDS;
       steps += 1;
       this.onTick?.(this.world);

@@ -8,6 +8,7 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { escapeHtml } from './ui/escape-html.js';
 import { handlePauseKey } from './ui/pause-menu.js';
 import { computeBotPolicy } from './net/bot-policy.js';
+import { buildRangedAimInput } from './net/ranged-aim.js';
 import { AFFIXES } from './content/affixes.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
@@ -852,13 +853,14 @@ function getNetBotInput() {
   const roomIndex = client.lastSnapshot.roomIndex ?? client.stageWorld.roomIndex;
   const room = client.stageWorld.arena.rooms[roomIndex];
   const door = client.stageWorld.arena.doors.find((entry) => entry.fromRoom === room?.id);
+  const policy = computeBotPolicy({
+    player,
+    viewed,
+    roomCleared: Boolean(client.lastSnapshot.roomCleared),
+    door,
+  });
   return {
-    ...computeBotPolicy({
-      player,
-      viewed,
-      roomCleared: Boolean(client.lastSnapshot.roomCleared),
-      door,
-    }),
+    ...buildRangedAimInput({ ...policy, viewTick }, player, viewed),
     viewTick,
   };
 }
@@ -971,6 +973,10 @@ async function startStage(stageId) {
     world,
     playerId: character.id,
     input,
+    buildInput: (rawInput, current) => {
+      const player = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+      return buildRangedAimInput(rawInput, player, current);
+    },
     render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
     onTick: (current) => {
       updateHud(current);

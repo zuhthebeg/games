@@ -3,6 +3,7 @@ import test from 'node:test';
 import { ENEMIES } from '../js/content/enemies.js';
 import { FAMILY_STARTER_WEAPONS, ITEM_BASES, ITEMS } from '../js/content/items.js';
 import { FAMILY_SKILLS, SKILLS } from '../js/content/skills.js';
+import { buildRangedAimInput } from '../js/net/ranged-aim.js';
 import { Predictor } from '../js/net/predictor.js';
 import { BUTTONS, createStageWorld, pickAimTarget, step, stepPlayerMotion } from '../js/sim/world.js';
 
@@ -45,15 +46,15 @@ function makeWorld(family, positions = []) {
   return { world, player, enemies: positions.map((_, index) => world.entities[index + 1]) };
 }
 
-function tick(world, seq, buttons = 0, viewTick) {
-  const input = { seq, moveX: 0, moveZ: 0, aim: 0, buttons };
+function tick(world, seq, buttons = 0, viewTick, extra = {}) {
+  const input = { seq, moveX: 0, moveZ: 0, aim: 0, buttons, ...extra };
   if (viewTick !== undefined) input.viewTick = viewTick;
   step(world, { hero: input });
 }
 
-function runTicks(world, count, firstButtons = 0, viewTick) {
+function runTicks(world, count, firstButtons = 0, viewTick, extra = {}) {
   for (let index = 0; index < count; index += 1) {
-    tick(world, world.tick + 1, index === 0 ? firstButtons : 0, viewTick);
+    tick(world, world.tick + 1, index === 0 ? firstButtons : 0, viewTick, extra);
   }
 }
 
@@ -112,6 +113,26 @@ test('pickAimTarget prefers the narrow cone, falls back to the forward half-plan
   assert.equal(pickAimTarget(world, player, 8).id, 3);
   world.entities[0].x = -1;
   assert.equal(pickAimTarget(world, player, 8), null);
+});
+
+test('ranged aim input follows the rendered target and omits distance when there is no target', () => {
+  const { world, player, enemies } = makeWorld('crossbow', [{ x: 6, z: 0 }]);
+  const renderedEnemy = { ...enemies[0], x: player.x + 2.36, z: player.z + 1.18 };
+  const input = buildRangedAimInput(
+    { seq: 1, moveX: 127, moveZ: 0, aim: 0, buttons: 0 },
+    player,
+    { entities: [renderedEnemy], activeEnemyIds: [renderedEnemy.id] },
+  );
+  assert.equal(input.ad, 2.6);
+  assert.equal(input.aim, Math.round(Math.atan2(1.18, 2.36) / (Math.PI * 2) * 256));
+
+  const noTarget = buildRangedAimInput(
+    { seq: 2, moveX: 0, moveZ: 127, aim: 0, ad: 4, buttons: 0 },
+    player,
+    { entities: [], activeEnemyIds: [] },
+  );
+  assert.equal(noTarget.aim, 64);
+  assert.equal(Object.hasOwn(noTarget, 'ad'), false);
 });
 
 test('commander selects bone-spear only beyond 5.5m and telegraphs its configured line', () => {
@@ -236,6 +257,27 @@ test('crossbow vault retreats over six ticks with i-frames and fires on the fina
   assert.equal(motion.shots.length, 1);
 });
 
+test('ranged casts use explicit aim and distance instead of auto-aim', () => {
+  const crossbow = makeWorld('crossbow', [{ x: 6, z: 0 }]);
+  runTicks(crossbow.world, 12, BUTTONS.ATTACK, undefined, { aim: 64, ad: 3 });
+  const shot = crossbow.world.events.find((event) => event.type === 'shot');
+  assert.equal(shot.angle, Math.PI / 2);
+
+  const staff = makeWorld('staff', [{ x: 6, z: 0 }]);
+  runTicks(staff.world, 6, BUTTONS.ATTACK, undefined, { aim: 64, ad: 3 });
+  const impact = staff.world.pendingImpacts[0];
+  assert.ok(Math.abs(impact.shape.originX - staff.player.x) < 1e-9);
+  assert.ok(Math.abs(impact.shape.originZ - (staff.player.z + 3)) < 1e-9);
+
+  const clamped = stepPlayerMotion(crossbow.world, crossbow.player, {
+    seq: crossbow.world.tick + 1,
+    aim: 64,
+    ad: 20,
+    buttons: 0,
+  });
+  assert.equal(clamped.input.ad, 12);
+});
+
 test('staff basic impacts seven ticks after firing at the fire-time target point', () => {
   const { world, player, enemies } = makeWorld('staff', [{ x: 6, z: 0 }]);
   runTicks(world, 6, BUTTONS.ATTACK);
@@ -249,14 +291,64 @@ test('staff basic impacts seven ticks after firing at the fire-time target point
   assert(enemies[0].hp < hp);
 });
 
-test('staff impacts resolve against current positions so a moved enemy can escape', () => {
-  const { world, player, enemies } = makeWorld('staff', [{ x: 6, z: 0 }]);
-  runTicks(world, 6, BUTTONS.ATTACK);
-  const target = enemies[0];
-  const hp = target.hp;
-  target.x = player.x + 12;
-  runTicks(world, 7);
-  assert.equal(target.hp, hp);
+test('staff impacts rewind by viewLag, hitting moved-away targets and missing moved-in targets', () => {
+  const { world, player, enemies } = makeWorld('staff', [
+    { x: 4, z: 0 },
+    { x: 10, z: 0 },
+    { x: 4, z: 0 },
+  ]);
+  const [movedAway, movedIn, alreadyDead] = enemies;
+  const movedAwayHp = movedAway.hp;
+  const movedInHp = movedIn.hp;
+  alreadyDead.dead = true;
+  alreadyDead.hp = 0;
+  world.tick = 10;
+  world.enemyHistory = [{
+    tick: 9,
+    enemies: [
+      { id: movedAway.id, x: player.x + 4, z: player.z, radius: movedAway.radius, dead: false },
+      { id: movedIn.id, x: player.x + 10, z: player.z, radius: movedIn.radius, dead: false },
+      { id: alreadyDead.id, x: player.x + 4, z: player.z, radius: alreadyDead.radius, dead: false },
+    ],
+  }];
+  movedAway.x = player.x + 12;
+  movedIn.x = player.x + 4;
+  world.pendingImpacts.push({
+    id: 'hero:rewound',
+    ownerId: 'hero',
+    ownerEntityId: player.id,
+    resolveTick: 11,
+    shape: { type: 'circle', originX: player.x + 4, originZ: player.z, radius: 1 },
+    motionMult: 1,
+    kind: 'staff-basic',
+    viewLag: 2,
+    viewTick: 8,
+  });
+
+  step(world, { hero: { seq: 1, moveX: 0, moveZ: 0, aim: 0, buttons: 0 } });
+  assert(movedAway.hp < movedAwayHp);
+  assert.equal(movedIn.hp, movedInHp);
+  assert(world.events.some((event) => event.type === 'hit' && event.targetId === movedAway.id && event.viewLag === 2));
+  assert.equal(world.events.some((event) => event.type === 'hit' && event.targetId === alreadyDead.id), false);
+});
+
+test('vault shot uses the viewTick from the firing input', () => {
+  const { world } = makeWorld('crossbow');
+  for (let index = 0; index < 6; index += 1) {
+    step(world, {
+      hero: {
+        seq: index + 1,
+        moveX: 0,
+        moveZ: 0,
+        aim: 0,
+        buttons: index === 0 ? BUTTONS.SKILL2 : 0,
+        viewTick: index === 0 ? 0 : index,
+      },
+    });
+  }
+  const strike = world.events.find((event) => event.type === 'strike' && event.castId === 'hero:1');
+  assert.equal(strike.viewTick, 5);
+  assert.equal(strike.viewLag, 1);
 });
 
 test('staff flame hits six times and frost applies a 45-tick slow', () => {
