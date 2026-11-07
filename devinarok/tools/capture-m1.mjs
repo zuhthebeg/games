@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const outputDir = '/home/ubuntu/devinarok-shots/m1';
+const outputDir = '/home/ubuntu/devinarok-shots/m1b';
 const errors = [];
 await mkdir(outputDir, { recursive: true });
 
@@ -66,6 +66,11 @@ async function viewport(client, width, height, mobile = false) {
   await client.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
 }
 
+async function activateTouch(client) {
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 8, y: 8, id: 1 }] });
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+}
+
 async function capture(client, name) {
   const response = await client.send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
   const path = `${outputDir}/${name.endsWith('.png') ? name : `${name}.png`}`;
@@ -90,6 +95,26 @@ async function renderTicks(client, button, count) {
       api.render(previous);
     }
   })()`);
+}
+
+async function renderFrames(client, count = 16) {
+  for (let frame = 0; frame < count; frame += 1) {
+    await delay(30);
+    await client.evaluate('window.__devinarok.render()');
+  }
+}
+
+async function ensureVisibleEnemies(client) {
+  let state = { alive: 0, spawned: 0 };
+  for (let attempt = 0; attempt < 8 && (state.alive < 2 || state.spawned < 2); attempt += 1) {
+    await renderTicks(client, 0, 30);
+    state = await client.evaluate(`(() => {
+      const enemies = window.__devinarok.world.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead);
+      return { alive: enemies.length, spawned: enemies.filter((entity) => (entity.spawnTicksLeft ?? 0) <= 0).length };
+    })()`);
+  }
+  if (state.alive < 2 || state.spawned < 2) throw new Error(`Expected two living, spawned enemies; found ${state.alive} alive and ${state.spawned} spawned`);
+  return state;
 }
 
 async function hideRoomEnemies(client) {
@@ -150,17 +175,30 @@ await client.evaluate(`(() => {
 })()`);
 await waitFor(client, `!document.querySelector('#character-card').hidden`);
 await client.evaluate(`document.querySelector('#start-button').click()`);
-  await waitFor(client, `Boolean(window.__devinarok.world?.mode === 'hub' && window.__devinarok.renderer)`);
+await waitFor(client, `Boolean(window.__devinarok.world?.mode === 'hub' && window.__devinarok.renderer)`);
 await delay(1000);
 await capture(client, 'hub-desktop-1024x768');
+await capture(client, 'hub-npcs-desktop-1024x768');
 await viewport(client, 390, 844, true);
+await activateTouch(client);
 await delay(400);
 await capture(client, 'hub-mobile-390x844');
+await capture(client, 'hub-npcs-mobile-390x844');
+
+await viewport(client, 1024, 768);
+await client.evaluate(`document.documentElement.classList.remove('touch-mode')`);
+await client.evaluate(`document.querySelector('.npc-hotspot[data-panel="blacksmith"]').click()`);
+await waitFor(client, `!document.querySelector('#hub-panel').hidden && document.querySelector('#hub-panel').dataset.kind === 'blacksmith'`);
+const npcClickProof = await client.evaluate(`({
+  opened: !document.querySelector('#hub-panel').hidden,
+  panel: document.querySelector('#hub-panel').dataset.kind
+})`);
+await client.evaluate(`document.querySelector('#hub-panel [data-close]').click()`);
+await writeFile(`${outputDir}/npc-panel-click-proof.json`, `${JSON.stringify(npcClickProof, null, 2)}\n`);
 
 await client.evaluate(`window.__devinarok.grantDevGold(1000)`);
 const swordUid = await client.evaluate(`window.__devinarok.grantDevItem({ itemId: 'rusted-sword', rarity: 'rare' })`);
-const comparisonUid = await client.evaluate(`window.__devinarok.grantDevItem({ itemId: 'rusted-sword', rarity: 'magic' })`);
-await viewport(client, 1024, 768);
+const comparisonUid = await client.evaluate(`window.__devinarok.grantDevItem({ itemId: 'rusted-sword', rarity: 'legendary' })`);
 await client.evaluate(`document.querySelector('[data-panel="inventory"]').click()`);
 await waitFor(client, `!document.querySelector('#hub-panel').hidden`);
 await client.evaluate(`document.querySelector('[data-equip="${swordUid}"]').click()`);
@@ -173,9 +211,62 @@ await capture(client, 'inventory-compare-panel.png');
 
 for (const stageId of ['C1', 'C2', 'C3']) {
   await enterStage(client, stageId);
-  await hideRoomEnemies(client);
+  const enemyState = await ensureVisibleEnemies(client);
+  console.log(`${stageId} capture enemies: ${enemyState.alive} alive, ${enemyState.spawned} spawned`);
+  const enemyProof = await client.evaluate(`(() => {
+    const api = window.__devinarok;
+    const renderer = api.renderer;
+    return api.world.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead).map((entity) => {
+      const visual = renderer.entities.get(entity.id);
+      const point = new renderer.camera.position.constructor(entity.x, 1, entity.z).project(renderer.camera);
+      let meshes = 0;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      visual?.root.updateMatrixWorld(true);
+      visual?.root.traverse((node) => {
+        if (!node.isMesh) return;
+        meshes += 1;
+        node.geometry.computeBoundingBox();
+        const bounds = node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld);
+        minY = Math.min(minY, bounds.min.y);
+        maxY = Math.max(maxY, bounds.max.y);
+      });
+      return {
+        id: entity.id,
+        model: entity.model,
+        x: entity.x,
+        z: entity.z,
+        spawnTicksLeft: entity.spawnTicksLeft,
+        projected: { x: point.x, y: point.y, z: point.z },
+        rootVisible: visual?.root.visible,
+        meshCount: meshes,
+        modelHeight: maxY - minY,
+        animation: visual?.currentKey
+      };
+    });
+  })()`);
+  await writeFile(`${outputDir}/${stageId.toLowerCase()}-enemy-proof.json`, `${JSON.stringify(enemyProof, null, 2)}\n`);
+  if (stageId === 'C1') {
+    const desktopUi = await client.evaluate(`({
+      finePointer: matchMedia('(pointer: fine)').matches,
+      controlsDisplay: getComputedStyle(document.querySelector('#controls')).display,
+      keyHintsDisplay: getComputedStyle(document.querySelector('#key-hints')).display
+    })`);
+    await writeFile(`${outputDir}/desktop-controls-proof.json`, `${JSON.stringify(desktopUi, null, 2)}\n`);
+  }
   await delay(500);
+  await renderFrames(client);
   await capture(client, `${stageId.toLowerCase()}-first-room-desktop-1024x768`);
+  if (stageId === 'C1') {
+    await viewport(client, 390, 844, true);
+    await activateTouch(client);
+    await renderFrames(client);
+    await capture(client, 'c1-first-room-mobile-390x844');
+    await viewport(client, 1024, 768);
+    await client.evaluate(`document.documentElement.classList.remove('touch-mode')`);
+    await client.evaluate('window.__devinarok.render()');
+    await hideRoomEnemies(client);
+  }
   if (stageId === 'C1') {
     await client.evaluate(`(() => {
       const api = window.__devinarok;
@@ -186,9 +277,6 @@ for (const stageId of ['C1', 'C2', 'C3']) {
       player.z = door.z + 3;
       const previous = structuredClone(api.world);
       api.step({});
-      api.renderer.camera.position.x = player.x;
-      api.renderer.camera.position.z = player.z + api.renderer.cameraOffsetZ - 0.6;
-      api.renderer.camera.lookAt(player.x, 0, player.z - 0.6);
       api.render(previous);
     })()`);
     await capture(client, 'c1-door-open-after-clear.png');
@@ -197,8 +285,6 @@ for (const stageId of ['C1', 'C2', 'C3']) {
       const player = api.world.entities.find((entity) => entity.kind === 'player');
       player.x = 0;
       player.z = 7;
-      api.renderer.camera.position.set(0, 16, 17.6);
-      api.renderer.camera.lookAt(0, 0, 6.4);
       api.render(structuredClone(api.world));
     })()`);
     await prepareSkill(client, 1);
@@ -241,6 +327,25 @@ await client.evaluate(`(() => {
 await waitFor(client, `document.querySelector('#boss-intro').hidden`);
 await renderTicks(client, 0, 14);
 await capture(client, 'boss-phase-two-telegraph.png');
+for (const [name, shape] of [
+  ['sector', { type: 'sector', originX: 0, originZ: 2, angle: 0.4, halfAngle: 0.58, range: 5.5 }],
+  ['line', { type: 'line', originX: -3, originZ: 0, angle: 0.2, length: 6.5, width: 1.2 }],
+  ['circle', { type: 'circle', originX: 0.5, originZ: 0, radius: 3.2 }],
+  ['ring', { type: 'ring', originX: 0, originZ: 1, innerRadius: 1.7, radius: 3.4 }],
+]) {
+  await client.evaluate(`(() => {
+    const api = window.__devinarok;
+    const boss = api.world.entities.find((entity) => entity.boss);
+    boss.attackPhase = 'windup';
+    boss.attackWindupTicks = 30;
+    boss.attackRemaining = 15;
+    boss.attackShape = ${JSON.stringify(shape)};
+    api.renderer.updateTelegraphs(api.world);
+    api.render(structuredClone(api.world));
+  })()`);
+  await delay(150);
+  await capture(client, `telegraph-${name}-mid-windup.png`);
+}
 
 await enterStage(client, 'C1');
 const proofBefore = await client.evaluate(`({
@@ -293,6 +398,7 @@ await client.evaluate(`(() => {
 })()`);
 await waitFor(client, `document.querySelector('#boss-intro').hidden`);
 await viewport(client, 390, 844, true);
+await activateTouch(client);
 await delay(500);
 await capture(client, 'mobile-combat-hud-cooldowns-potion-bossbar-390x844.png');
 
