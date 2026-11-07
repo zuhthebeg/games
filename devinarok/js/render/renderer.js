@@ -812,7 +812,11 @@ export class ArenaRenderer {
       const targetShift = this.mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea);
       const targetMinZ = minCameraZ + Math.min(0, targetShift);
       const targetMaxZ = maxCameraZ + Math.max(0, targetShift);
-      const targetZ = THREE.MathUtils.clamp(baseTargetZ + targetShift, targetMinZ, targetMaxZ);
+      const targetZ = THREE.MathUtils.clamp(
+        player.z - this.cameraFollowOffsetZ + targetShift,
+        targetMinZ,
+        targetMaxZ,
+      );
       this.camera.position.x += (0 - this.camera.position.x) * 0.06;
       const followAlpha = visibleArea ? 0.16 : 0.06;
       this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * followAlpha;
