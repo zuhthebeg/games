@@ -1293,6 +1293,10 @@ function settlementResult(world, outcome) {
 
 function finishStage(world, outcome) {
   if (world.outcome) return;
+  if (outcome === 'clear') {
+    const player = world.entities.find((entity) => entity.kind === 'player');
+    if (player) pickupLoot(world, player, true);
+  }
   world.outcome = outcome;
   world.result = settlementResult(world, outcome);
   emit(world, 'stageEnd', { outcome, stageId: world.stageId, result: world.result });
@@ -1329,9 +1333,9 @@ function updateStageProgress(world) {
   spawnRoom(world);
 }
 
-function pickupLoot(world, player) {
+function pickupLoot(world, player, collectAll = false) {
   for (const loot of [...world.entities]) {
-    if (loot.kind !== 'loot' || Math.hypot(player.x - loot.x, player.z - loot.z) > 1) continue;
+    if (loot.kind !== 'loot' || (!collectAll && Math.hypot(player.x - loot.x, player.z - loot.z) > 1)) continue;
     world.entities = world.entities.filter((entity) => entity.id !== loot.id);
     if (loot.lootType === 'gold') world.reward.gold += loot.gold;
     else world.reward.items.push({ ...loot.item, lootId: loot.id });

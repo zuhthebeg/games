@@ -58,6 +58,29 @@ test('stage settlement preserves potions consumed during the sortie', () => {
   assert.equal(result.potions, 2);
 });
 
+test('boss kill collects both guaranteed item drops before final-room settlement', () => {
+  const world = createStageWorld({ seed: 74, stageId: 'CB', playerId: 'a', character: { level: 7 } });
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  const boss = world.entities.find((entity) => entity.boss);
+  world.entities = world.entities.filter((entity) => entity.kind !== 'enemy' || entity.id === boss.id);
+  world.roomEnemyIds = [boss.id];
+  player.x = 0;
+  player.z = -1.5;
+  boss.x = 0;
+  boss.z = 0;
+  boss.hp = 1;
+  boss.spawnTicksLeft = 0;
+  boss.invulnerable = false;
+  boss.attackCooldownTicks = 10000;
+  for (let seq = 1; seq <= 15 && !world.outcome; seq += 1) {
+    step(world, { a: { seq, moveX: 0, moveZ: 0, aim: 64, buttons: seq === 1 ? BUTTONS.ATTACK : 0 } });
+  }
+  assert.equal(world.outcome, 'clear');
+  assert.equal(world.result.items.length, 2);
+  assert.ok(world.result.items.every((item) => ['rare', 'legendary'].includes(item.rarity)));
+  assert.equal(world.events.filter((event) => event.type === 'pickup' && event.lootType === 'item').length, 2);
+});
+
 test('10,000 rarity rolls reproduce the declared distribution and boss items are rare+', () => {
   const counts = { common: 0, magic: 0, rare: 0, legendary: 0 };
   for (let index = 0; index < 10000; index += 1) counts[rarityForRoll(index / 10000)] += 1;
