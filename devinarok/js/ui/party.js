@@ -294,7 +294,7 @@ export class PartyClient {
   }
 
   viewWorld(now = performance.now()) {
-    if (!this.stageWorld || !this.predictor) return this.stageWorld;
+    if (!this.stageWorld || !this.predictor || !this.session) return this.stageWorld;
     const snapshot = this.lastSnapshot;
     const estimate = this.session.clock.getEstimate(now);
     const sample = this.interpolation.sample(estimate);
