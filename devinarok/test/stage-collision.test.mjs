@@ -227,6 +227,38 @@ test('movement stops at the former ghost crates, stairs, and hub table', () => {
   }
 });
 
+test('boss charge stops at a prop and cannot hit through it', () => {
+  const world = createStageWorld({ seed: 901, stageId: 'CB', playerId: 'hero', inputDriven: true });
+  const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  boss.x = 0;
+  boss.z = 0;
+  boss.spawnTicksLeft = 0;
+  boss.invulnerable = false;
+  boss.attackPhase = 'active';
+  boss.attackPattern = 'charge';
+  boss.attackRemaining = 9;
+  boss.attackCooldownTicks = 0;
+  boss.chargeAngle = 0;
+  boss.lineTravelled = 0;
+  boss.attackShape = { type: 'line', originX: 0, originZ: 0, angle: 0, length: 9, width: 1.6 };
+  player.x = 4;
+  player.z = 0;
+  world.arena.obstacles.push({ id: 'test-charge-wall', type: 'rect', x: 2, z: 0, width: 0.5, depth: 4 });
+
+  step(world, {});
+  step(world, {});
+
+  assert.equal(boss.x, 1);
+  assert.equal(boss.lineTravelled, 1);
+  assert.equal(boss.attackPhase, null);
+  assert.equal(boss.recoverTicks, 18);
+  assert.equal(
+    world.events.some((event) => event.type === 'hit' && event.sourceId === boss.id && event.targetId === player.id),
+    false,
+  );
+});
+
 test('the inn board and CB clear explain the next-region progression', async () => {
   const main = await readFile(new URL('../js/main.js', import.meta.url), 'utf8');
   assert.match(main, /2지역 · 준비 중/);
