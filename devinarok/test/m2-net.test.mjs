@@ -4,6 +4,7 @@ import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { escapeHtml } from '../js/ui/escape-html.js';
+import { handlePauseKey } from '../js/ui/pause-menu.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
 import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
@@ -44,6 +45,14 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
 
 test('escapeHtml encodes peer-controlled names before HTML insertion', () => {
   assert.equal(escapeHtml(`<img src=x onerror="alert('x')">&`), '&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt;&amp;');
+});
+
+test('Escape and R toggle the co-op pause menu without a solo loop', () => {
+  const state = { loop: null, partyClient: {}, world: { mode: 'stage' }, pauseMenu: { hidden: true } };
+  assert.equal(handlePauseKey('Escape', state), true);
+  assert.equal(state.pauseMenu.hidden, false);
+  assert.equal(handlePauseKey('KeyR', state), true);
+  assert.equal(state.pauseMenu.hidden, true);
 });
 
 test('hit agreement excuses client targets dead by the last authoritative strike only', () => {

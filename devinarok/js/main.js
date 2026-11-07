@@ -5,6 +5,7 @@ import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
 import { escapeHtml } from './ui/escape-html.js';
+import { handlePauseKey } from './ui/pause-menu.js';
 import { computeBotPolicy } from './net/bot-policy.js';
 import { AFFIXES } from './content/affixes.js';
 import { ITEMS, RARITIES } from './content/items.js';
@@ -783,14 +784,7 @@ window.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'touch') document.documentElement.classList.add('touch-mode');
 }, { passive: true });
 window.addEventListener('keydown', (event) => {
-  if ((!loop && !partyClient) || world?.mode !== 'stage' || !['Escape', 'KeyR'].includes(event.code)) return;
-  if (pauseMenu.hidden) {
-    if (!partyClient) loop.pause();
-    pauseMenu.hidden = false;
-  } else {
-    pauseMenu.hidden = true;
-    loop.resume();
-  }
+  handlePauseKey(event.code, { loop, partyClient, world, pauseMenu });
 });
 
 saves = await createSaveRepository();
