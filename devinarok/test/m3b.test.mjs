@@ -65,6 +65,42 @@ test('forest summoner spawns at most four of its own minions', () => {
   assert.equal(ENEMIES.ashcaller.summon.maxAlive, 4);
 });
 
+test('forest rooms have dense props, solid cover, and two close staggered tree rows', () => {
+  const forestStages = STAGE_LIST.filter((stage) => stage.region === 2);
+  for (const stage of forestStages) {
+    for (const room of stage.rooms) {
+      const interior = stage.props.filter((prop) => prop.roomId === room.id && prop.forestInterior);
+      const solid = interior.filter((prop) => prop.solid !== false);
+      const boundary = stage.props.filter((prop) => prop.roomId === room.id && prop.forestBoundary);
+      assert.ok(interior.length >= 12, `${stage.id}/${room.id} has ${interior.length} interior props`);
+      assert.ok(solid.length >= 4, `${stage.id}/${room.id} has ${solid.length} solid interior props`);
+      assert.ok(boundary.length >= 50, `${stage.id}/${room.id} has ${boundary.length} perimeter trees`);
+      for (const row of [0, 1]) {
+        for (const axis of ['horizontal', 'vertical']) {
+          for (const side of [-1, 1]) {
+            const positions = boundary
+              .filter((prop) => prop.forestBoundaryRow === row
+                && prop.forestBoundaryAxis === axis
+                && prop.forestBoundarySide === side)
+              .map((prop) => axis === 'horizontal' ? prop.x : prop.z)
+              .sort((a, b) => a - b);
+            assert.ok(positions.length >= 5, `${stage.id}/${room.id} tree row ${row}/${axis}/${side}`);
+            for (let index = 1; index < positions.length; index += 1) {
+              assert.ok(positions[index] - positions[index - 1] <= 2.5, `${stage.id}/${room.id} tree spacing`);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const propsFor = (stageId) => STAGE_LIST.find((stage) => stage.id === stageId).props;
+  assert.ok(propsFor('F1').filter((prop) => prop.forestInterior && /log/.test(prop.model)).length >= 6);
+  assert.ok(propsFor('F2').filter((prop) => prop.bogPool).length >= 4);
+  assert.ok(propsFor('F3').filter((prop) => prop.forestInterior && /fence|campfire/.test(prop.model)).length >= 5);
+  assert.ok(propsFor('FB').filter((prop) => prop.forestInterior && /tree_.*fall/.test(prop.model)).length >= 8);
+});
+
 test('new enemies use the existing stage-level HP and attack scaling', () => {
   const { enemy: ashcaller } = prepareEnemy('F1', 'ashcaller', { x: 2, z: 0 });
   assert.equal(ashcaller.maxHp, Math.round(ENEMIES.ashcaller.hp * (1 + 0.12 * 6)));

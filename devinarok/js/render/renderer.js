@@ -47,6 +47,68 @@ const WEAPON_TINTS = {
   rare: 0xb8901a,
   legendary: 0xff6a1a,
 };
+const FOREST_TARGET_BOUNDS = {
+  'assets/env/forest/tree_pineTallA.glb': [2.5, 5, 2.5],
+  'assets/env/forest/tree_pineTallB.glb': [2.8, 5.5, 2.8],
+  'assets/env/forest/tree_default_fall.glb': [2.8, 3.8, 2.6],
+  'assets/env/forest/tree_oak_fall.glb': [3, 3.6, 3],
+  'assets/env/forest/rock_largeA.glb': [1.4, 0.9, 1.8],
+  'assets/env/forest/rock_largeD.glb': [1.8, 1.4, 1.8],
+  'assets/env/forest/rock_smallB.glb': [1, 0.9, 1],
+  'assets/env/forest/stump_old.glb': [0.9, 0.8, 0.9],
+  'assets/env/forest/stump_round.glb': [0.9, 0.75, 0.9],
+  'assets/env/forest/log.glb': [0.8, 0.75, 3],
+  'assets/env/forest/log_large.glb': [1.3, 0.85, 2.4],
+  'assets/env/forest/mushroom_redGroup.glb': [1, 0.8, 1],
+  'assets/env/forest/mushroom_tanGroup.glb': [1, 0.8, 1],
+  'assets/env/forest/plant_bushLarge.glb': [1.2, 0.9, 1.2],
+  'assets/env/forest/campfire_logs.glb': [1.2, 0.55, 1.2],
+  'assets/env/forest/fence_planks.glb': [2.8, 1, 0.5],
+  'assets/env/forest/fence_gate.glb': [2.8, 1, 0.8],
+};
+
+function createForestGroundTexture() {
+  const size = 128;
+  const data = new Uint8Array(size * size * 4);
+  const smooth = (value) => value * value * (3 - 2 * value);
+  const hash = (x, y, period) => {
+    const px = (x % period + period) % period;
+    const py = (y % period + period) % period;
+    const value = Math.sin((px + 17) * 127.1 + (py + 31) * 311.7) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  const noise = (x, y, cell) => {
+    const period = size / cell;
+    const gridX = x / cell;
+    const gridY = y / cell;
+    const x0 = Math.floor(gridX);
+    const y0 = Math.floor(gridY);
+    const tx = smooth(gridX - x0);
+    const ty = smooth(gridY - y0);
+    const top = hash(x0, y0, period) * (1 - tx) + hash(x0 + 1, y0, period) * tx;
+    const bottom = hash(x0, y0 + 1, period) * (1 - tx) + hash(x0 + 1, y0 + 1, period) * tx;
+    return top * (1 - ty) + bottom * ty;
+  };
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const grain = noise(x, y, 2);
+      const patch = noise(x, y, 32) * 0.7 + noise(x, y, 8) * 0.3;
+      const base = patch > 0.58 ? [82, 91, 59] : [125, 105, 73];
+      const variation = (grain - 0.5) * 36;
+      data[index] = Math.max(0, Math.min(255, base[0] + variation));
+      data[index + 1] = Math.max(0, Math.min(255, base[1] + variation));
+      data[index + 2] = Math.max(0, Math.min(255, base[2] + variation));
+      data[index + 3] = 255;
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 function isolateWeaponMaterials(root, materials) {
   root.traverse((node) => {
@@ -121,8 +183,8 @@ export class ArenaRenderer {
     this.arena = arena;
     this.isForest = arena.theme === 'forest';
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(this.isForest ? 0x333a36 : 0x17141a);
-    this.scene.fog = new THREE.Fog(this.isForest ? 0x69716a : 0x17141a, this.isForest ? 24 : 42, this.isForest ? 55 : 78);
+    this.scene.background = new THREE.Color(this.isForest ? 0x484f43 : 0x17141a);
+    this.scene.fog = new THREE.Fog(this.isForest ? 0x777663 : 0x17141a, this.isForest ? 12 : 42, this.isForest ? 36 : 78);
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
     this.camera.position.set(0, 15.5, 10.85);
     this.camera.lookAt(0, 0, 0);
@@ -209,7 +271,7 @@ export class ArenaRenderer {
   }
 
   createAshParticles() {
-    const count = 72;
+    const count = 180;
     this.ashPositions = new Float32Array(count * 3);
     for (let index = 0; index < count; index += 1) {
       const phase = index * 2.399963;
@@ -220,14 +282,16 @@ export class ArenaRenderer {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(this.ashPositions, 3));
     const material = new THREE.PointsMaterial({
-      color: 0xd0d0bd,
-      size: 0.055,
+      color: 0xe4d9bc,
+      size: 2.5,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.82,
       depthWrite: false,
-      sizeAttenuation: true,
+      depthTest: false,
+      sizeAttenuation: false,
     });
     this.ashPoints = new THREE.Points(geometry, material);
+    this.ashPoints.renderOrder = 2;
     this.scene.add(this.ashPoints);
     this.transientEffects.push({
       mesh: this.ashPoints,
@@ -311,6 +375,20 @@ export class ArenaRenderer {
     const modelPaths = [...new Set([...Object.values(M0_MODELS), ...propModels])];
     const loaded = await Promise.all(modelPaths.map(async (path) => [path, await load(path)]));
     const loadedByPath = new Map(loaded);
+    this.forestModelScales = new Map();
+    for (const [path, target] of Object.entries(FOREST_TARGET_BOUNDS)) {
+      const scene = loadedByPath.get(path)?.scene;
+      if (!scene) continue;
+      scene.updateMatrixWorld(true);
+      const measured = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+      if (measured.x && measured.y && measured.z) {
+        this.forestModelScales.set(path, new THREE.Vector3(
+          target[0] / measured.x,
+          target[1] / measured.y,
+          target[2] / measured.z,
+        ));
+      }
+    }
     for (const [key, path] of Object.entries(M0_MODELS)) this.models.set(key, loadedByPath.get(path).scene);
     for (const [key, path] of [['humanoid', 'assets/anims/humanoid.glb'], ['skeleton', 'assets/anims/skeleton.glb']]) {
       const gltf = await load(path);
@@ -352,31 +430,79 @@ export class ArenaRenderer {
       const materials = Array.isArray(material) ? material : [material];
       for (const item of materials) {
         if (item.color) {
-          item.color.multiplyScalar(this.isForest ? (path.includes('wood') ? 0.72 : 0.56) : (path.includes('wood') ? 0.84 : 0.76));
-          if (this.isForest) item.color.lerp(new THREE.Color(0x777f70), 0.32);
+          if (this.isForest) {
+            item.color.multiplyScalar(path.includes('wood') ? 0.9 : 0.95);
+            item.color.lerp(new THREE.Color(path.includes('wood') ? 0x6d5c40 : 0xb3a078), path.includes('wood') ? 0.5 : 0.78);
+          } else {
+            item.color.multiplyScalar(path.includes('wood') ? 0.84 : 0.76);
+          }
         }
       }
       this.scene.add(instances);
     }
+    if (this.isForest) {
+      const floorProps = this.arena.props.filter((prop) => (
+        prop.model === 'assets/env/floor_dirt_large.glb'
+        || prop.model === 'assets/env/floor_dirt_large_rocky.glb'
+      ));
+      if (floorProps.length) {
+        const minX = Math.min(...floorProps.map((prop) => prop.x)) - 8;
+        const maxX = Math.max(...floorProps.map((prop) => prop.x)) + 8;
+        const minZ = Math.min(...floorProps.map((prop) => prop.z)) - 14;
+        const maxZ = Math.max(...floorProps.map((prop) => prop.z)) + 14;
+        const width = maxX - minX;
+        const depth = maxZ - minZ;
+        const texture = createForestGroundTexture();
+        texture.repeat.set(width / 4, depth / 4);
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(width, depth),
+          new THREE.MeshBasicMaterial({
+            map: texture,
+            color: 0xe8d9b5,
+            transparent: true,
+            opacity: 0.34,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          }),
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set((minX + maxX) / 2, 0.025, (minZ + maxZ) / 2);
+        this.scene.add(ground);
+      }
+    }
     for (const placement of this.arena.props) {
       if (instancedModels.has(placement.model)) continue;
+      if (placement.bogPool) {
+        const geometry = new THREE.CircleGeometry(1, 12);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x202d28,
+          transparent: true,
+          opacity: 0.86,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        const pool = new THREE.Mesh(geometry, material);
+        pool.rotation.x = -Math.PI / 2;
+        pool.position.set(placement.x, 0.035, placement.z);
+        pool.scale.set(placement.scaleX ?? 1, placement.scaleZ ?? 1, 1);
+        this.scene.add(pool);
+        continue;
+      }
       const prop = SkeletonUtils.clone(loadedByPath.get(placement.model).scene);
+      const normalizedScale = this.forestModelScales.get(placement.model);
       if (this.isForest) {
         for (const material of cloneMaterials(prop)) {
           if (material.color) {
-            material.color.multiplyScalar(0.78).lerp(new THREE.Color(0x737b6f), 0.4);
-            if (placement.model.endsWith('/ground_pathStraight.glb')) {
-              material.color.multiplyScalar(0.42).lerp(new THREE.Color(0x3c4740), 0.55);
-            }
+            material.color.multiplyScalar(0.88).lerp(new THREE.Color(0x69735e), 0.2);
           }
         }
       }
       prop.position.set(placement.x, placement.y ?? 0, placement.z);
       prop.rotation.y = placement.rotY;
       prop.scale.set(
-        placement.scaleX ?? placement.scale ?? 1,
-        placement.scaleY ?? placement.scale ?? 1,
-        placement.scaleZ ?? placement.scale ?? 1,
+        (placement.scaleX ?? placement.scale ?? 1) * (normalizedScale?.x ?? 1),
+        (placement.scaleY ?? placement.scale ?? 1) * (normalizedScale?.y ?? 1),
+        (placement.scaleZ ?? placement.scale ?? 1) * (normalizedScale?.z ?? 1),
       );
       if (placement.wallSide) {
         const materials = cloneMaterials(prop);
@@ -441,6 +567,11 @@ export class ArenaRenderer {
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
+    if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
+      root.traverse((node) => {
+        if (/hat/i.test(node.name)) node.visible = false;
+      });
+    }
     if (Number.isInteger(entity.tint)) {
       const tint = new THREE.Color(entity.tint);
       for (const material of materials) {
