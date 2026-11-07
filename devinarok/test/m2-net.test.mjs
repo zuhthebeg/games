@@ -10,6 +10,7 @@ import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
 import { computeBotPolicy } from '../js/net/bot-policy.js';
 import { PartyClient, partyServerUrl } from '../js/ui/party.js';
+import { Predictor } from '../js/net/predictor.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS } from '../js/sim/world.js';
 
@@ -203,6 +204,45 @@ test('party clears queued inputs and blocks submission after reconnect expiry', 
   assert.equal(client.session.inputs.size, 0);
   assert.equal(client.sendInput({ seq: 2, buttons: BUTTONS.ATTACK }), null);
   assert.equal(client.session.inputs.size, 0);
+});
+
+test('downed local prediction ignores movement and actions, including pending replay', () => {
+  const player = {
+    id: 1,
+    playerId: 'self',
+    x: 2,
+    z: 3,
+    downed: true,
+    attack: null,
+    skillCast: null,
+    previousButtons: BUTTONS.ATTACK,
+  };
+  const predictor = new Predictor({ player, ctx: { arena: {}, tick: 10 } });
+  const result = predictor.applyLocalInput({
+    seq: 1,
+    moveX: 127,
+    moveZ: -127,
+    buttons: BUTTONS.ATTACK,
+  });
+  assert.equal(result.motion, null);
+  assert.equal(result.player.x, 2);
+  assert.equal(result.player.z, 3);
+  assert.equal(result.player.attack, null);
+  assert.deepEqual(predictor.pendingInputs[0], {
+    seq: 1,
+    moveX: 0,
+    moveZ: 0,
+    aim: 0,
+    buttons: 0,
+  });
+  predictor.reconcile({
+    tick: 11,
+    ack: 0,
+    player: { ...player, downed: false },
+  });
+  assert.equal(predictor.getPlayer().x, 2);
+  assert.equal(predictor.getPlayer().z, 3);
+  assert.equal(predictor.getPlayer().attack, null);
 });
 
 test('shared bot policy targets, dodges telegraphs, and enters cleared-room doors', () => {

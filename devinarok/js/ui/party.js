@@ -274,6 +274,14 @@ export class PartyClient {
     const estimate = this.session.clock.getEstimate(performance.now());
     const view = this.interpolation.sample(estimate);
     const input = { ...rawInput, viewTick: Math.round(view.renderTick) };
+    if (this.predictor.getPlayer().downed) {
+      input.moveX = 0;
+      input.moveZ = 0;
+      input.mx = 0;
+      input.mz = 0;
+      input.buttons = 0;
+      input.b = 0;
+    }
     this.predictor.applyLocalInput(input);
     this.castTimeline.predictInput(input, performance.now());
     this.session.queueInput(input);

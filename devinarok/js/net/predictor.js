@@ -60,11 +60,20 @@ export class Predictor {
 
   simulate(input) {
     this.ctx.tick += 1;
+    if (this.player.downed) {
+      this.player.previousButtons = 0;
+      return null;
+    }
     return stepPlayerMotion(this.ctx, this.player, normalizeInput(input));
   }
 
   applyLocalInput(input) {
     const normalized = normalizeInput(input);
+    if (this.player.downed) {
+      normalized.moveX = 0;
+      normalized.moveZ = 0;
+      normalized.buttons = 0;
+    }
     if (
       !Number.isSafeInteger(normalized.seq) ||
       normalized.seq <= this.lastAck ||
