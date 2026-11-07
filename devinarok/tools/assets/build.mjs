@@ -6,6 +6,7 @@ import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, meshopt, prune, resample, weld } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
+import { HUB_ARENA, STAGES } from '../../js/content/stages.js';
 
 const toolsDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const gameDir = resolve(toolsDir, '..');
@@ -299,6 +300,25 @@ for (const job of environment) {
   await writeDocument(job.output, document);
 }
 
+const m1AudioFiles = [
+  'assets/audio/sword-swing.ogg',
+  'assets/audio/impact.ogg',
+  'assets/audio/enemy-death.ogg',
+  'assets/audio/door-open.ogg',
+  'assets/audio/coins.ogg',
+  'assets/audio/boss-roar-substitute.ogg',
+  'assets/audio/footstep.ogg',
+  'assets/audio/ui-click.ogg',
+  'assets/audio/potion.ogg',
+  'assets/audio/confirm.ogg',
+  'assets/audio/hub-bgm.ogg',
+  'assets/audio/combat-bgm.ogg',
+];
+for (const file of m1AudioFiles) {
+  const bytes = await readFile(join(gameDir, file));
+  outputRecords.set(file, { bytes: bytes.byteLength, sha256: sha256(bytes) });
+}
+
 const vendorDir = join(gameDir, 'vendor/three-0.187.0');
 const threeFiles = [
   'three.module.min.js',
@@ -327,6 +347,29 @@ const m0LoadedBytes = m0LoadedFiles.reduce((sum, file) => sum + outputRecords.ge
 if (m0LoadedBytes > budgetBytes) {
   throw new Error(`M0 assets exceed budget: ${m0LoadedBytes} > ${budgetBytes}`);
 }
+const m1CommonFiles = [
+  'assets/chars/Knight.glb',
+  'assets/chars/Skeleton_Minion.glb',
+  'assets/chars/Skeleton_Warrior.glb',
+  'assets/chars/Skeleton_Mage.glb',
+  'assets/chars/Skeleton_Rogue.glb',
+  'assets/anims/humanoid.glb',
+  'assets/anims/skeleton.glb',
+];
+const m1StageArenas = { 'inn-hub': HUB_ARENA, ...STAGES };
+const m1StageLoadedFiles = Object.fromEntries(Object.entries(m1StageArenas).map(([stageId, arena]) => [
+  stageId,
+  [...new Set([...m1CommonFiles, ...arena.props.map((prop) => prop.model), ...m1AudioFiles])],
+]));
+const m1LoadedFiles = [...new Set(Object.values(m1StageLoadedFiles).flat())];
+const m1StageLoadedBytes = Object.fromEntries(Object.entries(m1StageLoadedFiles).map(([stageId, files]) => [
+  stageId,
+  files.reduce((sum, file) => sum + outputRecords.get(file).bytes, 0),
+]));
+const m1AssetBudgetBytes = 6 * 1024 * 1024;
+if (Math.max(...Object.values(m1StageLoadedBytes)) > m1AssetBudgetBytes) {
+  throw new Error(`M1 assets exceed budget: ${JSON.stringify(m1StageLoadedBytes)}`);
+}
 
 const manifestFiles = Object.fromEntries(
   [...outputRecords.entries()]
@@ -347,6 +390,10 @@ await writeFile(
     m0LoadedFiles,
     m0LoadedBytes,
     m0BudgetBytes: budgetBytes,
+    m1LoadedFiles,
+    m1StageLoadedFiles,
+    m1StageLoadedBytes,
+    m1AssetBudgetBytes,
   }, null, 2)}\n`,
 );
 
@@ -386,6 +433,10 @@ for (const [repoId, repo] of Object.entries(repos)) {
 
 const threeTarballUrl = 'https://registry.npmjs.org/three/-/three-0.187.0.tgz';
 const threeTarballSha256 = 'ff540832ded0cfe919764d24a3d88f3e2a05f23303f876423e4f893841e90728';
+const existingLedger = await readFile(join(gameDir, 'assets-ledger.md'), 'utf8').catch(() => '');
+const preservedM1Ledger = existingLedger.includes('\n## Vendored M1 audio')
+  ? `\n## Vendored M1 audio${existingLedger.split('\n## Vendored M1 audio')[1].split('\n## M1 stage asset budget')[0]}`
+  : '';
 const ledger = [
   '# Asset ledger',
   '',
@@ -409,7 +460,12 @@ const ledger = [
   '',
   ...m0LoadedFiles.map((file) => `- \`${file}\`: ${outputRecords.get(file).bytes.toLocaleString('en-US')} bytes`),
   '',
-].join('\n');
+  '',
+  '## M1 stage asset budget',
+  '',
+  `Loaded runtime assets: ${Object.entries(m1StageLoadedBytes).map(([stageId, bytes]) => `${stageId} ${bytes.toLocaleString('en-US')} bytes`).join('; ')}. The per-stage limit is ${m1AssetBudgetBytes.toLocaleString('en-US')} bytes.`,
+].join('\n') + preservedM1Ledger;
 await writeFile(join(gameDir, 'assets-ledger.md'), ledger);
 
 console.log(`M0 loaded assets: ${m0LoadedBytes} / ${budgetBytes} bytes`);
+console.log(`M1 stage assets: ${JSON.stringify(m1StageLoadedBytes)} / ${m1AssetBudgetBytes} bytes each`);

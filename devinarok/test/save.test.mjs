@@ -60,8 +60,8 @@ test('legacy schema migration backs up source and import/export verifies checksu
   };
   const repo = await repository(legacy);
   const migrated = await repo.backend.readData();
-  assert.equal(migrated.meta.schemaVersion, 1);
-  assert.equal(migrated.backups.length, 1);
+  assert.equal(migrated.meta.schemaVersion, 2);
+  assert.equal(migrated.backups.length, 2);
   assert.equal(migrated.backups[0].data.meta.schemaVersion, 0);
 
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '시험자', kind: 'knight' }] });
@@ -73,4 +73,49 @@ test('legacy schema migration backs up source and import/export verifies checksu
   const tampered = structuredClone(exported);
   tampered.data.characters[0].gold = 999;
   await assert.rejects(target.import(tampered), /checksum/);
+});
+
+test('M1 potion, sale, and enhancement operations enforce limits and settled rolls', () => {
+  const created = applyOperations(null, {}, [{ type: 'createCharacter', name: '강화자', kind: 'knight' }], 'hero');
+  const state = applyOperations(created.character, created.items, [
+    { type: 'grantGold', amount: 500 },
+    { type: 'buyPotion', count: 2 },
+    { type: 'grantItem', uid: 'blade', itemId: 'rusted-sword', rarity: 'rare', ilvl: 1 },
+    { type: 'equip', uid: 'blade', slot: 'weapon' },
+    { type: 'enhanceItem', uid: 'blade', roll: 0 },
+  ], 'hero');
+  assert.equal(state.character.potions, 2);
+  assert.equal(state.items.blade.enhance, 1);
+  assert.equal(state.character.gold, 410);
+  assert.throws(() => applyOperations(state.character, state.items, [{ type: 'buyPotion', count: 4 }], 'hero'), /carry limit/);
+  assert.throws(() => applyOperations(state.character, state.items, [{ type: 'sellItem', uid: 'blade' }], 'hero'), /Equipped/);
+});
+
+test('enhancement cost and success thresholds match every settled rank', () => {
+  const rates = [100, 100, 95, 90, 80, 70, 60, 50, 40, 30];
+  const base = applyOperations(null, {}, [{ type: 'createCharacter', name: '강화표', kind: 'knight' }], 'hero');
+  for (let rank = 0; rank < rates.length; rank += 1) {
+    const cost = 40 * (rank + 1) ** 2;
+    const funded = applyOperations(base.character, {}, [
+      { type: 'grantGold', amount: cost },
+      { type: 'grantItem', uid: `success-${rank}`, itemId: 'rusted-sword', rarity: 'common', ilvl: 1, enhance: rank },
+    ], 'hero');
+    const success = applyOperations(funded.character, funded.items, [
+      { type: 'enhanceItem', uid: `success-${rank}`, roll: rates[rank] * 100 - 1 },
+    ], 'hero');
+    assert.equal(success.items[`success-${rank}`].enhance, rank + 1);
+    assert.equal(success.character.gold, 0);
+
+    if (rates[rank] < 100) {
+      const failFunded = applyOperations(base.character, {}, [
+        { type: 'grantGold', amount: cost },
+        { type: 'grantItem', uid: `failure-${rank}`, itemId: 'rusted-sword', rarity: 'common', ilvl: 1, enhance: rank },
+      ], 'hero');
+      const failure = applyOperations(failFunded.character, failFunded.items, [
+        { type: 'enhanceItem', uid: `failure-${rank}`, roll: rates[rank] * 100 },
+      ], 'hero');
+      assert.equal(failure.items[`failure-${rank}`].enhance, rank);
+      assert.equal(failure.character.gold, 0);
+    }
+  }
 });

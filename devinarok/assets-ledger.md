@@ -204,3 +204,26 @@ The M0 GLB load set totals **1,167,856 bytes** (1.11 MiB) against a 5 MiB budget
 - `assets/env/barrel_large.glb`: 25,908 bytes
 - `assets/env/crates_stacked.glb`: 43,068 bytes
 - `assets/env/banner_red.glb`: 20,268 bytes
+
+## Vendored M1 audio
+
+Download date: 2026-11-07. Kenney sound files are extracted without modification from locally vendored ZIP archives. The archive SHA-256 is the pinned source artifact hash; each output hash is recorded separately. The OpenGameArt source pages explicitly identify both music tracks as CC0.
+
+| Source and license evidence | Pinned source SHA-256 | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | --- | ---: |
+| Kenney, [50 RPG sound effects](https://opengameart.org/content/50-rpg-sound-effects), CC0 stated on source page; archive [RPGsounds_Kenney.zip](https://opengameart.org/sites/default/files/RPGsounds_Kenney.zip); license copy [`assets/licenses/kenney-rpg-LICENSE.txt`](./assets/licenses/kenney-rpg-LICENSE.txt), SHA-256 `6f12f89bf8d1cc417b25afd1f8e6d9560b2b1d1ac2b175cf4ee9c377e180783d` | `3ae398ad63e293f9c450bda22d5d81c3af69c74df66fc1400f33c012c0bbc231` | `OGG/knifeSlice.ogg` → `assets/audio/sword-swing.ogg` | `4cd96dc630bed9840c15f1dd2306da2cc56a4da26a5d3f1a03c5a7265ac5e54f` | 15,532 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/chop.ogg` → `assets/audio/impact.ogg` | `d00c2b3c9fff07e376145c8c8c45c90e5084ec192f6ce0387db233f7b86f1486` | 9,370 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/dropLeather.ogg` → `assets/audio/enemy-death.ogg` | `097e1d3b74949b0145fda0519d40b7e0773ab82ec4858727f95be830927e1a45` | 11,695 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/doorOpen_1.ogg` → `assets/audio/door-open.ogg` | `4ab93bab96522d8eb109ff96dc57cb6765deb02448fe14c10472084be5bb2a0b` | 22,848 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/handleCoins.ogg` → `assets/audio/coins.ogg` | `8a91f969e932df709df80ee124d86a51389eed9b67f22e5e716bc2bbf60d8dab` | 25,394 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/creak3.ogg` → `assets/audio/boss-roar-substitute.ogg` | `f9638787f95004b9d2d06f8eff8e99d4e594c21b51947daf562856fbcec905d1` | 10,408 |
+| Same Kenney RPG pack and CC0 evidence | Same archive SHA-256 | `OGG/footstep03.ogg` → `assets/audio/footstep.ogg` | `a86756b9af9f370455ab47844239bb07fd1bee7a113068c91f0fcd9b72703fae` | 10,559 |
+| Kenney, [Interface Sounds](https://opengameart.org/content/interface-sounds), CC0 stated on source page; archive [kenney_interfaceSounds.zip](https://opengameart.org/sites/default/files/kenney_interfaceSounds.zip); license copy [`assets/licenses/kenney-interface-LICENSE.txt`](./assets/licenses/kenney-interface-LICENSE.txt), SHA-256 `f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9` | `f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232` | `Audio/click_001.ogg` → `assets/audio/ui-click.ogg` | `ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9` | 4,876 |
+| Same Kenney Interface pack and CC0 evidence | Same archive SHA-256 | `Audio/glass_001.ogg` → `assets/audio/potion.ogg` | `183eebee20eb0a532b0b85104d139cbf2673eb66d95c3cc733ac9ea98362e7e8` | 6,103 |
+| Same Kenney Interface pack and CC0 evidence | Same archive SHA-256 | `Audio/confirmation_001.ogg` → `assets/audio/confirm.ogg` | `063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a` | 8,968 |
+| OpenGameArt, [Dungeon Ambience](https://opengameart.org/content/dungeon-ambience), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/dungeon002.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | `dungeon002.ogg` → `assets/audio/hub-bgm.ogg` | `18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b` | 1,202,848 |
+| OpenGameArt, [Whispers in the Fog](https://opengameart.org/content/whispers-in-the-fog), CC0 stated on source page; direct source `https://opengameart.org/sites/default/files/whispers_in_the_fog.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | `whispers_in_the_fog.ogg` → `assets/audio/combat-bgm.ogg` | `3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd` | 204,349 |
+
+## M1 stage asset budget
+
+The renderer loads 1,082,932 bytes of shared character models and animation libraries plus each arena's unique KayKit props. The Web Audio manager loads all 12 locally vendored effects/tracks (1,532,950 bytes). Including those, actual per-stage totals are **2,866,450 bytes (inn-hub), 2,882,722 (C1), 2,882,722 (C2), 2,876,502 (C3), and 2,818,458 (CB)**, each under the 6 MiB budget. The separately vendored Three.js runtime is not part of the stage-asset manifest.

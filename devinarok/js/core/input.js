@@ -8,6 +8,7 @@ const KEY_BINDINGS = {
   Digit2: BUTTONS.SKILL2,
   Digit3: BUTTONS.SKILL3,
   KeyE: BUTTONS.INTERACT,
+  KeyQ: BUTTONS.POTION,
 };
 const MOVEMENT_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 

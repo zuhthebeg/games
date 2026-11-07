@@ -16,6 +16,7 @@ import {
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const simDir = resolve(projectDir, 'js/sim');
+const contentDir = resolve(projectDir, 'js/content');
 
 async function sourceFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -62,7 +63,7 @@ function advanceToChainWindow(world, player, startSeq) {
 }
 
 test('simulation source is isolated from browser, clock, and random globals', async () => {
-  const files = await sourceFiles(simDir);
+  const files = [...await sourceFiles(simDir), ...await sourceFiles(contentDir)];
   const forbidden = /\b(?:window|document|performance|Date|requestAnimationFrame|localStorage|indexedDB)\b|Math\.random/;
   const importPattern = /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?['"]([^'"]+)['"]/g;
 
@@ -73,8 +74,11 @@ test('simulation source is isolated from browser, clock, and random globals', as
       const specifier = match[1];
       assert.ok(specifier.startsWith('.'), `${relative(projectDir, file)} has non-relative import ${specifier}`);
       const resolved = resolve(dirname(file), specifier);
-      const rel = relative(simDir, resolved);
-      assert.ok(rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..'), `${specifier} escapes js/sim`);
+      const allowed = [simDir, contentDir].some((root) => {
+        const rel = relative(root, resolved);
+        return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..');
+      });
+      assert.ok(allowed, `${specifier} escapes pure simulation/content modules`);
     }
   }
 });

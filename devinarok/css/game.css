@@ -57,3 +57,39 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+.xp-track { margin-top: 3px; height: 3px; background: #352c36; border-radius: 4px; overflow: hidden; }
+.xp-track i { display: block; width: 0; height: 100%; background: #76c4df; }
+.combat-readout { display: grid; gap: 3px; color: #e5d2ad; font-size: 12px; text-align: center; }
+#boss-hud { width: min(250px, 32vw); color: #f0d4c7; }
+#boss-hud .hp-track i { background: linear-gradient(90deg, #692332, #d45348); }
+.hub-ui { position: absolute; inset: auto 16px 22px; display: grid; gap: 10px; z-index: 3; pointer-events: none; }
+.hub-title { justify-self: center; padding: 8px 14px; color: #eed5aa; border: 1px solid #755c45; border-radius: 20px; background: #151117d9; font: 600 13px system-ui, sans-serif; }
+.hub-hotspots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; pointer-events: auto; }
+.hub-hotspots button { min-width: 115px; padding: 10px 12px; background: #211a20e8; border-color: #80624c; font-size: 13px; }
+.hub-panel { justify-self: center; width: min(560px, calc(100vw - 24px)); max-height: min(55vh, 440px); overflow: auto; padding: 16px; pointer-events: auto; }
+.hub-panel h2 { margin: 0 0 10px; color: #f2d3a2; font-size: 20px; }
+.hub-panel p, .hub-panel li { font: 13px/1.55 system-ui, sans-serif; color: #c9bec0; }
+.hub-panel button { margin: 4px; padding: 9px 12px; }
+.hub-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
+.hub-row small { display: block; color: #b7a9ac; }
+.result-panel { max-height: 78vh; overflow: auto; }
+.potion-button { border-color: #6396a5 !important; }
+.buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"] { background: conic-gradient(#d6a466 var(--cooldown, 0%), #29222b 0); }
+.boss-intro { position: absolute; z-index: 2; inset: 0; display: grid; place-items: start center; padding-top: 22vh; pointer-events: none; background: linear-gradient(180deg, #110d18c9, transparent 52%); animation: intro-fade 2.8s ease both; }
+.boss-intro div { display: grid; gap: 8px; text-align: center; text-shadow: 0 3px 12px #000; }
+.boss-intro span { color: #d9bf9a; font: 13px system-ui, sans-serif; letter-spacing: .2em; }
+.boss-intro strong { color: #f1d5c2; font: 700 clamp(28px, 6vw, 54px) serif; }
+@keyframes intro-fade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@media (max-width: 699px) {
+  .hub-ui { inset: auto 8px max(10px, env(safe-area-inset-bottom)); gap: 6px; }
+  .hub-hotspots { gap: 5px; }
+  .hub-hotspots button { min-width: 0; flex: 1 1 30%; padding: 8px 5px; font-size: 11px; }
+  .hub-panel { max-height: 42vh; padding: 12px; }
+  .hud { gap: 8px; font-size: 11px; }
+  .hero-readout { width: 42vw; }
+  #boss-hud { width: 26vw; }
+  .buttons { grid-template-columns: repeat(3, 58px); gap: 5px; }
+  .buttons button, .buttons .attack-button { min-height: 43px; }
+  .buttons .attack-button { grid-row: span 2; min-height: 91px; }
+  .controls { padding: 0 10px; }
+}

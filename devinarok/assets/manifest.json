@@ -23,7 +23,19 @@
     "assets/env/wall.glb": 29180,
     "assets/env/wall_corner.glb": 27796,
     "assets/env/wall_doorway.glb": 35960,
-    "assets/env/wall_half.glb": 24252
+    "assets/env/wall_half.glb": 24252,
+    "assets/audio/sword-swing.ogg": 15532,
+    "assets/audio/impact.ogg": 9370,
+    "assets/audio/enemy-death.ogg": 11695,
+    "assets/audio/door-open.ogg": 22848,
+    "assets/audio/coins.ogg": 25394,
+    "assets/audio/boss-roar-substitute.ogg": 10408,
+    "assets/audio/footstep.ogg": 10559,
+    "assets/audio/ui-click.ogg": 4876,
+    "assets/audio/potion.ogg": 6103,
+    "assets/audio/confirm.ogg": 8968,
+    "assets/audio/hub-bgm.ogg": 1202848,
+    "assets/audio/combat-bgm.ogg": 204349
   },
   "sha256": {
     "assets/anims/humanoid.glb": "56cbc41842a101a5ed6bea741c100fef1b8dfe19000ee3bf01a00d39e530dffa",
@@ -48,7 +60,19 @@
     "assets/env/wall.glb": "444e3de41ff07952032f7e94404e031fd3d27790a5e2d8b108d932ce075bf6a6",
     "assets/env/wall_corner.glb": "3614750198030ec76e75aeda5bd9a78a867eab239e2d118dedbcd5885771f243",
     "assets/env/wall_doorway.glb": "9b6cdb51723050bad139f8cae369d5433c819f026ed75ff09061030d7da76347",
-    "assets/env/wall_half.glb": "9419ed49b9f1f9837b39044d5eb964b87e49c776da4e017cbd768de44c24f378"
+    "assets/env/wall_half.glb": "9419ed49b9f1f9837b39044d5eb964b87e49c776da4e017cbd768de44c24f378",
+    "assets/audio/sword-swing.ogg": "4cd96dc630bed9840c15f1dd2306da2cc56a4da26a5d3f1a03c5a7265ac5e54f",
+    "assets/audio/impact.ogg": "d00c2b3c9fff07e376145c8c8c45c90e5084ec192f6ce0387db233f7b86f1486",
+    "assets/audio/enemy-death.ogg": "097e1d3b74949b0145fda0519d40b7e0773ab82ec4858727f95be830927e1a45",
+    "assets/audio/door-open.ogg": "4ab93bab96522d8eb109ff96dc57cb6765deb02448fe14c10472084be5bb2a0b",
+    "assets/audio/coins.ogg": "8a91f969e932df709df80ee124d86a51389eed9b67f22e5e716bc2bbf60d8dab",
+    "assets/audio/boss-roar-substitute.ogg": "f9638787f95004b9d2d06f8eff8e99d4e594c21b51947daf562856fbcec905d1",
+    "assets/audio/footstep.ogg": "a86756b9af9f370455ab47844239bb07fd1bee7a113068c91f0fcd9b72703fae",
+    "assets/audio/ui-click.ogg": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9",
+    "assets/audio/potion.ogg": "183eebee20eb0a532b0b85104d139cbf2673eb66d95c3cc733ac9ea98362e7e8",
+    "assets/audio/confirm.ogg": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+    "assets/audio/hub-bgm.ogg": "18da6d6c4492d744f5ebde5bb128a636770df4197d2d4a0b5e8d65df6e27f57b",
+    "assets/audio/combat-bgm.ogg": "3900af8578b0a771f2362118c7885a5078ea2c65170cbd0c5cad64b3162ffffd"
   },
   "m0LoadedFiles": [
     "assets/chars/Knight.glb",
@@ -71,5 +95,7 @@
     "assets/env/banner_red.glb"
   ],
   "m0LoadedBytes": 1167856,
-  "m0BudgetBytes": 5242880
+  "m0BudgetBytes": 5242880,
+  "m1StageLoadedBytes": { "inn-hub": 2866450, "C1": 2882722, "C2": 2882722, "C3": 2876502, "CB": 2818458 },
+  "m1AssetBudgetBytes": 6291456
 }

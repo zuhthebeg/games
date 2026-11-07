@@ -1,6 +1,6 @@
 import { applyOperations } from './ops.js';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups'];
 
 export class ConflictError extends Error {
@@ -185,6 +185,13 @@ const migrations = [
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
   }),
+  (data) => ({
+    meta: { ...data.meta, schemaVersion: 2 },
+    characters: Object.fromEntries(Object.entries(data.characters ?? {}).map(([id, character]) => [id, { ...character, potions: character.potions ?? 0 }])),
+    items: Object.fromEntries(Object.entries(data.items ?? {}).map(([uid, item]) => [uid, { ...item, ilvl: item.ilvl ?? 1, requiredLevel: item.requiredLevel ?? 1 }])),
+    ledger: data.ledger ?? [],
+    backups: data.backups ?? [],
+  }),
 ];
 
 export class SaveRepository {
@@ -224,6 +231,12 @@ export class SaveRepository {
   async loadCharacter(id) {
     const character = (await this.backend.readData()).characters[id];
     return character ? clone(character) : null;
+  }
+
+  async listItems(characterId) {
+    return Object.values((await this.backend.readData()).items)
+      .filter((item) => item.characterId === characterId)
+      .map(clone);
   }
 
   async commit(change) {

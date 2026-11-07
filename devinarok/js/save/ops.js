@@ -1,4 +1,9 @@
+import { ITEMS } from '../content/items.js';
+
 const SLOTS = new Set(['weapon', 'head', 'body', 'hands', 'feet']);
+const ENHANCE_RATES = [100, 100, 95, 90, 80, 70, 60, 50, 40, 30];
+const SELL_VALUES = { common: 5, magic: 15, rare: 45, legendary: 150 };
+const ITEM_CAPACITY = 40;
 
 function integer(value, label, minimum = 0) {
   if (!Number.isInteger(value) || value < minimum) throw new TypeError(`${label} must be an integer >= ${minimum}`);
@@ -26,6 +31,7 @@ export function applyOperations(character, itemMap, operations, characterId) {
         level: 1,
         xp: 0,
         gold: 0,
+        potions: 0,
         rev: 0,
         equipment: { weapon: null, head: null, body: null, hands: null, feet: null },
         clearedStages: [],
@@ -36,10 +42,11 @@ export function applyOperations(character, itemMap, operations, characterId) {
     switch (operation.type) {
       case 'gainXp': {
         nextCharacter.xp += integer(operation.amount, 'XP');
-        while (nextCharacter.xp >= nextCharacter.level * 100) {
-          nextCharacter.xp -= nextCharacter.level * 100;
+        while (nextCharacter.level < 15 && nextCharacter.xp >= Math.round(60 * Math.pow(nextCharacter.level, 1.6))) {
+          nextCharacter.xp -= Math.round(60 * Math.pow(nextCharacter.level, 1.6));
           nextCharacter.level += 1;
         }
+        if (nextCharacter.level >= 15) nextCharacter.xp = 0;
         break;
       }
       case 'grantGold':
@@ -53,12 +60,18 @@ export function applyOperations(character, itemMap, operations, characterId) {
       }
       case 'grantItem': {
         if (!operation.uid || !operation.itemId || nextItems[operation.uid]) throw new TypeError('Invalid or duplicate item');
+        if (Object.values(nextItems).filter((item) => item.characterId === characterId).length >= ITEM_CAPACITY) {
+          throw new RangeError('Inventory is full');
+        }
         nextItems[operation.uid] = {
           uid: operation.uid,
           characterId,
           itemId: String(operation.itemId),
           rarity: String(operation.rarity ?? 'common'),
           enhance: integer(operation.enhance ?? 0, 'Enhance'),
+          ilvl: integer(operation.ilvl ?? 1, 'Item level', 1),
+          requiredLevel: ITEMS[operation.itemId]?.requiredLevel ?? 1,
+          legendaryId: operation.legendaryId ?? null,
           affixes: Array.isArray(operation.affixes) ? clone(operation.affixes) : [],
           slot: null,
         };
@@ -75,6 +88,9 @@ export function applyOperations(character, itemMap, operations, characterId) {
         const item = nextItems[operation.uid];
         if (!item || item.characterId !== characterId) throw new Error('Item is not owned by this character');
         if (!SLOTS.has(operation.slot)) throw new TypeError('Invalid equipment slot');
+        if (nextItems[operation.uid].requiredLevel > nextCharacter.level) {
+          throw new RangeError('Character level is too low');
+        }
         if (item.slot) nextCharacter.equipment[item.slot] = null;
         const previouslyEquipped = nextCharacter.equipment[operation.slot];
         if (previouslyEquipped && nextItems[previouslyEquipped]) nextItems[previouslyEquipped].slot = null;
@@ -93,6 +109,39 @@ export function applyOperations(character, itemMap, operations, characterId) {
         const stageId = String(operation.stageId ?? '');
         if (!stageId) throw new TypeError('stageId is required');
         if (!nextCharacter.clearedStages.includes(stageId)) nextCharacter.clearedStages.push(stageId);
+        break;
+      }
+      case 'setPotions':
+        nextCharacter.potions = integer(operation.count, 'Potion count');
+        if (nextCharacter.potions > 5) throw new RangeError('Potion carry limit exceeded');
+        break;
+      case 'buyPotion': {
+        const count = integer(operation.count ?? 1, 'Potion count', 1);
+        if (nextCharacter.gold < count * 25) throw new RangeError('Not enough gold');
+        if (nextCharacter.potions + count > 5) throw new RangeError('Potion carry limit exceeded');
+        nextCharacter.gold -= count * 25;
+        nextCharacter.potions += count;
+        break;
+      }
+      case 'sellItem': {
+        const item = nextItems[operation.uid];
+        if (!item || item.characterId !== characterId) throw new Error('Item is not owned by this character');
+        if (item.slot) throw new Error('Equipped items cannot be sold');
+        const value = (SELL_VALUES[item.rarity] ?? SELL_VALUES.common) * (1 + (item.ilvl ?? 1) / 10);
+        nextCharacter.gold += Math.round(value);
+        delete nextItems[operation.uid];
+        break;
+      }
+      case 'enhanceItem': {
+        const item = nextItems[operation.uid];
+        if (!item || item.characterId !== characterId) throw new Error('Item is not owned by this character');
+        if (item.enhance >= 10) throw new RangeError('Enhancement limit reached');
+        const cost = 40 * (item.enhance + 1) ** 2;
+        if (nextCharacter.gold < cost) throw new RangeError('Not enough gold');
+        const roll = operation.roll;
+        if (!Number.isInteger(roll) || roll < 0 || roll >= 10000) throw new TypeError('Enhancement roll must be 0–9999');
+        nextCharacter.gold -= cost;
+        if (roll < ENHANCE_RATES[item.enhance] * 100) item.enhance += 1;
         break;
       }
       default:
