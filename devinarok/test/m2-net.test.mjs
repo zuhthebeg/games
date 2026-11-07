@@ -11,7 +11,9 @@ import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
 import { computeBotPolicy } from '../js/net/bot-policy.js';
 import { PartyClient, partyServerUrl } from '../js/ui/party.js';
+import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from '../js/ui/party-finder.js';
 import { Predictor } from '../js/net/predictor.js';
+import { playerModelKey } from '../js/render/player-look.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS } from '../js/sim/world.js';
 
@@ -29,6 +31,8 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
       facing: 1.239,
       hp: 75,
       playerId: 'hero',
+      characterKind: 'knight',
+      look: { weapon: '2H_Sword', helmet: true, cape: true, weaponRarity: 'rare' },
       motion: { x: 1.235, z: -2.345, facing: -1.236 },
     }],
     events: [{ eventId: 4, type: 'hit', shape: { originX: 0.129, originZ: 1.999, angle: 2.345 } }],
@@ -41,6 +45,40 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.ents[0].playerId, 'hero');
   assert.equal(result.events[0].shape.angle, roundToHundredth(message.events[0].shape.angle));
   assert.equal(result.v, PROTOCOL_VERSION);
+});
+
+test('remote player model selection falls back to knight for older snapshots', () => {
+  assert.equal(playerModelKey({ kind: 'player' }), 'knight');
+  assert.equal(playerModelKey({ kind: 'player', characterKind: 'Rogue_Hooded' }), 'Rogue_Hooded');
+});
+
+test('snapshot delta merging preserves a newly seen player look', () => {
+  const received = [];
+  const session = new NetSession({
+    autoFlushInputs: false,
+    autoPing: false,
+    onMessage: (message) => received.push(message),
+  });
+  const socket = { close() {} };
+  session.socket = socket;
+  const player = {
+    id: 12,
+    kind: 'player',
+    playerId: 'remote',
+    characterKind: 'knight',
+    look: { weapon: '2H_Sword', helmet: true, cape: true, weaponRarity: 'legendary' },
+    x: 1,
+    z: 2,
+  };
+  const receive = (message) => session.handleSocketMessage(socket, { data: encodeMessage(message) });
+  receive({ t: 'snap', full: true, tick: 10, ents: [] });
+  receive({ t: 'snap', full: false, tick: 12, baseTick: 10, ents: [player] });
+  receive({ t: 'snap', full: false, tick: 14, baseTick: 12, ents: [{ id: 12, hp: 80 }] });
+
+  assert.deepEqual(received[1].ents[0].look, player.look);
+  assert.equal(received[2].ents[0].characterKind, 'knight');
+  assert.deepEqual(received[2].ents[0].look, player.look);
+  session.close();
 });
 
 test('escapeHtml encodes peer-controlled names before HTML insertion', () => {
@@ -94,6 +132,95 @@ test('party server URL appends the room path and honors local overrides', () => 
     partyServerUrl('ABC234', '?server=ws%3A%2F%2Flocalhost%2Fdevinarok'),
     'ws://localhost/devinarok/ABC234',
   );
+});
+
+test('party finder derives HTTP base, sorts rooms, and escapes host names', () => {
+  assert.equal(partyHttpBase('?server=ws://127.0.0.1:8787'), 'http://127.0.0.1:8787');
+  assert.equal(partyHttpBase('?server=wss://example.test/devinarok/ABC234'), 'https://example.test');
+  const rooms = sortPartyRooms([
+    { roomId: 'devinarok:A', players: 1, updatedAt: 20, meta: { hostName: '<script>', code: 'ABC234', stageId: 'C1' } },
+    { roomId: 'devinarok:B', players: 2, updatedAt: 10, meta: { hostName: '기사', code: 'BCD345', stageId: 'C2' } },
+  ]);
+  assert.equal(rooms[0].meta.code, 'BCD345');
+  const markup = partyRoomsMarkup(rooms, 1);
+  assert.ok(!markup.includes('<script>'));
+  assert.ok(markup.includes('&lt;script&gt;'));
+  assert.ok(markup.includes('권장 Lv.'));
+  assert.ok(markup.includes('class="party-row-join">참가</b>'));
+});
+
+test('quick join joins a match, creates when empty, and retries a failed room once', async () => {
+  const joined = [];
+  const created = [];
+  const joinedResult = await quickJoinParty({
+    httpBase: 'http://local',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({ roomId: 'devinarok:ABC234', meta: { code: 'ABC234' } }),
+    }),
+    joinRoom: async (code) => joined.push(code),
+    createRoom: async () => 'NEW234',
+  });
+  assert.deepEqual(joined, ['ABC234']);
+  assert.deepEqual(joinedResult, { code: 'ABC234', created: false });
+
+  const emptyResult = await quickJoinParty({
+    httpBase: 'http://local',
+    fetchImpl: async () => ({ ok: true, json: async () => ({ roomId: null }) }),
+    joinRoom: async () => assert.fail('must not join an empty match'),
+    createRoom: async () => { created.push(true); return 'NEW234'; },
+  });
+  assert.deepEqual(emptyResult, { code: 'NEW234', created: true });
+  assert.equal(created.length, 1);
+
+  let fetchCount = 0;
+  let attempts = 0;
+  const retryResult = await quickJoinParty({
+    httpBase: 'http://local',
+    fetchImpl: async () => {
+      fetchCount += 1;
+      return {
+        ok: true,
+        json: async () => ({
+          roomId: `devinarok:ABC23${fetchCount}`,
+          meta: { code: `ABC23${fetchCount}` },
+        }),
+      };
+    },
+    joinRoom: async () => {
+      attempts += 1;
+      throw new Error('room-full');
+    },
+    createRoom: async () => 'NEW234',
+  });
+  assert.deepEqual(retryResult, { code: 'NEW234', created: true });
+  assert.equal(fetchCount, 2);
+  assert.equal(attempts, 2);
+});
+
+test('quick join cancellation does not create a room', async () => {
+  const controller = new AbortController();
+  let created = false;
+  await assert.rejects(quickJoinParty({
+    httpBase: 'http://local',
+    signal: controller.signal,
+    fetchImpl: async () => {
+      controller.abort();
+      throw new Error('aborted');
+    },
+    joinRoom: async () => {},
+    createRoom: async () => { created = true; return 'NEW234'; },
+  }), { name: 'AbortError' });
+  assert.equal(created, false);
+});
+
+test('party client sends an explicit leave message', () => {
+  const sent = [];
+  const client = Object.create(PartyClient.prototype);
+  client.session = { send: (message) => { sent.push(message); return true; } };
+
+  assert.equal(client.leave(), true);
+  assert.deepEqual(sent, [{ t: 'leave' }]);
 });
 
 test('party rendering does not mutate the predictor player position', () => {

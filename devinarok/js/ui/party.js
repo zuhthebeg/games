@@ -143,7 +143,12 @@ export class PartyClient {
       } else if (message.code === 'version') {
         this.versionMismatch = true;
         this.handleStatus('version');
-      } else this.onError(new Error(message.code));
+      } else {
+        this.stopInputs();
+        const error = new Error(message.code);
+        error.code = message.code;
+        this.onError(error);
+      }
     }
   }
 
@@ -326,6 +331,10 @@ export class PartyClient {
 
   selectStage(stageId) {
     return this.session?.send({ t: 'lobby.stage', stageId }) ?? false;
+  }
+
+  setPublic(isPublic) {
+    return this.session?.send({ t: 'lobby.public', public: Boolean(isPublic) }) ?? false;
   }
 
   start() {
