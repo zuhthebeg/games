@@ -23,6 +23,7 @@ export class InputLayer {
     this.moveX = 0;
     this.moveZ = 0;
     this.aim = 192;
+    this.devInputProvider = null;
     this.joystick = controls.querySelector('[data-joystick]');
     this.joystickKnob = controls.querySelector('[data-joystick-knob]');
     this.joystickAnchor = null;
@@ -124,6 +125,9 @@ export class InputLayer {
   }
 
   nextTick() {
+    if (this.devInputProvider) {
+      return { ...this.devInputProvider(), seq: ++this.seq };
+    }
     let buttons = this.latchedButtons;
     this.latchedButtons = 0;
     for (const code of this.heldKeys) this.unreportedButtonKeys.delete(code);
@@ -140,7 +144,15 @@ export class InputLayer {
     return { seq: ++this.seq, moveX, moveZ, aim: this.aim, buttons };
   }
 
+  setDevInputProvider(provider) {
+    if (provider !== null && typeof provider !== 'function') {
+      throw new TypeError('Dev input provider must be a function or null');
+    }
+    this.devInputProvider = provider;
+  }
+
   destroy() {
+    this.devInputProvider = null;
     this.touchListeners.abort();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);

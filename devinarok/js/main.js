@@ -4,6 +4,7 @@ import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
+import { computeBotPolicy } from './net/bot-policy.js';
 import { AFFIXES } from './content/affixes.js';
 import { ITEMS, RARITIES } from './content/items.js';
 import { rekeySettlementItems } from './save/ops.js';
@@ -138,13 +139,19 @@ async function enterHub() {
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('hub-bgm');
-  if (DEV_MODE) $('#toast').textContent = `거점 여관 · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
+  updateDebugZone('거점 여관');
   frame = requestAnimationFrame(drawHub);
   const inviteCode = new URLSearchParams(location.search).get('room');
   if (inviteCode && !inviteRoomHandled) {
     inviteRoomHandled = true;
     connectParty(inviteCode);
   }
+}
+
+function updateDebugZone(areaName) {
+  const label = $('#debug-zone');
+  label.hidden = !DEV_MODE;
+  if (DEV_MODE) label.textContent = `${areaName} · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
 }
 
 async function loadAudio() {
@@ -309,6 +316,7 @@ async function startPartyStage(message) {
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('combat-bgm');
+  updateDebugZone(world.arena.name);
   partyPreviousWorld = world;
   partyLastTime = 0;
   partyAccumulator = 0;
@@ -338,18 +346,16 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
 
 function partyLoop(time) {
   if (!partyClient || !renderer || !input) return;
-  if (!partyLastTime) partyLastTime = time;
-  partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
-  partyLastTime = time;
-  let steps = 0;
-  while (partyAccumulator >= 1 / 30 && steps < 5) {
-    const next = DEV_MODE && typeof window.__devinarok?.partyInputProvider === 'function'
-      ? window.__devinarok.partyInputProvider()
-      : input.nextTick();
-    const queued = pauseMenu.hidden ? next : { ...next, moveX: 0, moveZ: 0, buttons: 0 };
-    partyClient.sendInput(queued);
-    partyAccumulator -= 1 / 30;
-    steps += 1;
+  if (!input.devInputProvider) {
+    if (!partyLastTime) partyLastTime = time;
+    partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
+    partyLastTime = time;
+    let steps = 0;
+    while (partyAccumulator >= 1 / 30 && steps < 5) {
+      sendPartyInputTick();
+      partyAccumulator -= 1 / 30;
+      steps += 1;
+    }
   }
   const nextWorld = partyClient.viewWorld(time) ?? world;
   if (nextWorld) {
@@ -368,6 +374,51 @@ function partyLoop(time) {
     overlay.hidden = false;
   } else overlay.hidden = true;
   partyFrame = requestAnimationFrame(partyLoop);
+}
+
+function sendPartyInputTick() {
+  if (!partyClient || !input || partyClient.result) return;
+  const next = input.nextTick();
+  const queued = pauseMenu.hidden ? next : { ...next, moveX: 0, moveZ: 0, buttons: 0 };
+  partyClient.sendInput(queued);
+}
+
+function setPartyInputProvider(provider) {
+  if (!DEV_MODE || !(input instanceof InputLayer)) return false;
+  input.setDevInputProvider(provider);
+  return true;
+}
+
+function tickPartyInput() {
+  if (!DEV_MODE || !(input instanceof InputLayer) || !input.devInputProvider || !partyClient || partyClient.result) {
+    return false;
+  }
+  sendPartyInputTick();
+  return true;
+}
+
+function getNetBotInput() {
+  const client = partyClient;
+  if (!client?.stageWorld || !client?.lastSnapshot || !client?.predictor || !client?.session) {
+    return { moveX: 0, moveZ: 0, aim: 0, buttons: 0, viewTick: 0 };
+  }
+  const player = client.predictor.getPlayer();
+  if (!player) return { moveX: 0, moveZ: 0, aim: 0, buttons: 0, viewTick: 0 };
+  const view = client.interpolation.sample(client.session.clock.getEstimate(performance.now()));
+  const viewTick = Math.round(view.renderTick);
+  const viewed = client.interpolation.sampleAtRenderTick(viewTick);
+  const roomIndex = client.lastSnapshot.roomIndex ?? client.stageWorld.roomIndex;
+  const room = client.stageWorld.arena.rooms[roomIndex];
+  const door = client.stageWorld.arena.doors.find((entry) => entry.fromRoom === room?.id);
+  return {
+    ...computeBotPolicy({
+      player,
+      viewed,
+      roomCleared: Boolean(client.lastSnapshot.roomCleared),
+      door,
+    }),
+    viewTick,
+  };
 }
 
 function renderInventory(compareUid = '') {
@@ -427,7 +478,7 @@ async function startStage(stageId) {
   await audio.unlock();
   audio.setMusic('combat-bgm');
   $('#stage-name').textContent = world.arena.name;
-  if (DEV_MODE) $('#toast').textContent = `${world.arena.name} · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
+  updateDebugZone(world.arena.name);
   if (stageId === 'CB') {
     $('#boss-intro').hidden = false;
     setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
@@ -665,6 +716,9 @@ if (DEV_MODE) {
     joinParty: (code) => connectParty(code),
     enterPartyCode(code) { return connectParty(code); },
     getPartyWorld() { return partyClient?.viewWorld(); },
+    getNetBotInput,
+    setPartyInputProvider,
+    tickPartyInput,
     enterHub,
     settleStage,
     forceOutcome(outcome = 'clear') { completeStage(world, outcome); return settleStage(outcome); },

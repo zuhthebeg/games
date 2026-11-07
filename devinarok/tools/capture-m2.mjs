@@ -51,6 +51,8 @@ class Page {
     await this.send('Page.enable');
     await this.send('Runtime.enable');
     await this.send('Log.enable');
+    await this.send('Emulation.setFocusEmulationEnabled', { enabled: true });
+    await this.send('Page.setWebLifecycleState', { state: 'active' });
   }
   send(method, params = {}) {
     const requestId = ++this.id;
@@ -143,122 +145,200 @@ await Promise.all([
   a.wait('Boolean(window.__devinarok.party.stageWorld && window.__devinarok.party.lastSnapshot && window.__devinarok.renderer)'),
   b.wait('Boolean(window.__devinarok.party.stageWorld && window.__devinarok.party.lastSnapshot && window.__devinarok.renderer)'),
 ]);
-await Promise.all([a.evaluate('window.__devinarok.renderer.ready'), b.evaluate('window.__devinarok.renderer.ready')]);
 
 const installBot = `(() => {
   const api = window.__devinarok;
-  window.__devinarok.partyInputProvider = () => {
-    const seq = (window.__partySeq = (window.__partySeq ?? 0) + 1);
-    const party = api.party;
-    const estimate = party.session.clock.getEstimate(performance.now());
-    const view = party.interpolation.sample(estimate);
-    const viewTick = Math.round(view.renderTick);
-    const viewed = party.interpolation.sampleAtRenderTick(viewTick);
-    const activeEnemyIds = viewed.activeEnemyIds ? new Set(viewed.activeEnemyIds) : null;
-    const player = party.predictor.getPlayer();
-    if (!player) return { seq, moveX: 0, moveZ: 0, aim: 0, buttons: 0 };
-    const enemies = viewed.entities
-      .filter((entity) => entity.kind === 'enemy' && !entity.dead && entity.state !== 'dead')
-      .filter((entity) => !entity.invulnerable && (entity.spawnTicksLeft ?? 0) <= 0)
-      .filter((entity) => !activeEnemyIds || activeEnemyIds.has(entity.id));
-    let target = null;
-    let targetDistance = Infinity;
-    for (const enemy of enemies) {
-      const distance = Math.hypot(enemy.x - player.x, enemy.z - player.z);
-      if (distance < targetDistance) { target = enemy; targetDistance = distance; }
-    }
-    const localWorld = party.stageWorld;
-    const roomIndex = party.lastSnapshot.roomIndex ?? localWorld.roomIndex;
-    const room = localWorld.arena.rooms[roomIndex];
-    const door = localWorld.arena.doors.find((entry) => entry.fromRoom === room?.id);
-    let moveX = 0, moveZ = 0, buttons = 0;
-    let dx = target ? target.x-player.x : 0, dz = target ? target.z-player.z : 0;
-    const angleDelta = (left,right) => {
-      let value=(left-right)%(Math.PI*2);
-      if(value>Math.PI)value-=Math.PI*2;
-      if(value< -Math.PI)value+=Math.PI*2;
-      return value;
-    };
-    const inside = (shape, point, radius) => {
-      if (!shape) return false;
-      const sx=point.x-shape.originX, sz=point.z-shape.originZ;
-      if(shape.type==='circle') return Math.hypot(sx,sz)<=shape.radius+radius;
-      if(shape.type==='circles') return shape.circles.some((circle)=>Math.hypot(point.x-circle.x,point.z-circle.z)<=circle.radius+radius);
-      if(shape.type==='sector') return Math.hypot(sx,sz)<=shape.range+radius && Math.abs(angleDelta(Math.atan2(sz,sx),shape.angle))<=shape.halfAngle;
-      if(shape.type==='line') {
-        const forward=sx*Math.cos(shape.angle)+sz*Math.sin(shape.angle);
-        const side=Math.abs(-sx*Math.sin(shape.angle)+sz*Math.cos(shape.angle));
-        return forward>=-radius&&forward<=shape.length+radius&&side<=shape.width/2+radius;
-      }
-      return false;
-    };
-    const threat = enemies.find((enemy) => enemy.attackPhase === 'windup' && enemy.attackRemaining > 0 && (
-      inside(enemy.attackShape, player, player.radius ?? 0.32) ||
-      Math.hypot(enemy.x - player.x, enemy.z - player.z) < 2.8
-    ));
-    let aim = target ? Math.round(Math.atan2(dz, dx) / (2 * Math.PI) * 256) & 255 : player.lastInput?.aim ?? 0;
-    if (threat) {
-      const shape=threat.attackShape;
-      let dodgeX=player.x-(shape.originX ?? threat.x), dodgeZ=player.z-(shape.originZ ?? threat.z);
-      if(Math.hypot(dodgeX,dodgeZ)<0.01){dodgeX=-(threat.z-player.z);dodgeZ=threat.x-player.x;}
-      const length=Math.hypot(dodgeX,dodgeZ)||1;
-      moveX=Math.round(dodgeX/length*127); moveZ=Math.round(dodgeZ/length*127);
-      if ((player.dodgeCooldownTicks ?? 0) === 0) buttons|=api.buttons.DODGE;
-      aim=Math.round(Math.atan2(dodgeZ,dodgeX)/(2*Math.PI)*256)&255;
-    } else if (party.lastSnapshot.roomCleared) {
-      if (door) {
-        dx=door.x-player.x; dz=door.z-player.z;
-        const distance=Math.hypot(dx,dz);
-        if(distance>0.75){moveX=Math.round(dx/distance*127);moveZ=Math.round(dz/distance*127);aim=Math.round(Math.atan2(dz,dx)/(2*Math.PI)*256)&255;}
-      }
-    } else if (target) {
-      if(targetDistance>1.35){moveX=Math.round(dx/targetDistance*127);moveZ=Math.round(dz/targetDistance*127);}
-      else if(!player.attack&&!player.skillCast)buttons|=api.buttons.ATTACK;
-    }
-    if(!threat&&player.hp<player.maxHp*0.8&&player.potions>0&&player.potionCooldownTicks===0&&player.potionTicks===0&&!buttons)buttons|=api.buttons.POTION;
-    const stats = window.__partyDriverStats ??= { inputs: 0, attacks: 0, dodges: 0, potions: 0, trace: [] };
+  const stats = window.__partyDriverStats = {
+    inputs: 0,
+    attacks: 0,
+    dodges: 0,
+    potions: 0,
+    trace: [],
+    visibility: { state: document.visibilityState, focused: document.hasFocus() },
+  };
+  const provider = () => {
+    const next = api.getNetBotInput();
     stats.inputs += 1;
-    if(buttons & api.buttons.ATTACK) stats.attacks += 1;
-    if(buttons & api.buttons.DODGE) stats.dodges += 1;
-    if(buttons & api.buttons.POTION) stats.potions += 1;
+    if (next.buttons & api.buttons.ATTACK) stats.attacks += 1;
+    if (next.buttons & api.buttons.DODGE) stats.dodges += 1;
+    if (next.buttons & api.buttons.POTION) stats.potions += 1;
     if (stats.inputs % 30 === 0) {
+      const player = api.party.predictor.getPlayer();
       stats.trace.push({
-        seq, hp: player.hp, maxHp: player.maxHp, potions: player.potions,
-        x: player.x, z: player.z, moveX, moveZ, buttons, targetDistance,
-        target: target?.id ?? null, attack: Boolean(player.attack), skillCast: Boolean(player.skillCast),
-        dodgeCooldownTicks: player.dodgeCooldownTicks, threat: threat?.id ?? null,
+        inputs: stats.inputs,
+        hp: player.hp,
+        maxHp: player.maxHp,
+        potions: player.potions,
+        x: player.x,
+        z: player.z,
+        moveX: next.moveX,
+        moveZ: next.moveZ,
+        buttons: next.buttons,
+        viewTick: next.viewTick,
+        serverTick: api.party.lastSnapshot?.tick,
+        attack: Boolean(player.attack),
+        dodgeCooldownTicks: player.dodgeCooldownTicks,
       });
     }
-    return { seq, moveX, moveZ, aim, buttons };
+    return next;
   };
+  window.__m2NetBotProvider = provider;
+  const installed = api.setPartyInputProvider(provider);
+  if (!installed) throw new Error('Dev input provider could not be installed');
 })()`;
 await Promise.all([a.evaluate(installBot), b.evaluate(installBot)]);
+const hudOnly = process.argv.includes('--hud-only');
+let inputDriverBusy = false;
+let inputDriverCalls = 0;
+const inputDriverCounts = [0, 0];
+const inputDriverFalse = [0, 0];
+const inputDriverErrors = [];
+const batchInput = `(() => {
+  let sent = 0;
+  while (sent < 30 && window.__devinarok.tickPartyInput()) sent += 1;
+  return sent;
+})()`;
+const inputDriver = hudOnly ? null : setInterval(() => {
+  if (inputDriverBusy) return;
+  inputDriverBusy = true;
+  Promise.all([a.evaluate(batchInput), b.evaluate(batchInput)]).then((counts) => {
+    inputDriverCalls += 1;
+    for (let index = 0; index < counts.length; index += 1) {
+      inputDriverCounts[index] += counts[index];
+      if (counts[index] < 30) inputDriverFalse[index] += 1;
+    }
+  }).catch((error) => {
+    inputDriverErrors.push(error.message);
+  }).finally(() => {
+    inputDriverBusy = false;
+  });
+}, 1000);
+await Promise.all([a.evaluate('window.__devinarok.renderer.ready'), b.evaluate('window.__devinarok.renderer.ready')]);
 await a.viewport(1024, 768);
 await b.viewport(390, 844, true);
 await capture(a, 'two-player-combat-desktop');
 await capture(b, 'two-player-combat-mobile-390x844');
+if (hudOnly) {
+  console.log(JSON.stringify({
+    roomCode: code,
+    exceptions: [...a.exceptions, ...b.exceptions],
+    captures: [...captured],
+  }, null, 2));
+  process.exit(0);
+}
 const deadline = Date.now() + 240000;
 let downedShot = false;
 let doorShot = false;
 let reconnectShot = false;
-const reconnectAt = Date.now() + 15000;
+let reconnectDiagnostics = null;
+let reviveAssistStarted = false;
+const reconnectAt = Date.now() + 30000;
 while (Date.now() < deadline) {
   const state = await a.evaluate(`({
-    downed: window.__devinarok.getPartyWorld()?.entities.some((entity)=>entity.kind==='player'&&entity.downed),
+    downedPlayer: window.__devinarok.party.lastSnapshot?.ents?.find((entity)=>entity.kind==='player'&&entity.downed)?.playerId ?? null,
+    reviveProgress: (() => {
+      const client = window.__devinarok.party;
+      const downed = client.lastSnapshot?.ents?.find((entity)=>entity.kind==='player'&&entity.downed);
+      return downed ? client.reviveProgress.get(downed.id)?.progress ?? 0 : 0;
+    })(),
     door: Boolean(window.__devinarok.getPartyWorld()?.doorCountdown),
     done: Boolean(window.__devinarok.party.result),
   })`);
-  if (state.downed && !downedShot) { await capture(a, 'downed-revive-ring'); downedShot = true; }
+  if (!state.downedPlayer && reviveAssistStarted) {
+    await Promise.all([
+      a.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
+      b.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
+    ]);
+    reviveAssistStarted = false;
+  }
+  if (state.downedPlayer && !state.reviveProgress && !reviveAssistStarted) {
+    const assist = `(() => {
+      const api = window.__devinarok;
+      api.setPartyInputProvider(() => {
+        const normal = window.__m2NetBotProvider();
+        const client = api.party;
+        const player = client.predictor.getPlayer();
+        const downed = client.lastSnapshot?.ents?.find((entity)=>entity.kind==='player'&&entity.downed);
+        if (!player || !downed || downed.playerId === client.playerId) return normal;
+        const dx = downed.x - player.x;
+        const dz = downed.z - player.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance <= 1.25) {
+          return {
+            ...normal,
+            moveX: 0,
+            moveZ: 0,
+            buttons: normal.buttons & (api.buttons.ATTACK | api.buttons.POTION),
+          };
+        }
+        return {
+          ...normal,
+          moveX: Math.round(dx / distance * 127),
+          moveZ: Math.round(dz / distance * 127),
+          buttons: normal.buttons & (api.buttons.ATTACK | api.buttons.DODGE | api.buttons.POTION),
+        };
+      });
+    })()`;
+    await Promise.all([a.evaluate(assist), b.evaluate(assist)]);
+    reviveAssistStarted = true;
+  }
+  if (state.downedPlayer && !state.done && state.reviveProgress > 0 && state.reviveProgress < 60 && !downedShot) {
+    const downedIsA = await a.evaluate(
+      `window.__devinarok.party.playerId === ${JSON.stringify(state.downedPlayer)}`,
+    );
+    await capture(downedIsA ? a : b, 'downed-revive-ring');
+    downedShot = true;
+  }
   if (state.door && !doorShot) { await capture(a, 'door-countdown'); doorShot = true; }
-  if (!reconnectShot && Date.now() > reconnectAt) {
-    await b.evaluate('window.__devinarok.party.session.socket.close()');
-    await delay(180);
-    await capture(b, 'reconnect-overlay');
-    reconnectShot = true;
+  if (!reconnectShot && doorShot && !state.downedPlayer && Date.now() > reconnectAt) {
+    await b.evaluate(`(() => {
+      const session = window.__devinarok.party.session;
+      window.__m2ReconnectStatuses = [];
+      const scheduleTimeout = session.setTimeoutFn;
+      session.__m2ScheduleTimeout = scheduleTimeout;
+      session.setTimeoutFn = (callback, ms) => scheduleTimeout(callback, Math.max(ms, 3000));
+      const onStatus = session.onStatus;
+      session.onStatus = (status, ...args) => {
+        window.__m2ReconnectStatuses.push(status);
+        return onStatus(status, ...args);
+      };
+      session.socket.addEventListener('close', (event) => {
+        window.__m2SocketClose = { code: event.code, reason: event.reason, wasClean: event.wasClean };
+      }, { once: true });
+      session.socket.close();
+    })()`);
+    try {
+      await b.wait('!document.querySelector("#party-network-overlay").hidden && document.querySelector("#party-network-overlay").textContent.includes("재연결 중")', 3000);
+      await capture(b, 'reconnect-overlay');
+      reconnectShot = true;
+    } catch {
+      reconnectDiagnostics = await b.evaluate(`({
+        status: window.__devinarok.party.status,
+        socketReadyState: window.__devinarok.party.session.socket?.readyState ?? null,
+        overlayHidden: document.querySelector("#party-network-overlay").hidden,
+        overlayText: document.querySelector("#party-network-overlay").textContent,
+        statuses: window.__m2ReconnectStatuses,
+        socketClose: window.__m2SocketClose ?? null,
+      })`);
+    } finally {
+      await b.evaluate(`(() => {
+        const session = window.__devinarok.party.session;
+        if (session.__m2ScheduleTimeout) {
+          session.setTimeoutFn = session.__m2ScheduleTimeout;
+          delete session.__m2ScheduleTimeout;
+        }
+      })()`);
+    }
   }
   if (state.done) break;
   await delay(100);
 }
+clearInterval(inputDriver);
+while (inputDriverBusy) await delay(5);
+await Promise.all([
+  a.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
+  b.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
+]);
 await a.wait('Boolean(window.__devinarok.party.result)', 10000);
 await a.wait('!document.querySelector("#result-panel").hidden', 10000);
 await capture(a, 'result-player-1');
@@ -274,13 +354,23 @@ const runStates = [
     outcome: window.__devinarok.party.result?.outcome,
     players: window.__devinarok.party.lastSnapshot?.ents?.filter((entity) => entity.kind === 'player').map(({playerId,hp,potions,downed}) => ({playerId,hp,potions,downed})),
     roomIndex: window.__devinarok.party.lastSnapshot?.roomIndex,
-    driver: window.__partyDriverStats,
+    driver: {
+      ...window.__partyDriverStats,
+      serverTick: window.__devinarok.party.lastSnapshot?.tick,
+      serverAck: window.__devinarok.party.lastSnapshot?.ack,
+      status: window.__devinarok.party.status,
+    },
   })`),
   await b.evaluate(`({
     outcome: window.__devinarok.party.result?.outcome,
     players: window.__devinarok.party.lastSnapshot?.ents?.filter((entity) => entity.kind === 'player').map(({playerId,hp,potions,downed}) => ({playerId,hp,potions,downed})),
     roomIndex: window.__devinarok.party.lastSnapshot?.roomIndex,
-    driver: window.__partyDriverStats,
+    driver: {
+      ...window.__partyDriverStats,
+      serverTick: window.__devinarok.party.lastSnapshot?.tick,
+      serverAck: window.__devinarok.party.lastSnapshot?.ack,
+      status: window.__devinarok.party.status,
+    },
   })`),
 ];
 await Promise.all([a.evaluate('location.reload()'), b.evaluate('location.reload()')]);
@@ -291,6 +381,7 @@ await Promise.all([
 const report = {
   roomCode: code,
   exceptions: [...a.exceptions, ...b.exceptions],
+  jsExceptionCount: a.exceptions.length + b.exceptions.length,
   rewardsAfterReload: [
     await a.evaluate('({gold:window.__devinarok.character.gold,xp:window.__devinarok.character.xp})'),
     await b.evaluate('({gold:window.__devinarok.character.gold,xp:window.__devinarok.character.xp})'),
@@ -298,6 +389,25 @@ const report = {
   rewardsBeforeReload,
   runStates,
   captures: [...captured],
+  reconnectDiagnostics,
+  inputDriver: {
+    batchSize: 30,
+    calls: inputDriverCalls,
+    inputs: inputDriverCounts,
+    incompleteBatches: inputDriverFalse,
+    errors: inputDriverErrors,
+  },
 };
+report.missingCaptures = [
+  'lobby-desktop',
+  'lobby-mobile-390x844',
+  'two-player-combat-desktop',
+  'two-player-combat-mobile-390x844',
+  'downed-revive-ring',
+  'door-countdown',
+  'reconnect-overlay',
+  'result-player-1',
+  'result-player-2',
+].filter((name) => !captured.has(name));
 await writeFile(`${outputDir}/capture-summary.json`, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));

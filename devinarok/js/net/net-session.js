@@ -45,7 +45,7 @@ export class NetSession {
     onError = () => {},
     onPong = () => {},
     onVersionMismatch = () => {},
-    now = () => 0,
+    now = () => globalThis.performance?.now?.() ?? Date.now(),
     setTimeoutFn = globalThis.setTimeout?.bind(globalThis),
     clearTimeoutFn = globalThis.clearTimeout?.bind(globalThis),
     setIntervalFn = globalThis.setInterval?.bind(globalThis),

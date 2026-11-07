@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
 import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
-import { partyServerUrl } from '../js/ui/party.js';
+import { computeBotPolicy } from '../js/net/bot-policy.js';
+import { PartyClient, partyServerUrl } from '../js/ui/party.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS } from '../js/sim/world.js';
 
@@ -77,6 +79,110 @@ test('party server URL appends the room path and honors local overrides', () => 
     partyServerUrl('ABC234', '?server=ws%3A%2F%2Flocalhost%2Fdevinarok'),
     'ws://localhost/devinarok/ABC234',
   );
+});
+
+test('party rendering does not mutate the predictor player position', () => {
+  const player = { id: 1, kind: 'player', playerId: 'self', x: 1, z: 2 };
+  const client = Object.create(PartyClient.prototype);
+  client.stageWorld = { tick: 7, entities: [] };
+  client.playerId = 'self';
+  client.predictor = {
+    getPlayer: () => player,
+    getVisualPosition: () => ({ x: 9, z: 8 }),
+  };
+  client.session = { clock: { getEstimate: () => 100 } };
+  client.interpolation = { sample: () => ({ entities: [] }) };
+  client.reviveProgress = new Map();
+  client.lastSnapshot = { tick: 7, ev: [], roomIndex: 0, openDoors: [] };
+
+  const view = client.viewWorld(100);
+  assert.equal(view.entities[0].x, 9);
+  assert.equal(view.entities[0].z, 8);
+  assert.equal(player.x, 1);
+  assert.equal(player.z, 2);
+});
+
+test('shared bot policy targets, dodges telegraphs, and enters cleared-room doors', () => {
+  const player = {
+    x: 0,
+    z: 0,
+    hp: 100,
+    maxHp: 100,
+    potions: 0,
+    radius: 0.32,
+    lastInput: { aim: 0 },
+    attack: null,
+    skillCast: null,
+    dodgeCooldownTicks: 0,
+  };
+  const target = { id: 2, kind: 'enemy', x: 1, z: 0, state: 'idle' };
+  const viewed = { entities: [target], activeEnemyIds: [target.id] };
+  const attack = computeBotPolicy({ player, viewed });
+  assert.equal(attack.buttons, BUTTONS.ATTACK);
+
+  const threat = {
+    id: 3,
+    kind: 'enemy',
+    x: 1,
+    z: 0,
+    attackPhase: 'windup',
+    attackRemaining: 2,
+    attackShape: { type: 'circle', originX: 0, originZ: 0, radius: 2 },
+  };
+  const dodge = computeBotPolicy({
+    player,
+    viewed: { entities: [threat], activeEnemyIds: [threat.id] },
+  });
+  assert.equal(dodge.buttons, BUTTONS.DODGE);
+  assert.ok(Math.hypot(dodge.moveX, dodge.moveZ) > 0);
+
+  const door = computeBotPolicy({
+    player,
+    viewed,
+    roomCleared: true,
+    door: { x: 2, z: 0 },
+  });
+  assert.equal(door.buttons, 0);
+  assert.equal(door.moveX, 127);
+  assert.equal(door.moveZ, 0);
+});
+
+test('dev input provider drives numbered InputLayer ticks', () => {
+  const hadWindow = Object.hasOwn(globalThis, 'window');
+  const originalWindow = globalThis.window;
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  const canvas = { addEventListener() {}, removeEventListener() {} };
+  const controls = { querySelector: () => null };
+  const input = new InputLayer({ canvas, controls });
+  try {
+    input.setDevInputProvider(() => ({
+      moveX: 64,
+      moveZ: -64,
+      aim: 32,
+      buttons: BUTTONS.ATTACK,
+      seq: 99,
+    }));
+    assert.deepEqual(input.nextTick(), {
+      moveX: 64,
+      moveZ: -64,
+      aim: 32,
+      buttons: BUTTONS.ATTACK,
+      seq: 1,
+    });
+    assert.equal(input.nextTick().seq, 2);
+    input.setDevInputProvider(null);
+    assert.deepEqual(input.nextTick(), {
+      seq: 3,
+      moveX: 0,
+      moveZ: 0,
+      aim: 192,
+      buttons: 0,
+    });
+  } finally {
+    input.destroy();
+    if (hadWindow) globalThis.window = originalWindow;
+    else delete globalThis.window;
+  }
 });
 
 test('protocol omits default fields in full keyframes and restores them on decode', () => {
@@ -340,6 +446,16 @@ test('net session reads the authoritative tick from the pong tick field', () => 
   socket.receive({ t: 'pong', c: 100, tick: 6 });
   assert.equal(session.clock.samples, 1);
   assert.equal(session.clock.rttMs, 100);
+  session.close();
+});
+
+test('net session defaults to the monotonic clock used by interpolation', () => {
+  const session = new NetSession({ autoFlushInputs: false, autoPing: false });
+  const ping = session.clock.makePing(session.now());
+  const receivedAt = session.now();
+  const serverTick = Math.round((ping.c + receivedAt) / 2 * session.clock.tickRate / 1000) + 12;
+  session.clock.observePong({ c: ping.c, t: serverTick }, receivedAt);
+  assert.ok(Math.abs(session.clock.getEstimate(performance.now()) - serverTick) < 2);
   session.close();
 });
 

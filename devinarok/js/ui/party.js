@@ -249,7 +249,7 @@ export class PartyClient {
     const snapshot = this.lastSnapshot;
     const estimate = this.session.clock.getEstimate(now);
     const sample = this.interpolation.sample(estimate);
-    const local = this.predictor.getPlayer();
+    const local = { ...this.predictor.getPlayer() };
     const visualPosition = this.predictor.getVisualPosition(now);
     local.x = visualPosition.x;
     local.z = visualPosition.z;
