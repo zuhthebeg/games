@@ -119,9 +119,10 @@ export class ArenaRenderer {
   constructor(canvas, onReady = () => {}, arena = ARENA, showCollisionOverlay = false) {
     this.canvas = canvas;
     this.arena = arena;
+    this.isForest = arena.theme === 'forest';
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x17141a);
-    this.scene.fog = new THREE.Fog(0x17141a, 42, 78);
+    this.scene.background = new THREE.Color(this.isForest ? 0x333a36 : 0x17141a);
+    this.scene.fog = new THREE.Fog(this.isForest ? 0x69716a : 0x17141a, this.isForest ? 24 : 42, this.isForest ? 55 : 78);
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
     this.camera.position.set(0, 15.5, 10.85);
     this.camera.lookAt(0, 0, 0);
@@ -156,6 +157,9 @@ export class ArenaRenderer {
     this.damageNumbers = [];
     this.deathPuffs = [];
     this.transientEffects = [];
+    this.ashPoints = null;
+    this.ashPositions = null;
+    if (this.isForest) this.createAshParticles();
     this.seenShotKeys = new Set();
     this.seenImpactCasts = new Set();
     this.torchLights = [];
@@ -204,6 +208,50 @@ export class ArenaRenderer {
     }
   }
 
+  createAshParticles() {
+    const count = 72;
+    this.ashPositions = new Float32Array(count * 3);
+    for (let index = 0; index < count; index += 1) {
+      const phase = index * 2.399963;
+      this.ashPositions[index * 3] = Math.sin(phase) * 11;
+      this.ashPositions[index * 3 + 1] = (index % 12) * 0.48 + 0.5;
+      this.ashPositions[index * 3 + 2] = Math.cos(phase) * 11;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(this.ashPositions, 3));
+    const material = new THREE.PointsMaterial({
+      color: 0xd0d0bd,
+      size: 0.055,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+    this.ashPoints = new THREE.Points(geometry, material);
+    this.scene.add(this.ashPoints);
+    this.transientEffects.push({
+      mesh: this.ashPoints,
+      geometry,
+      material,
+      startTime: null,
+      durationMs: null,
+      startTick: null,
+      endTick: null,
+      update: null,
+    });
+  }
+
+  updateAshParticles(dt, now) {
+    if (!this.ashPoints) return;
+    for (let index = 0; index < this.ashPositions.length / 3; index += 1) {
+      const offset = index * 3;
+      this.ashPositions[offset + 1] -= dt * (0.18 + index % 5 * 0.025);
+      this.ashPositions[offset] += Math.sin(now * 0.00012 + index) * dt * 0.05;
+      if (this.ashPositions[offset + 1] < 0.1) this.ashPositions[offset + 1] = 5.5;
+    }
+    this.ashPoints.geometry.attributes.position.needsUpdate = true;
+  }
+
   createCollisionOverlay() {
     const group = new THREE.Group();
     const material = new THREE.LineBasicMaterial({
@@ -242,11 +290,19 @@ export class ArenaRenderer {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
     await MeshoptDecoder.ready;
+    let assetHashes = {};
+    const assetUrl = (path) => {
+      const url = new URL(`../../${path}`, import.meta.url);
+      const hash = assetHashes[path];
+      if (hash) url.searchParams.set('v', hash.slice(0, 12));
+      return url.href;
+    };
     const load = async (path) => {
-      if (!this.gltfs.has(path)) this.gltfs.set(path, loader.loadAsync(ASSET(path)));
+      if (!this.gltfs.has(path)) this.gltfs.set(path, loader.loadAsync(assetUrl(path)));
       return this.gltfs.get(path);
     };
-    const manifest = await fetch(ASSET('assets/manifest.json')).then((response) => response.json());
+    const manifest = await fetch(ASSET('assets/manifest.json'), { cache: 'no-store' }).then((response) => response.json());
+    assetHashes = manifest.sha256 ?? {};
     this.loadedBytes = manifest.m1StageLoadedBytes?.[this.arena.id] ?? manifest.m0LoadedBytes;
     const propModels = [...new Set([
       ...this.arena.props.map((prop) => prop.model),
@@ -295,14 +351,27 @@ export class ArenaRenderer {
       instances.instanceMatrix.needsUpdate = true;
       const materials = Array.isArray(material) ? material : [material];
       for (const item of materials) {
-        if (item.color) item.color.multiplyScalar(path.includes('wood') ? 0.84 : 0.76);
+        if (item.color) {
+          item.color.multiplyScalar(this.isForest ? (path.includes('wood') ? 0.72 : 0.56) : (path.includes('wood') ? 0.84 : 0.76));
+          if (this.isForest) item.color.lerp(new THREE.Color(0x777f70), 0.32);
+        }
       }
       this.scene.add(instances);
     }
     for (const placement of this.arena.props) {
       if (instancedModels.has(placement.model)) continue;
       const prop = SkeletonUtils.clone(loadedByPath.get(placement.model).scene);
-      prop.position.set(placement.x, 0, placement.z);
+      if (this.isForest) {
+        for (const material of cloneMaterials(prop)) {
+          if (material.color) {
+            material.color.multiplyScalar(0.78).lerp(new THREE.Color(0x737b6f), 0.4);
+            if (placement.model.endsWith('/ground_pathStraight.glb')) {
+              material.color.multiplyScalar(0.42).lerp(new THREE.Color(0x3c4740), 0.55);
+            }
+          }
+        }
+      }
+      prop.position.set(placement.x, placement.y ?? 0, placement.z);
       prop.rotation.y = placement.rotY;
       prop.scale.set(
         placement.scaleX ?? placement.scale ?? 1,
@@ -372,6 +441,12 @@ export class ArenaRenderer {
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
+    if (Number.isInteger(entity.tint)) {
+      const tint = new THREE.Color(entity.tint);
+      for (const material of materials) {
+        if (material.color) material.color.lerp(tint, 0.45);
+      }
+    }
     if (entity.kind === 'player') isolateWeaponMaterials(root, materials);
     root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
@@ -741,7 +816,7 @@ export class ArenaRenderer {
       if (event.type === 'cast') this.createSlash(event);
       if (event.type === 'shot') this.createShot(event, now);
       if (event.type === 'impact') this.createImpact(event);
-      if (event.type === 'blink') this.createBlink(event, now);
+      if (event.type === 'blink' || event.type === 'bossBlink') this.createBlink(event, now);
       if (event.type === 'hit') {
         this.createDamageNumber(event);
         if (event.damage > 0) {
@@ -1050,6 +1125,7 @@ export class ArenaRenderer {
     const now = performance.now();
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);
     this.lastRender = now;
+    this.updateAshParticles(dt, now);
     this.consumeEvents(world, now);
     for (const torch of this.torchLights) {
       torch.light.intensity = torch.base * (0.9 + Math.sin(now * 0.009 + torch.phase) * 0.055 + Math.sin(now * 0.023 + torch.phase * 1.7) * 0.035);
@@ -1178,6 +1254,7 @@ export class ArenaRenderer {
       effect.material.dispose();
     });
     this.transientEffects = [];
+    this.ashPoints = null;
     this.damageNumbers.forEach((effect) => effect.element.remove());
     this.damageNumbers = [];
     for (let index = this.deathPuffs.length - 1; index >= 0; index -= 1) this.removeDeathPuff(index);

@@ -14,7 +14,7 @@ import { AFFIXES } from './content/affixes.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
-import { HUB_ARENA, STAGE_LIST } from './content/stages.js';
+import { HUB_ARENA, isStageUnlocked, STAGE_LIST } from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, calculatePlayerStats, completeStage, createHubWorld,
   createStageWorld, retreatStage, rollStageItem, step,
@@ -41,6 +41,7 @@ let input;
 let loop;
 let frame;
 let settled = false;
+let firstForestUnlock = false;
 let settlementId = null;
 let soundMuted = false;
 let audioLoaded = false;
@@ -152,9 +153,7 @@ function refreshHubPlayer() {
 }
 
 function stageIsUnlocked(stageId) {
-  if (stageId === 'C1') return true;
-  const index = STAGE_LIST.findIndex((stage) => stage.id === stageId);
-  return index > 0 && character.clearedStages.includes(STAGE_LIST[index - 1].id);
+  return isStageUnlocked(stageId, character.clearedStages);
 }
 
 function drawHub() {
@@ -183,7 +182,9 @@ async function enterHub() {
   $('#party-door-countdown').hidden = true;
   $('#party-downed').hidden = true;
   $('#party-network-overlay').hidden = true;
-  $('#stage-name').textContent = '거점 여관';
+  $('#stage-name').textContent = localStorage.getItem('devinarok.lastStageRegion') === '2'
+    ? '잿빛 숲 · 거점 여관'
+    : '거점 여관';
   $('#hud-name').textContent = character.name;
   world = createHubWorld({
     seed: 724103,
@@ -191,6 +192,8 @@ async function enterHub() {
     level: character.level,
     equipment: equippedItems(),
   });
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (hero) Object.assign(hero, equipmentLook(equippedItems()));
   renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA, DEV_COLLISION_OVERLAY);
   await Promise.all([renderer.ready, loadAudio()]);
   updateInventoryUpgradeBadge();
@@ -212,6 +215,12 @@ function updateDebugZone(areaName) {
   const label = $('#debug-zone');
   label.hidden = !DEV_MODE;
   if (DEV_MODE) label.textContent = `${areaName} · 자산 ${(renderer.getLoadedBytes() / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function updateBossIntro(stageId) {
+  const region = STAGE_LIST.find((stage) => stage.id === stageId)?.region ?? 1;
+  $('#boss-intro-region').textContent = region === 2 ? '잿빛 숲' : '무너진 지하묘지';
+  $('#boss-intro-name').textContent = region === 2 ? '잿빛 숲의 사령술사' : '해골 기사단장';
 }
 
 async function loadAudio() {
@@ -361,10 +370,18 @@ function renderBoard() {
   const rows = STAGE_LIST.map((stage) => {
     const unlocked = stageIsUnlocked(stage.id);
     const cleared = character.clearedStages.includes(stage.id);
-    return `<div class="hub-row"><span>${stage.name}<small>권장 Lv.${stage.recommendedLevel} · ${cleared ? '클리어' : unlocked ? '도전 가능' : '잠김'}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
+    const section = stage.id === 'C1' ? '<h3>1지역 · 무너진 지하묘지</h3>'
+      : stage.id === 'F1' ? '<h3>2지역 · 잿빛 숲</h3>' : '';
+    const newBadge = stage.id === 'F1' && character.clearedStages.includes('CB')
+      && !localStorage.getItem('devinarok.f1-entered') ? '<b class="stage-new">NEW</b>' : '';
+    const lockText = !unlocked && stage.region === 2 && !character.clearedStages.includes('CB')
+      ? '기사 전당 클리어 후 열려요'
+      : !unlocked ? `${STAGE_LIST[STAGE_LIST.findIndex((entry) => entry.id === stage.id) - 1]?.name ?? ''} 클리어 후 열려요`
+        : cleared ? '클리어' : '도전 가능';
+    const warning = character.level < stage.recommendedLevel - 1 ? ' is-underlevel' : '';
+    return `${section}<div class="hub-row${warning}"><span>${stage.name}${newBadge}<small>권장 Lv.${stage.recommendedLevel} · ${lockText}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
   }).join('');
-  const upcomingRegion = '<div class="hub-row" aria-disabled="true"><span>2지역 · 준비 중<small>다음 업데이트에서 열려요</small></span><button disabled>준비 중</button></div>';
-  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}${upcomingRegion}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 지하묘지로 떠납니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
 }
 
 function stopPartyFinderPolling() {
@@ -652,6 +669,9 @@ async function startPartyStage(message) {
   stopWorld();
   $('#hub-party-button').hidden = true;
   currentStageId = message.stageId;
+  const selectedStage = STAGE_LIST.find((entry) => entry.id === message.stageId);
+  localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
+  if (message.stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
   settled = false;
   settlementId = `${partyClient.roomCode}:${message.runId}:${partyClient.playerId}`;
   hubUi.hidden = true;
@@ -661,7 +681,9 @@ async function startPartyStage(message) {
   $('#controls').hidden = false;
   $('#party-hud').hidden = false;
   $('#party-rtt').hidden = false;
-  $('#boss-hud').hidden = message.stageId !== 'CB';
+  $('#boss-hud').hidden = !['CB', 'FB'].includes(message.stageId);
+  $('#boss-name').textContent = message.stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  updateBossIntro(message.stageId);
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
   $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
   world = partyClient.viewWorld() ?? partyClient.stageWorld;
@@ -947,6 +969,9 @@ function renderPanel(kind, compareUid = '') {
 
 async function startStage(stageId) {
   if (!stageIsUnlocked(stageId) && !DEV_MODE) return;
+  const selectedStage = STAGE_LIST.find((entry) => entry.id === stageId);
+  localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
+  if (stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
   stopWorld();
   partyClient?.close();
   partyClient = null;
@@ -958,7 +983,9 @@ async function startStage(stageId) {
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
   $('#controls').hidden = false;
-  $('#boss-hud').hidden = stageId !== 'CB';
+  $('#boss-hud').hidden = !['CB', 'FB'].includes(stageId);
+  $('#boss-name').textContent = stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  updateBossIntro(stageId);
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
@@ -975,7 +1002,7 @@ async function startStage(stageId) {
   audio.setMusic('combat-bgm');
   $('#stage-name').textContent = world.arena.name;
   updateDebugZone(world.arena.name);
-  if (stageId === 'CB') {
+  if (['CB', 'FB'].includes(stageId)) {
     $('#boss-intro').hidden = false;
     setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
   }
@@ -1025,12 +1052,13 @@ function updateHud(current) {
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
     }
   }
-  $('#boss-hud').hidden = current.stageId !== 'CB';
+  $('#boss-hud').hidden = !['CB', 'FB'].includes(current.stageId);
   const boss = current.entities.find((entity) => entity.boss);
   if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
 }
 
 function buildSettlement(outcome, result) {
+  firstForestUnlock = false;
   const ops = [
     { type: 'gainXp', amount: result.xp },
     { type: 'grantGold', amount: result.gold },
@@ -1038,6 +1066,7 @@ function buildSettlement(outcome, result) {
   ];
   let autoSold = 0;
   if (outcome === 'clear') {
+    firstForestUnlock = currentStageId === 'CB' && !character.clearedStages.includes('CB');
     const capacity = Math.max(0, 40 - inventory.length);
     const uniqueItems = rekeySettlementItems(result.items, inventory);
     uniqueItems.forEach((item, index) => {
@@ -1058,9 +1087,11 @@ function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) 
   const earnedItems = outcome === 'clear' && result.items.length
     ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
     : '';
-  const progression = outcome === 'clear' && currentStageId === 'CB'
-    ? '<p>1지역을 정복했어요. 다음 지역은 준비 중이에요.</p>'
-    : '';
+  const progression = outcome === 'clear' && firstForestUnlock
+    ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
+    : outcome === 'clear' && currentStageId === 'FB'
+      ? '<p>3지역은 준비 중이에요</p>'
+      : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
   resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {

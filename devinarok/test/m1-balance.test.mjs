@@ -28,7 +28,7 @@ function inTelegraph(player, shape) {
   return false;
 }
 
-function botTick(world, seq) {
+function botTick(world, seq, { aimAtTarget = false } = {}) {
   const player = world.entities.find((entity) => entity.kind === 'player');
   const ranged = player.family === 'crossbow' || player.family === 'staff';
   const enemies = world.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead && !entity.invulnerable);
@@ -62,8 +62,13 @@ function botTick(world, seq) {
     }
   }
   const magnitude = Math.hypot(dx, dz) || 1;
-  const moveX = Math.round(dx / magnitude * 127);
-  const moveZ = Math.round(dz / magnitude * 127);
+  let moveX = Math.round(dx / magnitude * 127);
+  let moveZ = Math.round(dz / magnitude * 127);
+  const targetDistance = target ? Math.hypot(target.x - player.x, target.z - player.z) : Infinity;
+  if (aimAtTarget && !ranged && !imminent && target && targetDistance < 1.1) {
+    moveX = Math.round((target.x - player.x) / targetDistance * 16);
+    moveZ = Math.round((target.z - player.z) / targetDistance * 16);
+  }
   let buttons = 0;
   if (imminent && player.dodgeCooldownTicks === 0 && !(player.previousButtons & 2)) buttons |= 2;
   else if (player.hp < player.maxHp * 0.58 && player.potions > 0 && player.potionCooldownTicks === 0) buttons |= 64;
@@ -75,15 +80,17 @@ function botTick(world, seq) {
     const timeline = COMBO_TIMELINES[player.attack.step - 1];
     if (player.attack.phase === 'recovery' && player.attack.phaseTick >= timeline.recoveryTicks - timeline.chainWindowTicks) buttons |= 1;
   } else if (!ranged && target) buttons |= 1;
-  const aim = Math.round((Math.atan2(dz, dx) / (Math.PI * 2) * 256 + 256) % 256);
+  const aimDx = aimAtTarget && target ? target.x - player.x : dx;
+  const aimDz = aimAtTarget && target ? target.z - player.z : dz;
+  const aim = Math.round((Math.atan2(aimDz, aimDx) / (Math.PI * 2) * 256 + 256) % 256);
   return { seq, moveX, moveZ, aim, buttons };
 }
 
-function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400 }) {
+function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false }) {
   const id = 'bot';
   const world = createStageWorld({ seed, stageId, playerId: id, character: { level, potions, equipment } });
   for (let tick = 1; tick <= maxTicks && !world.outcome; tick += 1) {
-    step(world, { [id]: botTick(world, tick) });
+    step(world, { [id]: botTick(world, tick, { aimAtTarget }) });
   }
   const player = world.entities.find((entity) => entity.kind === 'player');
   const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
@@ -94,6 +101,18 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
     hp: player?.hp ?? 0,
     maxHp: player?.maxHp ?? 0,
     bossDamage: boss ? boss.maxHp - boss.hp : null,
+    roomIndex: world.roomIndex,
+    roomCleared: world.roomCleared,
+    playerPosition: player ? { x: player.x, z: player.z } : null,
+    remainingEnemies: world.entities
+      .filter((entity) => entity.kind === 'enemy' && !entity.dead)
+      .map((entity) => ({
+        kind: entity.enemyKind,
+        x: Number(entity.x.toFixed(1)),
+        z: Number(entity.z.toFixed(1)),
+        hp: entity.hp,
+        spawnTicksLeft: entity.spawnTicksLeft,
+      })),
   };
 }
 
@@ -174,5 +193,78 @@ test('crossbow and staff bots keep level-7 boss wins in the target band', () => 
     if (wins < 10) {
       assert.ok(medianClearSeconds >= 45 && medianClearSeconds <= 120, `${family} CB median: ${medianClearSeconds.toFixed(1)}s`);
     }
+  }
+});
+
+test('region-2 balance gates use L5 gear in F1 and L7 gear in FB', () => {
+  const armor = {
+    5: [
+      ['ossuary-helm', 'ossuary-plate', 'bone-gauntlets', 'ossuary-greaves'],
+      [
+        [{ id: 'defense', value: 3 }, { id: 'maxHp', value: 20 }],
+        [{ id: 'maxHp', value: 20 }, { id: 'defense', value: 3 }],
+        [{ id: 'attackPercent', value: 8 }, { id: 'lifesteal', value: 3 }],
+        [{ id: 'moveSpeed', value: 5 }, { id: 'maxHp', value: 20 }],
+      ],
+    ],
+    7: [
+      ['ash-hood', 'ash-coat', 'ash-gloves', 'ash-greaves'],
+      [
+        [{ id: 'defense', value: 4 }, { id: 'maxHp', value: 28 }],
+        [{ id: 'maxHp', value: 28 }, { id: 'defense', value: 4 }],
+        [{ id: 'attackPercent', value: 10 }, { id: 'lifesteal', value: 4 }],
+        [{ id: 'moveSpeed', value: 6 }, { id: 'maxHp', value: 28 }],
+      ],
+    ],
+  };
+  const weaponIds = {
+    5: { sword: 'grave-greatsword', crossbow: 'grave-crossbow', staff: 'elder-staff' },
+    7: { sword: 'ash-sword', crossbow: 'ash-crossbow', staff: 'ash-staff' },
+  };
+  const runFamily = (family, stageId, gearLevel, characterLevel) => {
+    const [armorIds, armorAffixes] = armor[gearLevel];
+    const equipment = [
+      {
+        itemId: weaponIds[gearLevel][family],
+        rarity: 'rare',
+        enhance: 0,
+        affixes: [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }],
+      },
+      ...armorIds.map((itemId, index) => ({
+        itemId,
+        rarity: 'rare',
+        enhance: 0,
+        affixes: armorAffixes[index],
+      })),
+    ];
+    const runs = Array.from({ length: 10 }, (_, index) => runBot({
+      seed: (stageId === 'F1' ? 701 : 801) + index,
+      stageId,
+      level: characterLevel,
+      equipment,
+      potions: 3,
+      maxTicks: 9000,
+      aimAtTarget: true,
+    }));
+    const wins = runs.filter((run) => run.outcome === 'clear');
+    const medianClearSeconds = median(wins.map((run) => run.seconds));
+    console.log(`M3b ${family} ${stageId} L${characterLevel}/L${gearLevel}: ${wins.length}/10 clears; median ${medianClearSeconds.toFixed(1)}s`);
+    console.log(`M3b ${family} ${stageId} seeds: ${runs.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s hp${run.hp}/${run.maxHp}`).join(', ')}`);
+    const stalled = runs.filter((run) => run.outcome !== 'clear');
+    if (stalled.length) console.log(`M3b ${family} ${stageId} stalls: ${JSON.stringify(stalled.map(({ tick, roomIndex, roomCleared, playerPosition, remainingEnemies }) => ({ tick, roomIndex, roomCleared, playerPosition, remainingEnemies })))}`);
+    return { family, stageId, wins: wins.length, medianClearSeconds };
+  };
+
+  const results = ['sword', 'crossbow', 'staff'].flatMap((family) => [
+    runFamily(family, 'F1', 5, 7),
+    runFamily(family, 'FB', 7, 10),
+  ]);
+  for (const result of results.filter((entry) => entry.stageId === 'F1')) {
+    assert.ok(result.wins >= 9, `${result.family} F1: ${result.wins}/10`);
+  }
+  const swordBoss = results.find((entry) => entry.family === 'sword' && entry.stageId === 'FB');
+  assert.ok(swordBoss.wins >= 7 && swordBoss.wins <= 9, `sword FB: ${swordBoss.wins}/10`);
+  for (const result of results.filter((entry) => entry.family !== 'sword' && entry.stageId === 'FB')) {
+    assert.ok(result.wins >= 7, `${result.family} FB: ${result.wins}/10`);
   }
 });

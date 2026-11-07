@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +17,8 @@ const cacheDir = join(gameDir, '.cache/sources');
 const assetDir = join(gameDir, 'assets');
 const now = new Date().toISOString().slice(0, 10);
 const budgetBytes = 5 * 1024 * 1024;
+const natureArchiveSha256 = 'fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d';
+const natureArchivePath = join(cacheDir, 'kenney-nature-kit-2.1.zip');
 
 const repos = {
   adventures: {
@@ -38,6 +41,13 @@ const repos = {
     commit: 'b0ca9bd96a8072ab36a3a5464f00ed1e06a16d07',
     license: { path: 'LICENSE.txt', blob: '686cf4ee3931b75d4ecfac6308f9d3287553748c' },
     licenseOutput: 'assets/licenses/kaykit-dungeon-LICENSE.txt',
+  },
+  nature: {
+    name: 'Nature Kit 2.1',
+    url: 'https://kenney.nl/assets/nature-kit',
+    commit: natureArchiveSha256,
+    license: { path: 'License.txt' },
+    licenseOutput: 'assets/licenses/kenney-nature-kit-LICENSE.txt',
   },
 };
 
@@ -160,7 +170,34 @@ const environment = [
   output: `assets/env/${name}.glb`,
 }));
 
-const jobs = [...characters, ...animations, ...environment];
+const forestEnvironment = [
+  'tree_default_fall',
+  'tree_oak_fall',
+  'tree_pineTallA',
+  'tree_pineTallB',
+  'rock_largeA',
+  'rock_largeD',
+  'rock_smallB',
+  'stump_old',
+  'stump_round',
+  'log',
+  'log_large',
+  'mushroom_redGroup',
+  'mushroom_tanGroup',
+  'plant_bushLarge',
+  'fence_planks',
+  'fence_gate',
+  'campfire_logs',
+  'ground_pathStraight',
+  'ground_grass',
+].map((name) => ({
+  kind: 'environment',
+  repo: 'nature',
+  path: `Models/GLTF format/${name}.glb`,
+  output: `assets/env/forest/${name}.glb`,
+}));
+
+const jobs = [...characters, ...animations, ...environment, ...forestEnvironment];
 const sourceByKey = new Map();
 for (const job of jobs) sourceByKey.set(`${job.repo}/${job.path}`, job);
 for (const [repoId, repo] of Object.entries(repos)) {
@@ -168,7 +205,7 @@ for (const [repoId, repo] of Object.entries(repos)) {
     kind: 'license',
     repo: repoId,
     path: repo.license.path,
-    blob: repo.license.blob,
+    ...(repo.license.blob ? { blob: repo.license.blob } : {}),
     output: repo.licenseOutput,
   });
 }
@@ -254,15 +291,40 @@ async function sourceBytes(job) {
   try {
     bytes = await readFile(cachePath);
   } catch {
-    const url = `https://raw.githubusercontent.com/KayKit-Game-Assets/${repo.name}/${repo.commit}/${job.path}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Source download failed (${response.status}): ${url}`);
-    bytes = Buffer.from(await response.arrayBuffer());
+    if (job.repo === 'nature') {
+      let archive;
+      try {
+        archive = await readFile(natureArchivePath);
+      } catch {
+        const linkResponse = await fetch('https://kenney.nl/download-link/6173736574732f6e61747572652d6b6974');
+        if (!linkResponse.ok) throw new Error(`Nature Kit download link failed (${linkResponse.status})`);
+        const { url } = await linkResponse.json();
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Nature Kit archive download failed (${response.status})`);
+        archive = Buffer.from(await response.arrayBuffer());
+        if (sha256(archive) !== natureArchiveSha256) throw new Error('Nature Kit archive SHA-256 mismatch');
+        await mkdir(dirname(natureArchivePath), { recursive: true });
+        await writeFile(natureArchivePath, archive);
+      }
+      if (sha256(archive) !== natureArchiveSha256) throw new Error('Cached Nature Kit archive SHA-256 mismatch');
+      bytes = execFileSync('python3', [
+        '-c',
+        'import sys,zipfile; sys.stdout.buffer.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]))',
+        natureArchivePath,
+        job.path,
+      ], { maxBuffer: 32 * 1024 * 1024 });
+    } else {
+      const url = `https://raw.githubusercontent.com/KayKit-Game-Assets/${repo.name}/${repo.commit}/${job.path}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Source download failed (${response.status}): ${url}`);
+      bytes = Buffer.from(await response.arrayBuffer());
+    }
+    await mkdir(dirname(cachePath), { recursive: true });
     await writeFile(cachePath, bytes);
   }
-  const actualBlob = gitBlobSha1(bytes);
-  if (actualBlob !== job.blob) {
-    throw new Error(`Pinned Git blob mismatch for ${job.path}: ${actualBlob}`);
+  if (job.blob) {
+    const actualBlob = gitBlobSha1(bytes);
+    if (actualBlob !== job.blob) throw new Error(`Pinned Git blob mismatch for ${job.path}: ${actualBlob}`);
   }
   return { bytes, sha256: sha256(bytes) };
 }
@@ -273,6 +335,10 @@ const io = new NodeIO()
   .registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 const sourceRecords = new Map();
 for (const [key, job] of sourceByKey) sourceRecords.set(key, await sourceBytes(job));
+const natureLicenseText = sourceRecords.get('nature/License.txt').bytes.toString('utf8');
+if (!/Creative Commons Zero, CC0/i.test(natureLicenseText)) {
+  throw new Error('Nature Kit archive License.txt does not confirm CC0');
+}
 
 for (const repo of Object.values(repos)) {
   const key = Object.entries(repos).find(([, entry]) => entry === repo)?.[0];
@@ -326,6 +392,12 @@ for (const job of animations) {
 }
 
 for (const job of environment) {
+  const input = sourceRecords.get(`${job.repo}/${job.path}`).bytes;
+  const document = await io.readBinary(input);
+  await writeDocument(job.output, document);
+}
+
+for (const job of forestEnvironment) {
   const input = sourceRecords.get(`${job.repo}/${job.path}`).bytes;
   const document = await io.readBinary(input);
   await writeDocument(job.output, document);
@@ -404,6 +476,12 @@ const m1AssetBudgetBytes = 6 * 1024 * 1024;
 if (Math.max(...Object.values(m1StageLoadedBytes)) > m1AssetBudgetBytes) {
   throw new Error(`M1 assets exceed budget: ${JSON.stringify(m1StageLoadedBytes)}`);
 }
+const forestStageIds = Object.values(STAGES).filter((stage) => stage.region === 2).map((stage) => stage.id);
+const forestAssetBudgetBytes = 4.5 * 1024 * 1024;
+const forestStageLoadedBytes = Object.fromEntries(forestStageIds.map((stageId) => [stageId, m1StageLoadedBytes[stageId]]));
+if (Math.max(...Object.values(forestStageLoadedBytes)) > forestAssetBudgetBytes) {
+  throw new Error(`M3b forest assets exceed budget: ${JSON.stringify(forestStageLoadedBytes)}`);
+}
 
 const manifestFiles = Object.fromEntries(
   [...outputRecords.entries()]
@@ -428,6 +506,8 @@ await writeFile(
     m1StageLoadedFiles,
     m1StageLoadedBytes,
     m1AssetBudgetBytes,
+    forestStageLoadedBytes,
+    forestAssetBudgetBytes,
   }, null, 2)}\n`,
 );
 
@@ -450,7 +530,8 @@ for (const [repoId, repo] of Object.entries(repos)) {
   ledgerSections.push([
     `## ${repo.name}`,
     `- Repository: ${repo.url}`,
-    `- Pinned default-branch commit: \`${repo.commit}\``,
+    `- ${repoId === 'nature' ? 'Pinned source archive SHA-256' : 'Pinned default-branch commit'}: \`${repo.commit}\``,
+    ...(repoId === 'nature' ? ['- License evidence: the Nature Kit asset page lists Creative Commons CC0, and the pinned archive `License.txt` states “Creative Commons Zero, CC0”.'] : []),
     `- Download date: ${now}`,
     `- License copy: [\`${repo.licenseOutput}\`](./${repo.licenseOutput})`,
     `- Source license SHA-256: \`${licenseRecord.sha256}\``,
@@ -498,6 +579,10 @@ const ledger = [
   '## M1 stage asset budget',
   '',
   `Loaded runtime assets: ${Object.entries(m1StageLoadedBytes).map(([stageId, bytes]) => `${stageId} ${bytes.toLocaleString('en-US')} bytes`).join('; ')}. The per-stage limit is ${m1AssetBudgetBytes.toLocaleString('en-US')} bytes.`,
+  '',
+  '## M3b forest stage asset budget',
+  '',
+  `Loaded runtime assets: ${Object.entries(forestStageLoadedBytes).map(([stageId, bytes]) => `${stageId} ${bytes.toLocaleString('en-US')} bytes`).join('; ')}. The per-stage limit is ${(forestAssetBudgetBytes / 1024 / 1024).toFixed(1)} MiB.`,
 ].join('\n') + preservedM1Ledger;
 await writeFile(join(gameDir, 'assets-ledger.md'), ledger);
 

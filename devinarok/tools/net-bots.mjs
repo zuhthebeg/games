@@ -33,11 +33,12 @@ function parseOptions(argv) {
 const options = parseOptions(process.argv.slice(2));
 const botCount = Math.max(1, Math.min(4, Number(options.get('bots') ?? 2)));
 const botFamilies = String(options.get('families') ?? 'sword,sword').split(',');
+const stageId = String(options.get('stage') ?? 'C1');
 const serverUrl = String(options.get('server') ?? 'ws://127.0.0.1:8788');
 const roomCode = String(options.get('room') ?? Array.from({ length: 6 }, () => (
   ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]
 )).join(''));
-const runName = String(options.get('name') ?? `c1-${botCount}bot`);
+const runName = String(options.get('name') ?? `${stageId.toLowerCase()}-${botCount}bot`);
 const durationSeconds = Math.max(10, Number(options.get('duration') ?? 240));
 const reconnectBotIndex = options.has('reconnect-bot') ? Number(options.get('reconnect-bot')) : -1;
 const reconnectAfterMs = Math.max(1000, Number(options.get('reconnect-after') ?? 6000));
@@ -193,16 +194,33 @@ class Bot {
     this.index = index;
     this.family = ['sword', 'crossbow', 'staff'].includes(family) ? family : 'sword';
     this.name = `봇${index + 1}`;
-    const starterWeapon = {
-      sword: 'rusted-sword',
-      crossbow: 'rusted-crossbow',
-      staff: 'apprentice-wand',
-    }[this.family];
+    const starterWeapon = (stageId === 'F1'
+      ? { sword: 'grave-greatsword', crossbow: 'grave-crossbow', staff: 'elder-staff' }
+      : { sword: 'rusted-sword', crossbow: 'rusted-crossbow', staff: 'apprentice-wand' })[this.family];
+    const f1Armor = [
+      ['ossuary-helm', [{ id: 'defense', value: 3 }, { id: 'maxHp', value: 20 }]],
+      ['ossuary-plate', [{ id: 'maxHp', value: 20 }, { id: 'defense', value: 3 }]],
+      ['bone-gauntlets', [{ id: 'attackPercent', value: 8 }, { id: 'lifesteal', value: 3 }]],
+      ['ossuary-greaves', [{ id: 'moveSpeed', value: 5 }, { id: 'maxHp', value: 20 }]],
+    ];
     this.character = {
-      level: 1,
-      equipment: [{ itemId: starterWeapon, slot: 'weapon', rarity: 'common', enhance: 0, affixes: [] }],
+      level: stageId === 'F1' ? 7 : 1,
+      equipment: [
+        {
+          itemId: starterWeapon,
+          slot: 'weapon',
+          rarity: stageId === 'F1' ? 'rare' : 'common',
+          enhance: 0,
+          affixes: stageId === 'F1'
+            ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+            : [],
+        },
+        ...(stageId === 'F1' ? f1Armor.map(([itemId, affixes]) => ({
+          itemId, rarity: 'rare', enhance: 0, affixes,
+        })) : []),
+      ],
       potions: 3,
-      clearedStages: [],
+      clearedStages: stageId === 'F1' ? ['CB'] : [],
     };
     this.stats = {
       upBytes: 0,
@@ -922,6 +940,7 @@ async function run() {
   let reconnectTimer = null;
   try {
     for (const bot of bots) await waitForAll([bot.connect()], `bot ${bot.index + 1} welcome`);
+    if (stageId !== 'C1') bots[0].session.send({ t: 'lobby.stage', stageId });
     for (const bot of bots) bot.session.send({ t: 'lobby.ready', ready: true });
     await waitForAll(bots.map((bot) => bot.lobbyReadyPromise), 'all bots ready');
     bots[0].session.send({ t: 'lobby.start' });
@@ -988,7 +1007,7 @@ async function run() {
       createdAt: new Date().toISOString(),
       name: runName,
       roomCode,
-      stageId: 'C1',
+      stageId,
       serverUrl,
       profile,
       impairment: profile === 'impaired'
