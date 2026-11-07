@@ -88,6 +88,7 @@ export class InterpolationBuffer {
       tick,
       entities: list.map(cloneEntity),
       activeEnemyIds: Array.isArray(value.activeEnemyIds) ? [...value.activeEnemyIds] : null,
+      roomIndex: value.roomIndex,
       teleport: Boolean(value.teleport || value.roomChanged),
       receivedAt,
     };
@@ -142,7 +143,8 @@ export class InterpolationBuffer {
 
     const left = this.snapshots[rightIndex - 1];
     const right = this.snapshots[rightIndex];
-    const teleportAtRight = renderTick >= right.tick && right.teleport;
+    const teleportAtRight = right.teleport ||
+      (left.roomIndex !== undefined && right.roomIndex !== undefined && left.roomIndex !== right.roomIndex);
     if (teleportAtRight) {
       return {
         renderTick,
@@ -159,7 +161,13 @@ export class InterpolationBuffer {
     for (const id of ids) {
       const before = leftEntities.get(id);
       const after = rightEntities.get(id);
-      const entityTeleported = renderTick >= right.tick && Boolean(after?.teleport || after?.roomChanged);
+      const roomChanged = before && after && ['room', 'roomId', 'roomIndex'].some((key) => (
+        before[key] !== undefined && after[key] !== undefined && before[key] !== after[key]
+      ));
+      const jumped = before && after && Number.isFinite(before.x) && Number.isFinite(before.z) &&
+        Number.isFinite(after.x) && Number.isFinite(after.z) &&
+        Math.hypot(after.x - before.x, after.z - before.z) > 3;
+      const entityTeleported = Boolean(after?.teleport || after?.roomChanged || roomChanged || jumped);
       if (before && after) entities.push(interpolateEntity(before, after, amount, entityTeleported));
       else if (before) entities.push(cloneEntity(before));
       else if (amount >= 1) entities.push(cloneEntity(after));

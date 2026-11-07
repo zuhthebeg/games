@@ -456,6 +456,33 @@ test('interpolation adapts to jitter, interpolates facing, extrapolates for at m
   assert.ok(teleported.x >= 20);
 });
 
+test('interpolation snaps to newer samples across room changes and large jumps', () => {
+  const buffer = new InterpolationBuffer();
+  buffer.addSnapshot({
+    tick: 0,
+    roomIndex: 0,
+    entities: [
+      { id: 1, x: 0, z: 0, roomIndex: 0 },
+      { id: 2, x: 0, z: 0 },
+      { id: 3, x: 0, z: 0 },
+    ],
+  });
+  buffer.addSnapshot({
+    tick: 10,
+    roomIndex: 0,
+    entities: [
+      { id: 1, x: 1, z: 0, roomIndex: 1 },
+      { id: 2, x: 4, z: 0 },
+      { id: 3, x: 2, z: 0 },
+    ],
+  });
+
+  const entities = new Map(buffer.sampleAtRenderTick(5).entities.map((entity) => [entity.id, entity]));
+  assert.equal(entities.get(1).x, 1);
+  assert.equal(entities.get(2).x, 4);
+  assert.equal(entities.get(3).x, 1);
+});
+
 test('cast timeline deduplicates predicted and server casts and only emits authoritative effects', () => {
   const timeline = new CastTimeline({ playerId: 'hero' });
   const predicted = timeline.predictInput({ seq: 1, buttons: BUTTONS.ATTACK }, 0);
