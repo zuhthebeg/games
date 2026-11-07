@@ -126,6 +126,8 @@ test('party resets run prediction state to each first full snapshot', () => {
     autoPing: false,
   });
   client.playerId = 'self';
+  client.status = 'connected';
+  client.inputTerminated = false;
   client.character = { name: 'Hero', level: 1, potions: 3 };
   client.equipment = [];
   client.onSnapshot = () => {};
@@ -225,6 +227,7 @@ test('downed local prediction ignores movement and actions, including pending re
     attack: null,
     skillCast: null,
     previousButtons: BUTTONS.ATTACK,
+    lastInput: { seq: 0, moveX: 0, moveZ: 0, aim: 0, buttons: BUTTONS.ATTACK },
   };
   const predictor = new Predictor({ player, ctx: { arena: {}, tick: 10 } });
   const result = predictor.applyLocalInput({
@@ -247,7 +250,7 @@ test('downed local prediction ignores movement and actions, including pending re
   predictor.reconcile({
     tick: 11,
     ack: 0,
-    player: { ...player, downed: false },
+    player: { ...player },
   });
   assert.equal(predictor.getPlayer().x, 2);
   assert.equal(predictor.getPlayer().z, 3);
