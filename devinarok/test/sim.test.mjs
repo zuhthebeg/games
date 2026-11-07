@@ -17,6 +17,8 @@ import {
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const simDir = resolve(projectDir, 'js/sim');
 const contentDir = resolve(projectDir, 'js/content');
+const protocolFile = resolve(projectDir, 'js/net/protocol.js');
+const hitAgreementFile = resolve(projectDir, 'js/net/hit-agreement.js');
 
 async function sourceFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -62,8 +64,8 @@ function advanceToChainWindow(world, player, startSeq) {
   return seq;
 }
 
-test('simulation source is isolated from browser, clock, and random globals', async () => {
-  const files = [...await sourceFiles(simDir), ...await sourceFiles(contentDir)];
+test('simulation and protocol source are isolated from browser, clock, and random globals', async () => {
+  const files = [...await sourceFiles(simDir), ...await sourceFiles(contentDir), protocolFile, hitAgreementFile];
   const forbidden = /\b(?:window|document|performance|Date|requestAnimationFrame|localStorage|indexedDB)\b|Math\.random/;
   const importPattern = /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?['"]([^'"]+)['"]/g;
 
@@ -74,11 +76,11 @@ test('simulation source is isolated from browser, clock, and random globals', as
       const specifier = match[1];
       assert.ok(specifier.startsWith('.'), `${relative(projectDir, file)} has non-relative import ${specifier}`);
       const resolved = resolve(dirname(file), specifier);
-      const allowed = [simDir, contentDir].some((root) => {
+      const allowed = [simDir, contentDir, resolve(projectDir, 'js/net')].some((root) => {
         const rel = relative(root, resolved);
         return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..');
       });
-      assert.ok(allowed, `${specifier} escapes pure simulation/content modules`);
+      assert.ok(allowed, `${specifier} escapes pure simulation/content/protocol modules`);
     }
   }
 });
@@ -179,7 +181,7 @@ test('a three-step combo kills a Skeleton_Minion', () => {
   assert.equal(world.entities.some((entity) => entity.id === minion.id), false);
 });
 
-test('dodging through an active enemy shape blocks damage during its i-frames', () => {
+test('one-tick queued enemy hit is canceled by a dodge during the grace tick', () => {
   const world = createWorld({ seed: 15 });
   const player = addPlayer(world, { playerId: 'hero' });
   const enemy = world.entities.find((entity) => entity.kind === 'enemy');
@@ -202,11 +204,15 @@ test('dodging through an active enemy shape blocks damage during its i-frames', 
   };
   const hp = player.hp;
 
-  tick(world, 'hero', { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: BUTTONS.DODGE });
+  tick(world, 'hero', { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0 });
+  assert.equal(player.hp, hp);
+  assert.equal(world.pendingHits.length, 1);
+  tick(world, 'hero', { seq: 2, moveX: 0, moveZ: 0, aim: 192, buttons: BUTTONS.DODGE });
   assert.equal(player.hp, hp);
   assert.ok(player.iFrames > 0);
   assert.ok(player.dodgeCooldownTicks > 0);
-  assert.ok(world.events.some((event) => event.type === 'hit' && event.blocked));
+  assert.equal(world.pendingHits.length, 0);
+  assert.equal(world.events.some((event) => event.type === 'hit' && event.blocked), false);
 });
 
 test('enemy telegraph and damage use the same stored attack shape', () => {

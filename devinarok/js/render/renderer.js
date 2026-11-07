@@ -105,6 +105,10 @@ export class ArenaRenderer {
     this.npcLayer = document.createElement('div');
     this.npcLayer.className = 'npc-hotspots-layer';
     canvas.parentElement?.appendChild(this.npcLayer);
+    this.partyLayer = document.createElement('div');
+    this.partyLayer.className = 'party-name-layer';
+    canvas.parentElement?.appendChild(this.partyLayer);
+    this.partyMarkers = new Map();
     this.lastRender = performance.now();
     this.averageMs = 16;
     this.resolutionScale = 1;
@@ -514,6 +518,7 @@ export class ArenaRenderer {
   }
 
   updatePresentation(world, now) {
+    this.updatePartyMarkers(world);
     for (const [castId, effect] of this.slashes) {
       const entity = world.entities.find((item) => item.id === effect.entityId);
       const tick = world.tick;
@@ -563,6 +568,37 @@ export class ArenaRenderer {
       effect.group.scale.setScalar(0.7 + progress * 1.7);
       effect.group.position.y = progress * 0.2;
       effect.material.opacity = 0.68 * (1 - progress);
+    }
+  }
+
+  updatePartyMarkers(world) {
+    const active = new Set();
+    const rect = this.canvas.getBoundingClientRect();
+    for (const player of world.entities.filter((entity) => (
+      entity.kind === 'player' && world.localPlayerId && entity.playerId !== world.localPlayerId
+    ))) {
+      active.add(player.id);
+      let marker = this.partyMarkers.get(player.id);
+      if (!marker) {
+        marker = document.createElement('div');
+        marker.className = 'party-name-tag';
+        marker.innerHTML = '<span></span><span class="revive-track"><i></i></span>';
+        this.partyLayer.appendChild(marker);
+        this.partyMarkers.set(player.id, marker);
+      }
+      marker.classList.toggle('downed', Boolean(player.downed));
+      marker.querySelector('span').textContent = `${player.name ?? player.playerId} · Lv.${player.level ?? 1}`;
+      marker.querySelector('.revive-track').hidden = !player.downed;
+      marker.querySelector('.revive-track i').style.width = `${Math.min(100, (player.reviveProgress ?? 0) / 60 * 100)}%`;
+      const point = new THREE.Vector3(player.x, 2.1, player.z).project(this.camera);
+      marker.style.left = `${(point.x + 1) * rect.width / 2}px`;
+      marker.style.top = `${(1 - point.y) * rect.height / 2}px`;
+      marker.hidden = point.z < -1 || point.z > 1 || Math.abs(point.x) > 1.1 || Math.abs(point.y) > 1.1;
+    }
+    for (const [id, marker] of this.partyMarkers) {
+      if (active.has(id)) continue;
+      marker.remove();
+      this.partyMarkers.delete(id);
     }
   }
 
@@ -865,6 +901,8 @@ export class ArenaRenderer {
     }
     this.hubNpcs = [];
     this.npcLayer.remove();
+    this.partyLayer.remove();
+    this.partyMarkers.clear();
     for (const [id, visual] of this.entities) this.removeEntityVisual(id, visual);
     this.entities.clear();
     for (const effect of this.slashes.values()) {

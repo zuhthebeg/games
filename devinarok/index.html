@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=4da045daf6">
+  <link rel="stylesheet" href="css/game.css?v=0a36a73f54">
   <script type="importmap">
     {
       "imports": {
@@ -15,15 +15,28 @@
         "./js/content/items.js": "./js/content/items.js?v=449b51b760",
         "./js/content/skills.js": "./js/content/skills.js?v=6b8c30fb8e",
         "./js/content/stages.js": "./js/content/stages.js?v=bf3e4efa47",
-        "./js/core/input.js": "./js/core/input.js?v=939ca67791",
+        "./js/core/input.js": "./js/core/input.js?v=0cc8a65388",
         "./js/core/loop.js": "./js/core/loop.js?v=bd86126599",
-        "./js/main.js": "./js/main.js?v=bf0f94c68e",
+        "./js/main.js": "./js/main.js?v=9e74f5d356",
+        "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=c3d0769d1c",
+        "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=610dc2198e",
+        "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
+        "./js/net/hit-agreement.js": "./js/net/hit-agreement.js?v=17318a4551",
+        "./js/net/input-queue.js": "./js/net/input-queue.js?v=2a5ccb65b4",
+        "./js/net/interp.js": "./js/net/interp.js?v=83f5cecb32",
+        "./js/net/net-session.js": "./js/net/net-session.js?v=48e69f97b7",
+        "./js/net/predictor.js": "./js/net/predictor.js?v=e8cce175c7",
+        "./js/net/protocol.js": "./js/net/protocol.js?v=3a1e98ee00",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=794ac1cfc4",
         "./js/render/audio.js": "./js/render/audio.js?v=73802c0627",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=26e1209139",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=959bf9349d",
         "./js/save/ops.js": "./js/save/ops.js?v=13523559ec",
         "./js/save/repository.js": "./js/save/repository.js?v=81dd15a324",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=a9513ffbda",
+        "./js/sim/world.js": "./js/sim/world.js?v=e34d4a293a",
+        "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
+        "./js/ui/party.js": "./js/ui/party.js?v=2d711e0ebf",
+        "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
         "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
         "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
         "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
@@ -63,10 +76,15 @@
       <canvas id="scene"></canvas>
       <header class="hud">
         <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
-        <div class="counter"><span id="stage-name">여관</span></div>
+        <div class="counter"><span id="stage-name">여관</span><span id="party-rtt" hidden></span></div>
         <div id="boss-hud" hidden><span id="boss-name">해골 기사단장</span><div class="hp-track"><i id="boss-fill"></i></div></div>
         <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
       </header>
+      <aside id="party-hud" class="party-hud" hidden></aside>
+      <div id="debug-zone" class="debug-zone" hidden></div>
+      <div id="party-door-countdown" class="party-door-countdown" hidden></div>
+      <div id="party-downed" class="party-downed" hidden></div>
+      <div id="party-network-overlay" class="party-network-overlay" hidden></div>
       <div id="hub-ui" class="hub-ui" hidden>
         <div class="hub-title">무너진 지하묘지 · 거점 여관</div>
         <div class="hub-hotspots">
@@ -102,6 +120,6 @@
       <div id="toast" role="status"></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=bf0f94c68e"></script>
+  <script type="module" src="js/main.js?v=9e74f5d356"></script>
 </body>
 </html>
