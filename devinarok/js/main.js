@@ -188,11 +188,13 @@ function compareDeltas(item) {
     ['xpGain', '경험치 획득', (value) => `${value}%`],
     ['spinCooldownSeconds', '회전 기술 재사용 대기시간', (value) => `${value.toFixed(1)}초`],
   ];
-  return `<div class="compare-deltas">${stats.map(([key, label, format]) => {
+  const deltas = stats.flatMap(([key, label, format]) => {
     const delta = next[key] - current[key];
+    if (delta === 0) return [];
     const sign = delta > 0 ? '+' : '';
-    return `<span class="${delta > 0 ? 'delta-up' : delta < 0 ? 'delta-down' : ''}">${label} ${sign}${format(delta)}</span>`;
-  }).join('')}</div>`;
+    return [`<span class="${delta > 0 ? 'delta-up' : 'delta-down'}">${label} ${sign}${format(delta)}</span>`];
+  });
+  return `<div class="compare-deltas">${deltas.join('') || '<span>능력치 변화 없음</span>'}</div>`;
 }
 
 function renderBoard() {
@@ -333,8 +335,11 @@ function buildSettlement(outcome, result) {
 
 function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) {
   const saved = !error;
+  const earnedItems = outcome === 'clear' && result.items.length
+    ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
+    : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
