@@ -246,3 +246,28 @@ test('events are monotonic, bounded, and casts identify the input sequence', () 
   assert.equal(new Set(ids).size, ids.length);
   assert.ok(world.nextEventId > ids.at(-1));
 });
+
+test('an enemy waits out its attack cooldown before the next windup while the player stays in range', () => {
+  const world = createWorld({ seed: 21 });
+  const player = addPlayer(world, { playerId: 'hero' });
+  const enemy = world.entities.find((entity) => entity.kind === 'enemy');
+  player.x = 0;
+  player.z = 0;
+  enemy.x = 1;
+  enemy.z = 0;
+  enemy.spawnTicksLeft = 0;
+  enemy.invulnerable = false;
+  player.maxHp = 10000;
+  player.hp = 10000;
+  const phases = [];
+  for (let index = 0; index < 120; index += 1) {
+    tick(world, 'hero', { seq: index + 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0 });
+    phases.push(enemy.attackPhase ?? null);
+  }
+  const windupStarts = phases
+    .map((phase, index) => (phase === 'windup' && phases[index - 1] !== 'windup' ? index : -1))
+    .filter((index) => index >= 0);
+  assert.ok(windupStarts.length >= 2);
+  const firstEnd = phases.indexOf('active') + phases.slice(phases.indexOf('active')).findIndex((phase) => phase !== 'active');
+  assert.ok(windupStarts[1] - firstEnd >= 29, `second windup ${windupStarts[1] - firstEnd} ticks after the first attack ended`);
+});

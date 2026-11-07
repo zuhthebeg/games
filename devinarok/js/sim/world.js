@@ -596,6 +596,7 @@ function stepEnemy(world, enemy, players) {
   if (distance < 0.0001) return;
   enemy.facing = Math.atan2(dz, dx);
   if (distance <= rules.attackRange) {
+    if (enemy.attackCooldownTicks > 0) return;
     enemy.attackShape = createAttackShape(enemy, enemy.facing, rules.attackRange, rules.attackHalfAngle);
     enemy.attackPhase = 'windup';
     enemy.attackRemaining = rules.attackWindupTicks;
