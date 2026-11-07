@@ -23,6 +23,8 @@ export class AudioManager {
     }
     this.buffers = new Map();
     this.music = null;
+    this.musicName = null;
+    this.desiredMusic = null;
     this.muted = false;
   }
 
@@ -58,18 +60,32 @@ export class AudioManager {
 
   setMusic(name) {
     if (!this.buffers.has(name)) return;
+    this.desiredMusic = name;
+    if (this.music && this.musicName === name) return;
     this.music?.stop();
-    this.music = this.play(name, { loop: true, gain: 0.28 });
+    this.music = null;
+    this.musicName = null;
+    this.startDesiredMusic();
+  }
+
+  startDesiredMusic() {
+    if (!this.desiredMusic || this.muted || !this.buffers.has(this.desiredMusic)) return;
+    if (this.music && this.musicName === this.desiredMusic) return;
+    this.music = this.play(this.desiredMusic, { loop: true, gain: 0.28 });
+    if (this.music) this.musicName = this.desiredMusic;
   }
 
   setMuted(value) {
     this.muted = Boolean(value);
     if (this.master) this.master.gain.value = this.muted ? 0 : 0.72;
-    if (!this.muted && this.music) return;
+    if (!this.muted) this.startDesiredMusic();
   }
 
   destroy() {
     this.music?.stop();
+    this.music = null;
+    this.musicName = null;
+    this.desiredMusic = null;
     this.context?.close();
     this.buffers.clear();
   }

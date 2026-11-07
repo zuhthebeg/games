@@ -49,3 +49,40 @@ test('audio files fail independently and missing buffers do not affect music pla
     if (fetchDescriptor) Object.defineProperty(globalThis, 'fetch', fetchDescriptor);
   }
 });
+
+test('muted music changes resume the desired track once on unmute', () => {
+  const audio = new AudioManager();
+  let starts = 0;
+  let stops = 0;
+  audio.context = {
+    createBufferSource() {
+      return {
+        playbackRate: { value: 1 },
+        connect(target) { return target; },
+        start() { starts += 1; },
+        stop() { stops += 1; },
+      };
+    },
+    createGain() {
+      return { gain: { value: 1 }, connect(target) { return target; } };
+    },
+  };
+  audio.master = { gain: { value: 0.72 } };
+  audio.buffers.set('hub-bgm', {});
+  audio.buffers.set('combat-bgm', {});
+
+  audio.setMusic('hub-bgm');
+  audio.setMuted(true);
+  audio.setMuted(false);
+  assert.equal(starts, 1);
+
+  audio.setMuted(true);
+  audio.setMusic('combat-bgm');
+  assert.equal(stops, 1);
+  assert.equal(starts, 1);
+  audio.setMuted(false);
+  assert.equal(starts, 2);
+  audio.setMuted(false);
+  audio.setMusic('combat-bgm');
+  assert.equal(starts, 2);
+});
