@@ -47,6 +47,7 @@ export class Predictor {
       arena: ctx.arena,
       openDoors: clone(ctx.openDoors ?? {}),
       tick: Number.isSafeInteger(ctx.tick) ? ctx.tick : 0,
+      entities: clone(ctx.entities ?? []),
     };
     this.player = clone(player);
     this.pendingInputs = [];
@@ -121,8 +122,8 @@ export class Predictor {
     return { error, snapped: forcedSnap || error > 2, pending: pending.length };
   }
 
-  setContext({ arena = this.ctx.arena, openDoors = this.ctx.openDoors, tick = this.ctx.tick } = {}) {
-    this.ctx = { arena, openDoors: clone(openDoors), tick };
+  setContext({ arena = this.ctx.arena, openDoors = this.ctx.openDoors, tick = this.ctx.tick, entities = this.ctx.entities } = {}) {
+    this.ctx = { arena, openDoors: clone(openDoors), tick, entities: clone(entities ?? []) };
   }
 
   onVisibilityResume() {

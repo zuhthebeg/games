@@ -211,6 +211,7 @@ export class PartyClient {
             arena: this.stageWorld.arena,
             openDoors: message.openDoors ?? this.stageWorld.openDoors,
             tick: message.tick,
+            entities: message.ents ?? [],
           },
         });
         this.interpolation = new InterpolationBuffer();
@@ -227,10 +228,13 @@ export class PartyClient {
       teleport: (message.ents ?? []).some((entity) => entity.teleport || entity.roomChanged),
     });
     if (this.predictor) {
+      const estimate = this.session?.clock.getEstimate(performance.now()) ?? message.tick;
+      const aimEntities = this.interpolation.sample(estimate).entities;
       this.predictor.setContext({
         arena: this.stageWorld.arena,
         openDoors: message.openDoors ?? this.stageWorld.openDoors,
         tick: message.tick,
+        entities: aimEntities,
       });
       this.predictor.reconcile(message, performance.now());
     }

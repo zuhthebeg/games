@@ -31,6 +31,7 @@ function parseOptions(argv) {
 
 const options = parseOptions(process.argv.slice(2));
 const botCount = Math.max(1, Math.min(4, Number(options.get('bots') ?? 2)));
+const botFamilies = String(options.get('families') ?? 'sword,sword').split(',');
 const serverUrl = String(options.get('server') ?? 'ws://127.0.0.1:8788');
 const roomCode = String(options.get('room') ?? Array.from({ length: 6 }, () => (
   ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]
@@ -178,10 +179,21 @@ function distanceToShapeEdge(shape, target) {
 }
 
 class Bot {
-  constructor(index) {
+  constructor(index, family = 'sword') {
     this.index = index;
+    this.family = ['sword', 'crossbow', 'staff'].includes(family) ? family : 'sword';
     this.name = `봇${index + 1}`;
-    this.character = { level: 1, equipment: [], potions: 3, clearedStages: [] };
+    const starterWeapon = {
+      sword: 'rusted-sword',
+      crossbow: 'rusted-crossbow',
+      staff: 'apprentice-wand',
+    }[this.family];
+    this.character = {
+      level: 1,
+      equipment: [{ itemId: starterWeapon, slot: 'weapon', rarity: 'common', enhance: 0, affixes: [] }],
+      potions: 3,
+      clearedStages: [],
+    };
     this.stats = {
       upBytes: 0,
       downBytes: 0,
@@ -299,7 +311,9 @@ class Bot {
       party: message.party.map((member) => ({
         playerId: member.playerId,
         name: member.name,
-        character: { level: member.level, equipment: [], potions: 3 },
+        character: member.playerId === this.playerId
+          ? this.character
+          : { level: member.level, equipment: [], potions: 3 },
       })),
     });
     const player = livePlayer(this.localWorld, this.playerId);
@@ -755,7 +769,7 @@ async function waitForAll(promises, label, timeoutMs = 10_000) {
 
 async function run() {
   if (typeof globalThis.WebSocket !== 'function') throw new Error('Run with Node 22+ for global WebSocket support');
-  const bots = Array.from({ length: botCount }, (_, index) => new Bot(index));
+  const bots = Array.from({ length: botCount }, (_, index) => new Bot(index, botFamilies[index]));
   const runStartedAt = performance.now();
   let reconnectTimer = null;
   try {

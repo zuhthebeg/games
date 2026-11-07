@@ -4,7 +4,9 @@ export function playerModelKey(entity) {
 
 export function playerLookKey(look = {}) {
   return [
+    look.family ?? 'sword',
     look.weapon ?? '1H_Sword',
+    look.offhand ?? '',
     Boolean(look.helmet),
     Boolean(look.cape),
     look.weaponRarity ?? '',

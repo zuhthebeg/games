@@ -20,15 +20,28 @@ const M0_MODELS = {
 };
 const PLAYER_PARTS = new Set([
   '1H_Sword_Offhand',
+  'Knife',
+  'Knife_Offhand',
+  'Throwable',
+  'Spellbook',
+  'Spellbook_Offhand',
   'Badge_Shield',
   'Rectangle_Shield',
   'Round_Shield',
   'Spike_Shield',
   '1H_Sword',
   '2H_Sword',
+  '1H_Crossbow',
+  '2H_Crossbow',
+  '1H_Wand',
+  '2H_Staff',
   'Knight_Helmet',
   'Knight_Cape',
+  'Rogue_Cape',
+  'Mage_Hat',
+  'Mage_Cape',
 ]);
+const WEAPON_PARTS = new Set(['1H_Sword', '2H_Sword', '1H_Crossbow', '2H_Crossbow', '1H_Wand', '2H_Staff']);
 const WEAPON_TINTS = {
   magic: 0x2a4dff,
   rare: 0xb8901a,
@@ -37,7 +50,7 @@ const WEAPON_TINTS = {
 
 function isolateWeaponMaterials(root, materials) {
   root.traverse((node) => {
-    if (!node.isMesh || !['1H_Sword', '2H_Sword'].includes(node.name)) return;
+    if (!node.isMesh || !WEAPON_PARTS.has(node.name)) return;
     const clone = (material) => {
       const isolated = material.clone();
       materials.push(isolated);
@@ -49,12 +62,16 @@ function isolateWeaponMaterials(root, materials) {
 
 function applyPlayerLook(root, look = {}) {
   const weapon = look.weapon ?? '1H_Sword';
+  const offhand = look.offhand ?? (weapon === '1H_Sword' ? 'Round_Shield' : null);
   root.traverse((node) => {
     if (!PLAYER_PARTS.has(node.name)) return;
     node.visible = node.name === weapon
-      || (node.name === 'Round_Shield' && weapon === '1H_Sword')
+      || node.name === offhand
       || (node.name === 'Knight_Helmet' && Boolean(look.helmet))
-      || (node.name === 'Knight_Cape' && Boolean(look.cape));
+      || (node.name === 'Knight_Cape' && Boolean(look.cape))
+      || (node.name === 'Rogue_Cape' && Boolean(look.cape))
+      || (node.name === 'Mage_Hat' && Boolean(look.helmet))
+      || (node.name === 'Mage_Cape' && Boolean(look.cape));
   });
   const weaponMaterials = new Set();
   root.getObjectByName(weapon)?.traverse((node) => {
@@ -138,6 +155,9 @@ export class ArenaRenderer {
     this.slashes = new Map();
     this.damageNumbers = [];
     this.deathPuffs = [];
+    this.transientEffects = [];
+    this.seenShotKeys = new Set();
+    this.seenImpactCasts = new Set();
     this.torchLights = [];
     this.hubNpcs = [];
     this.hitstopUntil = 0;
@@ -348,7 +368,7 @@ export class ArenaRenderer {
 
   createEntity(entity) {
     const key = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
-    const modelKey = key === 'knight' ? 'knight' : key;
+    const modelKey = key === 'rogue' ? 'Rogue_Hooded' : key === 'mage' ? 'Mage' : key;
     const source = this.models.get(modelKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
@@ -435,10 +455,23 @@ export class ArenaRenderer {
   animationFor(entity) {
     if (entity.dead) return entity.kind === 'enemy' ? 'Death_C_Skeletons' : 'Death_A';
     if (entity.spawnTicksLeft > 0) return 'Spawn_Ground_Skeletons';
-    if (entity.dodgeTicks > 0) return 'Dodge_Forward';
+    if (entity.dodgeTicks > 0 || ['dodge', 'blink', 'vault'].includes(entity.anim)) return 'Dodge_Forward';
     if (entity.kind === 'player' && entity.attack?.step) {
+      if (entity.family === 'crossbow') return entity.look?.weapon === '2H_Crossbow' ? '2H_Ranged_Shoot' : '1H_Ranged_Shoot';
+      if (entity.family === 'staff') return 'Spellcast_Shoot';
       const clips = ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Slice_Horizontal', '1H_Melee_Attack_Chop'];
       return clips[entity.attack.step - 1];
+    }
+    if (entity.kind === 'player' && entity.skillCast?.name) {
+      if (['blink', 'vault'].includes(entity.skillCast.name)) return 'Dodge_Forward';
+      if (['flame', 'frost'].includes(entity.skillCast.name)) return 'Spellcast_Long';
+      if (entity.family === 'crossbow') return entity.look?.weapon === '2H_Crossbow' ? '2H_Ranged_Shoot' : '1H_Ranged_Shoot';
+      if (entity.family === 'staff') return 'Spellcast_Shoot';
+    }
+    if (entity.kind === 'player' && entity.anim === 'run') return 'Running_A';
+    if (entity.kind === 'player' && entity.anim && !['idle', 'attack', 'windup', 'active', 'recovery'].includes(entity.anim)) return entity.anim;
+    if (entity.kind === 'enemy' && entity.attackPhase === 'active' && entity.attackPattern === 'bone-spear') {
+      return this.clips.skeleton?.find((clip) => /throw/i.test(clip.name))?.name ?? '1H_Melee_Attack_Chop';
     }
     if (entity.attackPhase === 'active') return '1H_Melee_Attack_Chop';
     if (entity.moving || entity.attackShape) return entity.kind === 'enemy' ? 'Running_C' : 'Running_A';
@@ -579,12 +612,135 @@ export class ArenaRenderer {
     effect.material.dispose();
   }
 
+  addTransient(mesh, geometry, material, { startTime = null, durationMs = null, startTick = null, endTick = null, update = null } = {}) {
+    this.scene.add(mesh);
+    this.transientEffects.push({ mesh, geometry, material, startTime, durationMs, startTick, endTick, update });
+  }
+
+  createShot(event, now) {
+    const key = `${event.ownerId}:${event.castSeq}:${event.lineIndex ?? 0}`;
+    if (this.seenShotKeys.has(key)) return;
+    this.seenShotKeys.add(key);
+    while (this.seenShotKeys.size > 512) this.seenShotKeys.delete(this.seenShotKeys.values().next().value);
+    const geometry = new THREE.CylinderGeometry(0.018, 0.018, event.length, 5);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xffe9ab,
+      emissive: 0xffbd58,
+      emissiveIntensity: 1.6,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    const direction = new THREE.Vector3(Math.cos(event.angle), 0, Math.sin(event.angle));
+    mesh.position.set(event.x + direction.x * event.length / 2, 0.55, event.z + direction.z * event.length / 2);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    this.addTransient(mesh, geometry, material, { startTime: now, durationMs: 80 });
+  }
+
+  createImpactRing(x, z, radius, color, startTick, endTick) {
+    const geometry = new THREE.RingGeometry(0.1, radius, 32);
+    const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, 0.045, z);
+    mesh.renderOrder = 2;
+    this.addTransient(mesh, geometry, material, {
+      startTick,
+      endTick,
+      update: (effect, tick) => {
+        const progress = THREE.MathUtils.clamp((tick - startTick) / Math.max(1, endTick - startTick), 0, 1);
+        effect.mesh.scale.setScalar(0.25 + progress * 0.85);
+        effect.material.opacity = 0.8 * (1 - progress);
+      },
+    });
+  }
+
+  createImpact(event) {
+    const key = `${event.ownerId}:${event.castSeq}`;
+    if (this.seenImpactCasts.has(key)) return;
+    this.seenImpactCasts.add(key);
+    while (this.seenImpactCasts.size > 256) this.seenImpactCasts.delete(this.seenImpactCasts.values().next().value);
+    const { originX: x, originZ: z, radius } = event.shape;
+    if (event.kind === 'staff-basic') {
+      const geometry = new THREE.SphereGeometry(0.19, 10, 8);
+      const material = new THREE.MeshStandardMaterial({ color: 0xffd391, emissive: 0xff812f, emissiveIntensity: 1.4 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(event.sourceX, 0.8, event.sourceZ);
+      this.addTransient(mesh, geometry, material, {
+        startTick: event.fireTick,
+        endTick: event.resolveTick,
+        update: (effect, tick) => {
+          const progress = THREE.MathUtils.clamp((tick - event.fireTick) / Math.max(1, event.resolveTick - event.fireTick), 0, 1);
+          effect.mesh.position.set(event.sourceX + (x - event.sourceX) * progress, 0.8 + Math.sin(progress * Math.PI) * 0.35, event.sourceZ + (z - event.sourceZ) * progress);
+          if (tick >= event.resolveTick) {
+            this.createImpactRing(x, z, radius, 0xffd17a, event.resolveTick, event.resolveTick + 10);
+            effect.endTick = event.resolveTick;
+          }
+        },
+      });
+    } else if (event.kind === 'burn') {
+      const geometry = new THREE.CircleGeometry(radius, 36);
+      const material = new THREE.MeshBasicMaterial({ color: 0xff6b2e, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(x, 0.025, z);
+      this.addTransient(mesh, geometry, material, {
+        startTick: event.resolveTick,
+        endTick: event.endsTick,
+        update: (effect, tick) => {
+          effect.mesh.scale.setScalar(0.92 + Math.sin(tick * 0.55) * 0.08);
+          effect.material.opacity = 0.15 + (Math.sin(tick * 0.55) + 1) * 0.045;
+        },
+      });
+    } else {
+      this.createImpactRing(x, z, radius, 0x91dfff, event.resolveTick, event.resolveTick + 14);
+    }
+  }
+
+  createBlink(event, now) {
+    for (const point of [event.from, event.to]) {
+      const geometry = new THREE.SphereGeometry(0.2, 8, 6);
+      const material = new THREE.MeshBasicMaterial({ color: 0xb8e8ff, transparent: true, opacity: 0.72, depthWrite: false });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(point.x, 0.35, point.z);
+      this.addTransient(mesh, geometry, material, {
+        startTime: now,
+        durationMs: 360,
+        update: (effect, _tick, elapsed) => {
+          const progress = elapsed / 360;
+          effect.mesh.scale.setScalar(0.5 + progress * 1.8);
+          effect.material.opacity = 0.72 * (1 - progress);
+        },
+      });
+    }
+  }
+
+  updateTransientEffects(world, now) {
+    for (let index = this.transientEffects.length - 1; index >= 0; index -= 1) {
+      const effect = this.transientEffects[index];
+      const elapsed = effect.startTime === null ? 0 : now - effect.startTime;
+      if ((effect.durationMs !== null && elapsed >= effect.durationMs) || (effect.endTick !== null && world.tick > effect.endTick)) {
+        this.scene.remove(effect.mesh);
+        effect.geometry.dispose();
+        effect.material.dispose();
+        this.transientEffects.splice(index, 1);
+        continue;
+      }
+      effect.mesh.visible = effect.startTick === null || world.tick >= effect.startTick;
+      effect.update?.(effect, world.tick, elapsed);
+    }
+  }
+
   consumeEvents(world, now) {
     this.currentWorld = world;
     for (const event of world.events) {
       if (this.seenEventIds.has(event.eventId)) continue;
       this.seenEventIds.add(event.eventId);
       if (event.type === 'cast') this.createSlash(event);
+      if (event.type === 'shot') this.createShot(event, now);
+      if (event.type === 'impact') this.createImpact(event);
+      if (event.type === 'blink') this.createBlink(event, now);
       if (event.type === 'hit') {
         this.createDamageNumber(event);
         if (event.damage > 0) {
@@ -654,6 +810,7 @@ export class ArenaRenderer {
       effect.group.position.y = progress * 0.2;
       effect.material.opacity = 0.68 * (1 - progress);
     }
+    this.updateTransientEffects(world, now);
   }
 
   updatePartyMarkers(world) {
@@ -698,6 +855,9 @@ export class ArenaRenderer {
       } else if (invulnerable) {
         material.emissive.setHex(0x6298c4);
         material.emissiveIntensity = 0.65;
+      } else if (entity.kind === 'enemy' && (entity.slowTicks ?? 0) > 0) {
+        material.emissive.setHex(0x9edfff);
+        material.emissiveIntensity = 0.55;
       } else if (visual.weaponMaterials.has(material) && WEAPON_TINTS[entity.look?.weaponRarity]) {
         material.emissive.setHex(WEAPON_TINTS[entity.look.weaponRarity]);
         material.emissiveIntensity = 0.35;
@@ -1006,6 +1166,12 @@ export class ArenaRenderer {
       effect.mesh.material.dispose();
     }
     this.slashes.clear();
+    this.transientEffects.forEach((effect) => {
+      this.scene.remove(effect.mesh);
+      effect.geometry.dispose();
+      effect.material.dispose();
+    });
+    this.transientEffects = [];
     this.damageNumbers.forEach((effect) => effect.element.remove());
     this.damageNumbers = [];
     for (let index = this.deathPuffs.length - 1; index >= 0; index -= 1) this.removeDeathPuff(index);

@@ -41,6 +41,7 @@ export function insideShape(shape, point, radius = 0) {
 }
 
 export function computeBotPolicy({ player, viewed, roomCleared = false, door = null }) {
+  const ranged = player.family === 'crossbow' || player.family === 'staff';
   const activeEnemyIds = viewed.activeEnemyIds ? new Set(viewed.activeEnemyIds) : null;
   const enemies = viewed.entities
     .filter((entity) => entity.kind === 'enemy' && !entity.dead && entity.state !== 'dead')
@@ -94,15 +95,25 @@ export function computeBotPolicy({ player, viewed, roomCleared = false, door = n
   } else if (target) {
     const dx = target.x - player.x;
     const dz = target.z - player.z;
-    if (targetDistance > 1.35) {
+    if (ranged && targetDistance < 5.5) {
+      moveX = Math.round(-dx / targetDistance * 127);
+      moveZ = Math.round(-dz / targetDistance * 127);
+    } else if (ranged && targetDistance > 6.5) {
       moveX = Math.round(dx / targetDistance * 127);
       moveZ = Math.round(dz / targetDistance * 127);
-    } else if (!player.attack && !player.skillCast) {
+    } else if (!ranged && targetDistance > 1.35) {
+      moveX = Math.round(dx / targetDistance * 127);
+      moveZ = Math.round(dz / targetDistance * 127);
+    } else if (!ranged && !player.attack && !player.skillCast) {
       buttons |= BUTTONS.ATTACK;
     }
   }
   if (!threat && player.hp < player.maxHp * 0.55 && player.potions > 0 && !buttons) {
     buttons |= BUTTONS.POTION;
+  } else if (ranged && !threat && !roomCleared && target && !player.skillCast && !buttons) {
+    const availableSkill = [1, 2, 3].find((id) => (player.skillCooldowns?.[id] ?? 0) === 0);
+    if (availableSkill) buttons |= BUTTONS.SKILL1 << (availableSkill - 1);
+    else if (!player.attack) buttons |= BUTTONS.ATTACK;
   }
 
   return { moveX, moveZ, aim, buttons };
