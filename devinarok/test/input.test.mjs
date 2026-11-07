@@ -11,8 +11,11 @@ class ElementStub {
     this.style = {};
   }
 
-  addEventListener(type, handler) {
+  addEventListener(type, handler, options) {
     this.handlers[type] = handler;
+    options?.signal?.addEventListener('abort', () => {
+      if (this.handlers[type] === handler) delete this.handlers[type];
+    });
   }
 
   setPointerCapture() {}
@@ -93,5 +96,21 @@ test('WASD and arrow keys move the virtual joystick axes', () => {
   assert.equal(input.nextTick().moveX, 127);
   up({ code: 'ArrowRight' });
   input.destroy();
+  globalThis.window = oldWindow;
+});
+
+test('destroy removes touch listeners from the persistent controls', () => {
+  const oldWindow = globalThis.window;
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  const joystick = new ElementStub();
+  const attack = new ElementStub({ button: String(BUTTONS.ATTACK) });
+  joystick.parentElement = { querySelectorAll: () => [attack] };
+  const controls = { querySelector: (selector) => selector === '[data-joystick]' ? joystick : new ElementStub() };
+  const canvas = { addEventListener() {}, removeEventListener() {} };
+  const input = new InputLayer({ canvas, controls });
+  assert.ok(attack.handlers.pointerdown && joystick.handlers.pointerdown);
+  input.destroy();
+  assert.deepEqual(Object.keys(attack.handlers), []);
+  assert.deepEqual(Object.keys(joystick.handlers), []);
   globalThis.window = oldWindow;
 });
