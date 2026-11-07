@@ -788,7 +788,7 @@ export class ArenaRenderer {
         const oldFacing = Number.isFinite(old.facing) ? old.facing : 0;
         const entityFacing = Number.isFinite(entity.facing) ? entity.facing : oldFacing;
         const facing = oldFacing + shortestAngleDelta(oldFacing, entityFacing) * alpha;
-        visual.root.rotation.y = -facing;
+        visual.root.rotation.y = Math.PI / 2 - facing;
         this.updateAnimation(entity, visual, dt);
       }
       visual.root.visible = !entity.dead || entity.deathTicks > 0;
@@ -812,13 +812,17 @@ export class ArenaRenderer {
       const targetShift = this.mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea);
       const targetMinZ = minCameraZ + Math.min(0, targetShift);
       const targetMaxZ = maxCameraZ + Math.max(0, targetShift);
+      const followAlpha = visibleArea ? 0.16 : 0.06;
       const targetZ = THREE.MathUtils.clamp(
         player.z - this.cameraFollowOffsetZ + targetShift,
         targetMinZ,
         targetMaxZ,
       );
-      this.camera.position.x += (0 - this.camera.position.x) * 0.06;
-      const followAlpha = visibleArea ? 0.16 : 0.06;
+      const halfViewWidth = (this.camera.right - this.camera.left) / 2;
+      const roomHalfWidth = (room?.width ?? world.arena.width) / 2 + 1;
+      const maxCameraX = Math.max(0, roomHalfWidth - halfViewWidth);
+      const targetX = THREE.MathUtils.clamp(player.x, -maxCameraX, maxCameraX);
+      this.camera.position.x += (targetX - this.camera.position.x) * followAlpha;
       this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * followAlpha;
       let shakeX = 0;
       let shakeZ = 0;
@@ -827,7 +831,7 @@ export class ArenaRenderer {
         shakeX = Math.sin(now * 0.11) * 0.08 * strength;
         shakeZ = Math.cos(now * 0.13) * 0.05 * strength;
       }
-      this.camera.lookAt(shakeX, 0, targetZ + shakeZ);
+      this.camera.lookAt(this.camera.position.x + shakeX, 0, targetZ + shakeZ);
       this.updateWallFade(targetZ);
     }
     this.updateNpcHotspots(dt);
