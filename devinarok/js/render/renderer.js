@@ -62,9 +62,13 @@ export class ArenaRenderer {
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
     this.camera.position.set(0, 15.5, 10.85);
     this.camera.lookAt(0, 0, 0);
+    this.cameraHeight = 15.5;
     this.cameraOffsetZ = 10.85;
     this.cameraFollowOffsetZ = 8;
     this.frustumHeight = 19;
+    this.mobileCameraOverlayKey = '';
+    this.mobileCameraTargetShift = 0;
+    this.mobileCameraTargetScreenY = null;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
@@ -263,14 +267,25 @@ export class ArenaRenderer {
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
     root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
+    const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
+    const screenCenterY = modelBounds && !modelBounds.isEmpty()
+      ? (modelBounds.min.y + modelBounds.max.y) / 2
+      : 0.9;
+    const lootResources = [];
     if (entity.kind === 'loot') {
+      const beamGeometry = new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true);
+      const beamMaterial = new THREE.MeshBasicMaterial({ color: entity.item?.rarity === 'legendary' ? 0xff8b38 : entity.item?.rarity === 'rare' ? 0xf0c64f : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef, transparent: true, opacity: 0.72, depthWrite: false });
       const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true),
-        new THREE.MeshBasicMaterial({ color: entity.item?.rarity === 'legendary' ? 0xff8b38 : entity.item?.rarity === 'rare' ? 0xf0c64f : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef, transparent: true, opacity: 0.72, depthWrite: false }),
+        beamGeometry,
+        beamMaterial,
       );
+      lootResources.push(beamGeometry, beamMaterial);
       beam.position.y = 0.75;
       root.add(beam);
-      const orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xffdf94 }));
+      const orbGeometry = new THREE.OctahedronGeometry(0.22, 0);
+      const orbMaterial = new THREE.MeshBasicMaterial({ color: 0xffdf94 });
+      const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+      lootResources.push(orbGeometry, orbMaterial);
       orb.position.y = 0.18;
       root.add(orb);
       const labelCanvas = document.createElement('canvas');
@@ -285,7 +300,9 @@ export class ArenaRenderer {
       labelContext.fillText(entity.lootType === 'gold' ? `+${entity.gold} G` : ITEMS[entity.item?.itemId]?.name ?? `${RARITIES[entity.item?.rarity]?.name ?? '장비'} 아이템`, 160, 42);
       const labelTexture = new THREE.CanvasTexture(labelCanvas);
       labelTexture.colorSpace = THREE.SRGBColorSpace;
-      const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture, transparent: true, depthTest: false }));
+      const labelMaterial = new THREE.SpriteMaterial({ map: labelTexture, transparent: true, depthTest: false });
+      const label = new THREE.Sprite(labelMaterial);
+      lootResources.push(labelTexture, labelMaterial);
       label.position.y = 1.7;
       label.scale.set(1.7, 0.35, 1);
       root.add(label);
@@ -319,6 +336,8 @@ export class ArenaRenderer {
       shadow,
       materials,
       materialState,
+      screenCenterY,
+      lootResources,
     };
     this.entities.set(entity.id, visual);
     return visual;
@@ -572,6 +591,7 @@ export class ArenaRenderer {
     for (const material of visual.materials) material.dispose();
     visual.shadow.geometry.dispose();
     visual.shadow.material.dispose();
+    for (const resource of visual.lootResources) resource.dispose();
     this.entities.delete(id);
   }
 
@@ -675,6 +695,72 @@ export class ArenaRenderer {
     }
   }
 
+  mobileVisibleArea(canvasRect) {
+    const elements = [['controls', this.canvas.ownerDocument.querySelector('#controls')]];
+    if (canvasRect.width < 700) {
+      elements.push(['hub-buttons', this.canvas.ownerDocument.querySelector('#hub-ui:not([hidden]) .hub-hotspots')]);
+    }
+    const overlays = elements.flatMap(([id, element]) => {
+      if (!element || element.hidden) return [];
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') return [];
+      const rect = element.getBoundingClientRect();
+      const overlaps = rect.height > 0
+        && rect.width > 0
+        && rect.left < canvasRect.right
+        && rect.right > canvasRect.left
+        && rect.top < canvasRect.bottom
+        && rect.bottom > canvasRect.top + canvasRect.height / 2;
+      return overlaps ? [{ id, rect }] : [];
+    });
+    if (!overlays.length) return null;
+    const bottom = Math.min(canvasRect.bottom, ...overlays.map(({ rect }) => rect.top));
+    return {
+      top: canvasRect.top,
+      bottom,
+      key: overlays.map(({ id, rect }) => `${id}:${Math.round(rect.top)}:${Math.round(rect.height)}`).join('|'),
+    };
+  }
+
+  mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea) {
+    if (!visibleArea) {
+      this.mobileCameraOverlayKey = '';
+      this.mobileCameraTargetShift = 0;
+      this.mobileCameraTargetScreenY = null;
+      return 0;
+    }
+    const desiredY = THREE.MathUtils.clamp(
+      (visibleArea.top + visibleArea.bottom) / 2,
+      canvasRect.top + canvasRect.height * 0.45,
+      canvasRect.top + canvasRect.height * 0.5,
+    );
+    const overlayKey = `${Math.round(canvasRect.width)}x${Math.round(canvasRect.height)}:${visibleArea.key}`;
+    this.mobileCameraTargetScreenY = desiredY;
+    if (overlayKey !== this.mobileCameraOverlayKey) {
+      const visual = this.entities.get(player.id);
+      if (visual) {
+        const projectionCamera = this.camera.clone();
+        projectionCamera.position.set(0, this.cameraHeight, baseTargetZ + this.cameraOffsetZ);
+        projectionCamera.lookAt(0, 0, baseTargetZ);
+        projectionCamera.updateMatrixWorld(true);
+        const center = new THREE.Vector3(
+          visual.root.position.x,
+          visual.root.position.y + visual.screenCenterY,
+          visual.root.position.z,
+        ).project(projectionCamera);
+        const screenY = canvasRect.top + (1 - center.y) * canvasRect.height / 2;
+        const cameraUpZ = new THREE.Vector3(0, 1, 0).applyQuaternion(projectionCamera.quaternion).z;
+        const pixelsPerWorldUnit = canvasRect.height / this.frustumHeight;
+        const pixelsPerTargetMeter = cameraUpZ * pixelsPerWorldUnit;
+        this.mobileCameraTargetShift = Math.abs(pixelsPerTargetMeter) > 0.01
+          ? (desiredY - screenY) / pixelsPerTargetMeter
+          : 0;
+      }
+      this.mobileCameraOverlayKey = overlayKey;
+    }
+    return this.mobileCameraTargetShift;
+  }
+
   render(previous, world, alpha) {
     const now = performance.now();
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);
@@ -720,9 +806,16 @@ export class ArenaRenderer {
       const roomDepth = room ? world.arena.depth / Math.max(1, world.arena.rooms.length) : world.arena.depth;
       const minCameraZ = roomCenterZ - roomDepth / 2 + 1.6;
       const maxCameraZ = roomCenterZ + roomDepth / 2 - 1.6;
-      const targetZ = THREE.MathUtils.clamp(player.z - this.cameraFollowOffsetZ, minCameraZ, maxCameraZ);
+      const baseTargetZ = THREE.MathUtils.clamp(player.z - this.cameraFollowOffsetZ, minCameraZ, maxCameraZ);
+      const canvasRect = this.canvas.getBoundingClientRect();
+      const visibleArea = this.mobileVisibleArea(canvasRect);
+      const targetShift = this.mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea);
+      const targetMinZ = minCameraZ + Math.min(0, targetShift);
+      const targetMaxZ = maxCameraZ + Math.max(0, targetShift);
+      const targetZ = THREE.MathUtils.clamp(baseTargetZ + targetShift, targetMinZ, targetMaxZ);
       this.camera.position.x += (0 - this.camera.position.x) * 0.06;
-      this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * 0.06;
+      const followAlpha = visibleArea ? 0.16 : 0.06;
+      this.camera.position.z += (targetZ + this.cameraOffsetZ - this.camera.position.z) * followAlpha;
       let shakeX = 0;
       let shakeZ = 0;
       if (!this.reducedMotion && now < this.shakeUntil) {
