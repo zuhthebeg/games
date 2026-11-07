@@ -1,5 +1,7 @@
 import { BUTTONS } from '../sim/world.js';
 
+const MAX_AUTHORITATIVE_EVENTS = 256;
+
 function buttonsFor(input) {
   return Number(input.buttons ?? input.b ?? 0);
 }
@@ -85,6 +87,9 @@ export class CastTimeline {
         continue;
       }
       this.authoritativeEvents.push(event);
+      if (this.authoritativeEvents.length > MAX_AUTHORITATIVE_EVENTS) {
+        this.authoritativeEvents.splice(0, this.authoritativeEvents.length - MAX_AUTHORITATIVE_EVENTS);
+      }
     }
     return { spawned, attached };
   }

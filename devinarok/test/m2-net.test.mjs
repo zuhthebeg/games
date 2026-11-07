@@ -514,6 +514,17 @@ test('cast timeline deduplicates predicted and server casts and only emits autho
   assert.equal(timeline.update(510).some((cast) => cast.castId === 'hero:4'), false);
 });
 
+test('cast timeline bounds retained authoritative events', () => {
+  const timeline = new CastTimeline({ playerId: 'hero' });
+  timeline.ingestEvents(
+    Array.from({ length: 300 }, (_, index) => ({ eventId: index + 1, type: 'hit' })),
+    0,
+  );
+  assert.equal(timeline.authoritativeEvents.length, 256);
+  assert.equal(timeline.authoritativeEvents[0].eventId, 45);
+  assert.equal(timeline.authoritativeEvents.at(-1).eventId, 300);
+});
+
 class FakeSocket {
   static OPEN = 1;
 
