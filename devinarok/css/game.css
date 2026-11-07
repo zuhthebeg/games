@@ -33,6 +33,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .icon-button { grid-column: 3; grid-row: 1; pointer-events: auto; width: 46px; height: 46px; padding: 0; font-size: 22px; background: #17131ac9; }
 .controls { position: absolute; inset: auto 0 max(16px, env(safe-area-inset-bottom)) 0; display: none; justify-content: space-between; align-items: end; padding: 0 18px; pointer-events: none; background: transparent; z-index: 3; }
 .joystick { width: 116px; height: 116px; border-radius: 50%; border: 1px solid #c9a17c66; background: #19151c99; pointer-events: auto; touch-action: none; display: grid; place-items: center; }
+.controls .buttons { margin-left: auto; }
 .joystick.floating { position: fixed; z-index: 4; margin: 0; transform: translate(-50%, -50%); }
 .joystick span { display: block; width: 48px; height: 48px; border-radius: 50%; background: #c39b7566; border: 1px solid #d8b995; }
 .buttons { display: grid; grid-template-columns: repeat(2, 62px); gap: 7px; pointer-events: auto; }
