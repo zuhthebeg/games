@@ -53,7 +53,7 @@ function shortestAngleDelta(from, to) {
 }
 
 export class ArenaRenderer {
-  constructor(canvas, onReady = () => {}, arena = ARENA) {
+  constructor(canvas, onReady = () => {}, arena = ARENA, showCollisionOverlay = false) {
     this.canvas = canvas;
     this.arena = arena;
     this.scene = new THREE.Scene();
@@ -114,6 +114,8 @@ export class ArenaRenderer {
     this.resolutionScale = 1;
     this.loadedBytes = 0;
     this.buildRoom();
+    this.collisionOverlay = null;
+    if (showCollisionOverlay) this.createCollisionOverlay();
     this.resize = new ResizeObserver(() => this.resizeCanvas());
     this.resize.observe(canvas);
     this.ready = this.loadAssets().then(onReady).catch((error) => {
@@ -134,6 +136,40 @@ export class ArenaRenderer {
       this.scene.add(light);
       this.torchLights.push({ light, phase: this.torchLights.length * 1.71, base: light.intensity });
     }
+  }
+
+  createCollisionOverlay() {
+    const group = new THREE.Group();
+    const material = new THREE.LineBasicMaterial({
+      color: 0xff6370,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: true,
+      fog: false,
+    });
+    for (const obstacle of this.arena.obstacles ?? []) {
+      const points = obstacle.type === 'circle'
+        ? Array.from({ length: 48 }, (_, index) => {
+          const angle = index / 48 * Math.PI * 2;
+          return new THREE.Vector3(
+            obstacle.x + Math.cos(angle) * obstacle.radius,
+            0,
+            obstacle.z + Math.sin(angle) * obstacle.radius,
+          );
+        })
+        : [
+          new THREE.Vector3(obstacle.x - obstacle.width / 2, 0, obstacle.z - obstacle.depth / 2),
+          new THREE.Vector3(obstacle.x + obstacle.width / 2, 0, obstacle.z - obstacle.depth / 2),
+          new THREE.Vector3(obstacle.x + obstacle.width / 2, 0, obstacle.z + obstacle.depth / 2),
+          new THREE.Vector3(obstacle.x - obstacle.width / 2, 0, obstacle.z + obstacle.depth / 2),
+        ];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const outline = new THREE.LineLoop(geometry, material);
+      outline.position.y = 0.045;
+      group.add(outline);
+    }
+    this.collisionOverlay = group;
+    this.scene.add(group);
   }
 
   async loadAssets() {
@@ -922,6 +958,16 @@ export class ArenaRenderer {
       });
     }
     this.telegraphs.clear();
+    if (this.collisionOverlay) {
+      this.scene.remove(this.collisionOverlay);
+      const materials = new Set();
+      this.collisionOverlay.traverse((node) => {
+        node.geometry?.dispose();
+        for (const material of [node.material].flat()) if (material) materials.add(material);
+      });
+      for (const material of materials) material.dispose();
+      this.collisionOverlay = null;
+    }
     this.vfxLayer.remove();
     disposeSceneResources(this.scene);
     this.renderer.dispose();

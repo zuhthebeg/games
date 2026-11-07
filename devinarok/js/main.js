@@ -18,6 +18,7 @@ import {
 
 const $ = (selector) => document.querySelector(selector);
 const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
+const DEV_COLLISION_OVERLAY = DEV_MODE && new URLSearchParams(location.search).get('collide') === '1';
 const titleScreen = $('#title-screen');
 const gameScreen = $('#game-screen');
 const createForm = $('#create-form');
@@ -149,7 +150,7 @@ async function enterHub() {
   $('#stage-name').textContent = '거점 여관';
   $('#hud-name').textContent = character.name;
   world = createHubWorld({ seed: 724103, playerId: character.id });
-  renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA);
+  renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA, DEV_COLLISION_OVERLAY);
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('hub-bgm');
@@ -251,7 +252,8 @@ function renderBoard() {
     const cleared = character.clearedStages.includes(stage.id);
     return `<div class="hub-row"><span>${stage.name}<small>권장 Lv.${stage.recommendedLevel} · ${cleared ? '클리어' : unlocked ? '도전 가능' : '잠김'}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${cleared ? '재도전' : '출정'}</button></div>`;
   }).join('');
-  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<div class="party-entry"><strong>같이 출정</strong><p>동료와 함께 지하묘지로 떠납니다.</p><button data-party-create class="primary">방 만들기</button><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드"><button type="submit">코드로 참가</button></form></div><button data-close>닫기</button>`;
+  const upcomingRegion = '<div class="hub-row" aria-disabled="true"><span>2지역 · 준비 중<small>다음 업데이트에서 열려요</small></span><button disabled>준비 중</button></div>';
+  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}${upcomingRegion}<div class="party-entry"><strong>같이 출정</strong><p>동료와 함께 지하묘지로 떠납니다.</p><button data-party-create class="primary">방 만들기</button><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드"><button type="submit">코드로 참가</button></form></div><button data-close>닫기</button>`;
 }
 
 function inviteLink(code) {
@@ -326,7 +328,7 @@ async function startPartyStage(message) {
   $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
   world = partyClient.viewWorld() ?? partyClient.stageWorld;
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
-  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena);
+  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY);
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('combat-bgm');
@@ -569,7 +571,7 @@ async function startStage(stageId) {
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
   });
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
-  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena);
+  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY);
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
   audio.setMusic('combat-bgm');
@@ -654,8 +656,11 @@ function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) 
   const earnedItems = outcome === 'clear' && result.items.length
     ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
     : '';
+  const progression = outcome === 'clear' && currentStageId === 'CB'
+    ? '<p>1지역을 정복했어요. 다음 지역은 준비 중이에요.</p>'
+    : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
