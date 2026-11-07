@@ -25,10 +25,6 @@ export function partyServerUrl(code, search = globalThis.location?.search ?? '')
   return url.toString();
 }
 
-function livePlayer(world, playerId) {
-  return world.entities.find((entity) => entity.kind === 'player' && entity.playerId === playerId);
-}
-
 function playerFromSnapshot(snapshot, playerId) {
   const entity = (snapshot.ents ?? []).find((entry) => entry.playerId === playerId);
   return entity?.motion ? { ...entity, ...entity.motion } : entity;
@@ -69,6 +65,7 @@ export class PartyClient {
     this.castTimeline = null;
     this.lastSnapshot = null;
     this.runId = null;
+    this.runSnapshotReady = false;
     this.result = null;
     this.reviveProgress = new Map();
     this.eventIds = new Set();
@@ -150,10 +147,15 @@ export class PartyClient {
   }
 
   startRun(message) {
+    if (message.runId !== this.runId) {
+      this.session?.resetRunEpoch(message.tick ?? 0);
+      this.runSnapshotReady = false;
+      this.seenEventIds.clear();
+      this.eventIds.clear();
+    }
     this.runId = message.runId;
     this.result = null;
     this.reviveProgress.clear();
-    this.eventIds.clear();
     const party = (message.party ?? []).map((member) => ({
       playerId: member.playerId,
       name: member.name,
@@ -171,23 +173,33 @@ export class PartyClient {
       inputDriven: true,
       party,
     });
-    const player = livePlayer(this.stageWorld, this.playerId);
-    if (!player) throw new Error(`파티 플레이어 ${this.playerId}를 찾을 수 없습니다.`);
-    this.predictor = new Predictor({
-      player: structuredClone(player),
-      playerId: this.playerId,
-      ctx: {
-        arena: this.stageWorld.arena,
-        openDoors: this.stageWorld.openDoors,
-        tick: message.tick,
-      },
-    });
+    this.predictor = null;
     this.interpolation = new InterpolationBuffer();
     this.castTimeline = new CastTimeline({ playerId: this.playerId });
     this.lastSnapshot = null;
   }
 
   handleSnapshot(message) {
+    if (!this.runSnapshotReady && message.full) {
+      const player = (message.ents ?? []).find((entity) => (
+        entity.kind === 'player' && entity.playerId === this.playerId
+      ));
+      if (player && this.stageWorld) {
+        this.session?.resetRunClock(message.tick ?? 0);
+        this.predictor = new Predictor({
+          player: structuredClone(player),
+          playerId: this.playerId,
+          ctx: {
+            arena: this.stageWorld.arena,
+            openDoors: message.openDoors ?? this.stageWorld.openDoors,
+            tick: message.tick,
+          },
+        });
+        this.interpolation = new InterpolationBuffer();
+        this.castTimeline = new CastTimeline({ playerId: this.playerId });
+        this.runSnapshotReady = true;
+      }
+    }
     this.lastSnapshot = message;
     this.interpolation?.addSnapshot({
       tick: message.tick,
@@ -233,8 +245,16 @@ export class PartyClient {
     this.onSnapshot(message, this);
   }
 
+  get inputReady() {
+    return Boolean(
+      this.runSnapshotReady &&
+      this.session?.clock.samples > 0 &&
+      !this.result,
+    );
+  }
+
   sendInput(rawInput) {
-    if (!this.predictor || !this.session || this.result || !this.lastSnapshot) return null;
+    if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
     const estimate = this.session.clock.getEstimate(performance.now());
     const view = this.interpolation.sample(estimate);
     const input = { ...rawInput, viewTick: Math.round(view.renderTick) };

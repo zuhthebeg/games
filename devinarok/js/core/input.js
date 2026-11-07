@@ -126,7 +126,8 @@ export class InputLayer {
 
   nextTick() {
     if (this.devInputProvider) {
-      return { ...this.devInputProvider(), seq: ++this.seq };
+      const seq = ++this.seq;
+      return { ...this.devInputProvider(seq), seq };
     }
     let buttons = this.latchedButtons;
     this.latchedButtons = 0;

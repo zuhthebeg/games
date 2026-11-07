@@ -184,11 +184,11 @@ export class NetSession {
       message.ev ??= [];
     }
     if (message.t === 'pong') {
-      this.clock.observePong({
+      const synchronized = this.clock.observePong({
         c: message.c,
         t: message.tick ?? message.serverTick,
       }, this.now());
-      this.onPong(message);
+      if (synchronized) this.onPong(message);
     }
     if (message.t === 'error' && message.code === 'version') {
       this.versionRejected = true;
@@ -261,6 +261,21 @@ export class NetSession {
     if (!Number.isSafeInteger(compact.seq) || compact.seq < 0) return false;
     this.inputs.set(compact.seq, compact);
     return true;
+  }
+
+  resetRunEpoch(tick = 0) {
+    this.inputs.clear();
+    this.eventAck = 0;
+    this.receivedEventIds.clear();
+    this.snapshotAck = null;
+    this.snapshotResyncRequested = false;
+    this.snapshotStates.clear();
+    this.snapshotMetadataStates.clear();
+    this.clock.reset(this.now(), tick);
+  }
+
+  resetRunClock(tick = 0) {
+    this.clock.reset(this.now(), tick);
   }
 
   setEventAck(eventId) {

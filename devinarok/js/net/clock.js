@@ -24,6 +24,23 @@ export class ServerClock {
     this.previousRtt = null;
   }
 
+  reset(nowMs = 0, tick = 0) {
+    if (!Number.isFinite(nowMs) || !Number.isFinite(tick)) {
+      throw new TypeError('Clock reset values must be finite');
+    }
+    this.offsetTicks = tick - nowMs * this.tickRate / 1000;
+    this.rttMs = 0;
+    this.jitterMs = 0;
+    this.playbackRate = 1;
+    this.samples = 0;
+    this.pingsSent = 0;
+    this.nextPingAt = null;
+    this.pendingPings.clear();
+    this.lastEstimate = null;
+    this.lastEstimateAt = null;
+    this.previousRtt = null;
+  }
+
   makePing(nowMs) {
     if (!Number.isFinite(nowMs)) throw new TypeError('Ping time must be finite');
     if (this.nextPingAt !== null && nowMs < this.nextPingAt) return null;
@@ -38,7 +55,8 @@ export class ServerClock {
 
   observePong({ c, t }, receivedAtMs) {
     if (!Number.isFinite(c) || !Number.isFinite(t) || !Number.isFinite(receivedAtMs)) return false;
-    const sentAtMs = this.pendingPings.get(c) ?? c;
+    if (!this.pendingPings.has(c)) return false;
+    const sentAtMs = this.pendingPings.get(c);
     this.pendingPings.delete(c);
     const rtt = Math.max(0, receivedAtMs - sentAtMs);
     const midpoint = sentAtMs + rtt / 2;
@@ -47,6 +65,8 @@ export class ServerClock {
       this.offsetTicks = sampleOffset;
       this.rttMs = rtt;
       this.jitterMs = 0;
+      this.lastEstimate = null;
+      this.lastEstimateAt = null;
     } else {
       this.offsetTicks += this.alpha * (sampleOffset - this.offsetTicks);
       this.rttMs += this.alpha * (rtt - this.rttMs);

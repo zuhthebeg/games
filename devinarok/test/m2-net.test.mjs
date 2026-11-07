@@ -102,6 +102,84 @@ test('party rendering does not mutate the predictor player position', () => {
   assert.equal(player.z, 2);
 });
 
+test('party resets run prediction state to each first full snapshot', () => {
+  let now = 50000;
+  const client = Object.create(PartyClient.prototype);
+  client.session = new NetSession({
+    now: () => now,
+    autoFlushInputs: false,
+    autoPing: false,
+  });
+  client.playerId = 'self';
+  client.character = { name: 'Hero', level: 1, potions: 3 };
+  client.equipment = [];
+  client.onSnapshot = () => {};
+  client.onEvents = () => {};
+  client.reviveProgress = new Map();
+  client.eventIds = new Set();
+  client.seenEventIds = new Set();
+  client.runId = null;
+  client.result = null;
+
+  const beginRun = (runId) => client.startRun({
+    runId,
+    seed: 17,
+    stageId: 'C1',
+    tick: 0,
+    party: [
+      { playerId: 'self', name: 'Hero', level: 1 },
+      { playerId: 'other', name: 'Ally', level: 1 },
+    ],
+  });
+  const receiveFirstFull = () => {
+    const entities = structuredClone(client.stageWorld.entities);
+    client.handleSnapshot({
+      t: 'snap',
+      full: true,
+      tick: 0,
+      ack: 0,
+      ents: entities,
+      openDoors: client.stageWorld.openDoors,
+      ev: [],
+    });
+  };
+
+  client.session.inputs.set(7, { seq: 7 });
+  client.session.clock.makePing(now);
+  client.session.clock.observePong({ c: now, t: 1500 }, now + 100);
+  beginRun('run-1');
+  assert.equal(client.session.inputs.size, 0);
+  assert.equal(client.session.clock.samples, 0);
+  assert.equal(client.predictor, null);
+  assert.equal(client.runSnapshotReady, false);
+  receiveFirstFull();
+  assert.equal(client.predictor.getPlayer().playerId, 'self');
+  assert.equal(client.interpolation.snapshots.length, 1);
+  assert.equal(client.inputReady, false);
+
+  const firstRunPing = client.session.clock.makePing(now);
+  now += 100;
+  client.session.clock.observePong({ c: firstRunPing.c, t: 3 }, now);
+  assert.equal(client.inputReady, true);
+  client.castTimeline.predictInput({ seq: 1, buttons: BUTTONS.ATTACK }, now);
+  client.session.queueInput({ seq: 7 });
+  client.seenEventIds.add(1);
+  const firstPredictor = client.predictor;
+
+  beginRun('run-2');
+  assert.equal(client.session.inputs.size, 0);
+  assert.equal(client.session.clock.samples, 0);
+  assert.equal(client.predictor, null);
+  assert.equal(client.interpolation.snapshots.length, 0);
+  assert.equal(client.castTimeline.casts.size, 0);
+  assert.equal(client.seenEventIds.size, 0);
+  receiveFirstFull();
+  assert.notEqual(client.predictor, firstPredictor);
+  assert.equal(client.interpolation.snapshots.length, 1);
+  assert.equal(client.inputReady, false);
+  client.session.close();
+});
+
 test('shared bot policy targets, dodges telegraphs, and enters cleared-room doors', () => {
   const player = {
     x: 0,
@@ -154,14 +232,18 @@ test('dev input provider drives numbered InputLayer ticks', () => {
   const canvas = { addEventListener() {}, removeEventListener() {} };
   const controls = { querySelector: () => null };
   const input = new InputLayer({ canvas, controls });
+  const providerSequences = [];
   try {
-    input.setDevInputProvider(() => ({
-      moveX: 64,
-      moveZ: -64,
-      aim: 32,
-      buttons: BUTTONS.ATTACK,
-      seq: 99,
-    }));
+    input.setDevInputProvider((seq) => {
+      providerSequences.push(seq);
+      return {
+        moveX: 64,
+        moveZ: -64,
+        aim: 32,
+        buttons: BUTTONS.ATTACK,
+        seq: 99,
+      };
+    });
     assert.deepEqual(input.nextTick(), {
       moveX: 64,
       moveZ: -64,
@@ -170,6 +252,7 @@ test('dev input provider drives numbered InputLayer ticks', () => {
       seq: 1,
     });
     assert.equal(input.nextTick().seq, 2);
+    assert.deepEqual(providerSequences, [1, 2]);
     input.setDevInputProvider(null);
     assert.deepEqual(input.nextTick(), {
       seq: 3,
@@ -253,12 +336,14 @@ test('server clock EWMA tracks RTT and offset, schedules startup pings, and neve
   assert.equal(clock.makePing(1750).c, 1750);
 
   const measured = new ServerClock();
-  measured.observePong({ c: 0, t: 3 }, 100);
+  const firstPing = measured.makePing(0);
+  measured.observePong({ c: firstPing.c, t: 3 }, 100);
   assert.equal(measured.rttMs, 100);
   assert.equal(measured.offsetTicks, 1.5);
   const previousEstimate = measured.estimateTick(200);
-  measured.observePong({ c: 100, t: 9 }, 200);
-  assert.ok(Math.abs(measured.offsetTicks - 2.1) < 1e-9);
+  const secondPing = measured.makePing(250);
+  measured.observePong({ c: secondPing.c, t: 13 }, 350);
+  assert.ok(Math.abs(measured.offsetTicks - 2) < 1e-9);
   assert.ok(measured.estimateTick(200) >= previousEstimate);
   const forward = measured.estimateTick(300);
   assert.ok(measured.estimateTick(250) >= forward);
@@ -442,10 +527,61 @@ test('net session reads the authoritative tick from the pong tick field', () => 
   });
   const socket = session.connect();
   socket.open();
+  const ping = session.clock.makePing(now);
   now = 200;
-  socket.receive({ t: 'pong', c: 100, tick: 6 });
+  socket.receive({ t: 'pong', c: ping.c, tick: 6 });
   assert.equal(session.clock.samples, 1);
   assert.equal(session.clock.rttMs, 100);
+  session.close();
+});
+
+test('run clock resync discards a high lobby epoch and ignores its delayed pong', () => {
+  let now = 100000;
+  const session = new NetSession({
+    now: () => now,
+    autoFlushInputs: false,
+    autoPing: false,
+  });
+  const lobbyPing = session.clock.makePing(now);
+  now += 100;
+  session.clock.observePong({ c: lobbyPing.c, t: 3002 }, now);
+  assert.ok(session.clock.getEstimate(now) > 2999);
+
+  session.resetRunEpoch(0);
+  assert.equal(session.clock.samples, 0);
+  assert.equal(session.clock.observePong({ c: lobbyPing.c, t: 3002 }, now + 100), false);
+
+  const runPing = session.clock.makePing(now);
+  now += 100;
+  session.clock.getEstimate(now + 1000);
+  session.clock.observePong({ c: runPing.c, t: 60 }, now);
+  const estimate = session.clock.getEstimate(now);
+  const viewTick = Math.round(new InterpolationBuffer().sample(estimate).renderTick);
+  assert.ok(Math.abs(viewTick - 60) <= 2);
+  session.close();
+});
+
+test('a second run in the same session resets its clock to the new tick epoch', () => {
+  let now = 200000;
+  const session = new NetSession({
+    now: () => now,
+    autoFlushInputs: false,
+    autoPing: false,
+  });
+  const firstRunPing = session.clock.makePing(now);
+  now += 100;
+  session.clock.observePong({ c: firstRunPing.c, t: 6002 }, now);
+  assert.ok(session.clock.getEstimate(now) > 5999);
+
+  session.resetRunEpoch(0);
+  assert.equal(session.clock.samples, 0);
+  assert.equal(session.clock.observePong({ c: firstRunPing.c, t: 6002 }, now + 100), false);
+  const secondRunPing = session.clock.makePing(now);
+  now += 100;
+  session.clock.observePong({ c: secondRunPing.c, t: 45 }, now);
+  const estimate = session.clock.getEstimate(now);
+  const viewTick = Math.round(new InterpolationBuffer().sample(estimate).renderTick);
+  assert.ok(Math.abs(viewTick - 45) <= 2);
   session.close();
 });
 

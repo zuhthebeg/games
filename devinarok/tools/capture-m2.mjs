@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const outputDir = '/home/ubuntu/devinarok-shots/m2';
+const doorOnly = process.argv.includes('--door-only');
 await mkdir(outputDir, { recursive: true });
 const browserInfo = await fetch('http://127.0.0.1:9225/json/version').then((response) => response.json());
 const browser = new WebSocket(browserInfo.webSocketDebuggerUrl);
@@ -79,16 +80,50 @@ class Page {
   async viewport(width, height, mobile = false) {
     await this.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
   }
-  async capture(name) {
-    const shot = await this.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
+  async capture(name, render = true) {
+    if (render) await this.evaluate('window.__devinarok?.renderPartyFrame?.()');
+    const shot = await this.send('Page.captureScreenshot', {
+      format: 'png',
+      fromSurface: false,
+      captureBeyondViewport: false,
+      optimizeForSpeed: true,
+    });
     await writeFile(`${outputDir}/${name}.png`, Buffer.from(shot.data, 'base64'));
   }
 }
 
 const captured = new Set();
-async function capture(page, name) {
-  await page.capture(name);
+const captureTimings = [];
+async function capture(page, name, render = true) {
+  const startedAt = Date.now();
+  await page.capture(name, render);
+  captureTimings.push({
+    name,
+    durationMs: Date.now() - startedAt,
+  });
   captured.add(name);
+}
+
+const sceneCaptureErrors = [];
+async function capturePartyState(page, name, visibleExpression) {
+  try {
+    await page.wait(visibleExpression, 10000);
+    const frozen = await page.evaluate(`(() => {
+      if (!(${visibleExpression})) return false;
+      const api = window.__devinarok;
+      if (!api.setPartyHudCaptureFreeze(true)) return false;
+      api.renderPartyFrame();
+      return true;
+    })()`);
+    if (!frozen) return;
+    try {
+      await capture(page, name, false);
+    } finally {
+      await page.evaluate('window.__devinarok.setPartyHudCaptureFreeze(false)');
+    }
+  } catch (error) {
+    sceneCaptureErrors.push({ name, error: error.message });
+  }
 }
 
 async function openContext(name) {
@@ -133,10 +168,35 @@ await a.wait('Boolean(window.__devinarok.party?.roomCode && window.__devinarok.p
 const code = await a.evaluate('window.__devinarok.party.roomCode');
 await b.evaluate(`window.__devinarok.joinParty('${code}')`);
 await b.wait('Boolean(window.__devinarok.party?.lobby)');
+const tracePongs = `(() => {
+  const client = window.__devinarok.party;
+  const clock = client.session.clock;
+  const observePong = clock.observePong.bind(clock);
+  window.__m2ClockTrace = [];
+  clock.observePong = (pong, receivedAtMs) => {
+    const samplesBefore = clock.samples;
+    const accepted = observePong(pong, receivedAtMs);
+    window.__m2ClockTrace.push({
+      c: pong.c,
+      tick: pong.t,
+      receivedAtMs,
+      accepted,
+      samplesBefore,
+      samplesAfter: clock.samples,
+      estimate: clock.getEstimate(receivedAtMs),
+      runId: client.runId,
+      snapshotTick: client.lastSnapshot?.tick ?? null,
+    });
+    return accepted;
+  };
+})()`;
+await Promise.all([a.evaluate(tracePongs), b.evaluate(tracePongs)]);
 await a.viewport(1024, 768);
 await b.viewport(390, 844, true);
-await capture(a, 'lobby-desktop');
-await capture(b, 'lobby-mobile-390x844');
+if (!doorOnly) {
+  await capture(a, 'lobby-desktop');
+  await capture(b, 'lobby-mobile-390x844');
+}
 await a.evaluate('window.__devinarok.party.setReady(true)');
 await b.evaluate('window.__devinarok.party.setReady(true)');
 await a.wait('window.__devinarok.party.lobby?.players?.every((player) => player.ready)');
@@ -153,32 +213,93 @@ const installBot = `(() => {
     attacks: 0,
     dodges: 0,
     potions: 0,
-    trace: [],
+    inputSeqAtInstall: api.partyInputSeq,
+    inputTrace: [],
+    serverTrace: [],
     visibility: { state: document.visibilityState, focused: document.hasFocus() },
   };
-  const provider = () => {
+  const seenEventIds = new Set();
+  const provider = (seq) => {
     const next = api.getNetBotInput();
     stats.inputs += 1;
     if (next.buttons & api.buttons.ATTACK) stats.attacks += 1;
     if (next.buttons & api.buttons.DODGE) stats.dodges += 1;
     if (next.buttons & api.buttons.POTION) stats.potions += 1;
-    if (stats.inputs % 30 === 0) {
-      const player = api.party.predictor.getPlayer();
-      stats.trace.push({
-        inputs: stats.inputs,
-        hp: player.hp,
-        maxHp: player.maxHp,
-        potions: player.potions,
-        x: player.x,
-        z: player.z,
-        moveX: next.moveX,
-        moveZ: next.moveZ,
-        buttons: next.buttons,
-        viewTick: next.viewTick,
-        serverTick: api.party.lastSnapshot?.tick,
-        attack: Boolean(player.attack),
-        dodgeCooldownTicks: player.dodgeCooldownTicks,
-      });
+    const client = api.party;
+    const player = client.predictor.getPlayer();
+    const pendingSeqs = [...client.session.inputs.keys()];
+    const clockTick = client.session.clock.getEstimate(performance.now());
+    const serverSnapshot = client.lastSnapshot;
+    stats.inputTrace.push({
+      seq,
+      atMs: performance.now(),
+      buttons: next.buttons,
+      viewTick: next.viewTick,
+      clockTick,
+      roomTick: serverSnapshot?.tick ?? null,
+      serverAck: serverSnapshot?.ack ?? null,
+      ackLag: Number.isSafeInteger(serverSnapshot?.ack) ? seq - serverSnapshot.ack : null,
+      hp: player.hp,
+      maxHp: player.maxHp,
+      potions: player.potions,
+      x: player.x,
+      z: player.z,
+      moveX: next.moveX,
+      moveZ: next.moveZ,
+      pendingInputs: pendingSeqs.length,
+      maxPendingSeq: pendingSeqs.length ? Math.max(...pendingSeqs) : null,
+      attack: Boolean(player.attack),
+      dodgeCooldownTicks: player.dodgeCooldownTicks,
+    });
+    if (serverSnapshot) {
+      const serverAck = serverSnapshot.ack ?? null;
+      let entry = stats.serverTrace.at(-1);
+      if (!entry || entry.tick !== serverSnapshot.tick || entry.ack !== serverAck) {
+        entry = {
+          tick: serverSnapshot.tick,
+          ack: serverAck,
+          players: (serverSnapshot.ents ?? [])
+            .filter((entity) => entity.kind === 'player')
+            .map(({ id, playerId, x, z, hp, attack, downed }) => ({
+              id,
+              playerId,
+              x,
+              z,
+              hp,
+              attack: attack ? {
+                phase: attack.phase,
+                phaseTick: attack.phaseTick,
+                step: attack.step,
+              } : null,
+              downed,
+            })),
+          events: [],
+        };
+        stats.serverTrace.push(entry);
+      }
+      for (const event of serverSnapshot.ev ?? []) {
+        if (
+          !['attack', 'strike', 'hit', 'downed', 'reviveProgress', 'revived', 'potion'].includes(event.type) ||
+          !Number.isSafeInteger(event.eventId) ||
+          seenEventIds.has(event.eventId)
+        ) continue;
+        seenEventIds.add(event.eventId);
+        entry.events.push({
+          eventId: event.eventId,
+          tick: event.tick,
+          type: event.type,
+          entityId: event.entityId,
+          playerId: event.playerId,
+          sourceId: event.sourceId,
+          targetId: event.targetId,
+          inputSeq: event.inputSeq,
+          viewTick: event.viewTick,
+          viewLag: event.viewLag,
+          damage: event.damage,
+          progress: event.progress,
+          castId: event.castId,
+        });
+      }
     }
     return next;
   };
@@ -188,36 +309,20 @@ const installBot = `(() => {
 })()`;
 await Promise.all([a.evaluate(installBot), b.evaluate(installBot)]);
 const hudOnly = process.argv.includes('--hud-only');
-let inputDriverBusy = false;
-let inputDriverCalls = 0;
-const inputDriverCounts = [0, 0];
-const inputDriverFalse = [0, 0];
-const inputDriverErrors = [];
-const batchInput = `(() => {
-  let sent = 0;
-  while (sent < 30 && window.__devinarok.tickPartyInput()) sent += 1;
-  return sent;
-})()`;
-const inputDriver = hudOnly ? null : setInterval(() => {
-  if (inputDriverBusy) return;
-  inputDriverBusy = true;
-  Promise.all([a.evaluate(batchInput), b.evaluate(batchInput)]).then((counts) => {
-    inputDriverCalls += 1;
-    for (let index = 0; index < counts.length; index += 1) {
-      inputDriverCounts[index] += counts[index];
-      if (counts[index] < 30) inputDriverFalse[index] += 1;
-    }
-  }).catch((error) => {
-    inputDriverErrors.push(error.message);
-  }).finally(() => {
-    inputDriverBusy = false;
-  });
-}, 1000);
+if (!hudOnly) {
+  const enabled = await Promise.all([
+    a.evaluate('window.__devinarok.setPartyInputAutoDrive(true)'),
+    b.evaluate('window.__devinarok.setPartyInputAutoDrive(true)'),
+  ]);
+  if (enabled.some((value) => !value)) throw new Error('Could not start the party-loop input driver');
+}
 await Promise.all([a.evaluate('window.__devinarok.renderer.ready'), b.evaluate('window.__devinarok.renderer.ready')]);
 await a.viewport(1024, 768);
 await b.viewport(390, 844, true);
-await capture(a, 'two-player-combat-desktop');
-await capture(b, 'two-player-combat-mobile-390x844');
+if (!doorOnly) {
+  await capture(a, 'two-player-combat-desktop');
+  await capture(b, 'two-player-combat-mobile-390x844');
+}
 if (hudOnly) {
   console.log(JSON.stringify({
     roomCode: code,
@@ -227,12 +332,12 @@ if (hudOnly) {
   process.exit(0);
 }
 const deadline = Date.now() + 240000;
-let downedShot = false;
+let downedShot = doorOnly;
 let doorShot = false;
 let reconnectShot = false;
 let reconnectDiagnostics = null;
-let reviveAssistStarted = false;
-const reconnectAt = Date.now() + 30000;
+let downedCapturePage = null;
+const pendingSceneCaptures = [];
 while (Date.now() < deadline) {
   const state = await a.evaluate(`({
     downedPlayer: window.__devinarok.party.lastSnapshot?.ents?.find((entity)=>entity.kind==='player'&&entity.downed)?.playerId ?? null,
@@ -244,135 +349,149 @@ while (Date.now() < deadline) {
     door: Boolean(window.__devinarok.getPartyWorld()?.doorCountdown),
     done: Boolean(window.__devinarok.party.result),
   })`);
-  if (!state.downedPlayer && reviveAssistStarted) {
-    await Promise.all([
-      a.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
-      b.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
-    ]);
-    reviveAssistStarted = false;
-  }
-  if (state.downedPlayer && !state.reviveProgress && !reviveAssistStarted) {
-    const assist = `(() => {
-      const api = window.__devinarok;
-      api.setPartyInputProvider(() => {
-        const normal = window.__m2NetBotProvider();
-        const client = api.party;
-        const player = client.predictor.getPlayer();
-        const downed = client.lastSnapshot?.ents?.find((entity)=>entity.kind==='player'&&entity.downed);
-        if (!player || !downed || downed.playerId === client.playerId) return normal;
-        const dx = downed.x - player.x;
-        const dz = downed.z - player.z;
-        const distance = Math.hypot(dx, dz);
-        if (distance <= 1.25) {
-          return {
-            ...normal,
-            moveX: 0,
-            moveZ: 0,
-            buttons: normal.buttons & (api.buttons.ATTACK | api.buttons.POTION),
-          };
-        }
-        return {
-          ...normal,
-          moveX: Math.round(dx / distance * 127),
-          moveZ: Math.round(dz / distance * 127),
-          buttons: normal.buttons & (api.buttons.ATTACK | api.buttons.DODGE | api.buttons.POTION),
-        };
-      });
-    })()`;
-    await Promise.all([a.evaluate(assist), b.evaluate(assist)]);
-    reviveAssistStarted = true;
-  }
   if (state.downedPlayer && !state.done && state.reviveProgress > 0 && state.reviveProgress < 60 && !downedShot) {
     const downedIsA = await a.evaluate(
       `window.__devinarok.party.playerId === ${JSON.stringify(state.downedPlayer)}`,
     );
-    await capture(downedIsA ? a : b, 'downed-revive-ring');
+    downedCapturePage = downedIsA ? a : b;
+    pendingSceneCaptures.push(capturePartyState(
+      downedCapturePage,
+      'downed-revive-ring',
+      'document.querySelector("#party-downed").textContent.includes("부활 진행") && Number(document.querySelector("#party-downed").textContent.match(/(\\d+)\\/60/)?.[1]) > 0 && Number(document.querySelector("#party-downed").textContent.match(/(\\d+)\\/60/)?.[1]) < 60',
+    ));
     downedShot = true;
   }
-  if (state.door && !doorShot) { await capture(a, 'door-countdown'); doorShot = true; }
-  if (!reconnectShot && doorShot && !state.downedPlayer && Date.now() > reconnectAt) {
-    await b.evaluate(`(() => {
-      const session = window.__devinarok.party.session;
-      window.__m2ReconnectStatuses = [];
-      const scheduleTimeout = session.setTimeoutFn;
-      session.__m2ScheduleTimeout = scheduleTimeout;
-      session.setTimeoutFn = (callback, ms) => scheduleTimeout(callback, Math.max(ms, 3000));
-      const onStatus = session.onStatus;
-      session.onStatus = (status, ...args) => {
-        window.__m2ReconnectStatuses.push(status);
-        return onStatus(status, ...args);
-      };
-      session.socket.addEventListener('close', (event) => {
-        window.__m2SocketClose = { code: event.code, reason: event.reason, wasClean: event.wasClean };
-      }, { once: true });
-      session.socket.close();
-    })()`);
-    try {
-      await b.wait('!document.querySelector("#party-network-overlay").hidden && document.querySelector("#party-network-overlay").textContent.includes("재연결 중")', 3000);
-      await capture(b, 'reconnect-overlay');
-      reconnectShot = true;
-    } catch {
-      reconnectDiagnostics = await b.evaluate(`({
-        status: window.__devinarok.party.status,
-        socketReadyState: window.__devinarok.party.session.socket?.readyState ?? null,
-        overlayHidden: document.querySelector("#party-network-overlay").hidden,
-        overlayText: document.querySelector("#party-network-overlay").textContent,
-        statuses: window.__m2ReconnectStatuses,
-        socketClose: window.__m2SocketClose ?? null,
-      })`);
-    } finally {
-      await b.evaluate(`(() => {
-        const session = window.__devinarok.party.session;
-        if (session.__m2ScheduleTimeout) {
-          session.setTimeoutFn = session.__m2ScheduleTimeout;
-          delete session.__m2ScheduleTimeout;
-        }
-      })()`);
-    }
+  const doorOnB = await b.evaluate('Boolean(window.__devinarok.getPartyWorld()?.doorCountdown)');
+  if ((state.door || doorOnB) && !doorShot) {
+    const doorCapturePage = downedCapturePage === a ? b : a;
+    pendingSceneCaptures.push(capturePartyState(
+      doorCapturePage,
+      'door-countdown',
+      '!document.querySelector("#party-door-countdown").hidden && document.querySelector("#party-door-countdown").textContent.includes("다음 방으로 이동")',
+    ));
+    doorShot = true;
   }
   if (state.done) break;
-  await delay(100);
+  await delay(250);
 }
-clearInterval(inputDriver);
-while (inputDriverBusy) await delay(5);
+await Promise.all(pendingSceneCaptures);
 await Promise.all([
+  a.evaluate('window.__devinarok.setPartyInputAutoDrive(false)'),
+  b.evaluate('window.__devinarok.setPartyInputAutoDrive(false)'),
   a.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
   b.evaluate('window.__devinarok.setPartyInputProvider(window.__m2NetBotProvider)'),
 ]);
 await a.wait('Boolean(window.__devinarok.party.result)', 10000);
 await a.wait('!document.querySelector("#result-panel").hidden', 10000);
-await capture(a, 'result-player-1');
+if (!doorOnly) await capture(a, 'result-player-1');
 await b.wait('Boolean(window.__devinarok.party.result)', 10000);
 await b.wait('!document.querySelector("#result-panel").hidden', 10000);
-await capture(b, 'result-player-2');
+if (!doorOnly) await capture(b, 'result-player-2');
 const rewardsBeforeReload = [
   await a.evaluate('({gold:window.__devinarok.character.gold,xp:window.__devinarok.character.xp})'),
   await b.evaluate('({gold:window.__devinarok.character.gold,xp:window.__devinarok.character.xp})'),
 ];
+if (!doorOnly) {
+  await b.evaluate(`(() => {
+  const session = window.__devinarok.party.session;
+  window.__m2ReconnectStatuses = [];
+  const scheduleTimeout = session.setTimeoutFn;
+  session.__m2ScheduleTimeout = scheduleTimeout;
+  session.setTimeoutFn = (callback, ms) => scheduleTimeout(callback, Math.max(ms, 15000));
+  const onStatus = session.onStatus;
+  session.onStatus = (status, ...args) => {
+    window.__m2ReconnectStatuses.push(status);
+    return onStatus(status, ...args);
+  };
+  session.socket.addEventListener('close', (event) => {
+    window.__m2SocketClose = { code: event.code, reason: event.reason, wasClean: event.wasClean };
+  }, { once: true });
+  session.socket.close();
+})()`);
+  try {
+    await b.wait(
+      '!document.querySelector("#party-network-overlay").hidden && document.querySelector("#party-network-overlay").textContent.includes("재연결 중")',
+      10000,
+    );
+    reconnectDiagnostics = await b.evaluate(`({
+      status: window.__devinarok.party.status,
+      socketReadyState: window.__devinarok.party.session.socket?.readyState ?? null,
+      overlayHidden: document.querySelector("#party-network-overlay").hidden,
+      overlayText: document.querySelector("#party-network-overlay").textContent,
+      statuses: window.__m2ReconnectStatuses,
+      socketClose: window.__m2SocketClose ?? null,
+    })`);
+    await capture(b, 'reconnect-overlay');
+    reconnectShot = true;
+  } catch {
+    reconnectDiagnostics = await b.evaluate(`({
+      status: window.__devinarok.party.status,
+      socketReadyState: window.__devinarok.party.session.socket?.readyState ?? null,
+      overlayHidden: document.querySelector("#party-network-overlay").hidden,
+      overlayText: document.querySelector("#party-network-overlay").textContent,
+      statuses: window.__m2ReconnectStatuses,
+      socketClose: window.__m2SocketClose ?? null,
+    })`);
+  }
+}
 const runStates = [
   await a.evaluate(`({
     outcome: window.__devinarok.party.result?.outcome,
     players: window.__devinarok.party.lastSnapshot?.ents?.filter((entity) => entity.kind === 'player').map(({playerId,hp,potions,downed}) => ({playerId,hp,potions,downed})),
     roomIndex: window.__devinarok.party.lastSnapshot?.roomIndex,
+    inputReady: window.__devinarok.party.inputReady,
+    runSnapshotReady: window.__devinarok.party.runSnapshotReady,
+    clockSamples: window.__devinarok.party.session.clock.samples,
+    clockPingsSent: window.__devinarok.party.session.clock.pingsSent,
+    pendingClockPings: window.__devinarok.party.session.clock.pendingPings.size,
+    clockTick: window.__devinarok.party.session.clock.getEstimate(performance.now()),
+    clockTrace: window.__m2ClockTrace,
+    snapshotTicks: window.__devinarok.party.interpolation.snapshots.map(({tick,receivedAt}) => ({tick,receivedAt})),
+    predictorReady: Boolean(window.__devinarok.party.predictor),
+    localPlayerPresent: window.__devinarok.party.lastSnapshot?.ents?.some((entity) => entity.playerId === window.__devinarok.party.playerId),
     driver: {
       ...window.__partyDriverStats,
       serverTick: window.__devinarok.party.lastSnapshot?.tick,
       serverAck: window.__devinarok.party.lastSnapshot?.ack,
       status: window.__devinarok.party.status,
+      autoDriver: window.__devinarok.partyInputDriverStats,
     },
   })`),
   await b.evaluate(`({
     outcome: window.__devinarok.party.result?.outcome,
     players: window.__devinarok.party.lastSnapshot?.ents?.filter((entity) => entity.kind === 'player').map(({playerId,hp,potions,downed}) => ({playerId,hp,potions,downed})),
     roomIndex: window.__devinarok.party.lastSnapshot?.roomIndex,
+    inputReady: window.__devinarok.party.inputReady,
+    runSnapshotReady: window.__devinarok.party.runSnapshotReady,
+    clockSamples: window.__devinarok.party.session.clock.samples,
+    clockPingsSent: window.__devinarok.party.session.clock.pingsSent,
+    pendingClockPings: window.__devinarok.party.session.clock.pendingPings.size,
+    clockTick: window.__devinarok.party.session.clock.getEstimate(performance.now()),
+    clockTrace: window.__m2ClockTrace,
+    snapshotTicks: window.__devinarok.party.interpolation.snapshots.map(({tick,receivedAt}) => ({tick,receivedAt})),
+    predictorReady: Boolean(window.__devinarok.party.predictor),
+    localPlayerPresent: window.__devinarok.party.lastSnapshot?.ents?.some((entity) => entity.playerId === window.__devinarok.party.playerId),
     driver: {
       ...window.__partyDriverStats,
       serverTick: window.__devinarok.party.lastSnapshot?.tick,
       serverAck: window.__devinarok.party.lastSnapshot?.ack,
-      status: window.__devinarok.party.status,
+    status: window.__devinarok.party.status,
+    autoDriver: window.__devinarok.partyInputDriverStats,
     },
   })`),
 ];
+for (const state of runStates) {
+  const driver = state.driver;
+  let acknowledgedSeq = driver.inputSeqAtInstall ?? 0;
+  driver.serverTrace = driver.serverTrace.map((snapshot) => {
+    const ack = Number.isSafeInteger(snapshot.ack) ? snapshot.ack : acknowledgedSeq;
+    const consumedInputs = driver.inputTrace
+      .filter((input) => input.seq > acknowledgedSeq && input.seq <= ack)
+      .map(({ seq, buttons }) => ({ seq, buttons }));
+    acknowledgedSeq = Math.max(acknowledgedSeq, ack);
+    return { ...snapshot, consumedInputs };
+  });
+}
 await Promise.all([a.evaluate('location.reload()'), b.evaluate('location.reload()')]);
 await Promise.all([
   a.wait('window.__devinarok?.character?.name'),
@@ -389,16 +508,28 @@ const report = {
   rewardsBeforeReload,
   runStates,
   captures: [...captured],
+  captureTimings,
+  sceneCaptureErrors,
   reconnectDiagnostics,
   inputDriver: {
-    batchSize: 30,
-    calls: inputDriverCalls,
-    inputs: inputDriverCounts,
-    incompleteBatches: inputDriverFalse,
-    errors: inputDriverErrors,
+    source: 'dev-only catch-up InputLayer timer',
+    cadenceHz: 30,
+    pageStats: runStates.map(({ driver }) => ({
+      timer: driver.autoDriver,
+      inputSeqAtInstall: driver.inputSeqAtInstall,
+      inputs: driver.inputs,
+      attacks: driver.attacks,
+      dodges: driver.dodges,
+      potions: driver.potions,
+      snapshots: driver.serverTrace.length,
+      visibility: driver.visibility,
+    })),
   },
 };
-report.missingCaptures = [
+report.captureMode = doorOnly ? 'door-only supplemental' : 'full';
+report.missingCaptures = (doorOnly ? [
+  'door-countdown',
+] : [
   'lobby-desktop',
   'lobby-mobile-390x844',
   'two-player-combat-desktop',
@@ -408,6 +539,9 @@ report.missingCaptures = [
   'reconnect-overlay',
   'result-player-1',
   'result-player-2',
-].filter((name) => !captured.has(name));
-await writeFile(`${outputDir}/capture-summary.json`, JSON.stringify(report, null, 2));
+]).filter((name) => !captured.has(name));
+await writeFile(
+  `${outputDir}/${doorOnly ? 'door-capture-summary.json' : 'capture-summary.json'}`,
+  JSON.stringify(report, null, 2),
+);
 console.log(JSON.stringify(report, null, 2));

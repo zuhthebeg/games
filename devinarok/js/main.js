@@ -42,9 +42,15 @@ let partyClient = null;
 let partyFrame = null;
 let partyPreviousWorld = null;
 let partyLastTime = 0;
+let partyLastRenderTime = 0;
 let partyAccumulator = 0;
+let partyInputTimer = null;
+let partyInputLastTime = 0;
+let partyInputAccumulator = 0;
+let partyInputDriverStats = {};
 let inviteRoomHandled = false;
 let reviveText = new Map();
+let partyHudCaptureFrozen = false;
 
 async function reloadCharacter() {
   character = await saves.loadCharacter(character.id);
@@ -71,7 +77,13 @@ function stopWorld() {
   partyFrame = null;
   partyPreviousWorld = null;
   partyLastTime = 0;
+  partyLastRenderTime = 0;
   partyAccumulator = 0;
+  partyHudCaptureFrozen = false;
+  if (partyInputTimer !== null) clearInterval(partyInputTimer);
+  partyInputTimer = null;
+  partyInputLastTime = 0;
+  partyInputAccumulator = 0;
   loop?.stop();
   input?.destroy();
   renderer?.destroy();
@@ -319,12 +331,13 @@ async function startPartyStage(message) {
   updateDebugZone(world.arena.name);
   partyPreviousWorld = world;
   partyLastTime = 0;
+  partyLastRenderTime = 0;
   partyAccumulator = 0;
   partyFrame = requestAnimationFrame(partyLoop);
 }
 
 function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
-  if (!client || !client.stageWorld || !snapshot) return;
+  if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
   const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
   $('#party-hud').innerHTML = partyPlayers.map((member) => {
     const label = `${member.name ?? member.playerId} · Lv.${member.level ?? 1}`;
@@ -344,6 +357,23 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   if (countdown) $('#party-door-countdown').textContent = `다음 방으로 이동 ${Math.max(0, Math.ceil((countdown.endsTick - snapshot.tick) / 30))}초`;
 }
 
+function renderPartyFrame(time = performance.now()) {
+  if (!partyClient || !renderer) return false;
+  const nextWorld = partyClient.viewWorld(time) ?? world;
+  if (!nextWorld) return false;
+  renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+  partyPreviousWorld = nextWorld;
+  world = nextWorld;
+  return true;
+}
+
+function setPartyHudCaptureFreeze(frozen) {
+  if (!DEV_MODE) return false;
+  partyHudCaptureFrozen = Boolean(frozen);
+  if (!partyHudCaptureFrozen) updatePartyHud();
+  return true;
+}
+
 function partyLoop(time) {
   if (!partyClient || !renderer || !input) return;
   if (!input.devInputProvider) {
@@ -357,13 +387,23 @@ function partyLoop(time) {
       steps += 1;
     }
   }
-  const nextWorld = partyClient.viewWorld(time) ?? world;
-  if (nextWorld) {
-    renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
-    partyPreviousWorld = nextWorld;
-    world = nextWorld;
-    updateHud(nextWorld);
-    updatePartyHud();
+  if (
+    !DEV_MODE ||
+    partyInputTimer === null ||
+    !partyLastRenderTime ||
+    time - partyLastRenderTime >= 200
+  ) {
+    const nextWorld = partyClient.viewWorld(time) ?? world;
+    if (nextWorld) {
+      if (!DEV_MODE || partyInputTimer === null) {
+        renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+      }
+      partyPreviousWorld = nextWorld;
+      world = nextWorld;
+      updateHud(nextWorld);
+      updatePartyHud();
+    }
+    partyLastRenderTime = time;
   }
   const overlay = $('#party-network-overlay');
   if (partyClient.versionMismatch) {
@@ -377,10 +417,10 @@ function partyLoop(time) {
 }
 
 function sendPartyInputTick() {
-  if (!partyClient || !input || partyClient.result) return;
+  if (!partyClient || !partyClient.inputReady || !input || partyClient.result) return false;
   const next = input.nextTick();
   const queued = pauseMenu.hidden ? next : { ...next, moveX: 0, moveZ: 0, buttons: 0 };
-  partyClient.sendInput(queued);
+  return Boolean(partyClient.sendInput(queued));
 }
 
 function setPartyInputProvider(provider) {
@@ -390,10 +430,64 @@ function setPartyInputProvider(provider) {
 }
 
 function tickPartyInput() {
-  if (!DEV_MODE || !(input instanceof InputLayer) || !input.devInputProvider || !partyClient || partyClient.result) {
+  if (
+    !DEV_MODE ||
+    !(input instanceof InputLayer) ||
+    !input.devInputProvider ||
+    !partyClient?.inputReady ||
+    partyClient.result
+  ) {
     return false;
   }
   sendPartyInputTick();
+  return true;
+}
+
+function drivePartyInputTimer() {
+  const now = performance.now();
+  partyInputDriverStats.timerTicks += 1;
+  if (!partyClient?.inputReady || !input || partyClient.result) {
+    partyInputDriverStats.notReady += 1;
+    partyInputLastTime = now;
+    partyInputAccumulator = 0;
+    return;
+  }
+  if (!partyInputLastTime) partyInputLastTime = now;
+  partyInputAccumulator = Math.min(
+    3000,
+    partyInputAccumulator + Math.max(0, now - partyInputLastTime),
+  );
+  partyInputLastTime = now;
+  const pending = partyClient.session?.inputs.size ?? 0;
+  const limit = Math.max(0, Math.min(6, 90 - pending));
+  let steps = 0;
+  while (partyInputAccumulator >= 1000 / 30 && steps < limit) {
+    if (!sendPartyInputTick()) break;
+    partyInputAccumulator -= 1000 / 30;
+    steps += 1;
+  }
+  partyInputDriverStats.inputs += steps;
+  partyInputDriverStats.catchUpInputs += Math.max(0, steps - 3);
+  if (!steps && pending >= 90) partyInputDriverStats.backpressure += 1;
+}
+
+function setPartyInputAutoDrive(enabled) {
+  if (!DEV_MODE || !(input instanceof InputLayer) || !input.devInputProvider) return false;
+  if (partyInputTimer !== null) clearInterval(partyInputTimer);
+  partyInputTimer = null;
+  partyInputLastTime = 0;
+  partyInputAccumulator = 0;
+  if (enabled) {
+    partyInputDriverStats = {
+      timerTicks: 0,
+      inputs: 0,
+      catchUpInputs: 0,
+      notReady: 0,
+      backpressure: 0,
+    };
+    partyInputLastTime = performance.now();
+    partyInputTimer = setInterval(drivePartyInputTimer, 100);
+  }
   return true;
 }
 
@@ -717,8 +811,13 @@ if (DEV_MODE) {
     enterPartyCode(code) { return connectParty(code); },
     getPartyWorld() { return partyClient?.viewWorld(); },
     getNetBotInput,
+    renderPartyFrame,
+    setPartyHudCaptureFreeze,
     setPartyInputProvider,
     tickPartyInput,
+    setPartyInputAutoDrive,
+    get partyInputSeq() { return input?.seq ?? null; },
+    get partyInputDriverStats() { return { ...partyInputDriverStats }; },
     enterHub,
     settleStage,
     forceOutcome(outcome = 'clear') { completeStage(world, outcome); return settleStage(outcome); },
