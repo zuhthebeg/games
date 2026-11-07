@@ -21,6 +21,11 @@ export function createTutorialState(saved = {}) {
   };
 }
 
+export function resolveTutorialSortie(stageId, state) {
+  const beginCombat = Boolean(state?.active && state.step === 'board' && !state.combatComplete);
+  return { stageId: beginCombat ? 'C1' : stageId, beginCombat };
+}
+
 export function transitionTutorial(state, event) {
   if (!state.active && event.type !== 'replay') return state;
   let step = state.step;

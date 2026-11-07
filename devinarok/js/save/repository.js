@@ -1,7 +1,13 @@
 import { applyOperations } from './ops.js';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings'];
+
+function migratedTutorial(character) {
+  const veteran = (character.clearedStages?.length ?? 0) > 0 || Number(character.level ?? 1) > 1;
+  if (veteran) return { step: 'done', completed: true, skipped: false, combatComplete: true };
+  return character.tutorial ?? { step: 'board', completed: false, skipped: false, combatComplete: false };
+}
 
 export const DEFAULT_SETTINGS = Object.freeze({
   bgmVolume: 70,
@@ -247,7 +253,18 @@ const migrations = [
     meta: { ...data.meta, schemaVersion: 3 },
     characters: Object.fromEntries(Object.entries(data.characters ?? {}).map(([id, character]) => [
       id,
-      { ...character, tutorial: character.tutorial ?? { step: 'board', completed: false, skipped: false, combatComplete: false } },
+      { ...character, tutorial: migratedTutorial(character) },
+    ])),
+    items: data.items ?? {},
+    ledger: data.ledger ?? [],
+    backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
+  }),
+  (data) => ({
+    meta: { ...data.meta, schemaVersion: 4 },
+    characters: Object.fromEntries(Object.entries(data.characters ?? {}).map(([id, character]) => [
+      id,
+      { ...character, tutorial: migratedTutorial(character) },
     ])),
     items: data.items ?? {},
     ledger: data.ledger ?? [],

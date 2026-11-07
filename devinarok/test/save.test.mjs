@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ConflictError, MemoryBackend, SaveRepository } from '../js/save/repository.js';
 import { applyOperations } from '../js/save/ops.js';
+import { createTutorialState, resolveTutorialSortie } from '../js/ui/tutorial.js';
 
 async function repository(seed) {
   const repo = new SaveRepository(new MemoryBackend(seed));
@@ -81,8 +82,8 @@ test('legacy schema migration backs up source and import/export verifies checksu
   };
   const repo = await repository(legacy);
   const migrated = await repo.backend.readData();
-  assert.equal(migrated.meta.schemaVersion, 3);
-  assert.equal(migrated.backups.length, 3);
+  assert.equal(migrated.meta.schemaVersion, 4);
+  assert.equal(migrated.backups.length, 4);
   assert.equal(migrated.backups[0].data.meta.schemaVersion, 0);
 
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '시험자', kind: 'knight' }] });
@@ -94,6 +95,59 @@ test('legacy schema migration backs up source and import/export verifies checksu
   const tampered = structuredClone(exported);
   tampered.data.characters[0].gold = 999;
   await assert.rejects(target.import(tampered), /checksum/);
+});
+
+test('migrated veterans skip tutorial and keep the selected sortie stage', async () => {
+  const repo = await repository({
+    meta: { schemaVersion: 3, localAccountId: 'local-v3' },
+    characters: {
+      veteran: {
+        id: 'veteran',
+        name: 'Veteran',
+        level: 14,
+        clearedStages: ['CB'],
+        tutorial: { step: 'board', completed: false, skipped: false, combatComplete: false },
+      },
+    },
+    items: {},
+    ledger: [],
+    backups: [],
+  });
+  const veteran = await repo.loadCharacter('veteran');
+  const tutorial = createTutorialState(veteran.tutorial);
+
+  assert.deepEqual(veteran.tutorial, { step: 'done', completed: true, skipped: false, combatComplete: true });
+  assert.equal(tutorial.active, false);
+  assert.deepEqual(resolveTutorialSortie('F1', tutorial), { stageId: 'F1', beginCombat: false });
+});
+
+test('migrated level-one characters without clears start the tutorial', async () => {
+  const repo = await repository({
+    meta: { schemaVersion: 3, localAccountId: 'local-v3' },
+    characters: {
+      novice: { id: 'novice', name: 'Novice', level: 1, clearedStages: [] },
+    },
+    items: {},
+    ledger: [],
+    backups: [],
+  });
+  const novice = await repo.loadCharacter('novice');
+  const tutorial = createTutorialState(novice.tutorial);
+
+  assert.deepEqual(novice.tutorial, { step: 'board', completed: false, skipped: false, combatComplete: false });
+  assert.equal(tutorial.active, true);
+  assert.deepEqual(resolveTutorialSortie('C1', tutorial), { stageId: 'C1', beginCombat: true });
+});
+
+test('new characters start the tutorial through the create operation', () => {
+  const created = applyOperations(null, {}, [
+    { type: 'createCharacter', name: '새 모험가', kind: 'knight' },
+  ], 'new-character');
+  const tutorial = createTutorialState(created.character.tutorial);
+
+  assert.deepEqual(created.character.tutorial, { step: 'board', completed: false, skipped: false, combatComplete: false });
+  assert.equal(tutorial.active, true);
+  assert.deepEqual(resolveTutorialSortie('C1', tutorial), { stageId: 'C1', beginCombat: true });
 });
 
 test('M1 potion, sale, and enhancement operations enforce limits and settled rolls', () => {

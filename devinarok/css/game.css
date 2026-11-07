@@ -279,9 +279,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   overflow: hidden;
 }
 .settings-panel h2 { flex: 0 0 auto; margin: 0 0 12px; }
-.settings-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 12px; overscroll-behavior: contain; scrollbar-gutter: stable; }
-.settings-scroll > label:not(.setting-toggle) { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; color: #f0e8df; font: 14px/1.4 system-ui, sans-serif; }
-.settings-scroll output { color: #ffe0a3; font-variant-numeric: tabular-nums; }
+.settings-scroll { box-sizing: border-box; flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 12px; padding-right: 14px; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.settings-scroll > label:not(.setting-toggle) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px 10px; color: #f0e8df; font: 14px/1.4 system-ui, sans-serif; text-align: left; }
+.settings-scroll output { color: #ffe0a3; font-variant-numeric: tabular-nums; text-align: right; }
 .settings-scroll input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: #e3bd7c; }
 .settings-scroll select { min-width: 120px; padding: 7px; border: 1px solid #85746d; border-radius: 7px; background: #100e13; color: #f2ece5; }
 #settings-panel .settings-scroll > label.setting-toggle { display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 9px; min-height: 28px; color: #f0e8df; font: 14px/1.4 system-ui, sans-serif; }

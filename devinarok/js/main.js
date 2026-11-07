@@ -8,7 +8,7 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
-import { createTutorialState, TUTORIAL_COPY, transitionTutorial } from './ui/tutorial.js';
+import { createTutorialState, resolveTutorialSortie, TUTORIAL_COPY, transitionTutorial } from './ui/tutorial.js';
 import { SANCTUARY_ARENA } from './sanctuary/arena.js';
 import { SanctuaryVfx } from './sanctuary/vfx.js';
 import {
@@ -1324,36 +1324,38 @@ function renderPanel(kind, compareUid = '') {
 
 async function startStage(stageId) {
   if (!stageIsUnlocked(stageId) && !DEV_MODE) return;
-  if (tutorialState?.step === 'board' && !tutorialState.combatComplete) {
+  const tutorialSortie = resolveTutorialSortie(stageId, tutorialState);
+  const stageToStart = tutorialSortie.stageId;
+  if (tutorialSortie.beginCombat) {
     updateTutorial({ type: 'beginCombat' });
     await tutorialSaveChain;
   }
-  const selectedStage = STAGE_LIST.find((entry) => entry.id === stageId);
+  const selectedStage = STAGE_LIST.find((entry) => entry.id === stageToStart);
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
-  if (stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
-  if (stageId === 'K1') localStorage.setItem('devinarok.k1-entered', '1');
+  if (stageToStart === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
+  if (stageToStart === 'K1') localStorage.setItem('devinarok.k1-entered', '1');
   stopWorld();
   partyClient?.close();
   partyClient = null;
   $('#hub-party-button').hidden = true;
-  currentStageId = stageId;
+  currentStageId = stageToStart;
   settled = false;
   hubUi.hidden = true;
   hubPanel.hidden = true;
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
   $('#controls').hidden = false;
-  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageId);
-  $('#boss-name').textContent = stageId === 'KB'
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageToStart);
+  $('#boss-name').textContent = stageToStart === 'KB'
     ? '해골 왕'
-    : stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
-  updateBossIntro(stageId);
+    : stageToStart === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  updateBossIntro(stageToStart);
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
   world = createStageWorld({
     seed: crypto.getRandomValues(new Uint32Array(1))[0],
-    stageId,
+    stageId: stageToStart,
     playerId: character.id,
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
   });
@@ -1362,13 +1364,13 @@ async function startStage(stageId) {
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY, world);
   renderer.localPlayerId = character.id;
-  const [, music] = await Promise.all([renderer.ready, loadAudioForScene(stageId)]);
+  const [, music] = await Promise.all([renderer.ready, loadAudioForScene(stageToStart)]);
   applySettings();
   await audio.unlock();
   audio.setMusic(music, { crossfadeMs: 1000 });
   $('#stage-name').textContent = world.arena.name;
   renderTutorialCard();
-  if (['CB', 'FB', 'KB'].includes(stageId)) {
+  if (['CB', 'FB', 'KB'].includes(stageToStart)) {
     $('#boss-intro').hidden = false;
     setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
   }

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=c3783c2706">
+  <link rel="stylesheet" href="css/game.css?v=ff1b3c1c61">
   <script type="importmap">
     {
       "imports": {
@@ -17,7 +17,7 @@
         "./js/content/stages.js": "./js/content/stages.js?v=18e9b73ef9",
         "./js/core/input.js": "./js/core/input.js?v=0cc8a65388",
         "./js/core/loop.js": "./js/core/loop.js?v=455bc00b25",
-        "./js/main.js": "./js/main.js?v=6d47c2f5f1",
+        "./js/main.js": "./js/main.js?v=c89b01dc71",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=d59610f015",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=610dc2198e",
         "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
@@ -37,7 +37,7 @@
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
         "./js/save/ops.js": "./js/save/ops.js?v=1acba2dd60",
-        "./js/save/repository.js": "./js/save/repository.js?v=018a724908",
+        "./js/save/repository.js": "./js/save/repository.js?v=5e47c8c90b",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
         "./js/sim/world.js": "./js/sim/world.js?v=a4d3b0342e",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
@@ -45,7 +45,7 @@
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=95254c35c8",
         "./js/ui/party.js": "./js/ui/party.js?v=75a81026fd",
         "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
-        "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=50a1c8f296",
+        "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=b1e91c7a90",
         "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
         "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
         "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
@@ -137,14 +137,17 @@
         <section class="panel settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
           <h2 id="settings-title">설정</h2>
           <div class="settings-scroll">
-            <label for="bgm-volume">배경 음악 <output id="bgm-volume-value">70</output>
+            <label for="bgm-volume">
+              <span>배경 음악</span><output id="bgm-volume-value">70</output>
               <input id="bgm-volume" type="range" min="0" max="100" value="70">
             </label>
-            <label for="sfx-volume">효과음 <output id="sfx-volume-value">70</output>
+            <label for="sfx-volume">
+              <span>효과음</span><output id="sfx-volume-value">70</output>
               <input id="sfx-volume" type="range" min="0" max="100" value="70">
             </label>
             <button id="settings-mute-button" type="button">음소거</button>
-            <label for="quality-setting">화질
+            <label for="quality-setting">
+              <span>화질</span>
               <select id="quality-setting">
                 <option value="automatic">자동</option>
                 <option value="low">낮음</option>
@@ -171,6 +174,6 @@
       <div id="toast" role="status"></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=6d47c2f5f1"></script>
+  <script type="module" src="js/main.js?v=c89b01dc71"></script>
 </body>
 </html>
