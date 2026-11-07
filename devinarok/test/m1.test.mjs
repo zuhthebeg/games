@@ -50,6 +50,14 @@ test('M1 damage and level progression match the content contract', () => {
   assert.equal(xpToNextLevel(2), 182);
 });
 
+test('stage settlement preserves potions consumed during the sortie', () => {
+  const world = createStageWorld({ seed: 73, stageId: 'C1', playerId: 'a', character: { potions: 3 } });
+  step(world, { a: { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: BUTTONS.POTION } });
+  const result = completeStage(world, 'clear');
+  assert.equal(world.entities.find((entity) => entity.kind === 'player').potions, 2);
+  assert.equal(result.potions, 2);
+});
+
 test('10,000 rarity rolls reproduce the declared distribution and boss items are rare+', () => {
   const counts = { common: 0, magic: 0, rare: 0, legendary: 0 };
   for (let index = 0; index < 10000; index += 1) counts[rarityForRoll(index / 10000)] += 1;

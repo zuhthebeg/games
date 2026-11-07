@@ -1287,7 +1287,7 @@ function settlementResult(world, outcome) {
     items: outcome === 'clear' ? world.reward.items.map((item) => ({ ...item })) : [],
     lostItems: outcome === 'clear' ? [] : world.reward.items.map((item) => ({ ...item })),
     stageId: world.stageId,
-    potions: world.potions,
+    potions: world.entities.find((entity) => entity.kind === 'player')?.potions ?? 0,
   };
 }
 
