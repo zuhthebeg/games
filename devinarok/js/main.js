@@ -6,6 +6,7 @@ import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
 import { escapeHtml } from './ui/escape-html.js';
+import { applyHubEquipmentLook } from './ui/hub-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
 import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
@@ -139,13 +140,9 @@ function refreshHubPlayer() {
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const stats = calculatePlayerStats(character.level, equipment);
-  const look = equipmentLook(equipment);
+  const look = applyHubEquipmentLook(player, equipment);
   Object.assign(player, {
     level: character.level,
-    equipment,
-    family: look.family,
-    characterKind: look.characterKind,
-    look,
     stats,
     maxHp: stats.maxHp,
     hp: stats.maxHp,
@@ -684,7 +681,8 @@ async function startPartyStage(message) {
 function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
   const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
-  $('#party-hud').innerHTML = partyPlayers.map((member) => {
+  const partyHud = $('#party-hud');
+  partyHud.innerHTML = partyPlayers.map((member) => {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const hp = Math.max(0, Number(member.hp) || 0);
@@ -692,6 +690,11 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
     const label = `${name} · Lv.${level}`;
     return `<div class="party-member"><div class="party-member-row"><span>${label}</span><span>${hp}/${maxHp}</span></div><div class="hp-track"><i style="width:${Math.min(100, hp / maxHp * 100)}%"></i></div></div>`;
   }).join('');
+  const gameTop = gameScreen.getBoundingClientRect().top;
+  $('#toast').style.setProperty(
+    '--party-toast-top',
+    `${Math.ceil(partyHud.getBoundingClientRect().bottom - gameTop + 8)}px`,
+  );
   const rtt = Math.round(client.session?.clock.rttMs ?? 0);
   const badge = $('#party-rtt');
   badge.textContent = `${rtt} ms`;
@@ -889,9 +892,17 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   }).join('');
   const slotCards = EQUIPMENT_SLOTS.map((slot) => {
     const equipped = inventory.find((item) => item.slot === slot.key);
-    const cardText = equipped
-      ? `<strong class="rarity-${equipped.rarity}">${escapeHtml(itemName(equipped))}</strong><small>+${equipped.enhance ?? 0} · ${escapeHtml(itemStat(equipped).split(' · ')[0])}</small>`
-      : '<strong>비어 있음</strong>';
+    let cardText = '<strong>비어 있음</strong>';
+    if (equipped) {
+      const base = ITEMS[equipped.itemId];
+      const statParts = itemStat(equipped).split(' · ');
+      const stat = statParts[base?.family ? 1 : 0];
+      const family = base?.family;
+      const familyTag = family
+        ? `<span class="equipment-family-tag">${escapeHtml(FAMILY_NAMES[family])}</span>`
+        : '';
+      cardText = `<strong class="rarity-${equipped.rarity}">${escapeHtml(itemName(equipped))}</strong>${familyTag}<small>+${equipped.enhance ?? 0} · ${escapeHtml(stat)}</small>`;
+    }
     return `<article class="equipment-slot-card ${equipped ? `rarity-border-${equipped.rarity}` : ''}" data-slot-filter="${slot.key}" tabindex="0" role="button"><div class="slot-glyph">${slot.glyph}<small>${slot.label}</small></div><div class="equipment-slot-info">${cardText}</div><button data-unequip="${slot.key}" ${equipped ? '' : 'hidden'}>해제</button></article>`;
   }).join('');
   const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (

@@ -367,9 +367,9 @@ export class ArenaRenderer {
   }
 
   createEntity(entity) {
-    const key = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
-    const modelKey = key === 'rogue' ? 'Rogue_Hooded' : key === 'mage' ? 'Mage' : key;
-    const source = this.models.get(modelKey);
+    const entityModelKey = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
+    const assetKey = entityModelKey === 'rogue' ? 'Rogue_Hooded' : entityModelKey === 'mage' ? 'Mage' : entityModelKey;
+    const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const materials = cloneMaterials(root);
     if (entity.kind === 'player') isolateWeaponMaterials(root, materials);
@@ -445,6 +445,7 @@ export class ArenaRenderer {
       materialState,
       screenCenterY,
       lootResources,
+      modelKey: entity.kind === 'player' ? entityModelKey : '',
       lookKey: entity.kind === 'player' ? playerLookKey(entity.look) : '',
       weaponMaterials: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Set(),
     };
@@ -1067,6 +1068,11 @@ export class ArenaRenderer {
       let visual = this.entities.get(entity.id);
       if (!visual) visual = this.createEntity(entity);
       if (entity.kind === 'player') {
+        const modelKey = playerModelKey(entity);
+        if (modelKey !== visual.modelKey) {
+          this.removeEntityVisual(entity.id, visual);
+          visual = this.createEntity(entity);
+        }
         const lookKey = playerLookKey(entity.look);
         if (lookKey !== visual.lookKey) {
           visual.lookKey = lookKey;

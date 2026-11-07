@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { equipmentLook } from '../js/content/items.js';
+import { applyHubEquipmentLook } from '../js/ui/hub-player.js';
 import { createHubWorld, createStageWorld } from '../js/sim/world.js';
 
 test('equipmentLook selects the weapon mesh, armor visibility, and weapon rarity', () => {
@@ -84,4 +85,24 @@ test('hub player starts at full gear-scaled HP after leaving an injured stage', 
     cape: true,
     weaponRarity: null,
   });
+});
+
+test('hub player character follows the equipped weapon on entry and equipment changes', () => {
+  const hub = createHubWorld({
+    seed: 39,
+    playerId: 'hero',
+    equipment: [{ itemId: 'rusted-crossbow', slot: 'weapon', rarity: 'common' }],
+  });
+  const player = hub.entities.find((entity) => entity.kind === 'player');
+
+  assert.equal(player.family, 'crossbow');
+  assert.equal(player.characterKind, 'rogue');
+
+  applyHubEquipmentLook(player, [{ itemId: 'apprentice-wand', slot: 'weapon', rarity: 'common' }]);
+  assert.equal(player.family, 'staff');
+  assert.equal(player.characterKind, 'mage');
+
+  applyHubEquipmentLook(player, []);
+  assert.equal(player.family, 'sword');
+  assert.equal(player.characterKind, 'knight');
 });
