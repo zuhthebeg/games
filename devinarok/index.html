@@ -6,18 +6,18 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=0e3a256c3a">
+  <link rel="stylesheet" href="css/game.css?v=05782cb1de">
   <script type="importmap">
     {
       "imports": {
         "./js/content/affixes.js": "./js/content/affixes.js?v=023ce75224",
-        "./js/content/enemies.js": "./js/content/enemies.js?v=74e0f5ab60",
-        "./js/content/items.js": "./js/content/items.js?v=34c387269e",
+        "./js/content/enemies.js": "./js/content/enemies.js?v=aa5f860abc",
+        "./js/content/items.js": "./js/content/items.js?v=4a01606a6b",
         "./js/content/skills.js": "./js/content/skills.js?v=cb9aa781d7",
-        "./js/content/stages.js": "./js/content/stages.js?v=44cfa674af",
+        "./js/content/stages.js": "./js/content/stages.js?v=ea1f9202d5",
         "./js/core/input.js": "./js/core/input.js?v=0cc8a65388",
         "./js/core/loop.js": "./js/core/loop.js?v=455bc00b25",
-        "./js/main.js": "./js/main.js?v=a2343a310e",
+        "./js/main.js": "./js/main.js?v=3d7f725430",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=d59610f015",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=610dc2198e",
         "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
@@ -29,13 +29,16 @@
         "./js/net/protocol.js": "./js/net/protocol.js?v=7a0453fb82",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
         "./js/net/sim-version.js": "./js/net/sim-version.js?v=4f0a91f53f",
-        "./js/render/audio.js": "./js/render/audio.js?v=73802c0627",
+        "./js/render/audio.js": "./js/render/audio.js?v=8c397f7410",
         "./js/render/player-look.js": "./js/render/player-look.js?v=46a7229d53",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=1639a46047",
-        "./js/save/ops.js": "./js/save/ops.js?v=13523559ec",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=c28c409c3c",
+        "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
+        "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
+        "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=de33ee5ccf",
+        "./js/save/ops.js": "./js/save/ops.js?v=2ffb6974f6",
         "./js/save/repository.js": "./js/save/repository.js?v=81dd15a324",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=1cba837309",
+        "./js/sim/world.js": "./js/sim/world.js?v=cc0289f673",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=95254c35c8",
@@ -95,7 +98,8 @@
         <div class="hub-hotspots">
           <button data-panel="board">주인 · 게시판</button><button data-panel="blacksmith">대장장이</button>
           <button data-panel="merchant">상인</button><button data-panel="inventory">장비함 <b id="inventory-upgrade-badge" class="upgrade-station-badge" hidden>▲</b></button>
-          <button data-panel="character">모험가</button>
+          <button data-panel="character">모험가</button><button data-panel="sanctuary">법당</button>
+          <small id="sanctuary-party-disabled" class="sanctuary-party-disabled" hidden>파티 중에는 들어갈 수 없어요</small>
         </div>
         <section id="hub-panel" class="panel hub-panel" hidden></section>
       </div>
@@ -108,7 +112,13 @@
           <button data-button="8">기술 2</button>
           <button data-button="16">기술 3</button>
           <button class="potion-button" data-button="64"><span>물약 Q</span><b id="potion-count">0</b></button>
+          <button id="sanctuary-interact" class="sanctuary-interact" hidden>상호작용</button>
         </div>
+      </div>
+      <div id="sanctuary-hud" class="sanctuary-hud" hidden>
+        <div id="sanctuary-feedback" class="sanctuary-feedback" role="status" aria-live="polite" hidden></div>
+        <button id="sanctuary-cancel" hidden>취소</button>
+        <button id="sanctuary-exit">나가기</button>
       </div>
       <div id="key-hints" class="key-hints">J 공격 · K 회피 · 1/2/3 기술 · Q 물약</div>
       <div id="pause-menu" class="overlay" hidden>
@@ -125,6 +135,6 @@
       <div id="toast" role="status"></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=a2343a310e"></script>
+  <script type="module" src="js/main.js?v=3d7f725430"></script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+Source: https://opengameart.org/content/fire-crackling
+Asset file: fire-1.ogg
+The OpenGameArt source page lists the audio as Creative Commons Zero (CC0).
+Downloaded from: https://opengameart.org/sites/default/files/fire-1.ogg
+Source title: Fire Crackling
+SHA-256: f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb
+Downloaded file size: 22,784 bytes

@@ -49,6 +49,16 @@ const repos = {
     license: { path: 'License.txt' },
     licenseOutput: 'assets/licenses/kenney-nature-kit-LICENSE.txt',
   },
+  halloween: {
+    name: 'KayKit-Halloween-Bits-1.0',
+    url: 'https://github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0',
+    commit: '6dc69bf6b2fa766a985754f35ec6a0324090e6c6',
+    license: {
+      path: 'addons/kaykit_halloween_bits/Assets/LICENSE.txt',
+      blob: '1c10d234eb090aa374f7fb3c23a7da71e74197e3',
+    },
+    licenseOutput: 'assets/licenses/kaykit-halloween-bits-LICENSE.txt',
+  },
 };
 
 const characters = [
@@ -197,7 +207,26 @@ const forestEnvironment = [
   output: `assets/env/forest/${name}.glb`,
 }));
 
-const jobs = [...characters, ...animations, ...environment, ...forestEnvironment];
+const halloweenEnvironment = [
+  ['grave_A', '076cfd9e4ec165af2c7fa978bf1ea38e352fa909'],
+  ['gravestone', '7dd75f961293be878d6396873ece88801b8b5dd6'],
+  ['fence', '0dafdc846c869b195e5143f0751f566e0d074c21'],
+  ['bone_A', '3d4ddb16756b6068208999650a39fd540afa7583'],
+  ['bone_B', '52d5ed955c86a4c216ae135c03597df340e4b6a1'],
+  ['bone_C', '375500d9bf301fe6318efc84e3cbf308bec34e4f'],
+  ['ribcage', '8c737852082a2213a44e0bf4404ae343dea82f9a'],
+  ['skull', 'c045e51034bf3d51fe2021fe6c5be7eeed917a3d'],
+  ['coffin', '74b92de704805235c33e1446db9cfefe760df371'],
+  ['candle_triple', 'd72e8f75f52921c3b45fb2b041044f890deefddb'],
+].map(([name, blob]) => ({
+  kind: 'environment',
+  repo: 'halloween',
+  path: `addons/kaykit_halloween_bits/Assets/gltf/${name}.gltf`,
+  blob,
+  output: `assets/env/castle/${name}.glb`,
+}));
+
+const jobs = [...characters, ...animations, ...environment, ...forestEnvironment, ...halloweenEnvironment];
 const sourceByKey = new Map();
 for (const job of jobs) sourceByKey.set(`${job.repo}/${job.path}`, job);
 for (const [repoId, repo] of Object.entries(repos)) {
@@ -339,6 +368,10 @@ const natureLicenseText = sourceRecords.get('nature/License.txt').bytes.toString
 if (!/Creative Commons Zero, CC0/i.test(natureLicenseText)) {
   throw new Error('Nature Kit archive License.txt does not confirm CC0');
 }
+const halloweenLicenseText = sourceRecords.get(`halloween/${repos.halloween.license.path}`).bytes.toString('utf8');
+if (!/Creative Commons Zero, CC0/i.test(halloweenLicenseText)) {
+  throw new Error('KayKit Halloween Bits license does not confirm CC0');
+}
 
 for (const repo of Object.values(repos)) {
   const key = Object.entries(repos).find(([, entry]) => entry === repo)?.[0];
@@ -357,6 +390,23 @@ async function writeDocument(output, document) {
   const record = { bytes: bytes.byteLength, sha256: sha256(bytes) };
   outputRecords.set(output, record);
   console.log(`${output} ${record.bytes} bytes ${record.sha256}`);
+}
+
+async function readEnvironmentDocument(job) {
+  const source = sourceRecords.get(`${job.repo}/${job.path}`).bytes;
+  if (!job.path.endsWith('.gltf')) return io.readBinary(source);
+  const json = JSON.parse(source.toString('utf8'));
+  const references = [...(json.buffers ?? []), ...(json.images ?? [])]
+    .map((entry) => entry.uri)
+    .filter((uri) => typeof uri === 'string' && !uri.startsWith('data:'));
+  const resources = {};
+  for (const uri of new Set(references)) {
+    const path = join(dirname(job.path), uri);
+    const key = `${job.repo}/${path}`;
+    if (!sourceRecords.has(key)) sourceRecords.set(key, await sourceBytes({ repo: job.repo, path }));
+    resources[uri] = sourceRecords.get(key).bytes;
+  }
+  return io.readJSON({ json, resources });
 }
 
 for (const job of characters) {
@@ -403,6 +453,11 @@ for (const job of forestEnvironment) {
   await writeDocument(job.output, document);
 }
 
+for (const job of halloweenEnvironment) {
+  const document = await readEnvironmentDocument(job);
+  await writeDocument(job.output, document);
+}
+
 const m1AudioFiles = [
   'assets/audio/sword-swing.ogg',
   'assets/audio/impact.ogg',
@@ -416,6 +471,7 @@ const m1AudioFiles = [
   'assets/audio/confirm.ogg',
   'assets/audio/hub-bgm.ogg',
   'assets/audio/combat-bgm.ogg',
+  'assets/audio/fire-crackle.ogg',
 ];
 for (const file of m1AudioFiles) {
   const bytes = await readFile(join(gameDir, file));
@@ -482,6 +538,12 @@ const forestStageLoadedBytes = Object.fromEntries(forestStageIds.map((stageId) =
 if (Math.max(...Object.values(forestStageLoadedBytes)) > forestAssetBudgetBytes) {
   throw new Error(`M3b forest assets exceed budget: ${JSON.stringify(forestStageLoadedBytes)}`);
 }
+const castleStageIds = Object.values(STAGES).filter((stage) => stage.region === 3).map((stage) => stage.id);
+const castleAssetBudgetBytes = 4.5 * 1024 * 1024;
+const castleStageLoadedBytes = Object.fromEntries(castleStageIds.map((stageId) => [stageId, m1StageLoadedBytes[stageId]]));
+if (Math.max(...Object.values(castleStageLoadedBytes)) > castleAssetBudgetBytes) {
+  throw new Error(`M3c castle assets exceed budget: ${JSON.stringify(castleStageLoadedBytes)}`);
+}
 
 const manifestFiles = Object.fromEntries(
   [...outputRecords.entries()]
@@ -508,13 +570,20 @@ await writeFile(
     m1AssetBudgetBytes,
     forestStageLoadedBytes,
     forestAssetBudgetBytes,
+    castleStageLoadedBytes,
+    castleAssetBudgetBytes,
   }, null, 2)}\n`,
 );
 
 const ledgerSections = [];
 for (const [repoId, repo] of Object.entries(repos)) {
   const licenseRecord = sourceRecords.get(`${repoId}/${repo.license.path}`);
-  const licenseText = licenseRecord.bytes.toString('utf8').trimEnd();
+  const licenseText = licenseRecord.bytes.toString('utf8')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/\s+$/u, ''))
+    .join('\n')
+    .trim();
   const rows = jobs
     .filter((job) => job.repo === repoId)
     .map((job) => {
@@ -532,6 +601,7 @@ for (const [repoId, repo] of Object.entries(repos)) {
     `- Repository: ${repo.url}`,
     `- ${repoId === 'nature' ? 'Pinned source archive SHA-256' : 'Pinned default-branch commit'}: \`${repo.commit}\``,
     ...(repoId === 'nature' ? ['- License evidence: the Nature Kit asset page lists Creative Commons CC0, and the pinned archive `License.txt` states “Creative Commons Zero, CC0”.'] : []),
+    ...(repoId === 'halloween' ? ['- License evidence: the official KayKit Halloween Bits asset page lists CC0; the pinned official GitHub archive `Assets/LICENSE.txt` states “License: (Creative Commons Zero, CC0).”'] : []),
     `- Download date: ${now}`,
     `- License copy: [\`${repo.licenseOutput}\`](./${repo.licenseOutput})`,
     `- Source license SHA-256: \`${licenseRecord.sha256}\``,
@@ -551,6 +621,9 @@ const threeTarballSha256 = 'ff540832ded0cfe919764d24a3d88f3e2a05f23303f876423e4f
 const existingLedger = await readFile(join(gameDir, 'assets-ledger.md'), 'utf8').catch(() => '');
 const preservedM1Ledger = existingLedger.includes('\n## Vendored M1 audio')
   ? `\n## Vendored M1 audio${existingLedger.split('\n## Vendored M1 audio')[1].split('\n## M1 stage asset budget')[0]}`
+  : '';
+const preservedM3cAudioLedger = existingLedger.includes('\n## M3c sanctuary audio')
+  ? `\n## M3c sanctuary audio${existingLedger.split('\n## M3c sanctuary audio')[1]}`
   : '';
 const ledger = [
   '# Asset ledger',
@@ -583,7 +656,7 @@ const ledger = [
   '## M3b forest stage asset budget',
   '',
   `Loaded runtime assets: ${Object.entries(forestStageLoadedBytes).map(([stageId, bytes]) => `${stageId} ${bytes.toLocaleString('en-US')} bytes`).join('; ')}. The per-stage limit is ${(forestAssetBudgetBytes / 1024 / 1024).toFixed(1)} MiB.`,
-].join('\n') + preservedM1Ledger;
+].join('\n') + preservedM1Ledger + preservedM3cAudioLedger;
 await writeFile(join(gameDir, 'assets-ledger.md'), ledger);
 
 console.log(`M0 loaded assets: ${m0LoadedBytes} / ${budgetBytes} bytes`);

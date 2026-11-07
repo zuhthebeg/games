@@ -32,8 +32,9 @@ test('audio files fail independently and missing buffers do not affect music pla
   try {
     const audio = new AudioManager();
     await assert.doesNotReject(audio.loadAll());
-    assert.equal(audio.buffers.size, 11);
+    assert.equal(audio.buffers.size, 12);
     assert.ok(!audio.buffers.has('impact'));
+    assert.ok(audio.buffers.has('fire-crackle'));
     assert.equal(warnings.length, 1);
 
     const currentTrack = { stopped: false, stop() { this.stopped = true; } };

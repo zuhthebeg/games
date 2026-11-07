@@ -342,6 +342,6 @@ test('forest item tiers use L5 stat values and the family-specific weapon looks'
   assert.equal(equipmentLook([{ itemId: 'necromancer-staff' }]).weapon, '2H_Staff');
 });
 
-test('XP progression remains available through level 15', () => {
-  for (let level = 1; level <= 15; level += 1) assert.ok(xpToNextLevel(level) > 0);
+test('XP progression remains available through level 20', () => {
+  for (let level = 1; level <= 20; level += 1) assert.ok(xpToNextLevel(level) > 0);
 });

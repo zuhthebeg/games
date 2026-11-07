@@ -11,6 +11,7 @@ const SOUND_FILES = {
   footstep: 'footstep.ogg',
   'hub-bgm': 'hub-bgm.ogg',
   'combat-bgm': 'combat-bgm.ogg',
+  'fire-crackle': 'fire-crackle.ogg',
 };
 
 export class AudioManager {
