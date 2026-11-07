@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { ENEMIES } from '../js/content/enemies.js';
 import { ITEM_BASES, ITEMS } from '../js/content/items.js';
 import { isStageUnlocked, STAGE_LIST } from '../js/content/stages.js';
-import { BUTTONS, createStageWorld, rollStageItem, step } from '../js/sim/world.js';
+import { BUTTONS, createHubWorld, createStageWorld, rollStageItem, step } from '../js/sim/world.js';
+import { SANCTUARY_ARENA } from '../js/sanctuary/arena.js';
 
 function input(seq, buttons = 0, aim = 128) {
   return { seq, moveX: 0, moveZ: 0, aim, buttons };
@@ -95,7 +96,47 @@ test('shieldbearer guard and shield-bash tuning match the region-three definitio
     Math.sin(turning.shield.facing - Math.PI),
     Math.cos(turning.shield.facing - Math.PI),
   );
-  assert.ok(Math.abs(turn) <= Math.PI / 45 + 1e-8);
+  assert.ok(Math.abs(turn) <= Math.PI / 90 + 1e-8);
+
+  const guarded = prepareShieldbearer(1.2);
+  for (let seq = 1; seq <= 22; seq += 1) {
+    step(guarded.world, { hero: input(seq, seq === 1 ? BUTTONS.ATTACK : 0, 128) });
+  }
+  const guardedHit = guarded.world.events.find((event) => event.type === 'hit' && event.targetId === guarded.shield.id);
+  assert.equal(guardedHit.damage, Math.max(1, Math.round(guarded.player.stats.attack * 0.5)));
+
+  const bash = prepareShieldbearer(1.2);
+  bash.shield.attackPattern = 'shield-bash';
+  bash.shield.attackPhase = 'windup';
+  bash.shield.attackRemaining = 22;
+  for (let seq = 1; seq <= 22; seq += 1) {
+    step(bash.world, { hero: input(seq, seq === 1 ? BUTTONS.ATTACK : 0, 128) });
+  }
+  const bashHit = bash.world.events.find((event) => event.type === 'hit' && event.targetId === bash.shield.id);
+  assert.equal(bashHit.guarded, undefined);
+
+  const afterBash = prepareShieldbearer(1.2);
+  afterBash.shield.attackPattern = 'shield-bash';
+  afterBash.shield.attackPhase = 'active';
+  afterBash.shield.attackRemaining = 1;
+  afterBash.shield.attackCooldownTicks = 0;
+  step(afterBash.world, { hero: input(1) });
+  assert.equal(afterBash.shield.recoverTicks, 1);
+  step(afterBash.world, { hero: input(2) });
+  assert.equal(afterBash.shield.shieldGuardDownUntilTick, afterBash.world.tick + 45);
+});
+
+test('sanctuary hub ticks move the player without spawning combat waves', () => {
+  const world = createHubWorld({ seed: 42, playerId: 'hero' });
+  world.arena = SANCTUARY_ARENA;
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  const startX = player.x;
+
+  step(world, { hero: { seq: 1, moveX: 1, moveZ: 0, aim: 0, buttons: 0 } });
+
+  assert.equal(world.tick, 1);
+  assert.ok(player.x > startX);
+  assert.equal(world.entities.filter((entity) => entity.kind === 'enemy').length, 0);
 });
 
 test('Skeleton King has the authored boss patterns and telegraphs their shapes', () => {
@@ -155,6 +196,6 @@ test('Skeleton King has the authored boss patterns and telegraphs their shapes',
   boss.attackCooldownTicks = 0;
   step(world, { hero: input(4) });
   const wave = world.entities.filter((entity) => entity.kind === 'enemy' && entity.summonedBy === boss.id);
-  assert.equal(wave.filter((entity) => entity.enemyKind === 'shieldbearer').length, 2);
+  assert.equal(wave.filter((entity) => entity.enemyKind === 'shieldbearer').length, 1);
   assert.equal(wave.filter((entity) => entity.enemyKind === 'minion').length, 2);
 });

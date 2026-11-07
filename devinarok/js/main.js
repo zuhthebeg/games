@@ -345,7 +345,7 @@ async function enterSanctuary() {
     hero.z = SANCTUARY_ARENA.playerSpawn.z;
     hero.facing = -Math.PI / 2;
   }
-  input = new InputLayer($('#scene'), document.querySelectorAll('[data-button]'));
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'), () => {}, SANCTUARY_ARENA, DEV_COLLISION_OVERLAY);
   await Promise.all([renderer.ready, loadAudio()]);
   await audio.unlock();
@@ -534,7 +534,7 @@ function renderBoard() {
       : !unlocked ? `${STAGE_LIST[STAGE_LIST.findIndex((entry) => entry.id === stage.id) - 1]?.name ?? ''} 클리어 후 열려요`
         : cleared ? '클리어' : '도전 가능';
     const warning = character.level < stage.recommendedLevel - 1 ? ' is-underlevel' : '';
-    const action = cleared ? '재도전' : unlocked ? '출정' : '🔒 잠김';
+    const action = cleared ? '재도전' : unlocked ? '출정' : '잠김';
     return `${section}<div class="hub-row${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>권장 Lv.${stage.recommendedLevel} · ${lockText}</small></span><button data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
   hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;

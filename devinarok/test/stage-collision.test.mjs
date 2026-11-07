@@ -265,7 +265,7 @@ test('the inn board and CB clear explain forest-region progression', async () =>
   assert.match(main, /기사 전당 클리어 후 열려요/);
   assert.match(main, /1지역 · 무너진 지하묘지/);
   assert.match(main, /2지역 · 잿빛 숲/);
-  assert.match(main, /const action = cleared \? '재도전' : unlocked \? '출정' : '🔒 잠김';/);
+  assert.match(main, /const action = cleared \? '재도전' : unlocked \? '출정' : '잠김';/);
   assert.match(main, /class="hub-stage-name"/);
   assert.match(main, /STAGE_LIST\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id\) : entry\.id === stage\)/);
   assert.match(css, /\.hub-row button \{ flex: 0 0 88px;/);
