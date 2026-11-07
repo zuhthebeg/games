@@ -82,7 +82,13 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .hub-panel p, .hub-panel li { font: 13px/1.55 system-ui, sans-serif; color: #c9bec0; }
 .hub-panel button { margin: 4px; padding: 9px 12px; }
 .hub-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
+.hub-stage-info { min-width: 0; flex: 1 1 auto; }
+.hub-stage-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hub-row button { flex: 0 0 88px; width: 88px; margin: 0; padding-inline: 4px; white-space: nowrap; }
 .hub-row small { display: block; color: #b7a9ac; }
+.hub-row.is-underlevel small { color: #ef9a83; }
+.hub-panel h3 { margin: 12px 0 4px; color: #c8b38f; font-size: 13px; letter-spacing: .04em; }
+.stage-new { margin-left: 7px; color: #d8b76a; font-size: 10px; letter-spacing: .08em; }
 .item-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
 .item-row.selected { background: #c3a16c12; }
 .item-details { min-width: 0; display: grid; gap: 3px; }

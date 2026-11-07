@@ -8,8 +8,8 @@ import { HUB_ARENA, STAGE_LIST, STAGES } from '../js/content/stages.js';
 import { BUTTONS, calculateDamage, calculatePlayerStats, completeStage, createLootUid, createStageWorld, rarityForRoll, rollStageItem, step, xpToNextLevel } from '../js/sim/world.js';
 import { applyOperations, rekeySettlementItems } from '../js/save/ops.js';
 
-test('M1 content references valid KayKit models and settled combat ranges', () => {
-  assert.deepEqual(Object.keys(ENEMIES).sort(), ['commander', 'mage', 'minion', 'rogue', 'warrior']);
+test('M1 and M3b content reference valid models and settled combat ranges', () => {
+  assert.deepEqual(Object.keys(ENEMIES).sort(), ['ashcaller', 'ashwarden', 'bonearcher', 'brute', 'commander', 'mage', 'minion', 'rogue', 'warrior']);
   assert.equal(ENEMIES.minion.model, 'Skeleton_Minion');
   assert.equal(ENEMIES.rogue.model, 'Skeleton_Rogue');
   assert.equal(ENEMIES.mage.model, 'Skeleton_Mage');
@@ -19,10 +19,19 @@ test('M1 content references valid KayKit models and settled combat ranges', () =
   assert.equal(SKILLS.spin.windupTicks, 5);
   assert.equal(SKILLS.dash.dashDistance, 4);
   assert.equal(SKILLS.guard.durationTicks, 45);
-  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon').length, 9);
+  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon').length, 15);
   assert.equal(Object.keys(AFFIXES).length, 12);
   assert.deepEqual(Object.values(RARITIES).map((rarity) => rarity.weight), [60, 30, 9, 1]);
-  assert.deepEqual(STAGE_LIST.map((stage) => stage.id), ['C1', 'C2', 'C3', 'CB']);
+  assert.deepEqual(STAGE_LIST.map((stage) => stage.id), ['C1', 'C2', 'C3', 'CB', 'F1', 'F2', 'F3', 'FB']);
+  assert.deepEqual(STAGE_LIST.slice(0, 4).map((stage) => stage.region), [1, 1, 1, 1]);
+  assert.deepEqual(STAGE_LIST.slice(4).map(({ id, region, stageLevel, recommendedLevel }) => ({
+    id, region, stageLevel, recommendedLevel,
+  })), [
+    { id: 'F1', region: 2, stageLevel: 7, recommendedLevel: 7 },
+    { id: 'F2', region: 2, stageLevel: 8, recommendedLevel: 8 },
+    { id: 'F3', region: 2, stageLevel: 9, recommendedLevel: 9 },
+    { id: 'FB', region: 2, stageLevel: 10, recommendedLevel: 10 },
+  ]);
   for (const stage of [...STAGE_LIST.map((entry) => STAGES[entry.id]), HUB_ARENA]) {
     const props = new Map(stage.props.filter((prop) => prop.obstacleId).map((prop) => [prop.obstacleId, prop]));
     for (const obstacle of stage.obstacles) {
@@ -36,6 +45,11 @@ test('M1 content references valid KayKit models and settled combat ranges', () =
     for (const room of stage.rooms) {
       const props = stage.props.filter((prop) => prop.roomId === room.id);
       assert.ok(new Set(props.map((prop) => prop.model)).size >= 6, `${stage.id}/${room.id}: room dressing is too repetitive`);
+      if (stage.region === 2) {
+        assert.ok(!props.some((prop) => prop.model.startsWith('assets/env/wall')), `${stage.id}/${room.id}: forest must not have stone walls`);
+        assert.ok(props.some((prop) => prop.model.includes('/forest/tree_') && prop.solid === false), `${stage.id}/${room.id}: forest tree line is missing`);
+        continue;
+      }
       assert.equal(props.filter((prop) => prop.model === 'assets/env/torch_mounted.glb').length, 2, `${stage.id}/${room.id}: expected two wall torches`);
       assert.ok(props.some((prop) => prop.wallSide), `${stage.id}/${room.id}: side walls are missing`);
       assert.ok(props.some((prop) => prop.z === room.centerZ - stage.depth / stage.rooms.length / 2 - 0.5), `${stage.id}/${room.id}: back wall is missing`);

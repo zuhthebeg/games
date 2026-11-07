@@ -259,10 +259,23 @@ test('boss charge stops at a prop and cannot hit through it', () => {
   );
 });
 
-test('the inn board and CB clear explain the next-region progression', async () => {
+test('the inn board and CB clear explain forest-region progression', async () => {
   const main = await readFile(new URL('../js/main.js', import.meta.url), 'utf8');
-  assert.match(main, /2지역 · 준비 중/);
-  assert.match(main, /다음 업데이트에서 열려요/);
-  assert.match(main, /outcome === 'clear' && currentStageId === 'CB'/);
-  assert.match(main, /1지역을 정복했어요\. 다음 지역은 준비 중이에요\./);
+  const css = await readFile(new URL('../css/game.css', import.meta.url), 'utf8');
+  assert.match(main, /기사 전당 클리어 후 열려요/);
+  assert.match(main, /1지역 · 무너진 지하묘지/);
+  assert.match(main, /2지역 · 잿빛 숲/);
+  assert.match(main, /: unlocked \? '출정' : '잠김'/);
+  assert.match(main, /class="hub-stage-name"/);
+  assert.match(main, /STAGE_LIST\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id\) : entry\.id === stage\)/);
+  assert.match(css, /\.hub-row button \{ flex: 0 0 88px;/);
+  assert.match(css, /\.hub-stage-name \{[^}]*white-space: nowrap;/);
+  assert.match(main, /firstForestUnlock = currentStageId === 'CB'/);
+  assert.match(main, /outcome === 'clear' && firstForestUnlock/);
+  assert.match(main, /2지역 · 잿빛 숲이 열렸어요/);
+  assert.match(main, /3지역은 준비 중이에요/);
+  assert.doesNotMatch(main, /2지역 · 준비 중/);
+  assert.match(main, /function updateBossIntro\(stageId\)/);
+  assert.match(main, /boss-intro-region/);
+  assert.match(main, /boss-intro-name/);
 });

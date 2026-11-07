@@ -195,6 +195,61 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 | `addons/kaykit_dungeon_remastered/Assets/gltf/wall_corner_gated.gltf.glb` | `289cd2fb7a23c4fecdfe7832d505f33b168dc6114c106a2945ea7b5d2e1318bc` | `assets/env/wall_corner_gated.glb` | `1a0d2af628a3be8e64121587e6ad41cbf6cf4cc065eaffe486775dcc81ea048b` | 27332 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `addons/kaykit_dungeon_remastered/Assets/gltf/wall_cracked.gltf.glb` | `344fb9a709a51b7f04131fded75a5ad38e829d74fcf1784d848f3df0703f804c` | `assets/env/wall_cracked.glb` | `32580469ef9c13c7d52da4ed322c6607002258fd66be9576e386b0e1a2fe2226` | 49796 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 | `addons/kaykit_dungeon_remastered/Assets/gltf/wall_shelves.gltf.glb` | `8c794dfbc320af9f18c9d04d555fb1e8dce3c4cb4c2b4de01ddd2b95d1f85e9c` | `assets/env/wall_shelves.glb` | `a9736f2edcee2ff6fb6df1198e2edc21e9b6849ff3894a7c4106d56f5e385a16` | 48252 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+## Nature Kit 2.1
+- Repository: https://kenney.nl/assets/nature-kit
+- Pinned source archive SHA-256: `fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d`
+- License evidence: the Nature Kit asset page lists Creative Commons CC0, and the pinned archive `License.txt` states “Creative Commons Zero, CC0”.
+- Download date: 2026-11-07
+- License copy: [`assets/licenses/kenney-nature-kit-LICENSE.txt`](./assets/licenses/kenney-nature-kit-LICENSE.txt)
+- Source license SHA-256: `cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d`
+
+```text
+
+
+	Nature Kit (2.1)
+
+	Created/distributed by Kenney (www.kenney.nl)
+	Creation date: 29-04-2020 01:02
+
+			------------------------------
+
+	License: (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	This content is free to use in personal, educational and commercial projects.
+	Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
+
+			------------------------------
+
+	Donate:   http://support.kenney.nl
+	Request:  http://request.kenney.nl
+	Patreon:  http://patreon.com/kenney/
+
+	Follow on Twitter for updates:
+	http://twitter.com/KenneyNL
+```
+
+| Source path | Source SHA-256 | Output path | Output SHA-256 | Bytes | Modifications |
+| --- | --- | --- | --- | ---: | --- |
+| `Models/GLTF format/tree_default_fall.glb` | `f8e90ed7f7771644998a7c361302213af04350150b3ea0631e8384d26506efa2` | `assets/env/forest/tree_default_fall.glb` | `c601b423e6077730cdfafe07ba6b526f822ca4644340f940b5762c174528ec5f` | 5732 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/tree_oak_fall.glb` | `43a258d17b5428d8ef525a19e30e667caeeb330b6f3cb367a07da12093ff97a1` | `assets/env/forest/tree_oak_fall.glb` | `f90632680c9ad9b548b1d504e23b8340bafb210e54e32b2f3a6a62f19c0df035` | 5324 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/tree_pineTallA.glb` | `e0a56eb196d8a64ba86c7304d607136e17e6f9ad748dffcf86bd53b18b91b196` | `assets/env/forest/tree_pineTallA.glb` | `7c13b27e6ff1cf1955ee0b861962f297c9d39e4f56077aaa1d133ec57889e0f1` | 3976 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/tree_pineTallB.glb` | `49b54146351e1e009e97ee592f997a90a16b10c5467baf734d352df1cddec5d1` | `assets/env/forest/tree_pineTallB.glb` | `09bfcbe589a525b52a7489a14c9a9f029afffa2d39f00836db5ff3ba8cbf7ff4` | 3964 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/rock_largeA.glb` | `6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25` | `assets/env/forest/rock_largeA.glb` | `56fcf7a450d25d3e775d2e36ba1a5107aec8896cb1f7223c5e5f24b79a985d42` | 4032 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/rock_largeD.glb` | `e4fefd8d8d7deab42be61bd222bcd088330012f0025789146b81f25a46095ffd` | `assets/env/forest/rock_largeD.glb` | `467a039d9aa1a8ee88655db09f7175061b4e50b77a6b4bbd4bff547fb8e5d1e4` | 4900 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/rock_smallB.glb` | `11b26bc0a12e971a3b69df1401e530e24432d528c262df94b99c412e7f372763` | `assets/env/forest/rock_smallB.glb` | `5e7c0f172d88ca156098905000d8b766f41ba0bffa19b8149f6eb6f9f293448a` | 3272 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/stump_old.glb` | `4c2d2da34804c1662c6a776a9d60fe4449e6f6fdd50914bfec7d5cca3e9ceddb` | `assets/env/forest/stump_old.glb` | `beba174d62464c40e1860a216396365137118f68f65e8ed0fd0a383664b7bcd5` | 3452 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/stump_round.glb` | `e9b0f385f0ef98493ef716a055aa51e0b99efb8445279be7bb8bd83329a4c4af` | `assets/env/forest/stump_round.glb` | `af0606a7c09c0fa6e8863fb37d0e2b7e945e1b4ae0d8a063ab4744bac63e667b` | 3656 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/log.glb` | `8c8fe8f6adfc03a3c0cd6cb24961ff74be96c2da284d70322f05797d049972d6` | `assets/env/forest/log.glb` | `bb0d555b2e996361cf23542df165b0f2f13a9224556c1ad14a0378636751b551` | 5200 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/log_large.glb` | `e7a92369062d491e5a31a163d390e07db04ee573605bbfa84c00660d18896b4c` | `assets/env/forest/log_large.glb` | `734bcdb388899d4fdf70b42f9932b0892ff54fe05a69b4ed7bcd7e53b5d4b798` | 4048 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/mushroom_redGroup.glb` | `29f02df0589dd2b09e8d2aff6a4662394dac5cfcf1fec701640dcbd6127e0802` | `assets/env/forest/mushroom_redGroup.glb` | `4b61f0e3af65a634f67f2065acce3f9a267c39e248339d9e8a53692bb2ed4cf0` | 4832 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/mushroom_tanGroup.glb` | `2dc979485f164d7dce34329096271f44e0c9ea329c104251d94bcfbc8f8fe05e` | `assets/env/forest/mushroom_tanGroup.glb` | `e12652e2f026e0885d4be0aaf232584b14ed2b572a6c14a5688fe7d1e48cf63d` | 4828 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/plant_bushLarge.glb` | `10e1d9fbf29d96d1d1a56fb2ce25ae66537505101759229afe01ae22c6c45e02` | `assets/env/forest/plant_bushLarge.glb` | `4721124cdc650f725cf5d312b6d12eb221941454c918b7de37048fc300f50bc8` | 2928 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/fence_planks.glb` | `2db68f60d24443dbeab05dedd92fcc665d0e21bd261c6a668ea9022a732a06a9` | `assets/env/forest/fence_planks.glb` | `1fd62efbefb2debbc8ee4a6fc1981e03a04c48b2108de72e80e65b87475bb7e1` | 2812 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/fence_gate.glb` | `34d10d5620179b8a211a01eea837caa828c0782422f0b408e1a5838788888436` | `assets/env/forest/fence_gate.glb` | `f45b86fc343afeac1404dcca436aabd48ef38243f9236b19ef3c9b661b0e812a` | 9664 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/campfire_logs.glb` | `98d87cdcf9095b94fd348d0946e911dd4ca6c0956bac3318cfd2b0030b86055a` | `assets/env/forest/campfire_logs.glb` | `4abd4f1a225b217544bcee444f509d7ada1660214c6cc5e63dcf45b47c2f88e0` | 4224 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/ground_pathStraight.glb` | `86a1e88aaa028ccdfb98b6653c282c6aadb0fbccf9c4de00a834516b9bf79d37` | `assets/env/forest/ground_pathStraight.glb` | `da177acca724982025ad14b135f97d588e808cdf6875a08ebd1b2c9d3184431d` | 4472 | Pruned unused data; quantized and EXT_meshopt-compressed. |
+| `Models/GLTF format/ground_grass.glb` | `da741e8ab34ca70c0c85ccda21538558a798188db2f1e265885bcdd226a5cca2` | `assets/env/forest/ground_grass.glb` | `5149072905b9cf343dd8e0786c488256a9cd0075dddaceb6413d2977028b8c8f` | 1844 | Pruned unused data; quantized and EXT_meshopt-compressed. |
 ## Three.js
 - License: MIT (license text at [`vendor/three-0.187.0/LICENSE`](./vendor/three-0.187.0/LICENSE)).
 - Version: `0.187.0`.
@@ -236,7 +291,11 @@ The M0 GLB load set totals **1,104,100 bytes** (1.05 MiB) against a 5 MiB budget
 
 ## M1 stage asset budget
 
-Loaded runtime assets: inn-hub 3,633,490 bytes; C1 3,681,986 bytes; C2 3,630,918 bytes; C3 3,726,446 bytes; CB 3,398,942 bytes. The per-stage limit is 6,291,456 bytes.
+Loaded runtime assets: inn-hub 3,633,490 bytes; C1 3,681,986 bytes; C2 3,630,918 bytes; C3 3,726,446 bytes; CB 3,398,942 bytes; F1 3,112,658 bytes; F2 3,125,666 bytes; F3 3,109,294 bytes; FB 3,082,166 bytes. The per-stage limit is 6,291,456 bytes.
+
+## M3b forest stage asset budget
+
+Loaded runtime assets: F1 3,112,658 bytes; F2 3,125,666 bytes; F3 3,109,294 bytes; FB 3,082,166 bytes. The per-stage limit is 4.5 MiB.
 ## Vendored M1 audio
 
 Download date: 2026-11-07. Kenney sound files are extracted without modification from locally vendored ZIP archives. The archive SHA-256 is the pinned source artifact hash; each output hash is recorded separately. The OpenGameArt source pages explicitly identify both music tracks as CC0.
