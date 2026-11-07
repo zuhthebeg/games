@@ -4,6 +4,7 @@ import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
+import { escapeHtml } from './ui/escape-html.js';
 import { computeBotPolicy } from './net/bot-policy.js';
 import { AFFIXES } from './content/affixes.js';
 import { ITEMS, RARITIES } from './content/items.js';
@@ -267,7 +268,7 @@ function renderPartyLobby() {
   const stage = partyClient.lobby?.stageId ?? 'C1';
   const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id) : entry.id === stage)
     .map((entry) => `<option value="${entry.id}" ${entry.id === stage ? 'selected' : ''}>${entry.name}</option>`).join('');
-  const members = party.map((member) => `<div class="party-lobby-member"><span>${member.name} · Lv.${member.level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`).join('');
+  const members = party.map((member) => `<div class="party-lobby-member"><span>${escapeHtml(member.name ?? member.playerId)} · Lv.${member.level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`).join('');
   const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
   hubPanel.dataset.kind = 'party';
   hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실 · ${partyClient.roomCode}</h2><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><p class="invite-link">초대 링크<br>${inviteLink(partyClient.roomCode)}</p><button data-party-ready>${local?.ready ? '준비 취소' : '준비 완료'}</button><button data-party-start class="primary" ${isHost && allReady ? '' : 'disabled'}>시작</button><button data-party-close>나가기</button></section>`;
@@ -340,7 +341,7 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
   const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
   $('#party-hud').innerHTML = partyPlayers.map((member) => {
-    const label = `${member.name ?? member.playerId} · Lv.${member.level ?? 1}`;
+    const label = `${escapeHtml(member.name ?? member.playerId)} · Lv.${member.level ?? 1}`;
     return `<div class="party-member"><div class="party-member-row"><span>${label}</span><span>${member.hp}/${member.maxHp}</span></div><div class="hp-track"><i style="width:${member.hp / Math.max(1, member.maxHp) * 100}%"></i></div></div>`;
   }).join('');
   const rtt = Math.round(client.session?.clock.rttMs ?? 0);

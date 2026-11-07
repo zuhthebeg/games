@@ -3,6 +3,7 @@ import test from 'node:test';
 import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
 import { CastTimeline } from '../js/net/cast-timeline.js';
+import { escapeHtml } from '../js/ui/escape-html.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
 import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
@@ -38,6 +39,10 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.ents[0].playerId, 'hero');
   assert.equal(result.events[0].shape.angle, roundToHundredth(message.events[0].shape.angle));
   assert.equal(result.v, PROTOCOL_VERSION);
+});
+
+test('escapeHtml encodes peer-controlled names before HTML insertion', () => {
+  assert.equal(escapeHtml(`<img src=x onerror="alert('x')">&`), '&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt;&amp;');
 });
 
 test('hit agreement excuses client targets dead by the last authoritative strike only', () => {
