@@ -472,6 +472,18 @@ const m1AudioFiles = [
   'assets/audio/hub-bgm.ogg',
   'assets/audio/combat-bgm.ogg',
   'assets/audio/fire-crackle.ogg',
+  'assets/audio/crossbow-shot.ogg',
+  'assets/audio/spell-cast.ogg',
+  'assets/audio/spell-fire.ogg',
+  'assets/audio/spell-frost.ogg',
+  'assets/audio/spell-blink.ogg',
+  'assets/audio/spell-summon.ogg',
+  'assets/audio/shield-clang.ogg',
+  'assets/audio/boss-telegraph.ogg',
+  'assets/audio/level-up.ogg',
+  'assets/audio/forest-bgm.ogg',
+  'assets/audio/castle-bgm.ogg',
+  'assets/audio/sanctuary-bgm.ogg',
 ];
 for (const file of m1AudioFiles) {
   const bytes = await readFile(join(gameDir, file));
@@ -496,11 +508,12 @@ for (const file of threeFiles) {
 
 const m0LoadedFiles = [
   'assets/chars/Knight.glb',
-  'assets/chars/Skeleton_Minion.glb',
-  'assets/chars/Skeleton_Warrior.glb',
+  'assets/chars/Barbarian.glb',
+  'assets/chars/Rogue_Hooded.glb',
+  'assets/chars/Mage.glb',
   'assets/anims/humanoid.glb',
-  'assets/anims/skeleton.glb',
-  ...ARENA.props.map((prop) => prop.model),
+  ...HUB_ARENA.props.map((prop) => prop.model),
+  ...(HUB_ARENA.npcs ?? []).map((npc) => `assets/chars/${npc.model === 'knight' ? 'Knight' : npc.model}.glb`),
 ].filter((file, index, files) => files.indexOf(file) === index);
 const m0LoadedBytes = m0LoadedFiles.reduce((sum, file) => sum + outputRecords.get(file).bytes, 0);
 if (m0LoadedBytes > budgetBytes) {
@@ -519,16 +532,29 @@ const m1CommonFiles = [
   'assets/anims/skeleton.glb',
 ];
 const m1StageArenas = { 'inn-hub': HUB_ARENA, ...STAGES };
+const m1SharedAudioFiles = m1AudioFiles.filter((file) => !file.endsWith('-bgm.ogg'));
+const m1MusicFile = (stageId, arena) => `assets/audio/${
+  stageId === 'inn-hub' ? 'hub-bgm'
+    : arena.region === 2 ? 'forest-bgm'
+      : arena.region === 3 ? 'castle-bgm' : 'combat-bgm'
+}.ogg`;
 const m1StageLoadedFiles = Object.fromEntries(Object.entries(m1StageArenas).map(([stageId, arena]) => [
   stageId,
-  [...new Set([...m1CommonFiles, ...arena.props.map((prop) => prop.model), ...m1AudioFiles])],
+  stageId === 'inn-hub'
+    ? [...new Set([...m0LoadedFiles, ...m1SharedAudioFiles, m1MusicFile(stageId, arena)])]
+    : [...new Set([
+      ...m1CommonFiles,
+      ...arena.props.map((prop) => prop.model),
+      ...m1SharedAudioFiles,
+      m1MusicFile(stageId, arena),
+    ])],
 ]));
 const m1LoadedFiles = [...new Set(Object.values(m1StageLoadedFiles).flat())];
 const m1StageLoadedBytes = Object.fromEntries(Object.entries(m1StageLoadedFiles).map(([stageId, files]) => [
   stageId,
   files.reduce((sum, file) => sum + outputRecords.get(file).bytes, 0),
 ]));
-const m1AssetBudgetBytes = 6 * 1024 * 1024;
+const m1AssetBudgetBytes = 4.5 * 1024 * 1024;
 if (Math.max(...Object.values(m1StageLoadedBytes)) > m1AssetBudgetBytes) {
   throw new Error(`M1 assets exceed budget: ${JSON.stringify(m1StageLoadedBytes)}`);
 }

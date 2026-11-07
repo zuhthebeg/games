@@ -1,7 +1,40 @@
 import { applyOperations } from './ops.js';
 
-export const SCHEMA_VERSION = 2;
-const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups'];
+export const SCHEMA_VERSION = 4;
+const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings'];
+
+function migratedTutorial(character) {
+  const veteran = (character.clearedStages?.length ?? 0) > 0 || Number(character.level ?? 1) > 1;
+  if (veteran) return { step: 'done', completed: true, skipped: false, combatComplete: true };
+  return character.tutorial ?? { step: 'board', completed: false, skipped: false, combatComplete: false };
+}
+
+export const DEFAULT_SETTINGS = Object.freeze({
+  bgmVolume: 70,
+  sfxVolume: 70,
+  muted: false,
+  quality: 'automatic',
+  reducedMotion: null,
+  largeText: false,
+  haptics: null,
+  telegraphEmphasis: true,
+});
+
+const QUALITY_MODES = new Set(['automatic', 'low', 'medium', 'high']);
+
+export function normalizeSettings(value = {}) {
+  const volume = (key) => Math.round(Math.max(0, Math.min(100, Number(value[key] ?? DEFAULT_SETTINGS[key]) || 0)));
+  return {
+    bgmVolume: volume('bgmVolume'),
+    sfxVolume: volume('sfxVolume'),
+    muted: Boolean(value.muted),
+    quality: QUALITY_MODES.has(value.quality) ? value.quality : DEFAULT_SETTINGS.quality,
+    reducedMotion: typeof value.reducedMotion === 'boolean' ? value.reducedMotion : null,
+    largeText: Boolean(value.largeText),
+    haptics: typeof value.haptics === 'boolean' ? value.haptics : null,
+    telegraphEmphasis: value.telegraphEmphasis !== false,
+  };
+}
 
 export class ConflictError extends Error {
   constructor(message = 'Character revision changed') {
@@ -26,6 +59,7 @@ function blankData(localAccountId = uuid()) {
     items: {},
     ledger: [],
     backups: [],
+    settings: normalizeSettings(DEFAULT_SETTINGS),
   };
 }
 
@@ -70,13 +104,14 @@ function transactionDone(transaction) {
   });
 }
 
-function dataFromStores([metaRows, characters, items, ledger, backups]) {
+function dataFromStores([metaRows, characters, items, ledger, backups, settingsRows]) {
   return {
     meta: metaRows.find((entry) => entry.key === 'profile')?.value ?? null,
     characters: Object.fromEntries(characters.map((entry) => [entry.id, entry])),
     items: Object.fromEntries(items.map((entry) => [entry.uid, entry])),
     ledger,
     backups,
+    settings: normalizeSettings(settingsRows.find((entry) => entry.key === 'preferences')?.value),
   };
 }
 
@@ -87,6 +122,7 @@ function storeRows(data) {
     items: Object.values(data.items),
     ledger: data.ledger,
     backups: data.backups,
+    settings: [{ key: 'preferences', value: normalizeSettings(data.settings) }],
   };
 }
 
@@ -94,6 +130,7 @@ export class MemoryBackend {
   constructor(seed = null) {
     this.persistent = false;
     this.data = seed ? clone(seed) : blankData();
+    this.data.settings = normalizeSettings(this.data.settings);
   }
 
   async readData() {
@@ -102,6 +139,7 @@ export class MemoryBackend {
 
   async replaceData(data) {
     this.data = clone(data);
+    this.data.settings = normalizeSettings(this.data.settings);
   }
 
   async backup(data) {
@@ -113,6 +151,11 @@ export class MemoryBackend {
     const result = commitToData(next, change, Date.now());
     this.data = next;
     return result;
+  }
+
+  async commitSettings(settings) {
+    this.data.settings = normalizeSettings(settings);
+    return clone(this.data.settings);
   }
 }
 
@@ -129,7 +172,7 @@ export class IndexedDbBackend {
       request.onupgradeneeded = () => {
         for (const store of STORE_NAMES) {
           if (!request.result.objectStoreNames.contains(store)) {
-            const keyPath = store === 'meta' ? 'key' : store === 'items' ? 'uid' : 'id';
+            const keyPath = store === 'meta' || store === 'settings' ? 'key' : store === 'items' ? 'uid' : 'id';
             request.result.createObjectStore(store, { keyPath });
           }
         }
@@ -179,6 +222,14 @@ export class IndexedDbBackend {
     await transactionDone(transaction);
     return result;
   }
+
+  async commitSettings(settings) {
+    const transaction = this.database.transaction('settings', 'readwrite');
+    const normalized = normalizeSettings(settings);
+    transaction.objectStore('settings').put({ key: 'preferences', value: normalized });
+    await transactionDone(transaction);
+    return normalized;
+  }
 }
 
 const migrations = [
@@ -188,6 +239,7 @@ const migrations = [
     items: data.items ?? {},
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
   }),
   (data) => ({
     meta: { ...data.meta, schemaVersion: 2 },
@@ -195,6 +247,29 @@ const migrations = [
     items: Object.fromEntries(Object.entries(data.items ?? {}).map(([uid, item]) => [uid, { ...item, ilvl: item.ilvl ?? 1, requiredLevel: item.requiredLevel ?? 1 }])),
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
+  }),
+  (data) => ({
+    meta: { ...data.meta, schemaVersion: 3 },
+    characters: Object.fromEntries(Object.entries(data.characters ?? {}).map(([id, character]) => [
+      id,
+      { ...character, tutorial: migratedTutorial(character) },
+    ])),
+    items: data.items ?? {},
+    ledger: data.ledger ?? [],
+    backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
+  }),
+  (data) => ({
+    meta: { ...data.meta, schemaVersion: 4 },
+    characters: Object.fromEntries(Object.entries(data.characters ?? {}).map(([id, character]) => [
+      id,
+      { ...character, tutorial: migratedTutorial(character) },
+    ])),
+    items: data.items ?? {},
+    ledger: data.ledger ?? [],
+    backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
   }),
 ];
 
@@ -209,6 +284,7 @@ export class SaveRepository {
     let data = await this.backend.readData();
     if (!data.meta) {
       data.meta = { schemaVersion: SCHEMA_VERSION, localAccountId: uuid(this.cryptoProvider) };
+      data.settings = normalizeSettings(data.settings);
       await this.backend.replaceData(data);
     }
     while (data.meta.schemaVersion < SCHEMA_VERSION) {
@@ -243,6 +319,16 @@ export class SaveRepository {
       .map(clone);
   }
 
+  async loadSettings() {
+    return normalizeSettings((await this.backend.readData()).settings);
+  }
+
+  async commitSettings(changeSet) {
+    const current = await this.loadSettings();
+    const next = normalizeSettings({ ...current, ...changeSet });
+    return this.backend.commitSettings(next);
+  }
+
   async commit(change) {
     return this.backend.commit(change);
   }
@@ -255,6 +341,7 @@ export class SaveRepository {
       items: Object.values(data.items),
       ledger: data.ledger,
       backups: data.backups,
+      settings: normalizeSettings(data.settings),
     };
     const payload = {
       format: 'devinarok-save',
@@ -287,6 +374,7 @@ export class SaveRepository {
       items: Object.fromEntries(payload.data.items.map((item) => [item.uid, item])),
       ledger: clone(payload.data.ledger),
       backups: [...clone(payload.data.backups), { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: current }],
+      settings: normalizeSettings(payload.data.settings),
     };
     for (const character of Object.values(imported.characters)) {
       if (!character.id || !Number.isInteger(character.rev) || character.rev < 1 || !character.name) {

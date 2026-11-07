@@ -49,6 +49,7 @@ export function applyOperations(character, itemMap, operations, characterId) {
         rev: 0,
         equipment: { weapon: null, head: null, body: null, hands: null, feet: null },
         clearedStages: [],
+        tutorial: { step: 'board', completed: false, skipped: false, combatComplete: false },
       };
       continue;
     }
@@ -123,6 +124,13 @@ export function applyOperations(character, itemMap, operations, characterId) {
         const stageId = String(operation.stageId ?? '');
         if (!stageId) throw new TypeError('stageId is required');
         if (!nextCharacter.clearedStages.includes(stageId)) nextCharacter.clearedStages.push(stageId);
+        break;
+      }
+      case 'updateTutorial': {
+        if (!operation.state || typeof operation.state !== 'object' || Array.isArray(operation.state)) {
+          throw new TypeError('Tutorial state must be an object');
+        }
+        nextCharacter.tutorial = { ...(nextCharacter.tutorial ?? {}), ...clone(operation.state) };
         break;
       }
       case 'setPotions':

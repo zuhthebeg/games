@@ -6,6 +6,7 @@ import { ARENA } from '../sim/arena.js';
 import { COMBO_TIMELINES } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
 import { playerLookKey, playerModelKey } from './player-look.js';
+import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const M0_MODELS = {
@@ -143,6 +144,68 @@ function applyPlayerLook(root, look = {}) {
   return weaponMaterials;
 }
 
+function createGroundContinuationTexture(theme) {
+  const size = 128;
+  const data = new Uint8Array(size * size * 4);
+  const palettes = {
+    forest: [[45, 50, 39], [56, 50, 38]],
+    castle: [[31, 36, 54], [39, 45, 65]],
+    sanctuary: [[45, 29, 24], [54, 36, 27]],
+  };
+  const palette = palettes[theme] ?? [[50, 35, 28], [60, 44, 36]];
+  const seamColor = theme === 'castle' ? [23, 28, 43] : [26, 19, 16];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const seam = x % 64 < 2 || y % 64 < 2;
+      const noise = Math.sin(x * 12.9898 + y * 78.233) * 7;
+      const base = palette[((x >> 6) + (y >> 6)) % 2];
+      for (let channel = 0; channel < 3; channel += 1) {
+        data[index + channel] = seam ? seamColor[channel] : Math.max(0, Math.min(255, base[channel] + noise));
+      }
+      data[index + 3] = 255;
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function createOccluderState(placement, bounds, normalizedScale) {
+  const scaleX = (placement.scaleX ?? placement.scale ?? 1) * (normalizedScale?.x ?? 1);
+  const scaleY = (placement.scaleY ?? placement.scale ?? 1) * (normalizedScale?.y ?? 1);
+  const scaleZ = (placement.scaleZ ?? placement.scale ?? 1) * (normalizedScale?.z ?? 1);
+  const width = (bounds?.x ?? 1) * scaleX;
+  const height = (bounds?.y ?? 1) * scaleY;
+  const depth = (bounds?.z ?? 1) * scaleZ;
+  return {
+    x: placement.x,
+    y: (placement.y ?? 0) + height / 2,
+    z: placement.z,
+    radius: Math.hypot(width, height, depth) / 2,
+    opacity: 1,
+    from: 1,
+    to: 1,
+    startedAt: 0,
+  };
+}
+
+function updateOccluderOpacity(state, target, now) {
+  if (state.to !== target) {
+    state.from = state.opacity;
+    state.to = target;
+    state.startedAt = now;
+  }
+  const amount = Math.min(1, (now - state.startedAt) / 150);
+  const opacity = state.from + (state.to - state.from) * amount;
+  const changed = Math.abs(opacity - state.opacity) > 0.005;
+  state.opacity = opacity;
+  return changed;
+}
+
 function disposeSceneResources(scene) {
   const geometries = new Set();
   const materials = new Set();
@@ -177,10 +240,51 @@ function shortestAngleDelta(from, to) {
   return Math.atan2(Math.sin(to - from), Math.cos(to - from));
 }
 
+function createTelegraphHatch(type, { radius = 0, innerRadius = 0, halfAngle = null, length = 0, width = 0 } = {}) {
+  const positions = [];
+  const diagonal = Math.SQRT1_2;
+  const addLine = (x1, z1, x2, z2) => positions.push(x1, z1, 0, x2, z2, 0);
+  if (type === 'linear') {
+    for (let offset = -length - width; offset <= length + width; offset += 0.36) {
+      const centerX = -offset / 2;
+      const centerZ = offset / 2;
+      const minT = Math.max((-length / 2 - centerX) / diagonal, (-width / 2 - centerZ) / diagonal);
+      const maxT = Math.min((length / 2 - centerX) / diagonal, (width / 2 - centerZ) / diagonal);
+      if (minT <= maxT) addLine(centerX + minT * diagonal, centerZ + minT * diagonal, centerX + maxT * diagonal, centerZ + maxT * diagonal);
+    }
+  } else {
+    for (let offset = -radius * Math.SQRT2; offset <= radius * Math.SQRT2; offset += 0.34) {
+      const distance = Math.abs(offset) / Math.SQRT2;
+      if (distance > radius) continue;
+      const halfLength = Math.sqrt(radius * radius - distance * distance);
+      const centerX = -offset / 2;
+      const centerZ = offset / 2;
+      let previous = null;
+      const steps = Math.max(2, Math.ceil(halfLength * 2 / 0.08));
+      for (let step = 0; step <= steps; step += 1) {
+        const t = -halfLength + 2 * halfLength * step / steps;
+        const x = centerX + t * diagonal;
+        const z = centerZ + t * diagonal;
+        const radialDistance = Math.hypot(x, z);
+        const inSector = halfAngle === null || Math.abs(Math.atan2(-z, x)) <= halfAngle;
+        if (radialDistance >= innerRadius && radialDistance <= radius && inSector) {
+          if (previous) addLine(previous.x, previous.z, x, z);
+          previous = { x, z };
+        } else previous = null;
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  return geometry;
+}
+
 export class ArenaRenderer {
-  constructor(canvas, onReady = () => {}, arena = ARENA, showCollisionOverlay = false) {
+  constructor(canvas, onReady = () => {}, arena = ARENA, showCollisionOverlay = false, initialWorld = null) {
     this.canvas = canvas;
     this.arena = arena;
+    this.initialWorld = initialWorld;
+    this.isHub = arena.id === 'HUB';
     this.isForest = arena.theme === 'forest';
     this.isCastle = arena.theme === 'castle';
     this.isSanctuary = arena.theme === 'sanctuary';
@@ -193,18 +297,32 @@ export class ArenaRenderer {
       this.isForest || this.isCastle ? 12 : this.isSanctuary ? 18 : 42,
       this.isForest ? 36 : this.isCastle ? 44 : this.isSanctuary ? 32 : 78,
     );
+    this.baseFogRange = { near: this.scene.fog.near, far: this.scene.fog.far };
     this.camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 80);
-    this.camera.position.set(0, 15.5, 10.85);
-    this.camera.lookAt(0, 0, 0);
-    this.cameraHeight = 15.5;
+    this.cameraHeight = this.isForest || this.isCastle ? 10.85 : 15.5;
     this.cameraOffsetZ = 10.85;
+    this.camera.position.set(0, this.cameraHeight, this.cameraOffsetZ);
+    this.camera.lookAt(0, 0, 0);
     this.cameraFollowOffsetZ = 8;
     this.frustumHeight = 19;
     this.mobileCameraOverlayKey = '';
     this.mobileCameraTargetShift = 0;
     this.mobileCameraTargetScreenY = null;
+    this.mobileVisibleAreaResult = null;
+    this.mobileOverlays = [
+      { id: 'controls', element: canvas.ownerDocument.querySelector('#controls'), top: 0, height: 0, active: false },
+      { id: 'hub-buttons', element: canvas.ownerDocument.querySelector('#hub-ui:not([hidden]) .hub-hotspots'), top: 0, height: 0, active: false },
+    ];
+    this.projectionCamera = this.camera.clone();
+    this.mobileProjectedPoint = new THREE.Vector3();
+    this.mobileCameraUp = new THREE.Vector3(0, 1, 0);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    this.qualityController = new AutoQualityController('automatic');
+    this.qualityMode = 'automatic';
+    this.effectiveQuality = 'medium';
+    this.particleMultiplier = 1;
+    this.telegraphEmphasis = true;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -226,6 +344,11 @@ export class ArenaRenderer {
     this.models = new Map();
     this.gltfs = new Map();
     this.clips = { humanoid: [], skeleton: [] };
+    this.fadeGroups = [];
+    this.fadeObjects = [];
+    this.localPlayerId = initialWorld?.entities?.find((entity) => entity.kind === 'player')?.playerId ?? null;
+    this.occlusionPlayerPoint = new THREE.Vector3();
+    this.occlusionPropPoint = new THREE.Vector3();
     this.sideWalls = [];
     this.doorVisuals = [];
     this.seenEventIds = new Set();
@@ -256,10 +379,20 @@ export class ArenaRenderer {
     this.partyLayer.className = 'party-name-layer';
     canvas.parentElement?.appendChild(this.partyLayer);
     this.partyMarkers = new Map();
+    this.previousEntities = new Map();
+    this.activeEntityIds = new Set();
+    this.activeTelegraphs = new Set();
+    this.activePartyMarkers = new Set();
+    this.projectedPoint = new THREE.Vector3();
     this.lastRender = performance.now();
     this.averageMs = 16;
     this.resolutionScale = 1;
     this.loadedBytes = 0;
+    this.debugMode = new URLSearchParams(location.search).get('debug') === '1';
+    this.debugOverlay = document.querySelector('#debug-overlay');
+    this.debugFrames = 0;
+    this.debugLastTime = this.lastRender;
+    this.debugFps = 0;
     this.buildRoom();
     this.collisionOverlay = null;
     if (showCollisionOverlay) this.createCollisionOverlay();
@@ -269,6 +402,58 @@ export class ArenaRenderer {
       console.error('Devinarok assets failed to load', error);
       throw error;
     });
+  }
+
+  setQualityMode(mode) {
+    this.qualityMode = mode === 'automatic' || QUALITY_PRESETS[mode] ? mode : 'automatic';
+    this.qualityController.setMode(this.qualityMode);
+    this.applyQualityPreset(this.qualityController.quality);
+  }
+
+  applyQualityPreset(name) {
+    const preset = QUALITY_PRESETS[name] ?? QUALITY_PRESETS.medium;
+    const previousParticles = this.particleMultiplier;
+    this.effectiveQuality = name;
+    this.particleMultiplier = preset.particles;
+    if (this.renderer) {
+      this.renderer.shadowMap.enabled = preset.shadows;
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, preset.pixelRatio) * this.resolutionScale);
+    }
+    if (this.scene.fog) {
+      this.scene.fog.near = preset.fog ? this.baseFogRange.near : this.baseFogRange.near * 1.2;
+      this.scene.fog.far = preset.fog ? this.baseFogRange.far : this.baseFogRange.far * 0.8;
+    }
+    if (previousParticles !== this.particleMultiplier && this.isForest && this.ashPoints) {
+      this.scene.remove(this.ashPoints);
+      this.ashPoints.geometry.dispose();
+      this.ashPoints.material.dispose();
+      this.ashPoints = null;
+      this.createAshParticles();
+    }
+    if (this.particleMultiplier < previousParticles) {
+      const cap = Math.floor(48 * this.particleMultiplier);
+      while (this.transientEffects.length > cap) {
+        const [effect] = this.transientEffects.splice(0, 1);
+        this.scene.remove(effect.mesh);
+        effect.geometry.dispose();
+        effect.material.dispose();
+      }
+    }
+    this.resizeCanvas();
+  }
+
+  setReducedMotion(value) {
+    this.reducedMotion = Boolean(value);
+  }
+
+  setTelegraphEmphasis(value) {
+    this.telegraphEmphasis = Boolean(value);
+    for (const decal of this.telegraphs.values()) {
+      for (const part of decal.parts) {
+        part.hatch.visible = this.telegraphEmphasis;
+        part.outline.material.color.setHex(this.telegraphEmphasis ? 0xffe09a : 0xff7770);
+      }
+    }
   }
 
   buildRoom() {
@@ -386,7 +571,7 @@ export class ArenaRenderer {
   }
 
   createAshParticles() {
-    const count = 180;
+    const count = Math.floor(180 * this.particleMultiplier);
     this.ashPositions = new Float32Array(count * 3);
     for (let index = 0; index < count; index += 1) {
       const phase = index * 2.399963;
@@ -487,9 +672,25 @@ export class ArenaRenderer {
       ...this.arena.props.map((prop) => prop.model).filter(Boolean),
       ...(this.arena.npcs ?? []).map((npc) => M0_MODELS[npc.model]),
     ])];
-    const modelPaths = [...new Set([...Object.values(M0_MODELS), ...propModels])];
+    const characterPaths = [...new Set((this.initialWorld?.entities ?? []).map((entity) => {
+      const key = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
+      const assetKey = key === 'rogue' ? 'Rogue_Hooded' : key === 'mage' ? 'Mage' : key;
+      return M0_MODELS[assetKey];
+    }).filter(Boolean))];
+    const requiredModels = new Set([...propModels, ...characterPaths]);
+    if (!this.isHub && !this.isSanctuary) {
+      for (const path of Object.values(M0_MODELS)) requiredModels.add(path);
+    }
+    const modelPaths = [...requiredModels];
     const loaded = await Promise.all(modelPaths.map(async (path) => [path, await load(path)]));
     const loadedByPath = new Map(loaded);
+    this.modelBounds = new Map();
+    for (const [path, gltf] of loadedByPath) {
+      gltf.scene.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(gltf.scene);
+      const size = bounds.getSize(new THREE.Vector3());
+      this.modelBounds.set(path, { x: size.x, y: size.y, z: size.z });
+    }
     this.forestModelScales = new Map();
     for (const [path, target] of Object.entries(FOREST_TARGET_BOUNDS)) {
       const scene = loadedByPath.get(path)?.scene;
@@ -504,8 +705,11 @@ export class ArenaRenderer {
         ));
       }
     }
-    for (const [key, path] of Object.entries(M0_MODELS)) this.models.set(key, loadedByPath.get(path).scene);
-    for (const [key, path] of [['humanoid', 'assets/anims/humanoid.glb'], ['skeleton', 'assets/anims/skeleton.glb']]) {
+    for (const [key, path] of Object.entries(M0_MODELS)) {
+      if (loadedByPath.has(path)) this.models.set(key, loadedByPath.get(path).scene);
+    }
+    const animationLibraries = this.isHub || this.isSanctuary ? ['humanoid'] : ['humanoid', 'skeleton'];
+    for (const [key, path] of animationLibraries.map((name) => [name, `assets/anims/${name}.glb`])) {
       const gltf = await load(path);
       this.clips[key] = gltf.animations;
     }
@@ -536,7 +740,7 @@ export class ArenaRenderer {
       const matrix = new THREE.Matrix4();
       tileProps.forEach((prop, index) => {
         translation.makeTranslation(prop.x, prop.y ?? 0, prop.z);
-        rotation.makeRotationY(prop.rotY);
+        rotation.makeRotationY(prop.rotY ?? 0);
         const scale = new THREE.Matrix4().makeScale(prop.scaleX ?? prop.scale ?? 1, prop.scaleY ?? prop.scale ?? 1, prop.scaleZ ?? prop.scale ?? 1);
         matrix.multiplyMatrices(translation, rotation).multiply(scale).multiply(tileMesh.matrixWorld);
         instances.setMatrixAt(index, matrix);
@@ -558,6 +762,36 @@ export class ArenaRenderer {
       }
       this.scene.add(instances);
     }
+    const arenaBounds = this.arena.bounds ?? {
+      minX: -(this.arena.width ?? 16) / 2,
+      maxX: (this.arena.width ?? 16) / 2,
+      minZ: -(this.arena.depth ?? 24) / 2,
+      maxZ: (this.arena.depth ?? 24) / 2,
+    };
+    let minX = arenaBounds.minX;
+    let maxX = arenaBounds.maxX;
+    let minZ = arenaBounds.minZ;
+    let maxZ = arenaBounds.maxZ;
+    for (const prop of this.arena.props) {
+      minX = Math.min(minX, prop.x - 2);
+      maxX = Math.max(maxX, prop.x + 2);
+      minZ = Math.min(minZ, prop.z - 2);
+      maxZ = Math.max(maxZ, prop.z + 2);
+    }
+    minX -= 16;
+    maxX += 16;
+    minZ -= 16;
+    maxZ += 16;
+    const continuationTexture = createGroundContinuationTexture(this.arena.theme);
+    continuationTexture.repeat.set((maxX - minX) / 4, (maxZ - minZ) / 4);
+    const continuation = new THREE.Mesh(
+      new THREE.PlaneGeometry(maxX - minX, maxZ - minZ),
+      new THREE.MeshBasicMaterial({ map: continuationTexture, color: 0xffffff, side: THREE.DoubleSide }),
+    );
+    continuation.rotation.x = -Math.PI / 2;
+    continuation.position.set((minX + maxX) / 2, -0.4, (minZ + maxZ) / 2);
+    continuation.renderOrder = -2;
+    this.scene.add(continuation);
     if (this.isForest) {
       const floorProps = this.arena.props.filter((prop) => (
         prop.model === 'assets/env/floor_dirt_large.glb'
@@ -588,6 +822,96 @@ export class ArenaRenderer {
         this.scene.add(ground);
       }
     }
+    const staticGroups = new Map();
+    const staticPlacements = new Set();
+    for (const placement of this.arena.props) {
+      if (
+        !placement.model
+        || placement.procedural
+        || placement.decal
+        || placement.bogPool
+        || placement.blueFlame
+        || placement.wallSide
+        || placement.doorId
+        || instancedModels.has(placement.model)
+      ) continue;
+      const key = `${placement.model}:${placement.tint ?? ''}`;
+      if (!staticGroups.has(key)) staticGroups.set(key, []);
+      staticGroups.get(key).push(placement);
+      staticPlacements.add(placement);
+    }
+    for (const placements of staticGroups.values()) {
+      const source = loadedByPath.get(placements[0].model)?.scene;
+      if (!source) continue;
+      source.updateMatrixWorld(true);
+      const fadeGroup = this.isForest || this.isCastle
+        ? { states: placements.map((placement) => createOccluderState(
+          placement,
+          this.modelBounds.get(placement.model),
+          this.forestModelScales.get(placement.model),
+        )), attributes: [] }
+        : null;
+      if (fadeGroup) this.fadeGroups.push(fadeGroup);
+      const translation = new THREE.Matrix4();
+      const rotation = new THREE.Matrix4();
+      const scaleMatrix = new THREE.Matrix4();
+      const matrix = new THREE.Matrix4();
+      const materialClones = new Map();
+      source.traverse((node) => {
+        if (!node.isMesh) return;
+        const cloneMaterial = (sourceMaterial) => {
+          if (!materialClones.has(sourceMaterial)) {
+            const material = sourceMaterial.clone();
+            if (this.isForest && material.color) {
+              material.color.multiplyScalar(0.88).lerp(new THREE.Color(0x69735e), 0.2);
+            }
+            const tint = placements[0].tint;
+            if (Number.isInteger(tint) && material.color) material.color.lerp(new THREE.Color(tint), 0.35);
+            materialClones.set(sourceMaterial, material);
+          }
+          return materialClones.get(sourceMaterial);
+        };
+        const material = Array.isArray(node.material)
+          ? node.material.map(cloneMaterial)
+          : cloneMaterial(node.material);
+        const geometry = node.geometry.clone();
+        if (fadeGroup) {
+          const opacity = new THREE.InstancedBufferAttribute(new Float32Array(placements.length).fill(1), 1);
+          geometry.setAttribute('instanceOpacity', opacity);
+          fadeGroup.attributes.push(opacity);
+          for (const item of Array.isArray(material) ? material : [material]) {
+            item.transparent = true;
+            item.depthWrite = false;
+            item.onBeforeCompile = (shader) => {
+              shader.vertexShader = shader.vertexShader
+                .replace('#include <common>', '#include <common>\nattribute float instanceOpacity;\nvarying float vInstanceOpacity;')
+                .replace('#include <begin_vertex>', '#include <begin_vertex>\nvInstanceOpacity = instanceOpacity;');
+              shader.fragmentShader = shader.fragmentShader
+                .replace('#include <common>', '#include <common>\nvarying float vInstanceOpacity;')
+                .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= vInstanceOpacity;');
+            };
+            item.customProgramCacheKey = () => 'devinarok-instance-opacity-v1';
+            item.needsUpdate = true;
+          }
+        }
+        const instances = new THREE.InstancedMesh(geometry, material, placements.length);
+        const normalized = this.forestModelScales.get(placements[0].model);
+        placements.forEach((placement, index) => {
+          translation.makeTranslation(placement.x, placement.y ?? 0, placement.z);
+          rotation.makeRotationY(placement.rotY ?? 0);
+          scaleMatrix.makeScale(
+            (placement.scaleX ?? placement.scale ?? 1) * (normalized?.x ?? 1),
+            (placement.scaleY ?? placement.scale ?? 1) * (normalized?.y ?? 1),
+            (placement.scaleZ ?? placement.scale ?? 1) * (normalized?.z ?? 1),
+          );
+          matrix.multiplyMatrices(translation, rotation).multiply(scaleMatrix).multiply(node.matrixWorld);
+          instances.setMatrixAt(index, matrix);
+        });
+        instances.instanceMatrix.needsUpdate = true;
+        instances.computeBoundingSphere();
+        this.scene.add(instances);
+      });
+    }
     for (const placement of this.arena.props) {
       if (placement.decal === 'red-carpet') {
         const geometry = new THREE.PlaneGeometry(placement.decalWidth ?? 1.8, placement.decalLength ?? 16);
@@ -608,6 +932,7 @@ export class ArenaRenderer {
         this.createSanctuaryProp(placement);
         continue;
       }
+      if (staticPlacements.has(placement)) continue;
       if (instancedModels.has(placement.model)) continue;
       if (placement.bogPool) {
         const geometry = new THREE.CircleGeometry(1, 12);
@@ -627,8 +952,12 @@ export class ArenaRenderer {
       }
       const prop = SkeletonUtils.clone(loadedByPath.get(placement.model).scene);
       const normalizedScale = this.forestModelScales.get(placement.model);
-      if (this.isForest || Number.isInteger(placement.tint) || placement.blueFlame) {
-        for (const material of cloneMaterials(prop)) {
+      const propMaterials = this.isForest || this.isCastle || placement.wallSide || placement.doorId
+        || Number.isInteger(placement.tint) || placement.blueFlame
+        ? cloneMaterials(prop)
+        : [];
+      if (propMaterials.length) {
+        for (const material of propMaterials) {
           if (this.isForest && material.color) {
             material.color.multiplyScalar(0.88).lerp(new THREE.Color(0x69735e), 0.2);
           }
@@ -639,6 +968,16 @@ export class ArenaRenderer {
           }
         }
       }
+      if (this.isForest || this.isCastle) {
+        for (const material of propMaterials) {
+          material.transparent = true;
+          material.depthWrite = false;
+        }
+        this.fadeObjects.push({
+          state: createOccluderState(placement, this.modelBounds.get(placement.model), normalizedScale),
+          materials: propMaterials,
+        });
+      }
       prop.position.set(placement.x, placement.y ?? 0, placement.z);
       prop.rotation.y = placement.rotY;
       prop.scale.set(
@@ -647,12 +986,11 @@ export class ArenaRenderer {
         (placement.scaleZ ?? placement.scale ?? 1) * (normalizedScale?.z ?? 1),
       );
       if (placement.wallSide) {
-        const materials = cloneMaterials(prop);
-        for (const material of materials) {
+        for (const material of propMaterials) {
           material.transparent = true;
           material.depthWrite = false;
         }
-        this.sideWalls.push({ z: placement.wallCenterZ, materials });
+        this.sideWalls.push({ z: placement.wallCenterZ, materials: propMaterials });
       }
       if (placement.doorId) this.doorVisuals.push({ doorId: placement.doorId, root: prop });
       this.scene.add(prop);
@@ -788,7 +1126,7 @@ export class ArenaRenderer {
     const rect = this.canvas.getBoundingClientRect();
     for (const { npc, root, mixer, button } of this.hubNpcs) {
       mixer.update(Math.min(dt, 0.05));
-      const point = new THREE.Vector3(npc.x, 2.2, npc.z).project(this.camera);
+      const point = this.projectedPoint.set(npc.x, 2.2, npc.z).project(this.camera);
       button.style.left = `${(point.x + 1) * rect.width / 2}px`;
       button.style.top = `${(1 - point.y) * rect.height / 2}px`;
       button.hidden = point.z < -1 || point.z > 1 || Math.abs(point.x) > 1.1 || Math.abs(point.y) > 1.1;
@@ -1270,7 +1608,7 @@ export class ArenaRenderer {
         continue;
       }
       const progress = elapsed / effect.duration;
-      const point = new THREE.Vector3(target.x, 1.35 + progress * 0.65, target.z).project(this.camera);
+      const point = this.projectedPoint.set(target.x, 1.35 + progress * 0.65, target.z).project(this.camera);
       const rect = this.canvas.getBoundingClientRect();
       effect.element.style.left = `${(point.x + 1) * rect.width / 2}px`;
       effect.element.style.top = `${(1 - point.y) * rect.height / 2}px`;
@@ -1293,11 +1631,11 @@ export class ArenaRenderer {
   }
 
   updatePartyMarkers(world) {
-    const active = new Set();
+    const active = this.activePartyMarkers;
+    active.clear();
     const rect = this.canvas.getBoundingClientRect();
-    for (const player of world.entities.filter((entity) => (
-      entity.kind === 'player' && world.localPlayerId && entity.playerId !== world.localPlayerId
-    ))) {
+    for (const player of world.entities) {
+      if (player.kind !== 'player' || !world.localPlayerId || player.playerId === world.localPlayerId) continue;
       active.add(player.id);
       let marker = this.partyMarkers.get(player.id);
       if (!marker) {
@@ -1311,7 +1649,7 @@ export class ArenaRenderer {
       marker.querySelector('span').textContent = `${player.name ?? player.playerId} · Lv.${player.level ?? 1}`;
       marker.querySelector('.revive-track').hidden = !player.downed;
       marker.querySelector('.revive-track i').style.width = `${Math.min(100, (player.reviveProgress ?? 0) / 60 * 100)}%`;
-      const point = new THREE.Vector3(player.x, 2.1, player.z).project(this.camera);
+      const point = this.projectedPoint.set(player.x, 2.1, player.z).project(this.camera);
       marker.style.left = `${(point.x + 1) * rect.width / 2}px`;
       marker.style.top = `${(1 - point.y) * rect.height / 2}px`;
       marker.hidden = point.z < -1 || point.z > 1 || Math.abs(point.x) > 1.1 || Math.abs(point.y) > 1.1;
@@ -1324,7 +1662,7 @@ export class ArenaRenderer {
   }
 
   updateEntityMaterials(entity, visual) {
-    const hit = entity.hitFlashTicks > 0;
+    const hit = entity.hitFlashTicks > 0 && !this.reducedMotion;
     const invulnerable = entity.invulnerable && !hit;
     for (const [material, original] of visual.materialState) {
       if (!material.emissive) continue;
@@ -1359,7 +1697,8 @@ export class ArenaRenderer {
   }
 
   updateTelegraphs(world) {
-    const active = new Set();
+    const active = this.activeTelegraphs;
+    active.clear();
     for (const enemy of world.entities) {
       const shape = enemy.attackShape;
       if (enemy.kind !== 'enemy' || !shape || enemy.attackPhase !== 'windup') continue;
@@ -1376,7 +1715,7 @@ export class ArenaRenderer {
         }
         const group = new THREE.Group();
         const parts = [];
-        const addPart = (geometry, type, x = 0, z = 0, scaleX = 1) => {
+        const addPart = (geometry, type, x = 0, z = 0, scaleX = 1, hatchBounds = {}) => {
           const fillMaterial = new THREE.MeshBasicMaterial({
             color: 0xe84842,
             transparent: true,
@@ -1391,45 +1730,56 @@ export class ArenaRenderer {
           });
           const fill = new THREE.Mesh(geometry, fillMaterial);
           fill.rotation.x = -Math.PI / 2;
-          fill.position.set(x, 0.025, z);
+          fill.position.set(x, 0.2, z);
           const outline = new THREE.LineSegments(
             new THREE.EdgesGeometry(geometry),
-            new THREE.LineBasicMaterial({ color: 0xff7770, transparent: true, opacity: 0.96, depthTest: true, depthWrite: false, fog: false }),
+            new THREE.LineBasicMaterial({ color: this.telegraphEmphasis ? 0xffe09a : 0xff7770, transparent: true, opacity: 0.96, depthTest: true, depthWrite: false, fog: false }),
           );
           outline.rotation.x = -Math.PI / 2;
-          outline.position.set(x, 0.035, z);
-          group.add(fill, outline);
-          parts.push({ fill, outline, type, scaleX });
+          outline.position.set(x, 0.22, z);
+          const hatch = new THREE.LineSegments(
+            createTelegraphHatch(type, hatchBounds),
+            new THREE.LineBasicMaterial({ color: 0xfff2c7, transparent: true, opacity: 0.82, depthTest: true, depthWrite: false, fog: false }),
+          );
+          hatch.rotation.x = -Math.PI / 2;
+          hatch.position.set(x, 0.24, z);
+          hatch.visible = this.telegraphEmphasis;
+          group.add(fill, outline, hatch);
+          parts.push({ fill, outline, hatch, type, scaleX });
         };
         const circleGeometry = (radius, sector = false) => (
           sector
             ? new THREE.CircleGeometry(radius, 48, -shape.halfAngle, shape.halfAngle * 2)
             : new THREE.CircleGeometry(radius, 48)
         );
-        if (shape.type === 'sector') addPart(circleGeometry(shape.range, true), 'radial');
+        if (shape.type === 'sector') addPart(circleGeometry(shape.range, true), 'radial', 0, 0, 1, { radius: shape.range, halfAngle: shape.halfAngle });
         else if (shape.type === 'circle') {
-          if (shape.innerRadius > 0) addPart(new THREE.RingGeometry(shape.innerRadius, shape.radius, 48), 'radial');
-          else addPart(circleGeometry(shape.radius), 'radial');
+          if (shape.innerRadius > 0) addPart(new THREE.RingGeometry(shape.innerRadius, shape.radius, 48), 'radial', 0, 0, 1, { radius: shape.radius, innerRadius: shape.innerRadius });
+          else addPart(circleGeometry(shape.radius), 'radial', 0, 0, 1, { radius: shape.radius });
         } else if (shape.type === 'ring') {
-          addPart(new THREE.RingGeometry(shape.innerRadius ?? shape.radius * 0.66, shape.radius, 48), 'radial');
+          const innerRadius = shape.innerRadius ?? shape.radius * 0.66;
+          addPart(new THREE.RingGeometry(innerRadius, shape.radius, 48), 'radial', 0, 0, 1, { radius: shape.radius, innerRadius });
         } else if (shape.type === 'annulus') {
-          addPart(new THREE.RingGeometry(shape.innerRadius, shape.outerRadius, 48), 'radial');
+          addPart(new THREE.RingGeometry(shape.innerRadius, shape.outerRadius, 48), 'radial', 0, 0, 1, { radius: shape.outerRadius, innerRadius: shape.innerRadius });
         } else if (shape.type === 'circles') {
           for (const circle of shape.circles ?? []) {
+            const innerRadius = circle.innerRadius ?? 0;
             addPart(
-              circle.innerRadius > 0
+              innerRadius > 0
                 ? new THREE.RingGeometry(circle.innerRadius, circle.radius, 48)
                 : circleGeometry(circle.radius),
               'radial',
               circle.x,
               circle.z,
+              1,
+              { radius: circle.radius, innerRadius },
             );
           }
         } else if (shape.type === 'line' || shape.type === 'rect') {
           const geometry = new THREE.PlaneGeometry(shape.length, shape.width);
-          addPart(geometry, 'linear', shape.length / 2, 0);
+          addPart(geometry, 'linear', shape.length / 2, 0, 1, { length: shape.length, width: shape.width });
         }
-        group.renderOrder = 0;
+        group.renderOrder = 4;
         this.scene.add(group);
         decal = { mesh: group, shape, signature, parts };
         this.telegraphs.set(enemy.id, decal);
@@ -1446,6 +1796,7 @@ export class ArenaRenderer {
       for (const part of decal.parts) {
         if (part.type === 'linear') part.fill.scale.set(Math.max(0.001, progress), 1, 1);
         else part.fill.scale.setScalar(Math.max(0.001, progress));
+        part.hatch.scale.copy(part.fill.scale);
       }
     }
     for (const [id, decal] of this.telegraphs) {
@@ -1461,14 +1812,22 @@ export class ArenaRenderer {
   }
 
   mobileVisibleArea(canvasRect) {
-    const elements = [['controls', this.canvas.ownerDocument.querySelector('#controls')]];
-    if (canvasRect.width < 700) {
-      elements.push(['hub-buttons', this.canvas.ownerDocument.querySelector('#hub-ui:not([hidden]) .hub-hotspots')]);
-    }
-    const overlays = elements.flatMap(([id, element]) => {
-      if (!element || element.hidden) return [];
+    let bottom = canvasRect.bottom;
+    let hasOverlay = false;
+    let changed = false;
+    for (const overlay of this.mobileOverlays) {
+      const { element } = overlay;
+      if (!element || (overlay.id === 'hub-buttons' && canvasRect.width >= 700)) {
+        if (overlay.active) changed = true;
+        overlay.active = false;
+        continue;
+      }
       const style = getComputedStyle(element);
-      if (style.display === 'none' || style.visibility === 'hidden') return [];
+      if (element.hidden || style.display === 'none' || style.visibility === 'hidden') {
+        if (overlay.active) changed = true;
+        overlay.active = false;
+        continue;
+      }
       const rect = element.getBoundingClientRect();
       const overlaps = rect.height > 0
         && rect.width > 0
@@ -1476,15 +1835,32 @@ export class ArenaRenderer {
         && rect.right > canvasRect.left
         && rect.top < canvasRect.bottom
         && rect.bottom > canvasRect.top + canvasRect.height / 2;
-      return overlaps ? [{ id, rect }] : [];
-    });
-    if (!overlays.length) return null;
-    const bottom = Math.min(canvasRect.bottom, ...overlays.map(({ rect }) => rect.top));
-    return {
-      top: canvasRect.top,
-      bottom,
-      key: overlays.map(({ id, rect }) => `${id}:${Math.round(rect.top)}:${Math.round(rect.height)}`).join('|'),
-    };
+      const top = Math.round(rect.top);
+      const height = Math.round(rect.height);
+      if (overlay.active !== overlaps || overlay.top !== top || overlay.height !== height) changed = true;
+      overlay.active = overlaps;
+      overlay.top = top;
+      overlay.height = height;
+      if (overlaps) {
+        hasOverlay = true;
+        bottom = Math.min(bottom, rect.top);
+      }
+    }
+    if (!hasOverlay) {
+      this.mobileVisibleAreaResult = null;
+      return null;
+    }
+    const result = this.mobileVisibleAreaResult ??= { top: 0, bottom: 0, key: '' };
+    result.top = canvasRect.top;
+    result.bottom = bottom;
+    if (changed) {
+      let key = '';
+      for (const overlay of this.mobileOverlays) {
+        if (overlay.active) key += `${overlay.id}:${overlay.top}:${overlay.height}|`;
+      }
+      result.key = key;
+    }
+    return result;
   }
 
   mobileCameraShift(player, baseTargetZ, canvasRect, visibleArea) {
@@ -1504,17 +1880,17 @@ export class ArenaRenderer {
     if (overlayKey !== this.mobileCameraOverlayKey) {
       const visual = this.entities.get(player.id);
       if (visual) {
-        const projectionCamera = this.camera.clone();
+        const projectionCamera = this.projectionCamera.copy(this.camera);
         projectionCamera.position.set(0, this.cameraHeight, baseTargetZ + this.cameraOffsetZ);
         projectionCamera.lookAt(0, 0, baseTargetZ);
         projectionCamera.updateMatrixWorld(true);
-        const center = new THREE.Vector3(
+        const center = this.mobileProjectedPoint.set(
           visual.root.position.x,
           visual.root.position.y + visual.screenCenterY,
           visual.root.position.z,
         ).project(projectionCamera);
         const screenY = canvasRect.top + (1 - center.y) * canvasRect.height / 2;
-        const cameraUpZ = new THREE.Vector3(0, 1, 0).applyQuaternion(projectionCamera.quaternion).z;
+        const cameraUpZ = this.mobileCameraUp.set(0, 1, 0).applyQuaternion(projectionCamera.quaternion).z;
         const pixelsPerWorldUnit = canvasRect.height / this.frustumHeight;
         const pixelsPerTargetMeter = cameraUpZ * pixelsPerWorldUnit;
         this.mobileCameraTargetShift = Math.abs(pixelsPerTargetMeter) > 0.01
@@ -1526,10 +1902,65 @@ export class ArenaRenderer {
     return this.mobileCameraTargetShift;
   }
 
+  updateOccluderFades(world, now) {
+    if (!this.isForest && !this.isCastle) return;
+    let player = null;
+    for (const entity of world.entities) {
+      if (entity.kind !== 'player') continue;
+      if (entity.playerId === this.localPlayerId || entity.id === this.localPlayerId) {
+        player = entity;
+        break;
+      }
+      if (!player) player = entity;
+    }
+    if (!player) return;
+    const visual = this.entities.get(player.id);
+    this.camera.updateMatrixWorld(true);
+    this.occlusionPlayerPoint.set(
+      visual?.root.position.x ?? player.x,
+      (visual?.root.position.y ?? 0) + (visual?.screenCenterY ?? 1),
+      visual?.root.position.z ?? player.z,
+    ).project(this.camera);
+    const aspect = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
+    const playerRadiusX = 1 / (this.frustumHeight * aspect);
+    const playerRadiusY = 1.4 / this.frustumHeight;
+    for (const group of this.fadeGroups) {
+      let changed = false;
+      for (let index = 0; index < group.states.length; index += 1) {
+        const state = group.states[index];
+        const point = this.occlusionPropPoint.set(state.x, state.y, state.z).project(this.camera);
+        const radiusX = 2 * state.radius / (this.frustumHeight * aspect);
+        const radiusY = 2 * state.radius / this.frustumHeight;
+        const overlaps = Math.abs(point.x - this.occlusionPlayerPoint.x) < radiusX + playerRadiusX
+          && Math.abs(point.y - this.occlusionPlayerPoint.y) < radiusY + playerRadiusY
+          && point.z < 1;
+        if (updateOccluderOpacity(state, overlaps ? 0.25 : 1, now)) {
+          for (const attribute of group.attributes) attribute.array[index] = state.opacity;
+          changed = true;
+        }
+      }
+      if (changed) for (const attribute of group.attributes) attribute.needsUpdate = true;
+    }
+    for (const object of this.fadeObjects) {
+      const state = object.state;
+      const point = this.occlusionPropPoint.set(state.x, state.y, state.z).project(this.camera);
+      const radiusX = 2 * state.radius / (this.frustumHeight * aspect);
+      const radiusY = 2 * state.radius / this.frustumHeight;
+      const overlaps = Math.abs(point.x - this.occlusionPlayerPoint.x) < radiusX + playerRadiusX
+        && Math.abs(point.y - this.occlusionPlayerPoint.y) < radiusY + playerRadiusY
+        && point.z < 1;
+      if (updateOccluderOpacity(state, overlaps ? 0.25 : 1, now)) {
+        for (const material of object.materials) material.opacity = state.opacity;
+      }
+    }
+  }
+
   render(previous, world, alpha) {
     const now = performance.now();
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);
     this.lastRender = now;
+    const quality = this.qualityController.recordFrame(dt * 1000);
+    if (quality !== this.effectiveQuality) this.applyQualityPreset(quality);
     this.updateAshParticles(dt, now);
     this.consumeEvents(world, now);
     for (const torch of this.torchLights) {
@@ -1537,13 +1968,12 @@ export class ArenaRenderer {
     }
     for (const door of this.doorVisuals) door.root.visible = !world.openDoors?.[door.doorId];
     this.averageMs = this.averageMs * 0.92 + dt * 1000 * 0.08;
-    if (this.averageMs > 22 && this.resolutionScale > 0.7) {
-      this.resolutionScale = Math.max(0.7, this.resolutionScale - 0.05);
-      this.resizeCanvas();
-    }
     const hitstop = now < this.hitstopUntil;
-    const before = new Map(previous.entities.map((entity) => [entity.id, entity]));
-    const activeIds = new Set();
+    const before = this.previousEntities;
+    before.clear();
+    for (const entity of previous.entities) before.set(entity.id, entity);
+    const activeIds = this.activeEntityIds;
+    activeIds.clear();
     for (const entity of world.entities) {
       activeIds.add(entity.id);
       let visual = this.entities.get(entity.id);
@@ -1614,7 +2044,18 @@ export class ArenaRenderer {
     }
     this.updateNpcHotspots(dt);
     this.updatePresentation(world, now);
+    this.updateOccluderFades(world, now);
     this.renderer.render(this.scene, this.camera);
+    if (this.debugOverlay) this.debugOverlay.hidden = !this.debugMode;
+    if (this.debugMode && this.debugOverlay) {
+      this.debugFrames += 1;
+      if (now - this.debugLastTime >= 500) {
+        this.debugFps = Math.round(this.debugFrames * 1000 / (now - this.debugLastTime));
+        this.debugFrames = 0;
+        this.debugLastTime = now;
+      }
+      this.debugOverlay.textContent = `${this.debugFps} FPS · ${this.renderer.info.render.calls} DC · ${this.renderer.info.render.triangles.toLocaleString('ko-KR')} tris`;
+    }
   }
 
   resizeCanvas() {
@@ -1626,7 +2067,8 @@ export class ArenaRenderer {
     this.camera.top = frustum / 2;
     this.camera.bottom = -frustum / 2;
     this.camera.updateProjectionMatrix();
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2) * this.resolutionScale);
+    const pixelRatio = QUALITY_PRESETS[this.effectiveQuality]?.pixelRatio ?? 1.5;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, pixelRatio) * this.resolutionScale);
     this.renderer.setSize(width, height, false);
   }
 
