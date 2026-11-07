@@ -108,6 +108,46 @@ test('rogue line dash moves five meters along its stored attack line', () => {
   assert.equal(hit.shape.length, 5);
 });
 
+test('attack speed shortens combo timing without increasing damage', () => {
+  const equipment = [{ itemId: 'ossuary-helm', enhance: 0, affixes: [] }];
+  const fastEquipment = [{ ...equipment[0], affixes: [{ id: 'attackSpeed', value: 20 }] }];
+  const runCombo = (gear) => {
+    const world = createStageWorld({ seed: 76, stageId: 'C1', playerId: 'a', character: { equipment: gear } });
+    const player = world.entities.find((entity) => entity.kind === 'player');
+    const enemy = world.entities.find((entity) => entity.kind === 'enemy');
+    world.entities = [player, enemy];
+    world.roomEnemyIds = [enemy.id];
+    player.x = 0;
+    player.z = 0;
+    enemy.x = 0;
+    enemy.z = 1.2;
+    enemy.hp = 100;
+    enemy.maxHp = 100;
+    enemy.spawnTicksLeft = 0;
+    enemy.invulnerable = false;
+    enemy.stunnedTicks = 1000;
+    for (let seq = 1; seq <= 240; seq += 1) {
+      const attack = player.attack;
+      const buttons = !attack
+        ? seq === 1 ? BUTTONS.ATTACK : 0
+        : attack.step < 3 && attack.phase === 'recovery' && !attack.queued && seq % 2 === 0
+          ? BUTTONS.ATTACK
+          : 0;
+      step(world, { a: { seq, moveX: 0, moveZ: 0, aim: 64, buttons } });
+      if (seq > 1 && !player.attack) break;
+    }
+    return {
+      ticks: world.tick,
+      damage: world.events.filter((event) => event.type === 'hit' && event.sourceId === player.id).map((event) => event.damage),
+    };
+  };
+  const normal = runCombo(equipment);
+  const fast = runCombo(fastEquipment);
+  assert.deepEqual(fast.damage, normal.damage);
+  assert.equal(normal.damage.length, 3);
+  assert.ok(fast.ticks < normal.ticks, `${fast.ticks} should be less than ${normal.ticks}`);
+});
+
 test('10,000 rarity rolls reproduce the declared distribution and boss items are rare+', () => {
   const counts = { common: 0, magic: 0, rare: 0, legendary: 0 };
   for (let index = 0; index < 10000; index += 1) counts[rarityForRoll(index / 10000)] += 1;

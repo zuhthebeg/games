@@ -410,10 +410,20 @@ function beginPlayerAttack(world, player, step, seq) {
   });
 }
 
+function comboTimeline(player, step) {
+  const timeline = COMBO_TIMELINES[step - 1];
+  const speed = 1 + (player.stats?.attackSpeed ?? 0) / 100;
+  return {
+    ...timeline,
+    windupTicks: Math.max(1, Math.round(timeline.windupTicks / speed)),
+    recoveryTicks: Math.max(1, Math.round(timeline.recoveryTicks / speed)),
+  };
+}
+
 function queueCombo(player, seq) {
   const attack = player.attack;
   if (!attack || attack.step >= COMBO_TIMELINES.length || attack.queued) return;
-  const timeline = COMBO_TIMELINES[attack.step - 1];
+  const timeline = comboTimeline(player, attack.step);
   if (
     attack.phase === 'recovery' &&
     attack.phaseTick >= timeline.recoveryTicks - timeline.chainWindowTicks
@@ -450,7 +460,7 @@ function damageEnemy(world, player, enemy, shape, timeline, castId) {
 function advancePlayerAttack(world, player) {
   const attack = player.attack;
   if (!attack) return;
-  const timeline = COMBO_TIMELINES[attack.step - 1];
+  const timeline = comboTimeline(player, attack.step);
   if (attack.phase === 'active' && world.mode !== 'stage') {
     const shape = createAttackShape(player, player.facing, timeline.range, timeline.halfAngle);
     attack.shape = shape;
@@ -1071,7 +1081,7 @@ function advanceStagePlayer(world, player, rawInput) {
     const timeline = COMBO_TIMELINES[before.step - 1];
     if (before.phase === 'active') {
       const shape = createAttackShape(player, player.facing, timeline.range, timeline.halfAngle);
-      const motion = [1, 1.1, 1.8][before.step - 1] * (1 + player.stats.attackSpeed / 100);
+      const motion = [1, 1.1, 1.8][before.step - 1];
       playerStrike(world, player, { ...shape, type: 'sector' }, motion, before.castId, before.hitTargets);
     }
     advancePlayerAttack(world, player);
