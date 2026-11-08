@@ -1575,16 +1575,18 @@ function sendPartyInputTick() {
     return Boolean(partyClient.sendInput({ ...next, moveX: 0, moveZ: 0, buttons: 0, attackHeld: false }));
   }
   const player = partyClient.predictor?.getPlayer();
+  const inputView = partyClient.getInputViewSample();
+  if (!inputView) return false;
   const prepared = player
     ? buildPartyAssistedInput(
       attackInputAssistant,
       next,
       partyClient,
       player,
-      { autoAttack: autoAttackEnabled() },
+      { autoAttack: autoAttackEnabled(), inputView },
     )
     : next;
-  return Boolean(partyClient.sendInput(prepared));
+  return Boolean(partyClient.sendInput(prepared, inputView));
 }
 
 function driveClockedPartyInputs(now, collectStats = false) {

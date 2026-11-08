@@ -359,18 +359,26 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
   const enemy = stageWorld.entities.find((entity) => entity.kind === 'enemy');
   player.facing = 0;
   Object.assign(enemy, { dead: true, state: 'dead', x: player.x + 50, spawnTicksLeft: 0 });
+  const sampledTicks = [];
   const client = Object.create(PartyClient.prototype);
   client.stageWorld = stageWorld;
   client.playerId = 'self';
+  client.runSnapshotReady = true;
+  client.status = 'connected';
+  client.inputTerminated = false;
+  client.versionMismatch = false;
+  client.result = null;
   client.predictor = {
     getPlayer: () => player,
     getVisualPosition: () => ({ x: player.x, z: player.z }),
+    applyLocalInput: () => {},
   };
-  client.session = { clock: { getEstimate: () => 100 } };
+  client.session = { clock: { getEstimate: () => 100 }, queueInput: () => {} };
+  client.castTimeline = { predictInput: () => {} };
   client.interpolation = {
     snapshots: [],
     sample: () => ({
-      renderTick: 0,
+      renderTick: 104.6,
       entities: [
         { ...ally },
         {
@@ -384,21 +392,24 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
         },
       ],
     }),
-    sampleAtRenderTick: (tick) => ({
-      renderTick: tick,
-      entities: [
-        { ...ally },
-        {
-          ...enemy,
-          dead: false,
-          state: 'idle',
-          invulnerable: false,
-          spawnTicksLeft: 0,
-          x: player.x + 1,
-          z: player.z + 0.5,
-        },
-      ],
-    }),
+    sampleAtRenderTick: (tick) => {
+      sampledTicks.push(tick);
+      return {
+        renderTick: tick,
+        entities: [
+          { ...ally },
+          {
+            ...enemy,
+            dead: false,
+            state: 'idle',
+            invulnerable: false,
+            spawnTicksLeft: 0,
+            x: player.x + 1,
+            z: player.z + 0.5,
+          },
+        ],
+      };
+    },
   };
   client.lastSnapshot = {
     tick: 20,
@@ -432,15 +443,20 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
       z: player.z,
     },
   );
+  const inputView = client.getInputViewSample(100);
+  assert.equal(inputView.viewTick, 105);
   const input = buildPartyAssistedInput(
     new AttackInputAssistant(),
     { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0, attackHeld: false },
     client,
     player,
-    { autoAttack: true },
+    { autoAttack: true, inputView },
   );
   assert.equal(input.buttons & BUTTONS.ATTACK, BUTTONS.ATTACK);
   assert.equal(input.aim, 19);
+  const sent = client.sendInput(input, inputView);
+  assert.equal(sent.viewTick, 105);
+  assert.deepEqual(sampledTicks, [sent.viewTick]);
 });
 
 test('party resets run prediction state to each first full snapshot', () => {

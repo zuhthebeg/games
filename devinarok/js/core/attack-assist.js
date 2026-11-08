@@ -92,10 +92,11 @@ export class AttackInputAssistant {
 }
 
 export function buildPartyAssistedInput(assistant, rawInput, partyClient, player, options = {}) {
+  const { inputView, ...assistOptions } = options;
   return assistant.build(
     rawInput,
-    partyClient.viewAimWorld?.() ?? partyClient.viewWorld() ?? partyClient.stageWorld,
+    partyClient.viewAimWorld?.(inputView) ?? partyClient.viewWorld() ?? partyClient.stageWorld,
     player,
-    options,
+    assistOptions,
   );
 }

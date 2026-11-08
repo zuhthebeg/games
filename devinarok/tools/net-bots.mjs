@@ -953,9 +953,7 @@ class Bot {
     const view = this.interpolation.sample(estimate);
     const viewTick = Math.round(view.renderTick);
     const viewed = this.interpolation.sampleAtRenderTick(viewTick);
-    const targetView = attackMode === 'auto'
-      ? this.interpolation.sampleAtRenderTick(this.lastSnapshot.tick)
-      : viewed;
+    const targetView = viewed;
     if (attackMode === 'auto') {
       this.targetAgeMsSamples.push(Math.max(0, estimate - targetView.renderTick) * 1000 / TICK_HZ);
     }
@@ -995,8 +993,8 @@ class Bot {
       }
       const world = {
         ...this.localWorld,
-        tick: this.lastSnapshot.tick,
-        targetTick: targetView.renderTick,
+        tick: viewTick,
+        targetTick: viewTick,
         entities: [player, ...targetView.entities],
       };
       input = this.attackAssistant.build(

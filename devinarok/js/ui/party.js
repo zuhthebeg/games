@@ -329,12 +329,20 @@ export class PartyClient {
     );
   }
 
-  sendInput(rawInput) {
-    if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
-    const now = performance.now();
+  getInputViewSample(now = performance.now()) {
+    if (!this.session || !this.interpolation) return null;
     const estimate = this.session.clock.getEstimate(now);
     const view = this.interpolation.sample(estimate);
     const viewTick = Math.round(view.renderTick);
+    return { now, viewTick, sample: this.interpolation.sampleAtRenderTick(viewTick) };
+  }
+
+  sendInput(rawInput, inputView = null) {
+    if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
+    const viewSample = inputView ?? this.getInputViewSample();
+    if (!viewSample) return null;
+    const now = viewSample.now;
+    const viewTick = viewSample.viewTick;
     const autoAim = Boolean(rawInput.autoAim);
     let input = { ...rawInput, viewTick };
     delete input.autoAim;
@@ -351,7 +359,7 @@ export class PartyClient {
       input = buildRangedAimInput(
         input,
         this.predictor.getPlayer(),
-        this.interpolation.sampleAtRenderTick(viewTick),
+        viewSample.sample,
       );
     }
     this.predictor.applyLocalInput(input);
@@ -432,14 +440,14 @@ export class PartyClient {
     });
   }
 
-  viewAimWorld(now = performance.now()) {
-    const world = this.viewWorld(now);
-    if (!world || !this.lastSnapshot || !this.interpolation) return world;
-    const sample = this.interpolation.sampleAtRenderTick(this.lastSnapshot.tick);
+  viewAimWorld(inputView = null) {
+    const viewSample = inputView ?? this.getInputViewSample();
+    const world = this.viewWorld(viewSample?.now ?? performance.now());
+    if (!world || !this.lastSnapshot || !this.interpolation || !viewSample) return world;
     const output = this.viewAimWorldBuffer ??= { ...world, entities: [] };
     Object.assign(output, world, {
-      targetTick: sample.renderTick,
-      entities: sample.entities,
+      targetTick: viewSample.viewTick,
+      entities: viewSample.sample.entities,
     });
     return output;
   }
