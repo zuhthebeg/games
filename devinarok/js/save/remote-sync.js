@@ -51,6 +51,9 @@ export class RemoteSync {
     this.syncing = false;
     this.initialized = false;
     this.accountReady = false;
+    this.flushPromise = null;
+    this.flushAgain = false;
+    this.flushUpdateStatus = false;
   }
 
   get snapshot() {
@@ -278,7 +281,32 @@ export class RemoteSync {
     }
   }
 
-  async flushOutbox(updateStatus = true) {
+  flushOutbox(updateStatus = true) {
+    if (!this.userId) return Promise.resolve();
+    this.flushUpdateStatus ||= updateStatus;
+    if (this.flushPromise) {
+      this.flushAgain = true;
+      return this.flushPromise;
+    }
+    this.flushAgain = true;
+    this.flushPromise = (async () => {
+      try {
+        while (this.flushAgain) {
+          this.flushAgain = false;
+          const shouldUpdateStatus = this.flushUpdateStatus;
+          this.flushUpdateStatus = false;
+          await this.flushOutboxOnce(shouldUpdateStatus);
+        }
+      } finally {
+        this.flushPromise = null;
+        this.flushAgain = false;
+        this.flushUpdateStatus = false;
+      }
+    })();
+    return this.flushPromise;
+  }
+
+  async flushOutboxOnce(updateStatus) {
     if (!this.userId) return;
     const entries = await this.repository.listOutbox(this.userId);
     const resolvedCharacters = new Set();
@@ -426,7 +454,8 @@ export class RemoteSync {
   }
 
   localCommit() {
-    if (this.userId) void this.flushOutbox().catch((error) => {
+    if (!this.userId) return Promise.resolve();
+    return this.flushOutbox().catch((error) => {
       const offline = !this.online() || error?.message === 'offline' || error instanceof TypeError;
       this.setStatus(offline ? 'offline' : 'error', error?.message ?? String(error));
       this.scheduleRetry();

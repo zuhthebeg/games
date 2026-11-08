@@ -89,6 +89,49 @@ test('cloud outbox preserves revision order and retries with exponential backoff
   assert.equal((await repository.listOutbox('user-1')).length, 0);
 });
 
+test('concurrent local commits share one flush and send entries queued during it once', async () => {
+  const repository = await makeRepository();
+  const character = await createCharacter(repository, { cloudUserId: 'user-1' });
+  let firstRequestStarted;
+  const started = new Promise((resolve) => { firstRequestStarted = resolve; });
+  let releaseFirstRequest;
+  const firstRequestGate = new Promise((resolve) => { releaseFirstRequest = resolve; });
+  const sent = [];
+  const sync = new RemoteSync({
+    repository,
+    storage: new Storage({ cocy_auth_token: encodeToken({ sub: 'user-1' }) }),
+    apiBase: 'https://relay.test/api/devinarok',
+    fetcher: async (url, options) => {
+      if (!url.endsWith('/commit')) return response({ characters: [] });
+      const body = JSON.parse(options.body);
+      sent.push(body.idempotencyKey);
+      if (body.baseRev === 0) {
+        firstRequestStarted();
+        await firstRequestGate;
+      }
+      return response({ character: { id: body.characterId } });
+    },
+  });
+  sync.userId = 'user-1';
+
+  const firstFlush = sync.localCommit();
+  await started;
+  await repository.commit({
+    characterId: character.id,
+    baseRev: character.rev,
+    ops: [{ type: 'grantGold', amount: 1 }],
+    cloudUserId: 'user-1',
+  });
+  const secondFlush = sync.localCommit();
+  releaseFirstRequest();
+  await Promise.all([firstFlush, secondFlush]);
+
+  const entries = await repository.listOutbox('user-1');
+  assert.equal(entries.length, 0);
+  assert.equal(sent.length, 2);
+  assert.equal(new Set(sent).size, 2);
+});
+
 test('conflicts replace local state, preserve a backup, and discard queued writes', async () => {
   const repository = await makeRepository();
   const created = await createCharacter(repository, { cloudUserId: 'user-1' });
