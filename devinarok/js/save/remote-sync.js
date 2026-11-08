@@ -43,6 +43,7 @@ export class RemoteSync {
     this.lastSyncAt = null;
     this.serverCharacters = [];
     this.deviceCharacters = [];
+    this.importFailures = new Map();
     this.needsChooser = false;
     this.retryCount = 0;
     this.retryTimer = null;
@@ -167,7 +168,47 @@ export class RemoteSync {
 
   async fetchDeviceCharacters() {
     const characters = await this.repository.listCharacters();
-    this.deviceCharacters = characters.filter((character) => !character.cloudUserId);
+    this.deviceCharacters = characters
+      .filter((character) => !character.cloudUserId)
+      .map((character) => ({
+        ...character,
+        importFailure: this.importFailures.get(this.importFailureKey(character.id)) ?? null,
+      }));
+  }
+
+  importFailureKey(characterId) {
+    return `${this.userId}:${characterId}`;
+  }
+
+  updateChooserState() {
+    const hasFailedImport = this.deviceCharacters.some((character) => character.importFailure);
+    this.needsChooser = hasFailedImport || (
+      this.serverCharacters.length > 0 && this.deviceCharacters.length > 0
+    );
+  }
+
+  async importDeviceCharacter(character) {
+    try {
+      const items = await this.repository.listItems(character.id);
+      const { response, data } = await this.post('/import', { character, items });
+      if (!response.ok) {
+        const error = new Error(data.error ?? `http-${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+      await this.repository.linkCharacterToUser(character.id, this.userId);
+      this.importFailures.delete(this.importFailureKey(character.id));
+      return { imported: true, data };
+    } catch (error) {
+      const status = error?.status;
+      this.importFailures.set(this.importFailureKey(character.id), {
+        reason: error?.message ?? String(error),
+        message: status === 422
+          ? '서버 검사를 통과하지 못해 이 기기에만 저장돼요'
+          : '서버에 올리지 못했어요. 다시 시도해 주세요',
+      });
+      return { imported: false, error };
+    }
   }
 
   async syncAccount() {
@@ -185,11 +226,11 @@ export class RemoteSync {
       let localCharacters = await this.repository.listCharacters();
       const unlinked = localCharacters.filter((character) => !character.cloudUserId);
       if (serverCharacters.length === 0 && unlinked.length > 0) {
-        for (const character of unlinked.slice(0, 6)) {
-          const items = await this.repository.listItems(character.id);
-          const { response, data } = await this.post('/import', { character, items });
-          if (!response.ok) throw new Error(data.error ?? `http-${response.status}`);
-          await this.repository.linkCharacterToUser(character.id, this.userId);
+        const pendingImports = unlinked
+          .filter((character) => !this.importFailures.has(this.importFailureKey(character.id)))
+          .slice(0, 6);
+        for (const character of pendingImports) {
+          await this.importDeviceCharacter(character);
         }
         serverCharacters = await this.getServerCharacters();
       }
@@ -205,7 +246,7 @@ export class RemoteSync {
       this.serverCharacters = serverCharacters;
       this.accountReady = true;
       await this.fetchDeviceCharacters();
-      this.needsChooser = serverCharacters.length > 0 && this.deviceCharacters.length > 0;
+      this.updateChooserState();
       this.lastSyncAt = Date.now();
       this.retryCount = 0;
       this.clearRetry();
@@ -226,7 +267,9 @@ export class RemoteSync {
       this.syncing = false;
       if (this.status === 'saved' && this.userId && this.serverCharacters.length === 0) {
         void this.repository.listCharacters().then((characters) => {
-          if (!this.syncing && characters.some((character) => !character.cloudUserId)) {
+          if (!this.syncing && characters.some((character) => (
+            !character.cloudUserId && !this.importFailures.has(this.importFailureKey(character.id))
+          ))) {
             void this.syncAccount();
           }
         });
@@ -288,14 +331,22 @@ export class RemoteSync {
     if (!this.userId) throw new Error('login-required');
     const character = await this.repository.loadCharacter(characterId);
     if (!character) throw new Error('character-not-found');
-    const items = await this.repository.listItems(characterId);
-    const { response, data } = await this.post('/import', { character, items });
-    if (!response.ok) throw new Error(data.error ?? `http-${response.status}`);
-    await this.repository.linkCharacterToUser(characterId, this.userId);
+    const result = await this.importDeviceCharacter(character);
+    if (!result.imported) {
+      await this.fetchDeviceCharacters();
+      this.updateChooserState();
+      this.changed();
+      throw result.error;
+    }
+    const { data } = result;
     this.serverCharacters = [...this.serverCharacters, data];
     await this.fetchDeviceCharacters();
-    this.needsChooser = this.serverCharacters.length > 0 && this.deviceCharacters.length > 0;
+    this.updateChooserState();
     this.changed();
+  }
+
+  async retryLocalCharacter(characterId) {
+    return this.uploadLocalCharacter(characterId);
   }
 
   async useServerCharacter(characterId) {
@@ -303,7 +354,7 @@ export class RemoteSync {
     if (!remote || !this.userId) throw new Error('character-not-found');
     await this.repository.replaceCharacterFromRemote({ ...remote, userId: this.userId });
     await this.fetchDeviceCharacters();
-    this.needsChooser = this.serverCharacters.length > 0 && this.deviceCharacters.length > 0;
+    this.updateChooserState();
     this.changed();
   }
 

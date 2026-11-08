@@ -184,6 +184,92 @@ test('first login imports local characters when the server has no characters', a
   assert.equal(sync.needsChooser, false);
 });
 
+test('one rejected import stays device-only while later imports and sync continue without looping', async () => {
+  const repository = await makeRepository();
+  const rejected = await createCharacter(repository, { id: 'rejected-device-character' });
+  const accepted = await createCharacter(repository, { id: 'accepted-device-character' });
+  const cloudCharacter = await createCharacter(repository, { id: 'queued-cloud-character', cloudUserId: 'user-1' });
+  await repository.commit({
+    characterId: cloudCharacter.id,
+    baseRev: cloudCharacter.rev,
+    ops: [{ type: 'grantGold', amount: 1 }],
+    context: { kind: 'debug' },
+    cloudUserId: 'user-1',
+  });
+  const queuedOutbox = await repository.listOutbox('user-1');
+  const imports = [];
+  let rejectImport = true;
+  let hideServerList = false;
+  let commitCalls = 0;
+  const serverOnly = {
+    character: {
+      id: 'server-only-character',
+      name: '서버 기사',
+      kind: 'knight',
+      level: 1,
+      xp: 0,
+      gold: 0,
+      potions: 0,
+      rev: 1,
+      debugUsed: false,
+      equipment: {},
+      clearedStages: [],
+      records: {},
+    },
+    items: [],
+  };
+  const serverCharacters = [];
+  const sync = new RemoteSync({
+    repository,
+    storage: new Storage({ cocy_auth_token: encodeToken({ sub: 'user-1' }) }),
+    apiBase: 'https://relay.test/api/devinarok',
+    fetcher: async (url, options) => {
+      if (url.endsWith('/commit')) {
+        commitCalls += 1;
+        return response({ ok: true });
+      }
+      if (url.endsWith('/import')) {
+        const body = JSON.parse(options.body);
+        imports.push(body.character.id);
+        if (body.character.id === rejected.id && rejectImport) {
+          return response({ error: 'invalid-character' }, 422);
+        }
+        const entry = { character: { ...body.character }, items: body.items };
+        if (body.character.id === accepted.id) serverCharacters.push(entry, serverOnly);
+        return response(entry);
+      }
+      return response({ characters: hideServerList ? [] : serverCharacters });
+    },
+  });
+  sync.userId = 'user-1';
+
+  await sync.syncAccount();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(imports, [rejected.id, accepted.id]);
+  assert.equal((await repository.loadCharacter(rejected.id)).cloudUserId, undefined);
+  assert.equal((await repository.loadCharacter(accepted.id)).cloudUserId, 'user-1');
+  assert.equal((await repository.loadCharacter(serverOnly.character.id)).cloudUserId, 'user-1');
+  assert.equal((await repository.listOutbox('user-1')).length, 0);
+  assert.equal(commitCalls, queuedOutbox.length);
+  assert.equal(sync.deviceCharacters.length, 1);
+  assert.equal(sync.deviceCharacters[0].id, rejected.id);
+  assert.equal(sync.deviceCharacters[0].importFailure.reason, 'invalid-character');
+  assert.equal(sync.deviceCharacters[0].importFailure.message, '서버 검사를 통과하지 못해 이 기기에만 저장돼요');
+  assert.equal(sync.needsChooser, true);
+
+  hideServerList = true;
+  await sync.syncAccount();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(imports, [rejected.id, accepted.id]);
+
+  rejectImport = false;
+  await sync.retryLocalCharacter(rejected.id);
+  assert.deepEqual(imports, [rejected.id, accepted.id, rejected.id]);
+  assert.equal((await repository.loadCharacter(rejected.id)).cloudUserId, 'user-1');
+  assert.equal(sync.deviceCharacters.length, 0);
+});
+
 test('401 refreshes a login token once before retrying the cloud request', async () => {
   const repository = await makeRepository();
   const fresh = encodeToken({ sub: 'user-1' });

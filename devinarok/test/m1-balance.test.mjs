@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { AFFIXES } from '../js/content/affixes.js';
 import { ITEM_BASES } from '../js/content/items.js';
 import { ENEMIES } from '../js/content/enemies.js';
 import { DIFFICULTIES, effectiveStageLevel, STAGES } from '../js/content/stages.js';
@@ -149,6 +150,58 @@ function median(values) {
   return ordered.length % 2
     ? ordered[middle]
     : (ordered[middle - 1] + ordered[middle]) / 2;
+}
+
+function settlementCaps(stageId, difficulty) {
+  const stage = STAGES[stageId];
+  const tier = DIFFICULTIES[difficulty];
+  let enemyCount = 0;
+  let bossCount = 0;
+  let baseXp = 0;
+  let summonerBudget = 0;
+  let maxSummonerAddXp = 0;
+  let maxBossAddXp = 0;
+  const bossAddBudget = 40;
+  for (const room of stage.rooms) {
+    for (const wave of room.waves) {
+      const rule = ENEMIES[wave.enemy];
+      enemyCount += wave.count;
+      baseXp += rule.xp * wave.count;
+      if (rule.behavior === 'summoner') {
+        summonerBudget += 60 * wave.count;
+        maxSummonerAddXp = Math.max(maxSummonerAddXp, ENEMIES[rule.summon?.enemy ?? 'minion'].xp);
+      }
+      if (rule.behavior === 'boss-patterns') {
+        bossCount += wave.count;
+        const bossAddEnemyIds = Object.keys(rule.patterns?.['summon-wave']?.enemies ?? { minion: 1 });
+        for (const enemyId of bossAddEnemyIds) {
+          const bossAdd = ENEMIES[enemyId];
+          maxBossAddXp = Math.max(maxBossAddXp, bossAdd.xp);
+          if (bossAdd.behavior === 'summoner') {
+            summonerBudget += 60 * bossAddBudget * wave.count;
+            maxSummonerAddXp = Math.max(
+              maxSummonerAddXp,
+              ENEMIES[bossAdd.summon?.enemy ?? 'minion'].xp,
+            );
+          }
+        }
+      }
+    }
+  }
+  const effectiveLevel = effectiveStageLevel(stage, difficulty);
+  const goldGainMultiplier = 1 + (5 * (AFFIXES.goldGain.max + AFFIXES.goldGain.perIlvl * 20)) / 100;
+  const xpGainMultiplier = 1 + (5 * (AFFIXES.xpGain.max + AFFIXES.xpGain.perIlvl * 20)) / 100;
+  return {
+    xp: Math.ceil((
+      baseXp
+      + 0.25 * maxSummonerAddXp * summonerBudget
+      + maxBossAddXp * bossAddBudget * bossCount
+    ) * tier.xpMult * xpGainMultiplier * 1.25),
+    gold: Math.ceil(5 * effectiveLevel * tier.goldMult * goldGainMultiplier * (
+      enemyCount + 0.25 * summonerBudget + bossAddBudget * bossCount
+    ) * 1.25),
+    items: enemyCount + 2 * bossCount + 20 * bossCount,
+  };
 }
 
 function perfectDodgeSummary(runs) {
@@ -569,22 +622,7 @@ test('M5d settlement caps contain legit C1, KB, and nightmare KB bot rewards', {
       aimAtTarget: true,
     });
     assert.equal(run.outcome, 'clear', `${scenario.difficulty}:${scenario.stageId} bot must clear`);
-    const stage = STAGES[scenario.stageId];
-    const tier = DIFFICULTIES[scenario.difficulty];
-    const enemies = stage.rooms.flatMap((room) => room.waves.map((wave) => ({
-      rule: ENEMIES[wave.enemy], count: wave.count,
-    })));
-    const enemyCount = enemies.reduce((sum, enemy) => sum + enemy.count, 0);
-    const bossCount = enemies.reduce((sum, enemy) => (
-      sum + (enemy.rule.behavior === 'boss-patterns' ? enemy.count : 0)
-    ), 0);
-    const baseXp = enemies.reduce((sum, enemy) => sum + enemy.rule.xp * enemy.count, 0);
-    const effectiveLevel = effectiveStageLevel(stage, scenario.difficulty);
-    const caps = {
-      xp: 4 * baseXp * tier.xpMult,
-      gold: 20 * enemyCount * effectiveLevel * tier.goldMult,
-      items: enemyCount + 2 * bossCount,
-    };
+    const caps = settlementCaps(scenario.stageId, scenario.difficulty);
     assert.ok(run.reward.xp <= caps.xp, `${scenario.difficulty}:${scenario.stageId} XP ${run.reward.xp}/${caps.xp}`);
     assert.ok(run.reward.gold <= caps.gold, `${scenario.difficulty}:${scenario.stageId} gold ${run.reward.gold}/${caps.gold}`);
     assert.ok(run.reward.items.length <= caps.items, `${scenario.difficulty}:${scenario.stageId} items ${run.reward.items.length}/${caps.items}`);

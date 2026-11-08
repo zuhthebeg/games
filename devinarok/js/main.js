@@ -155,6 +155,8 @@ function renderCloudAccount(state = remoteSync?.snapshot) {
     group.append(heading);
     for (const entry of entries) {
       const info = entry.character ?? entry;
+      const row = document.createElement('div');
+      row.className = 'cloud-character-entry';
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset[action] = info.id;
@@ -163,7 +165,18 @@ function renderCloudAccount(state = remoteSync?.snapshot) {
       const level = document.createElement('small');
       level.textContent = `Lv.${info.level} · ${labelText}`;
       button.append(name, level);
-      group.append(button);
+      row.append(button);
+      if (entry.importFailure) {
+        const reason = document.createElement('small');
+        reason.className = 'cloud-import-failure';
+        reason.textContent = entry.importFailure.message;
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.dataset.retryImport = info.id;
+        retry.textContent = '다시 시도';
+        row.append(reason, retry);
+      }
+      group.append(row);
     }
     chooser.append(group);
   }
@@ -1985,6 +1998,7 @@ $('#cloud-character-chooser').addEventListener('click', async (event) => {
   try {
     if (button.dataset.useServer) await remoteSync.useServerCharacter(button.dataset.useServer);
     if (button.dataset.uploadDevice) await remoteSync.uploadLocalCharacter(button.dataset.uploadDevice);
+    if (button.dataset.retryImport) await remoteSync.retryLocalCharacter(button.dataset.retryImport);
     await refreshTitle();
   } catch (error) {
     showActionToast(error?.message ?? '캐릭터를 불러오지 못했어요');

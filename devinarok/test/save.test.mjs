@@ -97,6 +97,33 @@ test('legacy schema migration backs up source and import/export verifies checksu
   await assert.rejects(target.import(tampered), /checksum/);
 });
 
+test('save backup paths retain only the ten newest entries', async () => {
+  const repo = await repository();
+  for (let marker = 0; marker < 12; marker += 1) {
+    await repo.backend.backup({ marker });
+  }
+  const directBackups = (await repo.backend.readData()).backups;
+  assert.equal(directBackups.length, 10);
+  assert.deepEqual(directBackups.map((backup) => backup.data.marker), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+  const character = await repo.commit({
+    characterId: 'backup-hero',
+    baseRev: 0,
+    ops: [{ type: 'createCharacter', name: '복원 시험', kind: 'knight' }],
+    context: { kind: 'hub' },
+  });
+  for (let gold = 1; gold <= 12; gold += 1) {
+    await repo.replaceCharacterFromRemote({
+      character: { ...character, gold },
+      items: [],
+      userId: 'user-1',
+    });
+  }
+  const replacementBackups = (await repo.backend.readData()).backups;
+  assert.equal(replacementBackups.length, 10);
+  assert.deepEqual(replacementBackups.map((backup) => backup.data.character.gold), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+});
+
 test('migrated veterans skip tutorial and keep the selected sortie stage', async () => {
   const repo = await repository({
     meta: { schemaVersion: 3, localAccountId: 'local-v3' },

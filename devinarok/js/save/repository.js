@@ -2,6 +2,17 @@ import { applyOperations, normalizeCharacter } from './ops.js';
 
 export const SCHEMA_VERSION = 5;
 const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings', 'outbox'];
+const MAX_BACKUPS = 10;
+
+function recentBackups(backups) {
+  return [...(backups ?? [])]
+    .sort((left, right) => (left.createdAt ?? 0) - (right.createdAt ?? 0))
+    .slice(-MAX_BACKUPS);
+}
+
+function appendBackup(data, backup) {
+  data.backups = recentBackups([...(data.backups ?? []), backup]);
+}
 
 function migratedTutorial(character) {
   const veteran = (character.clearedStages?.length ?? 0) > 0 || Number(character.level ?? 1) > 1;
@@ -167,7 +178,7 @@ export class MemoryBackend {
   }
 
   async backup(data) {
-    this.data.backups.push({ id: uuid(), createdAt: Date.now(), data: clone(data) });
+    appendBackup(this.data, { id: uuid(), createdAt: Date.now(), data: clone(data) });
   }
 
   async commit(change) {
@@ -228,7 +239,13 @@ export class IndexedDbBackend {
 
   async backup(data) {
     const transaction = this.database.transaction('backups', 'readwrite');
-    transaction.objectStore('backups').put({ id: uuid(), createdAt: Date.now(), data: clone(data) });
+    const store = transaction.objectStore('backups');
+    const backups = recentBackups([
+      ...await requestResult(store.getAll()),
+      { id: uuid(), createdAt: Date.now(), data: clone(data) },
+    ]);
+    store.clear();
+    for (const backup of backups) store.put(backup);
     await transactionDone(transaction);
   }
 
@@ -329,11 +346,16 @@ export class SaveRepository {
       const migration = migrations[data.meta.schemaVersion];
       if (!migration) throw new Error(`No migration from schema ${data.meta.schemaVersion}`);
       const migrated = migration(clone(data));
-      migrated.backups.push({ id: uuid(this.cryptoProvider), createdAt: Date.now(), data: before });
+      appendBackup(migrated, { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: before });
       await this.backend.replaceData(migrated);
       data = migrated;
     }
     if (data.meta.schemaVersion !== SCHEMA_VERSION) throw new Error('Save schema is newer than this client');
+    const backups = recentBackups(data.backups);
+    if (backups.length !== (data.backups ?? []).length) {
+      data.backups = backups;
+      await this.backend.replaceData(data);
+    }
     return this.loadProfile();
   }
 
@@ -397,7 +419,7 @@ export class SaveRepository {
     const nextCharacter = normalizeCharacter({ ...character, cloudUserId: userId });
     const nextItems = items.map(clone).sort((a, b) => a.uid.localeCompare(b.uid));
     if (backup && oldCharacter && JSON.stringify({ character: oldCharacter, items: oldItems }) !== JSON.stringify({ character: nextCharacter, items: nextItems })) {
-      data.backups.push({
+      appendBackup(data, {
         id: uuid(this.cryptoProvider),
         createdAt: Date.now(),
         data: { character: oldCharacter, items: oldItems },
@@ -467,7 +489,10 @@ export class SaveRepository {
       characters: Object.fromEntries(payload.data.characters.map((character) => [character.id, normalizeCharacter(character)])),
       items: Object.fromEntries(payload.data.items.map((item) => [item.uid, item])),
       ledger: clone(payload.data.ledger),
-      backups: [...clone(payload.data.backups), { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: current }],
+      backups: recentBackups([
+        ...clone(payload.data.backups),
+        { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: current },
+      ]),
       settings: normalizeSettings(payload.data.settings),
       outbox: [],
     };
