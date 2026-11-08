@@ -121,6 +121,15 @@ function showActionToast(message) {
   }, 1500);
 }
 
+function updateCloudLogoutButton() {
+  const button = $('#cloud-logout-button');
+  const disabled = Boolean(remoteSync?.userId) && (world?.mode === 'stage' || Boolean(partyClient));
+  const label = disabled ? '여관에서 로그아웃할 수 있어요' : '로그아웃';
+  button.disabled = disabled;
+  button.textContent = label;
+  button.title = disabled ? label : '';
+}
+
 function renderCloudAccount(state = remoteSync?.snapshot) {
   if (!state) return;
   const label = state.status === 'syncing' ? '동기화 중'
@@ -135,6 +144,7 @@ function renderCloudAccount(state = remoteSync?.snapshot) {
   $('#cloud-sync-button').hidden = !state.loggedIn;
   $('#cloud-sync-button').disabled = state.status === 'syncing';
   $('#cloud-logout-button').hidden = !state.loggedIn;
+  updateCloudLogoutButton();
   const badge = $('#cloud-save-badge');
   badge.hidden = !['offline', 'error'].includes(state.status);
   badge.textContent = state.status === 'offline' ? '오프라인 저장' : '동기화 오류';
@@ -580,15 +590,17 @@ function stopWorld() {
   loop = input = renderer = null;
 }
 
-function showTitle() {
+async function showTitle() {
   stopWorld();
   partyClient?.close();
   partyClient = null;
+  world = null;
   $('#hub-party-button').hidden = true;
   titleScreen.hidden = false;
   gameScreen.hidden = true;
   resultPanel.hidden = true;
-  refreshTitle();
+  updateCloudLogoutButton();
+  await refreshTitle();
 }
 
 async function commit(ops, context = { kind: 'hub' }) {
@@ -616,6 +628,7 @@ async function applyOps(ops, { context = { kind: 'hub' } } = {}) {
 }
 
 function refreshSoloStagePlayer() {
+  if (!character) return;
   const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const equipment = equippedItems();
@@ -630,7 +643,7 @@ function equippedItems() {
 }
 
 function refreshHubPlayer() {
-  if (world?.mode !== 'hub') return;
+  if (!character || world?.mode !== 'hub') return;
   const equipment = equippedItems();
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
@@ -651,7 +664,7 @@ function stageIsUnlocked(stageId, difficulty = 'normal') {
 }
 
 function drawHub() {
-  if (!renderer || !world || world.mode !== 'hub') return;
+  if (!character || !renderer || !world || world.mode !== 'hub') return;
   updateHud(world);
   renderer.render(world, world, 1);
   debugController?.frame(world, renderer, performance.now());
@@ -663,6 +676,7 @@ async function enterHub() {
   stopWorld();
   partyClient?.close();
   partyClient = null;
+  updateCloudLogoutButton();
   $('#hub-party-button').hidden = false;
   $('#hub-ui [data-panel="sanctuary"]').disabled = false;
   $('#sanctuary-party-disabled').hidden = true;
@@ -716,6 +730,7 @@ async function enterHub() {
 }
 
 function renderSanctuaryHud(current) {
+  if (!character) return;
   const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   sanctuaryState.nearby = hero ? nearestRitual(hero.x, hero.z) : null;
   const interact = $('#sanctuary-interact');
@@ -1454,7 +1469,7 @@ function setPartyHudCaptureFreeze(frozen) {
 }
 
 function partyLoop(time) {
-  if (!partyClient || !renderer || !input) return;
+  if (!character || !partyClient || !renderer || !input) return;
   if (!input.devInputProvider) {
     if (!partyLastTime) partyLastTime = time;
     partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
@@ -1751,6 +1766,7 @@ async function startStage(stageId, options = {}) {
     playerId: character.id,
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
   });
+  updateCloudLogoutButton();
   tutorialLastX = null;
   tutorialLastZ = null;
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
@@ -1782,6 +1798,7 @@ async function startStage(stageId, options = {}) {
       debugController?.frame(current, renderer, performance.now());
     },
     onTick: (current) => {
+      if (!character) return;
       updateHud(current);
       trackTutorialMovement(current);
       for (const event of current.events) {
@@ -1797,6 +1814,8 @@ async function startStage(stageId, options = {}) {
 }
 
 function updateHud(current) {
+  if (!character || !current) return;
+  updateCloudLogoutButton();
   const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id)
     ?? current.entities.find((entity) => entity.kind === 'player');
   if (hero) {
@@ -1968,6 +1987,7 @@ $('#mute-button').addEventListener('click', () => { void saveSetting('muted', !s
 $('#settings-button').addEventListener('click', () => {
   settingsReturnToPause = !pauseMenu.hidden;
   pauseMenu.hidden = true;
+  updateCloudLogoutButton();
   $('#settings-panel').hidden = false;
   $('#bgm-volume').focus();
 });
@@ -2007,8 +2027,10 @@ $('#cloud-sync-button').addEventListener('click', async () => {
   }
 });
 $('#cloud-logout-button').addEventListener('click', async () => {
+  if ($('#cloud-logout-button').disabled) return;
+  closeSettings();
   remoteSync.logout();
-  await refreshTitle();
+  await showTitle();
 });
 $('#cloud-character-chooser').addEventListener('click', async (event) => {
   const button = event.target.closest('button');
