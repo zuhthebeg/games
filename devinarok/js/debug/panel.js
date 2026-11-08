@@ -1,8 +1,8 @@
 import { ITEM_BASES, ITEMS, RARITIES } from '../content/items.js';
 import { isStageUnlocked, STAGE_LIST } from '../content/stages.js';
-import { createHubWorld, completeStage, rollStageItem, spawnEnemy } from '../sim/world.js';
+import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
-import { debugKillRoomEnemies } from './combat.js';
+import { debugKillRoomEnemies, debugSpawnRoomEnemy } from './combat.js';
 import {
   debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
   recordRecentAction, TwoTapGate,
@@ -471,7 +471,7 @@ export function mountDebugPanel(context) {
       await commitDebugOps();
       const player = context.world.entities.find((entity) => entity.kind === 'player' && entity.playerId === context.character.id);
       if (!player) throw new Error('플레이어가 없습니다.');
-      spawnEnemy(context.world, state.enemyKind, {
+      debugSpawnRoomEnemy(context.world, state.enemyKind, {
         x: player.x + Math.cos(player.facing) * 3,
         z: player.z + Math.sin(player.facing) * 3,
       });

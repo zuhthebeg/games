@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
-import { debugKillEnemy } from '../js/debug/combat.js';
+import { debugKillEnemy, debugSpawnRoomEnemy } from '../js/debug/combat.js';
 import {
   debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
   recordRecentAction, TwoTapGate,
 } from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
-import { createStageWorld } from '../js/sim/world.js';
+import { BUTTONS, createStageWorld, pickAimTarget, step } from '../js/sim/world.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -188,6 +188,31 @@ test('debug room kill uses the normal stage death and reward path', () => {
   assert.ok(world.events.some((event) => event.type === 'bossDefeated' && event.entityId === boss.id));
   assert.ok(world.events.some((event) => event.type === 'lootSpawn' && event.ownerId === 'hero'));
   assert.ok(world.rewards.hero.xp > initialXp);
+});
+
+test('summoned enemies are targetable and keep a room open until killed', () => {
+  const world = createStageWorld({ seed: 76, stageId: 'C1', playerId: 'hero' });
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  world.roomEnemyIds = [];
+  const enemy = debugSpawnRoomEnemy(world, 'Skeleton_Minion', {
+    x: player.x + Math.cos(player.facing) * 3,
+    z: player.z + Math.sin(player.facing) * 3,
+  });
+  enemy.spawnTicksLeft = 0;
+  enemy.invulnerable = false;
+  enemy.hp = 1;
+  enemy.maxHp = 1;
+  enemy.moveSpeed = 0;
+  enemy.attackCooldownTicks = 10000;
+
+  assert.equal(world.roomEnemyIds.includes(enemy.id), true);
+  assert.equal(pickAimTarget(world, player, 5), enemy);
+  step(world, { hero: { seq: 1, moveX: 0, moveZ: 0, aim: 0, buttons: 0 } });
+  assert.equal(world.roomCleared, false);
+
+  assert.equal(debugKillEnemy(world, enemy), true);
+  assert.equal(enemy.dead, true);
+  assert.equal(world.roomCleared, true);
 });
 
 test('debug kill refuses party worlds without mutating enemies', () => {

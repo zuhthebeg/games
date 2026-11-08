@@ -1,4 +1,4 @@
-import { BUTTONS, step } from '../sim/world.js';
+import { BUTTONS, spawnEnemy, step } from '../sim/world.js';
 
 function angleByte(angle) {
   return Math.round((angle / (Math.PI * 2) * 256 + 256) % 256);
@@ -67,6 +67,14 @@ export function debugKillEnemy(world, enemy, runStep = (inputs) => step(world, i
   player.dodgeBufferTicks = 0;
   if (!enemy.dead) enemy.moveSpeed = enemySpeed;
   return enemy.dead;
+}
+
+export function debugSpawnRoomEnemy(world, enemyKind, position = null) {
+  if (world?.mode !== 'stage') return null;
+  const enemy = spawnEnemy(world, enemyKind, position);
+  enemy.currentRoomId = world.arena.rooms[world.roomIndex]?.id;
+  world.roomEnemyIds.push(enemy.id);
+  return enemy;
 }
 
 export function debugKillRoomEnemies(world, runStep) {
