@@ -39,6 +39,12 @@ test('save commits validate currency, item ownership, slots, and revisions', asy
     () => applyOperations(character, { owned: { uid: 'owned', characterId: 'hero' } }, [{ type: 'equip', uid: 'owned', slot: 'ring' }], 'hero'),
     /slot/,
   );
+  assert.throws(
+    () => applyOperations(character, {
+      owned: { uid: 'owned', characterId: 'hero', itemId: 'rusted-sword', slot: null, requiredLevel: 1 },
+    }, [{ type: 'equip', uid: 'owned', slot: 'head' }], 'hero'),
+    TypeError,
+  );
   await assert.rejects(
     repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'gainXp', amount: 1 }] }),
     ConflictError,
@@ -51,7 +57,7 @@ test('save commits validate currency, item ownership, slots, and revisions', asy
       { type: 'grantGold', amount: 10 },
       { type: 'spendGold', amount: 3 },
       { type: 'gainXp', amount: 120 },
-      { type: 'grantItem', uid: 'sword-1', itemId: 'iron-sword', rarity: 'common', enhance: 0, affixes: [] },
+      { type: 'grantItem', uid: 'sword-1', itemId: 'rusted-sword', rarity: 'common', enhance: 0, affixes: [] },
       { type: 'equip', uid: 'sword-1', slot: 'weapon' },
       { type: 'clearStage', stageId: 'trial-room' },
     ],
