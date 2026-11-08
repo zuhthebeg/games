@@ -159,6 +159,18 @@ test('sword, crossbow, and staff counters guarantee a critical and consume readi
   }
 });
 
+test('counter priority ignores a simultaneous skill press without using its cooldown', () => {
+  const { world, player, enemy } = makeWorld('sword', 2.4);
+  player.counterReadyTicks = 60;
+  player.counterAttackerId = enemy.id;
+
+  tick(world, BUTTONS.ATTACK | BUTTONS.SKILL1);
+
+  assert.ok(world.events.some((event) => event.type === 'cast' && event.skillId === 'counter'));
+  assert.equal(player.skillCooldowns[1], 0);
+  assert.equal(world.events.some((event) => event.type === 'skill'), false);
+});
+
 test('sword counter is an in-place line strike toward the attacker or facing fallback', () => {
   const { world, player, enemy } = makeWorld('sword', 2.4);
   const start = { x: player.x, z: player.z };
