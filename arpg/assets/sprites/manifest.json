@@ -719,12 +719,13 @@
     },
     "anchor": {
       "x": 0.5,
-      "y": 0.6547760367393494
+      "y": 0.6527324914932251
     },
     "lineage": "skeleton_knight",
     "form": "death_knight",
     "monster": false,
-    "bytes": 1017774
+    "bytes": 1181193,
+    "cacheVersion": "0b1d79183ab0"
   },
   {
     "id": "rune-guardian",

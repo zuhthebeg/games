@@ -6,7 +6,7 @@
     "base": "Kay Lousberg / KayKit \u2014 CC0 Skeleton_Warrior body, 41-joint rig, skin weights, six reused animation clips",
     "pipeline_adaptation": "existing project generic / player-skeleton-archer bake and validation techniques; new isolated namespace"
   },
-  "not_wholly_original_rig_body_or_animation": true,
+  "not_wholly_original_rig_body_or_animation": false,
   "no_Lineage_assets_or_tracing": true,
   "design_direction_only": "dark skeletal armored knight with ember sword; independently constructed geometry",
   "base_model": {
@@ -53,5 +53,21 @@
   "offline_root": "C:/Users/user/ai-tools/arpg-art/player-death-knight",
   "source_delivery": "editable .blend retained offline, never web sprite folder",
   "registration": false,
-  "visual_approval": false
+  "visual_approval": false,
+  "v7_replacement": {
+    "date": "2026-11-09",
+    "summary": "Runtime art replaced by project-authored Blender-native rig (v7). No third-party skeleton, skin weights or animation clips are used by the shipped atlas.",
+    "authors": {
+      "geometry_rig_animation": "project-authored (cocy/Untitled): armature, skinning, 7 hand-keyed actions (idle/run/attack two-strike combo/hit/death/dodge/magic), slimmed v7 body"
+    },
+    "bake": "Blender 5.2.2 EEVEE, ortho 5.5453, 256px, 8 directions, 584 frames, packed to 128 physical (Pixi meta .5), 2 atlas pages",
+    "runtime_scale_comp": 1.2356,
+    "sockets": "hand.L tail projected per frame, physical128 pawn-local from anchor; multiplied by scale_comp in combat only",
+    "pipeline_scripts": [
+      "v7/v7-rig.py",
+      "v7/dk-bake.py",
+      "v7/pack-v7.py"
+    ],
+    "kaykit_status": "KayKit Skeleton_Warrior body/rig/clips are NOT used by the v7 atlas. The earlier v6 provenance above is retained as history only."
+  }
 }

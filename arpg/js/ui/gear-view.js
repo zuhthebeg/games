@@ -147,7 +147,7 @@ export function getHeroPortrait(save, direction = 'SW') {
   if (save.lineage === 'skeleton_knight') {
     const appearance=skeletonAppearance(save), dir=PORTRAIT_DIRECTIONS.includes(direction)?direction:'SW';
     const metadata=SKELETON_PORTRAITS[appearance.id], frame=`idle_${dir}_000`, layout=metadata.frames[frame];
-    return {url:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp' : 'base.webp'}`,frame,appearance,anchor:metadata.anchor,packedFrame:layout.rect,trim:layout.trim,x:layout.rect[0],y:layout.rect[1],width:128,height:128,atlasWidth:metadata.size[0],atlasHeight:metadata.size[1],metadata:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp.json' : 'manifest.json'}`};
+    return {url:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp?v=3b87fc9fa5b2' : 'base.webp'}`,frame,appearance,anchor:metadata.anchor,packedFrame:layout.rect,trim:layout.trim,x:layout.rect[0],y:layout.rect[1],width:128,height:128,atlasWidth:metadata.size[0],atlasHeight:metadata.size[1],metadata:`assets/sprites/${appearance.id}/${appearance.id === 'player-death-knight' ? 'atlas-0.webp.json?v=3b87fc9fa5b2' : 'manifest.json'}`};
   }
   const family = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
   const kit = { blade:'sword', bow:'bow', focus:'focus' }[family];

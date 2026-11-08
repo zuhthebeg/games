@@ -1,4 +1,4 @@
-import { DEATH_KNIGHT_SOCKETS } from './death-knight-sockets.js';
+import { DEATH_KNIGHT_SOCKETS, DEATH_KNIGHT_SCALE } from './death-knight-sockets.js';
 import { SHIELD_HAND_ANCHORS } from './shield-hand-anchors.js';
 import { advanceDeathKnightPlayback, deathKnightAnimation } from './death-knight-playback.js';
 import { BALANCE } from '../content/balance.js';
@@ -120,7 +120,8 @@ function spriteVisual(entity, { color }, asset) {
   sprite.tint = entity.kind === 'monster' ? (entity.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;
   // This candidate's parser expands physical128 to logical256 (resolution .5).
   // Normalize only this kit; historical skeleton/human geometry is unchanged.
-  sprite.scale.set(atlasScale(entity) * (asset.id === 'player-death-knight' ? .5 : 1));
+  // The v7 bake frames a wider envelope (ortho 5.545 vs 4.488); DEATH_KNIGHT_SCALE restores on-screen size.
+  sprite.scale.set(atlasScale(entity) * (asset.id === 'player-death-knight' ? .5 * DEATH_KNIGHT_SCALE : 1));
   // Same atlas geometry, additive bright impact; no filters or base-palette tint changes.
   const flash = new Sprite(sprite.texture);
   flash.anchor.copyFrom(sprite.anchor);
@@ -164,7 +165,8 @@ function spriteVisual(entity, { color }, asset) {
       // Hand tables are authored pawn-local physical pixels. The evolved kit's
       // .5 sprite correction compensates logical256 textures, not equipment size.
       const equipmentScale=atlasScale(entity);
-      handPose.scale=equipmentScale;handPose.x=hand[0]*equipmentScale;handPose.y=hand[1]*equipmentScale;
+      const socketScale=asset.id==='player-death-knight'?DEATH_KNIGHT_SCALE:1;
+      handPose.scale=equipmentScale;handPose.x=hand[0]*equipmentScale*socketScale;handPose.y=hand[1]*equipmentScale*socketScale;
       handPose.facing=DIRECTIONS.indexOf(direction)*Math.PI/4;
       handPose.behind=direction === 'E' || direction === 'NE' || direction === 'N' || direction === 'NW';
       handPose.baked=asset.id==='player-skeleton-equipment' && asset.descriptor.layers.some(k=>k.endsWith('shield')||k==='buckler');

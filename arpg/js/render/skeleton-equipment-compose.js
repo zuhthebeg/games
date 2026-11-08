@@ -50,7 +50,7 @@ export async function composeSkeleton(descriptor, signal) {
 
 export async function composeDeathKnightPortrait(descriptor, signal) {
   const url=new URL('../../assets/sprites/player-death-knight/',import.meta.url);
-  const sheet=await loadJSON(new URL('atlas-0.webp.json',url),signal);
+  const sheet=await loadJSON(new URL('atlas-0.webp.json?v=3b87fc9fa5b2',url),signal);
   const blob=await loadBlob(new URL(sheet.meta.image,url),signal),bitmap=await decodeBitmap(blob,signal);
   let out;
   try{out=canvas(bitmap.width,bitmap.height);out.getContext('2d').drawImage(bitmap,0,0);}

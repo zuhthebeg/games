@@ -1,4 +1,8 @@
-# Original DeathKnight — unregistered art candidate
+# Original DeathKnight
+
+> **v7 (2026-11-09):** the shipped atlas now comes from a project-authored Blender-native rig and hand-keyed actions (see `v7/` and `provenance.json` `v7_replacement`). The KayKit-based text below describes the earlier v6 candidate and is kept as history.
+
+# (v6 history) Original DeathKnight — unregistered art candidate
 
 Art-only fork of `8c2b156`. **Parent visual/source review and later runtime binding are required.** Nothing here registers a kit, changes stats/simulation/save/network code, updates manifests/stamps, or deploys.
 

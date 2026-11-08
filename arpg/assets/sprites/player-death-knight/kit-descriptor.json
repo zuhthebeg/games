@@ -26,7 +26,7 @@
   },
   "anchor": {
     "x": 0.5,
-    "y": 0.6547760367393494
+    "y": 0.6527324914932251
   },
   "logical_frame_size": 256,
   "physical_frame_size": 128,
@@ -34,27 +34,28 @@
   "pixi_texture_resolution": 0.5,
   "logical_expansion": 2,
   "dodge_contract": {
-    "source": "Dodge_Forward",
+    "source": "project-authored dodge action",
     "source_seconds": 0.4,
     "source_frames": [
       0,
-      1.92,
-      3.84,
-      5.76,
-      7.68,
-      9.6
+      1,
+      2,
+      3,
+      4,
+      5
     ],
     "sample_count": 6,
     "presentation_seconds": 0.2,
     "loop": false,
     "endpoint_included": true,
     "phase": "atlasFrame duration .2 maps 6 frames; final source endpoint at age >= 1/6s",
-    "root_translation": "horizontal root/hips constant drivers; simulation owns travel",
+    "root_translation": "in-place root; simulation owns travel",
     "not_run_alias": true,
     "registration_pending": false,
-    "authored_action": "DK_Gravitas_dodge"
+    "authored_action": "dodge"
   },
   "parent_visual_review_required": true,
   "lineage": "skeleton_knight",
-  "form": "death_knight"
+  "form": "death_knight",
+  "scale_comp": 1.2356
 }
