@@ -93,3 +93,19 @@ test('CS2 stale GET response headers are rejected before reading or applying A b
 test('CS2 partially failed empty restore cannot authorize unrelated local bytes on reload',async()=>{
  const remote=human();remote.xp=10;const h=rig({characters:[{charId:'human',data:snapshot(remote)}]});await h.c.load();const write=h.storage.setItem;h.storage.setItem=(k,v)=>{if(k===SLOT_SAVE_KEYS.human)throw Error('local write');write(k,v);};assert.throws(()=>h.c.restore('human'));assert.equal(h.bytes.has(SLOT_SAVE_KEYS.human),false);const r=rig({bytes:h.bytes});await r.c.load();r.c.changed(human());await r.advance(300);assert.equal(r.puts().length,0);
 });
+
+test('CS2 delayed real token result cannot be paired with a newer owner context',async()=>{
+ const remote=human();remote.xp=10;const h=rig({characters:[{charId:'human',data:snapshot(remote)}]}),gate=deferred();
+ // Latency instrumentation only: owner proof still comes exclusively from the real /me path.
+ const token=h.c.token.bind(h.c);h.c.token=async()=>{const result=await token();await gate.promise;return result;};
+ const loading=h.c.load().catch(()=>null);await tick();h.setToken('B1');await token();gate.resolve();await loading;
+ assert.equal(h.c.offer('human'),null);assert.throws(()=>h.c.restore('human'));assert.equal(h.bytes.has(SLOT_SAVE_KEYS.human),false);
+});
+
+test('CS2 same-owner rotation during real token-result await retains pending latestness',async()=>{
+ for(const newer of [false,true]){
+  const h=rig(),s=human(),gate=deferred();h.bind(s);await h.c.token();h.c.changed(s);const token=h.c.token.bind(h.c);h.c.token=async()=>{const result=await token();await gate.promise;return result;};
+  const flushing=h.c.flush({hidden:true});await tick();h.setToken('A2');await token();if(newer){s.gold+=9;h.c.changed(s);}gate.resolve();await flushing;await h.advance(0);
+  assert.equal(h.puts().length,1);assert.equal(h.puts()[0].token,'A2');assert.equal(h.puts()[0].data.gold,s.gold);assert.equal(h.c.pending.size,0);
+ }
+});

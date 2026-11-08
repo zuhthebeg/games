@@ -127,7 +127,7 @@ export class CloudSave {
   }
   async load() {
     const token = await this.token(), context = this.current();
-    if (!this.matches(context)) throw new Error('Stale cloud GET');
+    if (!this.matches(context) || context.token !== token) throw new Error('Stale cloud GET');
     const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { headers: { Authorization: `Bearer ${token}` } });
     if (!this.matches(context)) throw new Error('Stale cloud GET');
     if (response.status === 401) this.blockedTokens.add(token);
@@ -223,6 +223,7 @@ export class CloudSave {
       this.uploading.add(slot);
       try {
         const token = await this.token(), context = this.current();
+        if (!context || context.token !== token) continue;
         if (!this.intentMatches(entry) || !this.writable(slot, entry.proof) || !this.matches(context)) {
           if (this.pending.get(slot) === entry) this.pending.delete(slot);
           continue;
