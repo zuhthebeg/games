@@ -297,6 +297,7 @@ class Bot {
     this.seenEnemyDeathEvents = new Set();
     this.castViewDelayTicks = new Map();
     this.correctionSamples = [];
+    this.counterSnapshotSamples = [];
     this.inputsConsumedAboveTick = 0;
     this.lastAckObserved = null;
     this.lastTickObserved = null;
@@ -399,7 +400,25 @@ class Bot {
         openDoors: message.openDoors ?? this.localWorld.openDoors,
         tick: message.tick,
       });
+      const serverCounterState = playerDiagnosticState(serverPlayer);
+      const pendingAttackSeqs = this.predictor.pendingInputs
+        .filter((input) => input.buttons & BUTTONS.ATTACK)
+        .map((input) => input.seq);
       const reconciliation = this.predictor.reconcile(message, now);
+      if (serverCounterState.counterReadyTicks > 0) {
+        const predictedPlayer = this.predictor.getPlayer();
+        this.counterSnapshotSamples.push({
+          tick: message.tick,
+          ack: message.ack,
+          serverCounterReadyTicks: serverCounterState.counterReadyTicks,
+          serverCounterAttackerId: serverPlayer?.motion?.counterAttackerId ?? serverPlayer?.counterAttackerId ?? null,
+          serverPerfectPaid: serverPlayer?.motion?.perfectPaid ?? serverPlayer?.perfectPaid ?? null,
+          serverDodgeStartTick: serverPlayer?.motion?.dodgeStartTick ?? serverPlayer?.dodgeStartTick ?? null,
+          inputSeq: this.inputSeq,
+          pendingAttackSeqs,
+          predictorCounterReadyTicks: predictedPlayer.counterReadyTicks,
+        });
+      }
       const intentionalSnap = Boolean(
         message.roomChanged ||
         message.teleport ||
@@ -954,6 +973,7 @@ class Bot {
       correctionsPerMinute: correctionRate,
       inputsConsumedAboveTick: this.inputsConsumedAboveTick,
       correctionSamples: this.correctionSamples,
+      counterSnapshotSamples: this.counterSnapshotSamples,
       snaps,
       remoteFrozenSeconds: this.remoteFrozenMs / 1000,
       remoteFreezeEpisodes: this.remoteFreezeEpisodes,

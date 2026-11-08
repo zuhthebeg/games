@@ -40,7 +40,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .joystick.floating { position: fixed; z-index: 4; margin: 0; transform: translate(-50%, -50%); }
 .joystick span { display: block; width: 48px; height: 48px; border-radius: 50%; background: #c39b7566; border: 1px solid #d8b995; }
 .buttons { position: relative; flex: 0 0 208px; width: 208px; height: 222px; margin-left: auto; pointer-events: auto; }
-.buttons button { position: absolute; min-width: 48px; min-height: 48px; padding: 0 4px; font: 12px system-ui, sans-serif; background: #211b22e8; backdrop-filter: blur(2px); touch-action: none; }
+.buttons button { position: absolute; min-width: 48px; min-height: 48px; padding: 0 4px; font: 12px system-ui, sans-serif; word-break: keep-all; background: #211b22e8; backdrop-filter: blur(2px); touch-action: none; }
 .buttons button[data-button="4"] { left: 144px; top: 56px; width: 64px; height: 64px; }
 .buttons button[data-button="8"] { left: 72px; top: 56px; width: 64px; height: 64px; }
 .buttons button[data-button="16"] { left: 0; top: 56px; width: 64px; height: 64px; }

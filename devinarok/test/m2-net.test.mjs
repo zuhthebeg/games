@@ -34,6 +34,10 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
       characterKind: 'knight',
       look: { weapon: '2H_Sword', helmet: true, cape: true, weaponRarity: 'rare' },
       motion: { x: 1.235, z: -2.345, facing: -1.236 },
+      counterReadyTicks: 42,
+      counterAttackerId: 8,
+      perfectPaid: true,
+      dodgeStartTick: 17,
     }],
     events: [{ eventId: 4, type: 'hit', shape: { originX: 0.129, originZ: 1.999, angle: 2.345 } }],
   };
@@ -41,6 +45,10 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.ents[0].x, roundToHundredth(message.ents[0].x));
   assert.equal(result.ents[0].z, roundToHundredth(message.ents[0].z));
   assert.equal(result.ents[0].facing, roundToHundredth(message.ents[0].facing));
+  assert.equal(result.ents[0].counterReadyTicks, 42);
+  assert.equal(result.ents[0].counterAttackerId, 8);
+  assert.equal(result.ents[0].perfectPaid, true);
+  assert.equal(result.ents[0].dodgeStartTick, 17);
   assert.equal(result.ents[0].motion.x, roundToHundredth(message.ents[0].motion.x));
   assert.equal(result.ents[0].playerId, 'hero');
   assert.equal(result.events[0].shape.angle, roundToHundredth(message.events[0].shape.angle));

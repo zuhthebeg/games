@@ -21,10 +21,10 @@ function normalizeInput(input) {
 }
 
 function ownPlayerFromSnapshot(snapshot, playerId) {
-  if (snapshot.player) return snapshot.player;
-  if (snapshot.ownPlayer) return snapshot.ownPlayer;
-  const entity = snapshot.ents?.find((entry) => entry.playerId === playerId || entry.id === snapshot.playerEntityId);
-  return entity?.motion ? { ...entity, ...entity.motion } : entity;
+  const player = snapshot.player ??
+    snapshot.ownPlayer ??
+    snapshot.ents?.find((entry) => entry.playerId === playerId || entry.id === snapshot.playerEntityId);
+  return player?.motion ? { ...player, ...player.motion } : player;
 }
 
 function needsForcedSnap(snapshot, previousPlayer, authoritative) {
