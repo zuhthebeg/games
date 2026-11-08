@@ -10,6 +10,18 @@ async function repository(seed) {
   return repo;
 }
 
+class DelayedReadBackend extends MemoryBackend {
+  readGate = null;
+
+  async readData() {
+    const data = await super.readData();
+    const gate = this.readGate;
+    this.readGate = null;
+    if (gate) await gate;
+    return data;
+  }
+}
+
 test('save commits validate currency, item ownership, slots, and revisions', async () => {
   const repo = await repository();
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '기사', kind: 'knight' }] });
@@ -70,6 +82,35 @@ test('settlement commits are idempotent across a retry after an uncertain respon
   assert.equal(retry.gold, 75);
   assert.equal(retry.xp, 12);
   assert.equal((await repo.backend.readData()).ledger.filter((entry) => entry.idempotencyKey === 'sortie-1').length, 1);
+});
+
+test('concurrent commits and outbox acknowledgements preserve both writes', async () => {
+  const backend = new DelayedReadBackend();
+  const repo = new SaveRepository(backend);
+  await repo.initialize();
+  const created = await repo.commit({
+    characterId: 'hero',
+    baseRev: 0,
+    ops: [{ type: 'createCharacter', name: '기사', kind: 'knight' }],
+    cloudUserId: 'user-1',
+  });
+  const [queued] = await repo.listOutbox('user-1');
+  let releaseRead;
+  backend.readGate = new Promise((resolve) => { releaseRead = resolve; });
+  const acknowledge = repo.acknowledgeOutbox(queued.id);
+  await new Promise(setImmediate);
+  const commit = repo.commit({
+    characterId: created.id,
+    baseRev: created.rev,
+    ops: [{ type: 'grantGold', amount: 5 }],
+    cloudUserId: 'user-1',
+  });
+  releaseRead();
+  await Promise.all([acknowledge, commit]);
+  assert.equal((await repo.loadCharacter('hero')).gold, 5);
+  const remaining = await repo.listOutbox('user-1');
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].baseRev, created.rev);
 });
 
 test('legacy schema migration backs up source and import/export verifies checksum', async () => {
