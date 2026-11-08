@@ -9,7 +9,9 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
-import { createTutorialState, resolveTutorialSortie, TUTORIAL_COPY, transitionTutorial } from './ui/tutorial.js';
+import {
+  createTutorialState, resolveTutorialSortie, shouldRenderTutorialCard, TUTORIAL_COPY, transitionTutorial,
+} from './ui/tutorial.js';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from './core/debug-toggle.js';
 import { SANCTUARY_ARENA } from './sanctuary/arena.js';
 import { SanctuaryVfx } from './sanctuary/vfx.js';
@@ -320,10 +322,7 @@ function trackTutorialMovement(current) {
 function renderTutorialCard() {
   const card = $('#tutorial-card');
   const copy = tutorialState?.active ? TUTORIAL_COPY[tutorialState.step] : null;
-  const hubStep = ['board', 'blacksmith', 'equipment'].includes(tutorialState?.step);
-  card.hidden = !copy
-    || !['hub', 'stage'].includes(world?.mode)
-    || (world?.mode === 'hub' && !hubStep);
+  card.hidden = !copy || !shouldRenderTutorialCard(world?.mode, tutorialState);
   if (!copy || card.hidden) return;
   $('#tutorial-title').textContent = copy.title;
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;

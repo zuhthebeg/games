@@ -22,6 +22,14 @@ export function createTutorialState(saved = {}) {
   };
 }
 
+export function shouldRenderTutorialCard(worldMode, state) {
+  if (!state?.active || !TUTORIAL_COPY[state.step]) return false;
+  const hubStep = ['board', 'blacksmith', 'equipment'].includes(state.step);
+  if (worldMode === 'hub') return hubStep;
+  if (worldMode === 'stage') return !hubStep;
+  return false;
+}
+
 export function resolveTutorialSortie(stageId, state) {
   const beginCombat = Boolean(state?.active && state.step === 'board' && !state.combatComplete);
   return { stageId: beginCombat ? 'C1' : stageId, beginCombat };

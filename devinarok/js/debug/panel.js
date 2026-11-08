@@ -3,7 +3,9 @@ import { isStageUnlocked, STAGE_LIST } from '../content/stages.js';
 import { createHubWorld, completeStage, rollStageItem, spawnEnemy } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
 import { debugKillRoomEnemies } from './combat.js';
-import { loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate } from './state.js';
+import {
+  debugShortcutOperations, loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate,
+} from './state.js';
 
 const FAMILY_LABELS = { sword: '검', crossbow: '석궁', staff: '지팡이' };
 const SLOTS = [
@@ -425,8 +427,8 @@ export function mountDebugPanel(context) {
       const family = characterFamily();
       const ops = [];
       if (bossTest) ops.push({ type: 'setLevel', level });
-      ops.push(...allFamilySetOps(family, level, 'rare'), { type: 'markDebug' });
-      await context.applyOps(ops);
+      ops.push(...allFamilySetOps(family, level, 'rare'));
+      await context.applyOps(debugShortcutOperations(context.character, action, ops));
       if (bossTest) {
         context.closeDebugPanel();
         await context.startStage(stage.id, { seed: currentSeed() });
@@ -518,7 +520,11 @@ export function mountDebugPanel(context) {
         toast = `${FAMILY_LABELS[family]} 희귀 무기 지급 · 착용`;
       }
     } else if (action === 'unlock-stages') {
-      await commitDebugOps(STAGE_LIST.map((stage) => ({ type: 'clearStage', stageId: stage.id })));
+      await context.applyOps(debugShortcutOperations(
+        context.character,
+        action,
+        STAGE_LIST.map((stage) => ({ type: 'clearStage', stageId: stage.id })),
+      ));
       toast = `모든 스테이지 해금 · ${STAGE_LIST.length}개`;
     } else if (action === 'tutorial-replay') {
       if (!await context.replayTutorial()) throw new Error('튜토리얼 상태가 없습니다.');
@@ -531,7 +537,7 @@ export function mountDebugPanel(context) {
       const stage = STAGE_LIST.find((entry) => entry.id === stageId);
       if (!stage) throw new Error('스테이지를 찾을 수 없습니다.');
       const seed = currentSeed();
-      await commitDebugOps();
+      await context.applyOps(debugShortcutOperations(context.character, action));
       context.closeDebugPanel();
       await context.startStage(stage.id, { seed });
       toast = `${stage.name} 시작${seed === null ? '' : ` · 시드 ${seed}`}`;

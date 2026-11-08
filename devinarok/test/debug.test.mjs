@@ -5,7 +5,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
 import { debugKillEnemy } from '../js/debug/combat.js';
-import { loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate } from '../js/debug/state.js';
+import {
+  debugShortcutOperations, loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate,
+} from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 import { createStageWorld } from '../js/sim/world.js';
 
@@ -17,6 +19,22 @@ function memoryStorage() {
     getItem(key) { return data.get(key) ?? null; },
     setItem(key, value) { data.set(key, String(value)); },
     removeItem(key) { data.delete(key); },
+  };
+}
+
+function characterWithTutorial(tutorial = {
+  step: 'board',
+  completed: false,
+  skipped: false,
+  combatComplete: false,
+}) {
+  return {
+    id: 'hero',
+    level: 1,
+    debugUsed: false,
+    equipment: { weapon: null, head: null, body: null, hands: null, feet: null },
+    clearedStages: [],
+    tutorial,
   };
 }
 
@@ -77,6 +95,58 @@ test('debug save operations clamp level, reset progress, and mark the character'
   assert.equal(lower.level, 1);
   assert.equal(lower.xp, 0);
   assert.throws(() => applyOperations(updated, {}, [{ type: 'setLevel', level: '3' }], 'hero'), /integer/);
+});
+
+test('boss test skips an active tutorial and marks the character as debug-used', () => {
+  const character = characterWithTutorial();
+  const updated = applyOperations(
+    character,
+    {},
+    debugShortcutOperations(character, 'preset-boss'),
+    'hero',
+  ).character;
+  assert.equal(updated.tutorial.step, 'done');
+  assert.equal(updated.tutorial.skipped, true);
+  assert.equal(updated.debugUsed, true);
+});
+
+test('starting a stage skips an active tutorial and marks the character as debug-used', () => {
+  const character = characterWithTutorial({ step: 'movement', combatComplete: false });
+  const updated = applyOperations(
+    character,
+    {},
+    debugShortcutOperations(character, 'start-stage:CB'),
+    'hero',
+  ).character;
+  assert.equal(updated.tutorial.step, 'done');
+  assert.equal(updated.tutorial.skipped, true);
+  assert.equal(updated.debugUsed, true);
+});
+
+test('unlocking all stages skips an active tutorial and marks the character as debug-used', () => {
+  const character = characterWithTutorial();
+  const updated = applyOperations(
+    character,
+    {},
+    debugShortcutOperations(character, 'unlock-stages', [{ type: 'clearStage', stageId: 'C1' }]),
+    'hero',
+  ).character;
+  assert.equal(updated.tutorial.step, 'done');
+  assert.equal(updated.tutorial.skipped, true);
+  assert.equal(updated.debugUsed, true);
+  assert.deepEqual(updated.clearedStages, ['C1']);
+});
+
+test('debug shortcuts preserve an already terminal tutorial', () => {
+  const character = characterWithTutorial({
+    step: 'done',
+    completed: true,
+    skipped: false,
+    combatComplete: true,
+  });
+  const operations = debugShortcutOperations(character, 'preset-boss');
+  assert.equal(operations.some((operation) => operation.type === 'updateTutorial'), false);
+  assert.equal(operations.some((operation) => operation.type === 'markDebug'), true);
 });
 
 test('debug destructive confirmation expires after three seconds', () => {

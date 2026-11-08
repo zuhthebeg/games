@@ -1,4 +1,23 @@
+import { createTutorialState, transitionTutorial } from '../ui/tutorial.js';
+
 export const RECENT_ACTIONS_KEY = 'devinarok.debug.recent';
+
+export function debugShortcutOperations(character, action, operations = []) {
+  const nextOperations = [...operations];
+  const tutorial = character?.tutorial;
+  const skipsTutorial = action === 'preset-boss'
+    || action === 'unlock-stages'
+    || action.startsWith('start-stage:');
+  const tutorialIsTerminal = tutorial?.completed || tutorial?.skipped || tutorial?.step === 'done';
+  if (skipsTutorial && !tutorialIsTerminal) {
+    const state = transitionTutorial(createTutorialState(tutorial), { type: 'skip' });
+    nextOperations.unshift({ type: 'updateTutorial', state });
+  }
+  if (!nextOperations.some((operation) => operation.type === 'markDebug')) {
+    nextOperations.push({ type: 'markDebug' });
+  }
+  return nextOperations;
+}
 
 export function partyActionReason(inParty, action) {
   return inParty && action !== 'disable-debug' && action !== 'info'
