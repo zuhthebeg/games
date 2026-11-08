@@ -1,5 +1,14 @@
 import { BUTTONS } from '../sim/world.js';
 
+export function detectTouchFlick({ pointerType, elapsedMs, dx, dy }) {
+  const distance = Math.hypot(dx, dy);
+  if (pointerType !== 'touch' || elapsedMs < 0 || elapsedMs > 180 || distance < 28) return null;
+  return {
+    moveX: Math.round(dx / distance * 127),
+    moveZ: Math.round(dy / distance * 127),
+  };
+}
+
 const KEY_BINDINGS = {
   KeyJ: BUTTONS.ATTACK,
   KeyK: BUTTONS.DODGE,
@@ -22,6 +31,7 @@ export class InputLayer {
     this.seq = 0;
     this.moveX = 0;
     this.moveZ = 0;
+    this.flickMove = null;
     this.aim = 192;
     this.devInputProvider = null;
     this.joystick = controls.querySelector('[data-joystick]');
@@ -51,13 +61,21 @@ export class InputLayer {
       this.joystick.style.left = `${event.clientX}px`;
       this.joystick.style.top = `${event.clientY}px`;
       this.joystick.classList.add('floating');
-      this.heldPointers.set(event.pointerId, { type: 'move', x: event.clientX, y: event.clientY });
+      this.heldPointers.set(event.pointerId, {
+        type: 'move',
+        x: event.clientX,
+        y: event.clientY,
+        startX: event.clientX,
+        startY: event.clientY,
+        startedAt: event.timeStamp,
+        pointerType: event.pointerType,
+      });
       this.updateJoystick(event);
     };
     this.onCanvasMove = (event) => {
       if (this.heldPointers.get(event.pointerId)?.type === 'move') this.updateJoystick(event);
     };
-    this.onCanvasUp = (event) => this.releasePointer(event.pointerId);
+    this.onCanvasUp = (event) => this.releasePointer(event.pointerId, event);
     this.canvas.addEventListener('pointerdown', this.onCanvasDown);
     this.canvas.addEventListener('pointermove', this.onCanvasMove);
     this.canvas.addEventListener('pointerup', this.onCanvasUp);
@@ -71,7 +89,16 @@ export class InputLayer {
     const on = (target, type, handler) => target?.addEventListener(type, handler, { signal });
     on(this.joystick, 'pointerdown', (event) => {
       this.joystick.setPointerCapture(event.pointerId);
-      this.heldPointers.set(event.pointerId, { type: 'move', x: event.clientX, y: event.clientY });
+      this.joystickAnchor = { x: event.clientX, y: event.clientY };
+      this.heldPointers.set(event.pointerId, {
+        type: 'move',
+        x: event.clientX,
+        y: event.clientY,
+        startX: event.clientX,
+        startY: event.clientY,
+        startedAt: event.timeStamp,
+        pointerType: event.pointerType,
+      });
       this.updateJoystick(event);
     });
     on(this.joystick, 'pointermove', (event) => {
@@ -85,11 +112,11 @@ export class InputLayer {
         this.heldPointers.set(event.pointerId, { type: 'button', bit });
         this.bindings.set(event.pointerId, bit);
       });
-      on(button, 'pointerup', (event) => this.releasePointer(event.pointerId));
-      on(button, 'pointercancel', (event) => this.releasePointer(event.pointerId));
+      on(button, 'pointerup', (event) => this.releasePointer(event.pointerId, event));
+      on(button, 'pointercancel', (event) => this.releasePointer(event.pointerId, event));
     }
-    on(this.joystick, 'pointerup', (event) => this.releasePointer(event.pointerId));
-    on(this.joystick, 'pointercancel', (event) => this.releasePointer(event.pointerId));
+    on(this.joystick, 'pointerup', (event) => this.releasePointer(event.pointerId, event));
+    on(this.joystick, 'pointercancel', (event) => this.releasePointer(event.pointerId, event));
   }
 
   updateJoystick(event) {
@@ -110,10 +137,23 @@ export class InputLayer {
     }
   }
 
-  releasePointer(pointerId) {
+  releasePointer(pointerId, event = null) {
     const pointer = this.heldPointers.get(pointerId);
     if (pointer?.type === 'button') this.latchedButtons |= pointer.bit;
     if (pointer?.type === 'move') {
+      if (event?.type === 'pointerup') {
+        const flick = detectTouchFlick({
+          pointerType: pointer.pointerType ?? event.pointerType,
+          elapsedMs: event.timeStamp - pointer.startedAt,
+          dx: event.clientX - pointer.startX,
+          dy: event.clientY - pointer.startY,
+        });
+        if (flick) {
+          this.flickMove = flick;
+          this.latchedButtons |= BUTTONS.DODGE;
+          this.aim = Math.round((Math.atan2(flick.moveZ, flick.moveX) / (Math.PI * 2) * 256 + 256) % 256);
+        }
+      }
       this.moveX = 0;
       this.moveZ = 0;
       this.joystickAnchor = null;
@@ -127,22 +167,33 @@ export class InputLayer {
   nextTick() {
     if (this.devInputProvider) {
       const seq = ++this.seq;
-      return { ...this.devInputProvider(seq), seq };
+      const input = { ...this.devInputProvider(seq), seq };
+      delete input.attackHeld;
+      return input;
     }
     let buttons = this.latchedButtons;
     this.latchedButtons = 0;
+    let heldButtons = 0;
     for (const code of this.heldKeys) this.unreportedButtonKeys.delete(code);
-    for (const code of this.heldKeys) buttons |= KEY_BINDINGS[code] ?? 0;
-    for (const bit of this.bindings.values()) buttons |= bit;
+    for (const code of this.heldKeys) heldButtons |= KEY_BINDINGS[code] ?? 0;
+    for (const bit of this.bindings.values()) heldButtons |= bit;
+    buttons |= heldButtons;
     let moveX = this.moveX;
     let moveZ = this.moveZ;
+    if (this.flickMove) {
+      moveX = this.flickMove.moveX;
+      moveZ = this.flickMove.moveZ;
+      this.flickMove = null;
+    }
     const key = (code) => this.heldKeys.has(code);
     moveX += (key('KeyD') || key('ArrowRight') ? 127 : 0) - (key('KeyA') || key('ArrowLeft') ? 127 : 0);
     moveZ += (key('KeyS') || key('ArrowDown') ? 127 : 0) - (key('KeyW') || key('ArrowUp') ? 127 : 0);
     moveX = Math.max(-127, Math.min(127, moveX));
     moveZ = Math.max(-127, Math.min(127, moveZ));
     if (moveX || moveZ) this.aim = Math.round((Math.atan2(moveZ, moveX) / (Math.PI * 2) * 256 + 256) % 256);
-    return { seq: ++this.seq, moveX, moveZ, aim: this.aim, buttons };
+    const input = { seq: ++this.seq, moveX, moveZ, aim: this.aim, buttons };
+    if (heldButtons & BUTTONS.ATTACK) input.attackHeld = true;
+    return input;
   }
 
   setDevInputProvider(provider) {

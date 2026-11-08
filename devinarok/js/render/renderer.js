@@ -1306,12 +1306,21 @@ export class ArenaRenderer {
   createSlash(event) {
     if (!event.castId || this.seenCastIds.has(event.castId)) return;
     this.seenCastIds.add(event.castId);
+    const counter = event.skillId === 'counter';
     const skillId = event.skill;
     const timeline = COMBO_TIMELINES[event.step - 1];
-    const duration = skillId === 1 ? 6 : skillId === 2 ? 6 : skillId === 3 ? 45 : timeline?.activeTicks;
+    const duration = counter ? 8 : skillId === 1 ? 6 : skillId === 2 ? 6 : skillId === 3 ? 45 : timeline?.activeTicks;
     if (!duration) return;
     const points = [];
-    if (skillId === 1) {
+    if (counter && event.family === 'staff') {
+      for (let index = 0; index <= 32; index += 1) {
+        const angle = index / 32 * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(angle) * 2.8, 0, Math.sin(angle) * 2.8));
+      }
+    } else if (counter) {
+      const length = event.family === 'crossbow' ? 12 : 3.5;
+      points.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(length, 0, 0));
+    } else if (skillId === 1) {
       for (let index = 0; index <= 32; index += 1) {
         const angle = index / 32 * Math.PI * 2;
         points.push(new THREE.Vector3(Math.cos(angle) * 2.2, 0, Math.sin(angle) * 2.2));
@@ -1325,10 +1334,11 @@ export class ArenaRenderer {
         points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
       }
     }
-    const curve = new THREE.CatmullRomCurve3(points, skillId === 1);
-    const geometry = new THREE.TubeGeometry(curve, skillId === 1 ? 40 : 28, skillId === 3 ? 0.085 : skillId === 1 ? 0.05 : 0.065, 6, skillId === 1);
+    const closed = skillId === 1 || (counter && event.family === 'staff');
+    const curve = new THREE.CatmullRomCurve3(points, closed);
+    const geometry = new THREE.TubeGeometry(curve, closed ? 40 : 28, counter ? 0.09 : skillId === 3 ? 0.085 : skillId === 1 ? 0.05 : 0.065, 6, closed);
     const material = new THREE.MeshBasicMaterial({
-      color: skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
+      color: counter ? 0xffe08a : skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
       transparent: true,
       opacity: 0.96,
       depthTest: false,
@@ -1339,7 +1349,7 @@ export class ArenaRenderer {
     mesh.renderOrder = 2;
     mesh.visible = false;
     this.scene.add(mesh);
-    const startTick = event.tick + (timeline?.windupTicks ?? (skillId === 1 ? 5 : 0));
+    const startTick = event.tick + (counter ? 0 : timeline?.windupTicks ?? (skillId === 1 ? 5 : 0));
     this.slashes.set(event.castId, {
       castId: event.castId,
       entityId: event.entityId,

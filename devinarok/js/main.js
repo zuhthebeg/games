@@ -1,5 +1,6 @@
 import { createSaveRepository, DEFAULT_SETTINGS } from './save/repository.js';
 import { InputLayer } from './core/input.js';
+import { AttackInputAssistant, autoAttackDefault } from './core/attack-assist.js';
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
@@ -24,7 +25,7 @@ import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
 import { HUB_ARENA, isStageUnlocked, STAGE_LIST } from './content/stages.js';
 import {
-  BUTTONS, COMBO_TIMELINES, calculatePlayerStats, completeStage, createHubWorld,
+  BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
   createStageWorld, retreatStage, rollStageItem, step,
 } from './sim/world.js';
 
@@ -58,6 +59,7 @@ let tutorialSaveChain = Promise.resolve();
 let tutorialLastX = null;
 let tutorialLastZ = null;
 const audio = new AudioManager();
+const attackInputAssistant = new AttackInputAssistant();
 let currentStageId = null;
 let partyClient = null;
 let partyFrame = null;
@@ -84,6 +86,43 @@ let partyFeedbackIsError = false;
 let sanctuaryState = null;
 let sanctuaryVfx = null;
 let sanctuaryBurnAudio = null;
+let actionToastTimer = null;
+let counterPunchTimer = null;
+
+function autoAttackEnabled() {
+  return settings.autoAttack ?? autoAttackDefault({
+    coarsePointer: window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
+  });
+}
+
+function showActionToast(message) {
+  const toast = $('#toast');
+  toast.textContent = message;
+  clearTimeout(actionToastTimer);
+  actionToastTimer = setTimeout(() => {
+    if (toast.textContent === message) toast.textContent = '';
+  }, 1500);
+}
+
+function showCounterPresentation() {
+  if (reducedMotionEnabled()) return;
+  const camera = renderer?.camera;
+  const property = camera && Number.isFinite(camera.fov) ? 'fov' : 'zoom';
+  const initial = camera?.[property];
+  if (Number.isFinite(initial)) {
+    camera[property] = property === 'fov' ? initial + 2 : initial * 1.06;
+    camera.updateProjectionMatrix();
+  }
+  document.body.classList.add('counter-flash');
+  clearTimeout(counterPunchTimer);
+  counterPunchTimer = setTimeout(() => {
+    if (camera && renderer?.camera === camera && Number.isFinite(initial)) {
+      camera[property] = initial;
+      camera.updateProjectionMatrix();
+    }
+    document.body.classList.remove('counter-flash');
+  }, 120);
+}
 
 async function reloadCharacter() {
   character = await saves.loadCharacter(character.id);
@@ -114,6 +153,8 @@ function applySettings() {
   $('#haptics-setting').checked = hapticsEnabled();
   $('#haptics-setting').disabled = typeof navigator.vibrate !== 'function';
   $('#telegraph-setting').checked = settings.telegraphEmphasis;
+  $('#auto-attack-setting').checked = autoAttackEnabled();
+  $('#auto-attack-chip').hidden = !autoAttackEnabled();
   $('#settings-mute-button').textContent = settings.muted ? '소리 켜기' : '음소거';
   $('#mute-button').textContent = settings.muted ? '소리 켜기' : '소리 끄기';
   renderer?.setQualityMode(settings.quality);
@@ -135,6 +176,7 @@ function updateTutorial(event) {
     && next.skipped === tutorialState.skipped
     && next.completed === tutorialState.completed
     && next.combatComplete === tutorialState.combatComplete
+    && next.perfectDodgeHintShown === tutorialState.perfectDodgeHintShown
   ) return;
   tutorialState = next;
   renderTutorialCard();
@@ -200,7 +242,15 @@ function handleAudioEvent(event, current) {
     entity.kind === 'player' && entity.playerId === character?.id
   ));
   if (event.type === 'cast') {
-    if (event.skill !== undefined) {
+    if (event.skillId === 'counter') {
+      if (event.family === 'crossbow') audio.play('crossbow-shot');
+      else if (event.family === 'staff') audio.play('staff-cast');
+      else audio.play('sword-swing');
+      if (event.playerId === character?.id) {
+        showActionToast('반격!');
+        showCounterPresentation();
+      }
+    } else if (event.skill !== undefined) {
       const sounds = {
         sword: { 3: 'shield-clang' },
         crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot' },
@@ -219,6 +269,11 @@ function handleAudioEvent(event, current) {
     || (event.type === 'hit' && event.damage > 0 && event.targetId === localPlayer?.id)
   ) playHaptic();
   if (event.type === 'dodge') audio.play('footstep');
+  if (event.type === 'perfectDodge' && event.playerId === character?.id) {
+    const firstHint = !tutorialState?.perfectDodgeHintShown;
+    updateTutorial({ type: 'perfectDodge' });
+    if (firstHint) showActionToast('완벽한 회피! 바로 공격하면 반격해요.');
+  }
   if (event.type === 'telegraph') {
     const enemy = current?.entities.find((entity) => entity.id === event.entityId);
     if (enemy?.boss) audio.play('boss-telegraph');
@@ -1147,8 +1202,15 @@ function partyLoop(time) {
 function sendPartyInputTick() {
   if (!partyClient || !partyClient.inputReady || !input || partyClient.result) return false;
   const next = input.nextTick();
-  const queued = pauseMenu.hidden ? next : { ...next, moveX: 0, moveZ: 0, buttons: 0 };
-  return Boolean(partyClient.sendInput(queued));
+  if (!pauseMenu.hidden) {
+    attackInputAssistant.reset();
+    return Boolean(partyClient.sendInput({ ...next, moveX: 0, moveZ: 0, buttons: 0, attackHeld: false }));
+  }
+  const player = partyClient.predictor?.getPlayer();
+  const prepared = player
+    ? attackInputAssistant.build(next, partyClient.stageWorld, player, { autoAttack: autoAttackEnabled() })
+    : next;
+  return Boolean(partyClient.sendInput(prepared));
 }
 
 function setPartyInputProvider(provider) {
@@ -1340,6 +1402,7 @@ async function startStage(stageId) {
   $('#hub-party-button').hidden = true;
   currentStageId = stageToStart;
   settled = false;
+  attackInputAssistant.reset();
   hubUi.hidden = true;
   hubPanel.hidden = true;
   pauseMenu.hidden = true;
@@ -1381,7 +1444,8 @@ async function startStage(stageId) {
     input,
     buildInput: (rawInput, current) => {
       const player = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
-      return buildRangedAimInput(rawInput, player, current);
+      const aimed = buildRangedAimInput(rawInput, player, current);
+      return attackInputAssistant.build(aimed, current, player, { autoAttack: autoAttackEnabled() });
     },
     render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
     onTick: (current) => {
@@ -1410,6 +1474,9 @@ function updateHud(current) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
     }
+    const dodgeButton = $('#controls [data-button="2"]');
+    dodgeButton?.style.setProperty('--cooldown', `${(hero.dodgeCooldownTicks / DODGE_COOLDOWN_TICKS) * 100}%`);
+    $('#controls .attack-button')?.classList.toggle('counter-ready', hero.counterReadyTicks > 0);
   }
   $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(current.stageId);
   const boss = current.entities.find((entity) => entity.boss);
@@ -1560,6 +1627,7 @@ $('#reduced-motion-setting').addEventListener('change', (event) => { void saveSe
 $('#large-text-setting').addEventListener('change', (event) => { void saveSetting('largeText', event.currentTarget.checked); });
 $('#haptics-setting').addEventListener('change', (event) => { void saveSetting('haptics', event.currentTarget.checked); });
 $('#telegraph-setting').addEventListener('change', (event) => { void saveSetting('telegraphEmphasis', event.currentTarget.checked); });
+$('#auto-attack-setting').addEventListener('change', (event) => { void saveSetting('autoAttack', event.currentTarget.checked); });
 $('#tutorial-skip').addEventListener('click', () => updateTutorial({ type: 'skip' }));
 $('#tutorial-replay-button').addEventListener('click', async () => {
   updateTutorial({ type: 'replay' });
@@ -1786,6 +1854,24 @@ reducedMotionMedia.addEventListener('change', () => {
 });
 
 window.addEventListener('keydown', (event) => {
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const editable = event.target instanceof HTMLElement && event.target.closest('input, select, textarea, [contenteditable="true"]');
+  if (
+    event.code === 'KeyT' &&
+    !event.repeat &&
+    !coarsePointer &&
+    !editable &&
+    pauseMenu.hidden &&
+    $('#settings-panel').hidden &&
+    hubPanel.hidden &&
+    resultPanel.hidden
+  ) {
+    event.preventDefault();
+    const enabled = !autoAttackEnabled();
+    void saveSetting('autoAttack', enabled);
+    showActionToast(`자동 공격 ${enabled ? '켜짐' : '꺼짐'}`);
+    return;
+  }
   if (sanctuaryState && world?.arena === SANCTUARY_ARENA) {
     if (event.code === 'KeyE') {
       event.preventDefault();

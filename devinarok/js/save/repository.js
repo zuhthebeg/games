@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   largeText: false,
   haptics: null,
   telegraphEmphasis: true,
+  autoAttack: null,
 });
 
 const QUALITY_MODES = new Set(['automatic', 'low', 'medium', 'high']);
@@ -33,6 +34,7 @@ export function normalizeSettings(value = {}) {
     largeText: Boolean(value.largeText),
     haptics: typeof value.haptics === 'boolean' ? value.haptics : null,
     telegraphEmphasis: value.telegraphEmphasis !== false,
+    autoAttack: typeof value.autoAttack === 'boolean' ? value.autoAttack : null,
   };
 }
 

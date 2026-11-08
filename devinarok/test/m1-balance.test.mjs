@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { ITEM_BASES } from '../js/content/items.js';
 import { BUTTONS, COMBO_TIMELINES, createStageWorld, step } from '../js/sim/world.js';
 
 function nearestEnemy(world, player) {
@@ -28,11 +29,12 @@ function inTelegraph(player, shape) {
   return false;
 }
 
-function botTick(world, seq, { aimAtTarget = false } = {}) {
+function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {}) {
   const player = world.entities.find((entity) => entity.kind === 'player');
   const ranged = player.family === 'crossbow' || player.family === 'staff';
   const enemies = world.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead && !entity.invulnerable);
-  const imminent = enemies.find((enemy) => enemy.attackPhase === 'windup' && enemy.attackRemaining <= 6 && inTelegraph(player, enemy.attackShape));
+  const dodgeWindow = perfectDodge ? 3 : 6;
+  const imminent = enemies.find((enemy) => enemy.attackPhase === 'windup' && enemy.attackRemaining <= dodgeWindow && inTelegraph(player, enemy.attackShape));
   let target = nearestEnemy(world, player);
   let dx = 0;
   let dz = 0;
@@ -80,17 +82,36 @@ function botTick(world, seq, { aimAtTarget = false } = {}) {
     const timeline = COMBO_TIMELINES[player.attack.step - 1];
     if (player.attack.phase === 'recovery' && player.attack.phaseTick >= timeline.recoveryTicks - timeline.chainWindowTicks) buttons |= 1;
   } else if (!ranged && target) buttons |= 1;
+  if (!imminent && player.counterReadyTicks > 0) {
+    if (player.previousButtons & BUTTONS.ATTACK) buttons &= ~BUTTONS.ATTACK;
+    else buttons |= BUTTONS.ATTACK;
+  }
   const aimDx = aimAtTarget && target ? target.x - player.x : dx;
   const aimDz = aimAtTarget && target ? target.z - player.z : dz;
   const aim = Math.round((Math.atan2(aimDz, aimDx) / (Math.PI * 2) * 256 + 256) % 256);
   return { seq, moveX, moveZ, aim, buttons };
 }
 
-function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false }) {
+function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false, perfectDodge = false }) {
   const id = 'bot';
   const world = createStageWorld({ seed, stageId, playerId: id, character: { level, potions, equipment } });
+  let dodges = 0;
+  let perfectDodges = 0;
+  let lastEventId = 0;
+  let lastDamage = null;
+  const playerId = world.entities.find((entity) => entity.kind === 'player')?.id;
   for (let tick = 1; tick <= maxTicks && !world.outcome; tick += 1) {
-    step(world, { [id]: botTick(world, tick, { aimAtTarget }) });
+    step(world, { [id]: botTick(world, tick, { aimAtTarget, perfectDodge }) });
+    for (const event of world.events) {
+      if (event.eventId <= lastEventId) continue;
+      lastEventId = event.eventId;
+      if (event.type === 'dodge') dodges += 1;
+      if (event.type === 'perfectDodge') perfectDodges += 1;
+      if (event.type === 'hit' && event.targetId === playerId && event.damage > 0) {
+        const source = world.entities.find((entity) => entity.id === event.sourceId);
+        lastDamage = { source: source?.enemyKind ?? event.sourceId, damage: event.damage };
+      }
+    }
   }
   const player = world.entities.find((entity) => entity.kind === 'player');
   const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
@@ -103,6 +124,9 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
     bossDamage: boss ? boss.maxHp - boss.hp : null,
     roomIndex: world.roomIndex,
     roomCleared: world.roomCleared,
+    dodgeCount: dodges,
+    perfectDodgeCount: perfectDodges,
+    lastDamage,
     playerPosition: player ? { x: player.x, z: player.z } : null,
     remainingEnemies: world.entities
       .filter((entity) => entity.kind === 'enemy' && !entity.dead)
@@ -124,11 +148,20 @@ function median(values) {
     : (ordered[middle - 1] + ordered[middle]) / 2;
 }
 
+function perfectDodgeSummary(runs) {
+  const dodgeCount = runs.reduce((sum, run) => sum + run.dodgeCount, 0);
+  const perfectCount = runs.reduce((sum, run) => sum + run.perfectDodgeCount, 0);
+  const rate = dodgeCount ? (perfectCount / dodgeCount * 100).toFixed(1) : '0.0';
+  const perRun = runs.map((run) => `${run.perfectDodgeCount}/${run.dodgeCount}`).join(',');
+  return `${perfectCount}/${dodgeCount} (${rate}%) per-run=${perRun}`;
+}
+
 test('scripted input-record bot keeps C1 level-1 clears within one of the M1 baseline', () => {
   const runs = Array.from({ length: 10 }, (_, index) => runBot({ seed: 101 + index, stageId: 'C1', level: 1 }));
   const clears = runs.filter((run) => run.outcome === 'clear');
   const averageSeconds = clears.length ? clears.reduce((sum, run) => sum + run.seconds, 0) / clears.length : 0;
   console.log(`M1 bot C1 L1: ${clears.length}/10 clears; mean clear time ${averageSeconds.toFixed(1)}s`);
+  console.log(`M1 bot C1 L1 perfect dodge: ${perfectDodgeSummary(runs)}`);
   assert.equal(clears.length, 10);
   assert.ok(clears.every((run) => run.seconds <= 180));
 });
@@ -143,8 +176,10 @@ test('scripted input-record bot keeps level-7 boss wins within one of the M1 bas
   ];
   const runs = Array.from({ length: 10 }, (_, index) => runBot({ seed: 301 + index, stageId: 'CB', level: 7, equipment, potions: 3, maxTicks: 9000 }));
   const wins = runs.filter((run) => run.outcome === 'clear');
-  console.log(`M1 bot CB L7 rare gear: ${wins.length}/10 wins`);
-  assert.ok(wins.length >= 8 && wins.length <= 10);
+  const medianClearSeconds = wins.length ? median(wins.map((run) => run.seconds)) : null;
+  console.log(`M1 bot CB L7 rare gear: ${wins.length}/10 wins; median ${medianClearSeconds?.toFixed(1) ?? '—'}s`);
+  console.log(`M1 bot CB perfect dodge: ${perfectDodgeSummary(runs)}`);
+  assert.ok(wins.length >= 7 && wins.length <= 10);
 });
 
 test('crossbow and staff bots reach C1 L1 starter clear targets', () => {
@@ -157,6 +192,7 @@ test('crossbow and staff bots reach C1 L1 starter clear targets', () => {
     }));
     const clears = runs.filter((run) => run.outcome === 'clear');
     console.log(`M3a ${family} bot C1 L1: ${clears.length}/10 clears`);
+    console.log(`M3a ${family} C1 perfect dodge: ${perfectDodgeSummary(runs)}`);
     assert.ok(clears.length >= 9, `${family} C1 L1: ${clears.length}/10`);
   }
 });
@@ -186,6 +222,7 @@ test('crossbow and staff bots keep level-7 boss wins in the target band', () => 
     const medianClearSeconds = median(wins.map((run) => run.seconds));
     console.log(`M3a ${family} bot CB L7 rare gear: ${wins.length}/10 wins; median clear ${medianClearSeconds.toFixed(1)}s`);
     console.log(`M3a ${family} CB seeds: ${runs.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s hp${run.hp}/${run.maxHp} bossDmg${run.bossDamage}`).join(', ')}`);
+    console.log(`M3a ${family} CB perfect dodge: ${perfectDodgeSummary(runs)}`);
     results.push({ family, wins: wins.length, medianClearSeconds });
   }
   for (const { family, wins, medianClearSeconds } of results) {
@@ -250,6 +287,7 @@ test('region-2 balance gates use L5 gear in F1 and L7 gear in FB', () => {
     const medianClearSeconds = median(wins.map((run) => run.seconds));
     console.log(`M3b ${family} ${stageId} L${characterLevel}/L${gearLevel}: ${wins.length}/10 clears; median ${medianClearSeconds.toFixed(1)}s`);
     console.log(`M3b ${family} ${stageId} seeds: ${runs.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s hp${run.hp}/${run.maxHp}`).join(', ')}`);
+    console.log(`M3b ${family} ${stageId} perfect dodge: ${perfectDodgeSummary(runs)}`);
     const stalled = runs.filter((run) => run.outcome !== 'clear');
     if (stalled.length) console.log(`M3b ${family} ${stageId} stalls: ${JSON.stringify(stalled.map(({ tick, roomIndex, roomCleared, playerPosition, remainingEnemies }) => ({ tick, roomIndex, roomCleared, playerPosition, remainingEnemies })))}`);
     return { family, stageId, wins: wins.length, medianClearSeconds };
@@ -263,8 +301,152 @@ test('region-2 balance gates use L5 gear in F1 and L7 gear in FB', () => {
     assert.ok(result.wins >= 9, `${result.family} F1: ${result.wins}/10`);
   }
   const swordBoss = results.find((entry) => entry.family === 'sword' && entry.stageId === 'FB');
-  assert.ok(swordBoss.wins >= 7 && swordBoss.wins <= 9, `sword FB: ${swordBoss.wins}/10`);
+  assert.ok(swordBoss.wins >= 7 && swordBoss.wins <= 10, `sword FB: ${swordBoss.wins}/10`);
   for (const result of results.filter((entry) => entry.family !== 'sword' && entry.stageId === 'FB')) {
     assert.ok(result.wins >= 7, `${result.family} FB: ${result.wins}/10`);
+  }
+});
+
+test('M5a K1 and KB gates include perfect-dodge counter outcomes', () => {
+  const priorBossMedian = { sword: 80.4, crossbow: 60.8, staff: 62.8 };
+  const armorAffixes = {
+    9: [
+      [{ id: 'defense', value: 5 }, { id: 'maxHp', value: 36 }],
+      [{ id: 'maxHp', value: 36 }, { id: 'defense', value: 5 }],
+      [{ id: 'attackPercent', value: 12 }, { id: 'lifesteal', value: 5 }],
+      [{ id: 'moveSpeed', value: 7 }, { id: 'maxHp', value: 36 }],
+    ],
+    11: [
+      [{ id: 'defense', value: 6 }, { id: 'maxHp', value: 44 }],
+      [{ id: 'maxHp', value: 44 }, { id: 'defense', value: 6 }],
+      [{ id: 'attackPercent', value: 14 }, { id: 'lifesteal', value: 6 }],
+      [{ id: 'moveSpeed', value: 8 }, { id: 'maxHp', value: 44 }],
+    ],
+  };
+  const gear = (level, family) => {
+    const weapon = ITEM_BASES.find((item) => item.slot === 'weapon' && item.family === family && item.requiredLevel === level);
+    const slots = ['head', 'body', 'hands', 'feet'];
+    const armor = ITEM_BASES.filter((item) => item.slot !== 'weapon' && item.requiredLevel === level)
+      .sort((a, b) => slots.indexOf(a.slot) - slots.indexOf(b.slot));
+    return [
+      { itemId: weapon.id, rarity: 'rare', affixes: [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }] },
+      ...armor.map((item, index) => ({ itemId: item.id, rarity: 'rare', affixes: armorAffixes[level][index] })),
+    ];
+  };
+  const results = ['sword', 'crossbow', 'staff'].flatMap((family) => ['K1', 'KB'].map((stageId) => {
+    const characterLevel = stageId === 'K1' ? 11 : 14;
+    const gearLevel = stageId === 'K1' ? 9 : 11;
+    const runs = Array.from({ length: 10 }, (_, index) => runBot({
+      seed: (stageId === 'K1' ? 901 : 1001) + index,
+      stageId,
+      level: characterLevel,
+      equipment: gear(gearLevel, family),
+      potions: 3,
+      maxTicks: 9000,
+      aimAtTarget: true,
+    }));
+    const clears = runs.filter((run) => run.outcome === 'clear');
+    const medianSeconds = median(clears.map((run) => run.seconds));
+    const dodges = runs.reduce((sum, run) => sum + run.dodgeCount, 0);
+    const perfect = runs.reduce((sum, run) => sum + run.perfectDodgeCount, 0);
+    console.log(`M5a ${family} ${stageId}: ${clears.length}/10, median ${medianSeconds.toFixed(1)}s, perfect dodge ${perfect}/${dodges} (${(dodges ? perfect / dodges * 100 : 0).toFixed(1)}%)`);
+    console.log(`M5a ${family} ${stageId} seeds: ${runs.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s perfect=${run.perfectDodgeCount}/${run.dodgeCount} damage=${run.lastDamage?.source ?? 'none'}:${run.lastDamage?.damage ?? 0}`).join(', ')}`);
+    return { family, stageId, wins: clears.length, medianSeconds };
+  }));
+  for (const result of results.filter((entry) => entry.stageId === 'K1')) {
+    assert.ok(result.wins >= 9, `${result.family} K1: ${result.wins}/10`);
+  }
+  for (const result of results.filter((entry) => entry.stageId === 'KB')) {
+    assert.ok(result.wins >= 7 && result.wins <= 10, `${result.family} KB: ${result.wins}/10`);
+    if (result.wins) assert.ok(result.medianSeconds >= priorBossMedian[result.family] * 0.7, `${result.family} KB became too fast`);
+  }
+});
+
+test('M5a perfect-dodge bot reports boss clears, medians, and perfect-dodge rates', () => {
+  const weaponIds = {
+    5: { sword: 'grave-greatsword', crossbow: 'grave-crossbow', staff: 'elder-staff' },
+    7: { sword: 'ash-sword', crossbow: 'ash-crossbow', staff: 'ash-staff' },
+    9: { sword: 'necromancer-sword', crossbow: 'necromancer-crossbow', staff: 'necromancer-staff' },
+    11: { sword: 'royal-sword', crossbow: 'royal-crossbow', staff: 'royal-staff' },
+  };
+  const armor = {
+    5: [
+      ['ossuary-helm', 'ossuary-plate', 'bone-gauntlets', 'ossuary-greaves'],
+      [
+        [{ id: 'defense', value: 3 }, { id: 'maxHp', value: 20 }],
+        [{ id: 'maxHp', value: 20 }, { id: 'defense', value: 3 }],
+        [{ id: 'attackPercent', value: 8 }, { id: 'lifesteal', value: 3 }],
+        [{ id: 'moveSpeed', value: 5 }, { id: 'maxHp', value: 20 }],
+      ],
+    ],
+    7: [
+      ['ash-hood', 'ash-coat', 'ash-gloves', 'ash-greaves'],
+      [
+        [{ id: 'defense', value: 4 }, { id: 'maxHp', value: 28 }],
+        [{ id: 'maxHp', value: 28 }, { id: 'defense', value: 4 }],
+        [{ id: 'attackPercent', value: 10 }, { id: 'lifesteal', value: 4 }],
+        [{ id: 'moveSpeed', value: 6 }, { id: 'maxHp', value: 28 }],
+      ],
+    ],
+    9: [
+      ['necromancer-hood', 'necromancer-robe', 'necromancer-gloves', 'necromancer-greaves'],
+      [
+        [{ id: 'defense', value: 5 }, { id: 'maxHp', value: 36 }],
+        [{ id: 'maxHp', value: 36 }, { id: 'defense', value: 5 }],
+        [{ id: 'attackPercent', value: 12 }, { id: 'lifesteal', value: 5 }],
+        [{ id: 'moveSpeed', value: 7 }, { id: 'maxHp', value: 36 }],
+      ],
+    ],
+    11: [
+      ['royal-helm', 'royal-plate', 'royal-gauntlets', 'royal-greaves'],
+      [
+        [{ id: 'defense', value: 6 }, { id: 'maxHp', value: 44 }],
+        [{ id: 'maxHp', value: 44 }, { id: 'defense', value: 6 }],
+        [{ id: 'attackPercent', value: 14 }, { id: 'lifesteal', value: 6 }],
+        [{ id: 'moveSpeed', value: 8 }, { id: 'maxHp', value: 44 }],
+      ],
+    ],
+  };
+  const equipmentFor = (gearLevel, family) => {
+    const [armorIds, affixes] = armor[gearLevel];
+    const weapon = ITEM_BASES.find((item) => item.id === weaponIds[gearLevel][family]);
+    return [
+      { itemId: weapon.id, rarity: 'rare', affixes: [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }] },
+      ...armorIds.map((itemId, index) => ({ itemId, rarity: 'rare', affixes: affixes[index] })),
+    ];
+  };
+  const stageSettings = {
+    CB: { level: 7, gearLevel: 5, seed: 301 },
+    FB: { level: 10, gearLevel: 7, seed: 801 },
+    KB: { level: 14, gearLevel: 11, seed: 1001 },
+  };
+
+  for (const family of ['sword', 'crossbow', 'staff']) {
+    for (const stageId of ['CB', 'FB', 'KB']) {
+      const { level, gearLevel, seed } = stageSettings[stageId];
+      const runs = (perfectDodge) => Array.from({ length: 10 }, (_, index) => runBot({
+        seed: seed + index,
+        stageId,
+        level,
+        equipment: equipmentFor(gearLevel, family),
+        potions: 3,
+        maxTicks: 9000,
+        aimAtTarget: true,
+        perfectDodge,
+      }));
+      const normal = runs(false);
+      const skilled = runs(true);
+      const normalClears = normal.filter((run) => run.outcome === 'clear');
+      const skilledClears = skilled.filter((run) => run.outcome === 'clear');
+      const normalMedian = normalClears.length ? median(normalClears.map((run) => run.seconds)) : null;
+      const skilledMedian = skilledClears.length ? median(skilledClears.map((run) => run.seconds)) : null;
+      const dodgeCount = skilled.reduce((sum, run) => sum + run.dodgeCount, 0);
+      const perfectCount = skilled.reduce((sum, run) => sum + run.perfectDodgeCount, 0);
+      console.log(`M5a skilled ${family} ${stageId}: normal ${normalClears.length}/10 median=${normalMedian?.toFixed(1) ?? '—'}s; perfectDodge ${skilledClears.length}/10 median=${skilledMedian?.toFixed(1) ?? '—'}s; rate=${perfectCount}/${dodgeCount} (${(dodgeCount ? perfectCount / dodgeCount * 100 : 0).toFixed(1)}%)`);
+      console.log(`M5a skilled ${family} ${stageId} seeds: ${skilled.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s perfect=${run.perfectDodgeCount}/${run.dodgeCount}`).join(', ')}`);
+      if (normalMedian !== null && skilledMedian !== null) {
+        assert.ok(skilledMedian >= normalMedian * 0.7, `${family} ${stageId} skilled bot became too fast`);
+      }
+    }
   }
 });

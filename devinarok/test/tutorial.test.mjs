@@ -34,3 +34,15 @@ test('the first hub board selection starts combat guidance without consuming the
   state = transitionTutorial(state, { type: 'board' });
   assert.equal(state.step, 'blacksmith');
 });
+
+test('perfect dodge tutorial hint is persisted once even after tutorial completion', () => {
+  const completed = createTutorialState({
+    step: 'done',
+    completed: true,
+    combatComplete: true,
+  });
+  const shown = transitionTutorial(completed, { type: 'perfectDodge' });
+  assert.equal(shown.perfectDodgeHintShown, true);
+  assert.equal(shown.completed, true);
+  assert.equal(transitionTutorial(shown, { type: 'perfectDodge' }), shown);
+});

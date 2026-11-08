@@ -290,7 +290,10 @@ export class PartyClient {
     const estimate = this.session.clock.getEstimate(performance.now());
     const view = this.interpolation.sample(estimate);
     const viewTick = Math.round(view.renderTick);
+    const autoAim = Boolean(rawInput.autoAim);
     let input = { ...rawInput, viewTick };
+    delete input.autoAim;
+    delete input.attackHeld;
     if (this.predictor.getPlayer().downed) {
       input.moveX = 0;
       input.moveZ = 0;
@@ -299,11 +302,13 @@ export class PartyClient {
       input.buttons = 0;
       input.b = 0;
     }
-    input = buildRangedAimInput(
-      input,
-      this.predictor.getPlayer(),
-      this.interpolation.sampleAtRenderTick(viewTick),
-    );
+    if (!autoAim) {
+      input = buildRangedAimInput(
+        input,
+        this.predictor.getPlayer(),
+        this.interpolation.sampleAtRenderTick(viewTick),
+      );
+    }
     this.predictor.applyLocalInput(input);
     this.castTimeline.predictInput(input, performance.now());
     this.session.queueInput(input);
