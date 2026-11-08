@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
-import { CastTimeline } from '../js/net/cast-timeline.js';
+import { CastTimeline, castVisualKey } from '../js/net/cast-timeline.js';
 import { escapeHtml } from '../js/ui/escape-html.js';
 import { handlePauseKey } from '../js/ui/pause-menu.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
-import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
+import { isCounterCast, scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
 import { computeBotPolicy } from '../js/net/bot-policy.js';
@@ -16,6 +16,37 @@ import { Predictor } from '../js/net/predictor.js';
 import { playerModelKey } from '../js/render/player-look.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS } from '../js/sim/world.js';
+
+test('server counter upgrades a predicted basic cast instead of being deduplicated', () => {
+  const timeline = new CastTimeline({ playerId: 'hero' });
+  const predicted = timeline.predictInput({ seq: 9, buttons: BUTTONS.ATTACK }, 0);
+  const basicKey = castVisualKey(predicted);
+  const counterEvent = {
+    eventId: 1,
+    type: 'cast',
+    castId: 'hero:9',
+    playerId: 'hero',
+    skillId: 'counter',
+    family: 'sword',
+  };
+
+  const result = timeline.ingestEvents([counterEvent], 20);
+  assert.equal(result.spawned.length, 0);
+  assert.equal(result.attached[0], predicted);
+  assert.equal(predicted.skillId, 'counter');
+  assert.equal(predicted.skill, 'counter');
+  assert.equal(predicted.kind, 'counter');
+  assert.equal(predicted.confirmed, true);
+  assert.notEqual(basicKey, castVisualKey(counterEvent));
+  assert.equal(castVisualKey(predicted), castVisualKey(counterEvent));
+});
+
+test('hit agreement classifies server and client-predicted counters separately', () => {
+  assert.equal(isCounterCast({ serverStrikeTicks: [{ skill: 'counter' }] }), true);
+  assert.equal(isCounterCast({ clientCastStep: 'counter' }), true);
+  assert.equal(isCounterCast({ clientSteps: [{ playerState: { castStep: 'counter' } }] }), true);
+  assert.equal(isCounterCast({ serverStrikeTicks: [{ skill: 0 }], clientCastStep: 1 }), false);
+});
 
 test('protocol round trips compact snapshots and rounds spatial values', () => {
   const message = {

@@ -7,6 +7,7 @@ import { COMBO_TIMELINES } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
 import { playerLookKey, playerModelKey } from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
+import { castVisualKey } from '../net/cast-timeline.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const M0_MODELS = {
@@ -352,7 +353,7 @@ export class ArenaRenderer {
     this.sideWalls = [];
     this.doorVisuals = [];
     this.seenEventIds = new Set();
-    this.seenCastIds = new Set();
+    this.seenCastKeys = new Set();
     this.slashes = new Map();
     this.damageNumbers = [];
     this.deathPuffs = [];
@@ -1304,9 +1305,16 @@ export class ArenaRenderer {
   }
 
   createSlash(event) {
-    if (!event.castId || this.seenCastIds.has(event.castId)) return;
-    this.seenCastIds.add(event.castId);
+    if (!event.castId) return;
+    const castKey = castVisualKey(event);
+    if (this.seenCastKeys.has(castKey)) return;
+    this.seenCastKeys.add(castKey);
     const counter = event.skillId === 'counter';
+    if (counter) {
+      for (const [key, effect] of this.slashes) {
+        if (effect.castId === event.castId && !effect.counter && !effect.hit) this.removeSlash(key);
+      }
+    }
     const skillId = event.skill;
     const timeline = COMBO_TIMELINES[event.step - 1];
     const duration = counter ? 8 : skillId === 1 ? 6 : skillId === 2 ? 6 : skillId === 3 ? 45 : timeline?.activeTicks;
@@ -1350,14 +1358,26 @@ export class ArenaRenderer {
     mesh.visible = false;
     this.scene.add(mesh);
     const startTick = event.tick + (counter ? 0 : timeline?.windupTicks ?? (skillId === 1 ? 5 : 0));
-    this.slashes.set(event.castId, {
+    this.slashes.set(castKey, {
+      castKey,
       castId: event.castId,
       entityId: event.entityId,
+      counter,
+      hit: false,
       startTick,
       endTick: startTick + duration,
-      facing: this.worldEntity(event.entityId)?.facing ?? 0,
+      facing: counter ? event.angle ?? this.worldEntity(event.entityId)?.facing ?? 0 : this.worldEntity(event.entityId)?.facing ?? 0,
       mesh,
     });
+  }
+
+  removeSlash(key) {
+    const effect = this.slashes.get(key);
+    if (!effect) return;
+    this.scene.remove(effect.mesh);
+    effect.mesh.geometry.dispose();
+    effect.mesh.material.dispose();
+    this.slashes.delete(key);
   }
 
   worldEntity(entityId) {
@@ -1568,6 +1588,9 @@ export class ArenaRenderer {
       if (event.type === 'impact') this.createImpact(event);
       if (event.type === 'blink' || event.type === 'bossBlink') this.createBlink(event, now);
       if (event.type === 'hit') {
+        for (const effect of this.slashes.values()) {
+          if (effect.castId === event.castId) effect.hit = true;
+        }
         this.createDamageNumber(event);
         if (event.guarded) this.createGuardSpark(event, world, now);
         if (event.damage > 0) {
@@ -1582,12 +1605,12 @@ export class ArenaRenderer {
       if (event.type === 'death') this.createDeathPuff(event, world);
     }
     while (this.seenEventIds.size > 512) this.seenEventIds.delete(this.seenEventIds.values().next().value);
-    while (this.seenCastIds.size > 256) this.seenCastIds.delete(this.seenCastIds.values().next().value);
+    while (this.seenCastKeys.size > 256) this.seenCastKeys.delete(this.seenCastKeys.values().next().value);
   }
 
   updatePresentation(world, now) {
     this.updatePartyMarkers(world);
-    for (const [castId, effect] of this.slashes) {
+    for (const [castKey, effect] of this.slashes) {
       const entity = world.entities.find((item) => item.id === effect.entityId);
       const tick = world.tick;
       const visible = entity && tick >= effect.startTick && tick <= effect.endTick + 3;
@@ -1598,10 +1621,7 @@ export class ArenaRenderer {
         effect.mesh.material.opacity = tick <= effect.endTick ? 0.9 : 0.9 * (1 - (tick - effect.endTick) / 4);
       }
       if (!entity || tick > effect.endTick + 3) {
-        this.scene.remove(effect.mesh);
-        effect.mesh.geometry.dispose();
-        effect.mesh.material.dispose();
-        this.slashes.delete(castId);
+        this.removeSlash(castKey);
       }
     }
 

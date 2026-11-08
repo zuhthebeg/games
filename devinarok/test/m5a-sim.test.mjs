@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   BUTTONS,
   createStageWorld,
+  stepPlayerMotion,
   step,
 } from '../js/sim/world.js';
 
@@ -134,10 +135,12 @@ test('sword, crossbow, and staff counters guarantee a critical and consume readi
     const { world, player, enemy } = makeWorld(family, distance);
     tick(world);
     enemy.x += 100;
+    const positionBeforeCounter = { x: player.x, z: player.z };
     player.counterReadyTicks = 60;
     player.counterAttackerId = enemy.id;
     tick(world, BUTTONS.ATTACK, { viewTick: world.tick });
 
+    assert.deepEqual({ x: player.x, z: player.z }, positionBeforeCounter);
     const cast = world.events.find((event) => event.type === 'cast' && event.skillId === 'counter');
     const strike = world.events.find((event) => event.type === 'strike' && event.skill === 'counter');
     const hit = world.events.find((event) => event.type === 'hit' && event.targetId === enemy.id);
@@ -154,6 +157,41 @@ test('sword, crossbow, and staff counters guarantee a critical and consume readi
     assert.equal(player.counterReadyTicks, 0);
     if (family === 'staff') assert.ok(enemy.slowTicks > 0);
   }
+});
+
+test('sword counter is an in-place line strike toward the attacker or facing fallback', () => {
+  const { world, player, enemy } = makeWorld('sword', 2.4);
+  const start = { x: player.x, z: player.z };
+  player.counterReadyTicks = 60;
+  player.counterAttackerId = enemy.id;
+  const strike = stepPlayerMotion(world, player, {
+    seq: 1,
+    moveX: 0,
+    moveZ: 0,
+    buttons: BUTTONS.ATTACK,
+    viewTick: world.tick,
+  }).counterStrike;
+  assert.equal(strike.motionMult, 1.8);
+  assert.equal(strike.shape.originX, start.x);
+  assert.equal(strike.shape.originZ, start.z);
+  assert.equal(strike.shape.angle, 0);
+  assert.equal(strike.shape.length, 3.5);
+  assert.equal(strike.shape.width, 1.6);
+  assert.deepEqual({ x: player.x, z: player.z }, start);
+
+  const deadAttacker = makeWorld('sword', 2.4);
+  deadAttacker.enemy.dead = true;
+  deadAttacker.player.facing = 1.1;
+  deadAttacker.player.counterReadyTicks = 60;
+  deadAttacker.player.counterAttackerId = deadAttacker.enemy.id;
+  const fallback = stepPlayerMotion(deadAttacker.world, deadAttacker.player, {
+    seq: 1,
+    moveX: 0,
+    moveZ: 0,
+    buttons: BUTTONS.ATTACK,
+    viewTick: deadAttacker.world.tick,
+  }).counterStrike;
+  assert.equal(fallback.shape.angle, deadAttacker.player.facing);
 });
 
 test('counter hits use lag-compensated enemy history', () => {

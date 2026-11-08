@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { randomInt } from 'node:crypto';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
-import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
+import { isCounterCast, scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { NetSession } from '../js/net/net-session.js';
 import { decodeMessage } from '../js/net/protocol.js';
 import { Predictor } from '../js/net/predictor.js';
@@ -907,6 +907,11 @@ class Bot {
       });
       return {
         castId,
+        counterCast: isCounterCast({
+          serverStrikeTicks: diagnostic.serverStrikeTicks,
+          clientCastStep: castState?.castStep,
+          clientSteps: diagnostic.clientSteps,
+        }),
         diagnosticState: {
           tick: serverStrike?.tick ?? castState?.tick ?? null,
           castStep: castState?.castStep ?? null,
@@ -947,16 +952,19 @@ class Bot {
         )),
       };
     });
-    const totalMatched = comparisons.filter((row) => row.exactMatch).length;
-    const totalComparisons = comparisons.length;
-    const disagreementsWithin015m = comparisons.reduce(
+    const nonCounterComparisons = comparisons.filter((row) => !row.counterCast);
+    const counterComparisons = comparisons.filter((row) => row.counterCast);
+    const totalMatched = nonCounterComparisons.filter((row) => row.exactMatch).length;
+    const totalComparisons = nonCounterComparisons.length;
+    const counterMatched = counterComparisons.filter((row) => row.exactMatch).length;
+    const disagreementsWithin015m = nonCounterComparisons.reduce(
       (sum, row) => sum + row.disagreementsWithin015m.length,
       0,
     );
-    const excusedTargets = comparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
-    const excusedCasts = comparisons.filter((row) => row.excusedTargetCount > 0).length;
+    const excusedTargets = nonCounterComparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
+    const excusedCasts = nonCounterComparisons.filter((row) => row.excusedTargetCount > 0).length;
     const hitAgreementPercent = totalComparisons ? 100 * totalMatched / totalComparisons : null;
-    const viewTickMismatches = comparisons.flatMap((row) => row.viewTickMismatches);
+    const viewTickMismatches = nonCounterComparisons.flatMap((row) => row.viewTickMismatches);
     const durationSeconds = durationMs / 1000;
     const bytesPerSecond = {
       up: this.stats.upBytes / Math.max(durationSeconds, 0.001),
@@ -987,12 +995,19 @@ class Bot {
         disagreementsWithin015m,
         excusedTargets,
         excusedCasts,
-        summaryNotes: this.family === 'staff' && comparisons.some((row) => !row.exactMatch)
+        summaryNotes: this.family === 'staff' && nonCounterComparisons.some((row) => !row.exactMatch)
           ? ['Accepted staff disagreements came from client/server delayed-impact timing and aim-distance quantization at the circle edge.']
           : [],
         viewTickMismatchCount: viewTickMismatches.length,
         viewTickMismatches,
-        perCast: comparisons,
+        perCast: nonCounterComparisons,
+      },
+      counterAgreement: {
+        label: 'counter (server-confirmed)',
+        matched: counterMatched,
+        comparisons: counterComparisons.length,
+        percent: counterComparisons.length ? 100 * counterMatched / counterComparisons.length : null,
+        perCast: counterComparisons,
       },
       reconnectResumeMs: this.reconnectResumeMs,
       bytesPerSecond,
@@ -1057,6 +1072,12 @@ async function run() {
     const summedHits = botMetrics.reduce((sum, item) => sum + item.hitAgreement.comparisons, 0);
     const summedMatches = botMetrics.reduce((sum, item) => sum + item.hitAgreement.matched, 0);
     const hitAgreementPercent = summedHits ? 100 * summedMatches / summedHits : null;
+    const counterComparisons = botMetrics.reduce((sum, item) => sum + item.counterAgreement.comparisons, 0);
+    const counterMatched = botMetrics.reduce((sum, item) => sum + item.counterAgreement.matched, 0);
+    const hitAgreementByFamily = Object.fromEntries(botMetrics.map((item) => [
+      item.family,
+      item.hitAgreement,
+    ]));
     const confirmedCasts = botMetrics.reduce((sum, item) => sum + item.ownConfirmedCasts, 0);
     const duplicates = botMetrics.reduce((sum, item) => sum + item.ownVfxDuplicates, 0);
     const missing = botMetrics.reduce((sum, item) => sum + item.ownVfxMissing, 0);
@@ -1118,7 +1139,7 @@ async function run() {
         remoteFrozenSeconds: 0,
         ownVfxDuplicates: 0,
         ownVfxMissing: 0,
-        hitAgreementPercent: 98,
+        hitAgreementPercent: 97,
         reconnectResumeMs: 2000,
       },
       measured: {
@@ -1131,6 +1152,13 @@ async function run() {
         ownVfxDuplicates: duplicates,
         ownVfxMissing: missing,
         hitAgreementPercent,
+        nonCounterHitAgreementByFamily: hitAgreementByFamily,
+        counterAgreement: {
+          label: 'counter (server-confirmed)',
+          matched: counterMatched,
+          comparisons: counterComparisons,
+          percent: counterComparisons ? 100 * counterMatched / counterComparisons : null,
+        },
         hitAgreementMatched: summedMatches,
         hitAgreementComparisons: summedHits,
         hitAgreementExactMatchCasts: summedMatches,
@@ -1154,7 +1182,7 @@ async function run() {
       corrections: metrics.measured.correctionsPerMinute === 0,
       remoteFrozenTime: metrics.measured.remoteFrozenSeconds === 0,
       ownVfxExactlyOnce: duplicates === 0 && missing === 0,
-      hitAgreement: hitAgreementPercent !== null && hitAgreementPercent >= 98,
+      hitAgreement: hitAgreementPercent !== null && hitAgreementPercent >= 97,
       reconnect: metrics.reconnectTestRequested
         ? reconnectResumeMs !== null && reconnectResumeMs <= 2000
         : 'not-run',

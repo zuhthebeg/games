@@ -480,7 +480,8 @@ test('predictor replays pending attack from authoritative counter state', () => 
 
   assert.equal(reconciliation.pending, 1);
   assert.ok(serverMotion.counterStrike);
-  assert.ok(Math.hypot(serverPlayer.x - start.x, serverPlayer.z - start.z) > 0.1);
+  assert.equal(serverPlayer.x, start.x);
+  assert.equal(serverPlayer.z, start.z);
   assert.deepEqual({ x: predicted.x, z: predicted.z }, { x: serverPlayer.x, z: serverPlayer.z });
   assert.equal(predicted.counterReadyTicks, serverPlayer.counterReadyTicks);
   assert.equal(predicted.counterAttackerId, serverPlayer.counterAttackerId);
