@@ -6,7 +6,8 @@ import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
 import { debugKillEnemy } from '../js/debug/combat.js';
 import {
-  debugShortcutOperations, loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate,
+  debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
+  recordRecentAction, TwoTapGate,
 } from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 import { createStageWorld } from '../js/sim/world.js';
@@ -147,6 +148,14 @@ test('debug shortcuts preserve an already terminal tutorial', () => {
   const operations = debugShortcutOperations(character, 'preset-boss');
   assert.equal(operations.some((operation) => operation.type === 'updateTutorial'), false);
   assert.equal(operations.some((operation) => operation.type === 'markDebug'), true);
+});
+
+test('save-changing debug actions are disabled in stages with the inn-only reason', () => {
+  for (const action of ['import-json', 'restore-backup', 'reset-save', 'reset-progress']) {
+    assert.equal(debugStageSaveReason(action, 'stage'), '여관에서만 사용할 수 있어요');
+    assert.equal(debugStageSaveReason(action, 'hub'), null);
+  }
+  assert.equal(debugStageSaveReason('copy-json', 'stage'), null);
 });
 
 test('debug destructive confirmation expires after three seconds', () => {

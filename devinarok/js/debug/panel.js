@@ -4,7 +4,8 @@ import { createHubWorld, completeStage, rollStageItem, spawnEnemy } from '../sim
 import { escapeHtml } from '../ui/escape-html.js';
 import { debugKillRoomEnemies } from './combat.js';
 import {
-  debugShortcutOperations, loadRecentActions, partyActionReason, recordRecentAction, TwoTapGate,
+  debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
+  recordRecentAction, TwoTapGate,
 } from './state.js';
 
 const FAMILY_LABELS = { sword: '검', crossbow: '석궁', staff: '지팡이' };
@@ -224,6 +225,8 @@ export function mountDebugPanel(context) {
   function reasonFor(action) {
     const partyBlock = partyActionReason(inParty(), action);
     if (partyBlock) return partyBlock;
+    const stageSaveBlock = debugStageSaveReason(action, context.world?.mode);
+    if (stageSaveBlock) return stageSaveBlock;
     if (['toggle-invulnerable', 'toggle-one-hit', 'toggle-no-cooldown', 'room-clear', 'instant-clear', 'summon-enemy'].includes(action)) {
       return combatReason();
     }
@@ -338,13 +341,14 @@ export function mountDebugPanel(context) {
     const backupAvailable = (() => {
       try { return Boolean(storage.getItem(BACKUP_KEY)); } catch { return false; }
     })();
+    const restoreReason = reasonFor('restore-backup') ?? (!backupAvailable ? '저장된 백업이 없어요' : null);
     return `<section><h2>JSON 저장</h2><div class="debug-action-list">
       ${actionMarkup('copy-json')}
       ${actionMarkup('import-json')}
       </div><textarea data-debug-setting="json" aria-label="세이브 JSON">${escapeHtml(state.jsonText)}</textarea></section>
       <section><h2>백업</h2><div class="debug-action-list">
         ${actionMarkup('backup-save')}
-        ${button('restore-backup', ACTION_LABELS['restore-backup'], backupAvailable ? reasonFor('restore-backup') : '저장된 백업이 없어요')}
+        ${button('restore-backup', ACTION_LABELS['restore-backup'], restoreReason)}
       </div></section>
       <section><h2>초기화</h2>${actionMarkup('reset-save')}</section>`;
   }

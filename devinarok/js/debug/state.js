@@ -1,6 +1,13 @@
 import { createTutorialState, transitionTutorial } from '../ui/tutorial.js';
 
 export const RECENT_ACTIONS_KEY = 'devinarok.debug.recent';
+const INN_ONLY_ACTIONS = new Set(['import-json', 'restore-backup', 'reset-progress', 'reset-save']);
+
+export function debugStageSaveReason(action, worldMode) {
+  return worldMode === 'stage' && INN_ONLY_ACTIONS.has(action)
+    ? '여관에서만 사용할 수 있어요'
+    : null;
+}
 
 export function debugShortcutOperations(character, action, operations = []) {
   const nextOperations = [...operations];
