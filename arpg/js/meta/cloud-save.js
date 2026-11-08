@@ -239,10 +239,12 @@ export class CloudSave {
     const record = { v: 1, owner: remote.context.owner, content: JSON.stringify(snapshot(remote.save)), committed: false };
     const staged = JSON.stringify(record), bytes = JSON.stringify(remote.save);
     this.storage.setItem(ownerKey(slot), staged);
-    if (this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(remote.context)) throw new Error('Cloud owner storage unavailable');
+    if (this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(remote.context) || this.storage.getItem(key) !== old) throw new Error('Cloud owner storage unavailable');
     if (old !== null) this.storage.setItem(`${key}.cloud-backup.${this.now()}`, old);
+    // Backup IO is another observable boundary; never overwrite a changed destination.
+    if (this.storage.getItem(key) !== old || this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(remote.context)) throw new Error('Cloud restore destination changed');
     this.storage.setItem(key, bytes);
-    if (this.storage.getItem(key) !== bytes || !this.matches(remote.context)) throw new Error('Cloud restore incomplete');
+    if (this.storage.getItem(key) !== bytes || this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(remote.context)) throw new Error('Cloud restore incomplete');
     // Native setItem is atomic: a thrown final write leaves only unusable staged proof.
     this.storage.setItem(ownerKey(slot), JSON.stringify({ ...record, committed: true }));
     return remote.save;
