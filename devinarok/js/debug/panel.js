@@ -463,10 +463,11 @@ export function mountDebugPanel(context) {
       toast = `방 정리 · 적 ${killed}마리 처치`;
     } else if (action === 'instant-clear') {
       await commitDebugOps();
+      const killed = debugKillRoomEnemies(context.world, (inputs) => context.stepWorld(inputs));
       context.closeDebugPanel();
       completeStage(context.world, 'clear');
       await context.settleStage('clear');
-      toast = '즉시 클리어 · 정산 완료';
+      toast = `즉시 클리어 · 적 ${killed}마리 처치 · 정산 완료`;
     } else if (action === 'summon-enemy') {
       await commitDebugOps();
       const player = context.world.entities.find((entity) => entity.kind === 'player' && entity.playerId === context.character.id);

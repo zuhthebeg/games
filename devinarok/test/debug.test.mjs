@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
-import { debugKillEnemy, debugSpawnRoomEnemy } from '../js/debug/combat.js';
+import { debugKillEnemy, debugKillRoomEnemies, debugSpawnRoomEnemy } from '../js/debug/combat.js';
 import {
   debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
   recordRecentAction, TwoTapGate,
 } from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
-import { BUTTONS, createStageWorld, pickAimTarget, step } from '../js/sim/world.js';
+import { BUTTONS, completeStage, createStageWorld, pickAimTarget, step } from '../js/sim/world.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -213,6 +213,22 @@ test('summoned enemies are targetable and keep a room open until killed', () => 
   assert.equal(debugKillEnemy(world, enemy), true);
   assert.equal(enemy.dead, true);
   assert.equal(world.roomCleared, true);
+});
+
+test('debug instant clear includes rewards from normal enemy deaths in settlement', () => {
+  const world = createStageWorld({ seed: 79, stageId: 'C1', playerId: 'hero', character: { level: 1 } });
+  const enemy = world.entities.find((entity) => entity.kind === 'enemy');
+  world.entities = world.entities.filter((entity) => entity.kind !== 'enemy' || entity.id === enemy.id);
+  world.roomEnemyIds = [enemy.id];
+  const initialXp = world.rewards.hero.xp;
+
+  assert.equal(debugKillRoomEnemies(world, (inputs) => step(world, inputs)), 1);
+  assert.equal(world.outcome, null);
+  const result = completeStage(world, 'clear');
+
+  assert.ok(result.xp > initialXp);
+  assert.ok(result.gold > 0);
+  assert.ok(world.events.some((event) => event.type === 'death' && event.entityId === enemy.id));
 });
 
 test('debug kill refuses party worlds without mutating enemies', () => {
