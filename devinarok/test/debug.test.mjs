@@ -6,8 +6,8 @@ import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
 import { debugKillEnemy, debugKillRoomEnemies, debugSpawnRoomEnemy } from '../js/debug/combat.js';
 import {
-  debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
-  recordRecentAction, TwoTapGate,
+  applyDebugSpeed, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
+  partyActionReason, recordRecentAction, resetDebugSpeed, TwoTapGate,
 } from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 import { BUTTONS, completeStage, createStageWorld, pickAimTarget, step } from '../js/sim/world.js';
@@ -156,6 +156,22 @@ test('save-changing debug actions are disabled in stages with the inn-only reaso
     assert.equal(debugStageSaveReason(action, 'hub'), null);
   }
   assert.equal(debugStageSaveReason('copy-json', 'stage'), null);
+});
+
+test('selected debug speed applies to new solo loops and resets when disabled', () => {
+  const firstLoop = { speed: 1 };
+  applyDebugSpeed(firstLoop, 2);
+  assert.equal(firstLoop.speed, 2);
+
+  const nextLoop = { speed: 1 };
+  applyDebugSpeed(nextLoop, 2);
+  assert.equal(nextLoop.speed, 2);
+  resetDebugSpeed(nextLoop);
+  assert.equal(nextLoop.speed, 1);
+
+  const partyLoop = { speed: 1 };
+  applyDebugSpeed(partyLoop, 2, true);
+  assert.equal(partyLoop.speed, 1);
 });
 
 test('debug destructive confirmation expires after three seconds', () => {

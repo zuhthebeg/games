@@ -9,6 +9,14 @@ export function debugStageSaveReason(action, worldMode) {
     : null;
 }
 
+export function applyDebugSpeed(loop, speed, inParty = false) {
+  if (loop && !inParty) loop.speed = speed;
+}
+
+export function resetDebugSpeed(loop) {
+  if (loop) loop.speed = 1;
+}
+
 export function debugShortcutOperations(character, action, operations = []) {
   const nextOperations = [...operations];
   const tutorial = character?.tutorial;

@@ -4,8 +4,8 @@ import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
 import { debugKillRoomEnemies, debugSpawnRoomEnemy } from './combat.js';
 import {
-  debugShortcutOperations, debugStageSaveReason, loadRecentActions, partyActionReason,
-  recordRecentAction, TwoTapGate,
+  applyDebugSpeed, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
+  partyActionReason, recordRecentAction, resetDebugSpeed, TwoTapGate,
 } from './state.js';
 
 const FAMILY_LABELS = { sword: '검', crossbow: '석궁', staff: '지팡이' };
@@ -636,7 +636,7 @@ export function mountDebugPanel(context) {
     else if (setting === 'boss-stage') state.selectedBossStage = target.value;
     else if (setting === 'speed') {
       state.speed = Number(target.value);
-      if (context.loop && !inParty()) context.loop.speed = state.speed;
+      applyDebugSpeed(context.loop, state.speed, inParty());
       remember('speed');
       void commitDebugOps().then(() => context.showToast(`속도 ${state.speed}×`));
     } else if (setting === 'level') {
@@ -672,6 +672,9 @@ export function mountDebugPanel(context) {
   return {
     get isOpen() { return !panel.hidden; },
     get activeTab() { return state.activeTab; },
+    applySpeed(loop = context.loop) {
+      applyDebugSpeed(loop, state.speed, inParty());
+    },
     beforeStep(world) {
       if (!soloStage() || world !== context.world) return;
       const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === context.character?.id);
@@ -713,7 +716,7 @@ export function mountDebugPanel(context) {
       if (!panel.hidden) close();
       abort.abort();
       context.renderer?.setDebugOverlays?.({});
-      if (context.loop) context.loop.speed = 1;
+      resetDebugSpeed(context.loop);
       for (const timer of confirmationTimers.values()) clearTimeout(timer);
       trigger.remove();
       panel.remove();

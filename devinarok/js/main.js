@@ -1600,6 +1600,7 @@ async function startStage(stageId, options = {}) {
       if (current.outcome && !settled) settleStage(current.outcome);
     },
   });
+  debugController?.applySpeed(loop);
   loop.start();
 }
 
