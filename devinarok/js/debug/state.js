@@ -9,6 +9,12 @@ export function debugStageSaveReason(action, worldMode) {
     : null;
 }
 
+export function debugCloudSaveReason(action, character) {
+  return character?.cloudUserId && INN_ONLY_ACTIONS.has(action)
+    ? '클라우드 캐릭터에서는 사용할 수 없어요'
+    : null;
+}
+
 export function applyDebugSpeed(loop, speed, inParty = false) {
   if (loop && !inParty) loop.speed = speed;
 }

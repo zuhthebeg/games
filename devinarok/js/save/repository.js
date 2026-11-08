@@ -1,7 +1,7 @@
 import { applyOperations, normalizeCharacter } from './ops.js';
 
-export const SCHEMA_VERSION = 4;
-const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings'];
+export const SCHEMA_VERSION = 5;
+const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings', 'outbox'];
 
 function migratedTutorial(character) {
   const veteran = (character.clearedStages?.length ?? 0) > 0 || Number(character.level ?? 1) > 1;
@@ -62,6 +62,7 @@ function blankData(localAccountId = uuid()) {
     ledger: [],
     backups: [],
     settings: normalizeSettings(DEFAULT_SETTINGS),
+    outbox: [],
   };
 }
 
@@ -69,7 +70,7 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function commitToData(data, { characterId, baseRev, ops, idempotencyKey }, now) {
+function commitToData(data, { characterId, baseRev, ops, idempotencyKey, context = { kind: 'hub' }, cloudUserId }, now) {
   const current = data.characters[characterId] ?? null;
   if (idempotencyKey && data.ledger.some((entry) => entry.characterId === characterId && entry.idempotencyKey === idempotencyKey)) {
     return clone(current);
@@ -78,16 +79,33 @@ function commitToData(data, { characterId, baseRev, ops, idempotencyKey }, now) 
   const result = applyOperations(current, data.items, ops, characterId);
   result.character.rev = baseRev + 1;
   result.character.updatedAt = now;
+  const linkedUserId = cloudUserId ?? null;
+  if (linkedUserId) result.character.cloudUserId = linkedUserId;
+  else if (current?.cloudUserId) result.character.cloudUserId = current.cloudUserId;
   data.characters[characterId] = result.character;
   data.items = result.items;
+  const remoteIdempotencyKey = linkedUserId ? (idempotencyKey ?? uuid()) : idempotencyKey;
   data.ledger.push({
     id: `${characterId}:${result.character.rev}`,
     characterId,
     rev: result.character.rev,
     ops: clone(ops),
     source: 'local',
-    ...(idempotencyKey ? { idempotencyKey } : {}),
+    ...(remoteIdempotencyKey ? { idempotencyKey: remoteIdempotencyKey } : {}),
   });
+  if (linkedUserId) {
+    data.outbox ??= [];
+    data.outbox.push({
+      id: `${characterId}:${result.character.rev}`,
+      userId: linkedUserId,
+      characterId,
+      baseRev,
+      ops: clone(ops),
+      idempotencyKey: remoteIdempotencyKey,
+      context: clone(context),
+      createdAt: now,
+    });
+  }
   return clone(result.character);
 }
 
@@ -106,7 +124,7 @@ function transactionDone(transaction) {
   });
 }
 
-function dataFromStores([metaRows, characters, items, ledger, backups, settingsRows]) {
+function dataFromStores([metaRows, characters, items, ledger, backups, settingsRows, outbox]) {
   return {
     meta: metaRows.find((entry) => entry.key === 'profile')?.value ?? null,
     characters: Object.fromEntries(characters.map((entry) => [entry.id, entry])),
@@ -114,6 +132,7 @@ function dataFromStores([metaRows, characters, items, ledger, backups, settingsR
     ledger,
     backups,
     settings: normalizeSettings(settingsRows.find((entry) => entry.key === 'preferences')?.value),
+    outbox: outbox ?? [],
   };
 }
 
@@ -125,6 +144,7 @@ function storeRows(data) {
     ledger: data.ledger,
     backups: data.backups,
     settings: [{ key: 'preferences', value: normalizeSettings(data.settings) }],
+    outbox: data.outbox ?? [],
   };
 }
 
@@ -133,6 +153,7 @@ export class MemoryBackend {
     this.persistent = false;
     this.data = seed ? clone(seed) : blankData();
     this.data.settings = normalizeSettings(this.data.settings);
+    this.data.outbox ??= [];
   }
 
   async readData() {
@@ -142,6 +163,7 @@ export class MemoryBackend {
   async replaceData(data) {
     this.data = clone(data);
     this.data.settings = normalizeSettings(this.data.settings);
+    this.data.outbox ??= [];
   }
 
   async backup(data) {
@@ -236,12 +258,13 @@ export class IndexedDbBackend {
 
 const migrations = [
   (data) => ({
-    meta: { ...data.meta, schemaVersion: 1, localAccountId: data.meta?.localAccountId ?? uuid() },
-    characters: data.characters ?? {},
-    items: data.items ?? {},
-    ledger: data.ledger ?? [],
-    backups: data.backups ?? [],
-    settings: normalizeSettings(data.settings),
+      meta: { ...data.meta, schemaVersion: 1, localAccountId: data.meta?.localAccountId ?? uuid() },
+      characters: data.characters ?? {},
+      items: data.items ?? {},
+      ledger: data.ledger ?? [],
+      backups: data.backups ?? [],
+      settings: normalizeSettings(data.settings),
+      outbox: data.outbox ?? [],
   }),
   (data) => ({
     meta: { ...data.meta, schemaVersion: 2 },
@@ -250,6 +273,7 @@ const migrations = [
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
     settings: normalizeSettings(data.settings),
+    outbox: data.outbox ?? [],
   }),
   (data) => ({
     meta: { ...data.meta, schemaVersion: 3 },
@@ -261,6 +285,7 @@ const migrations = [
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
     settings: normalizeSettings(data.settings),
+    outbox: data.outbox ?? [],
   }),
   (data) => ({
     meta: { ...data.meta, schemaVersion: 4 },
@@ -272,6 +297,16 @@ const migrations = [
     ledger: data.ledger ?? [],
     backups: data.backups ?? [],
     settings: normalizeSettings(data.settings),
+    outbox: data.outbox ?? [],
+  }),
+  (data) => ({
+    meta: { ...data.meta, schemaVersion: 5 },
+    characters: data.characters ?? {},
+    items: data.items ?? {},
+    ledger: data.ledger ?? [],
+    backups: data.backups ?? [],
+    settings: normalizeSettings(data.settings),
+    outbox: data.outbox ?? [],
   }),
 ];
 
@@ -319,6 +354,63 @@ export class SaveRepository {
     return Object.values((await this.backend.readData()).items)
       .filter((item) => item.characterId === characterId)
       .map(clone);
+  }
+
+  async listOutbox(userId = null) {
+    const entries = (await this.backend.readData()).outbox ?? [];
+    return entries
+      .filter((entry) => !userId || entry.userId === userId)
+      .sort((a, b) => a.createdAt - b.createdAt || a.characterId.localeCompare(b.characterId) || a.baseRev - b.baseRev)
+      .map(clone);
+  }
+
+  async acknowledgeOutbox(id) {
+    const data = await this.backend.readData();
+    data.outbox = (data.outbox ?? []).filter((entry) => entry.id !== id);
+    await this.backend.replaceData(data);
+  }
+
+  async linkCharacterToUser(id, userId) {
+    const data = await this.backend.readData();
+    const current = data.characters[id];
+    if (!current) throw new Error('Character not found');
+    data.characters[id] = { ...current, cloudUserId: userId };
+    await this.backend.replaceData(data);
+    return normalizeCharacter(data.characters[id]);
+  }
+
+  async detachCharacterFromUser(id) {
+    const data = await this.backend.readData();
+    const current = data.characters[id];
+    if (current) {
+      const { cloudUserId, ...localCharacter } = current;
+      data.characters[id] = localCharacter;
+    }
+    data.outbox = (data.outbox ?? []).filter((entry) => entry.characterId !== id);
+    await this.backend.replaceData(data);
+  }
+
+  async replaceCharacterFromRemote({ character, items, userId }, { backup = true } = {}) {
+    const data = await this.backend.readData();
+    const oldCharacter = data.characters[character.id];
+    const oldItems = Object.values(data.items).filter((item) => item.characterId === character.id).sort((a, b) => a.uid.localeCompare(b.uid));
+    const nextCharacter = normalizeCharacter({ ...character, cloudUserId: userId });
+    const nextItems = items.map(clone).sort((a, b) => a.uid.localeCompare(b.uid));
+    if (backup && oldCharacter && JSON.stringify({ character: oldCharacter, items: oldItems }) !== JSON.stringify({ character: nextCharacter, items: nextItems })) {
+      data.backups.push({
+        id: uuid(this.cryptoProvider),
+        createdAt: Date.now(),
+        data: { character: oldCharacter, items: oldItems },
+      });
+    }
+    for (const [uid, item] of Object.entries(data.items)) {
+      if (item.characterId === character.id) delete data.items[uid];
+    }
+    data.characters[character.id] = nextCharacter;
+    for (const item of nextItems) data.items[item.uid] = item;
+    data.outbox = (data.outbox ?? []).filter((entry) => entry.characterId !== character.id);
+    await this.backend.replaceData(data);
+    return normalizeCharacter(nextCharacter);
   }
 
   async loadSettings() {
@@ -377,6 +469,7 @@ export class SaveRepository {
       ledger: clone(payload.data.ledger),
       backups: [...clone(payload.data.backups), { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: current }],
       settings: normalizeSettings(payload.data.settings),
+      outbox: [],
     };
     for (const character of Object.values(imported.characters)) {
       if (!character.id || !Number.isInteger(character.rev) || character.rev < 1 || !character.name) {

@@ -6,7 +6,7 @@ import test from 'node:test';
 import { createTapToggle, initializeDebugMode, persistDebugMode } from '../js/core/debug-toggle.js';
 import { debugKillEnemy, debugKillRoomEnemies, debugSpawnRoomEnemy } from '../js/debug/combat.js';
 import {
-  applyDebugSpeed, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
+  applyDebugSpeed, debugCloudSaveReason, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
   partyActionReason, recordRecentAction, resetDebugSpeed, TwoTapGate,
 } from '../js/debug/state.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
@@ -156,6 +156,16 @@ test('save-changing debug actions are disabled in stages with the inn-only reaso
     assert.equal(debugStageSaveReason(action, 'hub'), null);
   }
   assert.equal(debugStageSaveReason('copy-json', 'stage'), null);
+});
+
+test('debug save import and reset actions are disabled for cloud characters only', () => {
+  const cloudCharacter = { id: 'cloud', cloudUserId: 'user-1' };
+  const localCharacter = { id: 'local' };
+  for (const action of ['import-json', 'restore-backup', 'reset-save', 'reset-progress']) {
+    assert.equal(debugCloudSaveReason(action, cloudCharacter), '클라우드 캐릭터에서는 사용할 수 없어요');
+    assert.equal(debugCloudSaveReason(action, localCharacter), null);
+  }
+  assert.equal(debugCloudSaveReason('backup-save', cloudCharacter), null);
 });
 
 test('selected debug speed applies to new solo loops and resets when disabled', () => {

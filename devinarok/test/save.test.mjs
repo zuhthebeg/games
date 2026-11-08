@@ -82,8 +82,8 @@ test('legacy schema migration backs up source and import/export verifies checksu
   };
   const repo = await repository(legacy);
   const migrated = await repo.backend.readData();
-  assert.equal(migrated.meta.schemaVersion, 4);
-  assert.equal(migrated.backups.length, 4);
+  assert.equal(migrated.meta.schemaVersion, 5);
+  assert.equal(migrated.backups.length, 5);
   assert.equal(migrated.backups[0].data.meta.schemaVersion, 0);
 
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '시험자', kind: 'knight' }] });

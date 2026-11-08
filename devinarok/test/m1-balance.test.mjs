@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ITEM_BASES } from '../js/content/items.js';
+import { ENEMIES } from '../js/content/enemies.js';
+import { DIFFICULTIES, effectiveStageLevel, STAGES } from '../js/content/stages.js';
 import { BUTTONS, COMBO_TIMELINES, createStageWorld, step } from '../js/sim/world.js';
 
 function nearestEnemy(world, player) {
@@ -117,6 +119,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
   const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
   return {
     outcome: world.outcome,
+    reward: world.result ? structuredClone(world.result) : null,
     tick: world.tick,
     seconds: world.tick / 30,
     hp: player?.hp ?? 0,
@@ -532,4 +535,64 @@ test('M5c ten-seed nightmare and hell balance gates', { timeout: 300000 }, () =>
     console.log(`M5c skilled N:KB ${family} set: ${withSet.length}/10 median ${setMedian?.toFixed(1) ?? '—'}s vs no set ${noSet.length}/10 median ${noSetMedian?.toFixed(1) ?? '—'}s`);
     if (noSetMedian !== null && setMedian !== null) assert.ok(setMedian >= noSetMedian * 0.7, `${family} four-piece set made the skilled bot too fast`);
   }
+});
+
+test('M5d settlement caps contain legit C1, KB, and nightmare KB bot rewards', { timeout: 180000 }, () => {
+  const gear = (level, family) => {
+    const weapon = ITEM_BASES.find((base) => base.requiredLevel === level && base.slot === 'weapon' && base.family === family);
+    const armor = ITEM_BASES.filter((base) => base.requiredLevel === level && base.slot !== 'weapon' && !base.setId)
+      .sort((a, b) => ['head', 'body', 'hands', 'feet'].indexOf(a.slot) - ['head', 'body', 'hands', 'feet'].indexOf(b.slot));
+    return [weapon, ...armor].map((base) => ({
+      itemId: base.id,
+      rarity: 'rare',
+      affixes: base.slot === 'weapon'
+        ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+        : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+    }));
+  };
+  const scenarios = [
+    { stageId: 'C1', difficulty: 'normal', level: 1, gearLevel: null, seed: 101 },
+    { stageId: 'KB', difficulty: 'normal', level: 14, gearLevel: 11, seed: 1001 },
+    { stageId: 'KB', difficulty: 'nightmare', level: 15, gearLevel: 15, seed: 1601 },
+  ];
+  const summaries = [];
+  for (const scenario of scenarios) {
+    const equipment = scenario.gearLevel ? gear(scenario.gearLevel, 'sword') : [];
+    const run = runBot({
+      seed: scenario.seed,
+      stageId: scenario.stageId,
+      difficulty: scenario.difficulty,
+      level: scenario.level,
+      equipment,
+      potions: scenario.gearLevel ? 5 : 3,
+      maxTicks: 12000,
+      aimAtTarget: true,
+    });
+    assert.equal(run.outcome, 'clear', `${scenario.difficulty}:${scenario.stageId} bot must clear`);
+    const stage = STAGES[scenario.stageId];
+    const tier = DIFFICULTIES[scenario.difficulty];
+    const enemies = stage.rooms.flatMap((room) => room.waves.map((wave) => ({
+      rule: ENEMIES[wave.enemy], count: wave.count,
+    })));
+    const enemyCount = enemies.reduce((sum, enemy) => sum + enemy.count, 0);
+    const bossCount = enemies.reduce((sum, enemy) => (
+      sum + (enemy.rule.behavior === 'boss-patterns' ? enemy.count : 0)
+    ), 0);
+    const baseXp = enemies.reduce((sum, enemy) => sum + enemy.rule.xp * enemy.count, 0);
+    const effectiveLevel = effectiveStageLevel(stage, scenario.difficulty);
+    const caps = {
+      xp: 4 * baseXp * tier.xpMult,
+      gold: 20 * enemyCount * effectiveLevel * tier.goldMult,
+      items: enemyCount + 2 * bossCount,
+    };
+    assert.ok(run.reward.xp <= caps.xp, `${scenario.difficulty}:${scenario.stageId} XP ${run.reward.xp}/${caps.xp}`);
+    assert.ok(run.reward.gold <= caps.gold, `${scenario.difficulty}:${scenario.stageId} gold ${run.reward.gold}/${caps.gold}`);
+    assert.ok(run.reward.items.length <= caps.items, `${scenario.difficulty}:${scenario.stageId} items ${run.reward.items.length}/${caps.items}`);
+    summaries.push({
+      key: scenario.difficulty === 'normal' ? scenario.stageId : `N:${scenario.stageId}`,
+      xp: run.reward.xp, xpCap: caps.xp, gold: run.reward.gold, goldCap: caps.gold,
+      items: run.reward.items.length, itemCap: caps.items,
+    });
+  }
+  console.log(`M5d legitimate settlement rewards: ${JSON.stringify(summaries)}`);
 });
