@@ -34,11 +34,13 @@ export class InputLayer {
     this.flickMove = null;
     this.aim = 192;
     this.devInputProvider = null;
+    this.enabled = true;
     this.joystick = controls.querySelector('[data-joystick]');
     this.joystickKnob = controls.querySelector('[data-joystick-knob]');
     this.joystickAnchor = null;
     this.bindings = new Map();
     this.onKeyDown = (event) => {
+      if (!this.enabled) return;
       const code = event.code;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(code)) event.preventDefault();
       if (KEY_BINDINGS[code] || MOVEMENT_KEYS.has(code)) {
@@ -47,6 +49,7 @@ export class InputLayer {
       }
     };
     this.onKeyUp = (event) => {
+      if (!this.enabled) return;
       if (this.unreportedButtonKeys.has(event.code)) this.latchedButtons |= KEY_BINDINGS[event.code] ?? 0;
       this.unreportedButtonKeys.delete(event.code);
       this.heldKeys.delete(event.code);
@@ -54,6 +57,7 @@ export class InputLayer {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     this.onCanvasDown = (event) => {
+      if (!this.enabled) return;
       if (event.clientX >= window.innerWidth / 2) return;
       event.preventDefault();
       this.canvas.setPointerCapture(event.pointerId);
@@ -73,6 +77,7 @@ export class InputLayer {
       this.updateJoystick(event);
     };
     this.onCanvasMove = (event) => {
+      if (!this.enabled) return;
       if (this.heldPointers.get(event.pointerId)?.type === 'move') this.updateJoystick(event);
     };
     this.onCanvasUp = (event) => this.releasePointer(event.pointerId, event);
@@ -88,6 +93,7 @@ export class InputLayer {
     const signal = this.touchListeners.signal;
     const on = (target, type, handler) => target?.addEventListener(type, handler, { signal });
     on(this.joystick, 'pointerdown', (event) => {
+      if (!this.enabled) return;
       this.joystick.setPointerCapture(event.pointerId);
       this.joystickAnchor = { x: event.clientX, y: event.clientY };
       this.heldPointers.set(event.pointerId, {
@@ -102,11 +108,13 @@ export class InputLayer {
       this.updateJoystick(event);
     });
     on(this.joystick, 'pointermove', (event) => {
+      if (!this.enabled) return;
       if (this.heldPointers.get(event.pointerId)?.type === 'move') this.updateJoystick(event);
     });
     for (const button of this.joystick?.parentElement?.querySelectorAll('[data-button]') ?? []) {
       const bit = Number(button.dataset.button);
       on(button, 'pointerdown', (event) => {
+        if (!this.enabled) return;
         event.preventDefault();
         button.setPointerCapture(event.pointerId);
         this.heldPointers.set(event.pointerId, { type: 'button', bit });
@@ -165,6 +173,7 @@ export class InputLayer {
   }
 
   nextTick() {
+    if (!this.enabled) return { seq: ++this.seq, moveX: 0, moveZ: 0, aim: this.aim, buttons: 0 };
     if (this.devInputProvider) {
       const seq = ++this.seq;
       const input = { ...this.devInputProvider(seq), seq };
@@ -201,6 +210,23 @@ export class InputLayer {
       throw new TypeError('Dev input provider must be a function or null');
     }
     this.devInputProvider = provider;
+  }
+
+  setEnabled(enabled) {
+    this.enabled = Boolean(enabled);
+    if (!this.enabled) {
+      this.heldKeys.clear();
+      this.unreportedButtonKeys.clear();
+      this.heldPointers.clear();
+      this.bindings.clear();
+      this.latchedButtons = 0;
+      this.moveX = 0;
+      this.moveZ = 0;
+      this.flickMove = null;
+      this.joystickAnchor = null;
+      this.joystickKnob.style.transform = '';
+      this.joystick.classList.remove('floating');
+    }
   }
 
   destroy() {

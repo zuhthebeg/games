@@ -4,18 +4,20 @@ const STEP_SECONDS = 1 / TICK_HZ;
 const MAX_STEPS = 5;
 
 export class FixedStepLoop {
-  constructor({ world, playerId, input, render, onTick, buildInput = (rawInput) => rawInput }) {
+  constructor({ world, playerId, input, render, onTick, beforeStep, buildInput = (rawInput) => rawInput }) {
     this.world = world;
     this.playerId = playerId;
     this.input = input;
     this.buildInput = buildInput;
     this.render = render;
     this.onTick = onTick;
+    this.beforeStep = beforeStep;
     this.previous = structuredClone(world);
     this.accumulator = 0;
     this.lastTime = 0;
     this.running = false;
     this.paused = false;
+    this.speed = 1;
     this.hidden = document.hidden;
     this.frame = (time) => this.onFrame(time);
     this.visibility = () => {
@@ -49,6 +51,17 @@ export class FixedStepLoop {
     this.lastTime = 0;
   }
 
+  stepOnce(inputs = null) {
+    this.previous = structuredClone(this.world);
+    this.beforeStep?.(this.world);
+    const nextInputs = inputs ?? {
+      [this.playerId]: this.buildInput(this.input.nextTick(), this.world),
+    };
+    step(this.world, nextInputs);
+    this.onTick?.(this.world);
+    return this.world;
+  }
+
   onFrame(time) {
     if (!this.running) return;
     if (this.hidden || this.paused) {
@@ -58,17 +71,15 @@ export class FixedStepLoop {
     }
     const delta = this.lastTime ? Math.min(0.25, (time - this.lastTime) / 1000) : 0;
     this.lastTime = time;
-    this.accumulator += delta;
+    this.accumulator += delta * this.speed;
     let steps = 0;
-    while (this.accumulator >= STEP_SECONDS && steps < MAX_STEPS) {
-      this.previous = structuredClone(this.world);
-      const rawInput = this.input.nextTick();
-      step(this.world, { [this.playerId]: this.buildInput(rawInput, this.world) });
+    const maxSteps = Math.ceil(MAX_STEPS * this.speed);
+    while (this.accumulator >= STEP_SECONDS && steps < maxSteps) {
+      this.stepOnce();
       this.accumulator -= STEP_SECONDS;
       steps += 1;
-      this.onTick?.(this.world);
     }
-    if (steps === MAX_STEPS && this.accumulator >= STEP_SECONDS) this.accumulator = 0;
+    if (steps === maxSteps && this.accumulator >= STEP_SECONDS) this.accumulator = 0;
     this.render(this.previous, this.world, this.accumulator / STEP_SECONDS);
     requestAnimationFrame(this.frame);
   }

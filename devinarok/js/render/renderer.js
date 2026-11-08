@@ -389,11 +389,14 @@ export class ArenaRenderer {
     this.averageMs = 16;
     this.resolutionScale = 1;
     this.loadedBytes = 0;
-    this.debugMode = new URLSearchParams(location.search).get('debug') === '1';
-    this.debugOverlay = document.querySelector('#debug-overlay');
-    this.debugFrames = 0;
-    this.debugLastTime = this.lastRender;
-    this.debugFps = 0;
+    this.showCollisionOverlay = showCollisionOverlay;
+    this.debugOverlayFlags = { hitboxes: false, attacks: false, dodgeWindow: false };
+    this.debugOverlayRoot = new THREE.Group();
+    this.debugOverlayRoot.name = 'debug-overlays';
+    this.scene.add(this.debugOverlayRoot);
+    this.debugEntityRings = new Map();
+    this.debugAttackLines = new Map();
+    this.debugDodgeRing = null;
     this.buildRoom();
     this.collisionOverlay = null;
     if (showCollisionOverlay) this.createCollisionOverlay();
@@ -649,6 +652,140 @@ export class ArenaRenderer {
     }
     this.collisionOverlay = group;
     this.scene.add(group);
+  }
+
+  setDebugOverlays(flags = {}) {
+    this.debugOverlayFlags = {
+      hitboxes: Boolean(flags.hitboxes),
+      attacks: Boolean(flags.attacks),
+      dodgeWindow: Boolean(flags.dodgeWindow),
+    };
+    if (this.debugOverlayFlags.hitboxes && !this.collisionOverlay) this.createCollisionOverlay();
+    if (this.collisionOverlay) {
+      this.collisionOverlay.visible = this.showCollisionOverlay || this.debugOverlayFlags.hitboxes;
+    }
+  }
+
+  debugAttackPoints(shape) {
+    const y = 0.09;
+    if (shape.type === 'sector') {
+      const points = [new THREE.Vector3(shape.originX, y, shape.originZ)];
+      const steps = 24;
+      for (let index = 0; index <= steps; index += 1) {
+        const angle = shape.angle - shape.halfAngle + shape.halfAngle * 2 * index / steps;
+        points.push(new THREE.Vector3(
+          shape.originX + Math.cos(angle) * shape.range,
+          y,
+          shape.originZ + Math.sin(angle) * shape.range,
+        ));
+      }
+      points.push(points[0].clone());
+      return points;
+    }
+    if (shape.type === 'circle' || shape.type === 'annulus') {
+      const radius = shape.radius ?? shape.outerRadius;
+      return Array.from({ length: 49 }, (_, index) => {
+        const angle = index / 48 * Math.PI * 2;
+        return new THREE.Vector3(shape.originX + Math.cos(angle) * radius, y, shape.originZ + Math.sin(angle) * radius);
+      });
+    }
+    if (shape.type === 'circles') {
+      return shape.circles.flatMap((circle) => Array.from({ length: 49 }, (_, index) => {
+        const angle = index / 48 * Math.PI * 2;
+        return new THREE.Vector3(circle.x + Math.cos(angle) * circle.radius, y, circle.z + Math.sin(angle) * circle.radius);
+      }).flatMap((point, index, points) => index === 0 ? [] : [points[index - 1], point]));
+    }
+    if (shape.type === 'line' || shape.type === 'rect') {
+      const dx = Math.cos(shape.angle);
+      const dz = Math.sin(shape.angle);
+      const sx = -dz * shape.width / 2;
+      const sz = dx * shape.width / 2;
+      const x1 = shape.originX - sx;
+      const z1 = shape.originZ - sz;
+      const x2 = shape.originX + dx * shape.length - sx;
+      const z2 = shape.originZ + dz * shape.length - sz;
+      const x3 = shape.originX + dx * shape.length + sx;
+      const z3 = shape.originZ + dz * shape.length + sz;
+      const x4 = shape.originX + sx;
+      const z4 = shape.originZ + sz;
+      return [
+        new THREE.Vector3(x1, y, z1), new THREE.Vector3(x2, y, z2),
+        new THREE.Vector3(x3, y, z3), new THREE.Vector3(x4, y, z4),
+        new THREE.Vector3(x1, y, z1),
+      ];
+    }
+    return [];
+  }
+
+  updateDebugOverlays(world, now) {
+    const { hitboxes, attacks, dodgeWindow } = this.debugOverlayFlags;
+    this.debugOverlayRoot.visible = hitboxes || attacks || dodgeWindow;
+    if (!this.debugOverlayRoot.visible) return;
+    const activeRings = new Set();
+    if (hitboxes) {
+      for (const entity of world.entities) {
+        if (!['player', 'enemy'].includes(entity.kind) || entity.dead) continue;
+        activeRings.add(entity.id);
+        let ring = this.debugEntityRings.get(entity.id);
+        if (!ring) {
+          const points = Array.from({ length: 49 }, (_, index) => {
+            const angle = index / 48 * Math.PI * 2;
+            return new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+          });
+          ring = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(points),
+            new THREE.LineBasicMaterial({ color: entity.kind === 'player' ? 0x71eaff : 0xff6774, transparent: true, opacity: 0.9, depthTest: true }),
+          );
+          this.debugEntityRings.set(entity.id, ring);
+          this.debugOverlayRoot.add(ring);
+        }
+        ring.visible = true;
+        ring.position.set(entity.x, 0.06, entity.z);
+        ring.scale.setScalar(entity.radius ?? 0.32);
+      }
+    }
+    for (const [id, ring] of this.debugEntityRings) ring.visible = hitboxes && activeRings.has(id);
+
+    const activeAttacks = new Set();
+    if (attacks) {
+      for (const enemy of world.entities) {
+        if (enemy.kind !== 'enemy' || enemy.dead || !enemy.attackShape) continue;
+        const points = this.debugAttackPoints(enemy.attackShape);
+        if (points.length < 2) continue;
+        activeAttacks.add(enemy.id);
+        let line = this.debugAttackLines.get(enemy.id);
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        if (!line) {
+          line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xffa64d, transparent: true, opacity: 0.95, depthTest: true }));
+          this.debugAttackLines.set(enemy.id, line);
+          this.debugOverlayRoot.add(line);
+        } else {
+          line.geometry.dispose();
+          line.geometry = geometry;
+        }
+        line.visible = true;
+      }
+    }
+    for (const [id, line] of this.debugAttackLines) line.visible = attacks && activeAttacks.has(id);
+
+    const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === this.localPlayerId);
+    if (dodgeWindow && player?.dodgeTicks > 0 && !player.perfectPaid) {
+      if (!this.debugDodgeRing) {
+        const points = Array.from({ length: 49 }, (_, index) => {
+          const angle = index / 48 * Math.PI * 2;
+          return new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+        });
+        this.debugDodgeRing = new THREE.LineLoop(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({ color: 0xffd45c, transparent: true, depthTest: true }),
+        );
+        this.debugOverlayRoot.add(this.debugDodgeRing);
+      }
+      this.debugDodgeRing.visible = true;
+      this.debugDodgeRing.position.set(player.x, 0.11, player.z);
+      this.debugDodgeRing.scale.setScalar((player.radius ?? 0.32) * (1.7 + Math.sin(now * 0.025) * 0.18));
+      this.debugDodgeRing.material.opacity = 0.5 + (Math.sin(now * 0.025) + 1) * 0.2;
+    } else if (this.debugDodgeRing) this.debugDodgeRing.visible = false;
   }
 
   async loadAssets() {
@@ -2086,17 +2223,8 @@ export class ArenaRenderer {
     this.updateNpcHotspots(dt);
     this.updatePresentation(world, now);
     this.updateOccluderFades(world, now);
+    this.updateDebugOverlays(world, now);
     this.renderer.render(this.scene, this.camera);
-    if (this.debugOverlay) this.debugOverlay.hidden = !this.debugMode;
-    if (this.debugMode && this.debugOverlay) {
-      this.debugFrames += 1;
-      if (now - this.debugLastTime >= 500) {
-        this.debugFps = Math.round(this.debugFrames * 1000 / (now - this.debugLastTime));
-        this.debugFrames = 0;
-        this.debugLastTime = now;
-      }
-      this.debugOverlay.textContent = `${this.debugFps} FPS · ${this.renderer.info.render.calls} DC · ${this.renderer.info.render.triangles.toLocaleString('ko-KR')} tris`;
-    }
   }
 
   resizeCanvas() {
@@ -2164,6 +2292,9 @@ export class ArenaRenderer {
       for (const material of materials) material.dispose();
       this.collisionOverlay = null;
     }
+    this.debugEntityRings.clear();
+    this.debugAttackLines.clear();
+    this.debugDodgeRing = null;
     this.vfxLayer.remove();
     disposeSceneResources(this.scene);
     this.renderer.dispose();

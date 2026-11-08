@@ -14,6 +14,10 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+export function normalizeCharacter(character) {
+  return character ? { ...clone(character), debugUsed: character.debugUsed === true } : null;
+}
+
 export function rekeySettlementItems(items, existingItems = []) {
   const occupied = new Set(existingItems.map((item) => typeof item === 'string' ? item : item.uid));
   return items.map((item) => {
@@ -29,7 +33,7 @@ export function rekeySettlementItems(items, existingItems = []) {
 }
 
 export function applyOperations(character, itemMap, operations, characterId) {
-  let nextCharacter = character ? clone(character) : null;
+  let nextCharacter = normalizeCharacter(character);
   const nextItems = clone(itemMap);
   for (const operation of operations) {
     if (!operation || typeof operation.type !== 'string') throw new TypeError('Invalid save operation');
@@ -46,6 +50,7 @@ export function applyOperations(character, itemMap, operations, characterId) {
         xp: 0,
         gold: 0,
         potions: 0,
+        debugUsed: false,
         rev: 0,
         equipment: { weapon: null, head: null, body: null, hands: null, feet: null },
         clearedStages: [],
@@ -62,6 +67,12 @@ export function applyOperations(character, itemMap, operations, characterId) {
           nextCharacter.level += 1;
         }
         if (nextCharacter.level >= 20) nextCharacter.xp = 0;
+        break;
+      }
+      case 'setLevel': {
+        if (!Number.isInteger(operation.level)) throw new TypeError('Level must be an integer');
+        nextCharacter.level = Math.max(1, Math.min(20, operation.level));
+        nextCharacter.xp = 0;
         break;
       }
       case 'grantGold':
@@ -126,6 +137,24 @@ export function applyOperations(character, itemMap, operations, characterId) {
         if (!nextCharacter.clearedStages.includes(stageId)) nextCharacter.clearedStages.push(stageId);
         break;
       }
+      case 'resetProgress':
+        nextCharacter.clearedStages = [];
+        break;
+      case 'markDebug':
+        nextCharacter.debugUsed = true;
+        break;
+      case 'resetCharacter':
+        for (const [uid, item] of Object.entries(nextItems)) {
+          if (item.characterId === characterId) delete nextItems[uid];
+        }
+        nextCharacter.level = 1;
+        nextCharacter.xp = 0;
+        nextCharacter.gold = 0;
+        nextCharacter.potions = 0;
+        nextCharacter.equipment = { weapon: null, head: null, body: null, hands: null, feet: null };
+        nextCharacter.clearedStages = [];
+        nextCharacter.tutorial = { step: 'board', completed: false, skipped: false, combatComplete: false };
+        break;
       case 'updateTutorial': {
         if (!operation.state || typeof operation.state !== 'object' || Array.isArray(operation.state)) {
           throw new TypeError('Tutorial state must be an object');

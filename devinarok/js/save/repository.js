@@ -1,4 +1,4 @@
-import { applyOperations } from './ops.js';
+import { applyOperations, normalizeCharacter } from './ops.js';
 
 export const SCHEMA_VERSION = 4;
 const STORE_NAMES = ['meta', 'characters', 'items', 'ledger', 'backups', 'settings'];
@@ -307,12 +307,12 @@ export class SaveRepository {
   }
 
   async listCharacters() {
-    return Object.values((await this.backend.readData()).characters).map(clone);
+    return Object.values((await this.backend.readData()).characters).map(normalizeCharacter);
   }
 
   async loadCharacter(id) {
     const character = (await this.backend.readData()).characters[id];
-    return character ? clone(character) : null;
+    return normalizeCharacter(character);
   }
 
   async listItems(characterId) {
@@ -339,7 +339,7 @@ export class SaveRepository {
     const data = await this.backend.readData();
     const exportedData = {
       meta: data.meta,
-      characters: Object.values(data.characters),
+      characters: Object.values(data.characters).map(normalizeCharacter),
       items: Object.values(data.items),
       ledger: data.ledger,
       backups: data.backups,
@@ -372,7 +372,7 @@ export class SaveRepository {
     const current = await this.backend.readData();
     const imported = {
       meta: clone(payload.data.meta),
-      characters: Object.fromEntries(payload.data.characters.map((character) => [character.id, character])),
+      characters: Object.fromEntries(payload.data.characters.map((character) => [character.id, normalizeCharacter(character)])),
       items: Object.fromEntries(payload.data.items.map((item) => [item.uid, item])),
       ledger: clone(payload.data.ledger),
       backups: [...clone(payload.data.backups), { id: uuid(this.cryptoProvider), createdAt: Date.now(), data: current }],

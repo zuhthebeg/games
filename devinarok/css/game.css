@@ -15,6 +15,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .panel { width: min(440px, calc(100vw - 32px)); padding: 24px; border: 1px solid #58454d; border-radius: 20px; background: #19161dcc; box-shadow: 0 20px 70px #0008; text-align: left; }
 .panel h2 { margin: 4px 0 12px; }
 .panel p { color: #b9adb0; font-size: 14px; }
+#character-debug-used { display: block; color: #f0c64f; font: 700 11px/1.4 system-ui, sans-serif; }
 .panel button { width: 100%; margin-top: 10px; }
 .panel label { display: grid; gap: 8px; }
 .panel input { border: 1px solid #66535a; border-radius: 10px; background: #100e13; color: white; padding: 12px; }
@@ -320,18 +321,239 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .tutorial-card strong { color: #ffe0a3; }
 .tutorial-card p { margin: 4px 0 7px; }
 .tutorial-card button { float: right; margin: 0; padding: 5px 9px; font-size: 11px; }
-.debug-overlay {
-  position: absolute;
-  z-index: 8;
-  top: 8px;
-  right: 8px;
-  padding: 5px 7px;
-  border: 1px solid #e6d5b0aa;
-  border-radius: 6px;
-  background: #100e13d9;
-  color: #fff4da;
+.settings-version {
+  display: block;
+  min-height: 44px;
+  margin: 8px auto 0 !important;
+  padding: 4px 12px !important;
+  border-color: transparent;
+  background: transparent;
+  color: #a99da0;
   font: 11px/1.4 ui-monospace, monospace;
+}
+.debug-trigger {
+  position: absolute;
+  z-index: 14;
+  top: calc(max(12px, env(safe-area-inset-top)) + 66px);
+  left: 8px;
+  width: 46px;
+  min-width: 46px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #dcb66e;
+  border-radius: 10px;
+  background: #261b15eF;
+  color: #ffe1a1;
+  font: 800 11px/1 ui-monospace, monospace;
+  box-shadow: 0 2px 10px #0009;
+}
+#game-screen:has(#party-hud:not([hidden])) .debug-trigger { top: 188px; }
+.debug-panel {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: max(0px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  width: min(620px, calc(100% - 12px));
+  height: min(70vh, 620px);
+  height: min(70dvh, 620px);
+  max-height: 70vh;
+  max-height: 70dvh;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border: 1px solid #846444;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: #17131af5;
+  box-shadow: 0 -12px 40px #000b;
+  color: #f2ece5;
+  font: 13px/1.45 system-ui, sans-serif;
+}
+.debug-drag-handle {
+  flex: 0 0 44px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 10px !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  touch-action: none;
+}
+.debug-drag-handle span {
+  display: block;
+  width: 42px;
+  height: 4px;
+  margin: auto;
+  border-radius: 5px;
+  background: #a88d72;
+}
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px 8px;
+  color: #f2d3a2;
+}
+.debug-header button {
+  flex: 0 0 auto;
+  min-width: 48px;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 10px;
+  font: 13px system-ui, sans-serif;
+}
+.debug-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+.debug-tabs button {
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 5px 2px;
+  border-radius: 9px;
+  color: #cbbcb3;
+  font: 700 12px/1.15 system-ui, sans-serif;
+}
+.debug-tabs button[aria-selected="true"] {
+  border-color: #d5a659;
+  background: #543a23;
+  color: #ffe3ae;
+}
+.debug-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px max(14px, env(safe-area-inset-bottom));
+}
+.debug-content h2 {
+  margin: 0 0 8px;
+  color: #f2d3a2;
+  font: 700 16px/1.3 system-ui, sans-serif;
+}
+.debug-content p {
+  color: #b9adb0;
+  font: 13px/1.45 system-ui, sans-serif;
+}
+.debug-action-list {
+  display: grid;
+  gap: 6px;
+}
+.debug-action {
+  display: grid;
+  gap: 3px;
+}
+.debug-action button {
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font: 700 13px/1.2 system-ui, sans-serif;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.debug-action button:disabled,
+.debug-content select:disabled,
+.debug-content input:disabled,
+.debug-content textarea:disabled {
+  opacity: 0.5;
+}
+.debug-reason,
+.debug-muted,
+.debug-stage-row small {
+  color: #c6a895;
+  font: 11px/1.3 system-ui, sans-serif;
+}
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.debug-content label {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  color: #d2c3bb;
+  font: 12px/1.3 system-ui, sans-serif;
+}
+.debug-content select,
+.debug-content input:not([type="checkbox"]),
+.debug-content textarea {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  border: 1px solid #665463;
+  border-radius: 8px;
+  background: #211b25;
+  color: #f2ece5;
+  font: 13px/1.3 system-ui, sans-serif;
+}
+.debug-content textarea {
+  min-height: 110px;
+  resize: vertical;
+  font: 11px/1.35 ui-monospace, monospace;
+}
+.debug-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  min-height: 44px;
+}
+.debug-check input {
+  width: 22px;
+  height: 22px;
+}
+.debug-stage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 8px;
+  min-height: 58px;
+  padding: 5px 0;
+  border-bottom: 1px solid #574551;
+}
+.debug-stage-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.debug-stage-row strong {
+  color: #e3d6cb;
+  font: 600 12px/1.25 system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+.debug-stage-row .debug-action button {
+  text-align: center;
+}
+.debug-info {
+  position: absolute;
+  z-index: 9;
+  top: calc(max(12px, env(safe-area-inset-top)) + 116px);
+  left: 8px;
+  max-width: min(250px, calc(100vw - 16px));
+  margin: 0;
+  padding: 6px;
+  border: 1px solid #d8bd8499;
+  border-radius: 7px;
+  background: #08090de0;
+  color: #d5f2ce;
+  font: 11px/1.35 ui-monospace, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   pointer-events: none;
+}
+#game-screen:has(#debug-panel:not([hidden])) #controls { display: none !important; }
+@media (max-width: 380px) {
+  .debug-tabs { gap: 2px; padding-inline: 5px; }
+  .debug-tabs button { font-size: 11px; }
+  .debug-content { padding-inline: 9px; }
 }
 body.large-text .hud { font-size: calc(var(--hud-base-font-size) * 1.2); }
 body.large-text #hud-hp { font-size: calc(var(--hud-hp-base-font-size) * 1.2); }
