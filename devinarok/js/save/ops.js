@@ -2,7 +2,7 @@ import { ITEMS } from '../content/items.js';
 
 const SLOTS = new Set(['weapon', 'head', 'body', 'hands', 'feet']);
 const ENHANCE_RATES = [100, 100, 95, 90, 80, 70, 60, 50, 40, 30];
-const SELL_VALUES = { common: 5, magic: 15, rare: 45, legendary: 150 };
+const SELL_VALUES = { common: 5, magic: 15, rare: 45, legendary: 150, set: 150 };
 const ITEM_CAPACITY = 40;
 
 function integer(value, label, minimum = 0) {

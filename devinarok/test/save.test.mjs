@@ -194,3 +194,14 @@ test('enhancement cost and success thresholds match every settled rank', () => {
     }
   }
 });
+
+test('selling a set item uses its set rarity value', () => {
+  const state = applyOperations(null, {}, [
+    { type: 'createCharacter', name: '세트판매', kind: 'knight' },
+    { type: 'grantItem', uid: 'set-blade', itemId: 'oath-sword', rarity: 'set', ilvl: 15 },
+    { type: 'sellItem', uid: 'set-blade' },
+  ], 'hero');
+
+  assert.equal(state.character.gold, Math.round(150 * 2.5));
+  assert.equal(state.items['set-blade'], undefined);
+});
