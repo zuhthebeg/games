@@ -15,7 +15,13 @@ function clone(value) {
 }
 
 export function normalizeCharacter(character) {
-  return character ? { ...clone(character), debugUsed: character.debugUsed === true } : null;
+  if (!character) return null;
+  const normalized = clone(character);
+  normalized.debugUsed = character.debugUsed === true;
+  normalized.records = character.records && typeof character.records === 'object' && !Array.isArray(character.records)
+    ? normalized.records
+    : {};
+  return normalized;
 }
 
 export function rekeySettlementItems(items, existingItems = []) {
@@ -54,6 +60,7 @@ export function applyOperations(character, itemMap, operations, characterId) {
         rev: 0,
         equipment: { weapon: null, head: null, body: null, hands: null, feet: null },
         clearedStages: [],
+        records: {},
         tutorial: { step: 'board', completed: false, skipped: false, combatComplete: false },
       };
       continue;
@@ -89,6 +96,8 @@ export function applyOperations(character, itemMap, operations, characterId) {
         if (Object.values(nextItems).filter((item) => item.characterId === characterId).length >= ITEM_CAPACITY) {
           throw new RangeError('Inventory is full');
         }
+        const base = ITEMS[operation.itemId];
+        const setId = operation.setId ?? base?.setId;
         nextItems[operation.uid] = {
           uid: operation.uid,
           characterId,
@@ -96,10 +105,11 @@ export function applyOperations(character, itemMap, operations, characterId) {
           rarity: String(operation.rarity ?? 'common'),
           enhance: integer(operation.enhance ?? 0, 'Enhance'),
           ilvl: integer(operation.ilvl ?? 1, 'Item level', 1),
-          requiredLevel: ITEMS[operation.itemId]?.requiredLevel ?? 1,
+          requiredLevel: base?.requiredLevel ?? 1,
           legendaryId: operation.legendaryId ?? null,
           affixes: Array.isArray(operation.affixes) ? clone(operation.affixes) : [],
           slot: null,
+          ...(setId ? { setId } : {}),
         };
         break;
       }
@@ -137,8 +147,20 @@ export function applyOperations(character, itemMap, operations, characterId) {
         if (!nextCharacter.clearedStages.includes(stageId)) nextCharacter.clearedStages.push(stageId);
         break;
       }
+      case 'recordClear': {
+        const key = String(operation.key ?? '');
+        if (!key) throw new TypeError('Record key is required');
+        const ticks = integer(operation.ticks, 'Clear ticks');
+        const current = nextCharacter.records?.[key];
+        if (!Number.isInteger(current) || ticks < current) {
+          nextCharacter.records ??= {};
+          nextCharacter.records[key] = ticks;
+        }
+        break;
+      }
       case 'resetProgress':
         nextCharacter.clearedStages = [];
+        nextCharacter.records = {};
         break;
       case 'markDebug':
         nextCharacter.debugUsed = true;
@@ -153,6 +175,7 @@ export function applyOperations(character, itemMap, operations, characterId) {
         nextCharacter.potions = 0;
         nextCharacter.equipment = { weapon: null, head: null, body: null, hands: null, feet: null };
         nextCharacter.clearedStages = [];
+        nextCharacter.records = {};
         nextCharacter.tutorial = { step: 'board', completed: false, skipped: false, combatComplete: false };
         break;
       case 'updateTutorial': {

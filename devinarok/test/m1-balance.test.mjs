@@ -92,9 +92,9 @@ function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {})
   return { seq, moveX, moveZ, aim, buttons };
 }
 
-function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false, perfectDodge = false }) {
+function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false, perfectDodge = false, difficulty = 'normal' }) {
   const id = 'bot';
-  const world = createStageWorld({ seed, stageId, playerId: id, character: { level, potions, equipment } });
+  const world = createStageWorld({ seed, stageId, difficulty, playerId: id, character: { level, potions, equipment } });
   let dodges = 0;
   let perfectDodges = 0;
   let lastEventId = 0;
@@ -448,5 +448,88 @@ test('M5a perfect-dodge bot reports boss clears, medians, and perfect-dodge rate
         assert.ok(skilledMedian >= normalMedian * 0.7, `${family} ${stageId} skilled bot became too fast`);
       }
     }
+  }
+});
+
+test('M5c ten-seed nightmare and hell balance gates', { timeout: 300000 }, () => {
+  const gear = (level, family) => {
+    const weapon = ITEM_BASES.find((base) => base.requiredLevel === level && base.slot === 'weapon' && base.family === family);
+    const armor = ITEM_BASES.filter((base) => base.requiredLevel === level && base.slot !== 'weapon' && !base.setId)
+      .sort((a, b) => ['head', 'body', 'hands', 'feet'].indexOf(a.slot) - ['head', 'body', 'hands', 'feet'].indexOf(b.slot));
+    return [weapon, ...armor].map((base) => ({
+      itemId: base.id,
+      rarity: 'rare',
+      affixes: base.slot === 'weapon'
+        ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+        : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+    }));
+  };
+  const result = [];
+  for (const [difficulty, level, gearLevel, c1Minimum, seedBase] of [
+    ['nightmare', 15, 15, 9, 1501],
+    ['hell', 20, 18, 8, 1701],
+  ]) {
+    for (const family of ['sword', 'crossbow', 'staff']) {
+      for (const stageId of ['C1', 'KB']) {
+        const runs = Array.from({ length: 10 }, (_, index) => runBot({
+          seed: seedBase + (stageId === 'KB' ? 100 : 0) + index,
+          stageId,
+          difficulty,
+          level,
+          equipment: gear(gearLevel, family),
+          potions: 5,
+          maxTicks: 12000,
+          aimAtTarget: true,
+        }));
+        const clears = runs.filter((run) => run.outcome === 'clear');
+        const medianSeconds = clears.length ? median(clears.map((run) => run.seconds)) : null;
+        console.log(`M5c ${difficulty} ${family} ${stageId}: ${clears.length}/10, median ${medianSeconds?.toFixed(1) ?? '—'}s`);
+        console.log(`M5c ${difficulty} ${family} ${stageId} seeds: ${runs.map((run) => `${run.outcome}@${run.seconds.toFixed(1)}s hp${run.hp}/${run.maxHp} room${run.roomIndex}`).join(', ')}`);
+        result.push({ difficulty, family, stageId, clears: clears.length, medianSeconds });
+      }
+    }
+  }
+  for (const row of result.filter((entry) => entry.stageId === 'C1')) {
+    assert.ok(row.clears >= (row.difficulty === 'nightmare' ? 9 : 8), `${row.difficulty} ${row.family} C1: ${row.clears}/10`);
+  }
+  for (const row of result.filter((entry) => entry.stageId === 'KB')) {
+    const minimum = row.difficulty === 'nightmare' ? 5 : 4;
+    assert.ok(row.clears >= minimum, `${row.difficulty} ${row.family} KB: ${row.clears}/10`);
+  }
+
+  const setIds = { sword: 'guardian-oath', crossbow: 'shadow-hunter', staff: 'ember-sage' };
+  for (const family of ['sword', 'crossbow', 'staff']) {
+    const compare = (withSet) => {
+      const baseGear = gear(15, family);
+      const setPieces = ITEM_BASES.filter((base) => base.setId === setIds[family]).slice(0, 4).map((base) => ({
+        itemId: base.id,
+        setId: base.setId,
+        rarity: 'set',
+        affixes: base.slot === 'weapon'
+          ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+          : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+      }));
+      const equipment = withSet
+        ? [...setPieces, baseGear.find((item) => ITEM_BASES.find((base) => base.id === item.itemId)?.slot === 'feet')]
+        : baseGear;
+      return Array.from({ length: 10 }, (_, index) => runBot({
+        seed: 1901 + index,
+        stageId: 'KB',
+        difficulty: 'nightmare',
+        level: 15,
+        equipment,
+        potions: 5,
+        maxTicks: 12000,
+        aimAtTarget: true,
+        perfectDodge: true,
+      })).filter((run) => run.outcome === 'clear');
+    };
+    const noSet = compare(false);
+    const withSet = compare(true);
+    assert.ok(noSet.length > 0 && withSet.length > 0, `${family} N:KB set comparison needs clear-time samples`);
+    const noSetMedian = noSet.length ? median(noSet.map((run) => run.seconds)) : null;
+    const setMedian = withSet.length ? median(withSet.map((run) => run.seconds)) : null;
+    console.log(`M5c skilled N:KB ${family} set: ${withSet.length}/10 median ${setMedian?.toFixed(1) ?? '—'}s vs no set ${noSet.length}/10 median ${noSetMedian?.toFixed(1) ?? '—'}s`);
+    if (noSetMedian !== null && setMedian !== null) assert.ok(setMedian >= noSetMedian * 0.7, `${family} four-piece set made the skilled bot too fast`);
   }
 });

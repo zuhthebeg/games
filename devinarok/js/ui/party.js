@@ -195,6 +195,7 @@ export class PartyClient {
     this.stageWorld = createStageWorld({
       seed: message.seed,
       stageId: message.stageId,
+      difficulty: message.difficulty ?? 'normal',
       inputDriven: true,
       party,
     });
@@ -356,8 +357,8 @@ export class PartyClient {
     return this.session?.send({ t: 'lobby.ready', ready: Boolean(ready) }) ?? false;
   }
 
-  selectStage(stageId) {
-    return this.session?.send({ t: 'lobby.stage', stageId }) ?? false;
+  selectStage(stageId, difficulty = this.lobby?.difficulty ?? 'normal') {
+    return this.session?.send({ t: 'lobby.stage', stageId, difficulty }) ?? false;
   }
 
   setPublic(isPublic) {

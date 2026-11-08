@@ -191,13 +191,14 @@ test('party finder derives HTTP base, sorts rooms, and escapes host names', () =
   assert.equal(partyHttpBase('?server=wss://example.test/devinarok/ABC234'), 'https://example.test');
   const rooms = sortPartyRooms([
     { roomId: 'devinarok:A', players: 1, updatedAt: 20, meta: { hostName: '<script>', code: 'ABC234', stageId: 'C1' } },
-    { roomId: 'devinarok:B', players: 2, updatedAt: 10, meta: { hostName: '기사', code: 'BCD345', stageId: 'C2' } },
+    { roomId: 'devinarok:B', players: 2, updatedAt: 10, meta: { hostName: '기사', code: 'BCD345', stageId: 'C2', difficulty: 'nightmare' } },
   ]);
   assert.equal(rooms[0].meta.code, 'BCD345');
   const markup = partyRoomsMarkup(rooms, 1);
   assert.ok(!markup.includes('<script>'));
   assert.ok(markup.includes('&lt;script&gt;'));
   assert.ok(markup.includes('권장 Lv.'));
+  assert.ok(markup.includes('악몽'));
   assert.ok(markup.includes('class="party-row-join">참가</b>'));
 });
 

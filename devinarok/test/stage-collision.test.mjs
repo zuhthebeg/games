@@ -267,10 +267,10 @@ test('the inn board and CB clear explain forest-region progression', async () =>
   assert.match(main, /2지역 · 잿빛 숲/);
   assert.match(main, /const action = cleared \? '재도전' : unlocked \? '출정' : '잠김';/);
   assert.match(main, /class="hub-stage-name"/);
-  assert.match(main, /STAGE_LIST\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id\) : entry\.id === stage\)/);
+  assert.match(main, /STAGE_LIST\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id, difficulty\) : entry\.id === stage\)/);
   assert.match(css, /\.hub-row button \{ flex: 0 0 88px;/);
   assert.match(css, /\.hub-stage-name \{[^}]*white-space: nowrap;/);
-  assert.match(main, /firstForestUnlock = currentStageId === 'CB'/);
+  assert.match(main, /firstForestUnlock = difficulty === 'normal' && stageId === 'CB'/);
   assert.match(main, /outcome === 'clear' && firstForestUnlock/);
   assert.match(main, /2지역 · 잿빛 숲이 열렸어요/);
   assert.match(main, /3지역 · 해골 왕의 성채가 열렸어요/);

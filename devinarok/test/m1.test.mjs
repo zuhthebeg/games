@@ -19,9 +19,10 @@ test('M1-M3c content reference valid models and settled combat ranges', () => {
   assert.equal(SKILLS.spin.windupTicks, 5);
   assert.equal(SKILLS.dash.dashDistance, 4);
   assert.equal(SKILLS.guard.durationTicks, 45);
-  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon').length, 21);
+  assert.equal(ITEM_BASES.filter((item) => item.slot === 'weapon' && item.requiredLevel <= 14).length, 21);
   assert.equal(Object.keys(AFFIXES).length, 12);
-  assert.deepEqual(Object.values(RARITIES).map((rarity) => rarity.weight), [60, 30, 9, 1]);
+  assert.deepEqual(Object.values(RARITIES).filter((rarity) => rarity.weight > 0).map((rarity) => rarity.weight), [60, 30, 9, 1]);
+  assert.equal(RARITIES.set.weight, 0);
   assert.deepEqual(STAGE_LIST.map((stage) => stage.id), ['C1', 'C2', 'C3', 'CB', 'F1', 'F2', 'F3', 'FB', 'K1', 'K2', 'K3', 'KB']);
   assert.deepEqual(STAGE_LIST.slice(0, 4).map((stage) => stage.region), [1, 1, 1, 1]);
   assert.deepEqual(STAGE_LIST.filter((stage) => stage.region === 2).map(({ id, region, stageLevel, recommendedLevel }) => ({
