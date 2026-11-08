@@ -203,7 +203,11 @@ async function loadSharedWallet() {
       script.src = new URL('../lib/shared-wallet.js', window.location.href).href;
       script.dataset.noUi = '';
       script.addEventListener('load', resolve, { once: true });
-      script.addEventListener('error', () => reject(new Error('로그인 모듈을 불러오지 못했어요')), { once: true });
+      script.addEventListener('error', () => {
+        script.remove();
+        sharedWalletLoadPromise = null;
+        reject(new Error('로그인 모듈을 불러오지 못했어요'));
+      }, { once: true });
       document.head.append(script);
     });
   }
