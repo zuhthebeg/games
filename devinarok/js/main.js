@@ -814,7 +814,7 @@ function itemDetails(item) {
     const unit = definition?.unit ?? (affix.id === 'spinCooldownSeconds' ? '초' : '');
     return `<small class="affix-line">${formatStat(affix.id, affix.value, unit)}</small>`;
   }).join('');
-  const set = ITEM_SETS[item.setId ?? ITEMS[item.itemId]?.setId];
+  const set = ITEM_SETS[ITEMS[item.itemId]?.setId];
   const setLabel = set ? `<small class="set-item-name">세트 · ${escapeHtml(set.name)}</small>` : '';
   return `<strong class="item-name rarity-${item.rarity}">${itemName(item)}</strong><small>${itemStat(item)}</small>${setLabel}${affixes || '<small>추가 옵션 없음</small>'}`;
 }
@@ -1492,10 +1492,10 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const family = equipmentLook(currentEquipment).family;
   const setCounts = {};
   for (const item of currentEquipment) {
-    const setId = item.setId ?? ITEMS[item.itemId]?.setId;
+    const setId = ITEMS[item.itemId]?.setId;
     if (ITEM_SETS[setId]) setCounts[setId] = (setCounts[setId] ?? 0) + 1;
   }
-  const ownedSetIds = new Set(inventory.map((item) => item.setId ?? ITEMS[item.itemId]?.setId).filter((id) => ITEM_SETS[id]));
+  const ownedSetIds = new Set(inventory.map((item) => ITEMS[item.itemId]?.setId).filter((id) => ITEM_SETS[id]));
   const setBonuses = Object.entries(ITEM_SETS).filter(([setId]) => ownedSetIds.has(setId) || setCounts[setId])
     .map(([setId, set]) => {
       const count = setCounts[setId] ?? 0;

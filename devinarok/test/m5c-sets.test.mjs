@@ -234,3 +234,17 @@ test('set bonuses are consumed by perfect-dodge and counter simulation', () => {
   assert.equal(fireField.motionMult, 0.2);
   assert.equal(fireField.endsTick - fireField.resolveTick, 60);
 });
+
+test('forged set IDs on non-set items do not count or grant bonuses', () => {
+  const bases = ITEM_BASES.filter((base) => !base.setId).slice(0, 4);
+  const equipment = bases.map((base) => ({ itemId: base.id }));
+  const forgedEquipment = bases.map((base) => ({ itemId: base.id, setId: 'guardian-oath' }));
+  const ordinaryStats = calculatePlayerStats(1, equipment);
+  const forgedStats = calculatePlayerStats(1, forgedEquipment);
+
+  assert.deepEqual(forgedStats.setCounts, {});
+  assert.equal(forgedStats.counterDamagePct, 0);
+  assert.equal(forgedStats.counterReadyTicks, 60);
+  assert.equal(forgedStats.maxHp, ordinaryStats.maxHp);
+  assert.equal(forgedStats.attack, ordinaryStats.attack);
+});
