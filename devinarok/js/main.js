@@ -8,6 +8,7 @@ import { PartyClient } from './ui/party.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
+import { refreshStagePlayerCharacter } from './ui/stage-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
 import {
   createTutorialState, resolveTutorialSortie, shouldRenderTutorialCard, TUTORIAL_COPY, transitionTutorial,
@@ -491,17 +492,7 @@ function refreshSoloStagePlayer() {
   const equipment = equippedItems();
   const stats = calculatePlayerStats(character.level, equipment);
   const look = equipmentLook(equipment);
-  Object.assign(player, {
-    ...look,
-    level: character.level,
-    equipment,
-    look,
-    family: look.family,
-    stats,
-    maxHp: stats.maxHp,
-    hp: Math.min(player.hp, stats.maxHp),
-    potions: character.potions,
-  });
+  refreshStagePlayerCharacter(player, character, equipment, look, stats);
 }
 
 function equippedItems() {
