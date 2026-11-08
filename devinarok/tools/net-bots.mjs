@@ -1,24 +1,42 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomInt } from 'node:crypto';
-import { CastTimeline } from '../js/net/cast-timeline.js';
-import { InterpolationBuffer } from '../js/net/interp.js';
-import { isCounterCast, scoreCastHitAgreement } from '../js/net/hit-agreement.js';
-import { NetSession } from '../js/net/net-session.js';
-import { decodeMessage } from '../js/net/protocol.js';
-import { Predictor } from '../js/net/predictor.js';
-import { buildRangedAimInput } from '../js/net/ranged-aim.js';
-import { BUTTONS, createStageWorld } from '../js/sim/world.js';
-import { computeBotPolicy, insideShape } from '../js/net/bot-policy.js';
-import { ITEM_BASES } from '../js/content/items.js';
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const TICK_HZ = 30;
-const INPUT_MS = 1000 / TICK_HZ;
 const RENDER_MS = 1000 / 60;
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
+const clientRoot = resolve(process.env.DEVINAROK_CLIENT_ROOT ?? resolve(here, '../js'));
+const importClient = (relativePath) => import(pathToFileURL(resolve(clientRoot, relativePath)).href);
+const [
+  { CastTimeline },
+  { InterpolationBuffer },
+  { isCounterCast, scoreCastHitAgreement },
+  { NetSession },
+  { decodeMessage },
+  { Predictor },
+  { buildRangedAimInput },
+  { BUTTONS, createStageWorld },
+  { computeBotPolicy, insideShape },
+  { ITEM_BASES },
+  { AttackInputAssistant },
+  { ClockInputScheduler },
+] = await Promise.all([
+  importClient('net/cast-timeline.js'),
+  importClient('net/interp.js'),
+  importClient('net/hit-agreement.js'),
+  importClient('net/net-session.js'),
+  importClient('net/protocol.js'),
+  importClient('net/predictor.js'),
+  importClient('net/ranged-aim.js'),
+  importClient('sim/world.js'),
+  importClient('net/bot-policy.js'),
+  importClient('content/items.js'),
+  importClient('core/attack-assist.js'),
+  import(pathToFileURL(resolve(here, '../js/net/clock-input-scheduler.js')).href),
+]);
 
 function parseOptions(argv) {
   const options = new Map();
@@ -42,6 +60,8 @@ const roomCode = String(options.get('room') ?? Array.from({ length: 6 }, () => (
 )).join(''));
 const runName = String(options.get('name') ?? `${stageId.toLowerCase()}-${botCount}bot`);
 const durationSeconds = Math.max(10, Number(options.get('duration') ?? 240));
+const fixedSeed = Math.max(1, Math.min(0xffffffff, Math.trunc(Number(options.get('seed') ?? 1))));
+const attackMode = String(options.get('attack-mode') ?? 'bot');
 const reconnectBotIndex = options.has('reconnect-bot') ? Number(options.get('reconnect-bot')) : -1;
 const reconnectAfterMs = Math.max(1000, Number(options.get('reconnect-after') ?? 6000));
 const metricsDirectory = resolve(String(options.get('metrics-dir') ?? '/home/ubuntu/devinarok-net'));
@@ -139,6 +159,25 @@ function angleDifference(left, right) {
   if (difference > Math.PI) difference -= Math.PI * 2;
   if (difference < -Math.PI) difference += Math.PI * 2;
   return difference;
+}
+
+function percentile95(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)];
+}
+
+function median(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function addJerk(displacement, window, values) {
+  window.push(displacement);
+  if (window.length > 10) window.shift();
+  values.push(Math.abs(displacement - median(window)) * 100);
 }
 
 function livePlayer(world, playerId) {
@@ -277,7 +316,7 @@ class Bot {
     };
     this.statusEvents = [];
     this.session = new NetSession({
-      url: `${serverUrl}/devinarok/${roomCode}`,
+      url: `${serverUrl.replace(/\/$/, '')}/devinarok/${roomCode}?debug=1&seed=${fixedSeed}`,
       WebSocketCtor: meteredWebSocket(this.stats),
       name: this.name,
       character: this.character,
@@ -288,6 +327,43 @@ class Bot {
         this.errors.push(String(error?.message ?? error));
       },
     });
+    this.inputFlowStats = this.newInputFlowStats();
+    const queueInput = this.session.queueInput.bind(this.session);
+    this.session.queueInput = (input) => {
+      const queued = queueInput(input);
+      if (queued !== false) {
+        const producedAt = performance.now();
+        if (this.inputFlowStats.lastProducedAt !== null) {
+          this.inputFlowStats.productionIntervalsMs.push(producedAt - this.inputFlowStats.lastProducedAt);
+          if (this.inputFlowStats.productionIntervalsMs.length > 1200) {
+            this.inputFlowStats.productionIntervalsMs.shift();
+          }
+        }
+        this.inputFlowStats.lastProducedAt = producedAt;
+        this.inputFlowStats.queuedInputs += 1;
+      }
+      return queued;
+    };
+    const flushInputs = this.session.flushInputs.bind(this.session);
+    this.session.flushInputs = (...args) => {
+      const bundleSize = this.session.inputs?.size ?? 0;
+      const sent = flushInputs(...args);
+      if (sent && bundleSize > 0) {
+        const flushedAt = performance.now();
+        if (this.inputFlowStats.lastFlushAt !== null) {
+          this.inputFlowStats.flushIntervalsMs.push(flushedAt - this.inputFlowStats.lastFlushAt);
+          if (this.inputFlowStats.flushIntervalsMs.length > 1200) {
+            this.inputFlowStats.flushIntervalsMs.shift();
+          }
+        }
+        this.inputFlowStats.lastFlushAt = flushedAt;
+        this.inputFlowStats.bundlesSent += 1;
+        this.inputFlowStats.inputCopiesSent += bundleSize;
+        this.inputFlowStats.bundleSizes.push(bundleSize);
+        if (this.inputFlowStats.bundleSizes.length > 1200) this.inputFlowStats.bundleSizes.shift();
+      }
+      return sent;
+    };
     this.errors = [];
     this.playerId = null;
     this.welcomeCount = 0;
@@ -295,6 +371,7 @@ class Bot {
     this.lobbyReadyPromise = new Promise((resolvePromise) => { this.resolveLobbyReady = resolvePromise; });
     this.startedPromise = new Promise((resolvePromise) => { this.resolveStarted = resolvePromise; });
     this.result = null;
+    this.resultAt = null;
     this.startedAt = null;
     this.lastSnapshot = null;
     this.localWorld = null;
@@ -302,8 +379,10 @@ class Bot {
     this.interpolation = new InterpolationBuffer();
     this.castTimeline = null;
     this.inputSeq = 0;
-    this.inputTimer = null;
+    this.inputScheduler = new ClockInputScheduler({ tickRate: TICK_HZ });
     this.renderTimer = null;
+    this.nextRenderAt = null;
+    this.renderSamplingStopped = true;
     this.pendingReconnectAt = null;
     this.reconnectResumeMs = null;
     this.predictedVfx = new Set();
@@ -324,6 +403,7 @@ class Bot {
     this.counterSnapshotSamples = [];
     this.inputsConsumedAboveTick = 0;
     this.lastAckObserved = null;
+    this.initialAckObserved = null;
     this.lastTickObserved = null;
     this.lastRoomIndex = 0;
     this.freezeTracks = new Map();
@@ -331,6 +411,58 @@ class Bot {
     this.remoteFreezeEpisodes = 0;
     this.measuredCorrectionsOver03m = 0;
     this.lastRenderAt = null;
+    this.attackAssistant = new AttackInputAssistant();
+    this.attackStarts = 0;
+    this.completedAttackChains = new Set();
+    this.assistantForcedReleases = 0;
+    this.targetAgeMsSamples = [];
+    this.frameMetrics = {
+      frames: 0,
+      ownMovingFrames: 0,
+      ownStepFrames: 0,
+      ownJerkValues: [],
+      ownJerkWindow: [],
+      remoteMovingFrames: 0,
+      remoteStallFrames: 0,
+      remoteJerkValues: [],
+      remoteJerkWindow: [],
+      extrapolationFrames: 0,
+      interpolationFreezeFrames: 0,
+      remoteFrames: 0,
+      renderFrameIntervalsMs: [],
+      clockSamples: [],
+    };
+    this.lastOwnRenderPosition = null;
+    this.lastRemoteRenderPosition = null;
+    this.lastInputMoving = false;
+    this.lastInputPredictedMoving = false;
+    this.snapshotIntervalsMs = [];
+    this.snapshotArrivalAt = null;
+    this.snapshotArrivalTick = null;
+    this.serverTickRateSamples = [];
+    this.serverTickRateHz = null;
+    this.lastServerTickDelta = null;
+    this.lastServerTickWallMs = null;
+    this.starvedTicks = 0;
+    this.initialStarvedTicks = null;
+    this.serverInputDebug = null;
+    this.initialInputDebug = null;
+    this.correctionsOver005m = 0;
+    this.correctionsOver03m = 0;
+    this.runSeed = fixedSeed;
+  }
+
+  newInputFlowStats() {
+    return {
+      queuedInputs: 0,
+      productionIntervalsMs: [],
+      lastProducedAt: null,
+      inputCopiesSent: 0,
+      bundlesSent: 0,
+      bundleSizes: [],
+      flushIntervalsMs: [],
+      lastFlushAt: null,
+    };
   }
 
   connect() {
@@ -364,6 +496,7 @@ class Bot {
     }
     if (message.t === 'result') {
       this.result = message.result;
+      this.resultAt = performance.now();
       return;
     }
     if (message.t === 'error') this.errors.push(`server:${message.code}`);
@@ -371,7 +504,12 @@ class Bot {
 
   startRun(message) {
     this.startedAt ??= performance.now();
+    this.resultAt = null;
+    this.session.resetRunEpoch?.(message.tick ?? 0);
+    this.inputScheduler.reset();
+    this.inputFlowStats = this.newInputFlowStats();
     this.runId = message.runId;
+    this.runSeed = message.seed;
     this.localWorld = createStageWorld({
       seed: message.seed,
       stageId: message.stageId,
@@ -391,13 +529,65 @@ class Bot {
       playerId: this.playerId,
       ctx: { arena: this.localWorld.arena, openDoors: this.localWorld.openDoors, tick: message.tick },
     });
+    this.lastAckObserved = null;
+    this.initialAckObserved = null;
+    this.initialStarvedTicks = null;
+    this.serverInputDebug = null;
+    this.initialInputDebug = null;
+    this.starvedTicks = 0;
     this.castTimeline = new CastTimeline({ playerId: this.playerId });
-    this.inputTimer = setInterval(() => this.sendBotInput(), INPUT_MS);
-    this.renderTimer = setInterval(() => this.sampleRemoteEntities(), RENDER_MS);
+    clearTimeout(this.renderTimer);
+    this.renderSamplingStopped = false;
+    this.nextRenderAt = performance.now() + RENDER_MS;
+    this.scheduleRenderSample();
+  }
+
+  scheduleRenderSample() {
+    if (this.renderSamplingStopped || this.nextRenderAt === null) return;
+    this.renderTimer = setTimeout(() => {
+      this.renderTimer = null;
+      if (this.renderSamplingStopped) return;
+      const now = performance.now();
+      this.driveClockedInputs(now);
+      this.sampleRemoteEntities(now);
+      const elapsedFrames = Math.max(1, Math.floor((now - this.nextRenderAt) / RENDER_MS) + 1);
+      this.nextRenderAt += elapsedFrames * RENDER_MS;
+      this.scheduleRenderSample();
+    }, Math.max(0, this.nextRenderAt - performance.now()));
   }
 
   handleSnapshot(message, now) {
     this.stats.snapshots += 1;
+    if (this.snapshotArrivalAt !== null && message.tick > this.snapshotArrivalTick) {
+      const tickDelta = message.tick - this.snapshotArrivalTick;
+      const wallMs = now - this.snapshotArrivalAt;
+      this.snapshotIntervalsMs.push(wallMs);
+      if (wallMs > 0) {
+        this.serverTickRateSamples.push({ tickDelta, wallMs });
+        if (this.serverTickRateSamples.length > 120) this.serverTickRateSamples.shift();
+        const total = this.serverTickRateSamples.reduce((sum, sample) => ({
+          ticks: sum.ticks + sample.tickDelta,
+          wallMs: sum.wallMs + sample.wallMs,
+        }), { ticks: 0, wallMs: 0 });
+        this.serverTickRateHz = total.ticks * 1000 / total.wallMs;
+        this.lastServerTickDelta = tickDelta;
+        this.lastServerTickWallMs = wallMs;
+      }
+    }
+    if (this.snapshotArrivalAt === null || message.tick > this.snapshotArrivalTick) {
+      this.snapshotArrivalAt = now;
+      this.snapshotArrivalTick = message.tick;
+    }
+    const reportedStarvedTicks = Number(message.debug?.starvedTicks);
+    if (Number.isFinite(reportedStarvedTicks)) {
+      this.starvedTicks = reportedStarvedTicks;
+      this.initialStarvedTicks ??= reportedStarvedTicks;
+    }
+    if (message.debug && typeof message.debug === 'object') {
+      this.serverInputDebug = { ...message.debug };
+      this.initialInputDebug ??= { ...message.debug };
+    }
+    this.initialAckObserved ??= message.ack ?? 0;
     this.lastSnapshot = message;
     this.lastServerTick = message.tick;
     this.lastRoomIndex = message.roomIndex ?? this.lastRoomIndex;
@@ -430,6 +620,10 @@ class Bot {
         .filter((input) => input.buttons & BUTTONS.ATTACK)
         .map((input) => input.seq);
       const reconciliation = this.predictor.reconcile(message, now);
+      if (reconciliation && !reconciliation.snapped && reconciliation.error > 0.05 && reconciliation.error <= 2) {
+        this.correctionsOver005m += 1;
+        if (reconciliation.error > 0.3) this.correctionsOver03m += 1;
+      }
       if (serverCounterState.counterReadyTicks > 0) {
         const predictedPlayer = this.predictor.getPlayer();
         this.counterSnapshotSamples.push({
@@ -753,13 +947,21 @@ class Bot {
   sendBotInput() {
     if (!this.predictor || !this.lastSnapshot || this.result) return;
     const player = this.predictor.getPlayer();
-    const estimate = this.session.clock.getEstimate(performance.now());
+    const now = performance.now();
+    const clockEstimate = this.session.clock.getEstimate(now);
+    const estimate = clockEstimate;
     const view = this.interpolation.sample(estimate);
     const viewTick = Math.round(view.renderTick);
     const viewed = this.interpolation.sampleAtRenderTick(viewTick);
+    const targetView = attackMode === 'auto'
+      ? this.interpolation.sampleAtRenderTick(this.lastSnapshot.tick)
+      : viewed;
+    if (attackMode === 'auto') {
+      this.targetAgeMsSamples.push(Math.max(0, estimate - targetView.renderTick) * 1000 / TICK_HZ);
+    }
     const room = this.localWorld.arena.rooms[this.lastRoomIndex];
     const door = this.localWorld.arena.doors.find((candidate) => candidate.fromRoom === room?.id);
-    const { moveX, moveZ, aim, buttons } = computeBotPolicy({
+    let { moveX, moveZ, aim, buttons } = computeBotPolicy({
       player,
       viewed,
       roomCleared: Boolean(this.lastSnapshot.roomCleared),
@@ -768,16 +970,56 @@ class Bot {
 
     const seq = ++this.inputSeq;
     const before = this.predictor.getPlayer();
-    const input = buildRangedAimInput(
-      { seq, moveX, moveZ, aim, buttons, viewTick },
-      player,
-      viewed,
-    );
+    let input;
+    if (attackMode === 'hold' || attackMode === 'auto') {
+      const targets = viewed.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead && !entity.downed);
+      const target = targets.sort((left, right) => (
+        Math.hypot(left.x - player.x, left.z - player.z) - Math.hypot(right.x - player.x, right.z - player.z)
+      ))[0];
+      moveX = 0;
+      moveZ = 0;
+      aim = player.facing ?? 0;
+      buttons = 0;
+      let ad;
+      if (target) {
+        const dx = target.x - player.x;
+        const dz = target.z - player.z;
+        const distance = Math.hypot(dx, dz);
+        const reach = this.family === 'crossbow' ? 9 : this.family === 'staff' ? 7 : 1.7;
+        if (distance > reach - 0.35) {
+          moveX = Math.round(dx / Math.max(distance, 0.001) * 127);
+          moveZ = Math.round(dz / Math.max(distance, 0.001) * 127);
+        }
+        aim = Math.round((Math.atan2(dz, dx) / (Math.PI * 2) * 256 + 256) % 256);
+        ad = Math.round(distance * 10) / 10;
+      }
+      const world = {
+        ...this.localWorld,
+        tick: this.lastSnapshot.tick,
+        targetTick: targetView.renderTick,
+        entities: [player, ...targetView.entities],
+      };
+      input = this.attackAssistant.build(
+        { seq, moveX, moveZ, aim, ad, buttons, viewTick, attackHeld: attackMode === 'hold' },
+        world,
+        player,
+        { autoAttack: attackMode === 'auto' },
+      );
+      if (this.attackAssistant.lastForcedRelease) this.assistantForcedReleases += 1;
+    } else {
+      input = buildRangedAimInput({ seq, moveX, moveZ, aim, buttons, viewTick }, player, viewed);
+    }
     if (buttons & (BUTTONS.ATTACK | BUTTONS.SKILL1 | BUTTONS.SKILL2 | BUTTONS.SKILL3)) {
       this.castViewDelayTicks.set(`${this.playerId}:${seq}`, view.delayMs * TICK_HZ / 1000);
     }
     const { motion } = this.predictor.applyLocalInput(input);
     const after = this.predictor.getPlayer();
+    this.lastInputMoving = Boolean(moveX || moveZ);
+    this.lastInputPredictedMoving = Math.hypot(after.x - before.x, after.z - before.z) > 0;
+    if (after.attack && (!before.attack || before.attack.castId !== after.attack.castId)) this.attackStarts += 1;
+    if (after.attack?.step >= 3 && after.attack.castId && !this.completedAttackChains.has(after.attack.castId)) {
+      this.completedAttackChains.add(after.attack.castId);
+    }
     this.inputDiagnostics.set(seq, {
       tick: this.predictor.ctx.tick,
       castStep: motion?.counterStrike ? 'counter' : after.attack?.step ?? before.attack?.step ?? null,
@@ -809,11 +1051,52 @@ class Bot {
     this.stats.inputs += 1;
   }
 
-  sampleRemoteEntities() {
-    if (!this.lastSnapshot || !this.session) return;
-    const now = performance.now();
-    const estimate = this.session.clock.getEstimate(now);
+  driveClockedInputs(now) {
+    if (!this.predictor || !this.lastSnapshot || this.result) return 0;
+    const steps = this.inputScheduler.steps(this.session.clock, now);
+    for (let index = 0; index < steps; index += 1) this.sendBotInput();
+    return steps;
+  }
+
+  sampleRemoteEntities(now = performance.now()) {
+    if (!this.lastSnapshot || !this.session || this.result) return;
+    const clockEstimate = this.session.clock.getEstimate(now);
+    const estimate = clockEstimate;
     const sample = this.interpolation.sample(estimate);
+    const frameMetrics = this.frameMetrics;
+    frameMetrics.frames += 1;
+    const snapshots = this.interpolation.snapshots;
+    const latestSnapshot = snapshots.at(-1);
+    frameMetrics.clockSamples.push({
+      at: now,
+      active: !this.result,
+      estimate,
+      clockEstimate,
+      renderTick: sample.renderTick,
+      latestSnapshotTick: latestSnapshot?.tick ?? this.lastSnapshot.tick,
+      snapshotAgeMs: latestSnapshot ? Math.max(0, now - latestSnapshot.receivedAt) : null,
+      delayMs: sample.delayMs,
+      clockOffsetTicks: this.session.clock.offsetTicks,
+      clockRttMs: this.session.clock.rttMs,
+      playbackRate: this.session.clock.playbackRate,
+      inputLeadTicks: this.inputScheduler.leadTicks,
+      lastProducedTick: this.inputScheduler.lastProducedTick,
+      inputClockEpoch: this.inputScheduler.clockEpoch,
+      serverTickRateHz: this.serverTickRateHz,
+      serverTickDelta: this.lastServerTickDelta,
+      serverTickWallMs: this.lastServerTickWallMs,
+    });
+    if (frameMetrics.clockSamples.length > 12_000) frameMetrics.clockSamples.shift();
+    const own = this.predictor?.getVisualPosition(now);
+    if (own && this.lastOwnRenderPosition) {
+      const ownDisplacement = Math.hypot(own.x - this.lastOwnRenderPosition.x, own.z - this.lastOwnRenderPosition.z);
+      if (this.lastInputMoving && this.lastInputPredictedMoving) {
+        frameMetrics.ownMovingFrames += 1;
+        if (ownDisplacement === 0) frameMetrics.ownStepFrames += 1;
+        addJerk(ownDisplacement, frameMetrics.ownJerkWindow, frameMetrics.ownJerkValues);
+      }
+    }
+    if (own) this.lastOwnRenderPosition = own;
     const serverEntities = new Map((this.lastSnapshot.ents ?? []).map((entity) => [entity.id, entity]));
     if (this.lastRenderAt === null) {
       this.lastRenderAt = now;
@@ -821,8 +1104,42 @@ class Bot {
     }
     const elapsed = Math.max(0, now - this.lastRenderAt);
     this.lastRenderAt = now;
+    frameMetrics.renderFrameIntervalsMs.push(elapsed);
+    if (this.result) return;
+    const oldestSnapshot = snapshots[0];
+    const frozenSample = !oldestSnapshot || !latestSnapshot || snapshots.length < 2 ||
+      sample.renderTick <= oldestSnapshot.tick ||
+      sample.renderTick >= latestSnapshot.tick +
+        this.interpolation.maxExtrapolationMs * this.interpolation.tickRate / 1000;
     for (const entity of sample.entities) {
       if (entity.kind !== 'player' || entity.playerId === this.playerId) continue;
+      frameMetrics.remoteFrames += 1;
+      if (latestSnapshot && sample.renderTick > latestSnapshot.tick) {
+        frameMetrics.extrapolationFrames += 1;
+      }
+      if (frozenSample) frameMetrics.interpolationFreezeFrames += 1;
+      const remotePosition = { x: entity.x, z: entity.z };
+      const remoteDisplacement = this.lastRemoteRenderPosition
+        ? Math.hypot(remotePosition.x - this.lastRemoteRenderPosition.x, remotePosition.z - this.lastRemoteRenderPosition.z)
+        : Infinity;
+      let rightIndex = snapshots.findIndex((snapshot) => snapshot.tick >= sample.renderTick);
+      if (rightIndex === 0) rightIndex = 1;
+      if (rightIndex < 0) rightIndex = snapshots.length - 1;
+      const leftSnapshot = snapshots[rightIndex - 1];
+      const rightSnapshot = snapshots[rightIndex];
+      const leftServer = leftSnapshot?.entities.find((candidate) => candidate.id === entity.id);
+      const rightServer = rightSnapshot?.entities.find((candidate) => candidate.id === entity.id);
+      const tickSpan = (rightSnapshot?.tick ?? 0) - (leftSnapshot?.tick ?? 0);
+      const serverSpeed = leftServer && rightServer && tickSpan > 0
+        ? Math.hypot(rightServer.x - leftServer.x, rightServer.z - leftServer.z) *
+          this.interpolation.tickRate / tickSpan
+        : 0;
+      if (serverSpeed > 0.5) {
+        frameMetrics.remoteMovingFrames += 1;
+        if (remoteDisplacement < 0.001) frameMetrics.remoteStallFrames += 1;
+        if (Number.isFinite(remoteDisplacement)) addJerk(remoteDisplacement, frameMetrics.remoteJerkWindow, frameMetrics.remoteJerkValues);
+      }
+      this.lastRemoteRenderPosition = remotePosition;
       const serverEntity = serverEntities.get(entity.id);
       if (!serverEntity) continue;
       let track = this.freezeTracks.get(entity.id);
@@ -863,15 +1180,19 @@ class Bot {
   }
 
   async stop() {
-    clearInterval(this.inputTimer);
-    clearInterval(this.renderTimer);
+    this.renderSamplingStopped = true;
+    clearTimeout(this.renderTimer);
+    this.renderTimer = null;
     this.session.close();
   }
 
   metrics(durationMs) {
+    const activeDurationMs = this.resultAt === null
+      ? durationMs
+      : Math.min(durationMs, Math.max(1, this.resultAt - (this.startedAt ?? this.resultAt)));
     const corrections = this.measuredCorrectionsOver03m;
     const snaps = this.predictor?.metrics.snaps ?? 0;
-    const correctionRate = corrections / Math.max(durationMs / 60_000, 1 / 60_000);
+    const correctionRate = corrections / Math.max(activeDurationMs / 60_000, 1 / 60_000);
     const ownConfirmed = [...this.confirmedOwnCasts];
     const ownDuplicates = ownConfirmed.reduce((sum, castId) => (
       sum + Math.max(0, (this.vfxSpawnCounts.get(castId) ?? 0) - 1)
@@ -991,12 +1312,25 @@ class Bot {
     const hitAgreementPercent = totalComparisons ? 100 * totalMatched / totalComparisons : null;
     const viewTickMismatches = nonCounterComparisons.flatMap((row) => row.viewTickMismatches);
     const durationSeconds = durationMs / 1000;
+    const durationMinutes = Math.max(activeDurationMs / 60_000, 1 / 60_000);
+    const inputStats = this.inputFlowStats;
+    const inputDebugDeltaPerMinute = (key) => {
+      const start = Number(this.initialInputDebug?.[key]);
+      const end = Number(this.serverInputDebug?.[key]);
+      return Number.isFinite(start) && Number.isFinite(end)
+        ? Math.max(0, end - start) / durationMinutes
+        : null;
+    };
+    const serverAckedInputsPerMinute = this.initialAckObserved === null || this.lastAckObserved === null
+      ? null
+      : Math.max(0, this.lastAckObserved - this.initialAckObserved) / durationMinutes;
     const bytesPerSecond = {
       up: this.stats.upBytes / Math.max(durationSeconds, 0.001),
       down: this.stats.downBytes / Math.max(durationSeconds, 0.001),
     };
     return {
       playerId: this.playerId,
+      seed: this.runSeed,
       family: this.family,
       inputs: this.stats.inputs,
       immediatePredictions: this.stats.immediatePredictions,
@@ -1009,6 +1343,35 @@ class Bot {
       counterSnapshotSamples: this.counterSnapshotSamples,
       snaps,
       remoteFrozenSeconds: this.remoteFrozenMs / 1000,
+      inputFlow: {
+        clientInputsProducedPerMinute: (inputStats.queuedInputs ?? 0) / durationMinutes,
+        clientProductionIntervalMeanMs: inputStats.productionIntervalsMs.length
+          ? inputStats.productionIntervalsMs.reduce((sum, interval) => sum + interval, 0) /
+            inputStats.productionIntervalsMs.length
+          : null,
+        clientProductionIntervalP95Ms: percentile95(inputStats.productionIntervalsMs),
+        clientInputCopiesSentPerMinute: (inputStats.inputCopiesSent ?? 0) / durationMinutes,
+        clientBundlesPerMinute: (inputStats.bundlesSent ?? 0) / durationMinutes,
+        clientBundleSizeMean: inputStats.bundleSizes?.length
+          ? inputStats.bundleSizes.reduce((sum, size) => sum + size, 0) / inputStats.bundleSizes.length
+          : null,
+        clientBundleSizeP95: percentile95(inputStats.bundleSizes ?? []),
+        clientFlushIntervalMeanMs: inputStats.flushIntervalsMs?.length
+          ? inputStats.flushIntervalsMs.reduce((sum, interval) => sum + interval, 0) /
+            inputStats.flushIntervalsMs.length
+          : null,
+        clientFlushIntervalP95Ms: percentile95(inputStats.flushIntervalsMs ?? []),
+        serverAckedInputsPerMinute,
+        serverInputsReceivedPerMinute: inputDebugDeltaPerMinute('inputsReceived'),
+        serverInputsConsumedPerMinute: inputDebugDeltaPerMinute('inputsConsumed') ?? serverAckedInputsPerMinute,
+        starvedTicksPerMinute: inputDebugDeltaPerMinute('starvedTicks'),
+        emptyBufferStarvedTicksPerMinute: inputDebugDeltaPerMinute('emptyBufferStarvedTicks'),
+        refillWaitStarvedTicksPerMinute: inputDebugDeltaPerMinute('refillWaitStarvedTicks'),
+        sequenceGapStarvedTicksPerMinute: inputDebugDeltaPerMinute('sequenceGapStarvedTicks'),
+        serverBundleInputSizeP95: this.serverInputDebug?.inputBundleInputP95 ?? null,
+        serverBundleIntervalP95Ms: this.serverInputDebug?.inputBundleIntervalP95Ms ?? null,
+        serverInputBundlesObserved: this.serverInputDebug?.inputBundlesObserved ?? null,
+      },
       remoteFreezeEpisodes: this.remoteFreezeEpisodes,
       ownConfirmedCasts: ownConfirmed.length,
       ownVfxDuplicates: ownDuplicates,
@@ -1043,6 +1406,47 @@ class Bot {
       ),
       downBandwidthBreakdownBytes: { ...this.stats.downBreakdown },
       bytes: { up: this.stats.upBytes, down: this.stats.downBytes },
+      m5f: {
+        activeDurationMs,
+        ownStepFramesPercent: this.frameMetrics.ownMovingFrames
+          ? this.frameMetrics.ownStepFrames * 100 / this.frameMetrics.ownMovingFrames
+          : null,
+        ownJerkP95Cm: percentile95(this.frameMetrics.ownJerkValues),
+        remoteStallPercent: this.frameMetrics.remoteMovingFrames
+          ? this.frameMetrics.remoteStallFrames * 100 / this.frameMetrics.remoteMovingFrames
+          : null,
+        remoteJerkP95Cm: percentile95(this.frameMetrics.remoteJerkValues),
+        correctionsOver005mPerMinute: this.correctionsOver005m / Math.max(activeDurationMs / 60_000, 1 / 60_000),
+        correctionsOver03mPerMinute: this.correctionsOver03m / Math.max(activeDurationMs / 60_000, 1 / 60_000),
+        snaps: this.predictor?.metrics.snaps ?? 0,
+        starvedTicksPerMinute: this.initialStarvedTicks === null
+          ? null
+          : (this.starvedTicks - this.initialStarvedTicks) / Math.max(activeDurationMs / 60_000, 1 / 60_000),
+        snapshotInterArrivalP95Ms: percentile95(this.snapshotIntervalsMs),
+        extrapolationFramesPercent: this.frameMetrics.frames
+          ? this.frameMetrics.extrapolationFrames * 100 / Math.max(1, this.frameMetrics.remoteFrames)
+          : null,
+        interpolationFreezeFramesPercent: this.frameMetrics.remoteFrames
+          ? this.frameMetrics.interpolationFreezeFrames * 100 / this.frameMetrics.remoteFrames
+          : null,
+        renderFrameIntervalCount: this.frameMetrics.renderFrameIntervalsMs.length,
+        renderFrameIntervalMeanMs: this.frameMetrics.renderFrameIntervalsMs.length
+          ? this.frameMetrics.renderFrameIntervalsMs.reduce((sum, interval) => sum + interval, 0) /
+            this.frameMetrics.renderFrameIntervalsMs.length
+          : null,
+        renderFrameIntervalP95Ms: percentile95(this.frameMetrics.renderFrameIntervalsMs),
+        renderFrameIntervalsMs: [...this.frameMetrics.renderFrameIntervalsMs],
+        serverTickRateHz: this.serverTickRateHz,
+        serverInputBuffer: this.serverInputDebug,
+        clockSamples: [...this.frameMetrics.clockSamples],
+        attacksStartedPer10Seconds: this.attackStarts / Math.max(activeDurationMs / 10_000, 0.001),
+        comboChainCompletionRate: this.attackStarts
+          ? this.completedAttackChains.size / this.attackStarts
+          : null,
+        assistantForcedReleasesPer10Seconds: this.assistantForcedReleases /
+          Math.max(activeDurationMs / 10_000, 0.001),
+        targetAgeP95Ms: percentile95(this.targetAgeMsSamples),
+      },
       statusEvents: this.statusEvents,
       errors: this.errors,
     };
@@ -1070,7 +1474,7 @@ async function waitForAll(promises, label, timeoutMs = 10_000) {
 async function run() {
   if (typeof globalThis.WebSocket !== 'function') throw new Error('Run with Node 22+ for global WebSocket support');
   const bots = Array.from({ length: botCount }, (_, index) => new Bot(index, botFamilies[index]));
-  const runStartedAt = performance.now();
+  let runStartedAt = performance.now();
   let reconnectTimer = null;
   try {
     for (const bot of bots) await waitForAll([bot.connect()], `bot ${bot.index + 1} welcome`);
@@ -1081,6 +1485,7 @@ async function run() {
     await waitForAll(bots.map((bot) => bot.lobbyReadyPromise), 'all bots ready');
     bots[0].session.send({ t: 'lobby.start' });
     await waitForAll(bots.map((bot) => bot.startedPromise), 'run start');
+    runStartedAt = performance.now();
 
     if (reconnectBotIndex >= 0 && reconnectBotIndex < bots.length) {
       const bot = bots[reconnectBotIndex];
@@ -1091,7 +1496,7 @@ async function run() {
     }
 
     const deadline = Date.now() + durationSeconds * 1000;
-    while (Date.now() < deadline && !bots.every((bot) => bot.result)) await wait(250);
+    while (Date.now() < deadline) await wait(250);
     const stoppedAt = performance.now();
     await Promise.all(bots.map((bot) => bot.stop()));
     const durationMs = stoppedAt - runStartedAt;
@@ -1153,6 +1558,8 @@ async function run() {
       difficulty,
       serverUrl,
       profile,
+      fixedSeed,
+      attackMode,
       impairment: profile === 'impaired'
         ? { oneWayDelayMs: '75±25', stallMs: 300, stallEveryMs: 2000 }
         : null,

@@ -18,7 +18,15 @@ for (let index = 2; index < process.argv.length; index += 1) {
 const port = Number(options.get('port') ?? 8788);
 const upstreamHost = options.get('upstream-host') ?? '127.0.0.1';
 const upstreamPort = Number(options.get('upstream-port') ?? 8787);
-const impaired = (options.get('profile') ?? 'impaired') !== 'none';
+const profile = String(options.get('profile') ?? 'impaired');
+const profiles = {
+  none: { delayMs: 0, jitterMs: 0, stallMs: 0, stallEveryMs: 0 },
+  impaired: { delayMs: 75, jitterMs: 25, stallMs: 300, stallEveryMs: 2000 },
+  'kr-far': { delayMs: 70, jitterMs: 20, stallMs: 0, stallEveryMs: 0 },
+  'kr-near': { delayMs: 20, jitterMs: 8, stallMs: 0, stallEveryMs: 0 },
+};
+const impairment = profiles[profile];
+if (!impairment) throw new TypeError(`Unknown network profile: ${profile}`);
 const startMs = Date.now();
 const WEB_SOCKET_MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const CODE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
@@ -32,11 +40,12 @@ function wait(ms) {
 }
 
 function deliveryAtMs(arrivalAt) {
-  if (!impaired) return arrivalAt;
-  const jitter = Math.random() * 50 - 25;
-  const deliveryAt = arrivalAt + 75 + jitter;
-  const phase = ((deliveryAt - startMs) % 2000 + 2000) % 2000;
-  return deliveryAt + (phase < 300 ? 300 - phase : 0);
+  if (profile === 'none') return arrivalAt;
+  const jitter = Math.random() * impairment.jitterMs * 2 - impairment.jitterMs;
+  const deliveryAt = arrivalAt + impairment.delayMs + jitter;
+  if (!impairment.stallEveryMs) return deliveryAt;
+  const phase = ((deliveryAt - startMs) % impairment.stallEveryMs + impairment.stallEveryMs) % impairment.stallEveryMs;
+  return deliveryAt + (phase < impairment.stallMs ? impairment.stallMs - phase : 0);
 }
 
 function createDelayedSender(source, destination) {
@@ -85,7 +94,7 @@ function createDelayedSender(source, destination) {
 const server = createServer((request, response) => {
   if (request.url === '/health') {
     response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ ok: true, profile: impaired ? 'impaired' : 'none', upstream: `${upstreamHost}:${upstreamPort}` }));
+    response.end(JSON.stringify({ ok: true, profile, upstream: `${upstreamHost}:${upstreamPort}` }));
     return;
   }
   response.writeHead(426, { 'content-type': 'text/plain' });
@@ -168,5 +177,8 @@ server.on('upgrade', (request, client, clientHead) => {
 });
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`Devinarok WS proxy listening on ws://127.0.0.1:${port} → ${upstreamHost}:${upstreamPort} (${impaired ? '75±25ms each way, 300ms stall/2s' : 'unimpaired'})`);
+  const delay = profile === 'none'
+    ? 'unimpaired'
+    : `${impairment.delayMs}±${impairment.jitterMs}ms each way${impairment.stallMs ? `, ${impairment.stallMs}ms stall/${impairment.stallEveryMs / 1000}s` : ''}`;
+  console.log(`Devinarok WS proxy listening on ws://127.0.0.1:${port} → ${upstreamHost}:${upstreamPort} (${profile}: ${delay})`);
 });

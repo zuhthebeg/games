@@ -109,9 +109,16 @@ export class InterpolationBuffer {
     return this.delayMs;
   }
 
+  getRenderTick(estimatedServerTick) {
+    return estimatedServerTick - this.delayMs * this.tickRate / 1000;
+  }
+
   sample(estimatedServerTick) {
-    const delayTicks = this.delayMs * this.tickRate / 1000;
-    return this.sampleAtRenderTick(estimatedServerTick - delayTicks);
+    return this.sampleAtRenderTick(this.getRenderTick(estimatedServerTick));
+  }
+
+  sampleIntoEstimate(estimatedServerTick) {
+    return this.sampleInto(this.getRenderTick(estimatedServerTick));
   }
 
   writeSampleEntity(output, source, left = null, amount = 1, teleported = false) {

@@ -59,8 +59,9 @@ export class InputLayer {
     window.addEventListener('keyup', this.onKeyUp);
     this.onCanvasDown = (event) => {
       if (!this.enabled) return;
-      if (event.clientX >= window.innerWidth / 2) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
       event.preventDefault();
+      if (event.clientX >= window.innerWidth / 2) return;
       this.canvas.setPointerCapture(event.pointerId);
       this.joystickAnchor = { x: event.clientX, y: event.clientY };
       this.joystick.style.left = `${event.clientX}px`;
@@ -86,6 +87,7 @@ export class InputLayer {
     this.canvas.addEventListener('pointermove', this.onCanvasMove);
     this.canvas.addEventListener('pointerup', this.onCanvasUp);
     this.canvas.addEventListener('pointercancel', this.onCanvasUp);
+    this.canvas.addEventListener('lostpointercapture', this.onCanvasUp);
     this.touchListeners = new AbortController();
     this.bindTouch();
   }
@@ -95,6 +97,7 @@ export class InputLayer {
     const on = (target, type, handler) => target?.addEventListener(type, handler, { signal });
     on(this.joystick, 'pointerdown', (event) => {
       if (!this.enabled) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
       this.joystick.setPointerCapture(event.pointerId);
       this.joystickAnchor = { x: event.clientX, y: event.clientY };
       this.heldPointers.set(event.pointerId, {
@@ -116,6 +119,7 @@ export class InputLayer {
       const bit = Number(button.dataset.button);
       on(button, 'pointerdown', (event) => {
         if (!this.enabled) return;
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
         event.preventDefault();
         button.setPointerCapture(event.pointerId);
         this.heldPointers.set(event.pointerId, { type: 'button', bit });
@@ -123,9 +127,11 @@ export class InputLayer {
       });
       on(button, 'pointerup', (event) => this.releasePointer(event.pointerId, event));
       on(button, 'pointercancel', (event) => this.releasePointer(event.pointerId, event));
+      on(button, 'lostpointercapture', (event) => this.releasePointer(event.pointerId, event));
     }
     on(this.joystick, 'pointerup', (event) => this.releasePointer(event.pointerId, event));
     on(this.joystick, 'pointercancel', (event) => this.releasePointer(event.pointerId, event));
+    on(this.joystick, 'lostpointercapture', (event) => this.releasePointer(event.pointerId, event));
   }
 
   updateJoystick(event) {
@@ -239,5 +245,6 @@ export class InputLayer {
     this.canvas.removeEventListener('pointermove', this.onCanvasMove);
     this.canvas.removeEventListener('pointerup', this.onCanvasUp);
     this.canvas.removeEventListener('pointercancel', this.onCanvasUp);
+    this.canvas.removeEventListener('lostpointercapture', this.onCanvasUp);
   }
 }

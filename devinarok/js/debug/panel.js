@@ -356,7 +356,10 @@ export function mountDebugPanel(context) {
   }
 
   function renderInfo() {
+    const colos = context.getPartyColos?.();
+    const ping = String(context.getPartyPing() ?? '—').replace(/\s*ms$/i, '');
     return `<section><h2>실행 정보</h2><p>SIM_HASH ${escapeHtml(context.simHash.slice(0, 8))} · 자산 ${escapeHtml(context.assetVersion)}</p><p>현재 시드 ${context.world?.seed ?? '—'} · 설정 시드 ${escapeHtml(state.seed || '무작위')}</p>
+      <p>서버 ${escapeHtml(colos?.serverColo ?? '—')} · 접속 ${escapeHtml(colos?.edgeColo ?? '—')} · ping ${escapeHtml(ping)}ms</p>
       <label class="debug-check"><input data-debug-setting="info" type="checkbox" ${state.infoVisible ? 'checked' : ''}> 정보 오버레이 표시</label>
       <p>파티 중에는 정보 확인만 가능합니다.</p>
       <div class="debug-action-list">${button('disable-debug', '디버그 끄기')}</div></section>`;

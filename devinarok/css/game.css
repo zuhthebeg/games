@@ -20,7 +20,8 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .panel label { display: grid; gap: 8px; }
 .panel input { border: 1px solid #66535a; border-radius: 10px; background: #100e13; color: white; padding: 12px; }
 .warning { max-width: 440px; margin: 0 auto 18px; color: #f0c27d; background: #543e253b; border: 1px solid #956e40; padding: 12px; border-radius: 12px; font: 13px/1.6 system-ui, sans-serif; }
-#game-screen { position: fixed; inset: 0; overflow: hidden; background: #100e13; }
+#game-screen { position: fixed; inset: 0; overflow: hidden; background: #100e13; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#game-screen img, #game-screen svg { -webkit-user-drag: none; user-drag: none; }
 #game-screen::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at center, transparent 48%, #08070c55 100%); }
 #scene { display: block; width: 100%; height: 100%; touch-action: none; }
 .hud { --hud-base-font-size: 13px; --hud-hp-base-font-size: 11px; position: absolute; inset: max(12px, env(safe-area-inset-top)) 14px auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px) 46px; grid-template-rows: auto auto; align-items: center; gap: 8px 14px; pointer-events: none; font: 600 13px/1.4 system-ui, sans-serif; text-shadow: 0 2px 8px #000; z-index: 2; }
