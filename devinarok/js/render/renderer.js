@@ -8,6 +8,7 @@ import { ITEMS, RARITIES } from '../content/items.js';
 import { playerLookKey, playerModelKey } from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
 import { castVisualKey } from '../net/cast-timeline.js';
+import { isPerfectDodgeWindowActive } from './dodge-window.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const M0_MODELS = {
@@ -769,7 +770,7 @@ export class ArenaRenderer {
     for (const [id, line] of this.debugAttackLines) line.visible = attacks && activeAttacks.has(id);
 
     const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === this.localPlayerId);
-    if (dodgeWindow && player?.dodgeTicks > 0 && !player.perfectPaid) {
+    if (dodgeWindow && player?.dodgeTicks > 0 && !player.perfectPaid && isPerfectDodgeWindowActive(world, player)) {
       if (!this.debugDodgeRing) {
         const points = Array.from({ length: 49 }, (_, index) => {
           const angle = index / 48 * Math.PI * 2;
