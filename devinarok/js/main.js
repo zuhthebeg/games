@@ -183,12 +183,30 @@ function renderCloudAccount(state = remoteSync?.snapshot) {
 }
 
 let cloudLoginWatcher = null;
+let sharedWalletLoadPromise = null;
+
+async function loadSharedWallet() {
+  window.SharedWalletConfig = { ...(window.SharedWalletConfig ?? {}), autoGuest: false };
+  if (!sharedWalletLoadPromise) {
+    sharedWalletLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('../lib/shared-wallet.js', window.location.href).href;
+      script.dataset.noUi = '';
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', () => reject(new Error('로그인 모듈을 불러오지 못했어요')), { once: true });
+      document.head.append(script);
+    });
+  }
+  await sharedWalletLoadPromise;
+  const wallet = typeof SharedWallet !== 'undefined' ? SharedWallet : null;
+  if (!wallet) throw new Error('로그인 모듈을 불러오지 못했어요');
+  if (wallet._initPromise) await wallet._initPromise;
+  return wallet;
+}
+
 async function openCloudLogin() {
   try {
-    const walletModule = await import('../../lib/shared-wallet.js');
-    const wallet = walletModule.SharedWallet ?? window.SharedWallet;
-    if (!wallet) throw new Error('로그인 모듈을 불러오지 못했어요');
-    await wallet.init({ showUI: false, autoGuest: false });
+    const wallet = await loadSharedWallet();
     wallet.showLogin();
     clearInterval(cloudLoginWatcher);
     cloudLoginWatcher = setInterval(async () => {
