@@ -5,6 +5,8 @@ import { STAGE_XP } from './progression.js';
 
 const CORE = ['version','createdAt','name','lineage','permanentDeathKnight','level','xp','statPoints','stats','gold','equipped','items','stacks','cleared','stageThreat','threat','skillMastery','learned','skills','loadout','loadouts','weaponLoadouts','quiz','flags','seenMaterials','quests','retiredScrolls','craftCount'];
 const encoder = new TextEncoder();
+const AUTH_KEYS = ['relay_token', 'cocy_auth_token', 'accessToken'];
+const ownerKey = slot => `${SLOT_SAVE_KEYS[slot]}.cloud-owner.v1`;
 export function snapshot(save) {
   if (!validateSave(save)) throw new Error('Invalid local save');
   const data = { v: 1, charId: save.lineage || 'human' };
@@ -48,34 +50,98 @@ export class CloudSave {
     this.storage = storage; this.fetcher = fetcher; this.now = now; this.timer = timer; this.cancelTimer = cancelTimer;
     this.pending = new Map(); this.lastSent = new Map(); this.lastHash = new Map(); this.remote = new Map(); this.uploading = new Set();
     this.wakeups = new Map(); this.retryAt = new Map();
+    this.epoch = 0; this.authRevision = 0; this.changes = new Map(); this.blockedTokens = new Set();
+    globalThis.window?.addEventListener?.('storage', event => {
+      if (event.storageArea && event.storageArea !== this.storage) return;
+      if (event.key === null || AUTH_KEYS.includes(event.key) || Object.values(SLOT_SAVE_KEYS).some(key => event.key === key || event.key === key + '.cloud-owner.v1')) {
+        this.authRevision++; this.isolate();
+      }
+    });
   }
+  // A token string (including decoded JWT claims) is not an owner proof.
+  authState() {
+    try {
+      const values = AUTH_KEYS.map(key => this.storage.getItem(key));
+      const key = JSON.stringify(values), token = values[1] || values[2] || values[0];
+      if (key !== this.authKey) {
+        this.authKey = key; this.authRevision++; this.verified = null;
+        if (!token) this.isolate();
+      }
+      return { key, token, revision: this.authRevision };
+    } catch { this.isolate(); return {}; }
+  }
+  isolate() {
+    // Discard only in-memory cloud state, never the local save or its backups.
+    this.epoch++; this.verified = null; this.owner = null;
+    for (const slot of this.wakeups.keys()) this.clearWakeup(slot);
+    for (const map of [this.pending, this.lastSent, this.lastHash, this.remote, this.retryAt, this.changes]) map.clear();
+  }
+  current() {
+    const state = this.authState(), context = this.verified;
+    return context && context.key === state.key && context.revision === state.revision && !this.blockedTokens.has(context.token) ? context : null;
+  }
+  matches(context) { return !!context && this.current() === context; }
   async token() {
-    const stored = this.storage.getItem('relay_token');
-    const mainToken = this.storage.getItem('cocy_auth_token') || this.storage.getItem('accessToken');
-    if ((!mainToken || mainToken === stored) && stored?.split('.').length === 3 && stored.split('.')[2]) {
-      try {
-        const payload = JSON.parse(atob(stored.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-        if (payload.exp > Date.now() / 1000 + 60) return stored;
-      } catch { /* Let the relay auth client repair an invalid token. */ }
-    }
-    const client = window.MultiplayerClient?.getInstance();
-    if (!client) throw new Error('Relay auth unavailable');
-    if (!this.authPromise) this.authPromise = client.ensureAuth().then(() => client.token).finally(() => { this.authPromise = null; });
-    return this.authPromise;
+    // Do not invoke ensureAuth: its fallback can create a different anonymous owner.
+    const state = this.authState();
+    if (!state.token || this.blockedTokens.has(state.token)) throw new Error('Cloud auth blocked');
+    if (this.current()) return this.verified.token;
+    if (this.authPromise?.key === state.key && this.authPromise.revision === state.revision) return this.authPromise.promise;
+    const request = { key: state.key, revision: state.revision };
+    request.promise = (async () => {
+      const response = await this.fetcher('https://relay.cocy.io/api/auth/me', { headers: { Authorization: `Bearer ${state.token}` } });
+      if (this.authState().revision !== state.revision) throw new Error('Stale cloud auth');
+      if (response.status === 401) this.blockedTokens.add(state.token);
+      if (!response.ok) throw new Error('Cloud identity unavailable');
+      const user = await response.json();
+      if (this.authState().revision !== state.revision || typeof user.id !== 'string' || !user.id) throw new Error('Stale cloud identity');
+      if (this.owner && this.owner !== user.id) this.isolate();
+      this.owner = user.id;
+      this.verified = { ...state, owner: user.id, epoch: this.epoch };
+      return state.token;
+    })().finally(() => { if (this.authPromise === request) this.authPromise = null; });
+    this.authPromise = request;
+    return request.promise;
+  }
+  proof(slot, data, owner) {
+    // Slot + creation identity prevents a replacement local character inheriting ownership.
+    try {
+      const raw = this.storage.getItem(ownerKey(slot)), proof = JSON.parse(raw);
+      const local = JSON.parse(this.storage.getItem(SLOT_SAVE_KEYS[slot]));
+      return proof?.v === 1 && proof.owner === owner && proof.createdAt === data.createdAt &&
+        validateSave(local) && (local.lineage || 'human') === slot && local.createdAt === proof.createdAt ? raw : null;
+    } catch { return null; }
+  }
+  writable(slot, raw) {
+    try {
+      if (!raw || this.storage.getItem(ownerKey(slot)) !== raw) return false;
+      // Rewriting the same nonsecret proof detects unavailable/quota-failed persistence.
+      this.storage.setItem(ownerKey(slot), raw);
+      return this.storage.getItem(ownerKey(slot)) === raw;
+    } catch { return false; }
+  }
+  intentMatches(entry) {
+    const context = this.current();
+    return context && entry.owner === context.owner && entry.epoch === context.epoch &&
+      this.proof(entry.data.charId, entry.data, context.owner) === entry.proof;
   }
   async load() {
-    const token = await this.token();
+    const token = await this.token(), context = this.current();
+    if (!this.matches(context)) throw new Error('Stale cloud GET');
     const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { headers: { Authorization: `Bearer ${token}` } });
+    if (!this.matches(context)) throw new Error('Stale cloud GET');
+    if (response.status === 401) this.blockedTokens.add(token);
     if (!response.ok) throw new Error(`Cloud GET ${response.status}`);
     const body = await response.json();
+    if (!this.matches(context)) throw new Error('Stale cloud GET');
     this.remote.clear();
     for (const row of body.characters || []) {
-      try { const save = restoreSnapshot(row.data); this.remote.set(row.charId, { ...row, save }); } catch { /* Ignore incompatible remote snapshots. */ }
+      try { const save = restoreSnapshot(row.data); if (row.charId !== (save.lineage || 'human')) continue; this.remote.set(row.charId, { ...row, save, context }); } catch { /* Ignore incompatible remote snapshots. */ }
     }
     for (const slot of ['human', 'skeleton_knight']) {
       let local = null;
       try { local = JSON.parse(this.storage.getItem(SLOT_SAVE_KEYS[slot])); } catch { /* Leave local recovery to SaveStore. */ }
-      if (!validateSave(local)) continue;
+      if (!validateSave(local) || !this.proof(slot, local, context.owner)) continue;
       const remote = this.remote.get(slot);
       if (remote && compareProgress(remote.save, local) > 0) continue;
       try {
@@ -88,27 +154,45 @@ export class CloudSave {
   }
   offer(slot) {
     const remote = this.remote.get(slot);
-    if (!remote) return null;
+    if (!remote || !this.matches(remote.context)) return null;
     let local = null;
-    try { local = JSON.parse(this.storage.getItem(SLOT_SAVE_KEYS[slot])); } catch { /* local reader owns corruption */ }
+    try {
+      const bytes = this.storage.getItem(SLOT_SAVE_KEYS[slot]);
+      local = JSON.parse(bytes);
+      // Only an empty destination can be first-bound by an explicit verified restore.
+      if (bytes === null ? this.storage.getItem(ownerKey(slot)) !== null : !this.proof(slot, local, remote.context.owner)) return null;
+    } catch { return null; }
     return !local || !validateSave(local) || compareProgress(remote.save, local) > 0 ? remote : null;
   }
   restore(slot) {
     const remote = this.offer(slot); if (!remote) throw new Error('No newer cloud character');
     const key = SLOT_SAVE_KEYS[slot];
     const old = this.storage.getItem(key);
+    if (!this.matches(remote.context)) throw new Error('Stale cloud restore');
+    const proof = JSON.stringify({ v: 1, owner: remote.context.owner, createdAt: remote.save.createdAt });
+    this.storage.setItem(ownerKey(slot), proof);
+    if (this.storage.getItem(ownerKey(slot)) !== proof || !this.matches(remote.context)) throw new Error('Cloud owner storage unavailable');
     if (old !== null) this.storage.setItem(`${key}.cloud-backup.${this.now()}`, old);
     this.storage.setItem(key, JSON.stringify(remote.save));
     return remote.save;
   }
   changed(save) {
-    const remote = this.remote.get(save.lineage || 'human');
-    if (remote && compareProgress(remote.save, save) > 0) return;
     let data; try { data = snapshot(save); } catch { return; }
-    const hash = JSON.stringify(data), slot = data.charId;
-    if (hash === this.lastHash.get(slot) && !this.pending.has(slot)) return;
-    this.pending.set(slot, { data, hash });
-    if (!this.uploading.has(slot)) this.schedule(slot, this.now() + 300);
+    const slot = data.charId, change = {};
+    this.changes.set(slot, change);
+    const enqueue = () => {
+      if (this.changes.get(slot) !== change) return;
+      const context = this.current(), proof = context && this.proof(slot, data, context.owner);
+      if (!proof) return;
+      const remote = this.remote.get(slot);
+      if (remote && this.matches(remote.context) && compareProgress(remote.save, data) > 0) return;
+      const hash = JSON.stringify(data);
+      if (hash === this.lastHash.get(slot) && !this.pending.has(slot)) return;
+      this.pending.set(slot, { data, hash, owner: context.owner, epoch: context.epoch, proof });
+      if (!this.uploading.has(slot)) this.schedule(slot, this.now() + 300);
+    };
+    if (this.current()) enqueue();
+    else this.token().then(enqueue).catch(() => {});
   }
   schedule(slot, at) {
     this.clearWakeup(slot);
@@ -138,8 +222,14 @@ export class CloudSave {
       this.clearWakeup(slot);
       this.uploading.add(slot);
       try {
-        const token = await this.token();
+        const token = await this.token(), context = this.current();
+        if (!this.intentMatches(entry) || !this.writable(slot, entry.proof) || !this.matches(context)) {
+          if (this.pending.get(slot) === entry) this.pending.delete(slot);
+          continue;
+        }
         const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(entry.data), keepalive: hidden });
+        if (!this.matches(context) || !this.intentMatches(entry)) continue;
+        if (response.status === 401) { this.blockedTokens.add(token); this.verified = null; continue; }
         if (response.status === 429) {
           const value = response.headers?.get('Retry-After')?.trim();
           // HTTP-date accepts IMF-fixdate, RFC850 and asctime, all in UTC.
@@ -154,10 +244,10 @@ export class CloudSave {
         if (this.pending.get(slot) === entry) this.pending.delete(slot);
         this.lastHash.set(slot, entry.hash); this.lastSent.set(slot, this.now());
         this.retryAt.delete(slot);
-      } catch { this.retry(slot, 30000); }
+      } catch { if (this.intentMatches(entry)) this.retry(slot, 30000); }
       finally {
         this.uploading.delete(slot);
-        if (this.pending.has(slot)) this.schedule(slot, this.now());
+        if (this.pending.has(slot) && this.current() && this.intentMatches(this.pending.get(slot))) this.schedule(slot, this.now());
       }
     }
   }
