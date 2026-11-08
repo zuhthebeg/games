@@ -177,8 +177,11 @@ test('CS1 acceptance6 deferred verified same-owner auth retains flow; CS2 reject
   const s = human(); h.cloud.changed(s); h.bytes.set('relay_token','synthetic-A2'); await h.advance(300);
   s.gold++; h.cloud.changed(s); await h.advance(300); const flushing = h.cloud.flush({hidden:true});
   assert.equal(authCalls,1); assert.equal(h.calls.length,0);
-  auth.resolve(); await flushing; await settle(); assert.equal(h.calls.length,1); assert.equal(h.tasks.size,1);
-  await h.advance(60000); assert.equal(h.calls.length,2); assert.equal(h.calls[1].data.gold,s.gold);
+  // Approved P1-2 oracle: stale bytes never dispatch; only proven latest gets one wakeup.
+  auth.resolve(); await flushing; await settle(); assert.equal(h.calls.length,0); assert.equal(h.tasks.size,1);
+  await h.advance(0); assert.equal(h.calls.length,1); assert.equal(h.calls[0].data.gold,s.gold);
+  assert.equal(h.cloud.pending.size,0); assert.equal(h.tasks.size,0);
+  await h.advance(60000); assert.equal(h.calls.length,1);
   const fake = 'x.' + Buffer.from(JSON.stringify({ sub:'synthetic',exp:Math.floor(Date.now()/1000)+3600 })).toString('base64url') + '.fake';
   h.bytes.set('relay_token',fake); assert.equal(await h.cloud.token(),fake); assert.equal(authCalls,2);
   h.bytes.set('cocy_auth_token','synthetic-B');

@@ -79,8 +79,8 @@ function readonly(value) {
 
 try {
   if (await reloadIfStale()) throw Object.assign(new Error('reloading'), { reloading: true });
-  const characters = new CharacterStores(localStorage);
   const cloud = new CloudSave({ storage: localStorage });
+  const characters = new CharacterStores(cloud.characterStorage());
   const store = { load: () => characters.selectHuman(), save: save => characters.persist(save), reset: () => characters.reset() };
   const bootQuery = new URLSearchParams(location.search);
   const { soloSelected, legacyEntry } = roomEntry(bootQuery);

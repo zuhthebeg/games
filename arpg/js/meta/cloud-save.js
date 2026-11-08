@@ -58,6 +58,68 @@ export class CloudSave {
       }
     });
   }
+  // Only CharacterStores receives this boundary. Cloud restore and external writes stay raw.
+  characterStorage() {
+    const cloud = this, storage = this.storage;
+    const slotFor = key => Object.keys(SLOT_SAVE_KEYS).find(slot => SLOT_SAVE_KEYS[slot] === key);
+    return Object.freeze({
+      getItem(key) { return storage.getItem(key); },
+      key(index) { return storage.key(index); },
+      get length() { return storage.length; },
+      setItem(key, value) {
+        const slot = slotFor(key);
+        if (slot) cloud.writeCharacter(slot, value);
+        else storage.setItem(key, value);
+      },
+      removeItem(key) {
+        const slot = slotFor(key);
+        if (slot) cloud.invalidateProof(slot);
+        storage.removeItem(key);
+      },
+    });
+  }
+  invalidateProof(slot) {
+    const key = ownerKey(slot), raw = this.storage.getItem(key);
+    if (raw === null) return;
+    // Do not let reset/new-slot/backup writes recycle an old committed record.
+    const invalid = JSON.stringify({ v: 1, committed: false });
+    this.storage.setItem(key, invalid);
+    if (this.storage.getItem(key) !== invalid) throw new Error('Cloud owner invalidation incomplete');
+  }
+  writeCharacter(slot, bytes) {
+    const key = SLOT_SAVE_KEYS[slot], old = this.storage.getItem(key);
+    if (old === null) {
+      this.invalidateProof(slot);
+      this.storage.setItem(key, bytes);
+      return;
+    }
+    const context = this.current();
+    // Read errors are storage failures, not evidence that a local write succeeded.
+    const rawProof = context && this.storage.getItem(ownerKey(slot));
+    let proof, content;
+    try {
+      const before = JSON.parse(old), after = JSON.parse(bytes), record = JSON.parse(rawProof);
+      if (context && validateSave(before) && (before.lineage || 'human') === slot &&
+          validateSave(after) && (after.lineage || 'human') === slot &&
+          record?.v === 1 && record.committed === true && record.owner === context.owner &&
+          record.content === JSON.stringify(snapshot(before))) {
+        proof = rawProof; content = JSON.stringify(snapshot(after));
+      }
+    } catch { /* Unproven/oversize content remains local only. */ }
+    if (!proof || !content) { this.storage.setItem(key, bytes); return; }
+    const record = { v: 1, owner: context.owner, content, committed: false };
+    const staged = JSON.stringify(record);
+    this.storage.setItem(ownerKey(slot), staged);
+    if (this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(context) || this.storage.getItem(key) !== old) {
+      throw new Error('Cloud owner staging incomplete');
+    }
+    // Let the existing SaveStore caller observe native failures. Never roll back local bytes.
+    this.storage.setItem(key, bytes);
+    if (this.storage.getItem(key) !== bytes || this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(context)) {
+      throw new Error('Cloud character write incomplete');
+    }
+    this.storage.setItem(ownerKey(slot), JSON.stringify({ ...record, committed: true }));
+  }
   // A token string (including decoded JWT claims) is not an owner proof.
   authState() {
     try {
@@ -187,7 +249,7 @@ export class CloudSave {
   }
   changed(save) {
     let data; try { data = snapshot(save); } catch { return; }
-    const slot = data.charId, change = {};
+    const slot = data.charId, change = { inflight: this.uploading.has(data.charId) };
     this.changes.set(slot, change);
     const enqueue = () => {
       if (this.changes.get(slot) !== change) return;
@@ -199,7 +261,8 @@ export class CloudSave {
       if (hash === this.lastHash.get(slot) && !this.pending.has(slot)) return;
       let localBytes; try { localBytes = this.storage.getItem(SLOT_SAVE_KEYS[slot]); } catch { return; }
       this.pending.set(slot, { data, hash, owner: context.owner, epoch: context.epoch, proof, localBytes });
-      if (!this.uploading.has(slot)) this.schedule(slot, this.now() + 300);
+      // A change made during an auth/PUT wait is already due when that wait ends.
+      if (!this.uploading.has(slot)) this.schedule(slot, this.now() + (change.inflight ? 0 : 300));
     };
     if (this.current()) enqueue();
     else this.token().then(enqueue).catch(() => {});
