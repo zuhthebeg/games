@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#100e13">
+  <title>데비나로크</title>
+  <link rel="icon" href="icon.svg">
+  <link rel="stylesheet" href="css/game.css?v=58ead69e09">
+  <script type="importmap">
+    {
+      "imports": {
+        "./js/content/affixes.js": "./js/content/affixes.js?v=023ce75224",
+        "./js/content/enemies.js": "./js/content/enemies.js?v=1c77ba3943",
+        "./js/content/items.js": "./js/content/items.js?v=4a01606a6b",
+        "./js/content/skills.js": "./js/content/skills.js?v=cb9aa781d7",
+        "./js/content/stages.js": "./js/content/stages.js?v=18e9b73ef9",
+        "./js/core/attack-assist.js": "./js/core/attack-assist.js?v=204ad965f6",
+        "./js/core/input.js": "./js/core/input.js?v=3d6e727e47",
+        "./js/core/loop.js": "./js/core/loop.js?v=455bc00b25",
+        "./js/main.js": "./js/main.js?v=5b0c1897fa",
+        "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=97f00cdc77",
+        "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=c0b8a9ef45",
+        "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
+        "./js/net/hit-agreement.js": "./js/net/hit-agreement.js?v=45cbf91d3e",
+        "./js/net/input-queue.js": "./js/net/input-queue.js?v=f85d9e6f28",
+        "./js/net/interp.js": "./js/net/interp.js?v=5fe8dcca9a",
+        "./js/net/net-session.js": "./js/net/net-session.js?v=188c1a7fef",
+        "./js/net/predictor.js": "./js/net/predictor.js?v=5ab9947114",
+        "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
+        "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=b6ee78cfc9",
+        "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
+        "./js/render/player-look.js": "./js/render/player-look.js?v=46a7229d53",
+        "./js/render/quality.js": "./js/render/quality.js?v=8fc4218783",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=619e87745e",
+        "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
+        "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
+        "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
+        "./js/save/ops.js": "./js/save/ops.js?v=1acba2dd60",
+        "./js/save/repository.js": "./js/save/repository.js?v=bea5e16922",
+        "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
+        "./js/sim/world.js": "./js/sim/world.js?v=dd167281d0",
+        "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
+        "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
+        "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=95254c35c8",
+        "./js/ui/party.js": "./js/ui/party.js?v=4d7eb72c48",
+        "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
+        "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=6cd9432b32",
+        "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
+        "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
+        "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
+        "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js": "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js?v=b1632a7032",
+        "./vendor/three-0.187.0/three.core.min.js": "./vendor/three-0.187.0/three.core.min.js?v=978d509554",
+        "./vendor/three-0.187.0/three.module.min.js": "./vendor/three-0.187.0/three.module.min.js?v=6a09a8b135",
+        "three": "./vendor/three-0.187.0/three.module.min.js?v=6a09a8b135",
+        "three/addons/": "./vendor/three-0.187.0/addons/",
+        "three/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
+        "three/addons/utils/SkeletonUtils.js": "./vendor/three-0.187.0/addons/utils/SkeletonUtils.js?v=b1632a7032",
+        "three/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
+        "three/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00"
+      }
+    }
+    </script>
+</head>
+<body>
+  <main id="app">
+    <section id="title-screen" class="screen">
+      <div class="title-mark">D E V · M1</div>
+      <h1>데비나로크</h1>
+      <p class="subtitle">무너진 지하묘지의 부름</p>
+      <div id="save-warning" class="warning" hidden></div>
+      <form id="create-form" class="panel" hidden>
+        <label>기사의 이름<input name="name" maxlength="12" minlength="1" required placeholder="이름 (1–12자)"></label>
+        <p>남은 클래스 선택은 다음 여정에서 열립니다.</p>
+        <button class="primary" type="submit">기사 · 검으로 시작</button>
+      </form>
+      <div id="character-card" class="panel" hidden>
+        <div class="eyebrow">기록된 모험가</div>
+        <h2 id="character-name"></h2>
+        <p id="character-level"></p>
+        <button id="start-button" class="primary">여관으로</button>
+      </div>
+    </section>
+    <section id="game-screen" hidden>
+      <canvas id="scene"></canvas>
+      <header class="hud">
+        <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
+        <div class="counter"><span id="stage-name">여관</span><span id="party-rtt" hidden></span></div>
+        <div id="boss-hud" hidden><span id="boss-name">해골 기사단장</span><div class="hp-track"><i id="boss-fill"></i></div></div>
+        <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
+        <button id="hub-party-button" class="hub-party-button" data-party-finder hidden>파티</button>
+      </header>
+      <aside id="party-hud" class="party-hud" hidden></aside>
+      <div id="party-door-countdown" class="party-door-countdown" hidden></div>
+      <div id="party-downed" class="party-downed" hidden></div>
+      <div id="party-network-overlay" class="party-network-overlay" hidden></div>
+      <div id="hub-ui" class="hub-ui" hidden>
+        <div class="hub-title">무너진 지하묘지 · 거점 여관</div>
+        <div class="hub-hotspots">
+          <button data-panel="board">주인 · 게시판</button><button data-panel="blacksmith">대장장이</button>
+          <button data-panel="merchant">상인</button><button data-panel="inventory">장비함 <b id="inventory-upgrade-badge" class="upgrade-station-badge" hidden>▲</b></button>
+          <button data-panel="character">모험가</button><button data-panel="sanctuary">법당</button>
+          <small id="sanctuary-party-disabled" class="sanctuary-party-disabled" hidden>파티 중에는 들어갈 수 없어요</small>
+        </div>
+        <section id="hub-panel" class="panel hub-panel" role="dialog" aria-modal="true" tabindex="-1" hidden></section>
+      </div>
+      <div id="controls" class="controls">
+        <div class="joystick" data-joystick><span data-joystick-knob></span></div>
+        <div class="buttons">
+          <button class="attack-button" data-button="1"><span>공격</span><small id="auto-attack-chip" class="auto-attack-chip" hidden>자동</small></button>
+          <button data-button="2">회피</button>
+          <button data-button="4">기술 1</button>
+          <button data-button="8">기술 2</button>
+          <button data-button="16">기술 3</button>
+          <button class="potion-button" data-button="64"><span>물약 Q</span><b id="potion-count">0</b></button>
+          <button id="sanctuary-interact" class="sanctuary-interact" hidden>상호작용</button>
+        </div>
+      </div>
+      <div id="sanctuary-hud" class="sanctuary-hud" hidden>
+        <div id="sanctuary-feedback" class="sanctuary-feedback" role="status" aria-live="polite" hidden></div>
+        <button id="sanctuary-cancel" hidden>취소</button>
+        <button id="sanctuary-exit">나가기</button>
+      </div>
+      <div id="key-hints" class="key-hints">J 공격 · K 회피 · 1/2/3 기술 · Q 물약</div>
+      <div id="pause-menu" class="overlay" hidden>
+        <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+          <div class="eyebrow">모험 중</div>
+          <h2 id="pause-title">숨을 고르세요</h2>
+          <button id="continue-button" class="primary">계속</button>
+          <button id="retreat-button">후퇴하고 여관으로</button>
+          <button id="tutorial-replay-button">튜토리얼 다시 보기</button>
+          <button id="settings-button">설정</button>
+          <button id="mute-button">소리 끄기</button>
+        </div>
+      </div>
+      <div id="settings-panel" class="overlay" hidden>
+        <section class="panel settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <h2 id="settings-title">설정</h2>
+          <div class="settings-scroll">
+            <label for="bgm-volume">
+              <span>배경 음악</span><output id="bgm-volume-value">70</output>
+              <input id="bgm-volume" type="range" min="0" max="100" value="70">
+            </label>
+            <label for="sfx-volume">
+              <span>효과음</span><output id="sfx-volume-value">70</output>
+              <input id="sfx-volume" type="range" min="0" max="100" value="70">
+            </label>
+            <button id="settings-mute-button" type="button">음소거</button>
+            <label for="quality-setting">
+              <span>화질</span>
+              <select id="quality-setting">
+                <option value="automatic">자동</option>
+                <option value="low">낮음</option>
+                <option value="medium">보통</option>
+                <option value="high">높음</option>
+              </select>
+            </label>
+            <label class="setting-toggle"><span>움직임 줄이기</span><input id="reduced-motion-setting" type="checkbox"></label>
+            <label class="setting-toggle"><span>큰 글자</span><input id="large-text-setting" type="checkbox"></label>
+            <label class="setting-toggle"><span>진동</span><input id="haptics-setting" type="checkbox"></label>
+            <label class="setting-toggle"><span>위험 표시 강조</span><input id="telegraph-setting" type="checkbox"></label>
+            <label class="setting-toggle"><span>자동 공격</span><input id="auto-attack-setting" type="checkbox"></label>
+          </div>
+          <button id="settings-close-button" type="button">닫기</button>
+        </section>
+      </div>
+      <aside id="tutorial-card" class="tutorial-card" role="status" aria-live="polite" hidden>
+        <strong id="tutorial-title"></strong>
+        <p id="tutorial-message"></p>
+        <button id="tutorial-skip" type="button">건너뛰기</button>
+      </aside>
+      <aside id="debug-overlay" class="debug-overlay" aria-live="off" hidden></aside>
+      <div id="boss-intro" class="boss-intro" hidden><div><span id="boss-intro-region">무너진 지하묘지</span><strong id="boss-intro-name">해골 기사단장</strong></div></div>
+      <div id="result-panel" class="overlay" hidden><div class="panel" role="dialog" aria-modal="true" tabindex="-1"></div></div>
+      <div id="toast" role="status"></div>
+      <div id="counter-toast" aria-live="polite" hidden></div>
+    </section>
+  </main>
+  <script type="module" src="js/main.js?v=5b0c1897fa"></script>
+</body>
+</html>

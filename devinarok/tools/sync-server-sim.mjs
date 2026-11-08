@@ -1,0 +1,85 @@
+import { createHash } from 'node:crypto';
+import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { dirname, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const toolsDirectory = dirname(fileURLToPath(import.meta.url));
+const gameDirectory = resolve(toolsDirectory, '..');
+const includeDirectories = ['js/sim', 'js/content'];
+const protocolPath = 'js/net/protocol.js';
+const simVersionPath = join(gameDirectory, 'js/net/sim-version.js');
+
+async function collectFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await collectFiles(path));
+    else if (entry.isFile()) files.push(path);
+  }
+  return files;
+}
+
+async function sourceFiles() {
+  const files = [];
+  for (const directory of includeDirectories) {
+    files.push(...await collectFiles(join(gameDirectory, directory)));
+  }
+  files.push(join(gameDirectory, protocolPath));
+  return files.sort((left, right) => {
+    const leftRelative = relative(gameDirectory, left).split(sep).join('/');
+    const rightRelative = relative(gameDirectory, right).split(sep).join('/');
+    return leftRelative < rightRelative ? -1 : leftRelative > rightRelative ? 1 : 0;
+  });
+}
+
+async function computeHash(files) {
+  const hash = createHash('sha256');
+  for (const path of files) {
+    hash.update(await readFile(path));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
+async function updateGeneratedVersion(hash) {
+  await writeFile(simVersionPath, `export const SIM_HASH = '${hash}';\n`);
+}
+
+async function syncToServer(serverRepository, files) {
+  const target = resolve(serverRepository, 'realtime-poc/src/devinarok');
+  const targetSourceRoot = resolve(serverRepository, 'realtime-poc/src');
+  await mkdir(targetSourceRoot, { recursive: true });
+  await mkdir(target, { recursive: true });
+  const syncFiles = [
+    ...files,
+    simVersionPath,
+  ];
+  for (const source of syncFiles) {
+    const gameRelative = relative(gameDirectory, source);
+    const destination = join(target, gameRelative);
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(source, destination);
+  }
+  const readmePath = join(target, 'README.md');
+  let readme = '';
+  try {
+    readme = await readFile(readmePath, 'utf8');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  const generatedLine = 'Generated from zuhthebeg/games by `devinarok/tools/sync-server-sim.mjs`; do not edit these files here.';
+  if (!readme.split(/\r?\n/).includes(generatedLine)) {
+    await writeFile(readmePath, `${readme.trimEnd()}${readme ? '\n' : ''}${generatedLine}\n`);
+  }
+}
+
+const files = await sourceFiles();
+const simHash = await computeHash(files);
+await updateGeneratedVersion(simHash);
+console.log(`SIM_HASH=${simHash}`);
+
+if (process.argv[2]) {
+  await syncToServer(resolve(process.argv[2]), files);
+  console.log(`Synced simulation into ${resolve(process.argv[2], 'realtime-poc/src/devinarok')}`);
+}

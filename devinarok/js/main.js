@@ -1,0 +1,1989 @@
+import { createSaveRepository, DEFAULT_SETTINGS } from './save/repository.js';
+import { InputLayer } from './core/input.js';
+import { AttackInputAssistant, autoAttackDefault, buildPartyAssistedInput } from './core/attack-assist.js';
+import { FixedStepLoop } from './core/loop.js';
+import { ArenaRenderer } from './render/renderer.js';
+import { AudioManager } from './render/audio.js';
+import { PartyClient } from './ui/party.js';
+import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
+import { escapeHtml } from './ui/escape-html.js';
+import { applyHubEquipmentLook } from './ui/hub-player.js';
+import { handlePauseKey } from './ui/pause-menu.js';
+import { createTutorialState, resolveTutorialSortie, TUTORIAL_COPY, transitionTutorial } from './ui/tutorial.js';
+import { SANCTUARY_ARENA } from './sanctuary/arena.js';
+import { SanctuaryVfx } from './sanctuary/vfx.js';
+import {
+  BURN_DONE, BURN_NOTE, CHIAO_FOOTER, INCENSE_DONE, RITUAL_CANCEL_HINT,
+  advanceRitual, cancelRitual, createRitualState, nearestRitual, resetRitual,
+  ritualMovement, startRitual, throwChiao,
+} from './sanctuary/state.js';
+import { computeBotPolicy } from './net/bot-policy.js';
+import { buildRangedAimInput } from './net/ranged-aim.js';
+import { AFFIXES } from './content/affixes.js';
+import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
+import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
+import { rekeySettlementItems } from './save/ops.js';
+import { HUB_ARENA, isStageUnlocked, STAGE_LIST } from './content/stages.js';
+import {
+  BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
+  createStageWorld, retreatStage, rollStageItem, step,
+} from './sim/world.js';
+
+const $ = (selector) => document.querySelector(selector);
+const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
+const DEV_COLLISION_OVERLAY = DEV_MODE && new URLSearchParams(location.search).get('collide') === '1';
+const titleScreen = $('#title-screen');
+const gameScreen = $('#game-screen');
+const createForm = $('#create-form');
+const characterCard = $('#character-card');
+const pauseMenu = $('#pause-menu');
+const hubUi = $('#hub-ui');
+const hubPanel = $('#hub-panel');
+const resultPanel = $('#result-panel');
+let saves;
+let character;
+let inventory = [];
+let inventoryFilter = 'all';
+let world;
+let renderer;
+let input;
+let loop;
+let frame;
+let settled = false;
+let firstForestUnlock = false;
+let settlementId = null;
+let settings = { ...DEFAULT_SETTINGS };
+let settingsReturnToPause = false;
+let tutorialState = null;
+let tutorialSaveChain = Promise.resolve();
+let tutorialLastX = null;
+let tutorialLastZ = null;
+const audio = new AudioManager();
+const attackInputAssistant = new AttackInputAssistant();
+let currentStageId = null;
+let partyClient = null;
+let partyFrame = null;
+let partyPreviousWorld = null;
+let partyLastTime = 0;
+let partyLastRenderTime = 0;
+let partyAccumulator = 0;
+let partyInputTimer = null;
+let partyInputLastTime = 0;
+let partyInputAccumulator = 0;
+let partyInputDriverStats = {};
+let inviteRoomHandled = false;
+let reviveText = new Map();
+let partyHudCaptureFrozen = false;
+let partyFinderTimer = null;
+let partyFinderRooms = [];
+let partyFinderState = 'loading';
+let partyFinderLastRefresh = 0;
+let partyQuickJoining = false;
+let partyQuickLookupFailed = false;
+let partyQuickAbortController = null;
+let partyFeedbackMessage = '';
+let partyFeedbackIsError = false;
+let sanctuaryState = null;
+let sanctuaryVfx = null;
+let sanctuaryBurnAudio = null;
+let actionToastTimer = null;
+let counterPunchTimer = null;
+let counterToastTimer = null;
+
+function autoAttackEnabled() {
+  return settings.autoAttack ?? autoAttackDefault({
+    coarsePointer: window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
+  });
+}
+
+function showActionToast(message) {
+  const toast = $('#toast');
+  toast.textContent = message;
+  clearTimeout(actionToastTimer);
+  actionToastTimer = setTimeout(() => {
+    if (toast.textContent === message) toast.textContent = '';
+  }, 1500);
+}
+
+function showCounterToast(player) {
+  const toast = $('#counter-toast');
+  const point = renderer?.projectWorldPosition(player?.x, 2.3, player?.z);
+  if (!point?.visible) return;
+  clearTimeout(counterToastTimer);
+  toast.textContent = '반격!';
+  toast.style.left = `${point.left}px`;
+  toast.style.top = `${point.top}px`;
+  toast.hidden = false;
+  toast.classList.remove('active');
+  void toast.offsetWidth;
+  toast.classList.add('active');
+  counterToastTimer = setTimeout(() => {
+    toast.classList.remove('active');
+    toast.hidden = true;
+  }, 600);
+}
+
+function showCounterPresentation() {
+  if (reducedMotionEnabled()) return;
+  const camera = renderer?.camera;
+  const property = camera && Number.isFinite(camera.fov) ? 'fov' : 'zoom';
+  const initial = camera?.[property];
+  if (Number.isFinite(initial)) {
+    camera[property] = property === 'fov' ? initial + 2 : initial * 1.06;
+    camera.updateProjectionMatrix();
+  }
+  document.body.classList.add('counter-flash');
+  clearTimeout(counterPunchTimer);
+  counterPunchTimer = setTimeout(() => {
+    if (camera && renderer?.camera === camera && Number.isFinite(initial)) {
+      camera[property] = initial;
+      camera.updateProjectionMatrix();
+    }
+    document.body.classList.remove('counter-flash');
+  }, 120);
+}
+
+async function reloadCharacter() {
+  character = await saves.loadCharacter(character.id);
+  inventory = await saves.listItems(character.id);
+}
+
+function reducedMotionEnabled() {
+  return settings.reducedMotion ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function hapticsEnabled() {
+  return settings.haptics ?? typeof navigator.vibrate === 'function';
+}
+
+function applySettings() {
+  document.body.classList.toggle('large-text', settings.largeText);
+  document.body.classList.toggle('reduced-motion', reducedMotionEnabled());
+  audio.setBgmVolume(settings.bgmVolume / 100);
+  audio.setSfxVolume(settings.sfxVolume / 100);
+  audio.setMuted(settings.muted);
+  $('#bgm-volume').value = String(settings.bgmVolume);
+  $('#sfx-volume').value = String(settings.sfxVolume);
+  $('#bgm-volume-value').value = String(settings.bgmVolume);
+  $('#sfx-volume-value').value = String(settings.sfxVolume);
+  $('#quality-setting').value = settings.quality;
+  $('#reduced-motion-setting').checked = reducedMotionEnabled();
+  $('#large-text-setting').checked = settings.largeText;
+  $('#haptics-setting').checked = hapticsEnabled();
+  $('#haptics-setting').disabled = typeof navigator.vibrate !== 'function';
+  $('#telegraph-setting').checked = settings.telegraphEmphasis;
+  $('#auto-attack-setting').checked = autoAttackEnabled();
+  $('#auto-attack-chip').hidden = !autoAttackEnabled();
+  $('#settings-mute-button').textContent = settings.muted ? '소리 켜기' : '음소거';
+  $('#mute-button').textContent = settings.muted ? '소리 켜기' : '소리 끄기';
+  renderer?.setQualityMode(settings.quality);
+  renderer?.setReducedMotion(reducedMotionEnabled());
+  renderer?.setTelegraphEmphasis(settings.telegraphEmphasis);
+  sanctuaryVfx?.setReducedMotion(reducedMotionEnabled());
+}
+
+async function saveSetting(key, value) {
+  settings = await saves.commitSettings({ [key]: value });
+  applySettings();
+}
+
+function updateTutorial(event) {
+  if (!tutorialState) return;
+  const next = transitionTutorial(tutorialState, event);
+  if (
+    next.step === tutorialState.step
+    && next.skipped === tutorialState.skipped
+    && next.completed === tutorialState.completed
+    && next.combatComplete === tutorialState.combatComplete
+    && next.perfectDodgeHintShown === tutorialState.perfectDodgeHintShown
+  ) return;
+  tutorialState = next;
+  renderTutorialCard();
+  updateInventoryUpgradeBadge();
+  const state = { ...next };
+  tutorialSaveChain = tutorialSaveChain.then(async () => {
+    if (!character) return;
+    character = await commit([{ type: 'updateTutorial', state }]);
+  }).catch((error) => console.error('Tutorial save failed', error));
+}
+
+function trackTutorialMovement(current) {
+  if (!current || tutorialState?.step !== 'movement') return;
+  let hero = null;
+  for (const entity of current.entities) {
+    if (entity.kind === 'player' && entity.playerId === character?.id) {
+      hero = entity;
+      break;
+    }
+  }
+  if (!hero) return;
+  if (
+    tutorialLastX !== null
+    && (Math.abs(hero.x - tutorialLastX) > 0.02 || Math.abs(hero.z - tutorialLastZ) > 0.02)
+  ) updateTutorial({ type: 'movement' });
+  tutorialLastX = hero.x;
+  tutorialLastZ = hero.z;
+}
+
+function renderTutorialCard() {
+  const card = $('#tutorial-card');
+  const copy = tutorialState?.active ? TUTORIAL_COPY[tutorialState.step] : null;
+  const hubStep = ['board', 'blacksmith', 'equipment'].includes(tutorialState?.step);
+  card.hidden = !copy
+    || !['hub', 'stage'].includes(world?.mode)
+    || (world?.mode === 'hub' && !hubStep);
+  if (!copy || card.hidden) return;
+  $('#tutorial-title').textContent = copy.title;
+  const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const messages = touch
+    ? {
+      movement: '화면 왼쪽 조이스틱으로 이동해 보세요.',
+      attack: '화면의 공격 버튼으로 적을 공격하세요.',
+      dodge: '적이 공격을 예고하면 위험 표시를 보고 회피하세요.',
+      dodgeTelegraph: '회피 버튼을 눌러 위험 표시 밖으로 벗어나세요.',
+      skill: '화면의 기술 버튼으로 계열 기술을 사용해 보세요.',
+      loot: '적이 떨어뜨린 전리품 가까이 다가가 자동으로 주우세요.',
+    }
+    : {
+      movement: 'WASD 또는 방향키로 이동해 보세요.',
+      attack: 'J 키로 적을 공격하세요.',
+      dodge: '적이 공격을 예고하면 위험 표시를 보고 회피하세요.',
+      dodgeTelegraph: '방향키와 K 키로 위험 표시 밖으로 벗어나세요.',
+      skill: '1 키로 계열 기술을 사용해 보세요.',
+      loot: '적이 떨어뜨린 전리품 가까이 다가가 자동으로 주우세요.',
+    };
+  $('#tutorial-message').textContent = messages[tutorialState.step] ?? copy.message;
+  $('#tutorial-skip').hidden = false;
+}
+
+function handleAudioEvent(event, current) {
+  const localPlayer = current?.entities.find((entity) => (
+    entity.kind === 'player' && entity.playerId === character?.id
+  ));
+  if (event.type === 'cast') {
+    if (event.skillId === 'counter') {
+      if (event.family === 'crossbow') audio.play('crossbow-shot');
+      else if (event.family === 'staff') audio.play('staff-cast');
+      else audio.play('sword-swing');
+      if (event.playerId === character?.id) {
+        showCounterToast(localPlayer);
+        showCounterPresentation();
+      }
+    } else if (event.skill !== undefined) {
+      const sounds = {
+        sword: { 3: 'shield-clang' },
+        crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot' },
+        staff: { 1: 'flame', 2: 'frost', 3: 'blink' },
+      };
+      audio.play(sounds[event.family]?.[event.skill] ?? 'staff-cast');
+    } else if (event.family === 'staff') audio.play('staff-cast');
+    else if (event.family !== 'crossbow') audio.play('sword-swing');
+  }
+  if (event.type === 'shot') audio.play('crossbow-shot');
+  if (event.type === 'impact') audio.play(event.kind === 'flame' ? 'flame' : event.kind === 'frost' ? 'frost' : 'impact');
+  if (event.type === 'perfectBlock' || (event.type === 'hit' && (event.blocked || event.guarded))) audio.play('shield-clang');
+  else if (event.type === 'hit') audio.play('impact');
+  if (
+    (event.type === 'dodge' && (event.playerId === character?.id || event.entityId === localPlayer?.id))
+    || (event.type === 'hit' && event.damage > 0 && event.targetId === localPlayer?.id)
+  ) playHaptic();
+  if (event.type === 'dodge') audio.play('footstep');
+  if (event.type === 'perfectDodge' && event.playerId === character?.id) {
+    const firstHint = !tutorialState?.perfectDodgeHintShown;
+    updateTutorial({ type: 'perfectDodge' });
+    if (firstHint) showActionToast('완벽한 회피! 바로 공격하면 반격해요.');
+  }
+  if (event.type === 'telegraph') {
+    const enemy = current?.entities.find((entity) => entity.id === event.entityId);
+    if (enemy?.boss) audio.play('boss-telegraph');
+    updateTutorial({ type: 'telegraph' });
+  }
+  if (event.type === 'bossSummon') audio.play('summon');
+  if (event.type === 'bossBlink') audio.play('blink');
+  if (event.type === 'death') audio.play('enemy-death');
+  if (event.type === 'lootSpawn' && ['rare', 'legendary'].includes(event.item?.rarity)) audio.play('reward-chime');
+  if (event.type === 'doorOpen') audio.play('door-open');
+  if (event.type === 'potion') audio.play('potion');
+  if (event.type === 'pickup') {
+    audio.play(event.lootType === 'gold' ? 'coins' : 'confirm');
+    if (event.lootType === 'item' && ['rare', 'legendary'].includes(event.item?.rarity)) audio.play('reward-chime');
+    updateTutorial({ type: 'loot' });
+  }
+  if (event.type === 'spawn' && event.boss) audio.play('roar', { rate: 0.62 });
+  if (event.type === 'cast' && event.step) updateTutorial({ type: 'attack' });
+  if (event.type === 'cast' && event.skill !== undefined) updateTutorial({ type: 'skill' });
+  if (event.type === 'dodge') updateTutorial({ type: 'dodge' });
+  if (event.type === 'spawn' && event.boss) {
+    $('#boss-intro').hidden = false;
+    setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
+  }
+}
+
+function playHaptic() {
+  if (!hapticsEnabled()) return;
+  try {
+    navigator.vibrate?.(24);
+  } catch {}
+}
+
+async function refreshTitle() {
+  character = (await saves.listCharacters()).sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  inventory = character ? await saves.listItems(character.id) : [];
+  $('#save-warning').hidden = saves.persistent;
+  $('#save-warning').textContent = saves.persistent ? '' : '저장이 브라우저 메모리에만 남습니다. 브라우저를 닫으면 기록이 사라질 수 있어요.';
+  createForm.hidden = Boolean(character);
+  characterCard.hidden = !character;
+  if (character) {
+    tutorialState = createTutorialState(character.tutorial);
+    $('#character-name').textContent = character.name;
+    $('#character-level').textContent = `기사 · Lv.${character.level} · 경험치 ${character.xp}`;
+  }
+  updateInventoryUpgradeBadge();
+}
+
+function stopWorld() {
+  if (frame) cancelAnimationFrame(frame);
+  if (partyFrame) cancelAnimationFrame(partyFrame);
+  frame = null;
+  partyFrame = null;
+  partyPreviousWorld = null;
+  partyLastTime = 0;
+  partyLastRenderTime = 0;
+  partyAccumulator = 0;
+  partyHudCaptureFrozen = false;
+  if (partyInputTimer !== null) clearInterval(partyInputTimer);
+  partyInputTimer = null;
+  partyInputLastTime = 0;
+  partyInputAccumulator = 0;
+  loop?.stop();
+  input?.destroy();
+  if (sanctuaryState) resetRitual(sanctuaryState);
+  sanctuaryState = null;
+  sanctuaryVfx?.destroy();
+  sanctuaryVfx = null;
+  sanctuaryBurnAudio?.stop();
+  sanctuaryBurnAudio = null;
+  renderer?.destroy();
+  loop = input = renderer = null;
+}
+
+function showTitle() {
+  stopWorld();
+  partyClient?.close();
+  partyClient = null;
+  $('#hub-party-button').hidden = true;
+  titleScreen.hidden = false;
+  gameScreen.hidden = true;
+  resultPanel.hidden = true;
+  refreshTitle();
+}
+
+function commit(ops) {
+  return saves.commit({ characterId: character.id, baseRev: character.rev, ops });
+}
+
+async function applyOps(ops) {
+  character = await commit(ops);
+  inventory = await saves.listItems(character.id);
+  return character;
+}
+
+function equippedItems() {
+  const ids = new Set(Object.values(character.equipment ?? {}).filter(Boolean));
+  return inventory.filter((item) => ids.has(item.uid));
+}
+
+function refreshHubPlayer() {
+  if (world?.mode !== 'hub') return;
+  const equipment = equippedItems();
+  const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (!player) return;
+  const stats = calculatePlayerStats(character.level, equipment);
+  const look = applyHubEquipmentLook(player, equipment);
+  Object.assign(player, {
+    level: character.level,
+    stats,
+    maxHp: stats.maxHp,
+    hp: stats.maxHp,
+  });
+  updateInventoryUpgradeBadge();
+  updateHud(world);
+}
+
+function stageIsUnlocked(stageId) {
+  return isStageUnlocked(stageId, character.clearedStages);
+}
+
+function drawHub() {
+  if (!renderer || !world || world.mode !== 'hub') return;
+  updateHud(world);
+  renderer.render(world, world, 1);
+  frame = requestAnimationFrame(drawHub);
+}
+
+async function enterHub() {
+  stopPartyFinderPolling();
+  stopWorld();
+  partyClient?.close();
+  partyClient = null;
+  $('#hub-party-button').hidden = false;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = false;
+  $('#sanctuary-party-disabled').hidden = true;
+  gameScreen.classList.remove('sanctuary-mode');
+  $('#sanctuary-hud').hidden = true;
+  $('#sanctuary-interact').hidden = true;
+  $('#sanctuary-feedback').hidden = true;
+  $('#key-hints').textContent = 'J 공격 · K 회피 · 1/2/3 기술 · Q 물약';
+  titleScreen.hidden = true;
+  gameScreen.hidden = false;
+  hubUi.hidden = false;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#controls').hidden = true;
+  $('#boss-hud').hidden = true;
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
+  $('#party-door-countdown').hidden = true;
+  $('#party-downed').hidden = true;
+  $('#party-network-overlay').hidden = true;
+  $('#stage-name').textContent = localStorage.getItem('devinarok.lastStageRegion') === '2'
+    ? '잿빛 숲 · 거점 여관'
+    : '거점 여관';
+  $('#hud-name').textContent = character.name;
+  world = createHubWorld({
+    seed: 724103,
+    playerId: character.id,
+    level: character.level,
+    equipment: equippedItems(),
+  });
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (hero) Object.assign(hero, equipmentLook(equippedItems()));
+  renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA, DEV_COLLISION_OVERLAY, world);
+  const [, music] = await Promise.all([renderer.ready, loadAudioForScene('hub')]);
+  applySettings();
+  updateInventoryUpgradeBadge();
+  await audio.unlock();
+  audio.setMusic(music, { crossfadeMs: 1000 });
+  renderTutorialCard();
+  $('#hub-ui [data-panel="board"]').classList.toggle('tutorial-pulse', tutorialState?.step === 'board');
+  frame = requestAnimationFrame(drawHub);
+  const inviteCode = new URLSearchParams(location.search).get('room');
+  if (inviteCode && !inviteRoomHandled) {
+    inviteRoomHandled = true;
+    void connectParty(inviteCode).catch((error) => {
+      setPartyToast(partyJoinErrorMessage(error), { error: true });
+      renderPanel('party-finder');
+    });
+  }
+}
+
+function renderSanctuaryHud(current) {
+  const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  sanctuaryState.nearby = hero ? nearestRitual(hero.x, hero.z) : null;
+  const interact = $('#sanctuary-interact');
+  interact.hidden = Boolean(sanctuaryState.active) || !sanctuaryState.nearby;
+  interact.textContent = sanctuaryState.nearby
+    ? `상호작용 · ${sanctuaryState.nearby.prompt}`
+    : '상호작용';
+  $('#sanctuary-cancel').hidden = !sanctuaryState.active;
+  const feedback = $('#sanctuary-feedback');
+  const result = sanctuaryState.active?.id === 'chiao' && sanctuaryState.active.phase === 'settled'
+    ? sanctuaryState.active.result
+    : null;
+  const message = sanctuaryState.feedback;
+  if (result) {
+    feedback.innerHTML = `<h2>${result.name}</h2><p>${result.description}</p><small>${CHIAO_FOOTER}</small><small>${RITUAL_CANCEL_HINT}</small>`;
+    feedback.hidden = false;
+  } else if (message) {
+    const note = message.text === BURN_DONE ? `<small>${BURN_NOTE}</small>` : '';
+    feedback.innerHTML = `<p>${message.text}</p>${note}<small>${RITUAL_CANCEL_HINT}</small>`;
+    feedback.hidden = false;
+  } else {
+    feedback.hidden = true;
+    feedback.replaceChildren();
+  }
+}
+
+function updateSanctuary(current) {
+  if (!sanctuaryState || !sanctuaryVfx) return;
+  const wasBurning = sanctuaryState.active?.id === 'burn';
+  advanceRitual(sanctuaryState, 1 / 30);
+  if (wasBurning && sanctuaryState.active?.id !== 'burn') {
+    sanctuaryBurnAudio?.stop();
+    sanctuaryBurnAudio = null;
+  }
+  sanctuaryVfx.update(sanctuaryState);
+  renderSanctuaryHud(current);
+}
+
+function interactSanctuary() {
+  if (partyClient) {
+    setPartyToast('파티 중에는 들어갈 수 없어요');
+    return;
+  }
+  const ritual = sanctuaryState?.nearby;
+  if (!ritual || sanctuaryState.active) return;
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  const origin = { x: hero?.x ?? 0, z: hero?.z ?? 0 };
+  if (!startRitual(sanctuaryState, ritual.id, { origin })) return;
+  audio.play('confirm');
+  if (ritual.id === 'chiao') {
+    const random = (Math.imul((world.seed + sanctuaryState.serial) >>> 0, 0x45d9f3b) ^ 0x9e3779b9) >>> 0;
+    const faces = [random & 1 ? 'convex' : 'flat', random & 2 ? 'convex' : 'flat'];
+    throwChiao(sanctuaryState, faces, random);
+  } else if (ritual.id === 'burn') {
+    sanctuaryBurnAudio?.stop();
+    sanctuaryBurnAudio = audio.play('fire-crackle', { loop: true, gain: 0.42 });
+  }
+}
+
+function cancelSanctuary() {
+  if (!sanctuaryState?.active) return false;
+  cancelRitual(sanctuaryState);
+  sanctuaryBurnAudio?.stop();
+  sanctuaryBurnAudio = null;
+  renderSanctuaryHud(world);
+  sanctuaryVfx?.update(sanctuaryState);
+  return true;
+}
+
+async function enterSanctuary() {
+  if (partyClient) {
+    setPartyToast('파티 중에는 들어갈 수 없어요');
+    return;
+  }
+  stopWorld();
+  sanctuaryState = createRitualState();
+  titleScreen.hidden = true;
+  gameScreen.hidden = false;
+  hubUi.hidden = true;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#boss-hud').hidden = true;
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
+  $('#party-door-countdown').hidden = true;
+  $('#party-downed').hidden = true;
+  $('#party-network-overlay').hidden = true;
+  $('#controls').hidden = false;
+  $('#sanctuary-hud').hidden = false;
+  $('#sanctuary-interact').hidden = true;
+  $('#sanctuary-feedback').hidden = true;
+  $('#stage-name').textContent = '법당';
+  $('#hud-name').textContent = `${character.name} · 법당`;
+  $('#key-hints').textContent = '이동 · E 상호작용 · Esc 나가기';
+  gameScreen.classList.add('sanctuary-mode');
+  world = createHubWorld({
+    seed: 724103,
+    playerId: character.id,
+    level: character.level,
+    equipment: equippedItems(),
+  });
+  world.arena = SANCTUARY_ARENA;
+  const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (hero) {
+    Object.assign(hero, equipmentLook(equippedItems()));
+    hero.x = SANCTUARY_ARENA.playerSpawn.x;
+    hero.z = SANCTUARY_ARENA.playerSpawn.z;
+    hero.facing = -Math.PI / 2;
+  }
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
+  renderer = new ArenaRenderer($('#scene'), () => {}, SANCTUARY_ARENA, DEV_COLLISION_OVERLAY, world);
+  const [, music] = await Promise.all([renderer.ready, loadAudioForScene('sanctuary')]);
+  applySettings();
+  await audio.unlock();
+  audio.setMusic(music, { crossfadeMs: 1000 });
+  sanctuaryVfx = new SanctuaryVfx(renderer.scene, {
+    onTok: () => audio.play('impact', { rate: 0.72, gain: 0.48 }),
+    reducedMotion: reducedMotionEnabled(),
+  });
+  renderSanctuaryHud(world);
+  loop = new FixedStepLoop({
+    world,
+    playerId: character.id,
+    input,
+    buildInput: (rawInput) => ({ ...ritualMovement(sanctuaryState, rawInput), buttons: 0 }),
+    render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
+    onTick: updateSanctuary,
+  });
+  loop.start();
+}
+
+function updateBossIntro(stageId) {
+  const region = STAGE_LIST.find((stage) => stage.id === stageId)?.region ?? 1;
+  $('#boss-intro-region').textContent = region === 3 ? '해골 왕의 성채' : region === 2 ? '잿빛 숲' : '무너진 지하묘지';
+  $('#boss-intro-name').textContent = stageId === 'KB'
+    ? '해골 왕'
+    : region === 2 ? '잿빛 숲의 사령술사' : '해골 기사단장';
+}
+
+async function loadAudioForScene(scene) {
+  const music = musicForScene(scene);
+  await audio.loadScene(music);
+  return music;
+}
+
+function musicForScene(scene) {
+  const stageRegion = STAGE_LIST.find((stage) => stage.id === scene)?.region;
+  return scene === 'sanctuary' ? 'sanctuary-bgm'
+    : stageRegion === 2 ? 'forest-bgm'
+      : stageRegion === 3 ? 'castle-bgm'
+        : scene === 'hub' ? 'hub-bgm' : 'combat-bgm';
+}
+
+function itemName(item) {
+  return ITEMS[item.itemId]?.name ?? item.itemId;
+}
+
+const STAT_NAMES = {
+  attack: '공격력',
+  attackPercent: '공격력',
+  defense: '방어력',
+  maxHp: '최대 체력',
+  critChance: '치명타 확률',
+  critDamage: '치명타 피해',
+  attackSpeed: '공격 속도',
+  moveSpeed: '이동 속도',
+  dodgeCooldownReduction: '회피 재사용 대기시간 감소',
+  skillCooldownReduction: '기술 재사용 대기시간 감소',
+  lifesteal: '흡혈',
+  goldGain: '골드 획득',
+  xpGain: '경험치 획득',
+  spinCooldownSeconds: '회전 기술 재사용 대기시간',
+};
+
+const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
+const FAMILY_ICONS = { sword: '🛡️', crossbow: '🏹', staff: '🔮' };
+const FAMILY_SKILL_COPY = {
+  sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.'],
+  crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.'],
+  staff: ['지점에 화염 장판을 남깁니다.', '주변에 냉기 파동을 퍼뜨려 둔화시킵니다.', '이동 방향으로 순간이동합니다.'],
+};
+
+function updateFamilySkillControls(family) {
+  const names = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+  names.forEach((name, index) => {
+    const button = $(`#controls [data-button="${4 << index}"]`);
+    if (button) button.textContent = SKILLS[name].name;
+  });
+  $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · Q 물약`;
+}
+
+function showFamilyChangeToast(family) {
+  const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((name) => SKILLS[name].name).join(' · ');
+  const message = `${FAMILY_NAMES[family]} 계열로 바뀌었어요 · 스킬: ${skills}`;
+  if (world?.mode === 'hub' && !hubPanel.hidden) {
+    hubPanel.querySelector('.family-change-toast')?.remove();
+    const status = document.createElement('p');
+    status.className = 'family-change-toast';
+    status.setAttribute('role', 'status');
+    status.textContent = message;
+    hubPanel.prepend(status);
+  } else $('#toast').textContent = message;
+}
+
+function formatStat(stat, value, unit = '') {
+  return `${STAT_NAMES[stat] ?? AFFIXES[stat]?.name ?? stat} ${value > 0 ? '+' : ''}${value}${unit}`;
+}
+
+function itemStat(item) {
+  const base = ITEMS[item.itemId];
+  if (!base) return '알 수 없는 장비';
+  const enhance = item.enhance ?? 0;
+  const value = base.value + enhance * Math.max(1, Math.round(base.value * 0.08));
+  const family = base.family ? `${FAMILY_NAMES[base.family]} 계열 · ` : '';
+  return `${family}${formatStat(base.stat, value)} · 강화 +${enhance} · 요구 Lv.${item.requiredLevel ?? base.requiredLevel} · ${RARITIES[item.rarity]?.name ?? item.rarity}`;
+}
+
+function itemDetails(item) {
+  const affixes = (item.affixes ?? []).map((affix) => {
+    const definition = AFFIXES[affix.id];
+    const unit = definition?.unit ?? (affix.id === 'spinCooldownSeconds' ? '초' : '');
+    return `<small class="affix-line">${formatStat(affix.id, affix.value, unit)}</small>`;
+  }).join('');
+  return `<strong class="item-name rarity-${item.rarity}">${itemName(item)}</strong><small>${itemStat(item)}</small>${affixes || '<small>추가 옵션 없음</small>'}`;
+}
+
+const COMPARISON_STATS = [
+  ['attack', '공격', (value) => Math.round(value)],
+  ['defense', '방어', (value) => Math.round(value)],
+  ['maxHp', '체력', (value) => Math.round(value)],
+  ['critChance', '치명타', (value) => `${value.toFixed(1)}%`],
+  ['critDamage', '치명타 피해', (value) => `${Math.round(value * 100)}%`],
+  ['attackSpeed', '공격 속도', (value) => `${value}%`],
+  ['moveSpeed', '이동 속도', (value) => value.toFixed(1)],
+  ['dodgeCooldownReduction', '회피 대기시간 감소', (value) => `${value}%`],
+  ['skillCooldownReduction', '기술 대기시간 감소', (value) => `${value}%`],
+  ['lifesteal', '흡혈', (value) => `${value}%`],
+  ['goldGain', '골드 획득', (value) => `${value}%`],
+  ['xpGain', '경험치 획득', (value) => `${value}%`],
+  ['spinCooldownSeconds', '회전 기술 대기시간', (value) => `${value.toFixed(1)}초`, -1],
+];
+
+function itemDeltas(item) {
+  const slot = ITEMS[item.itemId]?.slot ?? 'weapon';
+  const currentEquipment = equippedItems();
+  const current = calculatePlayerStats(character.level, currentEquipment);
+  const replaced = currentEquipment.filter((equipped) => equipped.slot !== slot);
+  const next = calculatePlayerStats(character.level, [...replaced, item]);
+  return COMPARISON_STATS.flatMap(([key, label, format, direction = 1]) => {
+    const delta = next[key] - current[key];
+    return Math.abs(delta) < 1e-9 ? [] : [{ key, label, delta, good: delta * direction > 0, value: format(delta) }];
+  });
+}
+
+function compareDeltas(item) {
+  const deltas = itemDeltas(item).map(({ label, delta, good, value }) => (
+    `<span class="${good ? 'delta-up' : 'delta-down'}">${label} ${delta > 0 ? '+' : ''}${value}</span>`
+  ));
+  return `<div class="compare-deltas">${deltas.join('') || '<span>능력치 변화 없음</span>'}</div>`;
+}
+
+function itemIsUpgrade(item) {
+  if (item.slot || (item.requiredLevel ?? ITEMS[item.itemId]?.requiredLevel ?? 1) > character.level) return false;
+  const mainStat = ITEMS[item.itemId]?.stat;
+  if (!mainStat) return false;
+  const deltas = itemDeltas(item);
+  return deltas.some((change) => change.key === mainStat && change.delta > 0)
+    && deltas.every((change) => change.key === mainStat || change.good);
+}
+
+function upgradeStatText(item) {
+  const stat = ITEMS[item.itemId]?.stat;
+  const change = itemDeltas(item).find((entry) => entry.key === stat && entry.delta > 0);
+  return change ? `${change.label} +${change.value}` : '';
+}
+
+function updateInventoryUpgradeBadge() {
+  const badge = $('#inventory-upgrade-badge');
+  if (!badge) return;
+  const hasUpgrade = inventory.some((item) => !item.slot && itemIsUpgrade(item));
+  badge.hidden = !hasUpgrade;
+  $('#hub-ui [data-panel="inventory"]')?.classList.toggle(
+    'tutorial-pulse',
+    hasUpgrade && tutorialState?.step === 'equipment',
+  );
+}
+
+const EQUIPMENT_SLOTS = [
+  { key: 'weapon', label: '무기', glyph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 17 7m-1-4 5 5-4 4-5-5zM4 20l3-1-2-2z"/></svg>' },
+  { key: 'head', label: '머리', glyph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16h16l-2-7-6-5-6 5zM4 16v3h16v-3M9 9l3 2 3-2"/></svg>' },
+  { key: 'body', label: '몸', glyph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4-4 3 2 5 2-1v9h8v-9l2 1 2-5-4-3-4 3zM9 4l3 3 3-3"/></svg>' },
+  { key: 'hands', label: '손', glyph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21V10a1.5 1.5 0 0 1 3 0v4-8a1.5 1.5 0 0 1 3 0v8-6a1.5 1.5 0 0 1 3 0v7l2-2a1.5 1.5 0 0 1 2 2l-4 6z"/></svg>' },
+  { key: 'feet', label: '발', glyph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v9l-3 5a2 2 0 0 0 2 3h12a2 2 0 0 0 2-2l-2-3-5-2-2-10zM7 17h12"/></svg>' },
+];
+
+function renderBoard() {
+  const rows = STAGE_LIST.map((stage) => {
+    const unlocked = stageIsUnlocked(stage.id);
+    const cleared = character.clearedStages.includes(stage.id);
+    const section = stage.id === 'C1' ? '<h3>1지역 · 무너진 지하묘지</h3>'
+      : stage.id === 'F1' ? '<h3>2지역 · 잿빛 숲</h3>'
+        : stage.id === 'K1' ? '<h3>3지역 · 해골 왕의 성채</h3>' : '';
+    const newBadge = stage.id === 'F1' && character.clearedStages.includes('CB')
+      && !localStorage.getItem('devinarok.f1-entered') ? '<b class="stage-new">NEW</b>' : '';
+    const lockText = !unlocked && stage.region === 2 && !character.clearedStages.includes('CB')
+      ? '기사 전당 클리어 후 열려요'
+      : !unlocked ? `${STAGE_LIST[STAGE_LIST.findIndex((entry) => entry.id === stage.id) - 1]?.name ?? ''} 클리어 후 열려요`
+        : cleared ? '클리어' : '도전 가능';
+    const warning = character.level < stage.recommendedLevel - 1 ? ' is-underlevel' : '';
+    const action = cleared ? '재도전' : unlocked ? '출정' : '잠김';
+    const pulse = unlocked && ['board', 'blacksmith'].includes(tutorialState?.step) ? ' tutorial-pulse' : '';
+    return `${section}<div class="hub-row${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>권장 Lv.${stage.recommendedLevel} · ${lockText}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
+  }).join('');
+  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+}
+
+function stopPartyFinderPolling() {
+  if (partyFinderTimer !== null) clearInterval(partyFinderTimer);
+  partyFinderTimer = null;
+}
+
+function renderPartyFinder() {
+  const rooms = sortPartyRooms(partyFinderRooms);
+  const busy = partyQuickJoining ? 'disabled' : '';
+  const list = partyFinderState === 'loading'
+    ? '<div class="party-room-skeleton"></div><div class="party-room-skeleton"></div>'
+    : partyFinderState === 'error'
+      ? `<div class="party-finder-state"><p>목록을 불러오지 못했어요.</p><button data-party-refresh ${busy}>다시 시도</button></div>`
+      : rooms.length
+        ? partyRoomsMarkup(rooms, character.level, { disabled: partyQuickJoining })
+        : `<div class="party-finder-state"><p>지금 열린 방이 없어요.</p><button data-party-create ${busy}>방 만들고 기다리기</button></div>`;
+  const quickLabel = partyQuickJoining ? '<span class="party-spinner"></span> 열린 방을 찾는 중…' : '빠른 참가';
+  const updated = partyFinderLastRefresh
+    ? `${Math.max(0, Math.floor((Date.now() - partyFinderLastRefresh) / 1000))}초 전 갱신`
+    : '갱신 전';
+  hubPanel.dataset.kind = 'party-finder';
+  const roomRegion = `<div class="party-room-heading"><strong>열린 방 · ${rooms.length}</strong><span>${updated}</span><button data-party-refresh ${busy} aria-label="방 목록 새로고침">↻</button></div>
+    <div class="party-room-list">${list}</div>`;
+  let finder = hubPanel.querySelector('.party-finder');
+  if (!finder) {
+    hubPanel.innerHTML = `<section class="party-finder">
+      <h2>같이 출정</h2>
+      <button data-party-quick class="primary party-quick-button" ${partyQuickJoining ? 'disabled' : ''}>${quickLabel}</button>
+      <p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p>
+      <div class="party-lookup-actions" data-party-lookup-actions hidden>
+        <button data-party-lookup-retry>다시 시도</button>
+        <button data-party-lookup-create>새 방 만들기</button>
+      </div>
+      <div class="party-room-region">${roomRegion}</div>
+      <div class="party-finder-actions"><button data-party-create ${busy}>방 만들기</button>
+        <details><summary>코드로 참가</summary><form id="party-join-form"><input id="party-code" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="초대 코드" ${busy}><button type="submit" ${busy}>참가</button></form></details>
+      </div><button data-close>닫기</button>
+    </section>`;
+    finder = hubPanel.querySelector('.party-finder');
+  } else {
+    finder.querySelector('.party-room-region').innerHTML = roomRegion;
+  }
+  const quickButton = finder.querySelector('[data-party-quick]');
+  quickButton.disabled = partyQuickJoining;
+  quickButton.innerHTML = quickLabel;
+  for (const button of finder.querySelectorAll('[data-party-create], [data-party-refresh], [data-party-lookup-retry], [data-party-lookup-create]')) {
+    button.disabled = partyQuickJoining;
+  }
+  const codeInput = finder.querySelector('#party-code');
+  const codeSubmit = finder.querySelector('#party-join-form button[type="submit"]');
+  if (codeInput) codeInput.disabled = partyQuickJoining;
+  if (codeSubmit) codeSubmit.disabled = partyQuickJoining;
+  const lookupActions = finder.querySelector('[data-party-lookup-actions]');
+  lookupActions.hidden = !partyQuickLookupFailed || partyFinderState === 'error';
+  syncPartyFeedback();
+}
+
+async function refreshPartyRooms({ loading = false } = {}) {
+  if (hubPanel.hidden || hubPanel.dataset.kind !== 'party-finder') return;
+  if (loading) partyFinderState = 'loading';
+  renderPartyFinder();
+  try {
+    const response = await fetch(`${partyHttpBase()}/coord/rooms?g=devinarok`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`rooms-http-${response.status}`);
+    const data = await response.json();
+    partyFinderRooms = sortPartyRooms(data.rooms ?? []);
+    partyFinderState = 'list';
+    partyFinderLastRefresh = Date.now();
+  } catch {
+    partyFinderState = 'error';
+  }
+  renderPartyFinder();
+}
+
+function openPartyFinder() {
+  stopPartyFinderPolling();
+  partyQuickAbortController?.abort();
+  partyQuickAbortController = null;
+  $('#hub-party-button').hidden = true;
+  hubPanel.hidden = false;
+  partyFinderRooms = [];
+  partyFinderState = 'loading';
+  partyFinderLastRefresh = 0;
+  partyQuickJoining = false;
+  partyQuickLookupFailed = false;
+  setPartyToast('');
+  renderPartyFinder();
+  void refreshPartyRooms({ loading: true });
+  partyFinderTimer = setInterval(() => {
+    if (hubPanel.hidden || hubPanel.dataset.kind !== 'party-finder') {
+      stopPartyFinderPolling();
+      return;
+    }
+    void refreshPartyRooms();
+  }, 5000);
+}
+
+function syncPartyFeedback() {
+  const lobby = hubPanel.querySelector('.party-lobby');
+  if (lobby && !lobby.querySelector('.sanctuary-party-message')) {
+    const notice = document.createElement('p');
+    notice.className = 'sanctuary-party-message';
+    notice.textContent = '파티 중에는 들어갈 수 없어요';
+    lobby.append(notice);
+  }
+  const status = hubPanel.querySelector('[data-party-feedback]');
+  if (!status) return;
+  status.textContent = partyFeedbackMessage;
+  status.hidden = !partyFeedbackMessage;
+  status.classList.toggle('is-error', partyFeedbackIsError);
+}
+
+function setPartyToast(message, { error = false } = {}) {
+  partyFeedbackMessage = String(message ?? '');
+  partyFeedbackIsError = Boolean(error);
+  $('#toast').textContent = partyFeedbackMessage;
+  syncPartyFeedback();
+}
+
+function partyJoinErrorMessage(error) {
+  if (['room-full', 'room-started', 'room-gone'].includes(error?.code ?? error?.message)) {
+    const code = error.code ?? error.message;
+    if (code === 'room-full') return '방이 가득 찼어요';
+    return '이미 출정한 방이에요';
+  }
+  return '방에 연결하지 못했어요. 다시 시도해 주세요.';
+}
+
+async function quickJoinFromFinder() {
+  if (partyQuickJoining) return;
+  stopPartyFinderPolling();
+  partyQuickLookupFailed = false;
+  setPartyToast('');
+  partyQuickJoining = true;
+  const abortController = new AbortController();
+  partyQuickAbortController = abortController;
+  renderPartyFinder();
+  try {
+    const result = await quickJoinParty({
+      httpBase: partyHttpBase(),
+      signal: abortController.signal,
+      joinRoom: (code) => connectParty(code),
+      createRoom: async () => {
+        await connectParty();
+        return partyClient?.roomCode;
+      },
+    });
+    if (abortController.signal.aborted) return;
+    setPartyToast(result.created
+      ? '열린 방이 없어 새 방을 만들었어요. 동료를 기다리는 중이에요'
+      : '열린 방에 참가했어요');
+  } catch (error) {
+    if (abortController.signal.aborted) return;
+    partyQuickLookupFailed = error?.code === 'match-lookup-failed';
+    if (partyQuickLookupFailed) setPartyToast('방 목록을 불러오지 못했어요', { error: true });
+    else setPartyToast(partyJoinErrorMessage(error), { error: true });
+    renderPartyFinder();
+    if (partyFinderTimer === null) partyFinderTimer = setInterval(() => void refreshPartyRooms(), 5000);
+  } finally {
+    if (partyQuickAbortController === abortController) {
+      partyQuickAbortController = null;
+      partyQuickJoining = false;
+      if (hubPanel.dataset.kind === 'party-finder') renderPartyFinder();
+    }
+  }
+}
+
+function inviteLink(code) {
+  const url = new URL(location.href);
+  url.searchParams.set('room', code);
+  return url.toString();
+}
+
+function renderPartyLobby() {
+  if (!partyClient?.roomCode || !partyClient.lobby || hubPanel.hidden) return;
+  $('#hub-party-button').hidden = true;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = true;
+  $('#sanctuary-party-disabled').hidden = false;
+  stopPartyFinderPolling();
+  const party = partyClient.lobby?.players ?? [];
+  const local = party.find((member) => member.playerId === partyClient.playerId);
+  const isHost = partyClient.lobby?.hostId === partyClient.playerId;
+  const allReady = party.length > 0 && party.every((member) => member.connected && member.ready);
+  const stage = partyClient.lobby?.stageId ?? 'C1';
+  const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id) : entry.id === stage)
+    .map((entry) => `<option value="${entry.id}" ${entry.id === stage ? 'selected' : ''}>${entry.name}</option>`).join('');
+  const members = party.map((member) => {
+    const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
+    const level = Math.max(1, Math.min(99, Number(member.level) || 1));
+    const family = ['sword', 'crossbow', 'staff'].includes(member.family) ? member.family : 'sword';
+    return `<div class="party-lobby-member"><span>${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
+  }).join('');
+  const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
+  hubPanel.dataset.kind = 'party';
+  const isPublic = partyClient.lobby?.public !== false;
+  const startLabel = allReady ? '출정' : '모두 준비하면 출정할 수 있어요';
+  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
+  syncPartyFeedback();
+}
+
+function connectParty(code = null) {
+  partyClient?.close();
+  $('#hub-party-button').hidden = true;
+  $('#hub-ui [data-panel="sanctuary"]').disabled = true;
+  $('#sanctuary-party-disabled').hidden = false;
+  if (hubPanel.hidden) {
+    hubPanel.hidden = false;
+    hubPanel.dataset.kind = 'party';
+    hubPanel.innerHTML = '<section class="party-lobby"><h2>파티에 연결 중…</h2><p>대기실 정보를 확인하고 있어요.</p><button data-party-close>나가기</button></section>';
+  }
+  let resolveLobby;
+  let rejectLobby;
+  let lobbyReceived = false;
+  const joined = new Promise((resolve, reject) => {
+    resolveLobby = resolve;
+    rejectLobby = reject;
+  });
+  const timeout = setTimeout(() => {
+    if (lobbyReceived) return;
+    partyClient?.close();
+    const error = new Error('connect-failed');
+    error.code = 'connect-failed';
+    rejectLobby(error);
+  }, 8000);
+  partyClient = new PartyClient({
+    character,
+    equipment: equippedItems(),
+    onLobby: () => {
+      lobbyReceived = true;
+      clearTimeout(timeout);
+      renderPartyLobby();
+      resolveLobby(partyClient);
+    },
+    onStatus: (status) => {
+      renderPartyLobby();
+      if (status === 'disconnected' && !lobbyReceived) {
+        clearTimeout(timeout);
+        const error = new Error('connect-failed');
+        error.code = 'connect-failed';
+        rejectLobby(error);
+      }
+    },
+    onStart: (message) => { void startPartyStage(message); },
+    onSnapshot: (message, client) => {
+      updatePartyHud(client, message);
+      trackTutorialMovement(client.viewWorld());
+    },
+    onEvents: (events) => {
+      for (const event of events) {
+        if (event.type === 'reviveProgress') reviveText.set(event.entityId, event);
+        if (event.type === 'revived' || event.type === 'roomEnter') reviveText.clear();
+        handleAudioEvent(event, partyClient?.viewWorld());
+        if (event.type === 'pickup') {
+          if (event.lootType === 'item' && event.item && itemIsUpgrade(event.item)) {
+            setPartyToast(`더 좋은 장비 · ${upgradeStatText(event.item)}`);
+          }
+        }
+      }
+    },
+    onResult: ({ result, roomCode, runId, playerId }) => {
+      void settleStage(result.outcome, result, `${roomCode}:${runId}:${playerId}`);
+    },
+    onRoomGone: () => {
+      clearTimeout(timeout);
+      const error = new Error('room-gone');
+      error.code = 'room-gone';
+      rejectLobby(error);
+      if (hubPanel.dataset.kind === 'party-finder') {
+        setPartyToast(partyJoinErrorMessage(error), { error: true });
+        void refreshPartyRooms({ loading: true });
+        return;
+      }
+      $('#party-network-overlay').hidden = true;
+      setPartyToast('방이 종료되어 여관으로 돌아갑니다.', { error: true });
+      void enterHub();
+    },
+    onError: (error) => {
+      console.error('Party connection failed', error);
+      if (!lobbyReceived) {
+        clearTimeout(timeout);
+        partyClient?.close();
+        rejectLobby(error);
+      } else setPartyToast(partyJoinErrorMessage(error), { error: true });
+    },
+  });
+  if (code) partyClient.joinRoom(code);
+  else partyClient.createRoom();
+  renderPartyLobby();
+  return joined;
+}
+
+async function startPartyStage(message) {
+  if (!partyClient) return;
+  stopPartyFinderPolling();
+  stopWorld();
+  $('#hub-party-button').hidden = true;
+  currentStageId = message.stageId;
+  const selectedStage = STAGE_LIST.find((entry) => entry.id === message.stageId);
+  localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
+  if (message.stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
+  settled = false;
+  settlementId = `${partyClient.roomCode}:${message.runId}:${partyClient.playerId}`;
+  hubUi.hidden = true;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#controls').hidden = false;
+  $('#party-hud').hidden = false;
+  $('#party-rtt').hidden = false;
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(message.stageId);
+  $('#boss-name').textContent = message.stageId === 'KB'
+    ? '해골 왕'
+    : message.stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  updateBossIntro(message.stageId);
+  updateFamilySkillControls(equipmentLook(equippedItems()).family);
+  $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
+  world = partyClient.viewWorld() ?? partyClient.stageWorld;
+  tutorialLastX = null;
+  tutorialLastZ = null;
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
+  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY, world);
+  renderer.localPlayerId = partyClient.playerId;
+  const [, music] = await Promise.all([renderer.ready, loadAudioForScene(world.stageId)]);
+  applySettings();
+  await audio.unlock();
+  audio.setMusic(music, { crossfadeMs: 1000 });
+  partyPreviousWorld = world;
+  partyLastTime = 0;
+  partyLastRenderTime = 0;
+  partyAccumulator = 0;
+  partyFrame = requestAnimationFrame(partyLoop);
+}
+
+function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
+  if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
+  const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
+  const partyHud = $('#party-hud');
+  partyHud.innerHTML = partyPlayers.map((member) => {
+    const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
+    const level = Math.max(1, Math.min(99, Number(member.level) || 1));
+    const hp = Math.max(0, Number(member.hp) || 0);
+    const maxHp = Math.max(1, Number(member.maxHp) || 1);
+    const label = `${name} · Lv.${level}`;
+    return `<div class="party-member"><div class="party-member-row"><span>${label}</span><span>${hp}/${maxHp}</span></div><div class="hp-track"><i style="width:${Math.min(100, hp / maxHp * 100)}%"></i></div></div>`;
+  }).join('');
+  const gameTop = gameScreen.getBoundingClientRect().top;
+  $('#toast').style.setProperty(
+    '--party-toast-top',
+    `${Math.ceil(partyHud.getBoundingClientRect().bottom - gameTop + 8)}px`,
+  );
+  const rtt = Math.round(client.session?.clock.rttMs ?? 0);
+  const badge = $('#party-rtt');
+  badge.textContent = `${rtt} ms`;
+  badge.dataset.state = rtt < 100 ? 'green' : rtt < 200 ? 'yellow' : 'red';
+  const own = partyPlayers.find((entry) => entry.playerId === client.playerId);
+  $('#party-downed').hidden = !own?.downed;
+  $('#party-downed').textContent = own?.downed
+    ? `쓰러짐 · 부활 진행 ${own.reviveProgress ?? reviveText.get(own.id)?.progress ?? 0}/60`
+    : '';
+  const countdown = snapshot.doorCountdown;
+  $('#party-door-countdown').hidden = !countdown;
+  if (countdown) $('#party-door-countdown').textContent = `다음 방으로 이동 ${Math.max(0, Math.ceil((countdown.endsTick - snapshot.tick) / 30))}초`;
+}
+
+function renderPartyFrame(time = performance.now()) {
+  if (!partyClient || !renderer) return false;
+  const nextWorld = partyClient.viewWorld(time) ?? world;
+  if (!nextWorld) return false;
+  renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+  partyPreviousWorld = nextWorld;
+  world = nextWorld;
+  return true;
+}
+
+function setPartyHudCaptureFreeze(frozen) {
+  if (!DEV_MODE) return false;
+  partyHudCaptureFrozen = Boolean(frozen);
+  if (!partyHudCaptureFrozen) updatePartyHud();
+  return true;
+}
+
+function partyLoop(time) {
+  if (!partyClient || !renderer || !input) return;
+  if (!input.devInputProvider) {
+    if (!partyLastTime) partyLastTime = time;
+    partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
+    partyLastTime = time;
+    let steps = 0;
+    while (partyAccumulator >= 1 / 30 && steps < 5) {
+      sendPartyInputTick();
+      partyAccumulator -= 1 / 30;
+      steps += 1;
+    }
+  }
+  if (
+    !DEV_MODE ||
+    partyInputTimer === null ||
+    !partyLastRenderTime ||
+    time - partyLastRenderTime >= 200
+  ) {
+    const nextWorld = partyClient.viewWorld(time) ?? world;
+    if (nextWorld) {
+      if (!DEV_MODE || partyInputTimer === null) {
+        renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+      }
+      partyPreviousWorld = nextWorld;
+      world = nextWorld;
+      updateHud(nextWorld);
+      updatePartyHud();
+    }
+    partyLastRenderTime = time;
+  }
+  const overlay = $('#party-network-overlay');
+  if (partyClient.versionMismatch) {
+    overlay.textContent = '새 버전이 있어요. 새로고침해 주세요';
+    overlay.hidden = false;
+  } else if (partyClient.status === 'reconnecting') {
+    overlay.textContent = '재연결 중…';
+    overlay.hidden = false;
+  } else overlay.hidden = true;
+  partyFrame = requestAnimationFrame(partyLoop);
+}
+
+function sendPartyInputTick() {
+  if (!partyClient || !partyClient.inputReady || !input || partyClient.result) return false;
+  const next = input.nextTick();
+  if (!pauseMenu.hidden) {
+    attackInputAssistant.reset();
+    return Boolean(partyClient.sendInput({ ...next, moveX: 0, moveZ: 0, buttons: 0, attackHeld: false }));
+  }
+  const player = partyClient.predictor?.getPlayer();
+  const prepared = player
+    ? buildPartyAssistedInput(
+      attackInputAssistant,
+      next,
+      partyClient,
+      player,
+      { autoAttack: autoAttackEnabled() },
+    )
+    : next;
+  return Boolean(partyClient.sendInput(prepared));
+}
+
+function setPartyInputProvider(provider) {
+  if (!DEV_MODE || !(input instanceof InputLayer)) return false;
+  input.setDevInputProvider(provider);
+  return true;
+}
+
+function tickPartyInput() {
+  if (
+    !DEV_MODE ||
+    !(input instanceof InputLayer) ||
+    !input.devInputProvider ||
+    !partyClient?.inputReady ||
+    partyClient.result
+  ) {
+    return false;
+  }
+  sendPartyInputTick();
+  return true;
+}
+
+function drivePartyInputTimer() {
+  const now = performance.now();
+  partyInputDriverStats.timerTicks += 1;
+  if (!partyClient?.inputReady || !input || partyClient.result) {
+    partyInputDriverStats.notReady += 1;
+    partyInputLastTime = now;
+    partyInputAccumulator = 0;
+    return;
+  }
+  if (!partyInputLastTime) partyInputLastTime = now;
+  partyInputAccumulator = Math.min(
+    3000,
+    partyInputAccumulator + Math.max(0, now - partyInputLastTime),
+  );
+  partyInputLastTime = now;
+  const pending = partyClient.session?.inputs.size ?? 0;
+  const limit = Math.max(0, Math.min(6, 90 - pending));
+  let steps = 0;
+  while (partyInputAccumulator >= 1000 / 30 && steps < limit) {
+    if (!sendPartyInputTick()) break;
+    partyInputAccumulator -= 1000 / 30;
+    steps += 1;
+  }
+  partyInputDriverStats.inputs += steps;
+  partyInputDriverStats.catchUpInputs += Math.max(0, steps - 3);
+  if (!steps && pending >= 90) partyInputDriverStats.backpressure += 1;
+}
+
+function setPartyInputAutoDrive(enabled) {
+  if (!DEV_MODE || !(input instanceof InputLayer) || !input.devInputProvider) return false;
+  if (partyInputTimer !== null) clearInterval(partyInputTimer);
+  partyInputTimer = null;
+  partyInputLastTime = 0;
+  partyInputAccumulator = 0;
+  if (enabled) {
+    partyInputDriverStats = {
+      timerTicks: 0,
+      inputs: 0,
+      catchUpInputs: 0,
+      notReady: 0,
+      backpressure: 0,
+    };
+    partyInputLastTime = performance.now();
+    partyInputTimer = setInterval(drivePartyInputTimer, 100);
+  }
+  return true;
+}
+
+function getNetBotInput() {
+  const client = partyClient;
+  if (!client?.stageWorld || !client?.lastSnapshot || !client?.predictor || !client?.session) {
+    return { moveX: 0, moveZ: 0, aim: 0, buttons: 0, viewTick: 0 };
+  }
+  const player = client.predictor.getPlayer();
+  if (!player) return { moveX: 0, moveZ: 0, aim: 0, buttons: 0, viewTick: 0 };
+  const view = client.interpolation.sample(client.session.clock.getEstimate(performance.now()));
+  const viewTick = Math.round(view.renderTick);
+  const viewed = client.interpolation.sampleAtRenderTick(viewTick);
+  const roomIndex = client.lastSnapshot.roomIndex ?? client.stageWorld.roomIndex;
+  const room = client.stageWorld.arena.rooms[roomIndex];
+  const door = client.stageWorld.arena.doors.find((entry) => entry.fromRoom === room?.id);
+  const policy = computeBotPolicy({
+    player,
+    viewed,
+    roomCleared: Boolean(client.lastSnapshot.roomCleared),
+    door,
+  });
+  return {
+    ...buildRangedAimInput({ ...policy, viewTick }, player, viewed),
+    viewTick,
+  };
+}
+
+function renderInventory(compareUid = '', filter = inventoryFilter) {
+  inventoryFilter = filter;
+  const slotOrder = new Map(EQUIPMENT_SLOTS.map((slot, index) => [slot.key, index]));
+  const rarityOrder = { common: 0, magic: 1, rare: 2, legendary: 3 };
+  const filteredItems = inventory
+    .filter((item) => filter === 'all' || (ITEMS[item.itemId]?.slot ?? 'weapon') === filter)
+    .sort((a, b) => {
+      const aGroup = a.slot ? 0 : itemIsUpgrade(a) ? 1 : 2;
+      const bGroup = b.slot ? 0 : itemIsUpgrade(b) ? 1 : 2;
+      return aGroup - bGroup
+        || (slotOrder.get(ITEMS[a.itemId]?.slot ?? 'weapon') ?? 99) - (slotOrder.get(ITEMS[b.itemId]?.slot ?? 'weapon') ?? 99)
+        || (rarityOrder[b.rarity] ?? 0) - (rarityOrder[a.rarity] ?? 0);
+    });
+  const rows = filteredItems.map((item) => {
+    const base = ITEMS[item.itemId];
+    const slot = base?.slot ?? 'weapon';
+    const equipped = Boolean(item.slot);
+    const compare = compareUid === item.uid ? compareDeltas(item) : '';
+    const upgrade = !equipped && itemIsUpgrade(item);
+    const deltas = equipped ? '' : `<div class="inventory-delta-chips">${itemDeltas(item).map(({ label, delta, good, value }) => `<span class="${good ? 'delta-up' : 'delta-down'}">${label} ${delta > 0 ? '+' : ''}${value}</span>`).join('') || '<span>변화 없음</span>'}</div>`;
+    return `<div class="item-row ${compare ? 'selected' : ''}"><div class="item-details">${itemDetails(item)}${equipped ? '<span class="equipped-badge">착용 중</span>' : ''}${upgrade ? '<span class="upgrade-badge">▲ 더 좋음</span>' : ''}</div><div class="item-actions"><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${(item.requiredLevel ?? base?.requiredLevel) > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></div>${deltas}${compare}</div>`;
+  }).join('');
+  const slotCards = EQUIPMENT_SLOTS.map((slot) => {
+    const equipped = inventory.find((item) => item.slot === slot.key);
+    let cardText = '<strong>비어 있음</strong>';
+    if (equipped) {
+      const base = ITEMS[equipped.itemId];
+      const statParts = itemStat(equipped).split(' · ');
+      const stat = statParts[base?.family ? 1 : 0];
+      const family = base?.family;
+      const familyTag = family
+        ? `<span class="equipment-family-tag">${escapeHtml(FAMILY_NAMES[family])}</span>`
+        : '';
+      cardText = `<strong class="rarity-${equipped.rarity}">${escapeHtml(itemName(equipped))}</strong>${familyTag}<small>+${equipped.enhance ?? 0} · ${escapeHtml(stat)}</small>`;
+    }
+    return `<article class="equipment-slot-card ${equipped ? `rarity-border-${equipped.rarity}` : ''}" data-slot-filter="${slot.key}" tabindex="0" role="button"><div class="slot-glyph">${slot.glyph}<small>${slot.label}</small></div><div class="equipment-slot-info">${cardText}</div><button data-unequip="${slot.key}" ${equipped ? '' : 'hidden'}>해제</button></article>`;
+  }).join('');
+  const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (
+    `<button data-slot-filter="${slot.key}" class="${filter === slot.key ? 'active' : ''}">${slot.label}</button>`
+  )).join('');
+  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2><section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
+  updateInventoryUpgradeBadge();
+}
+
+function renderPanel(kind, compareUid = '') {
+  if (kind !== 'party-finder') stopPartyFinderPolling();
+  hubPanel.hidden = false;
+  hubPanel.dataset.kind = kind;
+  if (kind === 'board') renderBoard();
+  if (kind === 'party-finder') openPartyFinder();
+  if (kind === 'inventory') renderInventory(compareUid);
+  if (kind === 'blacksmith') {
+    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 ? 'disabled' : ''}>강화</button></div></div>`).join('');
+    hubPanel.innerHTML = `<h2>대장장이 · 강화</h2><p>실패해도 장비는 파괴되거나 하락하지 않습니다. 보유 골드 ${character.gold}G</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
+  }
+  if (kind === 'merchant') {
+    const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
+    const familyWeapons = FAMILY_STARTER_WEAPONS.map(({ itemId, price }) => (
+      `<div class="hub-row"><span>${escapeHtml(ITEMS[itemId].name)}<small>체험 · 공용 · ${price}G</small></span><button data-buy-family-weapon="${itemId}" ${character.gold < price || inventory.length >= 40 ? 'disabled' : ''}>구매</button></div>`
+    )).join('');
+    hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>계열 체험 무기</h3>${familyWeapons}${rows}<button data-close>닫기</button>`;
+  }
+  if (kind === 'character') {
+    const stats = calculatePlayerStats(character.level, equippedItems());
+    const family = equipmentLook(equippedItems()).family;
+    const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+    const skillDescriptions = skillNames.map((name, index) => (
+      `<li><strong>${SKILLS[name].name}</strong> · ${FAMILY_SKILL_COPY[family][index]}</li>`
+    )).join('');
+    const gear = EQUIPMENT_SLOTS.map((slot) => {
+      const item = inventory.find((entry) => entry.slot === slot.key);
+      return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
+    }).join('');
+    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+  }
+  hubPanel.focus();
+}
+
+async function startStage(stageId) {
+  if (!stageIsUnlocked(stageId) && !DEV_MODE) return;
+  const tutorialSortie = resolveTutorialSortie(stageId, tutorialState);
+  const stageToStart = tutorialSortie.stageId;
+  if (tutorialSortie.beginCombat) {
+    updateTutorial({ type: 'beginCombat' });
+    await tutorialSaveChain;
+  }
+  const selectedStage = STAGE_LIST.find((entry) => entry.id === stageToStart);
+  localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
+  if (stageToStart === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
+  if (stageToStart === 'K1') localStorage.setItem('devinarok.k1-entered', '1');
+  stopWorld();
+  partyClient?.close();
+  partyClient = null;
+  $('#hub-party-button').hidden = true;
+  currentStageId = stageToStart;
+  settled = false;
+  attackInputAssistant.reset();
+  hubUi.hidden = true;
+  hubPanel.hidden = true;
+  pauseMenu.hidden = true;
+  resultPanel.hidden = true;
+  $('#controls').hidden = false;
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageToStart);
+  $('#boss-name').textContent = stageToStart === 'KB'
+    ? '해골 왕'
+    : stageToStart === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+  updateBossIntro(stageToStart);
+  $('#party-hud').hidden = true;
+  $('#party-rtt').hidden = true;
+  updateFamilySkillControls(equipmentLook(equippedItems()).family);
+  world = createStageWorld({
+    seed: crypto.getRandomValues(new Uint32Array(1))[0],
+    stageId: stageToStart,
+    playerId: character.id,
+    character: { level: character.level, potions: character.potions, equipment: equippedItems() },
+  });
+  tutorialLastX = null;
+  tutorialLastZ = null;
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
+  renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY, world);
+  renderer.localPlayerId = character.id;
+  const [, music] = await Promise.all([renderer.ready, loadAudioForScene(stageToStart)]);
+  applySettings();
+  await audio.unlock();
+  audio.setMusic(music, { crossfadeMs: 1000 });
+  $('#stage-name').textContent = world.arena.name;
+  renderTutorialCard();
+  if (['CB', 'FB', 'KB'].includes(stageToStart)) {
+    $('#boss-intro').hidden = false;
+    setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
+  }
+  let seenEventId = world.nextEventId - 1;
+  loop = new FixedStepLoop({
+    world,
+    playerId: character.id,
+    input,
+    buildInput: (rawInput, current) => {
+      const player = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+      const aimed = buildRangedAimInput(rawInput, player, current);
+      return attackInputAssistant.build(aimed, current, player, { autoAttack: autoAttackEnabled() });
+    },
+    render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
+    onTick: (current) => {
+      updateHud(current);
+      trackTutorialMovement(current);
+      for (const event of current.events) {
+        if (event.eventId <= seenEventId) continue;
+        seenEventId = event.eventId;
+        handleAudioEvent(event, current);
+      }
+      if (current.outcome && !settled) settleStage(current.outcome);
+    },
+  });
+  loop.start();
+}
+
+function updateHud(current) {
+  const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id)
+    ?? current.entities.find((entity) => entity.kind === 'player');
+  if (hero) {
+    $('#hud-name').textContent = `${character.name} · Lv.${character.level}`;
+    $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
+    $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
+    $('#potion-count').textContent = String(hero.potions);
+    for (const [id, buttonValue, max] of [[1, 4, 180], [2, 8, 240], [3, 16, 360]]) {
+      const button = $(`#controls [data-button="${buttonValue}"]`);
+      if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
+    }
+    const dodgeButton = $('#controls [data-button="2"]');
+    dodgeButton?.style.setProperty('--cooldown', `${(hero.dodgeCooldownTicks / DODGE_COOLDOWN_TICKS) * 100}%`);
+    $('#controls .attack-button')?.classList.toggle('counter-ready', hero.counterReadyTicks > 0);
+  }
+  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(current.stageId);
+  const boss = current.entities.find((entity) => entity.boss);
+  if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
+}
+
+function buildSettlement(outcome, result) {
+  firstForestUnlock = false;
+  const ops = [
+    { type: 'gainXp', amount: result.xp },
+    { type: 'grantGold', amount: result.gold },
+    { type: 'setPotions', count: result.potions },
+  ];
+  let autoSold = 0;
+  if (outcome === 'clear') {
+    firstForestUnlock = currentStageId === 'CB' && !character.clearedStages.includes('CB');
+    const capacity = Math.max(0, 40 - inventory.length);
+    const uniqueItems = rekeySettlementItems(result.items, inventory);
+    uniqueItems.forEach((item, index) => {
+      if (index < capacity) {
+        ops.push({ type: 'grantItem', uid: item.uid, itemId: item.itemId, rarity: item.rarity, enhance: item.enhance, ilvl: item.ilvl, affixes: item.affixes, legendaryId: item.legendaryId });
+      } else {
+        autoSold += Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10));
+      }
+    });
+    if (autoSold) ops.push({ type: 'grantGold', amount: autoSold });
+    ops.push({ type: 'clearStage', stageId: currentStageId });
+  }
+  return { ops, autoSold };
+}
+
+function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) {
+  const saved = !error;
+  const earnedItems = outcome === 'clear' && result.items.length
+    ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
+    : '';
+  const progression = outcome === 'clear' && currentStageId === 'KB'
+    ? '<p>모든 지역을 정복했어요</p>'
+    : outcome === 'clear' && currentStageId === 'FB'
+      ? '<p>3지역 · 해골 왕의 성채가 열렸어요</p>'
+      : outcome === 'clear' && firstForestUnlock
+        ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
+        : '';
+  const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  if (!saved) {
+    resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
+    $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
+    $('#result-discard').addEventListener('click', enterHub, { once: true });
+  } else {
+    $('#result-return').addEventListener('click', enterHub, { once: true });
+  }
+  resultPanel.hidden = false;
+  resultPanel.querySelector('[role="dialog"]')?.focus();
+}
+
+async function attemptSettlement(outcome, result, settlementId) {
+  let autoSold = 0;
+  try {
+    const previousLevel = character.level;
+    await reloadCharacter();
+    const settlement = buildSettlement(outcome, result);
+    autoSold = settlement.autoSold;
+    character = await saves.commit({
+      characterId: character.id,
+      baseRev: character.rev,
+      ops: settlement.ops,
+      idempotencyKey: settlementId,
+    });
+    if (character.level > previousLevel) audio.play('reward-chime');
+    inventory = await saves.listItems(character.id);
+    renderSettlement(outcome, result, { autoSold });
+  } catch (error) {
+    console.error('Settlement failed', error);
+    renderSettlement(outcome, result, { autoSold, error });
+  }
+}
+
+async function settleStage(outcome = world?.outcome, result = world?.result, idempotencyKey = null) {
+  if (!world || !result || settled) return;
+  if (outcome === 'clear') updateTutorial({ type: 'stageComplete' });
+  await tutorialSaveChain;
+  settled = true;
+  loop?.pause();
+  settlementId = idempotencyKey ?? crypto.randomUUID();
+  await attemptSettlement(outcome, result, settlementId);
+}
+
+createForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const name = new FormData(createForm).get('name');
+  const id = crypto.randomUUID();
+  await saves.commit({ characterId: id, baseRev: 0, ops: [{ type: 'createCharacter', name, kind: 'knight' }] });
+  await refreshTitle();
+});
+$('#start-button').addEventListener('click', () => {
+  enterHub().catch((error) => { console.error(error); $('#toast').textContent = '여관을 열지 못했습니다.'; });
+});
+$('#pause-button').addEventListener('click', () => {
+  if (world?.mode !== 'stage') return;
+  pauseMenu.hidden = false;
+  $('#continue-button').focus();
+  if (!partyClient) loop?.pause();
+});
+$('#hub-party-button').addEventListener('click', () => {
+  audio.play('click');
+  openPartyFinder();
+});
+$('#continue-button').addEventListener('click', () => { pauseMenu.hidden = true; loop?.resume(); });
+$('#retreat-button').addEventListener('click', () => {
+  if (world?.mode !== 'stage') return;
+  if (partyClient) {
+    partyClient.leave();
+    pauseMenu.hidden = true;
+    return;
+  }
+  retreatStage(world);
+  settleStage('retreat');
+});
+$('#mute-button').addEventListener('click', () => { void saveSetting('muted', !settings.muted); });
+$('#settings-button').addEventListener('click', () => {
+  settingsReturnToPause = !pauseMenu.hidden;
+  pauseMenu.hidden = true;
+  $('#settings-panel').hidden = false;
+  $('#bgm-volume').focus();
+});
+function closeSettings() {
+  $('#settings-panel').hidden = true;
+  pauseMenu.hidden = !settingsReturnToPause;
+  settingsReturnToPause = false;
+  $('#settings-button').focus();
+}
+$('#settings-close-button').addEventListener('click', closeSettings);
+$('#settings-panel').addEventListener('click', (event) => {
+  if (event.target === $('#settings-panel')) closeSettings();
+});
+for (const [id, key] of [['bgm-volume', 'bgmVolume'], ['sfx-volume', 'sfxVolume']]) {
+  const slider = $(`#${id}`);
+  slider.addEventListener('input', () => {
+    settings = { ...settings, [key]: Number(slider.value) };
+    applySettings();
+  });
+  slider.addEventListener('change', () => { void saveSetting(key, Number(slider.value)); });
+}
+$('#settings-mute-button').addEventListener('click', () => { void saveSetting('muted', !settings.muted); });
+$('#quality-setting').addEventListener('change', (event) => { void saveSetting('quality', event.currentTarget.value); });
+$('#reduced-motion-setting').addEventListener('change', (event) => { void saveSetting('reducedMotion', event.currentTarget.checked); });
+$('#large-text-setting').addEventListener('change', (event) => { void saveSetting('largeText', event.currentTarget.checked); });
+$('#haptics-setting').addEventListener('change', (event) => { void saveSetting('haptics', event.currentTarget.checked); });
+$('#telegraph-setting').addEventListener('change', (event) => { void saveSetting('telegraphEmphasis', event.currentTarget.checked); });
+$('#auto-attack-setting').addEventListener('change', (event) => { void saveSetting('autoAttack', event.currentTarget.checked); });
+$('#tutorial-skip').addEventListener('click', () => updateTutorial({ type: 'skip' }));
+$('#tutorial-replay-button').addEventListener('click', async () => {
+  updateTutorial({ type: 'replay' });
+  await tutorialSaveChain;
+  await startStage('C1');
+});
+$('#hub-ui').addEventListener('click', async (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  audio.play('click');
+  if (button.dataset.panel === 'sanctuary') {
+    if (partyClient) setPartyToast('파티 중에는 들어갈 수 없어요');
+    else await enterSanctuary();
+    return;
+  }
+  if (button.dataset.slotFilter) { renderInventory('', button.dataset.slotFilter); return; }
+  if (button.hasAttribute('data-party-finder')) { openPartyFinder(); return; }
+  if (button.hasAttribute('data-party-quick')) { await quickJoinFromFinder(); return; }
+  if (button.hasAttribute('data-party-lookup-retry')) {
+    partyQuickLookupFailed = false;
+    setPartyToast('');
+    await quickJoinFromFinder();
+    return;
+  }
+  if (button.hasAttribute('data-party-lookup-create')) {
+    partyQuickLookupFailed = false;
+    setPartyToast('');
+    try { await connectParty(); } catch (error) { setPartyToast(partyJoinErrorMessage(error), { error: true }); }
+    return;
+  }
+  if (button.hasAttribute('data-party-refresh')) { await refreshPartyRooms({ loading: true }); return; }
+  if (button.dataset.partyJoin) {
+    try {
+      await connectParty(button.dataset.partyJoin);
+    } catch (error) {
+      setPartyToast(partyJoinErrorMessage(error), { error: true });
+      partyFinderState = 'list';
+      renderPartyFinder();
+      void refreshPartyRooms({ loading: true });
+      if (partyFinderTimer === null) partyFinderTimer = setInterval(() => void refreshPartyRooms(), 5000);
+    }
+    return;
+  }
+  if (button.hasAttribute('data-party-create')) {
+    try { await connectParty(); } catch (error) { setPartyToast(partyJoinErrorMessage(error), { error: true }); }
+    return;
+  }
+  if (button.hasAttribute('data-party-share')) {
+    const url = inviteLink(partyClient.roomCode);
+    try {
+      if (navigator.share) await navigator.share({ title: '데비나로크 파티 초대', url });
+      else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setPartyToast('초대 링크를 복사했어요');
+      } else setPartyToast(url);
+    } catch {}
+    return;
+  }
+  if (button.hasAttribute('data-party-ready')) {
+    const local = partyClient?.lobby?.players?.find((member) => member.playerId === partyClient.playerId);
+    partyClient?.setReady(!local?.ready);
+    return;
+  }
+  if (button.hasAttribute('data-party-start')) { partyClient?.start(); return; }
+  if (button.hasAttribute('data-party-close')) {
+    stopPartyFinderPolling();
+    partyClient?.leave();
+    partyClient?.close();
+    partyClient = null;
+    $('#hub-party-button').hidden = false;
+    $('#hub-ui [data-panel="sanctuary"]').disabled = false;
+    $('#sanctuary-party-disabled').hidden = true;
+    renderPanel('board');
+    return;
+  }
+  if (button.dataset.panel) {
+    const tutorialStep = { board: 'board', blacksmith: 'blacksmith', inventory: 'equipment' }[button.dataset.panel];
+    if (tutorialStep) updateTutorial({ type: tutorialStep });
+    renderPanel(button.dataset.panel);
+  }
+  if (button.hasAttribute('data-close')) {
+    stopPartyFinderPolling();
+    const wasQuickJoining = partyQuickJoining;
+    partyQuickAbortController?.abort();
+    partyQuickAbortController = null;
+    partyQuickJoining = false;
+    if (wasQuickJoining) {
+      partyClient?.leave();
+      partyClient?.close();
+      partyClient = null;
+    }
+    $('#hub-party-button').hidden = false;
+    hubPanel.hidden = true;
+  }
+  if (button.dataset.sortie) startStage(button.dataset.sortie);
+  if (button.dataset.compare) renderPanel('inventory', button.dataset.compare);
+  if (button.dataset.equip) {
+    const equippedItem = inventory.find((item) => item.uid === button.dataset.equip);
+    const previousFamily = equipmentLook(equippedItems()).family;
+    await applyOps([{ type: 'equip', uid: button.dataset.equip, slot: button.dataset.slot }]);
+    refreshHubPlayer();
+    renderPanel(hubPanel.dataset.kind);
+    const nextFamily = equipmentLook(equippedItems()).family;
+    if (ITEMS[equippedItem?.itemId]?.slot === 'weapon' && previousFamily !== nextFamily) showFamilyChangeToast(nextFamily);
+  }
+  if (button.dataset.unequip) {
+    await applyOps([{ type: 'unequip', slot: button.dataset.unequip }]);
+    refreshHubPlayer();
+    renderPanel(hubPanel.dataset.kind);
+  }
+  if (button.dataset.sell) {
+    await applyOps([{ type: 'sellItem', uid: button.dataset.sell }]);
+    updateInventoryUpgradeBadge();
+    renderPanel(hubPanel.dataset.kind);
+  }
+  if (button.dataset.enhance) {
+    const roll = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
+    await applyOps([{ type: 'enhanceItem', uid: button.dataset.enhance, roll }]);
+    refreshHubPlayer();
+    renderPanel('blacksmith');
+  }
+  if (button.hasAttribute('data-buy-potion')) {
+    await applyOps([{ type: 'buyPotion', count: 1 }]);
+    renderPanel('merchant');
+  }
+  if (button.dataset.buyFamilyWeapon) {
+    const starter = FAMILY_STARTER_WEAPONS.find(({ itemId }) => itemId === button.dataset.buyFamilyWeapon);
+    if (!starter || character.gold < starter.price || inventory.length >= 40) return;
+    await applyOps([
+      { type: 'spendGold', amount: starter.price },
+      { type: 'grantItem', uid: crypto.randomUUID(), itemId: starter.itemId, rarity: 'common', ilvl: 1, enhance: 0, affixes: [] },
+    ]);
+    renderPanel('merchant');
+  }
+});
+hubPanel.addEventListener('click', (event) => {
+  const card = event.target.closest('.equipment-slot-card');
+  if (!card || event.target.closest('[data-unequip]')) return;
+  renderInventory('', card.dataset.slotFilter);
+});
+hubPanel.addEventListener('keydown', (event) => {
+  const card = event.target.closest('.equipment-slot-card');
+  if (!card || event.target.closest('button') || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  renderInventory('', card.dataset.slotFilter);
+});
+hubUi.addEventListener('submit', (event) => {
+  if (event.target.id !== 'party-join-form') return;
+  event.preventDefault();
+  try {
+    void connectParty($('#party-code').value).catch((error) => setPartyToast(partyJoinErrorMessage(error), { error: true }));
+  } catch (error) { setPartyToast(error.message, { error: true }); }
+});
+hubPanel.addEventListener('change', (event) => {
+  if (event.target.id === 'party-stage-select') partyClient?.selectStage(event.target.value);
+  if (event.target.matches('[data-party-public]')) partyClient?.setPublic(event.target.checked);
+});
+gameScreen.addEventListener('click', (event) => {
+  const station = event.target.closest('.npc-hotspot');
+  if (!station || world?.mode !== 'hub') return;
+  audio.play('click');
+  if (station.dataset.panel === 'sanctuary') {
+    if (partyClient) setPartyToast('파티 중에는 들어갈 수 없어요');
+    else void enterSanctuary();
+    return;
+  }
+  renderPanel(station.dataset.panel);
+});
+$('#sanctuary-interact').addEventListener('click', interactSanctuary);
+$('#sanctuary-cancel').addEventListener('click', cancelSanctuary);
+$('#sanctuary-exit').addEventListener('click', async () => {
+  resetRitual(sanctuaryState ?? createRitualState());
+  sanctuaryState = null;
+  stopWorld();
+  await enterHub();
+});
+window.addEventListener('pointerdown', (event) => {
+  if (event.pointerType === 'touch') document.documentElement.classList.add('touch-mode');
+}, { passive: true });
+document.addEventListener('keydown', (event) => {
+  const settingsPanel = $('#settings-panel');
+  const container = !settingsPanel.hidden ? settingsPanel.querySelector('[role="dialog"]')
+    : !pauseMenu.hidden ? pauseMenu.querySelector('[role="dialog"]')
+      : !hubPanel.hidden ? hubPanel
+        : !resultPanel.hidden ? resultPanel.querySelector('[role="dialog"]') : null;
+  if (!container) return;
+  if (event.code === 'Escape') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!settingsPanel.hidden) closeSettings();
+    else if (!hubPanel.hidden) hubPanel.querySelector('[data-close], [data-party-close]')?.click();
+    else if (!pauseMenu.hidden) {
+      pauseMenu.hidden = true;
+      loop?.resume();
+      $('#pause-button').focus();
+    } else ($('#result-return') ?? $('#result-retry') ?? $('#result-discard'))?.click();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = [...container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),summary,[tabindex]:not([tabindex="-1"])')]
+    .filter((element) => !element.hidden && element.offsetParent !== null);
+  if (!focusable.length) {
+    event.preventDefault();
+    container.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!container.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus();
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}, true);
+
+const reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+reducedMotionMedia.addEventListener('change', () => {
+  if (settings.reducedMotion === null) applySettings();
+});
+
+window.addEventListener('keydown', (event) => {
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const editable = event.target instanceof HTMLElement && event.target.closest('input, select, textarea, [contenteditable="true"]');
+  if (
+    event.code === 'KeyT' &&
+    !event.repeat &&
+    !coarsePointer &&
+    !editable &&
+    pauseMenu.hidden &&
+    $('#settings-panel').hidden &&
+    hubPanel.hidden &&
+    resultPanel.hidden
+  ) {
+    event.preventDefault();
+    const enabled = !autoAttackEnabled();
+    void saveSetting('autoAttack', enabled);
+    showActionToast(`자동 공격 ${enabled ? '켜짐' : '꺼짐'}`);
+    return;
+  }
+  if (sanctuaryState && world?.arena === SANCTUARY_ARENA) {
+    if (event.code === 'KeyE') {
+      event.preventDefault();
+      interactSanctuary();
+      return;
+    }
+    if (event.code === 'KeyR' || event.code === 'Escape') {
+      event.preventDefault();
+      if (!cancelSanctuary() && event.code === 'Escape') {
+        $('#sanctuary-exit').click();
+      }
+      return;
+    }
+  }
+  handlePauseKey(event.code, { loop, partyClient, world, pauseMenu });
+});
+
+saves = await createSaveRepository();
+settings = await saves.loadSettings();
+applySettings();
+await refreshTitle();
+if (DEV_MODE) {
+  window.__devinarok = {
+    get world() { return world; },
+    get renderer() { return renderer; },
+    get loop() { return loop; },
+    get character() { return character; },
+    get inventory() { return inventory; },
+    get party() { return partyClient; },
+    buttons: BUTTONS,
+    comboTimelines: COMBO_TIMELINES,
+    stages: STAGE_LIST,
+    startStage,
+    createParty: () => connectParty(),
+    joinParty: (code) => connectParty(code),
+    enterPartyCode(code) { return connectParty(code); },
+    getPartyWorld() { return partyClient?.viewWorld(); },
+    setTutorialStep(step) {
+      if (!TUTORIAL_COPY[step]) return false;
+      tutorialState = { ...tutorialState, step, active: true, completed: false, skipped: false };
+      renderTutorialCard();
+      return true;
+    },
+    getNetBotInput,
+    renderPartyFrame,
+    setPartyHudCaptureFreeze,
+    setPartyInputProvider,
+    tickPartyInput,
+    setPartyInputAutoDrive,
+    get partyInputSeq() { return input?.seq ?? null; },
+    get partyInputDriverStats() { return { ...partyInputDriverStats }; },
+    enterHub,
+    settleStage,
+    forceOutcome(outcome = 'clear') { completeStage(world, outcome); return settleStage(outcome); },
+    step(inputsByPlayerId) { return world && step(world, inputsByPlayerId); },
+    render(previous = world) { if (renderer && world) renderer.render(previous, world, 1); },
+    async grantDevItem(item = {}) {
+      const uid = item.uid ?? `dev:${character.rev}:${inventory.length}`;
+      const rolled = rollStageItem(world, { stageLevel: item.ilvl ?? 1, forcedRarity: item.rarity ?? 'rare' });
+      await applyOps([{
+        type: 'grantItem',
+        uid,
+        itemId: item.itemId ?? rolled.itemId,
+        rarity: item.rarity ?? rolled.rarity,
+        ilvl: item.ilvl ?? rolled.ilvl,
+        enhance: item.enhance ?? 0,
+        affixes: item.affixes ?? rolled.affixes,
+        legendaryId: rolled.legendaryId,
+      }]);
+      return uid;
+    },
+    async grantDevGold(amount = 500) { await applyOps([{ type: 'grantGold', amount }]); return character.gold; },
+    addLoot(item = {}) {
+      const player = world.entities.find((entry) => entry.kind === 'player');
+      const entity = {
+        id: world.nextEntityId++,
+        kind: 'loot',
+        lootType: item.lootType ?? 'item',
+        x: item.x ?? player?.x ?? 0,
+        z: item.z ?? player?.z ?? 0,
+        radius: 0.18,
+        item: item.lootType === 'gold' ? null : { itemId: item.itemId ?? 'rusted-sword', rarity: item.rarity ?? 'rare' },
+        gold: item.lootType === 'gold' ? item.gold ?? 50 : 0,
+      };
+      world.entities.push(entity);
+      return entity;
+    },
+    async reloadSave() { await reloadCharacter(); return { character, inventory }; },
+  };
+}
