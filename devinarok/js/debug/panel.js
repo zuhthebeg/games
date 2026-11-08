@@ -359,14 +359,6 @@ export function mountDebugPanel(context) {
     for (const buttonElement of panel.querySelectorAll('[data-debug-tab]')) {
       buttonElement.setAttribute('aria-selected', String(buttonElement.dataset.debugTab === tab));
     }
-    const heading = {
-      quick: '최근 실행과 빠른 프리셋',
-      character: '캐릭터와 진행 조작',
-      combat: '솔로 전투 도구',
-      stages: '스테이지와 재현 시드',
-      save: '백업과 세이브',
-      info: '실행 정보',
-    }[tab];
     const contentHtml = {
       quick: renderQuick,
       character: renderCharacter,
@@ -375,7 +367,7 @@ export function mountDebugPanel(context) {
       save: renderSave,
       info: renderInfo,
     }[tab]?.() ?? '';
-    content.innerHTML = `<h2>${heading}</h2>${contentHtml}`;
+    content.innerHTML = contentHtml;
     if (inParty() && tab !== 'info') {
       for (const control of content.querySelectorAll('input, select, textarea')) control.disabled = true;
     }
