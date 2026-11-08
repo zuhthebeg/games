@@ -25,10 +25,12 @@ import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
 import { SIM_HASH } from './net/sim-version.js';
 import { AFFIXES } from './content/affixes.js';
-import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
+import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
-import { HUB_ARENA, isStageUnlocked, STAGE_LIST } from './content/stages.js';
+import {
+  DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, stageClearKey, STAGE_LIST,
+} from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
   createStageWorld, retreatStage, rollStageItem, step,
@@ -71,6 +73,8 @@ let tutorialLastZ = null;
 const audio = new AudioManager();
 const attackInputAssistant = new AttackInputAssistant();
 let currentStageId = null;
+let currentStageDifficulty = 'normal';
+let boardDifficulty = 'normal';
 let partyClient = null;
 let partyFrame = null;
 let partyPreviousWorld = null;
@@ -517,8 +521,8 @@ function refreshHubPlayer() {
   updateHud(world);
 }
 
-function stageIsUnlocked(stageId) {
-  return isStageUnlocked(stageId, character.clearedStages);
+function stageIsUnlocked(stageId, difficulty = 'normal') {
+  return isStageUnlocked(stageId, character.clearedStages, difficulty);
 }
 
 function drawHub() {
@@ -763,7 +767,6 @@ const STAT_NAMES = {
 };
 
 const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
-const FAMILY_ICONS = { sword: '🛡️', crossbow: '🏹', staff: '🔮' };
 const FAMILY_SKILL_COPY = {
   sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.'],
   crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.'],
@@ -811,7 +814,9 @@ function itemDetails(item) {
     const unit = definition?.unit ?? (affix.id === 'spinCooldownSeconds' ? '초' : '');
     return `<small class="affix-line">${formatStat(affix.id, affix.value, unit)}</small>`;
   }).join('');
-  return `<strong class="item-name rarity-${item.rarity}">${itemName(item)}</strong><small>${itemStat(item)}</small>${affixes || '<small>추가 옵션 없음</small>'}`;
+  const set = ITEM_SETS[ITEMS[item.itemId]?.setId];
+  const setLabel = set ? `<small class="set-item-name">세트 · ${escapeHtml(set.name)}</small>` : '';
+  return `<strong class="item-name rarity-${item.rarity}">${itemName(item)}</strong><small>${itemStat(item)}</small>${setLabel}${affixes || '<small>추가 옵션 없음</small>'}`;
 }
 
 const COMPARISON_STATS = [
@@ -884,24 +889,57 @@ const EQUIPMENT_SLOTS = [
 ];
 
 function renderBoard() {
+  const difficulty = boardDifficulty;
+  const tier = DIFFICULTIES[difficulty];
+  const tierUnlocked = isDifficultyUnlocked(difficulty, character.clearedStages);
+  const tierLock = difficulty === 'nightmare'
+    ? '해골 왕(보통)을 쓰러뜨리면 열려요'
+    : difficulty === 'hell' ? '해골 왕(악몽)을 쓰러뜨리면 열려요' : '';
+  const tabs = Object.entries(DIFFICULTIES).map(([id, entry]) => {
+    const unlocked = isDifficultyUnlocked(id, character.clearedStages);
+    const condition = id === 'nightmare'
+      ? '해골 왕(보통)을 쓰러뜨리면 열려요'
+      : id === 'hell' ? '해골 왕(악몽)을 쓰러뜨리면 열려요' : '';
+    return `<button class="difficulty-tab${id === difficulty ? ' active' : ''}${unlocked ? '' : ' locked'}" data-board-difficulty="${id}" aria-pressed="${id === difficulty}">${unlocked ? '' : '잠김 · '}${entry.label}${unlocked ? '' : `<small>${condition}</small>`}</button>`;
+  }).join('');
   const rows = STAGE_LIST.map((stage) => {
-    const unlocked = stageIsUnlocked(stage.id);
-    const cleared = character.clearedStages.includes(stage.id);
+    const unlocked = stageIsUnlocked(stage.id, difficulty);
+    const key = stageClearKey(stage.id, difficulty);
+    const cleared = character.clearedStages.includes(key);
     const section = stage.id === 'C1' ? '<h3>1지역 · 무너진 지하묘지</h3>'
       : stage.id === 'F1' ? '<h3>2지역 · 잿빛 숲</h3>'
         : stage.id === 'K1' ? '<h3>3지역 · 해골 왕의 성채</h3>' : '';
-    const newBadge = stage.id === 'F1' && character.clearedStages.includes('CB')
+    const newBadge = difficulty === 'normal' && stage.id === 'F1' && character.clearedStages.includes('CB')
       && !localStorage.getItem('devinarok.f1-entered') ? '<b class="stage-new">NEW</b>' : '';
-    const lockText = !unlocked && stage.region === 2 && !character.clearedStages.includes('CB')
+    const regionGate = stage.region === 2 ? 'CB' : stage.region === 3 ? 'FB' : null;
+    const previousStage = STAGE_LIST[STAGE_LIST.findIndex((entry) => entry.id === stage.id) - 1];
+    const normalLockText = stage.region === 2 && !character.clearedStages.includes('CB')
       ? '기사 전당 클리어 후 열려요'
-      : !unlocked ? `${STAGE_LIST[STAGE_LIST.findIndex((entry) => entry.id === stage.id) - 1]?.name ?? ''} 클리어 후 열려요`
-        : cleared ? '클리어' : '도전 가능';
-    const warning = character.level < stage.recommendedLevel - 1 ? ' is-underlevel' : '';
+      : `${previousStage?.name ?? ''} 클리어 후 열려요`;
+    const lockText = !tierUnlocked ? tierLock
+      : !unlocked && difficulty === 'normal' ? normalLockText
+      : !unlocked && regionGate && !character.clearedStages.includes(stageClearKey(regionGate, difficulty))
+        ? `${STAGE_LIST.find((entry) => entry.id === regionGate)?.name ?? ''}(${tier.label})을 쓰러뜨리면 열려요`
+        : !unlocked ? `${previousStage?.name ?? ''}(${tier.label})을 쓰러뜨리면 열려요`
+          : cleared ? '클리어' : '도전 가능';
+    const bestTicks = character.records?.[key];
+    const bestLabel = Number.isInteger(bestTicks) ? ` · 최고 ${formatClearTime(bestTicks)}` : '';
+    const levelLabel = difficulty === 'normal'
+      ? `권장 Lv.${stage.recommendedLevel}`
+      : `${tier.label} · Lv.${effectiveStageLevel(stage, difficulty)}`;
+    const warningLevel = difficulty === 'normal' ? stage.recommendedLevel : effectiveStageLevel(stage, difficulty);
+    const warning = character.level < warningLevel - 1 ? ' is-underlevel' : '';
     const action = cleared ? '재도전' : unlocked ? '출정' : '잠김';
     const pulse = unlocked && ['board', 'blacksmith'].includes(tutorialState?.step) ? ' tutorial-pulse' : '';
-    return `${section}<div class="hub-row${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>권장 Lv.${stage.recommendedLevel} · ${lockText}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
+    return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
-  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p>${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+  const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">잠김 · ${tierLock}</p>`;
+  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+}
+
+function formatClearTime(ticks) {
+  const seconds = Math.floor(ticks / 30);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 function stopPartyFinderPolling() {
@@ -1087,19 +1125,23 @@ function renderPartyLobby() {
   const isHost = partyClient.lobby?.hostId === partyClient.playerId;
   const allReady = party.length > 0 && party.every((member) => member.connected && member.ready);
   const stage = partyClient.lobby?.stageId ?? 'C1';
-  const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id) : entry.id === stage)
+  const difficulty = partyClient.lobby?.difficulty ?? 'normal';
+  const difficultyOptions = Object.entries(DIFFICULTIES)
+    .filter(([id]) => isHost ? isDifficultyUnlocked(id, character.clearedStages) : id === difficulty)
+    .map(([id, entry]) => `<option value="${id}" ${id === difficulty ? 'selected' : ''}>${entry.label}</option>`).join('');
+  const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id, difficulty) : entry.id === stage)
     .map((entry) => `<option value="${entry.id}" ${entry.id === stage ? 'selected' : ''}>${entry.name}</option>`).join('');
   const members = party.map((member) => {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const family = ['sword', 'crossbow', 'staff'].includes(member.family) ? member.family : 'sword';
-    return `<div class="party-lobby-member"><span>${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
+    return `<div class="party-lobby-member"><span>${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
   }).join('');
   const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
   hubPanel.dataset.kind = 'party';
   const isPublic = partyClient.lobby?.public !== false;
   const startLabel = allReady ? '출정' : '모두 준비하면 출정할 수 있어요';
-  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
+  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>난이도<select id="party-difficulty-select" ${isHost ? '' : 'disabled'}>${difficultyOptions}</select></label><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
   syncPartyFeedback();
 }
 
@@ -1200,6 +1242,7 @@ async function startPartyStage(message) {
   stopWorld();
   $('#hub-party-button').hidden = true;
   currentStageId = message.stageId;
+  currentStageDifficulty = message.difficulty ?? 'normal';
   const selectedStage = STAGE_LIST.find((entry) => entry.id === message.stageId);
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
   if (message.stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
@@ -1444,7 +1487,25 @@ function getNetBotInput() {
 function renderInventory(compareUid = '', filter = inventoryFilter) {
   inventoryFilter = filter;
   const slotOrder = new Map(EQUIPMENT_SLOTS.map((slot, index) => [slot.key, index]));
-  const rarityOrder = { common: 0, magic: 1, rare: 2, legendary: 3 };
+  const rarityOrder = { common: 0, magic: 1, rare: 2, legendary: 3, set: 4 };
+  const currentEquipment = equippedItems();
+  const family = equipmentLook(currentEquipment).family;
+  const setCounts = {};
+  for (const item of currentEquipment) {
+    const setId = ITEMS[item.itemId]?.setId;
+    if (ITEM_SETS[setId]) setCounts[setId] = (setCounts[setId] ?? 0) + 1;
+  }
+  const ownedSetIds = new Set(inventory.map((item) => ITEMS[item.itemId]?.setId).filter((id) => ITEM_SETS[id]));
+  const setBonuses = Object.entries(ITEM_SETS).filter(([setId]) => ownedSetIds.has(setId) || setCounts[setId])
+    .map(([setId, set]) => {
+      const count = setCounts[setId] ?? 0;
+      const active = set.family === family;
+      const bonuses = set.bonuses.map((bonus) => (
+        `<small class="${active && count >= bonus.pieces ? 'set-bonus-active' : ''}">${bonus.pieces}세트 · ${escapeHtml(bonus.description)}</small>`
+      )).join('');
+      return `<article class="set-bonus-card"><strong class="rarity-set">${escapeHtml(set.name)} · ${count}/5 착용</strong>${bonuses}</article>`;
+    }).join('');
+  const setBonusSection = setBonuses ? `<section class="set-bonus-list" aria-label="세트 효과">${setBonuses}</section>` : '';
   const filteredItems = inventory
     .filter((item) => filter === 'all' || (ITEMS[item.itemId]?.slot ?? 'weapon') === filter)
     .sort((a, b) => {
@@ -1481,7 +1542,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (
     `<button data-slot-filter="${slot.key}" class="${filter === slot.key ? 'active' : ''}">${slot.label}</button>`
   )).join('');
-  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2><section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
+  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
   updateInventoryUpgradeBadge();
 }
 
@@ -1497,7 +1558,7 @@ function renderPanel(kind, compareUid = '') {
     hubPanel.innerHTML = `<h2>대장장이 · 강화</h2><p>실패해도 장비는 파괴되거나 하락하지 않습니다. 보유 골드 ${character.gold}G</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
   }
   if (kind === 'merchant') {
-    const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
+    const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150, set: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
     const familyWeapons = FAMILY_STARTER_WEAPONS.map(({ itemId, price }) => (
       `<div class="hub-row"><span>${escapeHtml(ITEMS[itemId].name)}<small>체험 · 공용 · ${price}G</small></span><button data-buy-family-weapon="${itemId}" ${character.gold < price || inventory.length >= 40 ? 'disabled' : ''}>구매</button></div>`
     )).join('');
@@ -1514,13 +1575,14 @@ function renderPanel(kind, compareUid = '') {
       const item = inventory.find((entry) => entry.slot === slot.key);
       return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
     }).join('');
-    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
   }
   hubPanel.focus();
 }
 
 async function startStage(stageId, options = {}) {
-  if (!stageIsUnlocked(stageId) && !DEV_MODE && !debugEnabled) return;
+  const difficulty = options.difficulty ?? 'normal';
+  if (!stageIsUnlocked(stageId, difficulty) && !DEV_MODE && !debugEnabled) return;
   const tutorialSortie = debugEnabled
     ? { stageId, beginCombat: false }
     : resolveTutorialSortie(stageId, tutorialState);
@@ -1538,6 +1600,7 @@ async function startStage(stageId, options = {}) {
   partyClient = null;
   $('#hub-party-button').hidden = true;
   currentStageId = stageToStart;
+  currentStageDifficulty = difficulty;
   settled = false;
   attackInputAssistant.reset();
   hubUi.hidden = true;
@@ -1556,6 +1619,7 @@ async function startStage(stageId, options = {}) {
   world = createStageWorld({
     seed: options.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
     stageId: stageToStart,
+    difficulty,
     playerId: character.id,
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
   });
@@ -1627,43 +1691,57 @@ function updateHud(current) {
 
 function buildSettlement(outcome, result) {
   firstForestUnlock = false;
+  const difficulty = result.difficulty ?? currentStageDifficulty;
+  const stageId = result.stageId ?? currentStageId;
   const ops = [
     { type: 'gainXp', amount: result.xp },
     { type: 'grantGold', amount: result.gold },
     { type: 'setPotions', count: result.potions },
   ];
   let autoSold = 0;
+  let record = false;
   if (outcome === 'clear') {
-    firstForestUnlock = currentStageId === 'CB' && !character.clearedStages.includes('CB');
+    const key = stageClearKey(stageId, difficulty);
+    const ticks = result.ticks;
+    const previousBest = character.records?.[key];
+    record = Number.isInteger(ticks) && (!Number.isInteger(previousBest) || ticks < previousBest);
+    firstForestUnlock = difficulty === 'normal' && stageId === 'CB' && !character.clearedStages.includes('CB');
     const capacity = Math.max(0, 40 - inventory.length);
     const uniqueItems = rekeySettlementItems(result.items, inventory);
     uniqueItems.forEach((item, index) => {
       if (index < capacity) {
-        ops.push({ type: 'grantItem', uid: item.uid, itemId: item.itemId, rarity: item.rarity, enhance: item.enhance, ilvl: item.ilvl, affixes: item.affixes, legendaryId: item.legendaryId });
+        ops.push({ type: 'grantItem', uid: item.uid, itemId: item.itemId, rarity: item.rarity, enhance: item.enhance, ilvl: item.ilvl, affixes: item.affixes, legendaryId: item.legendaryId, setId: item.setId });
       } else {
-        autoSold += Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10));
+        autoSold += Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150, set: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10));
       }
     });
     if (autoSold) ops.push({ type: 'grantGold', amount: autoSold });
-    ops.push({ type: 'clearStage', stageId: currentStageId });
+    ops.push({ type: 'clearStage', stageId: key });
+    if (Number.isInteger(ticks)) ops.push({ type: 'recordClear', key, ticks });
   }
-  return { ops, autoSold };
+  return { ops, autoSold, record };
 }
 
-function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) {
+function renderSettlement(outcome, result, { autoSold = 0, record = false, error = null } = {}) {
   const saved = !error;
+  const difficulty = result.difficulty ?? currentStageDifficulty;
+  const stageId = result.stageId ?? currentStageId;
   const earnedItems = outcome === 'clear' && result.items.length
     ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
     : '';
-  const progression = outcome === 'clear' && currentStageId === 'KB'
-    ? '<p>모든 지역을 정복했어요</p>'
-    : outcome === 'clear' && currentStageId === 'FB'
+  const progression = outcome === 'clear' && stageId === 'KB' && difficulty === 'normal'
+    ? '<p>모든 지역을 정복했어요 · 악몽 난이도가 열렸어요</p>'
+    : outcome === 'clear' && stageId === 'KB' && difficulty === 'nightmare'
+      ? '<p>지옥 난이도가 열렸어요</p>'
+      : outcome === 'clear' && stageId === 'FB' && difficulty === 'normal'
       ? '<p>3지역 · 해골 왕의 성채가 열렸어요</p>'
       : outcome === 'clear' && firstForestUnlock
         ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
         : '';
+  const stageName = STAGE_LIST.find((stage) => stage.id === stageId)?.name ?? '';
+  const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${STAGE_LIST.find((stage) => stage.id === currentStageId)?.name ?? ''}</h2><p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
@@ -1677,11 +1755,13 @@ function renderSettlement(outcome, result, { autoSold = 0, error = null } = {}) 
 
 async function attemptSettlement(outcome, result, settlementId) {
   let autoSold = 0;
+  let record = false;
   try {
     const previousLevel = character.level;
     await reloadCharacter();
     const settlement = buildSettlement(outcome, result);
     autoSold = settlement.autoSold;
+    record = settlement.record;
     character = await saves.commit({
       characterId: character.id,
       baseRev: character.rev,
@@ -1690,10 +1770,10 @@ async function attemptSettlement(outcome, result, settlementId) {
     });
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
-    renderSettlement(outcome, result, { autoSold });
+    renderSettlement(outcome, result, { autoSold, record });
   } catch (error) {
     console.error('Settlement failed', error);
-    renderSettlement(outcome, result, { autoSold, error });
+    renderSettlement(outcome, result, { autoSold, record, error });
   }
 }
 
@@ -1864,7 +1944,7 @@ $('#hub-ui').addEventListener('click', async (event) => {
     $('#hub-party-button').hidden = false;
     hubPanel.hidden = true;
   }
-  if (button.dataset.sortie) startStage(button.dataset.sortie);
+  if (button.dataset.sortie) startStage(button.dataset.sortie, { difficulty: boardDifficulty });
   if (button.dataset.compare) renderPanel('inventory', button.dataset.compare);
   if (button.dataset.equip) {
     const equippedItem = inventory.find((item) => item.uid === button.dataset.equip);
@@ -1906,6 +1986,12 @@ $('#hub-ui').addEventListener('click', async (event) => {
   }
 });
 hubPanel.addEventListener('click', (event) => {
+  const difficultyButton = event.target.closest('[data-board-difficulty]');
+  if (difficultyButton) {
+    boardDifficulty = difficultyButton.dataset.boardDifficulty;
+    renderBoard();
+    return;
+  }
   const card = event.target.closest('.equipment-slot-card');
   if (!card || event.target.closest('[data-unequip]')) return;
   renderInventory('', card.dataset.slotFilter);
@@ -1924,7 +2010,15 @@ hubUi.addEventListener('submit', (event) => {
   } catch (error) { setPartyToast(error.message, { error: true }); }
 });
 hubPanel.addEventListener('change', (event) => {
-  if (event.target.id === 'party-stage-select') partyClient?.selectStage(event.target.value);
+  if (event.target.id === 'party-stage-select') {
+    partyClient?.selectStage(event.target.value, partyClient.lobby?.difficulty ?? 'normal');
+  }
+  if (event.target.id === 'party-difficulty-select') {
+    const difficulty = event.target.value;
+    const currentStage = partyClient?.lobby?.stageId ?? 'C1';
+    const stageId = stageIsUnlocked(currentStage, difficulty) ? currentStage : 'C1';
+    partyClient?.selectStage(stageId, difficulty);
+  }
   if (event.target.matches('[data-party-public]')) partyClient?.setPublic(event.target.checked);
 });
 gameScreen.addEventListener('click', (event) => {

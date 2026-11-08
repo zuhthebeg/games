@@ -11,6 +11,7 @@ import { Predictor } from '../js/net/predictor.js';
 import { buildRangedAimInput } from '../js/net/ranged-aim.js';
 import { BUTTONS, createStageWorld } from '../js/sim/world.js';
 import { computeBotPolicy, insideShape } from '../js/net/bot-policy.js';
+import { ITEM_BASES } from '../js/content/items.js';
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const TICK_HZ = 30;
@@ -34,6 +35,7 @@ const options = parseOptions(process.argv.slice(2));
 const botCount = Math.max(1, Math.min(4, Number(options.get('bots') ?? 2)));
 const botFamilies = String(options.get('families') ?? 'sword,sword').split(',');
 const stageId = String(options.get('stage') ?? 'C1');
+const difficulty = String(options.get('difficulty') ?? 'normal');
 const serverUrl = String(options.get('server') ?? 'ws://127.0.0.1:8788');
 const roomCode = String(options.get('room') ?? Array.from({ length: 6 }, () => (
   ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]
@@ -214,9 +216,23 @@ class Bot {
       ['bone-gauntlets', [{ id: 'attackPercent', value: 8 }, { id: 'lifesteal', value: 3 }]],
       ['ossuary-greaves', [{ id: 'moveSpeed', value: 5 }, { id: 'maxHp', value: 20 }]],
     ];
+    const tierLevel = difficulty === 'nightmare' ? 15 : difficulty === 'hell' ? 18 : null;
+    const tierEquipment = tierLevel
+      ? ITEM_BASES.filter((item) => item.requiredLevel === tierLevel && !item.setId
+        && (item.slot !== 'weapon' || item.family === this.family))
+        .map((item) => ({
+          itemId: item.id,
+          slot: item.slot,
+          rarity: 'rare',
+          enhance: 0,
+          affixes: item.slot === 'weapon'
+            ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+            : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+        }))
+      : null;
     this.character = {
-      level: stageId === 'F1' ? 7 : 1,
-      equipment: [
+      level: tierLevel ?? (stageId === 'F1' ? 7 : 1),
+      equipment: tierEquipment ?? [
         {
           itemId: starterWeapon,
           slot: 'weapon',
@@ -230,8 +246,8 @@ class Bot {
           itemId, rarity: 'rare', enhance: 0, affixes,
         })) : []),
       ],
-      potions: 3,
-      clearedStages: stageId === 'F1' ? ['CB'] : [],
+      potions: tierLevel ? 5 : 3,
+      clearedStages: difficulty === 'hell' ? ['KB', 'N:KB'] : difficulty === 'nightmare' ? ['KB'] : stageId === 'F1' ? ['CB'] : [],
     };
     this.stats = {
       upBytes: 0,
@@ -351,6 +367,7 @@ class Bot {
     this.localWorld = createStageWorld({
       seed: message.seed,
       stageId: message.stageId,
+      difficulty: message.difficulty ?? 'normal',
       party: message.party.map((member) => ({
         playerId: member.playerId,
         name: member.name,
@@ -1049,7 +1066,9 @@ async function run() {
   let reconnectTimer = null;
   try {
     for (const bot of bots) await waitForAll([bot.connect()], `bot ${bot.index + 1} welcome`);
-    if (stageId !== 'C1') bots[0].session.send({ t: 'lobby.stage', stageId });
+    if (stageId !== 'C1' || difficulty !== 'normal') {
+      bots[0].session.send({ t: 'lobby.stage', stageId, difficulty });
+    }
     for (const bot of bots) bot.session.send({ t: 'lobby.ready', ready: true });
     await waitForAll(bots.map((bot) => bot.lobbyReadyPromise), 'all bots ready');
     bots[0].session.send({ t: 'lobby.start' });
@@ -1123,6 +1142,7 @@ async function run() {
       name: runName,
       roomCode,
       stageId,
+      difficulty,
       serverUrl,
       profile,
       impairment: profile === 'impaired'
