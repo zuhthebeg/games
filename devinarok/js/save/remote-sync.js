@@ -15,7 +15,8 @@ function decodeToken(token) {
 }
 
 function apiBaseFromLocation(locationValue = globalThis.location) {
-  const configured = new URLSearchParams(locationValue?.search ?? '').get('api');
+  const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(locationValue?.hostname?.toLowerCase());
+  const configured = localHost ? new URLSearchParams(locationValue?.search ?? '').get('api') : null;
   return (configured || DEFAULT_API_BASE).replace(/\/+$/, '');
 }
 

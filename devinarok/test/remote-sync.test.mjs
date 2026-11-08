@@ -1,12 +1,25 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemoryBackend, SaveRepository } from '../js/save/repository.js';
-import { RemoteSync } from '../js/save/remote-sync.js';
+import { apiBaseFromLocation, RemoteSync } from '../js/save/remote-sync.js';
 
 const encodeToken = (payload) => `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;
 const response = (value, status = 200) => new Response(JSON.stringify(value), {
   status,
   headers: { 'Content-Type': 'application/json' },
+});
+
+test('API overrides are accepted only on loopback development hosts', () => {
+  for (const hostname of ['localhost', '127.0.0.1', '[::1]']) {
+    assert.equal(
+      apiBaseFromLocation({ hostname, search: '?api=http%3A%2F%2Flocalhost%3A8793%2Fapi%2Fdevinarok%2F' }),
+      'http://localhost:8793/api/devinarok',
+    );
+  }
+  assert.equal(
+    apiBaseFromLocation({ hostname: 'game.cocy.io', search: '?api=https%3A%2F%2Fevil.test%2Fcollect' }),
+    'https://relay.cocy.io/api/devinarok',
+  );
 });
 
 class Storage {
