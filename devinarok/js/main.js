@@ -1439,6 +1439,7 @@ async function startPartyStage(message) {
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
   $('#controls').hidden = false;
+  $('#controls').classList.remove('hub-controls');
   $('#party-hud').hidden = false;
   $('#party-rtt').hidden = false;
   $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(message.stageId);
