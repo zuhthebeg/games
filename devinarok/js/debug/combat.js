@@ -1,4 +1,5 @@
 import { BUTTONS, spawnEnemy, step } from '../sim/world.js';
+import { ENEMIES } from '../content/enemies.js';
 
 function angleByte(angle) {
   return Math.round((angle / (Math.PI * 2) * 256 + 256) % 256);
@@ -71,8 +72,27 @@ export function debugKillEnemy(world, enemy, runStep = (inputs) => step(world, i
 
 export function debugSpawnRoomEnemy(world, enemyKind, position = null) {
   if (world?.mode !== 'stage') return null;
-  const enemy = spawnEnemy(world, enemyKind, position);
-  enemy.currentRoomId = world.arena.rooms[world.roomIndex]?.id;
+  const stageEnemyKind = enemyKind === 'Skeleton_Warrior' ? 'warrior' : 'minion';
+  const rule = ENEMIES[stageEnemyKind];
+  const enemy = spawnEnemy(world, rule.model, position);
+  const scale = 1 + 0.12 * ((world.stageLevel ?? 1) - 1);
+  const partyScale = 1 + 0.75 * ((world.partySize ?? 1) - 1);
+  const maxHp = Math.max(1, Math.round(rule.hp * scale * partyScale));
+  Object.assign(enemy, {
+    enemyKind: stageEnemyKind,
+    model: rule.model,
+    radius: rule.radius,
+    hp: maxHp,
+    maxHp,
+    attack: Math.max(1, Math.round(rule.attack * scale)),
+    speed: rule.speed,
+    moveSpeed: rule.speed,
+    boss: false,
+    elite: false,
+    summoned: false,
+    currentRoomId: world.arena.rooms[world.roomIndex]?.id,
+  });
+  world.roomEnemyIds ??= [];
   world.roomEnemyIds.push(enemy.id);
   return enemy;
 }
