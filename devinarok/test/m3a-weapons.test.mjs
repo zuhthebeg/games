@@ -3,6 +3,7 @@ import test from 'node:test';
 import { ENEMIES } from '../js/content/enemies.js';
 import { FAMILY_STARTER_WEAPONS, ITEM_BASES, ITEMS } from '../js/content/items.js';
 import { FAMILY_SKILLS, SKILLS } from '../js/content/skills.js';
+import { computeBotPolicy } from '../js/net/bot-policy.js';
 import { buildRangedAimInput } from '../js/net/ranged-aim.js';
 import { Predictor } from '../js/net/predictor.js';
 import { BUTTONS, createStageWorld, pickAimTarget, step, stepPlayerMotion } from '../js/sim/world.js';
@@ -82,9 +83,9 @@ function makeCommanderWorld(distance, phaseTwo = false) {
 
 test('family content keeps sword skills intact and adds equal-tier weapon bases', () => {
   assert.deepEqual(FAMILY_SKILLS, {
-    sword: ['spin', 'dash', 'guard'],
-    crossbow: ['pierce', 'vault', 'volley'],
-    staff: ['flame', 'frost', 'blink'],
+    sword: ['spin', 'dash', 'guard', 'quake'],
+    crossbow: ['pierce', 'vault', 'volley', 'rain'],
+    staff: ['flame', 'frost', 'blink', 'meteor'],
   });
   assert.deepEqual(SKILLS.spin, { id: 1, name: '회전베기', windupTicks: 5, activeTicks: 6, recoveryTicks: 10, range: 2.2, motionMult: 1.4, cooldownTicks: 180 });
   assert.deepEqual(SKILLS.dash, { id: 2, name: '돌진 찌르기', dashDistance: 4, dashTicks: 6, length: 4, width: 1, motionMult: 2, cooldownTicks: 240 });
@@ -360,6 +361,85 @@ test('staff flame hits six times and frost applies a 45-tick slow', () => {
   runTicks(frost.world, 10, BUTTONS.SKILL2);
   assert(frost.enemies[0].slowTicks > 0);
   assert(frost.enemies[0].slowTicks <= SKILLS.frost.slowTicks);
+});
+
+test('skill 4 stays locked below Lv7 without a cast or cooldown', () => {
+  const { world, player } = makeWorld('sword', [{ x: 2, z: 0 }]);
+  player.level = 6;
+  runTicks(world, 14, BUTTONS.SKILL4);
+  assert.equal(player.skillCooldowns[4], 0);
+  assert.equal(player.skillCast, null);
+  assert.equal(world.events.some((event) => event.type === 'cast' && event.skill === 4), false);
+});
+
+test('quake, rain, and meteor use their specified area effects and cooldowns', () => {
+  const quake = makeWorld('sword', [{ x: 2, z: 0 }]);
+  quake.player.level = 7;
+  quake.enemies[0].stunnedTicks = 0;
+  runTicks(quake.world, 14, BUTTONS.SKILL4);
+  const quakeStrike = quake.world.events.find((event) => event.type === 'strike' && event.skill === 4);
+  assert.equal(quakeStrike.shape.radius, 3);
+  assert(Math.abs(quakeStrike.shape.originX - (quake.player.x + 1.2)) < 1e-9);
+  assert(quake.world.events.some((event) => event.type === 'hit' && event.castId === 'hero:1' && event.damage > 0));
+  assert(quake.enemies[0].stunnedTicks > 0);
+  assert.equal(quake.player.skillCooldowns[4], SKILLS.quake.cooldownTicks - 14);
+
+  const rain = makeWorld('crossbow', [{ x: 6, z: 0 }]);
+  rain.player.level = 7;
+  runTicks(rain.world, 42, BUTTONS.SKILL4);
+  const rainStrikes = rain.world.events.filter((event) => event.type === 'strike' && event.castId === 'hero:1');
+  assert.equal(rainStrikes.length, 5);
+  assert(rainStrikes.every((event) => event.shape.type === 'circle' && event.shape.radius === 2.2));
+  assert.equal(rain.world.events.filter((event) => event.type === 'hit' && event.castId === 'hero:1' && event.damage > 0).length, 5);
+  assert.equal(rain.player.skillCooldowns[4], SKILLS.rain.cooldownTicks - 42);
+
+  const meteor = makeWorld('staff', [{ x: 6, z: 0 }]);
+  meteor.player.level = 7;
+  const originalX = meteor.enemies[0].x;
+  runTicks(meteor.world, 30, BUTTONS.SKILL4);
+  const meteorStrike = meteor.world.events.find((event) => event.type === 'strike' && event.castId === 'hero:1');
+  assert.equal(meteorStrike.shape.radius, 2.8);
+  assert(Math.abs(meteorStrike.shape.originX - originalX) < 1e-9);
+  assert(meteor.world.events.some((event) => event.type === 'hit' && event.castId === 'hero:1' && event.damage > 0));
+  assert(meteor.enemies[0].x > originalX + 0.8);
+  assert.equal(meteor.player.skillCooldowns[4], SKILLS.meteor.cooldownTicks - 30);
+});
+
+test('skill 4 respects skill cooldown reduction and preserves counter readiness', () => {
+  const { world, player } = makeWorld('staff', [{ x: 6, z: 0 }]);
+  player.level = 7;
+  player.stats.skillCooldownReduction = 15;
+  player.counterReadyTicks = 30;
+  player.counterAttackerId = 77;
+  tick(world, 1, BUTTONS.SKILL4);
+  assert.equal(player.skillCooldowns[4], Math.round(SKILLS.meteor.cooldownTicks * 0.85) - 1);
+  assert.equal(player.counterAttackerId, 77);
+  assert.equal(player.counterReadyTicks, 29);
+});
+
+test('Lv8 melee bot policy attempts skill 4 when earlier skills are cooling down', () => {
+  const input = computeBotPolicy({
+    player: {
+      playerId: 'hero',
+      family: 'sword',
+      level: 8,
+      x: 0,
+      z: 0,
+      hp: 100,
+      maxHp: 100,
+      potions: 0,
+      attack: null,
+      skillCast: null,
+      skillCooldowns: { 1: 10, 2: 10, 3: 10, 4: 0 },
+      counterReadyTicks: 0,
+      previousButtons: 0,
+    },
+    viewed: {
+      activeEnemyIds: ['enemy'],
+      entities: [{ id: 'enemy', kind: 'enemy', x: 2, z: 0, hp: 10, dead: false, invulnerable: false, spawnTicksLeft: 0 }],
+    },
+  });
+  assert.equal(input.buttons, BUTTONS.SKILL4);
 });
 
 test('staff blink clamps movement to obstacles and never ends inside one', () => {

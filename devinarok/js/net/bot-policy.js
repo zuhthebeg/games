@@ -108,14 +108,25 @@ export function computeBotPolicy({ player, viewed, roomCleared = false, door = n
       moveX = Math.round(dx / targetDistance * 127);
       moveZ = Math.round(dz / targetDistance * 127);
     } else if (!ranged && !player.attack && !player.skillCast) {
-      buttons |= BUTTONS.ATTACK;
+      const skillReady = player.level >= 7 && [1, 2, 3, 4].some((id) => (
+        (player.skillCooldowns?.[id] ?? 0) === 0
+      ));
+      if (!skillReady) buttons |= BUTTONS.ATTACK;
     }
   }
   if (!threat && player.hp < player.maxHp * 0.55 && player.potions > 0 && !buttons) {
     buttons |= BUTTONS.POTION;
-  } else if (ranged && !threat && !roomCleared && target && !player.skillCast && !buttons) {
-    const availableSkill = [1, 2, 3].find((id) => (player.skillCooldowns?.[id] ?? 0) === 0);
-    if (availableSkill) buttons |= BUTTONS.SKILL1 << (availableSkill - 1);
+  } else if (!threat && !roomCleared && target && !player.skillCast && !buttons && (ranged || targetDistance <= 3.2)) {
+    const skillIds = ranged || player.level >= 7 ? [1, 2, 3, 4] : [];
+    const availableSkill = skillIds.find((id) => (
+      (id < 4 || player.level >= 7) && (player.skillCooldowns?.[id] ?? 0) === 0
+    ));
+    if (availableSkill) buttons |= {
+      1: BUTTONS.SKILL1,
+      2: BUTTONS.SKILL2,
+      3: BUTTONS.SKILL3,
+      4: BUTTONS.SKILL4,
+    }[availableSkill];
     else if (!player.attack) buttons |= BUTTONS.ATTACK;
   }
   if (!threat && (player.counterReadyTicks ?? 0) > 0 && (player.previousButtons & BUTTONS.ATTACK)) {

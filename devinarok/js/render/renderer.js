@@ -286,7 +286,7 @@ export class ArenaRenderer {
     this.canvas = canvas;
     this.arena = arena;
     this.initialWorld = initialWorld;
-    this.isHub = arena.id === 'HUB';
+    this.isHub = arena.id === 'inn-hub';
     this.isForest = arena.theme === 'forest';
     this.isCastle = arena.theme === 'castle';
     this.isSanctuary = arena.theme === 'sanctuary';
@@ -305,8 +305,8 @@ export class ArenaRenderer {
     this.cameraOffsetZ = 10.85;
     this.camera.position.set(0, this.cameraHeight, this.cameraOffsetZ);
     this.camera.lookAt(0, 0, 0);
-    this.cameraFollowOffsetZ = 8;
-    this.frustumHeight = 19;
+    this.cameraFollowOffsetZ = this.isHub ? 3.5 : 8;
+    this.frustumHeight = this.isHub ? 15 : 19;
     this.mobileCameraOverlayKey = '';
     this.mobileCameraTargetShift = 0;
     this.mobileCameraTargetScreenY = null;
@@ -314,6 +314,8 @@ export class ArenaRenderer {
     this.mobileOverlays = [
       { id: 'controls', element: canvas.ownerDocument.querySelector('#controls'), top: 0, height: 0, active: false },
       { id: 'hub-buttons', element: canvas.ownerDocument.querySelector('#hub-ui:not([hidden]) .hub-hotspots'), top: 0, height: 0, active: false },
+      { id: 'hub-hud', element: this.isHub ? canvas.ownerDocument.querySelector('#hud') : null, top: 0, height: 0, active: false },
+      { id: 'tutorial-card', element: canvas.ownerDocument.querySelector('#tutorial-card'), top: 0, height: 0, active: false },
     ];
     this.projectionCamera = this.camera.clone();
     this.mobileProjectedPoint = new THREE.Vector3();
@@ -1261,10 +1263,14 @@ export class ArenaRenderer {
     }
   }
 
-  updateNpcHotspots(dt) {
+  updateNpcHotspots(dt, world) {
     const rect = this.canvas.getBoundingClientRect();
+    const player = world?.entities.find((entity) => entity.kind === 'player' && (
+      entity.playerId === this.localPlayerId || entity.id === this.localPlayerId
+    ));
     for (const { npc, root, mixer, button } of this.hubNpcs) {
       mixer.update(Math.min(dt, 0.05));
+      button.classList.toggle('is-nearby', Boolean(player && Math.hypot(player.x - npc.x, player.z - npc.z) <= 1.6));
       const point = this.projectedPoint.set(npc.x, 2.2, npc.z).project(this.camera);
       button.style.left = `${(point.x + 1) * rect.width / 2}px`;
       button.style.top = `${(1 - point.y) * rect.height / 2}px`;
@@ -1640,6 +1646,50 @@ export class ArenaRenderer {
     });
   }
 
+  createSkillTelegraph(event) {
+    const { originX: x, originZ: z, radius } = event.shape;
+    const colors = { quake: 0xe5be72, rain: 0x8bc9ff, meteor: 0xff8c4a };
+    const color = colors[event.skillName] ?? 0xffc777;
+    const fillGeometry = new THREE.CircleGeometry(radius, 48);
+    const fillMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.25,
+      depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const fill = new THREE.Mesh(fillGeometry, fillMaterial);
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.set(x, 0.04, z);
+    fill.renderOrder = 20;
+    this.addTransient(fill, fillGeometry, fillMaterial, {
+      startTick: event.startTick,
+      endTick: event.resolveTick,
+      update: (effect, tick) => {
+        const progress = THREE.MathUtils.clamp((tick - event.startTick) / Math.max(1, event.resolveTick - event.startTick), 0, 1);
+        effect.mesh.scale.setScalar(progress);
+      },
+    });
+    const ringGeometry = new THREE.RingGeometry(Math.max(0, radius - 0.18), radius, 48);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.85,
+      depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.045, z);
+    ring.renderOrder = 21;
+    this.addTransient(ring, ringGeometry, ringMaterial, {
+      startTick: event.startTick,
+      endTick: event.resolveTick,
+    });
+  }
+
   createImpact(event) {
     const key = `${event.ownerId}:${event.castSeq}`;
     if (this.seenImpactCasts.has(key)) return;
@@ -1678,7 +1728,9 @@ export class ArenaRenderer {
         },
       });
     } else {
-      this.createImpactRing(x, z, radius, 0x91dfff, event.resolveTick, event.resolveTick + 14);
+      const color = event.kind === 'quake' ? 0xe5be72
+        : event.kind === 'meteor' ? 0xff8c4a : 0x91dfff;
+      this.createImpactRing(x, z, radius, color, event.resolveTick, event.resolveTick + 14);
     }
   }
 
@@ -1722,6 +1774,7 @@ export class ArenaRenderer {
       if (this.seenEventIds.has(event.eventId)) continue;
       this.seenEventIds.add(event.eventId);
       if (event.type === 'cast') this.createSlash(event);
+      if (event.type === 'skillTelegraph') this.createSkillTelegraph(event);
       if (event.type === 'shot') this.createShot(event, now);
       if (event.type === 'impact') this.createImpact(event);
       if (event.type === 'blink' || event.type === 'bossBlink') this.createBlink(event, now);
@@ -1980,12 +2033,13 @@ export class ArenaRenderer {
   }
 
   mobileVisibleArea(canvasRect) {
+    let top = canvasRect.top;
     let bottom = canvasRect.bottom;
     let hasOverlay = false;
     let changed = false;
     for (const overlay of this.mobileOverlays) {
       const { element } = overlay;
-      if (!element || (overlay.id === 'hub-buttons' && canvasRect.width >= 700)) {
+      if (!element || (['hub-buttons', 'hub-hud', 'tutorial-card'].includes(overlay.id) && canvasRect.width >= 700)) {
         if (overlay.active) changed = true;
         overlay.active = false;
         continue;
@@ -1997,21 +2051,25 @@ export class ArenaRenderer {
         continue;
       }
       const rect = element.getBoundingClientRect();
+      const topOverlay = overlay.id === 'hub-hud';
       const overlaps = rect.height > 0
         && rect.width > 0
         && rect.left < canvasRect.right
         && rect.right > canvasRect.left
         && rect.top < canvasRect.bottom
-        && rect.bottom > canvasRect.top + canvasRect.height / 2;
-      const top = Math.round(rect.top);
+        && (topOverlay
+          ? rect.top < canvasRect.top + canvasRect.height / 2
+          : rect.bottom > canvasRect.top + canvasRect.height / 2);
+      const overlayTop = Math.round(rect.top);
       const height = Math.round(rect.height);
-      if (overlay.active !== overlaps || overlay.top !== top || overlay.height !== height) changed = true;
+      if (overlay.active !== overlaps || overlay.top !== overlayTop || overlay.height !== height) changed = true;
       overlay.active = overlaps;
-      overlay.top = top;
+      overlay.top = overlayTop;
       overlay.height = height;
       if (overlaps) {
         hasOverlay = true;
-        bottom = Math.min(bottom, rect.top);
+        if (topOverlay) top = Math.max(top, rect.bottom);
+        else bottom = Math.min(bottom, rect.top);
       }
     }
     if (!hasOverlay) {
@@ -2019,7 +2077,7 @@ export class ArenaRenderer {
       return null;
     }
     const result = this.mobileVisibleAreaResult ??= { top: 0, bottom: 0, key: '' };
-    result.top = canvasRect.top;
+    result.top = top;
     result.bottom = bottom;
     if (changed) {
       let key = '';
@@ -2038,11 +2096,17 @@ export class ArenaRenderer {
       this.mobileCameraTargetScreenY = null;
       return 0;
     }
-    const desiredY = THREE.MathUtils.clamp(
-      (visibleArea.top + visibleArea.bottom) / 2,
-      canvasRect.top + canvasRect.height * 0.45,
-      canvasRect.top + canvasRect.height * 0.5,
-    );
+    const desiredY = this.isHub
+      ? THREE.MathUtils.clamp(
+        (visibleArea.top + visibleArea.bottom) / 2,
+        canvasRect.top + canvasRect.height * 0.52,
+        canvasRect.top + canvasRect.height * 0.58,
+      )
+      : THREE.MathUtils.clamp(
+        (visibleArea.top + visibleArea.bottom) / 2,
+        canvasRect.top + canvasRect.height * 0.45,
+        canvasRect.top + canvasRect.height * 0.5,
+      );
     const overlayKey = `${Math.round(canvasRect.width)}x${Math.round(canvasRect.height)}:${visibleArea.key}`;
     this.mobileCameraTargetScreenY = desiredY;
     if (overlayKey !== this.mobileCameraOverlayKey) {
@@ -2221,7 +2285,7 @@ export class ArenaRenderer {
       this.camera.lookAt(this.camera.position.x + shakeX, 0, targetZ + shakeZ);
       this.updateWallFade(targetZ);
     }
-    this.updateNpcHotspots(dt);
+    this.updateNpcHotspots(dt, world);
     this.updatePresentation(world, now);
     this.updateOccluderFades(world, now);
     this.updateDebugOverlays(world, now);
@@ -2231,7 +2295,10 @@ export class ArenaRenderer {
   resizeCanvas() {
     const width = Math.max(1, this.canvas.clientWidth);
     const height = Math.max(1, this.canvas.clientHeight);
-    const frustum = this.frustumHeight;
+    const frustum = this.isHub
+      ? Math.max(15, 8 / (width / height))
+      : this.frustumHeight;
+    this.frustumHeight = frustum;
     this.camera.left = -frustum * width / height / 2;
     this.camera.right = frustum * width / height / 2;
     this.camera.top = frustum / 2;

@@ -11,6 +11,7 @@ function castKind(pressed) {
   if (pressed & BUTTONS.SKILL1) return { kind: 'skill', skill: 1 };
   if (pressed & BUTTONS.SKILL2) return { kind: 'skill', skill: 2 };
   if (pressed & BUTTONS.SKILL3) return { kind: 'skill', skill: 3 };
+  if (pressed & BUTTONS.SKILL4) return { kind: 'skill', skill: 4 };
   return null;
 }
 

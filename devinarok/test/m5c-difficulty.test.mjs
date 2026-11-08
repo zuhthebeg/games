@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DIFFICULTIES, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked } from '../js/content/stages.js';
+import { DIFFICULTIES, effectiveStageLevel, HUB_ARENA, isDifficultyUnlocked, isStageUnlocked, latestStage, STAGE_LIST } from '../js/content/stages.js';
 import { ENEMIES } from '../js/content/enemies.js';
 import { ITEMS } from '../js/content/items.js';
-import { createStageWorld, rarityForRoll, rollStageItem } from '../js/sim/world.js';
+import { createHubWorld, createStageWorld, rarityForRoll, rollStageItem, step } from '../js/sim/world.js';
 import { debugKillEnemy } from '../js/debug/combat.js';
 
 function stageEnemies(world) {
@@ -51,6 +51,39 @@ test('tier unlocks use namespaced clears and preserve within-tier gates', () => 
   assert.equal(isDifficultyUnlocked('hell', ['N:KB']), true);
   assert.equal(isStageUnlocked('C1', ['KB', 'N:KB'], 'hell'), true);
   assert.equal(isStageUnlocked('C1', ['KB'], 'hell'), false);
+});
+
+test('latest stage prefers the last uncleared unlocked stage for its tier', () => {
+  assert.equal(latestStage('normal', []), 'C1');
+  assert.equal(latestStage('normal', ['CB']), 'F1');
+  assert.equal(latestStage('nightmare', ['KB']), 'C1');
+  assert.equal(latestStage('nightmare', ['KB', 'N:C1', 'N:C2']), 'C3');
+  assert.equal(latestStage('nightmare', ['KB', 'N:C1', 'N:C2', 'N:C3']), 'CB');
+  assert.equal(latestStage('normal', STAGE_LIST.map((stage) => stage.id)), STAGE_LIST.at(-1).id);
+});
+
+test('hub simulation advances movement through the relocated NPC approach', () => {
+  const world = createHubWorld({ seed: 42, playerId: 'hero', level: 7 });
+  const player = world.entities.find((entity) => entity.kind === 'player');
+  assert.deepEqual(world.arena.playerSpawn, { x: 0, z: 1 });
+  assert.deepEqual(HUB_ARENA.npcs.map(({ x, z }) => [x, z]), [
+    [-3, -2.6], [3, -2.6], [0, -5.4], [3.2, -5.6],
+  ]);
+  let closestNpcDistance = Infinity;
+  for (let seq = 1; seq <= 100; seq += 1) {
+    step(world, { hero: { seq, moveX: -127, moveZ: -127, aim: 160, buttons: 0 } });
+    closestNpcDistance = Math.min(closestNpcDistance, Math.hypot(player.x + 3, player.z + 2.6));
+    if (closestNpcDistance <= 1.6) break;
+  }
+  assert(world.tick > 0);
+  assert(closestNpcDistance <= 1.6);
+
+  const collisionWorld = createHubWorld({ seed: 43, playerId: 'hero', level: 7 });
+  const collisionPlayer = collisionWorld.entities.find((entity) => entity.kind === 'player');
+  for (let seq = 1; seq <= 120; seq += 1) {
+    step(collisionWorld, { hero: { seq, moveX: 127, moveZ: 0, aim: 0, buttons: 0 } });
+  }
+  assert(collisionPlayer.x < 5);
 });
 
 test('difficulty loot uses effective item level, boss cap, and rarity tables', () => {
