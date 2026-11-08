@@ -1989,7 +1989,7 @@ async function attemptSettlement(outcome, result, settlementId) {
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
     const newSkill = previousLevel < 7 && character.level >= 7
-      ? SKILLS[FAMILY_SKILLS[equipmentLook(inventory).family]?.[3]]
+      ? SKILLS[FAMILY_SKILLS[equipmentLook(equippedItems()).family]?.[3]]
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
     renderSettlement(outcome, result, { autoSold, record, newSkill });
