@@ -352,16 +352,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   z-index: 14;
   top: 42vh;
   top: calc(42dvh + env(safe-area-inset-top));
-  left: max(8px, env(safe-area-inset-left));
-  width: 46px;
-  min-width: 46px;
-  min-height: 44px;
+  left: env(safe-area-inset-left, 0px);
+  width: 22px;
+  min-width: 22px;
+  min-height: 60px;
   padding: 0;
   border: 1px solid #dcb66e;
-  border-radius: 10px;
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
   background: #261b15eF;
   color: #ffe1a1;
   font: 800 11px/1 ui-monospace, monospace;
+  writing-mode: vertical-rl;
+  letter-spacing: 1px;
+  opacity: 0.85;
   box-shadow: 0 2px 10px #0009;
 }
 .debug-panel {

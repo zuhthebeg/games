@@ -767,7 +767,6 @@ const STAT_NAMES = {
 };
 
 const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
-const FAMILY_ICONS = { sword: '🛡️', crossbow: '🏹', staff: '🔮' };
 const FAMILY_SKILL_COPY = {
   sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.'],
   crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.'],
@@ -901,7 +900,7 @@ function renderBoard() {
     const condition = id === 'nightmare'
       ? '해골 왕(보통)을 쓰러뜨리면 열려요'
       : id === 'hell' ? '해골 왕(악몽)을 쓰러뜨리면 열려요' : '';
-    return `<button class="difficulty-tab${id === difficulty ? ' active' : ''}${unlocked ? '' : ' locked'}" data-board-difficulty="${id}" aria-pressed="${id === difficulty}">${unlocked ? '' : '🔒 '}${entry.label}${unlocked ? '' : `<small>${condition}</small>`}</button>`;
+    return `<button class="difficulty-tab${id === difficulty ? ' active' : ''}${unlocked ? '' : ' locked'}" data-board-difficulty="${id}" aria-pressed="${id === difficulty}">${unlocked ? '' : '잠김 · '}${entry.label}${unlocked ? '' : `<small>${condition}</small>`}</button>`;
   }).join('');
   const rows = STAGE_LIST.map((stage) => {
     const unlocked = stageIsUnlocked(stage.id, difficulty);
@@ -934,7 +933,7 @@ function renderBoard() {
     const pulse = unlocked && ['board', 'blacksmith'].includes(tutorialState?.step) ? ' tutorial-pulse' : '';
     return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
-  const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">🔒 ${tierLock}</p>`;
+  const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">잠김 · ${tierLock}</p>`;
   hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
 }
 
@@ -1136,7 +1135,7 @@ function renderPartyLobby() {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const family = ['sword', 'crossbow', 'staff'].includes(member.family) ? member.family : 'sword';
-    return `<div class="party-lobby-member"><span>${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
+    return `<div class="party-lobby-member"><span>${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
   }).join('');
   const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
   hubPanel.dataset.kind = 'party';
@@ -1576,7 +1575,7 @@ function renderPanel(kind, compareUid = '') {
       const item = inventory.find((entry) => entry.slot === slot.key);
       return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
     }).join('');
-    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_ICONS[family]} ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
   }
   hubPanel.focus();
 }
