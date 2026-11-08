@@ -65,6 +65,9 @@ export function computeBotPolicy({ player, viewed, roomCleared = false, door = n
     enemy.attackRemaining > 0 &&
     insideShape(enemy.attackShape, player, player.radius ?? 0.32)
   ));
+  if (!threat && (player.counterReadyTicks ?? 0) > 0) {
+    buttons |= (player.previousButtons & BUTTONS.ATTACK) ? 0 : BUTTONS.ATTACK;
+  }
   let aim = target
     ? aimByte(target.x - player.x, target.z - player.z)
     : player.lastInput?.aim ?? 0;
@@ -114,6 +117,9 @@ export function computeBotPolicy({ player, viewed, roomCleared = false, door = n
     const availableSkill = [1, 2, 3].find((id) => (player.skillCooldowns?.[id] ?? 0) === 0);
     if (availableSkill) buttons |= BUTTONS.SKILL1 << (availableSkill - 1);
     else if (!player.attack) buttons |= BUTTONS.ATTACK;
+  }
+  if (!threat && (player.counterReadyTicks ?? 0) > 0 && (player.previousButtons & BUTTONS.ATTACK)) {
+    buttons &= ~BUTTONS.ATTACK;
   }
 
   return { moveX, moveZ, aim, buttons };

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BUTTONS, completeStage, createStageWorld, hashWorld, leaveStage, setPlayerConnected, step } from '../js/sim/world.js';
+import { BUTTONS, completeStage, createStageWorld, hashWorld, leaveStage, setPlayerConnected, step, stepPlayerMotion } from '../js/sim/world.js';
 import { InputQueue } from '../js/net/input-queue.js';
 import { createPredictor } from '../js/net/predictor.js';
 
@@ -432,6 +432,61 @@ test('predictor matches 600 authoritative motion steps without knockback', () =>
   assert.equal(predictor.pendingInputs.length, 600);
   assert.equal(predictor.metrics.correctionsOver03m, 0);
   assert.equal(predictor.metrics.snaps, 0);
+});
+
+test('predictor replays pending attack from authoritative counter state', () => {
+  const world = createStageWorld({ seed: 126, stageId: 'C1', playerId: 'a' });
+  const player = playersOf(world)[0];
+  const attacker = isolateEnemy(world);
+  const predictor = createPredictor({
+    player: structuredClone(player),
+    playerId: player.playerId,
+    ctx: { arena: world.arena, openDoors: world.openDoors, tick: world.tick, entities: world.entities },
+  });
+  const input = neutral(1, BUTTONS.ATTACK);
+  assert.equal(predictor.applyLocalInput(input).motion.counterStrike, null);
+
+  const serverPlayer = structuredClone(player);
+  serverPlayer.counterReadyTicks = 30;
+  serverPlayer.counterAttackerId = attacker.id;
+  serverPlayer.perfectPaid = true;
+  serverPlayer.dodgeStartTick = 12;
+  const serverAttacker = structuredClone(attacker);
+  const serverContext = {
+    arena: world.arena,
+    openDoors: world.openDoors,
+    tick: world.tick,
+    entities: [serverPlayer, serverAttacker],
+    pendingImpacts: [],
+  };
+  const serverMotion = stepPlayerMotion(serverContext, serverPlayer, input);
+  const start = { x: player.x, z: player.z };
+  const snapshotPlayer = {
+    ...structuredClone(player),
+    counterReadyTicks: 30,
+    counterAttackerId: attacker.id,
+    perfectPaid: true,
+    dodgeStartTick: 12,
+    motion: {
+      ...structuredClone(player),
+      counterReadyTicks: 30,
+      counterAttackerId: attacker.id,
+      perfectPaid: true,
+      dodgeStartTick: 12,
+    },
+  };
+  const reconciliation = predictor.reconcile({ player: snapshotPlayer, ack: 0, tick: world.tick });
+  const predicted = predictor.getPlayer();
+
+  assert.equal(reconciliation.pending, 1);
+  assert.ok(serverMotion.counterStrike);
+  assert.equal(serverPlayer.x, start.x);
+  assert.equal(serverPlayer.z, start.z);
+  assert.deepEqual({ x: predicted.x, z: predicted.z }, { x: serverPlayer.x, z: serverPlayer.z });
+  assert.equal(predicted.counterReadyTicks, serverPlayer.counterReadyTicks);
+  assert.equal(predicted.counterAttackerId, serverPlayer.counterAttackerId);
+  assert.equal(predicted.perfectPaid, serverPlayer.perfectPaid);
+  assert.equal(predicted.dodgeStartTick, serverPlayer.dodgeStartTick);
 });
 
 test('predictor fades small corrections and resets from the next full snapshot after visibility resumes', () => {

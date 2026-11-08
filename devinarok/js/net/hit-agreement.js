@@ -42,3 +42,13 @@ export function scoreCastHitAgreement({
     exactMatch: disagreementTargets.length === 0,
   };
 }
+
+export function isCounterCast({
+  serverStrikeTicks = [],
+  clientCastStep = null,
+  clientSteps = [],
+} = {}) {
+  return serverStrikeTicks.some((strike) => strike?.skill === 'counter') ||
+    clientCastStep === 'counter' ||
+    clientSteps.some((step) => step?.playerState?.castStep === 'counter');
+}

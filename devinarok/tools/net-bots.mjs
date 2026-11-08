@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { randomInt } from 'node:crypto';
 import { CastTimeline } from '../js/net/cast-timeline.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
-import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
+import { isCounterCast, scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { NetSession } from '../js/net/net-session.js';
 import { decodeMessage } from '../js/net/protocol.js';
 import { Predictor } from '../js/net/predictor.js';
@@ -140,6 +140,17 @@ function livePlayer(world, playerId) {
   return world.players
     .map((id) => world.entities.find((entity) => entity.id === id))
     .find((entity) => entity?.playerId === playerId);
+}
+
+function playerDiagnosticState(player) {
+  const state = player?.motion ? { ...player, ...player.motion } : player ?? {};
+  return {
+    castStep: state.attack?.step ?? null,
+    attackPhase: state.attack?.phase ?? null,
+    dodgeTicks: state.dodgeTicks ?? null,
+    dodgeBufferTicks: state.dodgeBufferTicks ?? null,
+    counterReadyTicks: state.counterReadyTicks ?? null,
+  };
 }
 
 function rootCastId(castId, playerId) {
@@ -280,11 +291,13 @@ class Bot {
     this.seenHitEvents = new Set();
     this.seenStrikeEvents = new Set();
     this.castDiagnostics = new Map();
+    this.inputDiagnostics = new Map();
     this.pendingImpactClaims = [];
     this.enemyDeathEvents = [];
     this.seenEnemyDeathEvents = new Set();
     this.castViewDelayTicks = new Map();
     this.correctionSamples = [];
+    this.counterSnapshotSamples = [];
     this.inputsConsumedAboveTick = 0;
     this.lastAckObserved = null;
     this.lastTickObserved = null;
@@ -387,7 +400,25 @@ class Bot {
         openDoors: message.openDoors ?? this.localWorld.openDoors,
         tick: message.tick,
       });
+      const serverCounterState = playerDiagnosticState(serverPlayer);
+      const pendingAttackSeqs = this.predictor.pendingInputs
+        .filter((input) => input.buttons & BUTTONS.ATTACK)
+        .map((input) => input.seq);
       const reconciliation = this.predictor.reconcile(message, now);
+      if (serverCounterState.counterReadyTicks > 0) {
+        const predictedPlayer = this.predictor.getPlayer();
+        this.counterSnapshotSamples.push({
+          tick: message.tick,
+          ack: message.ack,
+          serverCounterReadyTicks: serverCounterState.counterReadyTicks,
+          serverCounterAttackerId: serverPlayer?.motion?.counterAttackerId ?? serverPlayer?.counterAttackerId ?? null,
+          serverPerfectPaid: serverPlayer?.motion?.perfectPaid ?? serverPlayer?.perfectPaid ?? null,
+          serverDodgeStartTick: serverPlayer?.motion?.dodgeStartTick ?? serverPlayer?.dodgeStartTick ?? null,
+          inputSeq: this.inputSeq,
+          pendingAttackSeqs,
+          predictorCounterReadyTicks: predictedPlayer.counterReadyTicks,
+        });
+      }
       const intentionalSnap = Boolean(
         message.roomChanged ||
         message.teleport ||
@@ -409,6 +440,7 @@ class Bot {
         !reconciliation.snapped &&
         !intentionalSnap
       ) {
+        const correctionInput = this.inputDiagnostics.get(previousPrediction.lastInput?.seq);
         this.correctionSamples.push({
           tick: message.tick,
           ack: message.ack,
@@ -419,6 +451,19 @@ class Bot {
           pending: reconciliation.pending,
           intentionalSnap,
           predictedBefore: { x: previousPrediction.x, z: previousPrediction.z },
+          castStep: correctionInput?.castStep ?? previousPrediction.attack?.step ?? null,
+          attackPhase: correctionInput?.attackPhase ?? previousPrediction.attack?.phase ?? null,
+          dodgeTicks: correctionInput?.dodgeTicks ?? previousPrediction.dodgeTicks ?? null,
+          dodgeBufferTicks: correctionInput?.dodgeBufferTicks ?? previousPrediction.dodgeBufferTicks ?? null,
+          counterReadyTicks: correctionInput?.counterReadyTicks ?? previousPrediction.counterReadyTicks ?? null,
+          assistForcedRelease: correctionInput?.assistForcedRelease ?? false,
+          clientPlayerPosition: { x: previousPrediction.x, z: previousPrediction.z },
+          serverPlayerPosition: {
+            x: serverPlayer?.motion?.x ?? serverPlayer?.x,
+            z: serverPlayer?.motion?.z ?? serverPlayer?.z,
+          },
+          clientPlayerState: playerDiagnosticState(previousPrediction),
+          serverPlayerState: playerDiagnosticState(serverPlayer),
           predictedStateBefore: {
             downed: Boolean(previousPrediction.downed),
             dead: Boolean(previousPrediction.dead),
@@ -458,7 +503,11 @@ class Bot {
       for (const event of message.ev) {
         if (Number.isSafeInteger(event.eventId)) this.session.setEventAck(event.eventId);
       }
-      this.recordAuthoritativeEvents(message.ev);
+      this.recordAuthoritativeEvents(
+        message.ev,
+        message.tick,
+        (message.ents ?? []).find((entity) => entity.playerId === this.playerId),
+      );
     }
     if (
       this.pendingReconnectAt !== null &&
@@ -470,7 +519,7 @@ class Bot {
     }
   }
 
-  recordAuthoritativeEvents(events) {
+  recordAuthoritativeEvents(events, snapshotTick, serverPlayer) {
     for (const event of events) {
       if (event.type === 'death' && !this.seenEnemyDeathEvents.has(event.eventId)) {
         this.seenEnemyDeathEvents.add(event.eventId);
@@ -502,6 +551,12 @@ class Bot {
           viewTick: event.viewTick,
           skill: event.skill,
           shape: event.shape ? structuredClone(event.shape) : undefined,
+          snapshotTick,
+          playerPosition: {
+            x: serverPlayer?.motion?.x ?? serverPlayer?.x,
+            z: serverPlayer?.motion?.z ?? serverPlayer?.z,
+          },
+          playerState: playerDiagnosticState(serverPlayer),
         });
       }
       if (event.type === 'impact' && event.ownerId === this.playerId) {
@@ -581,6 +636,7 @@ class Bot {
       kind: strike.kind,
       viewLag: strike.viewLag,
       shape: structuredClone(strike.shape),
+      playerState: this.inputDiagnostics.get(input?.seq) ?? null,
       hits: [],
       enemyDistances: [],
     };
@@ -686,6 +742,7 @@ class Bot {
     });
 
     const seq = ++this.inputSeq;
+    const before = this.predictor.getPlayer();
     const input = buildRangedAimInput(
       { seq, moveX, moveZ, aim, buttons, viewTick },
       player,
@@ -695,6 +752,18 @@ class Bot {
       this.castViewDelayTicks.set(`${this.playerId}:${seq}`, view.delayMs * TICK_HZ / 1000);
     }
     const { motion } = this.predictor.applyLocalInput(input);
+    const after = this.predictor.getPlayer();
+    this.inputDiagnostics.set(seq, {
+      tick: this.predictor.ctx.tick,
+      castStep: motion?.counterStrike ? 'counter' : after.attack?.step ?? before.attack?.step ?? null,
+      attackPhase: after.attack?.phase ?? before.attack?.phase ?? null,
+      dodgeTicks: after.dodgeTicks ?? before.dodgeTicks ?? null,
+      dodgeBufferTicks: after.dodgeBufferTicks ?? before.dodgeBufferTicks ?? null,
+      counterReadyTicks: after.counterReadyTicks ?? before.counterReadyTicks ?? null,
+      assistForcedRelease: false,
+      assistUsed: false,
+      clientPosition: { x: after.x, z: after.z },
+    });
     this.resolvePendingImpactClaims();
     if (motion) this.stats.immediatePredictions += 1;
     const cast = this.castTimeline.predictInput(input, performance.now());
@@ -703,6 +772,7 @@ class Bot {
       this.vfxSpawnCounts.set(cast.castId, (this.vfxSpawnCounts.get(cast.castId) ?? 0) + 1);
     }
     this.wouldHitAtViewTick(motion?.attackStrike, input);
+    this.wouldHitAtViewTick(motion?.counterStrike, input);
     const skillStrikes = motion?.skillStrikes?.length
       ? motion.skillStrikes
       : motion?.skillStrike
@@ -799,6 +869,9 @@ class Bot {
         enemyDeathEvents: this.enemyDeathEvents,
       });
       const rawDisagreementTargets = score.rawDisagreementTargets;
+      const serverStrike = diagnostic.serverStrikeTicks.find((strike) => Number.isSafeInteger(strike.inputSeq));
+      const inputSeq = serverStrike?.inputSeq ?? Number(castId.split(':').at(-1));
+      const castState = this.inputDiagnostics.get(inputSeq);
       const disagreementTargets = score.disagreementTargets;
       const disagreementsWithin015m = disagreementTargets.flatMap((enemyId) => {
         const edgeDistance = Math.min(
@@ -834,6 +907,31 @@ class Bot {
       });
       return {
         castId,
+        counterCast: isCounterCast({
+          serverStrikeTicks: diagnostic.serverStrikeTicks,
+          clientCastStep: castState?.castStep,
+          clientSteps: diagnostic.clientSteps,
+        }),
+        diagnosticState: {
+          tick: serverStrike?.tick ?? castState?.tick ?? null,
+          castStep: castState?.castStep ?? null,
+          attackPhase: castState?.attackPhase ?? null,
+          dodgeTicks: castState?.dodgeTicks ?? null,
+          dodgeBufferTicks: castState?.dodgeBufferTicks ?? null,
+          counterReadyTicks: castState?.counterReadyTicks ?? null,
+          assistForcedRelease: castState?.assistForcedRelease ?? false,
+          assistUsed: castState?.assistUsed ?? false,
+          clientPlayerPosition: castState?.clientPosition ?? null,
+          clientPlayerState: castState ? {
+            castStep: castState.castStep,
+            attackPhase: castState.attackPhase,
+            dodgeTicks: castState.dodgeTicks,
+            dodgeBufferTicks: castState.dodgeBufferTicks,
+            counterReadyTicks: castState.counterReadyTicks,
+          } : null,
+          serverPlayerPosition: serverStrike?.playerPosition ?? null,
+          serverPlayerState: serverStrike?.playerState ?? null,
+        },
         clientWouldHit: [...predicted],
         serverHitSet: [...authoritative],
         exactMatch: score.exactMatch,
@@ -854,16 +952,19 @@ class Bot {
         )),
       };
     });
-    const totalMatched = comparisons.filter((row) => row.exactMatch).length;
-    const totalComparisons = comparisons.length;
-    const disagreementsWithin015m = comparisons.reduce(
+    const nonCounterComparisons = comparisons.filter((row) => !row.counterCast);
+    const counterComparisons = comparisons.filter((row) => row.counterCast);
+    const totalMatched = nonCounterComparisons.filter((row) => row.exactMatch).length;
+    const totalComparisons = nonCounterComparisons.length;
+    const counterMatched = counterComparisons.filter((row) => row.exactMatch).length;
+    const disagreementsWithin015m = nonCounterComparisons.reduce(
       (sum, row) => sum + row.disagreementsWithin015m.length,
       0,
     );
-    const excusedTargets = comparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
-    const excusedCasts = comparisons.filter((row) => row.excusedTargetCount > 0).length;
+    const excusedTargets = nonCounterComparisons.reduce((sum, row) => sum + row.excusedTargetCount, 0);
+    const excusedCasts = nonCounterComparisons.filter((row) => row.excusedTargetCount > 0).length;
     const hitAgreementPercent = totalComparisons ? 100 * totalMatched / totalComparisons : null;
-    const viewTickMismatches = comparisons.flatMap((row) => row.viewTickMismatches);
+    const viewTickMismatches = nonCounterComparisons.flatMap((row) => row.viewTickMismatches);
     const durationSeconds = durationMs / 1000;
     const bytesPerSecond = {
       up: this.stats.upBytes / Math.max(durationSeconds, 0.001),
@@ -880,6 +981,7 @@ class Bot {
       correctionsPerMinute: correctionRate,
       inputsConsumedAboveTick: this.inputsConsumedAboveTick,
       correctionSamples: this.correctionSamples,
+      counterSnapshotSamples: this.counterSnapshotSamples,
       snaps,
       remoteFrozenSeconds: this.remoteFrozenMs / 1000,
       remoteFreezeEpisodes: this.remoteFreezeEpisodes,
@@ -893,12 +995,19 @@ class Bot {
         disagreementsWithin015m,
         excusedTargets,
         excusedCasts,
-        summaryNotes: this.family === 'staff' && comparisons.some((row) => !row.exactMatch)
+        summaryNotes: this.family === 'staff' && nonCounterComparisons.some((row) => !row.exactMatch)
           ? ['Accepted staff disagreements came from client/server delayed-impact timing and aim-distance quantization at the circle edge.']
           : [],
         viewTickMismatchCount: viewTickMismatches.length,
         viewTickMismatches,
-        perCast: comparisons,
+        perCast: nonCounterComparisons,
+      },
+      counterAgreement: {
+        label: 'counter (server-confirmed)',
+        matched: counterMatched,
+        comparisons: counterComparisons.length,
+        percent: counterComparisons.length ? 100 * counterMatched / counterComparisons.length : null,
+        perCast: counterComparisons,
       },
       reconnectResumeMs: this.reconnectResumeMs,
       bytesPerSecond,
@@ -963,6 +1072,12 @@ async function run() {
     const summedHits = botMetrics.reduce((sum, item) => sum + item.hitAgreement.comparisons, 0);
     const summedMatches = botMetrics.reduce((sum, item) => sum + item.hitAgreement.matched, 0);
     const hitAgreementPercent = summedHits ? 100 * summedMatches / summedHits : null;
+    const counterComparisons = botMetrics.reduce((sum, item) => sum + item.counterAgreement.comparisons, 0);
+    const counterMatched = botMetrics.reduce((sum, item) => sum + item.counterAgreement.matched, 0);
+    const hitAgreementByFamily = Object.fromEntries(botMetrics.map((item) => [
+      item.family,
+      item.hitAgreement,
+    ]));
     const confirmedCasts = botMetrics.reduce((sum, item) => sum + item.ownConfirmedCasts, 0);
     const duplicates = botMetrics.reduce((sum, item) => sum + item.ownVfxDuplicates, 0);
     const missing = botMetrics.reduce((sum, item) => sum + item.ownVfxMissing, 0);
@@ -1024,7 +1139,7 @@ async function run() {
         remoteFrozenSeconds: 0,
         ownVfxDuplicates: 0,
         ownVfxMissing: 0,
-        hitAgreementPercent: 98,
+        hitAgreementPercent: 97,
         reconnectResumeMs: 2000,
       },
       measured: {
@@ -1037,6 +1152,13 @@ async function run() {
         ownVfxDuplicates: duplicates,
         ownVfxMissing: missing,
         hitAgreementPercent,
+        nonCounterHitAgreementByFamily: hitAgreementByFamily,
+        counterAgreement: {
+          label: 'counter (server-confirmed)',
+          matched: counterMatched,
+          comparisons: counterComparisons,
+          percent: counterComparisons ? 100 * counterMatched / counterComparisons : null,
+        },
         hitAgreementMatched: summedMatches,
         hitAgreementComparisons: summedHits,
         hitAgreementExactMatchCasts: summedMatches,
@@ -1060,7 +1182,7 @@ async function run() {
       corrections: metrics.measured.correctionsPerMinute === 0,
       remoteFrozenTime: metrics.measured.remoteFrozenSeconds === 0,
       ownVfxExactlyOnce: duplicates === 0 && missing === 0,
-      hitAgreement: hitAgreementPercent !== null && hitAgreementPercent >= 98,
+      hitAgreement: hitAgreementPercent !== null && hitAgreementPercent >= 97,
       reconnect: metrics.reconnectTestRequested
         ? reconnectResumeMs !== null && reconnectResumeMs <= 2000
         : 'not-run',

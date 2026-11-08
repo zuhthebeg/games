@@ -16,6 +16,7 @@ test('settings survive repository reloads through the settings change set', asyn
     largeText: true,
     haptics: false,
     telegraphEmphasis: false,
+    autoAttack: true,
   });
   assert.deepEqual(saved, {
     ...DEFAULT_SETTINGS,
@@ -27,6 +28,7 @@ test('settings survive repository reloads through the settings change set', asyn
     largeText: true,
     haptics: false,
     telegraphEmphasis: false,
+    autoAttack: true,
   });
   const reopened = new SaveRepository(backend);
   await reopened.initialize();

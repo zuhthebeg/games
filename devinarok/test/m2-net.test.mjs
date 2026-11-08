@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { AttackInputAssistant, buildPartyAssistedInput } from '../js/core/attack-assist.js';
 import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
-import { CastTimeline } from '../js/net/cast-timeline.js';
+import { CastTimeline, castVisualKey } from '../js/net/cast-timeline.js';
 import { escapeHtml } from '../js/ui/escape-html.js';
 import { handlePauseKey } from '../js/ui/pause-menu.js';
 import { InterpolationBuffer } from '../js/net/interp.js';
-import { scoreCastHitAgreement } from '../js/net/hit-agreement.js';
+import { isCounterCast, scoreCastHitAgreement } from '../js/net/hit-agreement.js';
 import { InputQueue } from '../js/net/input-queue.js';
 import { NetSession } from '../js/net/net-session.js';
 import { computeBotPolicy } from '../js/net/bot-policy.js';
@@ -15,7 +16,38 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { Predictor } from '../js/net/predictor.js';
 import { playerModelKey } from '../js/render/player-look.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
-import { BUTTONS } from '../js/sim/world.js';
+import { BUTTONS, createStageWorld } from '../js/sim/world.js';
+
+test('server counter upgrades a predicted basic cast instead of being deduplicated', () => {
+  const timeline = new CastTimeline({ playerId: 'hero' });
+  const predicted = timeline.predictInput({ seq: 9, buttons: BUTTONS.ATTACK }, 0);
+  const basicKey = castVisualKey(predicted);
+  const counterEvent = {
+    eventId: 1,
+    type: 'cast',
+    castId: 'hero:9',
+    playerId: 'hero',
+    skillId: 'counter',
+    family: 'sword',
+  };
+
+  const result = timeline.ingestEvents([counterEvent], 20);
+  assert.equal(result.spawned.length, 0);
+  assert.equal(result.attached[0], predicted);
+  assert.equal(predicted.skillId, 'counter');
+  assert.equal(predicted.skill, 'counter');
+  assert.equal(predicted.kind, 'counter');
+  assert.equal(predicted.confirmed, true);
+  assert.notEqual(basicKey, castVisualKey(counterEvent));
+  assert.equal(castVisualKey(predicted), castVisualKey(counterEvent));
+});
+
+test('hit agreement classifies server and client-predicted counters separately', () => {
+  assert.equal(isCounterCast({ serverStrikeTicks: [{ skill: 'counter' }] }), true);
+  assert.equal(isCounterCast({ clientCastStep: 'counter' }), true);
+  assert.equal(isCounterCast({ clientSteps: [{ playerState: { castStep: 'counter' } }] }), true);
+  assert.equal(isCounterCast({ serverStrikeTicks: [{ skill: 0 }], clientCastStep: 1 }), false);
+});
 
 test('protocol round trips compact snapshots and rounds spatial values', () => {
   const message = {
@@ -34,6 +66,10 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
       characterKind: 'knight',
       look: { weapon: '2H_Sword', helmet: true, cape: true, weaponRarity: 'rare' },
       motion: { x: 1.235, z: -2.345, facing: -1.236 },
+      counterReadyTicks: 42,
+      counterAttackerId: 8,
+      perfectPaid: true,
+      dodgeStartTick: 17,
     }],
     events: [{ eventId: 4, type: 'hit', shape: { originX: 0.129, originZ: 1.999, angle: 2.345 } }],
   };
@@ -41,6 +77,10 @@ test('protocol round trips compact snapshots and rounds spatial values', () => {
   assert.equal(result.ents[0].x, roundToHundredth(message.ents[0].x));
   assert.equal(result.ents[0].z, roundToHundredth(message.ents[0].z));
   assert.equal(result.ents[0].facing, roundToHundredth(message.ents[0].facing));
+  assert.equal(result.ents[0].counterReadyTicks, 42);
+  assert.equal(result.ents[0].counterAttackerId, 8);
+  assert.equal(result.ents[0].perfectPaid, true);
+  assert.equal(result.ents[0].dodgeStartTick, 17);
   assert.equal(result.ents[0].motion.x, roundToHundredth(message.ents[0].motion.x));
   assert.equal(result.ents[0].playerId, 'hero');
   assert.equal(result.events[0].shape.angle, roundToHundredth(message.events[0].shape.angle));
@@ -286,6 +326,84 @@ test('party rendering does not mutate the predictor player position', () => {
   assert.equal(view.entities[0].z, 8);
   assert.equal(player.x, 1);
   assert.equal(player.z, 2);
+});
+
+test('party auto-attack targets a live enemy snapshot in a two-player party', () => {
+  const stageWorld = createStageWorld({
+    seed: 251,
+    stageId: 'C1',
+    playerId: 'self',
+    inputDriven: true,
+    party: [{ playerId: 'self' }, { playerId: 'ally' }],
+  });
+  const player = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'self');
+  const ally = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'ally');
+  const enemy = stageWorld.entities.find((entity) => entity.kind === 'enemy');
+  Object.assign(enemy, { dead: true, state: 'dead', x: player.x + 50, spawnTicksLeft: 0 });
+  const client = Object.create(PartyClient.prototype);
+  client.stageWorld = stageWorld;
+  client.playerId = 'self';
+  client.predictor = {
+    getPlayer: () => player,
+    getVisualPosition: () => ({ x: player.x, z: player.z }),
+  };
+  client.session = { clock: { getEstimate: () => 100 } };
+  client.interpolation = {
+    sample: () => ({
+      renderTick: 0,
+      entities: [
+        { ...ally },
+        {
+          ...enemy,
+          dead: false,
+          state: 'idle',
+          invulnerable: false,
+          spawnTicksLeft: 0,
+          x: player.x + 1.5,
+          z: player.z,
+        },
+      ],
+    }),
+  };
+  client.lastSnapshot = {
+    tick: 0,
+    ev: [],
+    roomIndex: 0,
+    openDoors: stageWorld.openDoors,
+    activeEnemyIds: [enemy.id],
+  };
+  client.reviveProgress = new Map();
+
+  const world = client.viewWorld(100);
+  const viewedEnemy = world.entities.find((entity) => entity.id === enemy.id);
+  assert.deepEqual(
+    {
+      kind: viewedEnemy.kind,
+      dead: viewedEnemy.dead,
+      state: viewedEnemy.state,
+      invulnerable: viewedEnemy.invulnerable,
+      spawnTicksLeft: viewedEnemy.spawnTicksLeft,
+      x: viewedEnemy.x,
+      z: viewedEnemy.z,
+    },
+    {
+      kind: 'enemy',
+      dead: false,
+      state: 'idle',
+      invulnerable: false,
+      spawnTicksLeft: 0,
+      x: player.x + 1.5,
+      z: player.z,
+    },
+  );
+  const input = buildPartyAssistedInput(
+    new AttackInputAssistant(),
+    { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0, attackHeld: false },
+    client,
+    player,
+    { autoAttack: true },
+  );
+  assert.equal(input.buttons & BUTTONS.ATTACK, BUTTONS.ATTACK);
 });
 
 test('party resets run prediction state to each first full snapshot', () => {

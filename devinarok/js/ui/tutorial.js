@@ -17,6 +17,7 @@ export function createTutorialState(saved = {}) {
     skipped: Boolean(saved.skipped),
     completed: Boolean(saved.completed),
     combatComplete: Boolean(saved.combatComplete),
+    perfectDodgeHintShown: Boolean(saved.perfectDodgeHintShown),
     active: !saved.skipped && !saved.completed && step !== 'done',
   };
 }
@@ -27,6 +28,9 @@ export function resolveTutorialSortie(stageId, state) {
 }
 
 export function transitionTutorial(state, event) {
+  if (event.type === 'perfectDodge' && !state.perfectDodgeHintShown) {
+    return { ...state, perfectDodgeHintShown: true };
+  }
   if (!state.active && event.type !== 'replay') return state;
   let step = state.step;
   let skipped = state.skipped;
@@ -63,6 +67,7 @@ export function transitionTutorial(state, event) {
     skipped,
     completed,
     combatComplete,
+    perfectDodgeHintShown: Boolean(state.perfectDodgeHintShown),
     active: !skipped && !completed && step !== 'done',
   };
 }

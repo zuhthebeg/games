@@ -14,6 +14,13 @@ function castKind(pressed) {
   return null;
 }
 
+export function castVisualKey(cast) {
+  const skill = cast?.skillId === 'counter' || cast?.skill === 'counter'
+    ? 'counter'
+    : `skill-${cast?.skill ?? 0}`;
+  return `${cast?.castId ?? ''}|${skill}`;
+}
+
 export class CastTimeline {
   constructor({ playerId, confirmTimeoutMs = 300, fadeDurationMs = 150 } = {}) {
     this.playerId = playerId;
@@ -65,12 +72,21 @@ export class CastTimeline {
           existing.confirmed = true;
           existing.eventId = event.eventId;
           existing.serverEvent = event;
+          existing.skillId = event.skillId ?? existing.skillId;
+          existing.family = event.family ?? existing.family;
+          if (event.skillId === 'counter') {
+            existing.kind = 'counter';
+            existing.skill = 'counter';
+          } else if (event.skill !== undefined) existing.skill = event.skill;
           attached.push(existing);
         } else if (!this.seenCastIds.has(event.castId)) {
           const cast = {
             castId: event.castId,
             playerId: event.playerId,
-            skill: event.skill ?? 0,
+            kind: event.skillId === 'counter' ? 'counter' : event.skill === undefined ? 'attack' : 'skill',
+            skill: event.skillId === 'counter' ? 'counter' : event.skill ?? 0,
+            skillId: event.skillId,
+            family: event.family,
             step: event.step,
             predicted: false,
             confirmed: true,

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=ff1b3c1c61">
+  <link rel="stylesheet" href="css/game.css?v=58ead69e09">
   <script type="importmap">
     {
       "imports": {
@@ -15,37 +15,38 @@
         "./js/content/items.js": "./js/content/items.js?v=4a01606a6b",
         "./js/content/skills.js": "./js/content/skills.js?v=cb9aa781d7",
         "./js/content/stages.js": "./js/content/stages.js?v=18e9b73ef9",
-        "./js/core/input.js": "./js/core/input.js?v=0cc8a65388",
+        "./js/core/attack-assist.js": "./js/core/attack-assist.js?v=204ad965f6",
+        "./js/core/input.js": "./js/core/input.js?v=3d6e727e47",
         "./js/core/loop.js": "./js/core/loop.js?v=455bc00b25",
-        "./js/main.js": "./js/main.js?v=c89b01dc71",
-        "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=d59610f015",
-        "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=610dc2198e",
+        "./js/main.js": "./js/main.js?v=5b0c1897fa",
+        "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=97f00cdc77",
+        "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=c0b8a9ef45",
         "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
-        "./js/net/hit-agreement.js": "./js/net/hit-agreement.js?v=304a510908",
+        "./js/net/hit-agreement.js": "./js/net/hit-agreement.js?v=45cbf91d3e",
         "./js/net/input-queue.js": "./js/net/input-queue.js?v=f85d9e6f28",
         "./js/net/interp.js": "./js/net/interp.js?v=5fe8dcca9a",
         "./js/net/net-session.js": "./js/net/net-session.js?v=188c1a7fef",
-        "./js/net/predictor.js": "./js/net/predictor.js?v=13e85ca1bf",
-        "./js/net/protocol.js": "./js/net/protocol.js?v=7a0453fb82",
+        "./js/net/predictor.js": "./js/net/predictor.js?v=5ab9947114",
+        "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
-        "./js/net/sim-version.js": "./js/net/sim-version.js?v=cb2a32c495",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=b6ee78cfc9",
         "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
         "./js/render/player-look.js": "./js/render/player-look.js?v=46a7229d53",
         "./js/render/quality.js": "./js/render/quality.js?v=8fc4218783",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=14de157c1f",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=619e87745e",
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
         "./js/save/ops.js": "./js/save/ops.js?v=1acba2dd60",
-        "./js/save/repository.js": "./js/save/repository.js?v=5e47c8c90b",
+        "./js/save/repository.js": "./js/save/repository.js?v=bea5e16922",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=a4d3b0342e",
+        "./js/sim/world.js": "./js/sim/world.js?v=dd167281d0",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=95254c35c8",
-        "./js/ui/party.js": "./js/ui/party.js?v=75a81026fd",
+        "./js/ui/party.js": "./js/ui/party.js?v=4d7eb72c48",
         "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
-        "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=b1e91c7a90",
+        "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=6cd9432b32",
         "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js": "./vendor/three-0.187.0/addons/libs/meshopt_decoder.module.js?v=d428e73a00",
         "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js": "./vendor/three-0.187.0/addons/loaders/GLTFLoader.js?v=532ac726e1",
         "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js": "./vendor/three-0.187.0/addons/utils/BufferGeometryUtils.js?v=7bda2a8ba8",
@@ -107,7 +108,7 @@
       <div id="controls" class="controls">
         <div class="joystick" data-joystick><span data-joystick-knob></span></div>
         <div class="buttons">
-          <button class="attack-button" data-button="1">공격</button>
+          <button class="attack-button" data-button="1"><span>공격</span><small id="auto-attack-chip" class="auto-attack-chip" hidden>자동</small></button>
           <button data-button="2">회피</button>
           <button data-button="4">기술 1</button>
           <button data-button="8">기술 2</button>
@@ -159,6 +160,7 @@
             <label class="setting-toggle"><span>큰 글자</span><input id="large-text-setting" type="checkbox"></label>
             <label class="setting-toggle"><span>진동</span><input id="haptics-setting" type="checkbox"></label>
             <label class="setting-toggle"><span>위험 표시 강조</span><input id="telegraph-setting" type="checkbox"></label>
+            <label class="setting-toggle"><span>자동 공격</span><input id="auto-attack-setting" type="checkbox"></label>
           </div>
           <button id="settings-close-button" type="button">닫기</button>
         </section>
@@ -172,8 +174,9 @@
       <div id="boss-intro" class="boss-intro" hidden><div><span id="boss-intro-region">무너진 지하묘지</span><strong id="boss-intro-name">해골 기사단장</strong></div></div>
       <div id="result-panel" class="overlay" hidden><div class="panel" role="dialog" aria-modal="true" tabindex="-1"></div></div>
       <div id="toast" role="status"></div>
+      <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=c89b01dc71"></script>
+  <script type="module" src="js/main.js?v=5b0c1897fa"></script>
 </body>
 </html>
