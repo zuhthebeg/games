@@ -30,7 +30,7 @@ import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } fro
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
 import {
-  DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, stageClearKey, STAGE_LIST,
+  DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage, stageClearKey, STAGE_LIST,
 } from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
@@ -82,6 +82,7 @@ let partyFrame = null;
 let partyPreviousWorld = null;
 let partyLastTime = 0;
 let partyLastRenderTime = 0;
+let partyLobbySelection = { hostId: null, difficulty: null, wasHost: false };
 let partyAccumulator = 0;
 let partyInputTimer = null;
 let partyInputLastTime = 0;
@@ -495,9 +496,9 @@ function handleAudioEvent(event, current) {
       }
     } else if (event.skill !== undefined) {
       const sounds = {
-        sword: { 3: 'shield-clang' },
-        crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot' },
-        staff: { 1: 'flame', 2: 'frost', 3: 'blink' },
+        sword: { 3: 'shield-clang', 4: 'impact' },
+        crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot', 4: 'crossbow-shot' },
+        staff: { 1: 'flame', 2: 'frost', 3: 'blink', 4: 'impact' },
       };
       audio.play(sounds[event.family]?.[event.skill] ?? 'staff-cast');
     } else if (event.family === 'staff') audio.play('staff-cast');
@@ -688,14 +689,15 @@ async function enterHub() {
   $('#sanctuary-hud').hidden = true;
   $('#sanctuary-interact').hidden = true;
   $('#sanctuary-feedback').hidden = true;
-  $('#key-hints').textContent = 'J 공격 · K 회피 · 1/2/3 기술 · Q 물약';
+  $('#key-hints').textContent = 'WASD 이동 · 조이스틱 이동';
   titleScreen.hidden = true;
   gameScreen.hidden = false;
   hubUi.hidden = false;
   hubPanel.hidden = true;
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
-  $('#controls').hidden = true;
+  $('#controls').hidden = false;
+  $('#controls').classList.add('hub-controls');
   $('#boss-hud').hidden = true;
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
@@ -714,7 +716,9 @@ async function enterHub() {
   });
   const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (hero) Object.assign(hero, equipmentLook(equippedItems()));
+  input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA, DEV_COLLISION_OVERLAY, world);
+  renderer.localPlayerId = character.id;
   const [, music] = await Promise.all([renderer.ready, loadAudioForScene('hub')]);
   applySettings();
   updateInventoryUpgradeBadge();
@@ -722,7 +726,19 @@ async function enterHub() {
   audio.setMusic(music, { crossfadeMs: 1000 });
   renderTutorialCard();
   $('#hub-ui [data-panel="board"]').classList.toggle('tutorial-pulse', tutorialState?.step === 'board');
-  frame = requestAnimationFrame(drawHub);
+  loop = new FixedStepLoop({
+    world,
+    playerId: character.id,
+    input,
+    beforeStep: (current) => debugController?.beforeStep(current),
+    render: (previous, current, alpha) => {
+      updateHud(current);
+      renderer?.render(previous, current, alpha);
+      debugController?.frame(current, renderer, performance.now());
+    },
+  });
+  debugController?.applySpeed(loop);
+  loop.start();
   const inviteCode = new URLSearchParams(location.search).get('room');
   if (inviteCode && !inviteRoomHandled) {
     inviteRoomHandled = true;
@@ -824,6 +840,7 @@ async function enterSanctuary() {
   $('#party-downed').hidden = true;
   $('#party-network-overlay').hidden = true;
   $('#controls').hidden = false;
+  $('#controls').classList.remove('hub-controls');
   $('#sanctuary-hud').hidden = false;
   $('#sanctuary-interact').hidden = true;
   $('#sanctuary-feedback').hidden = true;
@@ -912,18 +929,21 @@ const STAT_NAMES = {
 
 const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
 const FAMILY_SKILL_COPY = {
-  sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.'],
-  crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.'],
-  staff: ['지점에 화염 장판을 남깁니다.', '주변에 냉기 파동을 퍼뜨려 둔화시킵니다.', '이동 방향으로 순간이동합니다.'],
+  sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.', '전방에 지진을 일으켜 적을 기절시킵니다.'],
+  crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.', '지정 지점에 화살비를 퍼붓습니다.'],
+  staff: ['지점에 화염 장판을 남깁니다.', '주변에 냉기 파동을 퍼뜨려 둔화시킵니다.', '이동 방향으로 순간이동합니다.', '지정 지점에 운석을 떨어뜨립니다.'],
 };
 
 function updateFamilySkillControls(family) {
   const names = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+  const buttonValues = [4, 8, 16, 128];
   names.forEach((name, index) => {
-    const button = $(`#controls [data-button="${4 << index}"]`);
-    if (button) button.textContent = SKILLS[name].name;
+    const button = $(`#controls [data-button="${buttonValues[index]}"]`);
+    if (index === 3) {
+      if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
+    } else if (button) button.textContent = SKILLS[name].name;
   });
-  $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · Q 물약`;
+  $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · 4 ${SKILLS[names[3]].name} · Q 물약`;
 }
 
 function showFamilyChangeToast(family) {
@@ -1046,6 +1066,7 @@ function renderBoard() {
       : id === 'hell' ? '해골 왕(악몽)을 쓰러뜨리면 열려요' : '';
     return `<button class="difficulty-tab${id === difficulty ? ' active' : ''}${unlocked ? '' : ' locked'}" data-board-difficulty="${id}" aria-pressed="${id === difficulty}">${unlocked ? '' : '잠김 · '}${entry.label}${unlocked ? '' : `<small>${condition}</small>`}</button>`;
   }).join('');
+  const recommendedStage = latestStage(difficulty, character.clearedStages);
   const rows = STAGE_LIST.map((stage) => {
     const unlocked = stageIsUnlocked(stage.id, difficulty);
     const key = stageClearKey(stage.id, difficulty);
@@ -1075,10 +1096,16 @@ function renderBoard() {
     const warning = character.level < warningLevel - 1 ? ' is-underlevel' : '';
     const action = cleared ? '재도전' : unlocked ? '출정' : '잠김';
     const pulse = unlocked && ['board', 'blacksmith'].includes(tutorialState?.step) ? ' tutorial-pulse' : '';
-    return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
+    const recommendation = stage.id === recommendedStage ? '<b class="stage-recommendation">추천</b>' : '';
+    const recommendedClass = stage.id === recommendedStage ? ' is-recommended' : '';
+    return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}${recommendedClass}" data-stage-id="${stage.id}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}${recommendation}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
   const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">잠김 · ${tierLock}</p>`;
   hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+  hubPanel.querySelector(`[data-stage-id="${recommendedStage}"]`)?.scrollIntoView({
+    block: 'center',
+    behavior: settings.reducedMotion ? 'instant' : 'smooth',
+  });
 }
 
 function formatClearTime(ticks) {
@@ -1267,7 +1294,9 @@ function renderPartyLobby() {
   const party = partyClient.lobby?.players ?? [];
   const local = party.find((member) => member.playerId === partyClient.playerId);
   const isHost = partyClient.lobby?.hostId === partyClient.playerId;
-  const allReady = party.length > 0 && party.every((member) => member.connected && member.ready);
+  const guests = party.filter((member) => member.playerId !== partyClient.lobby.hostId);
+  const readyGuests = guests.filter((member) => member.connected && member.ready).length;
+  const allReady = party.length > 0 && party.every((member) => member.connected) && readyGuests === guests.length;
   const stage = partyClient.lobby?.stageId ?? 'C1';
   const difficulty = partyClient.lobby?.difficulty ?? 'normal';
   const difficultyOptions = Object.entries(DIFFICULTIES)
@@ -1279,17 +1308,21 @@ function renderPartyLobby() {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const family = ['sword', 'crossbow', 'staff'].includes(member.family) ? member.family : 'sword';
-    return `<div class="party-lobby-member"><span>${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김'}</span></div>`;
+    const state = member.playerId === partyClient.lobby.hostId
+      ? '방장'
+      : member.connected ? member.ready ? '준비 완료' : '대기 중' : '연결 끊김';
+    return `<div class="party-lobby-member"><span>${FAMILY_NAMES[family]} · ${name} · Lv.${level}</span><span>${state}</span></div>`;
   }).join('');
   const status = partyClient.status === 'reconnecting' ? '재연결 중…' : partyClient.status === 'connecting' ? '연결 중…' : '방에 입장했습니다.';
   hubPanel.dataset.kind = 'party';
   const isPublic = partyClient.lobby?.public !== false;
-  const startLabel = allReady ? '출정' : '모두 준비하면 출정할 수 있어요';
-  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>난이도<select id="party-difficulty-select" ${isHost ? '' : 'disabled'}>${difficultyOptions}</select></label><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
+  const startLabel = allReady ? '출정' : `동료 준비를 기다리는 중 (${readyGuests}/${guests.length})`;
+  hubPanel.innerHTML = `<section class="party-lobby"><h2>파티 대기실</h2><div class="party-invite"><strong>${escapeHtml(partyClient.roomCode)}</strong><button data-party-share>초대 공유</button></div><p class="party-feedback" data-party-feedback role="status" aria-live="polite" hidden></p><p>${status}</p><div class="party-lobby-members">${members || '<p>파티 정보를 기다리는 중…</p>'}</div><label>난이도<select id="party-difficulty-select" ${isHost ? '' : 'disabled'}>${difficultyOptions}</select></label><label>출정 지역<select id="party-stage-select" ${isHost ? '' : 'disabled'}>${stageOptions}</select></label><a class="invite-link" href="${escapeHtml(inviteLink(partyClient.roomCode))}">${escapeHtml(inviteLink(partyClient.roomCode))}</a>${isHost ? `<label class="party-public-toggle"><input type="checkbox" data-party-public ${isPublic ? 'checked' : ''}> 공개 방</label><small>끄면 목록에 보이지 않고 코드로만 들어올 수 있어요</small>` : ''}${isHost ? '' : `<button data-party-ready class="party-ready-button">${local?.ready ? '준비 취소' : '준비'}</button>`}${isHost ? `<button data-party-start class="primary" ${allReady ? '' : 'disabled'}>${startLabel}</button>` : ''}<button data-party-close>나가기</button></section>`;
   syncPartyFeedback();
 }
 
 function connectParty(code = null) {
+  partyLobbySelection = { hostId: null, difficulty: null, wasHost: false };
   partyClient?.close();
   $('#hub-party-button').hidden = true;
   $('#hub-ui [data-panel="sanctuary"]').disabled = true;
@@ -1316,9 +1349,18 @@ function connectParty(code = null) {
   partyClient = new PartyClient({
     character,
     equipment: equippedItems(),
-    onLobby: () => {
+    onLobby: (lobby) => {
       lobbyReceived = true;
       clearTimeout(timeout);
+      const isHost = lobby.hostId === partyClient?.playerId;
+      const hostChanged = lobby.hostId !== partyLobbySelection.hostId;
+      const difficultyChanged = lobby.difficulty !== partyLobbySelection.difficulty;
+      const becameHost = isHost && !partyLobbySelection.wasHost;
+      partyLobbySelection = { hostId: lobby.hostId, difficulty: lobby.difficulty, wasHost: isHost };
+      if (isHost && (hostChanged || difficultyChanged || becameHost)) {
+        const stageId = latestStage(lobby.difficulty, character.clearedStages);
+        if (stageId !== lobby.stageId) partyClient.selectStage(stageId, lobby.difficulty);
+      }
       renderPartyLobby();
       resolveLobby(partyClient);
     },
@@ -1755,6 +1797,7 @@ async function startStage(stageId, options = {}) {
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
   $('#controls').hidden = false;
+  $('#controls').classList.remove('hub-controls');
   $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageToStart);
   $('#boss-name').textContent = stageToStart === 'KB'
     ? '해골 왕'
@@ -1827,9 +1870,21 @@ function updateHud(current) {
     $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
     $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
     $('#potion-count').textContent = String(hero.potions);
-    for (const [id, buttonValue, max] of [[1, 4, 180], [2, 8, 240], [3, 16, 360]]) {
+    const skillNames = FAMILY_SKILLS[hero.family ?? 'sword'] ?? FAMILY_SKILLS.sword;
+    for (const [id, buttonValue] of [[1, 4], [2, 8], [3, 16], [4, 128]]) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
+      const skill = SKILLS[skillNames[id - 1]];
+      const max = Math.max(1, Math.round(skill.cooldownTicks * (
+        1 - Math.min(60, hero.stats.skillCooldownReduction) / 100
+      )));
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
+      if (id === 4 && button) {
+        const locked = character.level < 7;
+        button.disabled = locked;
+        button.classList.toggle('is-locked', locked);
+        button.querySelector('.skill-unlock-badge').hidden = !locked;
+        button.setAttribute('aria-label', `${skill.name}${locked ? ', Lv7' : ''}`);
+      }
     }
     const dodgeButton = $('#controls [data-button="2"]');
     dodgeButton?.style.setProperty('--cooldown', `${(hero.dodgeCooldownTicks / DODGE_COOLDOWN_TICKS) * 100}%`);
@@ -1873,7 +1928,7 @@ function buildSettlement(outcome, result) {
   return { ops, autoSold, record };
 }
 
-function renderSettlement(outcome, result, { autoSold = 0, record = false, error = null } = {}) {
+function renderSettlement(outcome, result, { autoSold = 0, record = false, error = null, newSkill = null } = {}) {
   const saved = !error;
   const difficulty = result.difficulty ?? currentStageDifficulty;
   const stageId = result.stageId ?? currentStageId;
@@ -1892,7 +1947,7 @@ function renderSettlement(outcome, result, { autoSold = 0, record = false, error
   const stageName = STAGE_LIST.find((stage) => stage.id === stageId)?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
@@ -1932,7 +1987,11 @@ async function attemptSettlement(outcome, result, settlementId) {
     remoteSync?.localCommit();
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
-    renderSettlement(outcome, result, { autoSold, record });
+    const newSkill = previousLevel < 7 && character.level >= 7
+      ? SKILLS[FAMILY_SKILLS[equipmentLook(inventory).family]?.[3]]
+      : null;
+    if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
+    renderSettlement(outcome, result, { autoSold, record, newSkill });
   } catch (error) {
     console.error('Settlement failed', error);
     renderSettlement(outcome, result, { autoSold, record, error });
@@ -2228,8 +2287,7 @@ hubPanel.addEventListener('change', (event) => {
   }
   if (event.target.id === 'party-difficulty-select') {
     const difficulty = event.target.value;
-    const currentStage = partyClient?.lobby?.stageId ?? 'C1';
-    const stageId = stageIsUnlocked(currentStage, difficulty) ? currentStage : 'C1';
+    const stageId = latestStage(difficulty, character.clearedStages);
     partyClient?.selectStage(stageId, difficulty);
   }
   if (event.target.matches('[data-party-public]')) partyClient?.setPublic(event.target.checked);

@@ -40,14 +40,18 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .controls .buttons { margin-left: auto; }
 .joystick.floating { position: fixed; z-index: 4; margin: 0; transform: translate(-50%, -50%); }
 .joystick span { display: block; width: 48px; height: 48px; border-radius: 50%; background: #c39b7566; border: 1px solid #d8b995; }
-.buttons { position: relative; flex: 0 0 208px; width: 208px; height: 222px; margin-left: auto; pointer-events: auto; }
+.buttons { position: relative; flex: 0 0 264px; width: 264px; height: 260px; margin-left: auto; pointer-events: auto; }
 .buttons button { position: absolute; min-width: 48px; min-height: 48px; padding: 0 4px; font: 12px system-ui, sans-serif; word-break: keep-all; background: #211b22e8; backdrop-filter: blur(2px); touch-action: none; }
-.buttons button[data-button="4"] { left: 144px; top: 56px; width: 64px; height: 64px; }
-.buttons button[data-button="8"] { left: 72px; top: 56px; width: 64px; height: 64px; }
-.buttons button[data-button="16"] { left: 0; top: 56px; width: 64px; height: 64px; }
-.buttons button[data-button="2"] { left: 24px; top: 126px; width: 84px; height: 84px; border: 2px solid #f0b94f; border-radius: 50%; background: #49372be8; font-weight: 800; }
-.buttons button[data-button="64"] { left: 160px; top: 0; width: 48px; height: 48px; border-color: #6396a5 !important; font-size: 10px; }
-.buttons .attack-button { left: 112px; top: 126px; width: 96px; height: 96px; min-width: 96px; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-color: #e5a477; background: #71362feF; font-size: 14px; font-weight: 800; }
+.buttons button[data-button="4"] { left: 0; top: 76px; width: 64px; height: 64px; }
+.buttons button[data-button="8"] { left: 66px; top: 22px; width: 64px; height: 64px; }
+.buttons button[data-button="16"] { left: 132px; top: 0; width: 64px; height: 64px; }
+.buttons button[data-button="128"] { left: 198px; top: 22px; width: 64px; height: 64px; }
+.buttons button[data-button="2"] { left: 48px; top: 166px; width: 84px; height: 84px; border: 2px solid #f0b94f; border-radius: 50%; background: #49372be8; font-weight: 800; }
+.buttons button[data-button="64"] { left: 0; top: 0; width: 48px; height: 48px; border-color: #6396a5 !important; font-size: 10px; }
+.buttons .attack-button { left: 148px; top: 154px; width: 96px; height: 96px; min-width: 96px; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-color: #e5a477; background: #71362feF; font-size: 14px; font-weight: 800; }
+.skill-unlock-badge { position: absolute; right: -5px; top: -7px; padding: 2px 5px; border: 1px solid #e5be72; border-radius: 8px; background: #17131a; color: #ffe5ad; font: 700 10px/1.2 system-ui, sans-serif; }
+.skill-four-button.is-locked { border-color: #887b69; color: #b7a9ac; }
+.skill-four-button.is-locked > span { opacity: .7; }
 .buttons #sanctuary-interact { left: 0; top: 0; min-width: 64px; min-height: 48px; }
 .auto-attack-chip { padding: 1px 5px; border-radius: 8px; background: #e5c28b; color: #261c18; font: 800 9px/1.3 system-ui, sans-serif; }
 .attack-button.counter-ready { border-color: #ffe49c; box-shadow: 0 0 0 2px #ffe49c, 0 0 22px #ffc55c; }
@@ -56,6 +60,9 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .key-hints { display: block; position: absolute; right: 16px; bottom: 14px; z-index: 2; padding: 6px 10px; border: 1px solid #a9957c55; border-radius: 10px; color: #e5d6c4; background: #16131a99; font: 11px system-ui, sans-serif; letter-spacing: .02em; pointer-events: none; }
 .npc-hotspots-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .npc-hotspot { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; padding: 6px 10px; border: 1px solid #dfb36d; border-radius: 15px; color: #fff0cf; background: #201811d9; font: 700 12px/1.2 system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 10px #0009; }
+.npc-hotspot.is-nearby { border-color: #fff0b0; background: #7d552ddd; box-shadow: 0 0 0 2px #f0c77788, 0 2px 14px #000c; }
+#controls.hub-controls .buttons { display: none; }
+#controls.hub-controls { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 78px); }
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #09080bcc; padding: 18px; }
 .overlay .panel { text-align: center; }
 #toast { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); color: #f4d29a; font: 13px system-ui, sans-serif; text-shadow: 0 2px 10px #000; }
@@ -81,6 +88,9 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 }
 .touch-mode .controls { display: flex; }
 .touch-mode .key-hints { display: none; }
+@media (max-width: 699px) {
+  #game-screen:has(#hub-ui:not([hidden])) #controls.hub-controls { display: flex; }
+}
 #game-screen:has(.overlay:not([hidden])) #controls,
 #game-screen:has(#hub-ui .hub-panel:not([hidden])) #controls,
 #game-screen:has(#hub-ui .hub-panel:not([hidden])) #hub-ui .hub-hotspots { display: none !important; }
@@ -148,7 +158,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .compare-deltas .delta-down { color: #ee8d83; }
 .result-panel { max-height: 78vh; overflow: auto; }
 .potion-button { border-color: #6396a5 !important; }
-.buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"] { background: conic-gradient(#d6a466 var(--cooldown, 0%), #29222b 0); }
+.buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"], .buttons button[data-button="128"] { background: conic-gradient(#d6a466 var(--cooldown, 0%), #29222b 0); }
 .buttons button[data-button="2"] { background: conic-gradient(#ffd478 var(--cooldown, 0%), #49372b 0); }
 #counter-toast { position: absolute; z-index: 4; display: none; color: #ffd76f; font: 800 28px/1.1 system-ui, sans-serif; letter-spacing: .03em; white-space: nowrap; -webkit-text-stroke: 2px #20130c; paint-order: stroke fill; text-shadow: 0 3px 5px #100903, 0 0 12px #e59b35; pointer-events: none; }
 #counter-toast.active { display: block; animation: counter-pop 600ms cubic-bezier(.18,.8,.25,1) both; }
@@ -164,20 +174,36 @@ body.reduced-motion.counter-flash #scene { filter: none; }
 @keyframes intro-fade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
 @media (max-width: 699px) {
   .hub-ui { inset: auto 8px max(10px, env(safe-area-inset-bottom)); gap: 6px; }
+  .hub-ui:not(:has(> .hub-panel:not([hidden]))) { padding-left: 116px; box-sizing: border-box; }
   .hub-hotspots { gap: 5px; }
-  .hub-hotspots button { min-width: 0; flex: 1 1 30%; padding: 8px 5px; font-size: 11px; }
+  .hub-hotspots button { min-width: 0; flex: 1 1 45%; padding: 8px 5px; font-size: 11px; }
   .hub-panel { max-height: 42vh; padding: 12px; }
   .hub-panel:has(.party-finder), .hub-panel:has(.party-lobby) { max-height: 80vh; overflow: hidden; }
+  .controls { padding: 0 6px; }
   .hud { --hud-base-font-size: 11px; --hud-hp-base-font-size: 10px; inset-inline: 8px; grid-template-columns: minmax(0, 1fr) minmax(0, 106px) 40px; gap: 6px 5px; font-size: 11px; }
   .hero-readout { column-gap: 4px; }
   #hud-hp { font-size: 10px; }
   #boss-hud { width: 100%; }
-  .buttons { flex-basis: 208px; width: 208px; height: 222px; }
+  .buttons { flex-basis: 264px; width: 264px; height: 260px; }
   .controls { padding: 0 10px; }
   .key-hints { display: none; }
   .hub-panel .item-row { grid-template-columns: minmax(0, 1fr); }
   .hub-panel .item-actions { justify-content: flex-end; }
+  #game-screen:has(#hub-ui:not([hidden])):has(#hub-panel[hidden]) #tutorial-card { left: auto; right: 8px; bottom: calc(146px + env(safe-area-inset-bottom)); transform: none; width: min(236px, calc(100% - 140px)); box-sizing: border-box; }
+  #game-screen:has(#hub-ui:not([hidden])):has(#hub-panel[hidden]):has(#tutorial-card:not([hidden])) .hub-title { display: none; }
 }
+@media (max-width: 380px) {
+  .joystick { flex-basis: 96px; width: 96px; height: 96px; }
+  .buttons { flex-basis: 220px; width: 220px; height: 220px; }
+  .buttons button[data-button="4"] { left: 0; top: 64px; width: 56px; height: 56px; }
+  .buttons button[data-button="8"] { left: 54px; top: 18px; width: 56px; height: 56px; }
+  .buttons button[data-button="16"] { left: 108px; top: 0; width: 56px; height: 56px; }
+  .buttons button[data-button="128"] { left: 162px; top: 18px; width: 56px; height: 56px; }
+  .buttons button[data-button="2"] { left: 36px; top: 136px; width: 76px; height: 76px; }
+  .buttons button[data-button="64"] { width: 44px; height: 44px; }
+  .buttons .attack-button { left: 124px; top: 132px; width: 84px; height: 84px; min-width: 84px; min-height: 84px; }
+}
+#game-screen:has(#hub-panel:not([hidden])) #tutorial-card { display: none; }
 .hub-ui:has(> .hub-panel:not([hidden])) {
   inset: calc(max(12px, env(safe-area-inset-top)) + 60px) 8px max(10px, env(safe-area-inset-bottom));
   display: flex;
@@ -217,6 +243,8 @@ body.reduced-motion.counter-flash #scene { filter: none; }
 .party-lobby { display: grid; gap: 8px; }
 .party-lobby-members { display: grid; gap: 5px; }
 .party-lobby-member { display: flex; justify-content: space-between; padding: 7px; border-radius: 7px; background: #29212a; font: 13px system-ui, sans-serif; }
+.stage-card.is-recommended { border-color: #d6a466; box-shadow: 0 0 0 1px #d6a46655; }
+.stage-recommendation { margin-left: 6px; color: #f2d3a2; font: 700 10px system-ui, sans-serif; }
 .party-lobby select { width: 100%; padding: 8px; border-radius: 8px; background: #100e13; color: #f2ece5; }
 .party-lobby .invite-link { overflow-wrap: anywhere; color: #e3c28a; font: 11px system-ui, sans-serif; }
 .party-finder { min-height: 0; display: flex; flex-direction: column; gap: 8px; font: 13px/1.35 system-ui, sans-serif; }

@@ -188,7 +188,7 @@ test('movement stops at the former ghost crates, stairs, and hub table', () => {
     {
       world: createHubWorld({ seed: 903 }),
       model: 'assets/env/table_medium_decorated_A.glb',
-      x: 4.5,
+      x: 7.5,
       z: -3.5,
       approach: 1,
     },

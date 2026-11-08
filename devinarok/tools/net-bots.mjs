@@ -46,6 +46,9 @@ const reconnectBotIndex = options.has('reconnect-bot') ? Number(options.get('rec
 const reconnectAfterMs = Math.max(1000, Number(options.get('reconnect-after') ?? 6000));
 const metricsDirectory = resolve(String(options.get('metrics-dir') ?? '/home/ubuntu/devinarok-net'));
 const profile = String(options.get('profile') ?? (serverUrl.includes(':8788') ? 'impaired' : 'none'));
+const clearedStagesOverride = options.has('cleared-stages')
+  ? String(options.get('cleared-stages')).split(',').map((stage) => stage.trim()).filter(Boolean)
+  : null;
 
 function byteLength(data) {
   if (typeof data === 'string') return Buffer.byteLength(data);
@@ -216,6 +219,11 @@ class Bot {
       ['bone-gauntlets', [{ id: 'attackPercent', value: 8 }, { id: 'lifesteal', value: 3 }]],
       ['ossuary-greaves', [{ id: 'moveSpeed', value: 5 }, { id: 'maxHp', value: 20 }]],
     ];
+    const clearedStages = clearedStagesOverride ?? (
+      difficulty === 'hell' ? ['KB', 'N:KB']
+        : difficulty === 'nightmare' ? ['KB']
+          : stageId === 'F1' ? ['CB'] : []
+    );
     const tierLevel = difficulty === 'nightmare' ? 15 : difficulty === 'hell' ? 18 : null;
     const tierEquipment = tierLevel
       ? ITEM_BASES.filter((item) => item.requiredLevel === tierLevel && !item.setId
@@ -247,7 +255,7 @@ class Bot {
         })) : []),
       ],
       potions: tierLevel ? 5 : 3,
-      clearedStages: difficulty === 'hell' ? ['KB', 'N:KB'] : difficulty === 'nightmare' ? ['KB'] : stageId === 'F1' ? ['CB'] : [],
+      clearedStages,
     };
     this.stats = {
       upBytes: 0,
@@ -1149,6 +1157,11 @@ async function run() {
         ? { oneWayDelayMs: '75±25', stallMs: 300, stallEveryMs: 2000 }
         : null,
       botCount,
+      botSetup: bots.map((bot) => ({
+        family: bot.family,
+        level: bot.character.level,
+        clearedStages: [...bot.character.clearedStages],
+      })),
       durationMs,
       completed: bots.every((bot) => Boolean(bot.result)),
       reconnectTestRequested: reconnectBotIndex >= 0 && reconnectBotIndex < bots.length,
