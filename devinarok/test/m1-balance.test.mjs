@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { AFFIXES } from '../js/content/affixes.js';
 import { ITEM_BASES } from '../js/content/items.js';
+import { ENEMIES } from '../js/content/enemies.js';
+import { DIFFICULTIES, effectiveStageLevel, STAGES } from '../js/content/stages.js';
 import { BUTTONS, COMBO_TIMELINES, createStageWorld, step } from '../js/sim/world.js';
 
 function nearestEnemy(world, player) {
@@ -117,6 +120,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
   const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
   return {
     outcome: world.outcome,
+    reward: world.result ? structuredClone(world.result) : null,
     tick: world.tick,
     seconds: world.tick / 30,
     hp: player?.hp ?? 0,
@@ -146,6 +150,58 @@ function median(values) {
   return ordered.length % 2
     ? ordered[middle]
     : (ordered[middle - 1] + ordered[middle]) / 2;
+}
+
+function settlementCaps(stageId, difficulty) {
+  const stage = STAGES[stageId];
+  const tier = DIFFICULTIES[difficulty];
+  let enemyCount = 0;
+  let bossCount = 0;
+  let baseXp = 0;
+  let summonerBudget = 0;
+  let maxSummonerAddXp = 0;
+  let maxBossAddXp = 0;
+  const bossAddBudget = 40;
+  for (const room of stage.rooms) {
+    for (const wave of room.waves) {
+      const rule = ENEMIES[wave.enemy];
+      enemyCount += wave.count;
+      baseXp += rule.xp * wave.count;
+      if (rule.behavior === 'summoner') {
+        summonerBudget += 60 * wave.count;
+        maxSummonerAddXp = Math.max(maxSummonerAddXp, ENEMIES[rule.summon?.enemy ?? 'minion'].xp);
+      }
+      if (rule.behavior === 'boss-patterns') {
+        bossCount += wave.count;
+        const bossAddEnemyIds = Object.keys(rule.patterns?.['summon-wave']?.enemies ?? { minion: 1 });
+        for (const enemyId of bossAddEnemyIds) {
+          const bossAdd = ENEMIES[enemyId];
+          maxBossAddXp = Math.max(maxBossAddXp, bossAdd.xp);
+          if (bossAdd.behavior === 'summoner') {
+            summonerBudget += 60 * bossAddBudget * wave.count;
+            maxSummonerAddXp = Math.max(
+              maxSummonerAddXp,
+              ENEMIES[bossAdd.summon?.enemy ?? 'minion'].xp,
+            );
+          }
+        }
+      }
+    }
+  }
+  const effectiveLevel = effectiveStageLevel(stage, difficulty);
+  const goldGainMultiplier = 1 + (5 * (AFFIXES.goldGain.max + AFFIXES.goldGain.perIlvl * 20)) / 100;
+  const xpGainMultiplier = 1 + (5 * (AFFIXES.xpGain.max + AFFIXES.xpGain.perIlvl * 20)) / 100;
+  return {
+    xp: Math.ceil((
+      baseXp
+      + 0.25 * maxSummonerAddXp * summonerBudget
+      + maxBossAddXp * bossAddBudget * bossCount
+    ) * tier.xpMult * xpGainMultiplier * 1.25),
+    gold: Math.ceil(5 * effectiveLevel * tier.goldMult * goldGainMultiplier * (
+      enemyCount + 0.25 * summonerBudget + bossAddBudget * bossCount
+    ) * 1.25),
+    items: enemyCount + 2 * bossCount + 20 * bossCount,
+  };
 }
 
 function perfectDodgeSummary(runs) {
@@ -532,4 +588,49 @@ test('M5c ten-seed nightmare and hell balance gates', { timeout: 300000 }, () =>
     console.log(`M5c skilled N:KB ${family} set: ${withSet.length}/10 median ${setMedian?.toFixed(1) ?? '—'}s vs no set ${noSet.length}/10 median ${noSetMedian?.toFixed(1) ?? '—'}s`);
     if (noSetMedian !== null && setMedian !== null) assert.ok(setMedian >= noSetMedian * 0.7, `${family} four-piece set made the skilled bot too fast`);
   }
+});
+
+test('M5d settlement caps contain legit C1, KB, and nightmare KB bot rewards', { timeout: 180000 }, () => {
+  const gear = (level, family) => {
+    const weapon = ITEM_BASES.find((base) => base.requiredLevel === level && base.slot === 'weapon' && base.family === family);
+    const armor = ITEM_BASES.filter((base) => base.requiredLevel === level && base.slot !== 'weapon' && !base.setId)
+      .sort((a, b) => ['head', 'body', 'hands', 'feet'].indexOf(a.slot) - ['head', 'body', 'hands', 'feet'].indexOf(b.slot));
+    return [weapon, ...armor].map((base) => ({
+      itemId: base.id,
+      rarity: 'rare',
+      affixes: base.slot === 'weapon'
+        ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+        : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+    }));
+  };
+  const scenarios = [
+    { stageId: 'C1', difficulty: 'normal', level: 1, gearLevel: null, seed: 101 },
+    { stageId: 'KB', difficulty: 'normal', level: 14, gearLevel: 11, seed: 1001 },
+    { stageId: 'KB', difficulty: 'nightmare', level: 15, gearLevel: 15, seed: 1601 },
+  ];
+  const summaries = [];
+  for (const scenario of scenarios) {
+    const equipment = scenario.gearLevel ? gear(scenario.gearLevel, 'sword') : [];
+    const run = runBot({
+      seed: scenario.seed,
+      stageId: scenario.stageId,
+      difficulty: scenario.difficulty,
+      level: scenario.level,
+      equipment,
+      potions: scenario.gearLevel ? 5 : 3,
+      maxTicks: 12000,
+      aimAtTarget: true,
+    });
+    assert.equal(run.outcome, 'clear', `${scenario.difficulty}:${scenario.stageId} bot must clear`);
+    const caps = settlementCaps(scenario.stageId, scenario.difficulty);
+    assert.ok(run.reward.xp <= caps.xp, `${scenario.difficulty}:${scenario.stageId} XP ${run.reward.xp}/${caps.xp}`);
+    assert.ok(run.reward.gold <= caps.gold, `${scenario.difficulty}:${scenario.stageId} gold ${run.reward.gold}/${caps.gold}`);
+    assert.ok(run.reward.items.length <= caps.items, `${scenario.difficulty}:${scenario.stageId} items ${run.reward.items.length}/${caps.items}`);
+    summaries.push({
+      key: scenario.difficulty === 'normal' ? scenario.stageId : `N:${scenario.stageId}`,
+      xp: run.reward.xp, xpCap: caps.xp, gold: run.reward.gold, goldCap: caps.gold,
+      items: run.reward.items.length, itemCap: caps.items,
+    });
+  }
+  console.log(`M5d legitimate settlement rewards: ${JSON.stringify(summaries)}`);
 });

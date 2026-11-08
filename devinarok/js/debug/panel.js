@@ -4,7 +4,7 @@ import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
 import { debugKillRoomEnemies, debugSpawnRoomEnemy } from './combat.js';
 import {
-  applyDebugSpeed, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
+  applyDebugSpeed, debugCloudSaveReason, debugShortcutOperations, debugStageSaveReason, loadRecentActions,
   partyActionReason, recordRecentAction, resetDebugSpeed, TwoTapGate,
 } from './state.js';
 
@@ -227,6 +227,8 @@ export function mountDebugPanel(context) {
     if (partyBlock) return partyBlock;
     const stageSaveBlock = debugStageSaveReason(action, context.world?.mode);
     if (stageSaveBlock) return stageSaveBlock;
+    const cloudSaveBlock = debugCloudSaveReason(action, context.character);
+    if (cloudSaveBlock) return cloudSaveBlock;
     if (['toggle-invulnerable', 'toggle-one-hit', 'toggle-no-cooldown', 'room-clear', 'instant-clear', 'summon-enemy'].includes(action)) {
       return combatReason();
     }

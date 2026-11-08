@@ -10,6 +10,18 @@ async function repository(seed) {
   return repo;
 }
 
+class DelayedReadBackend extends MemoryBackend {
+  readGate = null;
+
+  async readData() {
+    const data = await super.readData();
+    const gate = this.readGate;
+    this.readGate = null;
+    if (gate) await gate;
+    return data;
+  }
+}
+
 test('save commits validate currency, item ownership, slots, and revisions', async () => {
   const repo = await repository();
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '기사', kind: 'knight' }] });
@@ -27,6 +39,12 @@ test('save commits validate currency, item ownership, slots, and revisions', asy
     () => applyOperations(character, { owned: { uid: 'owned', characterId: 'hero' } }, [{ type: 'equip', uid: 'owned', slot: 'ring' }], 'hero'),
     /slot/,
   );
+  assert.throws(
+    () => applyOperations(character, {
+      owned: { uid: 'owned', characterId: 'hero', itemId: 'rusted-sword', slot: null, requiredLevel: 1 },
+    }, [{ type: 'equip', uid: 'owned', slot: 'head' }], 'hero'),
+    TypeError,
+  );
   await assert.rejects(
     repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'gainXp', amount: 1 }] }),
     ConflictError,
@@ -39,7 +57,7 @@ test('save commits validate currency, item ownership, slots, and revisions', asy
       { type: 'grantGold', amount: 10 },
       { type: 'spendGold', amount: 3 },
       { type: 'gainXp', amount: 120 },
-      { type: 'grantItem', uid: 'sword-1', itemId: 'iron-sword', rarity: 'common', enhance: 0, affixes: [] },
+      { type: 'grantItem', uid: 'sword-1', itemId: 'rusted-sword', rarity: 'common', enhance: 0, affixes: [] },
       { type: 'equip', uid: 'sword-1', slot: 'weapon' },
       { type: 'clearStage', stageId: 'trial-room' },
     ],
@@ -72,6 +90,35 @@ test('settlement commits are idempotent across a retry after an uncertain respon
   assert.equal((await repo.backend.readData()).ledger.filter((entry) => entry.idempotencyKey === 'sortie-1').length, 1);
 });
 
+test('concurrent commits and outbox acknowledgements preserve both writes', async () => {
+  const backend = new DelayedReadBackend();
+  const repo = new SaveRepository(backend);
+  await repo.initialize();
+  const created = await repo.commit({
+    characterId: 'hero',
+    baseRev: 0,
+    ops: [{ type: 'createCharacter', name: '기사', kind: 'knight' }],
+    cloudUserId: 'user-1',
+  });
+  const [queued] = await repo.listOutbox('user-1');
+  let releaseRead;
+  backend.readGate = new Promise((resolve) => { releaseRead = resolve; });
+  const acknowledge = repo.acknowledgeOutbox(queued.id);
+  await new Promise(setImmediate);
+  const commit = repo.commit({
+    characterId: created.id,
+    baseRev: created.rev,
+    ops: [{ type: 'grantGold', amount: 5 }],
+    cloudUserId: 'user-1',
+  });
+  releaseRead();
+  await Promise.all([acknowledge, commit]);
+  assert.equal((await repo.loadCharacter('hero')).gold, 5);
+  const remaining = await repo.listOutbox('user-1');
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].baseRev, created.rev);
+});
+
 test('legacy schema migration backs up source and import/export verifies checksum', async () => {
   const legacy = {
     meta: { schemaVersion: 0, localAccountId: 'local-old' },
@@ -82,8 +129,8 @@ test('legacy schema migration backs up source and import/export verifies checksu
   };
   const repo = await repository(legacy);
   const migrated = await repo.backend.readData();
-  assert.equal(migrated.meta.schemaVersion, 4);
-  assert.equal(migrated.backups.length, 4);
+  assert.equal(migrated.meta.schemaVersion, 5);
+  assert.equal(migrated.backups.length, 5);
   assert.equal(migrated.backups[0].data.meta.schemaVersion, 0);
 
   await repo.commit({ characterId: 'hero', baseRev: 0, ops: [{ type: 'createCharacter', name: '시험자', kind: 'knight' }] });
@@ -95,6 +142,33 @@ test('legacy schema migration backs up source and import/export verifies checksu
   const tampered = structuredClone(exported);
   tampered.data.characters[0].gold = 999;
   await assert.rejects(target.import(tampered), /checksum/);
+});
+
+test('save backup paths retain only the ten newest entries', async () => {
+  const repo = await repository();
+  for (let marker = 0; marker < 12; marker += 1) {
+    await repo.backend.backup({ marker });
+  }
+  const directBackups = (await repo.backend.readData()).backups;
+  assert.equal(directBackups.length, 10);
+  assert.deepEqual(directBackups.map((backup) => backup.data.marker), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+  const character = await repo.commit({
+    characterId: 'backup-hero',
+    baseRev: 0,
+    ops: [{ type: 'createCharacter', name: '복원 시험', kind: 'knight' }],
+    context: { kind: 'hub' },
+  });
+  for (let gold = 1; gold <= 12; gold += 1) {
+    await repo.replaceCharacterFromRemote({
+      character: { ...character, gold },
+      items: [],
+      userId: 'user-1',
+    });
+  }
+  const replacementBackups = (await repo.backend.readData()).backups;
+  assert.equal(replacementBackups.length, 10);
+  assert.deepEqual(replacementBackups.map((backup) => backup.data.character.gold), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 });
 
 test('migrated veterans skip tutorial and keep the selected sortie stage', async () => {

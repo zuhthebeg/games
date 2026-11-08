@@ -1,4 +1,5 @@
 import { createSaveRepository, DEFAULT_SETTINGS } from './save/repository.js';
+import { RemoteSync } from './save/remote-sync.js';
 import { InputLayer } from './core/input.js';
 import { AttackInputAssistant, autoAttackDefault, buildPartyAssistedInput } from './core/attack-assist.js';
 import { FixedStepLoop } from './core/loop.js';
@@ -53,6 +54,7 @@ const hubUi = $('#hub-ui');
 const hubPanel = $('#hub-panel');
 const resultPanel = $('#result-panel');
 let saves;
+let remoteSync;
 let character;
 let inventory = [];
 let inventoryFilter = 'all';
@@ -117,6 +119,120 @@ function showActionToast(message) {
   actionToastTimer = setTimeout(() => {
     if (toast.textContent === message) toast.textContent = '';
   }, 1500);
+}
+
+function updateCloudLogoutButton() {
+  const button = $('#cloud-logout-button');
+  const disabled = Boolean(remoteSync?.userId) && (world?.mode === 'stage' || Boolean(partyClient));
+  const label = disabled ? '여관에서 로그아웃할 수 있어요' : '로그아웃';
+  button.disabled = disabled;
+  button.textContent = label;
+  button.title = disabled ? label : '';
+}
+
+function renderCloudAccount(state = remoteSync?.snapshot) {
+  if (!state) return;
+  const label = state.status === 'syncing' ? '동기화 중'
+    : state.status === 'offline' ? '오프라인 · 기기에 저장됨'
+      : state.status === 'error' ? `동기화 오류 · ${state.error ?? '다시 시도해 주세요'}`
+        : state.loggedIn
+          ? `${state.accountName} · ${state.lastSyncAt ? `마지막 동기화 ${new Date(state.lastSyncAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '서버 저장 준비됨'}`
+          : '게스트 저장 · 이 기기만';
+  $('#cloud-account-state').textContent = label;
+  $('#cloud-account-prompt').hidden = state.loggedIn;
+  $('#cloud-login-button').hidden = state.loggedIn;
+  $('#cloud-sync-button').hidden = !state.loggedIn;
+  $('#cloud-sync-button').disabled = state.status === 'syncing';
+  $('#cloud-logout-button').hidden = !state.loggedIn;
+  updateCloudLogoutButton();
+  const badge = $('#cloud-save-badge');
+  badge.hidden = !['offline', 'error'].includes(state.status);
+  badge.textContent = state.status === 'offline' ? '오프라인 저장' : '동기화 오류';
+
+  const chooser = $('#cloud-character-chooser');
+  chooser.replaceChildren();
+  chooser.hidden = !state.needsChooser;
+  if (!state.needsChooser) return;
+  for (const [title, entries, action, labelText] of [
+    ['서버 캐릭터', state.serverCharacters, 'useServer', '이 캐릭터 사용'],
+    ['이 기기 캐릭터', state.deviceCharacters, 'uploadDevice', '서버에 올리기'],
+  ]) {
+    if (!entries.length) continue;
+    const group = document.createElement('section');
+    group.className = 'cloud-character-group';
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    group.append(heading);
+    for (const entry of entries) {
+      const info = entry.character ?? entry;
+      const row = document.createElement('div');
+      row.className = 'cloud-character-entry';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset[action] = info.id;
+      const name = document.createElement('span');
+      name.textContent = info.name;
+      const level = document.createElement('small');
+      level.textContent = `Lv.${info.level} · ${labelText}`;
+      button.append(name, level);
+      row.append(button);
+      if (entry.importFailure) {
+        const reason = document.createElement('small');
+        reason.className = 'cloud-import-failure';
+        reason.textContent = entry.importFailure.message;
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.dataset.retryImport = info.id;
+        retry.textContent = '다시 시도';
+        row.append(reason, retry);
+      }
+      group.append(row);
+    }
+    chooser.append(group);
+  }
+}
+
+let cloudLoginWatcher = null;
+let sharedWalletLoadPromise = null;
+
+async function loadSharedWallet() {
+  window.SharedWalletConfig = { ...(window.SharedWalletConfig ?? {}), autoGuest: false };
+  if (!sharedWalletLoadPromise) {
+    sharedWalletLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('../lib/shared-wallet.js', window.location.href).href;
+      script.dataset.noUi = '';
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', () => {
+        script.remove();
+        sharedWalletLoadPromise = null;
+        reject(new Error('로그인 모듈을 불러오지 못했어요'));
+      }, { once: true });
+      document.head.append(script);
+    });
+  }
+  await sharedWalletLoadPromise;
+  const wallet = typeof SharedWallet !== 'undefined' ? SharedWallet : null;
+  if (!wallet) throw new Error('로그인 모듈을 불러오지 못했어요');
+  if (wallet._initPromise) await wallet._initPromise;
+  return wallet;
+}
+
+async function openCloudLogin() {
+  try {
+    const wallet = await loadSharedWallet();
+    wallet.showLogin();
+    clearInterval(cloudLoginWatcher);
+    cloudLoginWatcher = setInterval(async () => {
+      if (!remoteSync.readIdentity()) return;
+      clearInterval(cloudLoginWatcher);
+      cloudLoginWatcher = null;
+      await remoteSync.loginCompleted();
+      await refreshTitle();
+    }, 400);
+  } catch (error) {
+    showActionToast(error?.message ?? '로그인을 시작하지 못했어요');
+  }
 }
 
 function showCounterToast(player) {
@@ -202,26 +318,38 @@ function createDebugContext() {
       return new URL(document.querySelector('script[type="module"][src*="main.js"]')?.src ?? location.href)
         .searchParams.get('v') ?? 'local';
     },
-    applyOps,
+    applyOps: (ops) => {
+      if (character?.cloudUserId && ops.some((operation) => ['resetProgress', 'resetCharacter'].includes(operation.type))) {
+        throw new Error('클라우드 캐릭터에서는 사용할 수 없어요');
+      }
+      return applyOps(ops, { context: { kind: 'debug' } });
+    },
     reloadCharacter,
     exportSave: () => saves.export(),
     async importSave(payload) {
+      if (character?.cloudUserId) {
+        throw new Error('클라우드 캐릭터에서는 사용할 수 없어요');
+      }
       await saves.import(payload);
       await refreshTitle();
-      if (character) await applyOps([{ type: 'markDebug' }]);
+      if (character) await applyOps([{ type: 'markDebug' }], { context: { kind: 'debug' } });
     },
     async replayTutorial() {
       if (!tutorialState) return false;
       const next = transitionTutorial(tutorialState, { type: 'replay' });
       tutorialState = next;
       renderTutorialCard();
-      await applyOps([{ type: 'updateTutorial', state: next }, { type: 'markDebug' }]);
+      await applyOps(
+        [{ type: 'updateTutorial', state: next }, { type: 'markDebug' }],
+        { context: { kind: 'debug' } },
+      );
       return true;
     },
     startStage,
     settleStage,
-    clearStage(outcome) {
+    async clearStage(outcome) {
       if (!world || partyClient || world.mode !== 'stage') return false;
+      await applyOps([{ type: 'markDebug' }], { context: { kind: 'debug' } });
       completeStage(world, outcome);
       return settleStage(outcome);
     },
@@ -423,7 +551,9 @@ function playHaptic() {
 }
 
 async function refreshTitle() {
-  character = (await saves.listCharacters()).sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  const characters = await saves.listCharacters();
+  character = (remoteSync ? remoteSync.visibleCharacters(characters) : characters)
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
   inventory = character ? await saves.listItems(character.id) : [];
   $('#save-warning').hidden = saves.persistent;
   $('#save-warning').textContent = saves.persistent ? '' : '저장이 브라우저 메모리에만 남습니다. 브라우저를 닫으면 기록이 사라질 수 있어요.';
@@ -464,23 +594,34 @@ function stopWorld() {
   loop = input = renderer = null;
 }
 
-function showTitle() {
+async function showTitle() {
   stopWorld();
   partyClient?.close();
   partyClient = null;
+  world = null;
   $('#hub-party-button').hidden = true;
   titleScreen.hidden = false;
   gameScreen.hidden = true;
   resultPanel.hidden = true;
-  refreshTitle();
+  updateCloudLogoutButton();
+  await refreshTitle();
 }
 
-function commit(ops) {
-  return saves.commit({ characterId: character.id, baseRev: character.rev, ops });
+async function commit(ops, context = { kind: 'hub' }) {
+  const cloudUserId = character?.cloudUserId === remoteSync?.userId ? remoteSync.userId : undefined;
+  const result = await saves.commit({
+    characterId: character.id,
+    baseRev: character.rev,
+    ops,
+    context,
+    cloudUserId,
+  });
+  remoteSync?.localCommit();
+  return result;
 }
 
-async function applyOps(ops) {
-  character = await commit(ops);
+async function applyOps(ops, { context = { kind: 'hub' } } = {}) {
+  character = await commit(ops, context);
   inventory = await saves.listItems(character.id);
   $('#character-debug-used').hidden = !character.debugUsed;
   tutorialState = createTutorialState(character.tutorial);
@@ -491,6 +632,7 @@ async function applyOps(ops) {
 }
 
 function refreshSoloStagePlayer() {
+  if (!character) return;
   const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const equipment = equippedItems();
@@ -505,7 +647,7 @@ function equippedItems() {
 }
 
 function refreshHubPlayer() {
-  if (world?.mode !== 'hub') return;
+  if (!character || world?.mode !== 'hub') return;
   const equipment = equippedItems();
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
@@ -526,7 +668,7 @@ function stageIsUnlocked(stageId, difficulty = 'normal') {
 }
 
 function drawHub() {
-  if (!renderer || !world || world.mode !== 'hub') return;
+  if (!character || !renderer || !world || world.mode !== 'hub') return;
   updateHud(world);
   renderer.render(world, world, 1);
   debugController?.frame(world, renderer, performance.now());
@@ -538,6 +680,7 @@ async function enterHub() {
   stopWorld();
   partyClient?.close();
   partyClient = null;
+  updateCloudLogoutButton();
   $('#hub-party-button').hidden = false;
   $('#hub-ui [data-panel="sanctuary"]').disabled = false;
   $('#sanctuary-party-disabled').hidden = true;
@@ -591,6 +734,7 @@ async function enterHub() {
 }
 
 function renderSanctuaryHud(current) {
+  if (!character) return;
   const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   sanctuaryState.nearby = hero ? nearestRitual(hero.x, hero.z) : null;
   const interact = $('#sanctuary-interact');
@@ -1329,7 +1473,7 @@ function setPartyHudCaptureFreeze(frozen) {
 }
 
 function partyLoop(time) {
-  if (!partyClient || !renderer || !input) return;
+  if (!character || !partyClient || !renderer || !input) return;
   if (!input.devInputProvider) {
     if (!partyLastTime) partyLastTime = time;
     partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
@@ -1554,7 +1698,10 @@ function renderPanel(kind, compareUid = '') {
   if (kind === 'party-finder') openPartyFinder();
   if (kind === 'inventory') renderInventory(compareUid);
   if (kind === 'blacksmith') {
-    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 ? 'disabled' : ''}>강화</button></div></div>`).join('');
+    const cloudEnhanceOffline = Boolean(character.cloudUserId) && (
+      !remoteSync?.userId || !navigator.onLine || remoteSync.status === 'offline'
+    );
+    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 || cloudEnhanceOffline ? 'disabled' : ''} ${cloudEnhanceOffline ? 'title="연결되면 강화할 수 있어요"' : ''}>강화</button>${cloudEnhanceOffline ? '<small>연결되면 강화할 수 있어요</small>' : ''}</div></div>`).join('');
     hubPanel.innerHTML = `<h2>대장장이 · 강화</h2><p>실패해도 장비는 파괴되거나 하락하지 않습니다. 보유 골드 ${character.gold}G</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
   }
   if (kind === 'merchant') {
@@ -1623,6 +1770,7 @@ async function startStage(stageId, options = {}) {
     playerId: character.id,
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
   });
+  updateCloudLogoutButton();
   tutorialLastX = null;
   tutorialLastZ = null;
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
@@ -1654,6 +1802,7 @@ async function startStage(stageId, options = {}) {
       debugController?.frame(current, renderer, performance.now());
     },
     onTick: (current) => {
+      if (!character) return;
       updateHud(current);
       trackTutorialMovement(current);
       for (const event of current.events) {
@@ -1669,6 +1818,8 @@ async function startStage(stageId, options = {}) {
 }
 
 function updateHud(current) {
+  if (!character || !current) return;
+  updateCloudLogoutButton();
   const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id)
     ?? current.entities.find((entity) => entity.kind === 'player');
   if (hero) {
@@ -1767,7 +1918,18 @@ async function attemptSettlement(outcome, result, settlementId) {
       baseRev: character.rev,
       ops: settlement.ops,
       idempotencyKey: settlementId,
+      context: {
+        kind: 'settlement',
+        stageId: result.stageId ?? currentStageId,
+        difficulty: result.difficulty ?? currentStageDifficulty,
+        partySize: Math.max(1, Math.min(4, Number(
+          result.partySize ?? partyClient?.lobby?.players?.length ?? world?.partySize ?? 1,
+        ))),
+        outcome,
+      },
+      cloudUserId: character.cloudUserId === remoteSync?.userId ? remoteSync.userId : undefined,
     });
+    remoteSync?.localCommit();
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
     renderSettlement(outcome, result, { autoSold, record });
@@ -1791,7 +1953,14 @@ createForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const name = new FormData(createForm).get('name');
   const id = crypto.randomUUID();
-  await saves.commit({ characterId: id, baseRev: 0, ops: [{ type: 'createCharacter', name, kind: 'knight' }] });
+  await saves.commit({
+    characterId: id,
+    baseRev: 0,
+    ops: [{ type: 'createCharacter', name, kind: 'knight' }],
+    context: { kind: 'hub' },
+    cloudUserId: remoteSync?.cloudUserIdForNewCharacter(),
+  });
+  remoteSync?.localCommit();
   await refreshTitle();
 });
 $('#start-button').addEventListener('click', () => {
@@ -1822,6 +1991,7 @@ $('#mute-button').addEventListener('click', () => { void saveSetting('muted', !s
 $('#settings-button').addEventListener('click', () => {
   settingsReturnToPause = !pauseMenu.hidden;
   pauseMenu.hidden = true;
+  updateCloudLogoutButton();
   $('#settings-panel').hidden = false;
   $('#bgm-volume').focus();
 });
@@ -1850,6 +2020,34 @@ $('#large-text-setting').addEventListener('change', (event) => { void saveSettin
 $('#haptics-setting').addEventListener('change', (event) => { void saveSetting('haptics', event.currentTarget.checked); });
 $('#telegraph-setting').addEventListener('change', (event) => { void saveSetting('telegraphEmphasis', event.currentTarget.checked); });
 $('#auto-attack-setting').addEventListener('change', (event) => { void saveSetting('autoAttack', event.currentTarget.checked); });
+$('#cloud-login-button').addEventListener('click', () => { void openCloudLogin(); });
+$('#cloud-sync-button').addEventListener('click', async () => {
+  try {
+    await remoteSync.syncNow();
+    await refreshTitle();
+    showActionToast('동기화했어요');
+  } catch (error) {
+    showActionToast(error?.message ?? '동기화에 실패했어요');
+  }
+});
+$('#cloud-logout-button').addEventListener('click', async () => {
+  if ($('#cloud-logout-button').disabled) return;
+  closeSettings();
+  remoteSync.logout();
+  await showTitle();
+});
+$('#cloud-character-chooser').addEventListener('click', async (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  try {
+    if (button.dataset.useServer) await remoteSync.useServerCharacter(button.dataset.useServer);
+    if (button.dataset.uploadDevice) await remoteSync.uploadLocalCharacter(button.dataset.uploadDevice);
+    if (button.dataset.retryImport) await remoteSync.retryLocalCharacter(button.dataset.retryImport);
+    await refreshTitle();
+  } catch (error) {
+    showActionToast(error?.message ?? '캐릭터를 불러오지 못했어요');
+  }
+});
 $('#tutorial-skip').addEventListener('click', () => updateTutorial({ type: 'skip' }));
 $('#tutorial-replay-button').addEventListener('click', async () => {
   updateTutorial({ type: 'replay' });
@@ -1966,8 +2164,23 @@ $('#hub-ui').addEventListener('click', async (event) => {
     renderPanel(hubPanel.dataset.kind);
   }
   if (button.dataset.enhance) {
-    const roll = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
-    await applyOps([{ type: 'enhanceItem', uid: button.dataset.enhance, roll }]);
+    if (character.cloudUserId) {
+      if (!remoteSync?.userId || !navigator.onLine || remoteSync.status === 'offline') {
+        showActionToast('연결되면 강화할 수 있어요');
+        return;
+      }
+      try {
+        await remoteSync.enhance({ characterId: character.id, uid: button.dataset.enhance });
+        character = await saves.loadCharacter(character.id);
+        inventory = await saves.listItems(character.id);
+      } catch (error) {
+        showActionToast(error?.message === 'offline' ? '연결되면 강화할 수 있어요' : error?.message ?? '강화에 실패했어요');
+        return;
+      }
+    } else {
+      const roll = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
+      await applyOps([{ type: 'enhanceItem', uid: button.dataset.enhance, roll }]);
+    }
     refreshHubPlayer();
     renderPanel('blacksmith');
   }
@@ -2126,8 +2339,28 @@ window.addEventListener('keydown', (event) => {
 });
 
 saves = await createSaveRepository();
+remoteSync = new RemoteSync({
+  repository: saves,
+  onChange: (state) => {
+    renderCloudAccount(state);
+    void refreshTitle().then(() => {
+      if (world?.mode === 'hub') refreshHubPlayer();
+      else if (world?.mode === 'stage' && !partyClient) refreshSoloStagePlayer();
+    });
+  },
+  onRevert: () => {
+    showActionToast('서버 기록으로 되돌렸어요');
+    if (!resultPanel.hidden) {
+      const panel = resultPanel.querySelector('.panel');
+      panel.innerHTML = '<div class="eyebrow">서버 동기화</div><h2>서버 기록으로 되돌렸어요</h2><p>서버에 저장된 캐릭터 기록으로 복원했어요.</p><button id="result-return" class="primary">여관으로</button>';
+      $('#result-return').addEventListener('click', enterHub, { once: true });
+    }
+  },
+});
 settings = await saves.loadSettings();
 applySettings();
+await remoteSync.initialize();
+renderCloudAccount(remoteSync.snapshot);
 await refreshTitle();
 installDebugVersionToggle();
 if (debugEnabled) await enableDebugMode({ announce: false });
@@ -2178,10 +2411,13 @@ if (DEV_MODE) {
         enhance: item.enhance ?? 0,
         affixes: item.affixes ?? rolled.affixes,
         legendaryId: rolled.legendaryId,
-      }]);
+      }, { type: 'markDebug' }], { context: { kind: 'debug' } });
       return uid;
     },
-    async grantDevGold(amount = 500) { await applyOps([{ type: 'grantGold', amount }]); return character.gold; },
+    async grantDevGold(amount = 500) {
+      await applyOps([{ type: 'grantGold', amount }, { type: 'markDebug' }], { context: { kind: 'debug' } });
+      return character.gold;
+    },
     addLoot(item = {}) {
       const player = world.entities.find((entry) => entry.kind === 'player');
       const entity = {

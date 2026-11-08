@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=5dcd6a750e">
+  <link rel="stylesheet" href="css/game.css?v=4b686a76f9">
   <script type="importmap">
     {
       "imports": {
@@ -20,9 +20,9 @@
         "./js/core/input.js": "./js/core/input.js?v=9c7612b8a0",
         "./js/core/loop.js": "./js/core/loop.js?v=555f0b3d4c",
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
-        "./js/debug/panel.js": "./js/debug/panel.js?v=cf8f05ab47",
-        "./js/debug/state.js": "./js/debug/state.js?v=1531ec7c7f",
-        "./js/main.js": "./js/main.js?v=c7231e85c2",
+        "./js/debug/panel.js": "./js/debug/panel.js?v=a8941c446a",
+        "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
+        "./js/main.js": "./js/main.js?v=1b99c28d91",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=97f00cdc77",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=c0b8a9ef45",
         "./js/net/clock.js": "./js/net/clock.js?v=ebe89b04ae",
@@ -42,8 +42,9 @@
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
-        "./js/save/ops.js": "./js/save/ops.js?v=7ba56bf915",
-        "./js/save/repository.js": "./js/save/repository.js?v=50bdf34bce",
+        "./js/save/ops.js": "./js/save/ops.js?v=b3968a3f69",
+        "./js/save/remote-sync.js": "./js/save/remote-sync.js?v=a1174a60c0",
+        "./js/save/repository.js": "./js/save/repository.js?v=1bacce0c02",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
         "./js/sim/world.js": "./js/sim/world.js?v=f170d4864a",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
@@ -93,7 +94,7 @@
       <canvas id="scene"></canvas>
       <header class="hud">
         <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
-        <div class="counter"><span id="stage-name">여관</span><span id="party-rtt" hidden></span></div>
+        <div class="counter"><span id="stage-name">여관</span><span id="party-rtt" hidden></span><span id="cloud-save-badge" class="cloud-save-badge" hidden></span></div>
         <div id="boss-hud" hidden><span id="boss-name">해골 기사단장</span><div class="hp-track"><i id="boss-fill"></i></div></div>
         <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
         <button id="hub-party-button" class="hub-party-button" data-party-finder hidden>파티</button>
@@ -168,6 +169,17 @@
             <label class="setting-toggle"><span>진동</span><input id="haptics-setting" type="checkbox"></label>
             <label class="setting-toggle"><span>위험 표시 강조</span><input id="telegraph-setting" type="checkbox"></label>
             <label class="setting-toggle"><span>자동 공격</span><input id="auto-attack-setting" type="checkbox"></label>
+            <section id="cloud-account" class="cloud-account">
+              <h3>클라우드 저장</h3>
+              <p id="cloud-account-state">게스트 저장 · 이 기기만</p>
+              <small id="cloud-account-prompt">로그인하면 다른 기기에서도 이어서</small>
+              <div class="cloud-account-actions">
+                <button id="cloud-login-button" type="button">로그인</button>
+                <button id="cloud-sync-button" type="button" hidden>지금 동기화</button>
+                <button id="cloud-logout-button" type="button" hidden>로그아웃</button>
+              </div>
+              <div id="cloud-character-chooser" class="cloud-character-chooser" hidden></div>
+            </section>
           </div>
           <button id="settings-close-button" type="button">닫기</button>
           <button id="settings-version-toggle" class="settings-version" type="button">버전 <span id="settings-asset-version">local</span></button>
@@ -184,6 +196,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=c7231e85c2"></script>
+  <script type="module" src="js/main.js?v=1b99c28d91"></script>
 </body>
 </html>
