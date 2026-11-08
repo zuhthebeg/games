@@ -1,6 +1,6 @@
 import { createSaveRepository, DEFAULT_SETTINGS } from './save/repository.js';
 import { InputLayer } from './core/input.js';
-import { AttackInputAssistant, autoAttackDefault } from './core/attack-assist.js';
+import { AttackInputAssistant, autoAttackDefault, buildPartyAssistedInput } from './core/attack-assist.js';
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
@@ -1227,7 +1227,13 @@ function sendPartyInputTick() {
   }
   const player = partyClient.predictor?.getPlayer();
   const prepared = player
-    ? attackInputAssistant.build(next, partyClient.stageWorld, player, { autoAttack: autoAttackEnabled() })
+    ? buildPartyAssistedInput(
+      attackInputAssistant,
+      next,
+      partyClient,
+      player,
+      { autoAttack: autoAttackEnabled() },
+    )
     : next;
   return Boolean(partyClient.sendInput(prepared));
 }

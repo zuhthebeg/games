@@ -87,3 +87,12 @@ export class AttackInputAssistant {
     return { ...input, buttons };
   }
 }
+
+export function buildPartyAssistedInput(assistant, rawInput, partyClient, player, options = {}) {
+  return assistant.build(
+    rawInput,
+    partyClient.viewWorld() ?? partyClient.stageWorld,
+    player,
+    options,
+  );
+}

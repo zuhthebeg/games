@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { AttackInputAssistant, buildPartyAssistedInput } from '../js/core/attack-assist.js';
 import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
 import { CastTimeline, castVisualKey } from '../js/net/cast-timeline.js';
@@ -15,7 +16,7 @@ import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from 
 import { Predictor } from '../js/net/predictor.js';
 import { playerModelKey } from '../js/render/player-look.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
-import { BUTTONS } from '../js/sim/world.js';
+import { BUTTONS, createStageWorld } from '../js/sim/world.js';
 
 test('server counter upgrades a predicted basic cast instead of being deduplicated', () => {
   const timeline = new CastTimeline({ playerId: 'hero' });
@@ -325,6 +326,84 @@ test('party rendering does not mutate the predictor player position', () => {
   assert.equal(view.entities[0].z, 8);
   assert.equal(player.x, 1);
   assert.equal(player.z, 2);
+});
+
+test('party auto-attack targets a live enemy snapshot in a two-player party', () => {
+  const stageWorld = createStageWorld({
+    seed: 251,
+    stageId: 'C1',
+    playerId: 'self',
+    inputDriven: true,
+    party: [{ playerId: 'self' }, { playerId: 'ally' }],
+  });
+  const player = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'self');
+  const ally = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'ally');
+  const enemy = stageWorld.entities.find((entity) => entity.kind === 'enemy');
+  Object.assign(enemy, { dead: true, state: 'dead', x: player.x + 50, spawnTicksLeft: 0 });
+  const client = Object.create(PartyClient.prototype);
+  client.stageWorld = stageWorld;
+  client.playerId = 'self';
+  client.predictor = {
+    getPlayer: () => player,
+    getVisualPosition: () => ({ x: player.x, z: player.z }),
+  };
+  client.session = { clock: { getEstimate: () => 100 } };
+  client.interpolation = {
+    sample: () => ({
+      renderTick: 0,
+      entities: [
+        { ...ally },
+        {
+          ...enemy,
+          dead: false,
+          state: 'idle',
+          invulnerable: false,
+          spawnTicksLeft: 0,
+          x: player.x + 1.5,
+          z: player.z,
+        },
+      ],
+    }),
+  };
+  client.lastSnapshot = {
+    tick: 0,
+    ev: [],
+    roomIndex: 0,
+    openDoors: stageWorld.openDoors,
+    activeEnemyIds: [enemy.id],
+  };
+  client.reviveProgress = new Map();
+
+  const world = client.viewWorld(100);
+  const viewedEnemy = world.entities.find((entity) => entity.id === enemy.id);
+  assert.deepEqual(
+    {
+      kind: viewedEnemy.kind,
+      dead: viewedEnemy.dead,
+      state: viewedEnemy.state,
+      invulnerable: viewedEnemy.invulnerable,
+      spawnTicksLeft: viewedEnemy.spawnTicksLeft,
+      x: viewedEnemy.x,
+      z: viewedEnemy.z,
+    },
+    {
+      kind: 'enemy',
+      dead: false,
+      state: 'idle',
+      invulnerable: false,
+      spawnTicksLeft: 0,
+      x: player.x + 1.5,
+      z: player.z,
+    },
+  );
+  const input = buildPartyAssistedInput(
+    new AttackInputAssistant(),
+    { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0, attackHeld: false },
+    client,
+    player,
+    { autoAttack: true },
+  );
+  assert.equal(input.buttons & BUTTONS.ATTACK, BUTTONS.ATTACK);
 });
 
 test('party resets run prediction state to each first full snapshot', () => {
