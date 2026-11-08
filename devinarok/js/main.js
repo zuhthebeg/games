@@ -88,6 +88,7 @@ let sanctuaryVfx = null;
 let sanctuaryBurnAudio = null;
 let actionToastTimer = null;
 let counterPunchTimer = null;
+let counterToastTimer = null;
 
 function autoAttackEnabled() {
   return settings.autoAttack ?? autoAttackDefault({
@@ -102,6 +103,24 @@ function showActionToast(message) {
   actionToastTimer = setTimeout(() => {
     if (toast.textContent === message) toast.textContent = '';
   }, 1500);
+}
+
+function showCounterToast(player) {
+  const toast = $('#counter-toast');
+  const point = renderer?.projectWorldPosition(player?.x, 2.3, player?.z);
+  if (!point?.visible) return;
+  clearTimeout(counterToastTimer);
+  toast.textContent = '반격!';
+  toast.style.left = `${point.left}px`;
+  toast.style.top = `${point.top}px`;
+  toast.hidden = false;
+  toast.classList.remove('active');
+  void toast.offsetWidth;
+  toast.classList.add('active');
+  counterToastTimer = setTimeout(() => {
+    toast.classList.remove('active');
+    toast.hidden = true;
+  }, 600);
 }
 
 function showCounterPresentation() {
@@ -247,7 +266,7 @@ function handleAudioEvent(event, current) {
       else if (event.family === 'staff') audio.play('staff-cast');
       else audio.play('sword-swing');
       if (event.playerId === character?.id) {
-        showActionToast('반격!');
+        showCounterToast(localPlayer);
         showCounterPresentation();
       }
     } else if (event.skill !== undefined) {

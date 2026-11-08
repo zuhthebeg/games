@@ -1965,6 +1965,17 @@ export class ArenaRenderer {
     }
   }
 
+  projectWorldPosition(x, y, z) {
+    this.camera.updateMatrixWorld(true);
+    const point = this.projectedPoint.set(x, y, z).project(this.camera);
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      left: (point.x + 1) * rect.width / 2,
+      top: (1 - point.y) * rect.height / 2,
+      visible: point.z >= -1 && point.z <= 1 && Math.abs(point.x) <= 1 && Math.abs(point.y) <= 1,
+    };
+  }
+
   render(previous, world, alpha) {
     const now = performance.now();
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);

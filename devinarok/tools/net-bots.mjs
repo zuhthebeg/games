@@ -142,6 +142,17 @@ function livePlayer(world, playerId) {
     .find((entity) => entity?.playerId === playerId);
 }
 
+function playerDiagnosticState(player) {
+  const state = player?.motion ? { ...player, ...player.motion } : player ?? {};
+  return {
+    castStep: state.attack?.step ?? null,
+    attackPhase: state.attack?.phase ?? null,
+    dodgeTicks: state.dodgeTicks ?? null,
+    dodgeBufferTicks: state.dodgeBufferTicks ?? null,
+    counterReadyTicks: state.counterReadyTicks ?? null,
+  };
+}
+
 function rootCastId(castId, playerId) {
   const prefix = `${playerId}:`;
   if (typeof castId !== 'string' || !castId.startsWith(prefix)) return castId;
@@ -280,6 +291,7 @@ class Bot {
     this.seenHitEvents = new Set();
     this.seenStrikeEvents = new Set();
     this.castDiagnostics = new Map();
+    this.inputDiagnostics = new Map();
     this.pendingImpactClaims = [];
     this.enemyDeathEvents = [];
     this.seenEnemyDeathEvents = new Set();
@@ -409,6 +421,7 @@ class Bot {
         !reconciliation.snapped &&
         !intentionalSnap
       ) {
+        const correctionInput = this.inputDiagnostics.get(previousPrediction.lastInput?.seq);
         this.correctionSamples.push({
           tick: message.tick,
           ack: message.ack,
@@ -419,6 +432,19 @@ class Bot {
           pending: reconciliation.pending,
           intentionalSnap,
           predictedBefore: { x: previousPrediction.x, z: previousPrediction.z },
+          castStep: correctionInput?.castStep ?? previousPrediction.attack?.step ?? null,
+          attackPhase: correctionInput?.attackPhase ?? previousPrediction.attack?.phase ?? null,
+          dodgeTicks: correctionInput?.dodgeTicks ?? previousPrediction.dodgeTicks ?? null,
+          dodgeBufferTicks: correctionInput?.dodgeBufferTicks ?? previousPrediction.dodgeBufferTicks ?? null,
+          counterReadyTicks: correctionInput?.counterReadyTicks ?? previousPrediction.counterReadyTicks ?? null,
+          assistForcedRelease: correctionInput?.assistForcedRelease ?? false,
+          clientPlayerPosition: { x: previousPrediction.x, z: previousPrediction.z },
+          serverPlayerPosition: {
+            x: serverPlayer?.motion?.x ?? serverPlayer?.x,
+            z: serverPlayer?.motion?.z ?? serverPlayer?.z,
+          },
+          clientPlayerState: playerDiagnosticState(previousPrediction),
+          serverPlayerState: playerDiagnosticState(serverPlayer),
           predictedStateBefore: {
             downed: Boolean(previousPrediction.downed),
             dead: Boolean(previousPrediction.dead),
@@ -458,7 +484,11 @@ class Bot {
       for (const event of message.ev) {
         if (Number.isSafeInteger(event.eventId)) this.session.setEventAck(event.eventId);
       }
-      this.recordAuthoritativeEvents(message.ev);
+      this.recordAuthoritativeEvents(
+        message.ev,
+        message.tick,
+        (message.ents ?? []).find((entity) => entity.playerId === this.playerId),
+      );
     }
     if (
       this.pendingReconnectAt !== null &&
@@ -470,7 +500,7 @@ class Bot {
     }
   }
 
-  recordAuthoritativeEvents(events) {
+  recordAuthoritativeEvents(events, snapshotTick, serverPlayer) {
     for (const event of events) {
       if (event.type === 'death' && !this.seenEnemyDeathEvents.has(event.eventId)) {
         this.seenEnemyDeathEvents.add(event.eventId);
@@ -502,6 +532,12 @@ class Bot {
           viewTick: event.viewTick,
           skill: event.skill,
           shape: event.shape ? structuredClone(event.shape) : undefined,
+          snapshotTick,
+          playerPosition: {
+            x: serverPlayer?.motion?.x ?? serverPlayer?.x,
+            z: serverPlayer?.motion?.z ?? serverPlayer?.z,
+          },
+          playerState: playerDiagnosticState(serverPlayer),
         });
       }
       if (event.type === 'impact' && event.ownerId === this.playerId) {
@@ -581,6 +617,7 @@ class Bot {
       kind: strike.kind,
       viewLag: strike.viewLag,
       shape: structuredClone(strike.shape),
+      playerState: this.inputDiagnostics.get(input?.seq) ?? null,
       hits: [],
       enemyDistances: [],
     };
@@ -686,6 +723,7 @@ class Bot {
     });
 
     const seq = ++this.inputSeq;
+    const before = this.predictor.getPlayer();
     const input = buildRangedAimInput(
       { seq, moveX, moveZ, aim, buttons, viewTick },
       player,
@@ -695,6 +733,18 @@ class Bot {
       this.castViewDelayTicks.set(`${this.playerId}:${seq}`, view.delayMs * TICK_HZ / 1000);
     }
     const { motion } = this.predictor.applyLocalInput(input);
+    const after = this.predictor.getPlayer();
+    this.inputDiagnostics.set(seq, {
+      tick: this.predictor.ctx.tick,
+      castStep: motion?.counterStrike ? 'counter' : after.attack?.step ?? before.attack?.step ?? null,
+      attackPhase: after.attack?.phase ?? before.attack?.phase ?? null,
+      dodgeTicks: after.dodgeTicks ?? before.dodgeTicks ?? null,
+      dodgeBufferTicks: after.dodgeBufferTicks ?? before.dodgeBufferTicks ?? null,
+      counterReadyTicks: after.counterReadyTicks ?? before.counterReadyTicks ?? null,
+      assistForcedRelease: false,
+      assistUsed: false,
+      clientPosition: { x: after.x, z: after.z },
+    });
     this.resolvePendingImpactClaims();
     if (motion) this.stats.immediatePredictions += 1;
     const cast = this.castTimeline.predictInput(input, performance.now());
@@ -703,6 +753,7 @@ class Bot {
       this.vfxSpawnCounts.set(cast.castId, (this.vfxSpawnCounts.get(cast.castId) ?? 0) + 1);
     }
     this.wouldHitAtViewTick(motion?.attackStrike, input);
+    this.wouldHitAtViewTick(motion?.counterStrike, input);
     const skillStrikes = motion?.skillStrikes?.length
       ? motion.skillStrikes
       : motion?.skillStrike
@@ -799,6 +850,9 @@ class Bot {
         enemyDeathEvents: this.enemyDeathEvents,
       });
       const rawDisagreementTargets = score.rawDisagreementTargets;
+      const serverStrike = diagnostic.serverStrikeTicks.find((strike) => Number.isSafeInteger(strike.inputSeq));
+      const inputSeq = serverStrike?.inputSeq ?? Number(castId.split(':').at(-1));
+      const castState = this.inputDiagnostics.get(inputSeq);
       const disagreementTargets = score.disagreementTargets;
       const disagreementsWithin015m = disagreementTargets.flatMap((enemyId) => {
         const edgeDistance = Math.min(
@@ -834,6 +888,26 @@ class Bot {
       });
       return {
         castId,
+        diagnosticState: {
+          tick: serverStrike?.tick ?? castState?.tick ?? null,
+          castStep: castState?.castStep ?? null,
+          attackPhase: castState?.attackPhase ?? null,
+          dodgeTicks: castState?.dodgeTicks ?? null,
+          dodgeBufferTicks: castState?.dodgeBufferTicks ?? null,
+          counterReadyTicks: castState?.counterReadyTicks ?? null,
+          assistForcedRelease: castState?.assistForcedRelease ?? false,
+          assistUsed: castState?.assistUsed ?? false,
+          clientPlayerPosition: castState?.clientPosition ?? null,
+          clientPlayerState: castState ? {
+            castStep: castState.castStep,
+            attackPhase: castState.attackPhase,
+            dodgeTicks: castState.dodgeTicks,
+            dodgeBufferTicks: castState.dodgeBufferTicks,
+            counterReadyTicks: castState.counterReadyTicks,
+          } : null,
+          serverPlayerPosition: serverStrike?.playerPosition ?? null,
+          serverPlayerState: serverStrike?.playerState ?? null,
+        },
         clientWouldHit: [...predicted],
         serverHitSet: [...authoritative],
         exactMatch: score.exactMatch,
