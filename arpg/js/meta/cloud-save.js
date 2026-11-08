@@ -104,12 +104,14 @@ export class CloudSave {
     return request.promise;
   }
   proof(slot, data, owner) {
-    // Slot + creation identity prevents a replacement local character inheriting ownership.
+    // Timestamp is not provenance: only the exact committed cloud snapshot is proven.
     try {
       const raw = this.storage.getItem(ownerKey(slot)), proof = JSON.parse(raw);
       const local = JSON.parse(this.storage.getItem(SLOT_SAVE_KEYS[slot]));
-      return proof?.v === 1 && proof.owner === owner && proof.createdAt === data.createdAt &&
-        validateSave(local) && (local.lineage || 'human') === slot && local.createdAt === proof.createdAt ? raw : null;
+      return proof?.v === 1 && proof.committed === true && proof.owner === owner &&
+        proof.content === JSON.stringify(data.charId ? data : snapshot(data)) &&
+        validateSave(local) && (local.lineage || 'human') === slot &&
+        JSON.stringify(snapshot(local)) === proof.content ? raw : null;
     } catch { return null; }
   }
   writable(slot, raw) {
@@ -122,8 +124,11 @@ export class CloudSave {
   }
   intentMatches(entry) {
     const context = this.current();
-    return context && entry.owner === context.owner && entry.epoch === context.epoch &&
-      this.proof(entry.data.charId, entry.data, context.owner) === entry.proof;
+    try {
+      return context && entry.owner === context.owner && entry.epoch === context.epoch &&
+        this.storage.getItem(SLOT_SAVE_KEYS[entry.data.charId]) === entry.localBytes &&
+        this.proof(entry.data.charId, entry.data, context.owner) === entry.proof;
+    } catch { return false; }
   }
   async load() {
     const token = await this.token(), context = this.current();
@@ -169,11 +174,15 @@ export class CloudSave {
     const key = SLOT_SAVE_KEYS[slot];
     const old = this.storage.getItem(key);
     if (!this.matches(remote.context)) throw new Error('Stale cloud restore');
-    const proof = JSON.stringify({ v: 1, owner: remote.context.owner, createdAt: remote.save.createdAt });
-    this.storage.setItem(ownerKey(slot), proof);
-    if (this.storage.getItem(ownerKey(slot)) !== proof || !this.matches(remote.context)) throw new Error('Cloud owner storage unavailable');
+    const record = { v: 1, owner: remote.context.owner, content: JSON.stringify(snapshot(remote.save)), committed: false };
+    const staged = JSON.stringify(record), bytes = JSON.stringify(remote.save);
+    this.storage.setItem(ownerKey(slot), staged);
+    if (this.storage.getItem(ownerKey(slot)) !== staged || !this.matches(remote.context)) throw new Error('Cloud owner storage unavailable');
     if (old !== null) this.storage.setItem(`${key}.cloud-backup.${this.now()}`, old);
-    this.storage.setItem(key, JSON.stringify(remote.save));
+    this.storage.setItem(key, bytes);
+    if (this.storage.getItem(key) !== bytes || !this.matches(remote.context)) throw new Error('Cloud restore incomplete');
+    // Native setItem is atomic: a thrown final write leaves only unusable staged proof.
+    this.storage.setItem(ownerKey(slot), JSON.stringify({ ...record, committed: true }));
     return remote.save;
   }
   changed(save) {
@@ -188,7 +197,8 @@ export class CloudSave {
       if (remote && this.matches(remote.context) && compareProgress(remote.save, data) > 0) return;
       const hash = JSON.stringify(data);
       if (hash === this.lastHash.get(slot) && !this.pending.has(slot)) return;
-      this.pending.set(slot, { data, hash, owner: context.owner, epoch: context.epoch, proof });
+      let localBytes; try { localBytes = this.storage.getItem(SLOT_SAVE_KEYS[slot]); } catch { return; }
+      this.pending.set(slot, { data, hash, owner: context.owner, epoch: context.epoch, proof, localBytes });
       if (!this.uploading.has(slot)) this.schedule(slot, this.now() + 300);
     };
     if (this.current()) enqueue();
@@ -224,12 +234,12 @@ export class CloudSave {
       try {
         const token = await this.token(), context = this.current();
         if (!context || context.token !== token) continue;
-        if (!this.intentMatches(entry) || !this.writable(slot, entry.proof) || !this.matches(context)) {
+        if (!this.intentMatches(entry) || !this.writable(slot, entry.proof) || !this.intentMatches(entry) || !this.matches(context)) {
           if (this.pending.get(slot) === entry) this.pending.delete(slot);
           continue;
         }
         const response = await this.fetcher('https://relay.cocy.io/api/arpg/character', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(entry.data), keepalive: hidden });
-        if (!this.matches(context) || !this.intentMatches(entry)) continue;
+        if (!this.matches(context)) continue;
         if (response.status === 401) { this.blockedTokens.add(token); this.verified = null; continue; }
         if (response.status === 429) {
           const value = response.headers?.get('Retry-After')?.trim();
@@ -245,7 +255,10 @@ export class CloudSave {
         if (this.pending.get(slot) === entry) this.pending.delete(slot);
         this.lastHash.set(slot, entry.hash); this.lastSent.set(slot, this.now());
         this.retryAt.delete(slot);
-      } catch { if (this.intentMatches(entry)) this.retry(slot, 30000); }
+      } catch {
+        const latest = this.pending.get(slot);
+        if (latest && latest.owner === entry.owner && latest.epoch === entry.epoch && this.intentMatches(latest)) this.retry(slot, 30000);
+      }
       finally {
         this.uploading.delete(slot);
         if (this.pending.has(slot) && this.current() && this.intentMatches(this.pending.get(slot))) this.schedule(slot, this.now());

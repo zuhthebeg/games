@@ -28,7 +28,7 @@ test('cloud store debounces and skips unchanged snapshots', async () => {
   const task = [...tasks.values()][0]; assert.equal(task.delay, 300); tasks.clear(); task.fn(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(calls.length,1);
   cloud.changed(save); assert.equal(tasks.size, 0);
-  save.gold++; cloud.changed(save); assert.ok([...tasks.values()].some(t => t.delay === 60000));
+  save.gold++; bindFixture(bytes, save); cloud.changed(save); assert.ok([...tasks.values()].some(t => t.delay === 60000));
 });
 test('newer cloud save is offered but local bytes remain until restore', async () => {
   const local = human(), remote = human(); remote.level = 1; remote.xp = 10;
@@ -52,7 +52,7 @@ const deferred = () => { let resolve; const promise = new Promise(r => { resolve
 function bindFixture(bytes, save) {
   const key = save.lineage === 'skeleton_knight' ? 'arpg.save.v1.slots.skeleton_knight' : 'arpg.save.v1';
   bytes.set(key, JSON.stringify(save));
-  bytes.set(key + '.cloud-owner.v1', JSON.stringify({v:1,owner:'A',createdAt:save.createdAt}));
+  bytes.set(key + '.cloud-owner.v1', JSON.stringify({v:1,owner:'A',content:JSON.stringify(snapshot(save)),committed:true}));
 }
 async function schedulerHarness(transport = async () => success(), start = 100000) {
   let now = start, id = 0;
@@ -68,6 +68,10 @@ async function schedulerHarness(transport = async () => success(), start = 10000
   bindFixture(bytes, human());
   bindFixture(bytes, createSkeletonSave({lineage:'skeleton_knight',name:'Bone',answers:[0,0,0,0,0],createdAt:12345}));
   await cloud.token();
+  // Scheduler-only fixture: each submitted value is independently proven persisted content.
+  // This is NOT production first-binding or proof advancement for local progression.
+  const changed = cloud.changed.bind(cloud);
+  cloud.changed = save => { bindFixture(bytes, save); changed(save); };
   async function advance(ms) {
     const target = now + ms; let count = 0;
     while (true) {
