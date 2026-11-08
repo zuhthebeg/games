@@ -3,6 +3,7 @@ import test from 'node:test';
 import { AttackInputAssistant, buildPartyAssistedInput } from '../js/core/attack-assist.js';
 import { InputLayer } from '../js/core/input.js';
 import { ServerClock } from '../js/net/clock.js';
+import { ClockInputScheduler } from '../js/net/clock-input-scheduler.js';
 import { CastTimeline, castVisualKey } from '../js/net/cast-timeline.js';
 import { escapeHtml } from '../js/ui/escape-html.js';
 import { handlePauseKey } from '../js/ui/pause-menu.js';
@@ -185,6 +186,14 @@ test('party server URL appends the room path and honors local overrides', () => 
     partyServerUrl('ABC234', '?server=ws%3A%2F%2Flocalhost%2Fdevinarok'),
     'ws://localhost/devinarok/ABC234',
   );
+  assert.equal(
+    partyServerUrl('ABC234', '?dev=1&netDebug=1&server=ws%3A%2F%2F127.0.0.1%3A8798'),
+    'ws://127.0.0.1:8798/devinarok/ABC234?debug=1',
+  );
+  assert.equal(
+    partyServerUrl('ABC234', '?netDebug=1&server=ws%3A%2F%2F127.0.0.1%3A8798'),
+    'ws://127.0.0.1:8798/devinarok/ABC234',
+  );
 });
 
 test('party finder derives HTTP base, sorts rooms, and escapes host names', () => {
@@ -313,6 +322,9 @@ test('party client sends an explicit leave message', () => {
 
 test('party rendering does not mutate the predictor player position', () => {
   const player = { id: 1, kind: 'player', playerId: 'self', x: 1, z: 2 };
+  const interpolation = new InterpolationBuffer();
+  interpolation.addSnapshot({ tick: 100, receivedAt: 1000, entities: [] });
+  interpolation.addSnapshot({ tick: 102, receivedAt: 1067, entities: [] });
   const client = Object.create(PartyClient.prototype);
   client.stageWorld = { tick: 7, entities: [] };
   client.playerId = 'self';
@@ -320,16 +332,18 @@ test('party rendering does not mutate the predictor player position', () => {
     getPlayer: () => player,
     getVisualPosition: () => ({ x: 9, z: 8 }),
   };
-  client.session = { clock: { getEstimate: () => 100 } };
-  client.interpolation = { sample: () => ({ entities: [] }) };
+  client.session = { clock: { getEstimate: () => 104 } };
+  client.interpolation = interpolation;
   client.reviveProgress = new Map();
+  client.frameTelemetry = [];
   client.lastSnapshot = { tick: 7, ev: [], roomIndex: 0, openDoors: [] };
 
-  const view = client.viewWorld(100);
+  const view = client.viewWorld(1100);
   assert.equal(view.entities[0].x, 9);
   assert.equal(view.entities[0].z, 8);
   assert.equal(player.x, 1);
   assert.equal(player.z, 2);
+  assert.ok(client.frameTelemetry[0].renderTick < interpolation.snapshots.at(-1).tick);
 });
 
 test('party auto-attack targets a live enemy snapshot in a two-player party', () => {
@@ -343,18 +357,28 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
   const player = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'self');
   const ally = stageWorld.entities.find((entity) => entity.kind === 'player' && entity.playerId === 'ally');
   const enemy = stageWorld.entities.find((entity) => entity.kind === 'enemy');
+  player.facing = 0;
   Object.assign(enemy, { dead: true, state: 'dead', x: player.x + 50, spawnTicksLeft: 0 });
+  const sampledTicks = [];
   const client = Object.create(PartyClient.prototype);
   client.stageWorld = stageWorld;
   client.playerId = 'self';
+  client.runSnapshotReady = true;
+  client.status = 'connected';
+  client.inputTerminated = false;
+  client.versionMismatch = false;
+  client.result = null;
   client.predictor = {
     getPlayer: () => player,
     getVisualPosition: () => ({ x: player.x, z: player.z }),
+    applyLocalInput: () => {},
   };
-  client.session = { clock: { getEstimate: () => 100 } };
+  client.session = { clock: { getEstimate: () => 100 }, queueInput: () => {} };
+  client.castTimeline = { predictInput: () => {} };
   client.interpolation = {
+    snapshots: [],
     sample: () => ({
-      renderTick: 0,
+      renderTick: 104.6,
       entities: [
         { ...ally },
         {
@@ -368,15 +392,34 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
         },
       ],
     }),
+    sampleAtRenderTick: (tick) => {
+      sampledTicks.push(tick);
+      return {
+        renderTick: tick,
+        entities: [
+          { ...ally },
+          {
+            ...enemy,
+            dead: false,
+            state: 'idle',
+            invulnerable: false,
+            spawnTicksLeft: 0,
+            x: player.x + 1,
+            z: player.z + 0.5,
+          },
+        ],
+      };
+    },
   };
   client.lastSnapshot = {
-    tick: 0,
+    tick: 20,
     ev: [],
     roomIndex: 0,
     openDoors: stageWorld.openDoors,
     activeEnemyIds: [enemy.id],
   };
   client.reviveProgress = new Map();
+  client.frameTelemetry = [];
 
   const world = client.viewWorld(100);
   const viewedEnemy = world.entities.find((entity) => entity.id === enemy.id);
@@ -400,14 +443,20 @@ test('party auto-attack targets a live enemy snapshot in a two-player party', ()
       z: player.z,
     },
   );
+  const inputView = client.getInputViewSample(100);
+  assert.equal(inputView.viewTick, 105);
   const input = buildPartyAssistedInput(
     new AttackInputAssistant(),
     { seq: 1, moveX: 0, moveZ: 0, aim: 192, buttons: 0, attackHeld: false },
     client,
     player,
-    { autoAttack: true },
+    { autoAttack: true, inputView },
   );
   assert.equal(input.buttons & BUTTONS.ATTACK, BUTTONS.ATTACK);
+  assert.equal(input.aim, 19);
+  const sent = client.sendInput(input, inputView);
+  assert.equal(sent.viewTick, 105);
+  assert.deepEqual(sampledTicks, [sent.viewTick]);
 });
 
 test('party resets run prediction state to each first full snapshot', () => {
@@ -465,7 +514,7 @@ test('party resets run prediction state to each first full snapshot', () => {
   receiveFirstFull();
   assert.equal(client.predictor.getPlayer().playerId, 'self');
   assert.equal(client.interpolation.snapshots.length, 1);
-  assert.equal(client.inputReady, false);
+  assert.equal(client.inputReady, true);
 
   const firstRunPing = client.session.clock.makePing(now);
   now += 100;
@@ -486,7 +535,7 @@ test('party resets run prediction state to each first full snapshot', () => {
   receiveFirstFull();
   assert.notEqual(client.predictor, firstPredictor);
   assert.equal(client.interpolation.snapshots.length, 1);
-  assert.equal(client.inputReady, false);
+  assert.equal(client.inputReady, true);
   client.session.close();
 });
 
@@ -548,6 +597,60 @@ test('downed local prediction ignores movement and actions, including pending re
   assert.equal(predictor.getPlayer().x, 2);
   assert.equal(predictor.getPlayer().z, 3);
   assert.equal(predictor.getPlayer().attack, null);
+});
+
+test('predictor reconcile keeps the visual path continuous and converges to authority', () => {
+  const predictor = new Predictor({
+    player: { id: 1, playerId: 'self', x: 0, z: 0, facing: 0 },
+    ctx: { arena: {}, tick: 0 },
+  });
+  predictor.simulate = function simulate() {
+    this.ctx.tick += 1;
+    this.player.x += 1;
+  };
+
+  for (let seq = 1; seq <= 3; seq += 1) {
+    predictor.applyLocalInput({ seq }, (seq - 1) * 1000 / 30);
+  }
+  const beforeCorrection = predictor.getVisualPosition(100);
+  const authoritative = { ...predictor.getPlayer(), x: 2.8, z: 0 };
+  const result = predictor.reconcile({
+    tick: 3,
+    ack: 3,
+    player: authoritative,
+  }, 100);
+
+  assert.equal(result.snapped, false);
+  assert.ok(Math.abs(predictor.getVisualPosition(100).x - beforeCorrection.x) < 1e-9);
+  assert.ok(predictor.getVisualPosition(160).x < beforeCorrection.x);
+  assert.ok(Math.abs(predictor.getVisualPosition(220).x - authoritative.x) < 1e-9);
+});
+
+test('30 Hz predictor interpolation removes repeated poses in 60 Hz sampling', () => {
+  const predictor = new Predictor({
+    player: { id: 1, playerId: 'self', x: 0, z: 0, facing: 0 },
+    ctx: { arena: {}, tick: 0 },
+  });
+  predictor.simulate = function simulate() {
+    this.ctx.tick += 1;
+    this.player.x += 1;
+  };
+
+  const frameIntervalMs = 1000 / 60;
+  const legacyPositions = [];
+  const interpolatedPositions = [];
+  for (let frame = 0; frame < 120; frame += 1) {
+    const now = frame * frameIntervalMs;
+    if (frame % 2 === 0) predictor.applyLocalInput({ seq: frame / 2 + 1 }, now);
+    legacyPositions.push(predictor.getPlayer().x);
+    interpolatedPositions.push(predictor.getVisualPosition(now).x);
+  }
+  const repeatedFrames = (positions) => positions.slice(1).filter((position, index) => (
+    Math.abs(position - positions[index]) < 1e-9
+  )).length * 100 / (positions.length - 1);
+
+  assert.ok(Math.abs(repeatedFrames(legacyPositions) - 50) < 1);
+  assert.equal(repeatedFrames(interpolatedPositions), 0);
 });
 
 test('shared bot policy targets, dodges telegraphs, and enters cleared-room doors', () => {
@@ -722,6 +825,44 @@ test('server clock EWMA tracks RTT and offset, schedules startup pings, and neve
   assert.ok(measured.playbackRate >= 0.95 && measured.playbackRate <= 1.05);
 });
 
+test('server clock hard-resyncs when the target is more than six ticks away', () => {
+  const clock = new ServerClock();
+  clock.reset(1000, 0);
+  assert.equal(clock.getEstimate(1000), 0);
+  assert.equal(clock.getEstimate(2000), 30);
+  const previousEpoch = clock.epoch;
+  clock.offsetTicks = -100;
+  assert.equal(clock.getEstimate(2000), -40);
+  assert.equal(clock.playbackRate, 1);
+  assert.equal(clock.epoch, previousEpoch + 1);
+});
+
+test('clock input scheduler follows tick estimates, caps catch-up, and resets without bursting', () => {
+  const scheduler = new ClockInputScheduler({ leadSmoothing: 1 });
+  const clock = {
+    samples: 0,
+    rttMs: 200,
+    epoch: 1,
+    estimate: 100,
+    getEstimate() { return this.estimate; },
+  };
+
+  assert.equal(scheduler.steps(clock, 0), 0);
+  assert.equal(scheduler.leadTicks, 4);
+  assert.equal(scheduler.lastProducedTick, 104);
+  clock.estimate = 101;
+  assert.equal(scheduler.steps(clock, 1), 1);
+  assert.equal(scheduler.lastProducedTick, 105);
+  clock.estimate = 110;
+  assert.equal(scheduler.steps(clock, 2), 3);
+  assert.equal(scheduler.lastProducedTick, 108);
+
+  clock.epoch += 1;
+  clock.estimate = 500;
+  assert.equal(scheduler.steps(clock, 3), 0);
+  assert.equal(scheduler.lastProducedTick, 504);
+});
+
 test('interpolation adapts to jitter, interpolates facing, extrapolates for at most 100ms, and snaps teleports', () => {
   const buffer = new InterpolationBuffer();
   buffer.addSnapshot({
@@ -761,6 +902,26 @@ test('interpolation adapts to jitter, interpolates facing, extrapolates for at m
   });
   const teleported = buffer.sample(16).entities[0];
   assert.ok(teleported.x >= 20);
+});
+
+test('interpolation estimate sampler applies delay without rebasing the clock', () => {
+  const buffer = new InterpolationBuffer();
+  buffer.addSnapshot({
+    tick: 100,
+    receivedAt: 1000,
+    entities: [{ id: 1, kind: 'player', x: 0, z: 0 }],
+  });
+  buffer.addSnapshot({
+    tick: 102,
+    receivedAt: 1067,
+    entities: [{ id: 1, kind: 'player', x: 2, z: 0 }],
+  });
+
+  const estimate = 104;
+  const sampled = buffer.sample(estimate);
+  const sampledInto = buffer.sampleIntoEstimate(estimate);
+  assert.ok(sampled.renderTick < 100);
+  assert.equal(sampledInto.renderTick, sampled.renderTick);
 });
 
 test('interpolation snaps to newer samples across room changes and large jumps', () => {
@@ -971,6 +1132,7 @@ test('run clock resync discards a high lobby epoch and ignores its delayed pong'
 
   session.resetRunEpoch(0);
   assert.equal(session.clock.samples, 0);
+  assert.equal(session.clock.rttMs, 100);
   assert.equal(session.clock.observePong({ c: lobbyPing.c, t: 3002 }, now + 100), false);
 
   const runPing = session.clock.makePing(now);
@@ -980,6 +1142,56 @@ test('run clock resync discards a high lobby epoch and ignores its delayed pong'
   const estimate = session.clock.getEstimate(now);
   const viewTick = Math.round(new InterpolationBuffer().sample(estimate).renderTick);
   assert.ok(Math.abs(viewTick - 60) <= 2);
+  session.close();
+});
+
+test('party lobby ping, run start, and first snapshot use the run clock epoch', () => {
+  const session = new NetSession({
+    autoFlushInputs: false,
+    autoPing: false,
+  });
+  const now = session.now();
+  const lobbyPing = session.clock.makePing(now);
+  session.clock.observePong({ c: lobbyPing.c, t: 0 }, now + 100);
+  assert.ok(session.clock.getEstimate(now + 8100) > 200);
+
+  const client = new PartyClient({
+    character: { name: 'Hero', level: 1, potions: 3 },
+  });
+  client.playerId = 'hero';
+  client.session = session;
+  client.handleMessage({
+    t: 'start',
+    runId: 'run-clock-test',
+    tick: 0,
+    seed: 7,
+    stageId: 'C1',
+    party: [{ playerId: 'hero', name: 'Hero', level: 1 }],
+  });
+  client.status = 'connected';
+  assert.equal(session.clock.samples, 0);
+  assert.equal(session.clock.rttMs, 100);
+  assert.equal(session.clock.observePong({ c: lobbyPing.c, t: 0 }, session.now()), false);
+  assert.ok(Math.abs(session.clock.getEstimate(session.now())) < 1);
+
+  const startSnapshot = {
+    t: 'snap',
+    tick: 0,
+    ack: 0,
+    full: true,
+    roomIndex: 0,
+    openDoors: [],
+    ev: [],
+    ents: client.stageWorld.entities.map((entity) => ({ ...entity })),
+  };
+  client.handleMessage(startSnapshot);
+  assert.equal(client.runSnapshotReady, true);
+  assert.equal(session.clock.samples, 0);
+  assert.equal(session.clock.rttMs, 100);
+  assert.equal(client.inputReady, true);
+  const runPing = session.clock.makePing(session.now());
+  session.clock.observePong({ c: runPing.c, t: startSnapshot.tick }, runPing.c + 40);
+  assert.ok(Math.abs(session.clock.getEstimate(runPing.c + 40) - startSnapshot.tick) < 6);
   session.close();
 });
 

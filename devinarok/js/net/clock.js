@@ -22,12 +22,14 @@ export class ServerClock {
     this.lastEstimate = null;
     this.lastEstimateAt = null;
     this.previousRtt = null;
+    this.epoch = 0;
   }
 
   reset(nowMs = 0, tick = 0) {
     if (!Number.isFinite(nowMs) || !Number.isFinite(tick)) {
       throw new TypeError('Clock reset values must be finite');
     }
+    this.epoch += 1;
     this.offsetTicks = tick - nowMs * this.tickRate / 1000;
     this.rttMs = 0;
     this.jitterMs = 0;
@@ -83,6 +85,13 @@ export class ServerClock {
     if (!Number.isFinite(nowMs)) throw new TypeError('Clock time must be finite');
     const target = nowMs * this.tickRate / 1000 + this.offsetTicks;
     if (this.lastEstimate === null) {
+      this.lastEstimate = target;
+      this.lastEstimateAt = nowMs;
+      return target;
+    }
+    if (Math.abs(target - this.lastEstimate) > 6) {
+      this.epoch += 1;
+      this.playbackRate = 1;
       this.lastEstimate = target;
       this.lastEstimateAt = nowMs;
       return target;

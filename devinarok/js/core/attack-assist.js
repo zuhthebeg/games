@@ -28,6 +28,7 @@ export class AttackInputAssistant {
     this.lastSentAttack = false;
     this.triggerKey = null;
     this.pendingPress = false;
+    this.lastForcedRelease = false;
   }
 
   reset() {
@@ -39,6 +40,7 @@ export class AttackInputAssistant {
   build(rawInput, world, player, { autoAttack = false } = {}) {
     const input = { ...rawInput };
     delete input.attackHeld;
+    this.lastForcedRelease = false;
     let buttons = Number(rawInput.buttons) || 0;
     const autoEligible = autoAttack && canAutoAttack(world, player);
     const target = autoEligible ? pickAimTarget(world, player, attackReach(player)) : null;
@@ -68,6 +70,7 @@ export class AttackInputAssistant {
       }
     } else if (this.pendingPress) this.pendingPress = false;
 
+    this.lastForcedRelease = forceRelease;
     if (forceRelease) buttons &= ~BUTTONS.ATTACK;
     else buttons |= BUTTONS.ATTACK;
     this.lastSentAttack = Boolean(buttons & BUTTONS.ATTACK);
@@ -89,10 +92,11 @@ export class AttackInputAssistant {
 }
 
 export function buildPartyAssistedInput(assistant, rawInput, partyClient, player, options = {}) {
+  const { inputView, ...assistOptions } = options;
   return assistant.build(
     rawInput,
-    partyClient.viewWorld() ?? partyClient.stageWorld,
+    partyClient.viewAimWorld?.(inputView) ?? partyClient.viewWorld() ?? partyClient.stageWorld,
     player,
-    options,
+    assistOptions,
   );
 }

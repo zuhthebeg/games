@@ -6,6 +6,7 @@ import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import { PartyClient } from './ui/party.js';
+import { ClockInputScheduler } from './net/clock-input-scheduler.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
@@ -80,14 +81,12 @@ let boardDifficulty = 'normal';
 let partyClient = null;
 let partyFrame = null;
 let partyPreviousWorld = null;
-let partyLastTime = 0;
 let partyLastRenderTime = 0;
+let partyRendererReady = false;
 let partyLobbySelection = { hostId: null, difficulty: null, wasHost: false };
-let partyAccumulator = 0;
 let partyInputTimer = null;
-let partyInputLastTime = 0;
-let partyInputAccumulator = 0;
 let partyInputDriverStats = {};
+const partyInputScheduler = new ClockInputScheduler();
 let inviteRoomHandled = false;
 let reviveText = new Map();
 let partyHudCaptureFrozen = false;
@@ -106,6 +105,16 @@ let sanctuaryBurnAudio = null;
 let actionToastTimer = null;
 let counterPunchTimer = null;
 let counterToastTimer = null;
+
+function suppressGameGesture(event) {
+  if (!world && !partyClient?.runId) return;
+  if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+  event.preventDefault();
+}
+
+for (const type of ['contextmenu', 'selectstart', 'dragstart', 'gesturestart']) {
+  gameScreen.addEventListener(type, suppressGameGesture, { passive: false });
+}
 
 function autoAttackEnabled() {
   return settings.autoAttack ?? autoAttackDefault({
@@ -363,6 +372,11 @@ function createDebugContext() {
     getPartyPing() {
       return partyClient ? ($('#party-rtt').textContent || null) : null;
     },
+    getPartyColos() {
+      return partyClient
+        ? { serverColo: partyClient.serverColo, edgeColo: partyClient.edgeColo }
+        : null;
+    },
     showToast: showActionToast,
     onDisable: () => disableDebugMode(),
   };
@@ -456,7 +470,9 @@ function trackTutorialMovement(current) {
 function renderTutorialCard() {
   const card = $('#tutorial-card');
   const copy = tutorialState?.active ? TUTORIAL_COPY[tutorialState.step] : null;
-  card.hidden = !copy || !shouldRenderTutorialCard(world?.mode, tutorialState);
+  card.hidden = Boolean(partyClient?.runId && !partyClient.result)
+    || !copy
+    || !shouldRenderTutorialCard(world?.mode, tutorialState);
   if (!copy || card.hidden) return;
   $('#tutorial-title').textContent = copy.title;
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -575,14 +591,12 @@ function stopWorld() {
   frame = null;
   partyFrame = null;
   partyPreviousWorld = null;
-  partyLastTime = 0;
   partyLastRenderTime = 0;
-  partyAccumulator = 0;
+  partyRendererReady = false;
+  partyInputScheduler.reset();
   partyHudCaptureFrozen = false;
   if (partyInputTimer !== null) clearInterval(partyInputTimer);
   partyInputTimer = null;
-  partyInputLastTime = 0;
-  partyInputAccumulator = 0;
   loop?.stop();
   input?.destroy();
   if (sanctuaryState) resetRitual(sanctuaryState);
@@ -833,6 +847,7 @@ async function enterSanctuary() {
   hubPanel.hidden = true;
   pauseMenu.hidden = true;
   resultPanel.hidden = true;
+  $('#tutorial-card').hidden = true;
   $('#boss-hud').hidden = true;
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
@@ -1416,6 +1431,7 @@ function connectParty(code = null) {
       } else setPartyToast(partyJoinErrorMessage(error), { error: true });
     },
   });
+  partyClient.inputScheduler = partyInputScheduler;
   if (code) partyClient.joinRoom(code);
   else partyClient.createRoom();
   renderPartyLobby();
@@ -1455,15 +1471,16 @@ async function startPartyStage(message) {
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'), () => {}, world.arena, DEV_COLLISION_OVERLAY, world);
   renderer.localPlayerId = partyClient.playerId;
+  partyRendererReady = false;
+  partyPreviousWorld = world;
+  partyLastRenderTime = 0;
+  partyInputScheduler.reset();
+  partyFrame = requestAnimationFrame(partyLoop);
   const [, music] = await Promise.all([renderer.ready, loadAudioForScene(world.stageId)]);
   applySettings();
+  partyRendererReady = true;
   await audio.unlock();
   audio.setMusic(music, { crossfadeMs: 1000 });
-  partyPreviousWorld = world;
-  partyLastTime = 0;
-  partyLastRenderTime = 0;
-  partyAccumulator = 0;
-  partyFrame = requestAnimationFrame(partyLoop);
 }
 
 function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
@@ -1486,6 +1503,7 @@ function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   const rtt = Math.round(client.session?.clock.rttMs ?? 0);
   const badge = $('#party-rtt');
   badge.textContent = `${rtt} ms`;
+  badge.title = `서버 ${client.serverColo ?? '—'} · 접속 ${client.edgeColo ?? '—'}`;
   badge.dataset.state = rtt < 100 ? 'green' : rtt < 200 ? 'yellow' : 'red';
   const own = partyPlayers.find((entry) => entry.playerId === client.playerId);
   $('#party-downed').hidden = !own?.downed;
@@ -1517,23 +1535,13 @@ function setPartyHudCaptureFreeze(frozen) {
 
 function partyLoop(time) {
   if (!character || !partyClient || !renderer || !input) return;
-  if (!input.devInputProvider) {
-    if (!partyLastTime) partyLastTime = time;
-    partyAccumulator += Math.min(0.25, (time - partyLastTime) / 1000);
-    partyLastTime = time;
-    let steps = 0;
-    while (partyAccumulator >= 1 / 30 && steps < 5) {
-      sendPartyInputTick();
-      partyAccumulator -= 1 / 30;
-      steps += 1;
-    }
-  }
-  if (
+  if (!input.devInputProvider) driveClockedPartyInputs(time, false);
+  if (partyRendererReady && (
     !DEV_MODE ||
     partyInputTimer === null ||
     !partyLastRenderTime ||
     time - partyLastRenderTime >= 200
-  ) {
+  )) {
     const nextWorld = partyClient.viewWorld(time) ?? world;
     if (nextWorld) {
       if (!DEV_MODE || partyInputTimer === null) {
@@ -1548,6 +1556,7 @@ function partyLoop(time) {
     partyLastRenderTime = time;
   }
   const overlay = $('#party-network-overlay');
+  $('#tutorial-card').hidden = Boolean(partyClient?.runId && !partyClient.result);
   if (partyClient.versionMismatch) {
     overlay.textContent = '새 버전이 있어요. 새로고침해 주세요';
     overlay.hidden = false;
@@ -1566,16 +1575,41 @@ function sendPartyInputTick() {
     return Boolean(partyClient.sendInput({ ...next, moveX: 0, moveZ: 0, buttons: 0, attackHeld: false }));
   }
   const player = partyClient.predictor?.getPlayer();
+  const inputView = partyClient.getInputViewSample();
+  if (!inputView) return false;
   const prepared = player
     ? buildPartyAssistedInput(
       attackInputAssistant,
       next,
       partyClient,
       player,
-      { autoAttack: autoAttackEnabled() },
+      { autoAttack: autoAttackEnabled(), inputView },
     )
     : next;
-  return Boolean(partyClient.sendInput(prepared));
+  return Boolean(partyClient.sendInput(prepared, inputView));
+}
+
+function driveClockedPartyInputs(now, collectStats = false) {
+  if (collectStats) partyInputDriverStats.timerTicks += 1;
+  if (!partyClient?.inputReady || !input || partyClient.result) {
+    if (collectStats) partyInputDriverStats.notReady += 1;
+    return 0;
+  }
+  const pending = partyClient.session?.inputs.size ?? 0;
+  if (pending >= 90) {
+    if (collectStats) partyInputDriverStats.backpressure += 1;
+    return 0;
+  }
+  const steps = partyInputScheduler.steps(partyClient.session?.clock, now);
+  let sent = 0;
+  for (; sent < steps; sent += 1) {
+    if (!sendPartyInputTick()) break;
+  }
+  if (collectStats) {
+    partyInputDriverStats.inputs += sent;
+    partyInputDriverStats.catchUpInputs += Math.max(0, sent - 1);
+  }
+  return sent;
 }
 
 function setPartyInputProvider(provider) {
@@ -1600,38 +1634,14 @@ function tickPartyInput() {
 
 function drivePartyInputTimer() {
   const now = performance.now();
-  partyInputDriverStats.timerTicks += 1;
-  if (!partyClient?.inputReady || !input || partyClient.result) {
-    partyInputDriverStats.notReady += 1;
-    partyInputLastTime = now;
-    partyInputAccumulator = 0;
-    return;
-  }
-  if (!partyInputLastTime) partyInputLastTime = now;
-  partyInputAccumulator = Math.min(
-    3000,
-    partyInputAccumulator + Math.max(0, now - partyInputLastTime),
-  );
-  partyInputLastTime = now;
-  const pending = partyClient.session?.inputs.size ?? 0;
-  const limit = Math.max(0, Math.min(6, 90 - pending));
-  let steps = 0;
-  while (partyInputAccumulator >= 1000 / 30 && steps < limit) {
-    if (!sendPartyInputTick()) break;
-    partyInputAccumulator -= 1000 / 30;
-    steps += 1;
-  }
-  partyInputDriverStats.inputs += steps;
-  partyInputDriverStats.catchUpInputs += Math.max(0, steps - 3);
-  if (!steps && pending >= 90) partyInputDriverStats.backpressure += 1;
+  driveClockedPartyInputs(now, true);
 }
 
 function setPartyInputAutoDrive(enabled) {
   if (!DEV_MODE || !(input instanceof InputLayer) || !input.devInputProvider) return false;
   if (partyInputTimer !== null) clearInterval(partyInputTimer);
   partyInputTimer = null;
-  partyInputLastTime = 0;
-  partyInputAccumulator = 0;
+  partyInputScheduler.reset();
   if (enabled) {
     partyInputDriverStats = {
       timerTicks: 0,
@@ -1640,7 +1650,6 @@ function setPartyInputAutoDrive(enabled) {
       notReady: 0,
       backpressure: 0,
     };
-    partyInputLastTime = performance.now();
     partyInputTimer = setInterval(drivePartyInputTimer, 100);
   }
   return true;
@@ -2439,6 +2448,14 @@ if (DEV_MODE) {
     joinParty: (code) => connectParty(code),
     enterPartyCode(code) { return connectParty(code); },
     getPartyWorld() { return partyClient?.viewWorld(); },
+    getNetFrameTelemetry() { return partyClient?.frameTelemetry?.slice() ?? []; },
+    get partyInputSchedule() {
+      return {
+        lastProducedTick: partyInputScheduler.lastProducedTick,
+        leadTicks: partyInputScheduler.leadTicks,
+        clockEpoch: partyInputScheduler.clockEpoch,
+      };
+    },
     setTutorialStep(step) {
       if (!TUTORIAL_COPY[step]) return false;
       tutorialState = { ...tutorialState, step, active: true, completed: false, skipped: false };

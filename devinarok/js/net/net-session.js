@@ -2,7 +2,7 @@ import { ServerClock } from './clock.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION } from './protocol.js';
 import { SIM_HASH } from './sim-version.js';
 
-const INPUT_SEND_INTERVAL_MS = 1000 / 15;
+const INPUT_SEND_INTERVAL_MS = 1000 / 30;
 const RECONNECT_START_MS = 250;
 const RECONNECT_MAX_MS = 2000;
 const TOKEN_RETAIN_MS = 60_000;
@@ -80,6 +80,8 @@ export class NetSession {
     this.reconnectSince = null;
     this.reconnectTimer = null;
     this.inputTimer = null;
+    this.inputFlushActive = false;
+    this.nextInputFlushAt = null;
     this.pingTimer = null;
     this.inputs = new Map();
     this.eventAck = 0;
@@ -88,6 +90,18 @@ export class NetSession {
     this.snapshotResyncRequested = false;
     this.snapshotStates = new Map();
     this.snapshotMetadataStates = new Map();
+    this.inputStats = this.newInputStats();
+  }
+
+  newInputStats() {
+    return {
+      queuedInputs: 0,
+      inputCopiesSent: 0,
+      bundlesSent: 0,
+      bundleSizes: [],
+      flushIntervalsMs: [],
+      lastFlushAt: null,
+    };
   }
 
   connect() {
@@ -239,8 +253,22 @@ export class NetSession {
 
   startTimers() {
     this.stopTimers();
-    if (this.autoFlushInputs && this.setIntervalFn) {
-      this.inputTimer = this.setIntervalFn(() => this.flushInputs(), INPUT_SEND_INTERVAL_MS);
+    if (this.autoFlushInputs && this.setTimeoutFn) {
+      this.inputFlushActive = true;
+      this.nextInputFlushAt = this.now() + INPUT_SEND_INTERVAL_MS;
+      const flush = () => {
+        if (!this.inputFlushActive) return;
+        this.flushInputs();
+        this.nextInputFlushAt += INPUT_SEND_INTERVAL_MS;
+        const now = this.now();
+        if (this.nextInputFlushAt <= now) {
+          this.nextInputFlushAt += (
+            Math.floor((now - this.nextInputFlushAt) / INPUT_SEND_INTERVAL_MS) + 1
+          ) * INPUT_SEND_INTERVAL_MS;
+        }
+        this.inputTimer = this.setTimeoutFn(flush, Math.max(0, this.nextInputFlushAt - now));
+      };
+      this.inputTimer = this.setTimeoutFn(flush, INPUT_SEND_INTERVAL_MS);
     }
     if (this.autoPing && this.setIntervalFn) {
       this.pingTimer = this.setIntervalFn(() => {
@@ -251,9 +279,11 @@ export class NetSession {
   }
 
   stopTimers() {
-    if (this.inputTimer !== null) this.clearIntervalFn?.(this.inputTimer);
+    this.inputFlushActive = false;
+    if (this.inputTimer !== null) this.clearTimeoutFn?.(this.inputTimer);
     if (this.pingTimer !== null) this.clearIntervalFn?.(this.pingTimer);
     this.inputTimer = null;
+    this.nextInputFlushAt = null;
     this.pingTimer = null;
   }
 
@@ -261,10 +291,12 @@ export class NetSession {
     const compact = compactInput(input);
     if (!Number.isSafeInteger(compact.seq) || compact.seq < 0) return false;
     this.inputs.set(compact.seq, compact);
+    this.inputStats.queuedInputs += 1;
     return true;
   }
 
   resetRunEpoch(tick = 0) {
+    const rttMs = this.clock.rttMs;
     this.inputs.clear();
     this.eventAck = 0;
     this.receivedEventIds.clear();
@@ -272,11 +304,15 @@ export class NetSession {
     this.snapshotResyncRequested = false;
     this.snapshotStates.clear();
     this.snapshotMetadataStates.clear();
+    this.inputStats = this.newInputStats();
     this.clock.reset(this.now(), tick);
+    this.clock.rttMs = rttMs;
   }
 
   resetRunClock(tick = 0) {
+    const rttMs = this.clock.rttMs;
     this.clock.reset(this.now(), tick);
+    this.clock.rttMs = rttMs;
   }
 
   setEventAck(eventId) {
@@ -295,7 +331,21 @@ export class NetSession {
       ...(this.snapshotAck === null ? {} : { sa: this.snapshotAck }),
       ...(this.snapshotResyncRequested ? { sr: true } : {}),
     });
-    if (sent) this.snapshotResyncRequested = false;
+    if (sent) {
+      this.snapshotResyncRequested = false;
+      if (inputs.length) {
+        const flushedAt = this.now();
+        if (this.inputStats.lastFlushAt !== null) {
+          this.inputStats.flushIntervalsMs.push(flushedAt - this.inputStats.lastFlushAt);
+          if (this.inputStats.flushIntervalsMs.length > 1200) this.inputStats.flushIntervalsMs.shift();
+        }
+        this.inputStats.lastFlushAt = flushedAt;
+        this.inputStats.bundlesSent += 1;
+        this.inputStats.inputCopiesSent += inputs.length;
+        this.inputStats.bundleSizes.push(inputs.length);
+        if (this.inputStats.bundleSizes.length > 1200) this.inputStats.bundleSizes.shift();
+      }
+    }
     return sent;
   }
 

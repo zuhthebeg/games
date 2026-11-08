@@ -51,6 +51,10 @@ export class Predictor {
       entities: clone(ctx.entities ?? []),
     };
     this.player = clone(player);
+    this.prevTickPos = { x: this.player.x, z: this.player.z, facing: this.player.facing ?? 0 };
+    this.currTickPos = { ...this.prevTickPos };
+    this.lastStepAt = 0;
+    this.hasLocalStep = false;
     this.pendingInputs = [];
     this.seenSeqs = new Set();
     this.lastAck = -1;
@@ -69,7 +73,7 @@ export class Predictor {
     return stepPlayerMotion(this.ctx, this.player, normalizeInput(input));
   }
 
-  applyLocalInput(input) {
+  applyLocalInput(input, nowMs = performance.now()) {
     const normalized = normalizeInput(input);
     if (this.player.downed) {
       normalized.moveX = 0;
@@ -85,7 +89,15 @@ export class Predictor {
     }
     this.seenSeqs.add(normalized.seq);
     this.pendingInputs.push(normalized);
+    this.prevTickPos = { ...this.currTickPos };
     const motion = this.simulate(normalized);
+    this.currTickPos = {
+      x: this.player.x,
+      z: this.player.z,
+      facing: this.player.facing ?? this.currTickPos.facing,
+    };
+    this.lastStepAt = nowMs;
+    this.hasLocalStep = true;
     return { motion, player: this.getPlayer() };
   }
 
@@ -105,6 +117,12 @@ export class Predictor {
     if (snapshot.openDoors) this.ctx.openDoors = clone(snapshot.openDoors);
     for (const input of pending) this.simulate(input);
 
+    const replayShiftX = this.player.x - previousPosition.x;
+    const replayShiftZ = this.player.z - previousPosition.z;
+    this.prevTickPos.x += replayShiftX;
+    this.prevTickPos.z += replayShiftZ;
+    this.currTickPos.x += replayShiftX;
+    this.currTickPos.z += replayShiftZ;
     const correctionX = previousPosition.x - this.player.x;
     const correctionZ = previousPosition.z - this.player.z;
     const error = Math.hypot(correctionX, correctionZ);
@@ -116,9 +134,15 @@ export class Predictor {
       this.metrics.snaps += 1;
       this.visualOffset = { x: 0, z: 0 };
       this.visualOffsetStartedAt = null;
+      this.prevTickPos = { x: this.player.x, z: this.player.z, facing: this.player.facing ?? 0 };
+      this.currTickPos = { ...this.prevTickPos };
     } else if (error > 0) {
       this.visualOffset = { x: correctionX, z: correctionZ };
       this.visualOffsetStartedAt = nowMs;
+    }
+    if (!forcedSnap && error <= 2 && !this.hasLocalStep) {
+      this.prevTickPos = { x: this.player.x, z: this.player.z, facing: this.player.facing ?? 0 };
+      this.currTickPos = { ...this.prevTickPos };
     }
     return { error, snapped: forcedSnap || error > 2, pending: pending.length };
   }
@@ -138,10 +162,18 @@ export class Predictor {
       this.visualOffset = { x: 0, z: 0 };
       this.visualOffsetStartedAt = null;
     }
+    const stepAmount = Math.max(0, Math.min(1, (nowMs - this.lastStepAt) / (1000 / 30)));
     return {
-      x: this.player.x + this.visualOffset.x * amount,
-      z: this.player.z + this.visualOffset.z * amount,
+      x: this.prevTickPos.x + (this.currTickPos.x - this.prevTickPos.x) * stepAmount + this.visualOffset.x * amount,
+      z: this.prevTickPos.z + (this.currTickPos.z - this.prevTickPos.z) * stepAmount + this.visualOffset.z * amount,
     };
+  }
+
+  getVisualFacing(nowMs = 0) {
+    const amount = Math.max(0, Math.min(1, (nowMs - this.lastStepAt) / (1000 / 30)));
+    let delta = this.currTickPos.facing - this.prevTickPos.facing;
+    delta = ((delta + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    return this.prevTickPos.facing + delta * amount;
   }
 
   getPlayer() {

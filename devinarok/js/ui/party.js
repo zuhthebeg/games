@@ -15,9 +15,13 @@ export function makeRoomCode(random = Math.random) {
 }
 
 export function partyServerUrl(code, search = globalThis.location?.search ?? '') {
-  const override = new URLSearchParams(search).get('server');
+  const params = new URLSearchParams(search);
+  const override = params.get('server');
   if (!override) return `wss://relay-do-poc.zuhejbeg.workers.dev/devinarok/${code}`;
   const url = new URL(override);
+  if (params.get('dev') === '1' && params.get('netDebug') === '1') {
+    url.searchParams.set('debug', '1');
+  }
   const path = url.pathname.replace(/\/+$/, '');
   if (path.endsWith(`/devinarok/${code}`)) return url.toString();
   url.pathname = path.endsWith('/devinarok')
@@ -57,6 +61,8 @@ export class PartyClient {
     this.session = null;
     this.roomCode = null;
     this.playerId = null;
+    this.serverColo = null;
+    this.edgeColo = null;
     this.lobby = null;
     this.status = 'disconnected';
     this.versionMismatch = false;
@@ -66,6 +72,14 @@ export class PartyClient {
     this.interpolation = null;
     this.castTimeline = null;
     this.lastSnapshot = null;
+    this.snapshotArrivalAt = null;
+    this.snapshotArrivalTick = null;
+    this.serverTickRateSamples = [];
+    this.serverTickRateHz = null;
+    this.lastServerTickDelta = null;
+    this.lastServerTickWallMs = null;
+    this.frameTelemetry = [];
+    this.lastFrameTelemetryAt = null;
     this.runId = null;
     this.runSnapshotReady = false;
     this.result = null;
@@ -116,6 +130,8 @@ export class PartyClient {
     if (message.t === 'welcome') {
       this.playerId = message.playerId;
       this.roomCode = message.roomCode ?? this.roomCode;
+      this.serverColo = message.serverColo ?? null;
+      this.edgeColo = message.edgeColo ?? null;
       return;
     }
     if (message.t === 'lobby') {
@@ -177,6 +193,14 @@ export class PartyClient {
       this.runSnapshotReady = false;
       this.seenEventIds.clear();
       this.eventIds.clear();
+      this.snapshotArrivalAt = null;
+      this.snapshotArrivalTick = null;
+      this.serverTickRateSamples = [];
+      this.serverTickRateHz = null;
+      this.lastServerTickDelta = null;
+      this.lastServerTickWallMs = null;
+      this.frameTelemetry = [];
+      this.lastFrameTelemetryAt = null;
     }
     this.runId = message.runId;
     this.result = null;
@@ -206,6 +230,26 @@ export class PartyClient {
   }
 
   handleSnapshot(message) {
+    const receivedAt = performance.now();
+    if (this.snapshotArrivalAt !== null && message.tick > this.snapshotArrivalTick) {
+      const tickDelta = message.tick - this.snapshotArrivalTick;
+      const wallMs = receivedAt - this.snapshotArrivalAt;
+      if (wallMs > 0) {
+        this.serverTickRateSamples.push({ tickDelta, wallMs });
+        if (this.serverTickRateSamples.length > 120) this.serverTickRateSamples.shift();
+        const total = this.serverTickRateSamples.reduce((sum, sample) => ({
+          ticks: sum.ticks + sample.tickDelta,
+          wallMs: sum.wallMs + sample.wallMs,
+        }), { ticks: 0, wallMs: 0 });
+        this.serverTickRateHz = total.ticks * 1000 / total.wallMs;
+        this.lastServerTickDelta = tickDelta;
+        this.lastServerTickWallMs = wallMs;
+      }
+    }
+    if (this.snapshotArrivalAt === null || message.tick > this.snapshotArrivalTick) {
+      this.snapshotArrivalAt = receivedAt;
+      this.snapshotArrivalTick = message.tick;
+    }
     if (!this.runSnapshotReady && message.full) {
       const player = (message.ents ?? []).find((entity) => (
         entity.kind === 'player' && entity.playerId === this.playerId
@@ -230,13 +274,13 @@ export class PartyClient {
     this.lastSnapshot = message;
     this.interpolation?.addSnapshot({
       tick: message.tick,
-      receivedAt: performance.now(),
+      receivedAt,
       entities: message.ents ?? [],
       activeEnemyIds: message.activeEnemyIds ?? null,
       teleport: (message.ents ?? []).some((entity) => entity.teleport || entity.roomChanged),
     });
     if (this.predictor) {
-      const estimate = this.session?.clock.getEstimate(performance.now()) ?? message.tick;
+      const estimate = this.session?.clock.getEstimate(receivedAt) ?? message.tick;
       const aimEntities = this.interpolation.sample(estimate).entities;
       this.predictor.setContext({
         arena: this.stageWorld.arena,
@@ -244,7 +288,7 @@ export class PartyClient {
         tick: message.tick,
         entities: aimEntities,
       });
-      this.predictor.reconcile(message, performance.now());
+      this.predictor.reconcile(message, receivedAt);
     }
     const events = message.ev ?? [];
     const freshEvents = events.filter((event) => (
@@ -278,7 +322,6 @@ export class PartyClient {
   get inputReady() {
     return Boolean(
       this.runSnapshotReady &&
-      this.session?.clock.samples > 0 &&
       this.status === 'connected' &&
       !this.inputTerminated &&
       !this.versionMismatch &&
@@ -286,11 +329,20 @@ export class PartyClient {
     );
   }
 
-  sendInput(rawInput) {
-    if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
-    const estimate = this.session.clock.getEstimate(performance.now());
+  getInputViewSample(now = performance.now()) {
+    if (!this.session || !this.interpolation) return null;
+    const estimate = this.session.clock.getEstimate(now);
     const view = this.interpolation.sample(estimate);
     const viewTick = Math.round(view.renderTick);
+    return { now, viewTick, sample: this.interpolation.sampleAtRenderTick(viewTick) };
+  }
+
+  sendInput(rawInput, inputView = null) {
+    if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
+    const viewSample = inputView ?? this.getInputViewSample();
+    if (!viewSample) return null;
+    const now = viewSample.now;
+    const viewTick = viewSample.viewTick;
     const autoAim = Boolean(rawInput.autoAim);
     let input = { ...rawInput, viewTick };
     delete input.autoAim;
@@ -307,11 +359,11 @@ export class PartyClient {
       input = buildRangedAimInput(
         input,
         this.predictor.getPlayer(),
-        this.interpolation.sampleAtRenderTick(viewTick),
+        viewSample.sample,
       );
     }
     this.predictor.applyLocalInput(input);
-    this.castTimeline.predictInput(input, performance.now());
+    this.castTimeline.predictInput(input, now);
     this.session.queueInput(input);
     return input;
   }
@@ -319,14 +371,49 @@ export class PartyClient {
   viewWorld(now = performance.now()) {
     if (!this.stageWorld || !this.predictor || !this.session) return this.stageWorld;
     const snapshot = this.lastSnapshot;
-    const estimate = this.session.clock.getEstimate(now);
-    const sample = this.interpolation.sampleInto?.(estimate) ?? this.interpolation.sample(estimate);
+    const clockEstimate = this.session.clock.getEstimate(now);
+    const estimate = clockEstimate;
+    const sample = this.interpolation.sampleIntoEstimate?.(estimate) ?? this.interpolation.sample(estimate);
+    if (this.lastFrameTelemetryAt !== now) {
+      const snapshots = this.interpolation.snapshots;
+      const oldestSnapshot = snapshots[0];
+      const latestSnapshot = snapshots.at(-1);
+      const maxExtrapolationTicks =
+        this.interpolation.maxExtrapolationMs * this.interpolation.tickRate / 1000;
+      this.frameTelemetry.push({
+        at: now,
+        active: !this.result,
+        estimate,
+        clockEstimate,
+        renderTick: sample.renderTick,
+        latestSnapshotTick: latestSnapshot?.tick ?? snapshot?.tick ?? null,
+        extrapolating: Boolean(latestSnapshot && sample.renderTick > latestSnapshot.tick),
+        frozen: !oldestSnapshot || !latestSnapshot || snapshots.length < 2 ||
+          sample.renderTick <= oldestSnapshot.tick ||
+          sample.renderTick >= latestSnapshot.tick + maxExtrapolationTicks,
+        snapshotAgeMs: latestSnapshot ? Math.max(0, now - latestSnapshot.receivedAt) : null,
+        delayMs: sample.delayMs,
+        clockOffsetTicks: this.session.clock.offsetTicks,
+        clockRttMs: this.session.clock.rttMs,
+        serverInputBuffer: snapshot?.debug ?? null,
+        playbackRate: this.session.clock.playbackRate,
+        serverTickRateHz: this.serverTickRateHz,
+        serverTickDelta: this.lastServerTickDelta,
+        serverTickWallMs: this.lastServerTickWallMs,
+        inputLeadTicks: this.inputScheduler?.leadTicks ?? null,
+        lastProducedTick: this.inputScheduler?.lastProducedTick ?? null,
+        inputClockEpoch: this.inputScheduler?.clockEpoch ?? null,
+      });
+      if (this.frameTelemetry.length > 12_000) this.frameTelemetry.shift();
+      this.lastFrameTelemetryAt = now;
+    }
     this.viewLocalPlayer ??= {};
     this.viewEntityPool ??= new Map();
     const local = Object.assign(this.viewLocalPlayer, this.predictor.getPlayer());
     const visualPosition = this.predictor.getVisualPosition(now);
     local.x = visualPosition.x;
     local.z = visualPosition.z;
+    local.facing = this.predictor.getVisualFacing?.(now) ?? local.facing;
     local.reviveProgress = this.reviveProgress.get(local.id)?.progress ?? local.reviveProgress ?? 0;
     const output = this.viewWorldBuffer ??= { ...this.stageWorld, entities: [] };
     const entities = output.entities;
@@ -351,6 +438,18 @@ export class PartyClient {
       activeEnemyIds: snapshot?.activeEnemyIds ?? null,
       localPlayerId: this.playerId,
     });
+  }
+
+  viewAimWorld(inputView = null) {
+    const viewSample = inputView ?? this.getInputViewSample();
+    const world = this.viewWorld(viewSample?.now ?? performance.now());
+    if (!world || !this.lastSnapshot || !this.interpolation || !viewSample) return world;
+    const output = this.viewAimWorldBuffer ??= { ...world, entities: [] };
+    Object.assign(output, world, {
+      targetTick: viewSample.viewTick,
+      entities: viewSample.sample.entities,
+    });
+    return output;
   }
 
   setReady(ready) {
