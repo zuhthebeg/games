@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createTutorialState, transitionTutorial } from '../js/ui/tutorial.js';
+import { createTutorialState, shouldRenderTutorialCard, transitionTutorial } from '../js/ui/tutorial.js';
 
 test('tutorial follows combat telegraph and hub guidance steps', () => {
   let state = createTutorialState();
@@ -22,6 +22,15 @@ test('tutorial can be skipped and replayed from the beginning', () => {
   assert.equal(state.step, 'board');
   assert.equal(state.active, true);
   assert.equal(state.skipped, false);
+});
+
+test('hub-only tutorial steps never render in a stage', () => {
+  for (const step of ['board', 'blacksmith', 'equipment']) {
+    const state = createTutorialState({ step });
+    assert.equal(shouldRenderTutorialCard('stage', state), false);
+    assert.equal(shouldRenderTutorialCard('hub', state), true);
+  }
+  assert.equal(shouldRenderTutorialCard('stage', createTutorialState({ step: 'movement' })), true);
 });
 
 test('the first hub board selection starts combat guidance without consuming the post-stage board step', () => {

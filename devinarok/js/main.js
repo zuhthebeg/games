@@ -8,8 +8,12 @@ import { PartyClient } from './ui/party.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
 import { escapeHtml } from './ui/escape-html.js';
 import { applyHubEquipmentLook } from './ui/hub-player.js';
+import { refreshStagePlayerCharacter } from './ui/stage-player.js';
 import { handlePauseKey } from './ui/pause-menu.js';
-import { createTutorialState, resolveTutorialSortie, TUTORIAL_COPY, transitionTutorial } from './ui/tutorial.js';
+import {
+  createTutorialState, resolveTutorialSortie, shouldRenderTutorialCard, TUTORIAL_COPY, transitionTutorial,
+} from './ui/tutorial.js';
+import { createTapToggle, initializeDebugMode, persistDebugMode } from './core/debug-toggle.js';
 import { SANCTUARY_ARENA } from './sanctuary/arena.js';
 import { SanctuaryVfx } from './sanctuary/vfx.js';
 import {
@@ -19,6 +23,7 @@ import {
 } from './sanctuary/state.js';
 import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
+import { SIM_HASH } from './net/sim-version.js';
 import { AFFIXES } from './content/affixes.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
@@ -30,8 +35,13 @@ import {
 } from './sim/world.js';
 
 const $ = (selector) => document.querySelector(selector);
-const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
-const DEV_COLLISION_OVERLAY = DEV_MODE && new URLSearchParams(location.search).get('collide') === '1';
+const query = new URLSearchParams(location.search);
+const DEV_MODE = query.get('dev') === '1';
+const DEV_COLLISION_OVERLAY = DEV_MODE && query.get('collide') === '1';
+let debugEnabled = initializeDebugMode(query, localStorage);
+let debugController = null;
+let debugPanelModule = null;
+let debugModulePromise = null;
 const titleScreen = $('#title-screen');
 const gameScreen = $('#game-screen');
 const createForm = $('#create-form');
@@ -148,6 +158,91 @@ async function reloadCharacter() {
   inventory = await saves.listItems(character.id);
 }
 
+async function enableDebugMode({ announce = true } = {}) {
+  debugEnabled = true;
+  persistDebugMode(true, localStorage);
+  debugModulePromise ??= import('./debug/panel.js');
+  debugPanelModule ??= await debugModulePromise;
+  if (!debugEnabled) return null;
+  if (!debugController) debugController = debugPanelModule.mountDebugPanel(createDebugContext());
+  if (announce) showActionToast('디버그 모드 켜짐');
+  return debugController;
+}
+
+function disableDebugMode({ announce = true } = {}) {
+  debugEnabled = false;
+  persistDebugMode(false, localStorage);
+  debugController?.destroy();
+  debugController = null;
+  if (announce) showActionToast('디버그 모드 꺼짐');
+}
+
+function toggleDebugMode() {
+  if (debugEnabled) disableDebugMode();
+  else void enableDebugMode();
+}
+
+function createDebugContext() {
+  return {
+    get world() { return world; },
+    get renderer() { return renderer; },
+    get loop() { return loop; },
+    get input() { return input; },
+    get character() { return character; },
+    get inventory() { return inventory; },
+    get partyClient() { return partyClient; },
+    get currentStageId() { return currentStageId; },
+    get debugEnabled() { return debugEnabled; },
+    get simHash() { return SIM_HASH; },
+    get assetVersion() {
+      return new URL(document.querySelector('script[type="module"][src*="main.js"]')?.src ?? location.href)
+        .searchParams.get('v') ?? 'local';
+    },
+    applyOps,
+    reloadCharacter,
+    exportSave: () => saves.export(),
+    async importSave(payload) {
+      await saves.import(payload);
+      await refreshTitle();
+      if (character) await applyOps([{ type: 'markDebug' }]);
+    },
+    async replayTutorial() {
+      if (!tutorialState) return false;
+      const next = transitionTutorial(tutorialState, { type: 'replay' });
+      tutorialState = next;
+      renderTutorialCard();
+      await applyOps([{ type: 'updateTutorial', state: next }, { type: 'markDebug' }]);
+      return true;
+    },
+    startStage,
+    settleStage,
+    clearStage(outcome) {
+      if (!world || partyClient || world.mode !== 'stage') return false;
+      completeStage(world, outcome);
+      return settleStage(outcome);
+    },
+    stepWorld(inputs) {
+      if (loop?.stepOnce) return loop.stepOnce(inputs);
+      return step(world, inputs);
+    },
+    closeDebugPanel: () => debugController?.close(),
+    localStorage,
+    getPartyPing() {
+      return partyClient ? ($('#party-rtt').textContent || null) : null;
+    },
+    showToast: showActionToast,
+    onDisable: () => disableDebugMode(),
+  };
+}
+
+function installDebugVersionToggle() {
+  const button = $('#settings-version-toggle');
+  const script = document.querySelector('script[type="module"][src*="main.js"]');
+  const version = new URL(script?.src ?? location.href).searchParams.get('v') ?? 'local';
+  $('#settings-asset-version').textContent = version;
+  button.addEventListener('click', createTapToggle(toggleDebugMode));
+}
+
 function reducedMotionEnabled() {
   return settings.reducedMotion ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -228,10 +323,7 @@ function trackTutorialMovement(current) {
 function renderTutorialCard() {
   const card = $('#tutorial-card');
   const copy = tutorialState?.active ? TUTORIAL_COPY[tutorialState.step] : null;
-  const hubStep = ['board', 'blacksmith', 'equipment'].includes(tutorialState?.step);
-  card.hidden = !copy
-    || !['hub', 'stage'].includes(world?.mode)
-    || (world?.mode === 'hub' && !hubStep);
+  card.hidden = !copy || !shouldRenderTutorialCard(world?.mode, tutorialState);
   if (!copy || card.hidden) return;
   $('#tutorial-title').textContent = copy.title;
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -337,6 +429,7 @@ async function refreshTitle() {
     tutorialState = createTutorialState(character.tutorial);
     $('#character-name').textContent = character.name;
     $('#character-level').textContent = `기사 · Lv.${character.level} · 경험치 ${character.xp}`;
+    $('#character-debug-used').hidden = !character.debugUsed;
   }
   updateInventoryUpgradeBadge();
 }
@@ -385,7 +478,21 @@ function commit(ops) {
 async function applyOps(ops) {
   character = await commit(ops);
   inventory = await saves.listItems(character.id);
+  $('#character-debug-used').hidden = !character.debugUsed;
+  tutorialState = createTutorialState(character.tutorial);
+  renderTutorialCard();
+  if (world?.mode === 'hub') refreshHubPlayer();
+  else if (world?.mode === 'stage' && !partyClient) refreshSoloStagePlayer();
   return character;
+}
+
+function refreshSoloStagePlayer() {
+  const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
+  if (!player) return;
+  const equipment = equippedItems();
+  const stats = calculatePlayerStats(character.level, equipment);
+  const look = equipmentLook(equipment);
+  refreshStagePlayerCharacter(player, character, equipment, look, stats);
 }
 
 function equippedItems() {
@@ -418,6 +525,7 @@ function drawHub() {
   if (!renderer || !world || world.mode !== 'hub') return;
   updateHud(world);
   renderer.render(world, world, 1);
+  debugController?.frame(world, renderer, performance.now());
   frame = requestAnimationFrame(drawHub);
 }
 
@@ -1164,6 +1272,7 @@ function renderPartyFrame(time = performance.now()) {
   const nextWorld = partyClient.viewWorld(time) ?? world;
   if (!nextWorld) return false;
   renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
+  debugController?.frame(nextWorld, renderer, time);
   partyPreviousWorld = nextWorld;
   world = nextWorld;
   return true;
@@ -1200,6 +1309,7 @@ function partyLoop(time) {
       if (!DEV_MODE || partyInputTimer === null) {
         renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);
       }
+      debugController?.frame(nextWorld, renderer, time);
       partyPreviousWorld = nextWorld;
       world = nextWorld;
       updateHud(nextWorld);
@@ -1409,9 +1519,11 @@ function renderPanel(kind, compareUid = '') {
   hubPanel.focus();
 }
 
-async function startStage(stageId) {
-  if (!stageIsUnlocked(stageId) && !DEV_MODE) return;
-  const tutorialSortie = resolveTutorialSortie(stageId, tutorialState);
+async function startStage(stageId, options = {}) {
+  if (!stageIsUnlocked(stageId) && !DEV_MODE && !debugEnabled) return;
+  const tutorialSortie = debugEnabled
+    ? { stageId, beginCombat: false }
+    : resolveTutorialSortie(stageId, tutorialState);
   const stageToStart = tutorialSortie.stageId;
   if (tutorialSortie.beginCombat) {
     updateTutorial({ type: 'beginCombat' });
@@ -1442,7 +1554,7 @@ async function startStage(stageId) {
   $('#party-rtt').hidden = true;
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
   world = createStageWorld({
-    seed: crypto.getRandomValues(new Uint32Array(1))[0],
+    seed: options.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
     stageId: stageToStart,
     playerId: character.id,
     character: { level: character.level, potions: character.potions, equipment: equippedItems() },
@@ -1472,7 +1584,11 @@ async function startStage(stageId) {
       const aimed = buildRangedAimInput(rawInput, player, current);
       return attackInputAssistant.build(aimed, current, player, { autoAttack: autoAttackEnabled() });
     },
-    render: (previous, current, alpha) => renderer?.render(previous, current, alpha),
+    beforeStep: (current) => debugController?.beforeStep(current),
+    render: (previous, current, alpha) => {
+      renderer?.render(previous, current, alpha);
+      debugController?.frame(current, renderer, performance.now());
+    },
     onTick: (current) => {
       updateHud(current);
       trackTutorialMovement(current);
@@ -1484,6 +1600,7 @@ async function startStage(stageId) {
       if (current.outcome && !settled) settleStage(current.outcome);
     },
   });
+  debugController?.applySpeed(loop);
   loop.start();
 }
 
@@ -1918,6 +2035,8 @@ saves = await createSaveRepository();
 settings = await saves.loadSettings();
 applySettings();
 await refreshTitle();
+installDebugVersionToggle();
+if (debugEnabled) await enableDebugMode({ announce: false });
 if (DEV_MODE) {
   window.__devinarok = {
     get world() { return world; },
