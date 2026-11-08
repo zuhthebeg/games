@@ -730,6 +730,7 @@ try {
   if (debugEnabled) {
     const { mountDebug } = await import('./debug/index.js');
     debug = mountDebug({ hub, store, renderer, input, startUndead, leaveUndead,
+      importSave: next => { characters.assertOwner(); cloud.invalidateProof(characters.active.slot); characters.persist(next); },
       get undead() { return !!undead || !!undeadStarting; },
       get undeadStarting() { return !!undeadStarting; },
       setMastery: (id, level) => {

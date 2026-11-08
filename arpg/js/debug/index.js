@@ -82,8 +82,10 @@ export function mountDebug(context) {
     event.preventDefault(); togglePanel();
   });
   const requireInn = () => { if (context.undead) throw new Error('언데드 디버그 저장 금지'); if (context.running) throw new Error('전투 중 저장 수정 불가. 정산 후 여관에서 사용.'); };
-  const save = next => {
-    requireInn(); store.save(next); hub.save = next;
+  const save = (next, external = false) => {
+    requireInn();
+    if (external) context.importSave(next); else store.save(next);
+    hub.save = next;
     if (typeof hub.showInn === 'function') hub.showInn(); else location.reload();
     status('저장 완료');
   };
@@ -121,7 +123,7 @@ export function mountDebug(context) {
       catch { panel.querySelector('#dbg-json').select(); status('클립보드 불가: 아래 JSON을 직접 복사하세요.'); }
       return;
     }
-    if (action === 'import') { requireInn(); save(JSON.parse(panel.querySelector('#dbg-json').value)); return; }
+    if (action === 'import') { requireInn(); save(JSON.parse(panel.querySelector('#dbg-json').value), true); return; }
     const current = requireSave();
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     if (action === 'gear') save(grantGear(current, { slot: value('slot'), rarity: value('rarity'), huntTier: Number(value('tier')), seed }));
@@ -140,7 +142,7 @@ export function mountDebug(context) {
     extensions.replaceChildren();
     for (const action of debugActions) {
       const button = document.createElement('button'); button.textContent = `${action.group} · ${action.label}`;
-      button.addEventListener('click', () => Promise.resolve().then(() => (context.undead ? Promise.reject(new Error('언데드 디버그 확장 기능 금지')) : action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, persistSave: save })))).catch(error => status(error.message)));
+      button.addEventListener('click', () => Promise.resolve().then(() => (context.undead ? Promise.reject(new Error('언데드 디버그 확장 기능 금지')) : action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, persistSave: next => save(next, true) })))).catch(error => status(error.message)));
       extensions.append(button);
     }
   };
