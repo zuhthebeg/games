@@ -354,3 +354,32 @@ test('401 refreshes a login token once before retrying the cloud request', async
   assert.equal(protectedRequests, 2);
   assert.equal(refreshRequests, 1);
 });
+
+test('cloud reforge uses the dedicated endpoint with the current revision', async () => {
+  const repository = await makeRepository();
+  const character = await createCharacter(repository, { cloudUserId: 'user-1' });
+  let request;
+  let replaced = false;
+  repository.replaceCharacterFromRemote = async () => { replaced = true; };
+  const sync = new RemoteSync({
+    repository,
+    storage: new Storage({ cocy_auth_token: encodeToken({ sub: 'user-1' }) }),
+    apiBase: 'https://relay.test/api/devinarok',
+    fetcher: async (url, options) => {
+      assert.equal(url, 'https://relay.test/api/devinarok/reforge');
+      request = JSON.parse(options.body);
+      return response({ character: { id: character.id }, items: [], roll: 123 });
+    },
+  });
+  sync.userId = 'user-1';
+  sync.online = () => true;
+  sync.flushOutbox = async () => {};
+  await sync.reforge({ characterId: character.id, uid: 'item-1', index: 0 });
+  assert.deepEqual(request, {
+    characterId: character.id,
+    baseRev: character.rev,
+    uid: 'item-1',
+    index: 0,
+  });
+  assert.equal(replaced, true);
+});
