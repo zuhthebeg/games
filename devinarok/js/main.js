@@ -513,33 +513,39 @@ function renderTutorialCard() {
   $('#tutorial-skip').hidden = false;
 }
 
+function playCastSound(event) {
+  if (event.skillId === 'counter') {
+    if (event.family === 'crossbow') audio.play('crossbow-shot');
+    else if (event.family === 'staff') audio.play('staff-cast');
+    else audio.play('sword-swing');
+  } else if (event.skill !== undefined) {
+    const sounds = {
+      sword: { 3: 'shield-clang', 4: 'impact' },
+      crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot', 4: 'crossbow-shot' },
+      staff: { 1: 'flame', 2: 'frost', 3: 'blink', 4: 'impact' },
+    };
+    audio.play(sounds[event.family]?.[event.skill] ?? 'staff-cast');
+  } else if (event.family === 'staff') audio.play('staff-cast');
+  else if (event.family !== 'crossbow') audio.play('sword-swing');
+}
+
 function handleAudioEvent(event, current) {
   const localPlayer = current?.entities.find((entity) => (
     entity.kind === 'player' && entity.playerId === character?.id
   ));
   if (event.type === 'cast') {
-    if (event.skillId === 'counter') {
-      if (event.family === 'crossbow') audio.play('crossbow-shot');
-      else if (event.family === 'staff') audio.play('staff-cast');
-      else audio.play('sword-swing');
-      if (event.playerId === character?.id) {
-        showCounterToast(localPlayer);
-        showCounterPresentation();
-      }
-    } else if (event.skill !== undefined) {
-      const sounds = {
-        sword: { 3: 'shield-clang', 4: 'impact' },
-        crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot', 4: 'crossbow-shot' },
-        staff: { 1: 'flame', 2: 'frost', 3: 'blink', 4: 'impact' },
-      };
-      audio.play(sounds[event.family]?.[event.skill] ?? 'staff-cast');
-    } else if (event.family === 'staff') audio.play('staff-cast');
-    else if (event.family !== 'crossbow') audio.play('sword-swing');
+    if (!event.predictedLocally) playCastSound(event);
+    if (event.skillId === 'counter' && event.playerId === character?.id) {
+      showCounterToast(localPlayer);
+      showCounterPresentation();
+    }
   }
   if (event.type === 'shot') audio.play('crossbow-shot');
   if (event.type === 'impact') audio.play(event.kind === 'flame' ? 'flame' : event.kind === 'frost' ? 'frost' : 'impact');
-  if (event.type === 'perfectBlock' || (event.type === 'hit' && (event.blocked || event.guarded))) audio.play('shield-clang');
-  else if (event.type === 'hit') audio.play('impact');
+  if (event.type === 'perfectBlock') audio.play('shield-clang');
+  else if (event.type === 'hit' && !event.predictedLocally) {
+    audio.play(event.blocked || event.guarded ? 'shield-clang' : 'impact');
+  }
   if (
     (event.type === 'dodge' && (event.playerId === character?.id || event.entityId === localPlayer?.id))
     || (event.type === 'hit' && event.damage > 0 && event.targetId === localPlayer?.id)
@@ -1623,13 +1629,23 @@ function setPartyHudCaptureFreeze(frozen) {
 function partyLoop(time) {
   if (!character || !partyClient || !renderer || !input) return;
   if (!input.devInputProvider) driveClockedPartyInputs(time, false);
+  const predictedEvents = partyClient.consumePredictedEvents();
+  let nextWorld = null;
+  if (predictedEvents.length) {
+    nextWorld = partyClient.viewWorld(time) ?? world;
+    if (nextWorld) renderer.consumePredictedEvents(predictedEvents, nextWorld, time);
+    for (const event of predictedEvents) {
+      if (event.type === 'cast') playCastSound(event);
+      else if (event.type === 'predictedHit') audio.play('impact');
+    }
+  }
   if (partyRendererReady && (
     !DEV_MODE ||
     partyInputTimer === null ||
     !partyLastRenderTime ||
     time - partyLastRenderTime >= 200
   )) {
-    const nextWorld = partyClient.viewWorld(time) ?? world;
+    nextWorld ??= partyClient.viewWorld(time) ?? world;
     if (nextWorld) {
       if (!DEV_MODE || partyInputTimer === null) {
         renderer.render(partyPreviousWorld ?? nextWorld, nextWorld, 1);

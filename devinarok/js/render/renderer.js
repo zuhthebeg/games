@@ -372,6 +372,7 @@ export class ArenaRenderer {
     this.hitstopUntil = 0;
     this.hitstopStartedAt = 0;
     this.shakeUntil = 0;
+    this.predictedFlashUntil = new Map();
     this.enemyClipPreview = null;
     this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     this.vfxLayer = document.createElement('div');
@@ -1858,6 +1859,24 @@ export class ArenaRenderer {
     }
   }
 
+  consumePredictedEvents(events, world, now) {
+    this.currentWorld = world;
+    for (const event of events ?? []) {
+      if (event.type === 'cast') {
+        this.createSlash(event);
+      } else if (event.type === 'predictedHit') {
+        for (const effect of this.slashes.values()) {
+          if (effect.castId === event.castId) effect.hit = true;
+        }
+        this.predictedFlashUntil.set(event.targetId, now + 150);
+        if (!this.reducedMotion) {
+          if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
+          this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
+        }
+      }
+    }
+  }
+
   consumeEvents(world, now) {
     this.currentWorld = world;
     for (const event of world.events) {
@@ -1895,7 +1914,7 @@ export class ArenaRenderer {
         }
         this.createDamageNumber(event);
         if (event.guarded) this.createGuardSpark(event, world, now);
-        if (event.damage > 0) {
+        if (event.damage > 0 && !event.predictedLocally) {
           if (!this.reducedMotion) {
             if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
             this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
@@ -2124,8 +2143,11 @@ export class ArenaRenderer {
     }
   }
 
-  updateEntityMaterials(entity, visual) {
-    const hit = entity.hitFlashTicks > 0 && !this.reducedMotion;
+  updateEntityMaterials(entity, visual, now) {
+    const predictedFlashUntil = this.predictedFlashUntil.get(entity.id) ?? 0;
+    const predictedFlash = predictedFlashUntil > now;
+    if (!predictedFlash && predictedFlashUntil) this.predictedFlashUntil.delete(entity.id);
+    const hit = (entity.hitFlashTicks > 0 || predictedFlash) && !this.reducedMotion;
     const invulnerable = entity.invulnerable && !hit;
     for (const [material, original] of visual.materialState) {
       if (!material.emissive) continue;
@@ -2486,7 +2508,7 @@ export class ArenaRenderer {
       }
       visual.root.visible = !entity.dead || entity.deathTicks > 0;
       visual.shadow.visible = !entity.dead;
-      this.updateEntityMaterials(entity, visual);
+      this.updateEntityMaterials(entity, visual, now);
     }
     for (const [id, visual] of this.entities) {
       if (!activeIds.has(id)) this.removeEntityVisual(id, visual);
@@ -2574,6 +2596,7 @@ export class ArenaRenderer {
       effect.mesh.material.dispose();
     }
     this.slashes.clear();
+    this.predictedFlashUntil.clear();
     this.transientEffects.forEach((effect) => {
       this.scene.remove(effect.mesh);
       effect.geometry.dispose();

@@ -2,11 +2,18 @@ import { CastTimeline } from '../net/cast-timeline.js';
 import { InterpolationBuffer } from '../net/interp.js';
 import { NetSession } from '../net/net-session.js';
 import { Predictor } from '../net/predictor.js';
+import { predictStrikeHits } from '../net/predicted-hits.js';
 import { buildRangedAimInput } from '../net/ranged-aim.js';
 import { createStageWorld } from '../sim/world.js';
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_PATTERN = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
+const MAX_PREDICTED_KEYS = 512;
+
+function rememberBounded(set, key) {
+  set.add(key);
+  while (set.size > MAX_PREDICTED_KEYS) set.delete(set.values().next().value);
+}
 
 export function makeRoomCode(random = Math.random) {
   return Array.from({ length: 6 }, () => (
@@ -71,6 +78,9 @@ export class PartyClient {
     this.predictor = null;
     this.interpolation = null;
     this.castTimeline = null;
+    this.predictedEvents = [];
+    this.predictedCastIds = new Set();
+    this.predictedHitKeys = new Set();
     this.lastSnapshot = null;
     this.snapshotArrivalAt = null;
     this.snapshotArrivalTick = null;
@@ -227,7 +237,14 @@ export class PartyClient {
     this.predictor = null;
     this.interpolation = new InterpolationBuffer();
     this.castTimeline = new CastTimeline({ playerId: this.playerId });
+    this.resetPredictedState();
     this.lastSnapshot = null;
+  }
+
+  resetPredictedState() {
+    this.predictedEvents = [];
+    this.predictedCastIds = new Set();
+    this.predictedHitKeys = new Set();
   }
 
   handleSnapshot(message) {
@@ -269,6 +286,7 @@ export class PartyClient {
         });
         this.interpolation = new InterpolationBuffer();
         this.castTimeline = new CastTimeline({ playerId: this.playerId });
+        this.resetPredictedState();
         this.runSnapshotReady = true;
       }
     }
@@ -295,6 +313,20 @@ export class PartyClient {
     const freshEvents = events.filter((event) => (
       !Number.isSafeInteger(event.eventId) || !this.seenEventIds.has(event.eventId)
     ));
+    const localEntityId = this.predictor?.getPlayer()?.id
+      ?? (message.ents ?? []).find((entity) => entity.playerId === this.playerId)?.id;
+    for (const event of freshEvents) {
+      if (event.type === 'cast' && this.predictedCastIds.has(event.castId)) {
+        event.predictedLocally = true;
+      }
+      if (
+        event.type === 'hit'
+        && event.sourceId === localEntityId
+        && this.predictedHitKeys.has(`${event.castId}|${event.targetId}`)
+      ) {
+        event.predictedLocally = true;
+      }
+    }
     this.castTimeline?.ingestEvents(freshEvents, performance.now());
     for (const event of freshEvents) {
       if (event.type === 'reviveProgress') {
@@ -338,6 +370,12 @@ export class PartyClient {
     return { now, viewTick, sample: this.interpolation.sampleAtRenderTick(viewTick) };
   }
 
+  consumePredictedEvents() {
+    const events = this.predictedEvents;
+    this.predictedEvents = [];
+    return events;
+  }
+
   sendInput(rawInput, inputView = null) {
     if (!this.inputReady || !this.predictor || !this.session || !this.lastSnapshot) return null;
     const viewSample = inputView ?? this.getInputViewSample();
@@ -363,7 +401,40 @@ export class PartyClient {
         viewSample.sample,
       );
     }
-    this.predictor.applyLocalInput(input);
+    const motion = this.predictor.applyLocalInput(input)?.motion;
+    const castEvents = [...(motion?.events ?? [])];
+    if (motion?.counterStrike?.payload) {
+      castEvents.push({ type: 'counter', payload: motion.counterStrike.payload });
+    }
+    for (const event of castEvents) {
+      if (
+        ['dodge', 'potion', 'skillTelegraph'].includes(event.type)
+        || !event.payload?.castId
+        || this.predictedCastIds.has(event.payload.castId)
+      ) continue;
+      const predictedEvent = {
+        type: 'cast',
+        ...event.payload,
+        tick: this.lastSnapshot.tick,
+        predicted: true,
+      };
+      rememberBounded(this.predictedCastIds, predictedEvent.castId);
+      this.predictedEvents.push(predictedEvent);
+    }
+    if (motion) {
+      const hits = predictStrikeHits(motion, viewSample.sample.entities, {
+        activeEnemyIds: this.lastSnapshot.activeEnemyIds ?? null,
+        hitKeys: this.predictedHitKeys,
+      });
+      const sourceId = this.predictor.getPlayer().id;
+      for (const hit of hits) {
+        this.predictedEvents.push({
+          type: 'predictedHit',
+          ...hit,
+          sourceId,
+        });
+      }
+    }
     this.castTimeline.predictInput(input, now);
     this.session.queueInput(input);
     return input;
