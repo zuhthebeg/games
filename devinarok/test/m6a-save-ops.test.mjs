@@ -37,10 +37,22 @@ test('character normalization clamps materials and supplies contract defaults', 
   assert.deepEqual(normalizeCharacter({}).materials, { essence: 0, soul: 0 });
   assert.deepEqual(normalizeCharacter({}).contracts, { dateKey: null, progress: {}, claimed: [], basis: null });
   assert.deepEqual(
-    normalizeCharacter({ contracts: { basis: { clearedStages: ['C2', 'C1', 'C1'], level: 2 } } }).contracts.basis,
+    normalizeCharacter({
+      level: 3,
+      clearedStages: ['C1', 'C2'],
+      contracts: { basis: { clearedStages: ['C2', 'C1', 'C1'], level: 2 } },
+    }).contracts.basis,
     { clearedStages: ['C1', 'C2'], level: 2 },
   );
   assert.equal(normalizeCharacter({ contracts: { basis: { clearedStages: ['C1'], level: 0 } } }).contracts.basis, null);
+  assert.deepEqual(
+    normalizeCharacter({
+      level: 3,
+      clearedStages: ['C1'],
+      contracts: { basis: { clearedStages: ['C1', 'C2'], level: 10 } },
+    }).contracts.basis,
+    { clearedStages: ['C1'], level: 3 },
+  );
 });
 
 test('salvage yields rarity materials, enhancement bonus, and rejects equipped items', () => {
@@ -260,4 +272,23 @@ test('reforge rejects a unique affix and preserves it when reforging another aff
   ], 'hero');
   assert.deepEqual(reforged.items['legendary-unique'].affixes[0], unique);
   assert.equal(reforged.items['legendary-unique'].legendaryId, 'spinning-sigil');
+});
+
+test('lowering a level clamps and normalizes the frozen contract basis', () => {
+  let state = makeCharacter('level-basis');
+  state = applyOperations(state.character, state.items, [
+    { type: 'setLevel', level: 10 },
+    { type: 'clearStage', stageId: 'C1' },
+    { type: 'contractDay', dateKey: '2026-05-01' },
+    { type: 'setLevel', level: 3 },
+  ], 'level-basis');
+  assert.equal(state.character.contracts.basis.level, 3);
+  const normalized = normalizeCharacter({
+    ...state.character,
+    contracts: {
+      ...state.character.contracts,
+      basis: { clearedStages: ['C1', 'C2'], level: 10 },
+    },
+  });
+  assert.deepEqual(normalized.contracts.basis, { clearedStages: ['C1'], level: 3 });
 });
