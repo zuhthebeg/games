@@ -28,6 +28,7 @@ import { buildRangedAimInput } from './net/ranged-aim.js';
 import { SIM_HASH } from './net/sim-version.js';
 import { AFFIXES } from './content/affixes.js';
 import { contractDayFirst, contractDescription, contractsFor, kstDateKey } from './content/contracts.js';
+import { OBJECTIVE_LABELS, objectiveBonusGold } from './content/objectives.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import {
@@ -88,6 +89,10 @@ let boardTab = 'quests';
 let blacksmithTab = 'enhance';
 let selectedReforgeUid = null;
 let selectedReforgeIndex = null;
+const OBJECTIVE_ENEMY_NAMES = {
+  warrior: '해골 전사',
+  brute: '무너진 거한',
+};
 let reforgeResult = null;
 let partyClient = null;
 let partyFrame = null;
@@ -552,6 +557,14 @@ function handleAudioEvent(event, current) {
   }
   if (event.type === 'bossSummon') audio.play('summon');
   if (event.type === 'bossBlink') audio.play('blink');
+  if (event.type === 'objectiveComplete') {
+    showActionToast('목표 달성! 보상이 떨어졌어요');
+    audio.play('reward-chime');
+  }
+  if (event.type === 'objectiveFailed') {
+    showActionToast('목표 실패');
+    audio.play('enemy-death');
+  }
   if (event.type === 'death') audio.play('enemy-death');
   if (event.type === 'lootSpawn' && ['rare', 'legendary'].includes(event.item?.rarity)) audio.play('reward-chime');
   if (event.type === 'doorOpen') audio.play('door-open');
@@ -1162,7 +1175,9 @@ function renderBoard() {
     const pulse = unlocked && ['board', 'blacksmith'].includes(tutorialState?.step) ? ' tutorial-pulse' : '';
     const recommendation = stage.id === recommendedStage ? '<b class="stage-recommendation">추천</b>' : '';
     const recommendedClass = stage.id === recommendedStage ? ' is-recommended' : '';
-    return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}${recommendedClass}" data-stage-id="${stage.id}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}${recommendation}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
+    const objective = stage.rooms.at(-1)?.objective;
+    const objectiveBadge = objective ? `<b class="objective-stage-badge">${OBJECTIVE_LABELS[objective.type]}</b>` : '';
+    return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}${recommendedClass}" data-stage-id="${stage.id}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}${recommendation}${objectiveBadge}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
   const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">잠김 · ${tierLock}</p>`;
   hubPanel.innerHTML = `${boardTabs}<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
@@ -2063,6 +2078,37 @@ function updateHud(current) {
   $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(current.stageId);
   const boss = current.entities.find((entity) => entity.boss);
   if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
+  updateObjectiveHud(current);
+}
+
+function updateObjectiveHud(current) {
+  const banner = $('#objective-hud');
+  const objective = current?.objective;
+  if (
+    current?.mode !== 'stage'
+    || objective?.state !== 'active'
+    || objective.roomIndex !== current.roomIndex
+  ) {
+    banner.hidden = true;
+    banner.innerHTML = '';
+    return;
+  }
+  banner.hidden = false;
+  if (objective.type === 'hunt') {
+    const seconds = Math.max(0, Math.ceil((objective.endsTick - current.tick) / 30));
+    const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    const target = current.entities.find((entity) => entity.id === objective.targetId);
+    const targetKind = target?.enemyKind
+      ?? current.arena?.rooms?.[objective.roomIndex]?.objective?.target;
+    const targetName = OBJECTIVE_ENEMY_NAMES[targetKind] ?? target?.name ?? '표적';
+    banner.innerHTML = `<strong>현상수배 · ${targetName} 처치 · ${time}</strong>`;
+  } else if (objective.type === 'defend') {
+    const percent = Math.max(0, Math.min(100, Math.round(objective.hp / objective.maxHp * 100)));
+    banner.innerHTML = `<strong>결계석 방어 · 결계석 ${percent}%</strong><span class="objective-hud-bar"><i style="width:${percent}%"></i></span>`;
+  } else {
+    const percent = Math.max(0, Math.min(100, Math.floor(objective.progress / objective.required * 100)));
+    banner.innerHTML = `<strong>봉인 의식 · 원 안에 머무르세요 · ${percent}%</strong>`;
+  }
 }
 
 function buildSettlement(outcome, result) {
@@ -2168,8 +2214,17 @@ function renderSettlement(outcome, result, {
         : '';
   const stageName = STAGE_LIST.find((stage) => stage.id === stageId)?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
+  const objectiveLabel = OBJECTIVE_LABELS[result.objective?.type];
+  const objectiveStage = STAGE_LIST.find((stage) => stage.id === stageId);
+  const objectiveMarkup = objectiveLabel
+    ? result.objective.success
+      ? outcome === 'clear'
+        ? `<p class="settlement-objective">목표 · ${objectiveLabel} 달성 (+${objectiveBonusGold(objectiveStage, difficulty)}G · 희귀 장비)</p>`
+        : `<p class="settlement-objective">목표 · ${objectiveLabel} 달성 (귀환하지 못해 보상 일부를 잃었어요)</p>`
+      : `<p class="settlement-objective">목표 · ${objectiveLabel} 실패</p>`
+    : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p>${objectiveMarkup}<p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (contractProgressLines.length) {
     const lines = contractProgressLines.map(({ contract, progress, complete }) => {
       const label = contract.type === 'kills'

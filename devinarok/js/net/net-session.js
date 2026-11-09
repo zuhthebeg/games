@@ -12,6 +12,7 @@ const SNAPSHOT_METADATA_FIELDS = [
   'doorCountdown',
   'openDoors',
   'activeEnemyIds',
+  'objective',
 ];
 
 function addListener(socket, type, listener) {
