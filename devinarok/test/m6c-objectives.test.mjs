@@ -110,7 +110,7 @@ test('objective content, labels, bonus gold, and extra-spawn budgets match stage
     F2: { type: 'channel', radius: 2.4, channelSec: 12, spawns: [[4, 'minion', 2], [9, 'bonearcher', 1], [14, 'minion', 3]] },
     F3: { type: 'hunt', target: 'brute', timeSec: 45 },
     K2: { type: 'defend', hp: 500, spawns: [[8, 'minion', 3], [16, 'bonearcher', 2], [24, 'shieldbearer', 1], [24, 'minion', 2]] },
-    K3: { type: 'channel', radius: 2.4, channelSec: 15, spawns: [[4, 'minion', 3], [10, 'mage', 1], [10, 'minion', 2], [16, 'shieldbearer', 1]] },
+    K3: { type: 'channel', radius: 2.4, channelSec: 15, spawns: [[4, 'minion', 2], [10, 'minion', 2], [16, 'bonearcher', 1]] },
   };
   for (const [stageId, wanted] of Object.entries(expected)) {
     const stage = STAGES[stageId];
