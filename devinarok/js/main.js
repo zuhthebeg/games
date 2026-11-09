@@ -34,6 +34,7 @@ import {
   MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
 } from './content/mastery.js';
 import { rekeySettlementItems } from './save/ops.js';
+import { acquireSettlement } from './save/settlement-lock.js';
 import {
   DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage, stageClearKey, STAGE_LIST,
 } from './content/stages.js';
@@ -69,7 +70,7 @@ let renderer;
 let input;
 let loop;
 let frame;
-let settled = false;
+const settlementState = { settled: false };
 let firstForestUnlock = false;
 let settlementId = null;
 let settings = { ...DEFAULT_SETTINGS };
@@ -1519,7 +1520,7 @@ async function startPartyStage(message) {
   const selectedStage = STAGE_LIST.find((entry) => entry.id === message.stageId);
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
   if (message.stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
-  settled = false;
+  settlementState.settled = false;
   settlementId = `${partyClient.roomCode}:${message.runId}:${partyClient.playerId}`;
   hubUi.hidden = true;
   hubPanel.hidden = true;
@@ -1946,7 +1947,7 @@ async function startStage(stageId, options = {}) {
   $('#hub-party-button').hidden = true;
   currentStageId = stageToStart;
   currentStageDifficulty = difficulty;
-  settled = false;
+  settlementState.settled = false;
   attackInputAssistant.reset();
   hubUi.hidden = true;
   hubPanel.hidden = true;
@@ -2009,7 +2010,7 @@ async function startStage(stageId, options = {}) {
         seenEventId = event.eventId;
         handleAudioEvent(event, current);
       }
-      if (current.outcome && !settled) settleStage(current.outcome);
+      if (current.outcome && !settlementState.settled) settleStage(current.outcome);
     },
   });
   debugController?.applySpeed(loop);
@@ -2240,11 +2241,9 @@ async function attemptSettlement(outcome, result, settlementId) {
 }
 
 async function settleStage(outcome = world?.outcome, result = world?.result, idempotencyKey = null) {
-  if (!world || !result || settled) return;
+  if (!world || !result || !acquireSettlement(settlementState, () => loop?.pause())) return;
   if (outcome === 'clear') updateTutorial({ type: 'stageComplete' });
   await tutorialSaveChain;
-  settled = true;
-  loop?.pause();
   settlementId = idempotencyKey ?? crypto.randomUUID();
   await attemptSettlement(outcome, result, settlementId);
 }
