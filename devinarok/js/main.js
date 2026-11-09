@@ -642,6 +642,7 @@ async function commit(ops, context = { kind: 'hub' }) {
 }
 
 async function applyOps(ops, { context = { kind: 'hub' } } = {}) {
+  await tutorialSaveChain;
   character = await commit(ops, context);
   inventory = await saves.listItems(character.id);
   $('#character-debug-used').hidden = !character.debugUsed;
