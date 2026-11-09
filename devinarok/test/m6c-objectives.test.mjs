@@ -197,6 +197,7 @@ test('entering a hunt room spawns a bounty target, then success grants owner-sco
     assert.ok(owned.some((loot) => loot.lootType === 'gold' && loot.gold === objectiveBonusGold(stage)));
     const items = owned.filter((loot) => loot.lootType === 'item').map((loot) => loot.item);
     assert.ok(items.some((item) => Object.keys(RARITIES).indexOf(item.rarity) >= Object.keys(RARITIES).indexOf('rare')));
+    assert.ok(items.every((item) => item.rarity === 'rare' && item.affixes.length === RARITIES.rare.affixes));
   }
   completeStage(world, 'clear');
   for (const memberId of ['hero', 'guest']) {
