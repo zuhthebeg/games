@@ -320,6 +320,38 @@ test('party client sends an explicit leave message', () => {
   assert.deepEqual(sent, [{ t: 'leave' }]);
 });
 
+test('party hello character includes saved mastery', () => {
+  const originalConnect = NetSession.prototype.connect;
+  let session;
+  NetSession.prototype.connect = function connect() {
+    session = this;
+    return null;
+  };
+  const client = new PartyClient({
+    character: {
+      name: 'Hero',
+      level: 4,
+      potions: 2,
+      clearedStages: ['C1'],
+      mastery: { spin: 73 },
+    },
+  });
+
+  try {
+    assert.equal(client.joinRoom('ABC234'), 'ABC234');
+    assert.deepEqual(session.character, {
+      level: 4,
+      equipment: [],
+      potions: 2,
+      clearedStages: ['C1'],
+      mastery: { spin: 73 },
+    });
+  } finally {
+    client.close();
+    NetSession.prototype.connect = originalConnect;
+  }
+});
+
 test('party rendering does not mutate the predictor player position', () => {
   const player = { id: 1, kind: 'player', playerId: 'self', x: 1, z: 2 };
   const interpolation = new InterpolationBuffer();
