@@ -1086,11 +1086,16 @@ function renderBoard() {
       const claimed = stored.claimed?.includes(contract.id);
       const complete = progress >= contract.target;
       const tier = { easy: '쉬움', normal: '보통', hard: '어려움' }[contract.tier];
+      const progressPercent = (progress / contract.target) * 100;
+      const buttonLabel = claimed ? '완료' : complete ? '보상 받기' : '진행 중';
       return `<article class="contract-card tier-${contract.tier}${claimed ? ' claimed' : ''}${complete ? ' complete' : ''}">
         <div class="contract-card-heading"><strong>${tier}</strong><span>${claimed ? '완료' : `${progress}/${contract.target}`}</span></div>
         <p>${contractDescription(contract)}</p>
+        <div class="contract-progress" role="progressbar" aria-label="의뢰 진행도" aria-valuemin="0" aria-valuemax="${contract.target}" aria-valuenow="${progress}">
+          <span class="contract-progress-fill" style="width:${progressPercent}%"></span>
+        </div>
         <small>보상 · ${contract.rewards.gold}G · 정수 ${contract.rewards.essence}${contract.rewards.soul ? ` · 영혼 ${contract.rewards.soul}` : ''}</small>
-        <button data-claim-contract="${contract.id}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? '완료' : '보상 받기'}</button>
+        <button data-claim-contract="${contract.id}" ${complete && !claimed ? '' : 'disabled'}>${buttonLabel}</button>
       </article>`;
     }).join('');
     const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
@@ -1820,14 +1825,15 @@ function renderBlacksmith() {
   const essenceCost = { magic: 2, rare: 4, legendary: 8, set: 8 }[selected?.rarity] ?? 0;
   const soulCost = selected?.rarity === 'legendary' || selected?.rarity === 'set' ? 1 : 0;
   const goldCost = selected ? 20 * selected.ilvl : 0;
-  const rows = eligible.map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>${item.ilvl}레벨</span></div>${(item.affixes ?? []).map((affix, index) => `<button class="affix-select${selectedReforgeUid === item.uid && selectedReforgeIndex === index ? ' selected' : ''}" data-select-reforge-affix="${item.uid}" data-index="${index}" ${AFFIXES[affix.id] ? '' : 'disabled'}>${escapeHtml(AFFIXES[affix.id]?.name ?? '고유 능력')} · ${affix.value}</button>`).join('')}</div>`).join('');
+  const rows = eligible.map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>아이템 Lv${item.ilvl}</span></div>${(item.affixes ?? []).map((affix, index) => `<button class="affix-select${selectedReforgeUid === item.uid && selectedReforgeIndex === index ? ' selected' : ''}" data-select-reforge-affix="${item.uid}" data-index="${index}" ${AFFIXES[affix.id] ? '' : 'disabled'}>${escapeHtml(AFFIXES[affix.id]?.name ?? '고유 능력')} · ${affix.value}</button>`).join('')}</div>`).join('');
   const resultMarkup = reforgeResult && reforgeResult.uid === selectedReforgeUid && reforgeResult.expiresAt > Date.now()
     ? `<p class="reforge-result rarity-${reforgeResult.rarity}">${escapeHtml(reforgeResult.oldName)} ${reforgeResult.oldValue} → ${escapeHtml(reforgeResult.newName)} ${reforgeResult.newValue}</p>`
     : '';
   const action = selectedAffix
     ? `<p>재련 비용 · 정수 ${essenceCost} · 영혼 ${soulCost} · 골드 ${goldCost}G</p><button data-reforge-action ${cloudOffline || character.materials?.essence < essenceCost || character.materials?.soul < soulCost || character.gold < goldCost ? 'disabled' : ''}>재련</button>${cloudOffline ? '<small>연결되면 재련할 수 있어요</small>' : ''}`
     : '<p>재련할 장비의 능력치를 선택하세요.</p>';
-  hubPanel.innerHTML = `<h2>대장장이 · 재련</h2>${materials}${tabs}<div class="reforge-list">${rows || '<p>재련할 장비가 없습니다.</p>'}</div>${action}${resultMarkup}<button data-close>닫기</button>`;
+  const footer = `<div class="reforge-footer">${action}${resultMarkup}<button data-close>닫기</button></div>`;
+  hubPanel.innerHTML = `<h2>대장장이 · 재련</h2>${materials}${tabs}<div class="reforge-list">${rows || '<p>재련할 장비가 없습니다.</p>'}</div>${footer}`;
 }
 
 function renderPanel(kind, compareUid = '') {

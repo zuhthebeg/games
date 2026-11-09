@@ -130,6 +130,12 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .contract-card small, .contract-footer, .material-counts { color: #d0c0a5 !important; }
 .contract-card-heading { display: flex; justify-content: space-between; color: #e9d3a5; }
 .contract-card button { justify-self: end; min-width: 112px; margin: 0; }
+.contract-card [data-claim-contract]:disabled { border-color: #564d4f; color: #8c8384; background: #29262b; opacity: .72; cursor: not-allowed; box-shadow: none; }
+.contract-progress { height: 4px; overflow: hidden; border-radius: 999px; background: #383337; }
+.contract-progress-fill { display: block; height: 100%; border-radius: inherit; }
+.contract-card.tier-easy .contract-progress-fill { background: #7ebd87; }
+.contract-card.tier-normal .contract-progress-fill { background: #89aee3; }
+.contract-card.tier-hard .contract-progress-fill { background: #d9956e; }
 .contract-claim-badge { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #211509; background: #ffd56b; font-size: 12px; }
 .contract-claim-badge[hidden] { display: none; }
 .npc-hotspot .npc-contract-badge { position: absolute; top: -6px; right: -5px; width: 18px; height: 18px; margin: 0; padding: 0; }
@@ -138,6 +144,10 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .affix-select.selected { border-color: #e1b65d; background: #483525; }
 .reforge-list { display: grid; gap: 8px; }
 .reforge-result { padding: 9px; border: 1px solid currentColor; border-radius: 8px; text-align: center; }
+.reforge-footer { position: sticky; bottom: -16px; z-index: 1; display: grid; gap: 6px; margin: 8px -16px -16px; padding: 10px 16px 16px; border-top: 1px solid #56434a; background: #17131a; }
+.reforge-footer p { margin: 0; }
+.reforge-footer button { width: 100%; margin: 0; }
+.reforge-footer small { color: #d0c0a5; text-align: center; }
 .settlement-contract { padding: 5px 8px; border-left: 3px solid #8b7352; background: #342b243b; }
 .settlement-contract.complete { color: #ffe08b !important; border-color: #f3ca5f; background: #6c4e1f55; }
 .hub-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
