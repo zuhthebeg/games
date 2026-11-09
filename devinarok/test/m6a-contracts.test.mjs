@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AFFIXES } from '../js/content/affixes.js';
 import { rollAffixValue } from '../js/content/affix-value.js';
-import { contractDescription, contractRewards, dailyContracts, kstDateKey } from '../js/content/contracts.js';
+import {
+  contractDayFirst, contractDescription, contractRewards, dailyContracts, kstDateKey,
+} from '../js/content/contracts.js';
 import { ENEMIES } from '../js/content/enemies.js';
 import { DIFFICULTIES, isStageUnlocked, STAGES } from '../js/content/stages.js';
 
@@ -22,6 +24,18 @@ test('daily contracts are deterministic, dated, tiered, and use distinct types',
   assert.deepEqual(contracts[0].rewards, { gold: 104, essence: 2, soul: 0 });
   assert.deepEqual(contracts[2].rewards, { gold: 286, essence: 6, soul: 1 });
   assert.ok(contracts.every((contract) => contractDescription(contract)));
+});
+
+test('settlement operations start with contractDay only when the contract date changes', () => {
+  const operations = [{ type: 'gainXp', amount: 1 }, { type: 'recordClear', key: 'C1', ticks: 150 }];
+  assert.deepEqual(
+    contractDayFirst({ contracts: { dateKey: '2026-01-01' } }, '2026-01-02', operations),
+    [{ type: 'contractDay', dateKey: '2026-01-02' }, ...operations],
+  );
+  assert.strictEqual(
+    contractDayFirst({ contracts: { dateKey: '2026-01-02' } }, '2026-01-02', operations),
+    operations,
+  );
 });
 
 test('contracts use only unlocked stages and non-boss enemy kinds', () => {

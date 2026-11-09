@@ -27,7 +27,7 @@ import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
 import { SIM_HASH } from './net/sim-version.js';
 import { AFFIXES } from './content/affixes.js';
-import { contractDescription, dailyContracts, kstDateKey } from './content/contracts.js';
+import { contractDayFirst, contractDescription, contractsFor, kstDateKey } from './content/contracts.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
@@ -1079,7 +1079,7 @@ function renderBoard() {
   const boardTabs = `<nav class="board-tabs" aria-label="게시판"><button data-board-tab="quests" class="${boardTab === 'quests' ? 'active' : ''}" aria-pressed="${boardTab === 'quests'}">퀘스트</button><button data-board-tab="contracts" class="${boardTab === 'contracts' ? 'active' : ''}" aria-pressed="${boardTab === 'contracts'}">의뢰</button></nav>`;
   if (boardTab === 'contracts') {
     const dateKey = kstDateKey(Date.now());
-    const contracts = dailyContracts(character.id, dateKey, character);
+    const contracts = contractsFor(character, dateKey);
     const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
     const cards = contracts.map((contract) => {
       const progress = Math.min(contract.target, stored.progress?.[contract.id] ?? 0);
@@ -1164,7 +1164,7 @@ function renderBoard() {
 function updateContractClaimBadge() {
   if (!character) return;
   const dateKey = kstDateKey(Date.now());
-  const contracts = dailyContracts(character.id, dateKey, character);
+  const contracts = contractsFor(character, dateKey);
   const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
   const claimable = contracts.some((contract) => (
     !stored.claimed?.includes(contract.id)
@@ -1867,6 +1867,14 @@ function renderPanel(kind, compareUid = '') {
   hubPanel.focus();
 }
 
+async function openBoard() {
+  const dateKey = kstDateKey(Date.now());
+  if (character.contracts?.dateKey !== dateKey) {
+    await applyOps([{ type: 'contractDay', dateKey }]);
+  }
+  renderPanel('board');
+}
+
 async function startStage(stageId, options = {}) {
   const difficulty = options.difficulty ?? 'normal';
   if (!stageIsUnlocked(stageId, difficulty) && !DEV_MODE && !debugEnabled) return;
@@ -2024,7 +2032,7 @@ function buildSettlement(outcome, result) {
     if (Number.isInteger(ticks)) ops.push({ type: 'recordClear', key, ticks });
   }
   const dateKey = kstDateKey(Date.now());
-  const contracts = dailyContracts(character.id, dateKey, character);
+  const contracts = contractsFor(character, dateKey);
   const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
   const contractProgressLines = [];
   for (const contract of contracts) {
@@ -2045,7 +2053,7 @@ function buildSettlement(outcome, result) {
     ops.push({ type: 'contractProgress', dateKey, contractId: contract.id, amount });
     contractProgressLines.push({ contract, progress, complete: progress >= contract.target });
   }
-  return { ops, autoSold, record, contractProgressLines };
+  return { ops: contractDayFirst(character, dateKey, ops), autoSold, record, contractProgressLines };
 }
 
 function renderSettlement(outcome, result, {
@@ -2264,17 +2272,22 @@ $('#hub-ui').addEventListener('click', async (event) => {
   if (button.dataset.slotFilter) { renderInventory('', button.dataset.slotFilter); return; }
   if (button.dataset.boardTab) {
     boardTab = button.dataset.boardTab;
-    renderPanel('board');
+    await openBoard();
     return;
   }
   if (button.dataset.claimContract) {
+    const dateKey = kstDateKey(Date.now());
+    if (character.contracts?.dateKey !== dateKey) {
+      await openBoard();
+      return;
+    }
     await applyOps([{
       type: 'claimContract',
-      dateKey: kstDateKey(Date.now()),
+      dateKey,
       contractId: button.dataset.claimContract,
     }]);
     updateContractClaimBadge();
-    renderPanel('board');
+    await openBoard();
     return;
   }
   if (button.dataset.blacksmithTab) {
@@ -2406,13 +2419,14 @@ $('#hub-ui').addEventListener('click', async (event) => {
     $('#hub-party-button').hidden = false;
     $('#hub-ui [data-panel="sanctuary"]').disabled = false;
     $('#sanctuary-party-disabled').hidden = true;
-    renderPanel('board');
+    await openBoard();
     return;
   }
   if (button.dataset.panel) {
     const tutorialStep = { board: 'board', blacksmith: 'blacksmith', inventory: 'equipment' }[button.dataset.panel];
     if (tutorialStep) updateTutorial({ type: tutorialStep });
-    renderPanel(button.dataset.panel);
+    if (button.dataset.panel === 'board') await openBoard();
+    else renderPanel(button.dataset.panel);
   }
   if (button.hasAttribute('data-close')) {
     stopPartyFinderPolling();

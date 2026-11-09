@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AFFIXES } from '../js/content/affixes.js';
-import { dailyContracts } from '../js/content/contracts.js';
+import { contractsFor, dailyContracts } from '../js/content/contracts.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 
-function makeCharacter() {
+function makeCharacter(characterId = 'hero') {
   return applyOperations(null, {}, [
     { type: 'createCharacter', name: '모험가', kind: 'knight' },
-  ], 'hero');
+  ], characterId);
 }
 
 function addItems(state, definitions) {
@@ -32,9 +32,15 @@ test('character normalization clamps materials and supplies contract defaults', 
     dateKey: '2026-04-01',
     progress: { '2026-04-01:0': 2 },
     claimed: ['x'],
+    basis: null,
   });
   assert.deepEqual(normalizeCharacter({}).materials, { essence: 0, soul: 0 });
-  assert.deepEqual(normalizeCharacter({}).contracts, { dateKey: null, progress: {}, claimed: [] });
+  assert.deepEqual(normalizeCharacter({}).contracts, { dateKey: null, progress: {}, claimed: [], basis: null });
+  assert.deepEqual(
+    normalizeCharacter({ contracts: { basis: { clearedStages: ['C2', 'C1', 'C1'], level: 2 } } }).contracts.basis,
+    { clearedStages: ['C1', 'C2'], level: 2 },
+  );
+  assert.equal(normalizeCharacter({ contracts: { basis: { clearedStages: ['C1'], level: 0 } } }).contracts.basis, null);
 });
 
 test('salvage yields rarity materials, enhancement bonus, and rejects equipped items', () => {
@@ -121,6 +127,48 @@ test('reforge preserves legendary and set identity and rejects invalid or insuff
   );
 });
 
+test('daily contracts keep their basis and progress through a clear and level-up', () => {
+  let state = makeCharacter('basis-3');
+  state = applyOperations(state.character, state.items, [{ type: 'clearStage', stageId: 'C1' }], 'basis-3');
+  const dateKey = '2026-05-01';
+  state = applyOperations(state.character, state.items, [{ type: 'contractDay', dateKey }], 'basis-3');
+  const contracts = contractsFor(state.character, dateKey);
+  const target = contracts.find(({ tier, type, stageId }) => tier === 'hard' && type === 'clear' && stageId === 'C2');
+  assert.ok(target);
+  const settled = applyOperations(state.character, state.items, [
+    { type: 'contractProgress', dateKey, contractId: target.id, amount: 1 },
+    { type: 'clearStage', stageId: 'C2' },
+    { type: 'gainXp', amount: 60 },
+  ], 'basis-3');
+  assert.equal(settled.character.level, 2);
+  assert.notDeepEqual(dailyContracts('basis-3', dateKey, settled.character), contracts);
+  assert.deepEqual(contractsFor(settled.character, dateKey), contracts);
+  assert.equal(settled.character.contracts.progress[target.id], 1);
+  const claimed = applyOperations(settled.character, settled.items, [
+    { type: 'claimContract', dateKey, contractId: target.id },
+  ], 'basis-3');
+  assert.equal(claimed.character.gold - settled.character.gold, target.rewards.gold);
+});
+
+test('contractDay resets progress and snapshots the current basis once', () => {
+  const character = {
+    ...makeCharacter().character,
+    level: 3,
+    clearedStages: ['C2', 'C1'],
+    contracts: {
+      dateKey: '2026-05-01', progress: { '2026-05-01:0': 4 }, claimed: ['2026-05-01:1'],
+      basis: { clearedStages: ['C1'], level: 1 },
+    },
+  };
+  const next = applyOperations(character, {}, [{ type: 'contractDay', dateKey: '2026-05-02' }], 'hero').character;
+  assert.deepEqual(next.contracts, {
+    dateKey: '2026-05-02', progress: {}, claimed: [],
+    basis: { clearedStages: ['C1', 'C2'], level: 3 },
+  });
+  const repeated = applyOperations(next, {}, [{ type: 'contractDay', dateKey: '2026-05-02' }], 'hero').character;
+  assert.deepEqual(repeated.contracts, next.contracts);
+});
+
 test('contract progress caps at target, resets on date rollover, and claims once', () => {
   let { character, items } = makeCharacter();
   const dateKey = '2026-05-01';
@@ -137,11 +185,21 @@ test('contract progress caps at target, resets on date rollover, and claims once
   assert.equal(updated.character.contracts.progress[contract.id], contract.target);
   const nextDay = '2026-05-02';
   const nextContract = dailyContracts('hero', nextDay, updated.character)[0];
-  updated = applyOperations(updated.character, updated.items, [
+  assert.throws(() => applyOperations(updated.character, updated.items, [
     { type: 'contractProgress', dateKey: nextDay, contractId: nextContract.id, amount: 1 },
+  ], 'hero'), /not active/);
+  assert.throws(() => applyOperations(updated.character, updated.items, [
+    { type: 'claimContract', dateKey: nextDay, contractId: nextContract.id },
+  ], 'hero'), /not active/);
+  updated = applyOperations(updated.character, updated.items, [
+    { type: 'contractDay', dateKey: nextDay },
+  ], 'hero');
+  const frozenNextContract = contractsFor(updated.character, nextDay)[0];
+  updated = applyOperations(updated.character, updated.items, [
+    { type: 'contractProgress', dateKey: nextDay, contractId: frozenNextContract.id, amount: 1 },
   ], 'hero');
   assert.equal(updated.character.contracts.dateKey, nextDay);
-  assert.deepEqual(updated.character.contracts.progress, { [nextContract.id]: 1 });
+  assert.deepEqual(updated.character.contracts.progress, { [frozenNextContract.id]: 1 });
 
   const ready = applyOperations(character, items, [
     { type: 'contractProgress', dateKey, contractId: contract.id, amount: contract.target },
