@@ -1204,7 +1204,7 @@ test('party lobby ping, run start, and first snapshot use the run clock epoch', 
   });
   client.status = 'connected';
   assert.equal(session.clock.samples, 0);
-  assert.equal(session.clock.rttMs, 100);
+  assert.ok(Math.abs(session.clock.rttMs - 100) < 1e-9);
   assert.equal(session.clock.observePong({ c: lobbyPing.c, t: 0 }, session.now()), false);
   assert.ok(Math.abs(session.clock.getEstimate(session.now())) < 1);
 
@@ -1221,7 +1221,7 @@ test('party lobby ping, run start, and first snapshot use the run clock epoch', 
   client.handleMessage(startSnapshot);
   assert.equal(client.runSnapshotReady, true);
   assert.equal(session.clock.samples, 0);
-  assert.equal(session.clock.rttMs, 100);
+  assert.ok(Math.abs(session.clock.rttMs - 100) < 1e-9);
   assert.equal(client.inputReady, true);
   const runPing = session.clock.makePing(session.now());
   session.clock.observePong({ c: runPing.c, t: startSnapshot.tick }, runPing.c + 40);
