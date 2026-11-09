@@ -27,6 +27,7 @@ import { computeBotPolicy } from './net/bot-policy.js';
 import { buildRangedAimInput } from './net/ranged-aim.js';
 import { SIM_HASH } from './net/sim-version.js';
 import { AFFIXES } from './content/affixes.js';
+import { contractDescription, dailyContracts, kstDateKey } from './content/contracts.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import { rekeySettlementItems } from './save/ops.js';
@@ -78,6 +79,11 @@ const attackInputAssistant = new AttackInputAssistant();
 let currentStageId = null;
 let currentStageDifficulty = 'normal';
 let boardDifficulty = 'normal';
+let boardTab = 'quests';
+let blacksmithTab = 'enhance';
+let selectedReforgeUid = null;
+let selectedReforgeIndex = null;
+let reforgeResult = null;
 let partyClient = null;
 let partyFrame = null;
 let partyPreviousWorld = null;
@@ -736,6 +742,7 @@ async function enterHub() {
   const [, music] = await Promise.all([renderer.ready, loadAudioForScene('hub')]);
   applySettings();
   updateInventoryUpgradeBadge();
+  updateContractClaimBadge();
   await audio.unlock();
   audio.setMusic(music, { crossfadeMs: 1000 });
   renderTutorialCard();
@@ -1069,6 +1076,31 @@ const EQUIPMENT_SLOTS = [
 
 function renderBoard() {
   const difficulty = boardDifficulty;
+  const boardTabs = `<nav class="board-tabs" aria-label="게시판"><button data-board-tab="quests" class="${boardTab === 'quests' ? 'active' : ''}" aria-pressed="${boardTab === 'quests'}">퀘스트</button><button data-board-tab="contracts" class="${boardTab === 'contracts' ? 'active' : ''}" aria-pressed="${boardTab === 'contracts'}">의뢰</button></nav>`;
+  if (boardTab === 'contracts') {
+    const dateKey = kstDateKey(Date.now());
+    const contracts = dailyContracts(character.id, dateKey, character);
+    const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
+    const cards = contracts.map((contract) => {
+      const progress = Math.min(contract.target, stored.progress?.[contract.id] ?? 0);
+      const claimed = stored.claimed?.includes(contract.id);
+      const complete = progress >= contract.target;
+      const tier = { easy: '쉬움', normal: '보통', hard: '어려움' }[contract.tier];
+      return `<article class="contract-card tier-${contract.tier}${claimed ? ' claimed' : ''}${complete ? ' complete' : ''}">
+        <div class="contract-card-heading"><strong>${tier}</strong><span>${claimed ? '완료' : `${progress}/${contract.target}`}</span></div>
+        <p>${contractDescription(contract)}</p>
+        <small>보상 · ${contract.rewards.gold}G · 정수 ${contract.rewards.essence}${contract.rewards.soul ? ` · 영혼 ${contract.rewards.soul}` : ''}</small>
+        <button data-claim-contract="${contract.id}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? '완료' : '보상 받기'}</button>
+      </article>`;
+    }).join('');
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const nextMidnight = Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate() + 1) - 9 * 60 * 60 * 1000;
+    const minutes = Math.max(0, Math.ceil((nextMidnight - Date.now()) / 60000));
+    const footer = `내일 새 의뢰 · ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')} 후`;
+    hubPanel.innerHTML = `${boardTabs}<h2>매일의 의뢰</h2><div class="contract-list">${cards}</div><p class="contract-footer">${footer}</p><button data-close>닫기</button>`;
+    updateContractClaimBadge();
+    return;
+  }
   const tier = DIFFICULTIES[difficulty];
   const tierUnlocked = isDifficultyUnlocked(difficulty, character.clearedStages);
   const tierLock = difficulty === 'nightmare'
@@ -1116,10 +1148,25 @@ function renderBoard() {
     return `${section}<div class="hub-row stage-card difficulty-${difficulty}${warning}${recommendedClass}" data-stage-id="${stage.id}"><span class="hub-stage-info"><span class="hub-stage-name">${stage.name}${newBadge}${recommendation}</span><small>${levelLabel} · ${lockText}${bestLabel}</small></span><button class="hub-sortie${pulse}" data-sortie="${stage.id}" ${unlocked ? '' : 'disabled'}>${action}</button></div>`;
   }).join('');
   const tierNotice = tierUnlocked ? '' : `<p class="difficulty-lock-notice">잠김 · ${tierLock}</p>`;
-  hubPanel.innerHTML = `<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+  hubPanel.innerHTML = `${boardTabs}<h2>주인 · 출정 게시판</h2><p>골드 ${character.gold} · 해금된 기록에 따라 다음 지역이 열립니다.</p><nav class="difficulty-tabs" aria-label="난이도">${tabs}</nav>${tierNotice}${rows}<button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
   hubPanel.querySelector(`[data-stage-id="${recommendedStage}"]`)?.scrollIntoView({
     block: 'center',
     behavior: settings.reducedMotion ? 'instant' : 'smooth',
+  });
+  updateContractClaimBadge();
+}
+
+function updateContractClaimBadge() {
+  if (!character) return;
+  const dateKey = kstDateKey(Date.now());
+  const contracts = dailyContracts(character.id, dateKey, character);
+  const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
+  const claimable = contracts.some((contract) => (
+    !stored.claimed?.includes(contract.id)
+    && (stored.progress?.[contract.id] ?? 0) >= contract.target
+  ));
+  document.querySelectorAll('[data-contract-claim-badge], #contract-claim-badge').forEach((badge) => {
+    badge.hidden = !claimable;
   });
 }
 
@@ -1738,8 +1785,49 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (
     `<button data-slot-filter="${slot.key}" class="${filter === slot.key ? 'active' : ''}">${slot.label}</button>`
   )).join('');
-  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
+  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2><p class="material-counts">재료 · 정수 ${character.materials?.essence ?? 0} · 영혼 ${character.materials?.soul ?? 0}</p>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
   updateInventoryUpgradeBadge();
+}
+
+function renderBlacksmith() {
+  const tabs = `<nav class="blacksmith-tabs" aria-label="대장장이">${[
+    ['enhance', '강화'],
+    ['salvage', '분해'],
+    ['reforge', '재련'],
+  ].map(([id, label]) => `<button data-blacksmith-tab="${id}" class="${blacksmithTab === id ? 'active' : ''}" aria-pressed="${blacksmithTab === id}">${label}</button>`).join('')}</nav>`;
+  const materials = `<p class="material-counts">보유 재료 · 정수 ${character.materials?.essence ?? 0} · 영혼 ${character.materials?.soul ?? 0} · 골드 ${character.gold}G</p>`;
+  const cloudOffline = Boolean(character.cloudUserId) && (
+    !remoteSync?.userId || !navigator.onLine || remoteSync.status === 'offline'
+  );
+  if (blacksmithTab === 'enhance') {
+    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 || cloudOffline ? 'disabled' : ''} ${cloudOffline ? 'title="연결되면 강화할 수 있어요"' : ''}>강화</button>${cloudOffline ? '<small>연결되면 강화할 수 있어요</small>' : ''}</div></div>`).join('');
+    hubPanel.innerHTML = `<h2>대장장이</h2>${materials}${tabs}<p>실패해도 장비는 파괴되거나 하락하지 않습니다.</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
+    return;
+  }
+  if (blacksmithTab === 'salvage') {
+    const yields = { common: 1, magic: 2, rare: 4, legendary: 10, set: 10 };
+    const rows = inventory.filter((item) => !item.slot).map((item) => {
+      const essence = (yields[item.rarity] ?? 1) + Math.floor((item.enhance ?? 0) / 2);
+      const soul = item.rarity === 'legendary' || item.rarity === 'set' ? 1 : 0;
+      return `<div class="item-row"><div class="item-details">${itemDetails(item)}<small>분해 획득 · 정수 ${essence}${soul ? ' · 영혼 1' : ''}</small></div><div class="item-actions"><button data-salvage="${item.uid}" data-rarity="${item.rarity}">분해</button></div></div>`;
+    }).join('');
+    hubPanel.innerHTML = `<h2>대장장이 · 분해</h2>${materials}${tabs}${rows || '<p>분해할 장비가 없습니다.</p>'}<button data-close>닫기</button>`;
+    return;
+  }
+  const eligible = inventory.filter((item) => !item.slot && item.rarity !== 'common');
+  const selected = eligible.find((item) => item.uid === selectedReforgeUid);
+  const selectedAffix = selected?.affixes?.[selectedReforgeIndex];
+  const essenceCost = { magic: 2, rare: 4, legendary: 8, set: 8 }[selected?.rarity] ?? 0;
+  const soulCost = selected?.rarity === 'legendary' || selected?.rarity === 'set' ? 1 : 0;
+  const goldCost = selected ? 20 * selected.ilvl : 0;
+  const rows = eligible.map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>${item.ilvl}레벨</span></div>${(item.affixes ?? []).map((affix, index) => `<button class="affix-select${selectedReforgeUid === item.uid && selectedReforgeIndex === index ? ' selected' : ''}" data-select-reforge-affix="${item.uid}" data-index="${index}" ${AFFIXES[affix.id] ? '' : 'disabled'}>${escapeHtml(AFFIXES[affix.id]?.name ?? '고유 능력')} · ${affix.value}</button>`).join('')}</div>`).join('');
+  const resultMarkup = reforgeResult && reforgeResult.uid === selectedReforgeUid && reforgeResult.expiresAt > Date.now()
+    ? `<p class="reforge-result rarity-${reforgeResult.rarity}">${escapeHtml(reforgeResult.oldName)} ${reforgeResult.oldValue} → ${escapeHtml(reforgeResult.newName)} ${reforgeResult.newValue}</p>`
+    : '';
+  const action = selectedAffix
+    ? `<p>재련 비용 · 정수 ${essenceCost} · 영혼 ${soulCost} · 골드 ${goldCost}G</p><button data-reforge-action ${cloudOffline || character.materials?.essence < essenceCost || character.materials?.soul < soulCost || character.gold < goldCost ? 'disabled' : ''}>재련</button>${cloudOffline ? '<small>연결되면 재련할 수 있어요</small>' : ''}`
+    : '<p>재련할 장비의 능력치를 선택하세요.</p>';
+  hubPanel.innerHTML = `<h2>대장장이 · 재련</h2>${materials}${tabs}<div class="reforge-list">${rows || '<p>재련할 장비가 없습니다.</p>'}</div>${action}${resultMarkup}<button data-close>닫기</button>`;
 }
 
 function renderPanel(kind, compareUid = '') {
@@ -1749,13 +1837,7 @@ function renderPanel(kind, compareUid = '') {
   if (kind === 'board') renderBoard();
   if (kind === 'party-finder') openPartyFinder();
   if (kind === 'inventory') renderInventory(compareUid);
-  if (kind === 'blacksmith') {
-    const cloudEnhanceOffline = Boolean(character.cloudUserId) && (
-      !remoteSync?.userId || !navigator.onLine || remoteSync.status === 'offline'
-    );
-    const rows = inventory.filter((item) => item.slot).map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>다음 비용 ${40 * (item.enhance + 1) ** 2}G</span><button data-enhance="${item.uid}" ${item.enhance >= 10 || character.gold < 40 * (item.enhance + 1) ** 2 || cloudEnhanceOffline ? 'disabled' : ''} ${cloudEnhanceOffline ? 'title="연결되면 강화할 수 있어요"' : ''}>강화</button>${cloudEnhanceOffline ? '<small>연결되면 강화할 수 있어요</small>' : ''}</div></div>`).join('');
-    hubPanel.innerHTML = `<h2>대장장이 · 강화</h2><p>실패해도 장비는 파괴되거나 하락하지 않습니다. 보유 골드 ${character.gold}G</p>${rows || '<p>강화할 장비를 먼저 착용하세요.</p>'}<button data-close>닫기</button>`;
-  }
+  if (kind === 'blacksmith') renderBlacksmith();
   if (kind === 'merchant') {
     const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150, set: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
     const familyWeapons = FAMILY_STARTER_WEAPONS.map(({ itemId, price }) => (
@@ -1935,10 +2017,38 @@ function buildSettlement(outcome, result) {
     ops.push({ type: 'clearStage', stageId: key });
     if (Number.isInteger(ticks)) ops.push({ type: 'recordClear', key, ticks });
   }
-  return { ops, autoSold, record };
+  const dateKey = kstDateKey(Date.now());
+  const contracts = dailyContracts(character.id, dateKey, character);
+  const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
+  const contractProgressLines = [];
+  for (const contract of contracts) {
+    const current = stored.progress?.[contract.id] ?? 0;
+    let amount = contract.type === 'kills'
+      ? result.kills?.[contract.enemyKind] ?? 0
+      : contract.type === 'perfect'
+        ? result.perfectDodges ?? 0
+        : 0;
+    if (contract.type === 'clear' && outcome === 'clear'
+      && result.stageId === contract.stageId && result.difficulty === contract.difficulty) amount = 1;
+    if (contract.type === 'noPotion' && outcome === 'clear'
+      && result.stageId === contract.stageId && result.difficulty === contract.difficulty
+      && result.potionsUsed === 0) amount = 1;
+    amount = Math.min(Math.max(0, contract.target - current), amount);
+    if (amount <= 0) continue;
+    const progress = current + amount;
+    ops.push({ type: 'contractProgress', dateKey, contractId: contract.id, amount });
+    contractProgressLines.push({ contract, progress, complete: progress >= contract.target });
+  }
+  return { ops, autoSold, record, contractProgressLines };
 }
 
-function renderSettlement(outcome, result, { autoSold = 0, record = false, error = null, newSkill = null } = {}) {
+function renderSettlement(outcome, result, {
+  autoSold = 0,
+  record = false,
+  error = null,
+  newSkill = null,
+  contractProgressLines = [],
+} = {}) {
   const saved = !error;
   const difficulty = result.difficulty ?? currentStageDifficulty;
   const stageId = result.stageId ?? currentStageId;
@@ -1958,6 +2068,15 @@ function renderSettlement(outcome, result, { autoSold = 0, record = false, error
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
   resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p><p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  if (contractProgressLines.length) {
+    const lines = contractProgressLines.map(({ contract, progress, complete }) => {
+      const label = contract.type === 'kills'
+        ? contractDescription(contract).replace(` ${contract.target}마리 처치`, '')
+        : contract.type === 'perfect' ? '완벽 회피' : contractDescription(contract);
+      return `<p class="settlement-contract${complete ? ' complete' : ''}">의뢰 진행 · ${label} ${progress}/${contract.target}</p>`;
+    }).join('');
+    resultContent.querySelector('h2')?.insertAdjacentHTML('afterend', lines);
+  }
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
@@ -1972,12 +2091,14 @@ function renderSettlement(outcome, result, { autoSold = 0, record = false, error
 async function attemptSettlement(outcome, result, settlementId) {
   let autoSold = 0;
   let record = false;
+  let contractProgressLines = [];
   try {
     const previousLevel = character.level;
     await reloadCharacter();
     const settlement = buildSettlement(outcome, result);
     autoSold = settlement.autoSold;
     record = settlement.record;
+    contractProgressLines = settlement.contractProgressLines;
     character = await saves.commit({
       characterId: character.id,
       baseRev: character.rev,
@@ -1991,6 +2112,8 @@ async function attemptSettlement(outcome, result, settlementId) {
           result.partySize ?? partyClient?.lobby?.players?.length ?? world?.partySize ?? 1,
         ))),
         outcome,
+        ticks: result.ticks ?? 0,
+        potionsUsed: result.potionsUsed ?? 0,
       },
       cloudUserId: character.cloudUserId === remoteSync?.userId ? remoteSync.userId : undefined,
     });
@@ -2001,10 +2124,10 @@ async function attemptSettlement(outcome, result, settlementId) {
       ? SKILLS[FAMILY_SKILLS[equipmentLook(equippedItems()).family]?.[3]]
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
-    renderSettlement(outcome, result, { autoSold, record, newSkill });
+    renderSettlement(outcome, result, { autoSold, record, newSkill, contractProgressLines });
   } catch (error) {
     console.error('Settlement failed', error);
-    renderSettlement(outcome, result, { autoSold, record, error });
+    renderSettlement(outcome, result, { autoSold, record, error, contractProgressLines });
   }
 }
 
@@ -2133,6 +2256,94 @@ $('#hub-ui').addEventListener('click', async (event) => {
     return;
   }
   if (button.dataset.slotFilter) { renderInventory('', button.dataset.slotFilter); return; }
+  if (button.dataset.boardTab) {
+    boardTab = button.dataset.boardTab;
+    renderPanel('board');
+    return;
+  }
+  if (button.dataset.claimContract) {
+    await applyOps([{
+      type: 'claimContract',
+      dateKey: kstDateKey(Date.now()),
+      contractId: button.dataset.claimContract,
+    }]);
+    updateContractClaimBadge();
+    renderPanel('board');
+    return;
+  }
+  if (button.dataset.blacksmithTab) {
+    blacksmithTab = button.dataset.blacksmithTab;
+    renderPanel('blacksmith');
+    return;
+  }
+  if (button.dataset.selectReforgeAffix !== undefined) {
+    selectedReforgeUid = button.dataset.selectReforgeAffix;
+    selectedReforgeIndex = Number(button.dataset.index);
+    reforgeResult = null;
+    renderPanel('blacksmith');
+    return;
+  }
+  if (button.dataset.salvage) {
+    const rarity = button.dataset.rarity;
+    if (['rare', 'legendary', 'set'].includes(rarity) && !window.confirm('희귀 이상 장비를 분해할까요?')) return;
+    await applyOps([{ type: 'salvageItem', uid: button.dataset.salvage }]);
+    updateInventoryUpgradeBadge();
+    renderPanel('blacksmith');
+    return;
+  }
+  if (button.hasAttribute('data-reforge-action')) {
+    const item = inventory.find((entry) => entry.uid === selectedReforgeUid);
+    const oldAffix = item?.affixes?.[selectedReforgeIndex];
+    if (!item || !oldAffix) return;
+    const oldName = AFFIXES[oldAffix.id]?.name ?? oldAffix.id;
+    if (character.cloudUserId) {
+      if (!remoteSync?.userId || !navigator.onLine || remoteSync.status === 'offline') {
+        showActionToast('연결되면 강화할 수 있어요');
+        return;
+      }
+      try {
+        await remoteSync.reforge({
+          characterId: character.id,
+          uid: item.uid,
+          index: selectedReforgeIndex,
+        });
+        character = await saves.loadCharacter(character.id);
+        inventory = await saves.listItems(character.id);
+      } catch (error) {
+        showActionToast(error?.message === 'offline' ? '연결되면 강화할 수 있어요' : error?.message ?? '재련에 실패했어요');
+        return;
+      }
+    } else {
+      const roll = crypto.getRandomValues(new Uint32Array(1))[0];
+      await applyOps([{
+        type: 'reforgeAffix',
+        uid: item.uid,
+        index: selectedReforgeIndex,
+        roll,
+      }]);
+    }
+    const newAffix = inventory.find((entry) => entry.uid === item.uid)?.affixes?.[selectedReforgeIndex];
+    if (newAffix) {
+      reforgeResult = {
+        uid: item.uid,
+        rarity: item.rarity,
+        oldName,
+        oldValue: oldAffix.value,
+        newName: AFFIXES[newAffix.id]?.name ?? newAffix.id,
+        newValue: newAffix.value,
+        expiresAt: Date.now() + 1500,
+      };
+    }
+    refreshHubPlayer();
+    renderPanel('blacksmith');
+    window.setTimeout(() => {
+      if (reforgeResult?.expiresAt <= Date.now()) {
+        reforgeResult = null;
+        if (hubPanel.dataset.kind === 'blacksmith' && blacksmithTab === 'reforge') renderPanel('blacksmith');
+      }
+    }, 1500);
+    return;
+  }
   if (button.hasAttribute('data-party-finder')) { openPartyFinder(); return; }
   if (button.hasAttribute('data-party-quick')) { await quickJoinFromFinder(); return; }
   if (button.hasAttribute('data-party-lookup-retry')) {

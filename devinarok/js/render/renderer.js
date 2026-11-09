@@ -1249,7 +1249,15 @@ export class ArenaRenderer {
       button.className = 'npc-hotspot';
       button.type = 'button';
       button.dataset.panel = npc.panel;
-      button.textContent = npc.name;
+      button.append(document.createTextNode(npc.name));
+      if (npc.id === 'innkeeper') {
+        const badge = document.createElement('b');
+        badge.className = 'contract-claim-badge npc-contract-badge';
+        badge.dataset.contractClaimBadge = 'innkeeper';
+        badge.textContent = '!';
+        badge.hidden = true;
+        button.append(badge);
+      }
       this.npcLayer.appendChild(button);
       this.hubNpcs.push({ npc, root, mixer, action, button, materials });
     }
