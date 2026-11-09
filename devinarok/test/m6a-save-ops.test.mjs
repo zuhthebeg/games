@@ -169,6 +169,32 @@ test('contractDay resets progress and snapshots the current basis once', () => {
   assert.deepEqual(repeated.contracts, next.contracts);
 });
 
+test('contractDay only moves forward and cannot restore a claimed contract reward', () => {
+  const yesterday = '2026-05-01';
+  const today = '2026-05-02';
+  let state = applyOperations(makeCharacter().character, {}, [
+    { type: 'contractDay', dateKey: yesterday },
+  ], 'hero');
+  const contract = contractsFor(state.character, yesterday)[0];
+  state = applyOperations(state.character, state.items, [
+    { type: 'contractProgress', dateKey: yesterday, contractId: contract.id, amount: contract.target },
+    { type: 'claimContract', dateKey: yesterday, contractId: contract.id },
+  ], 'hero');
+  const goldAfterClaim = state.character.gold;
+  state = applyOperations(state.character, state.items, [
+    { type: 'contractDay', dateKey: today },
+  ], 'hero');
+  assert.equal(state.character.contracts.dateKey, today);
+  assert.throws(
+    () => applyOperations(state.character, state.items, [{ type: 'contractDay', dateKey: yesterday }], 'hero'),
+    { name: 'RangeError', message: 'Contract day cannot go backwards' },
+  );
+  assert.throws(() => applyOperations(state.character, state.items, [
+    { type: 'claimContract', dateKey: yesterday, contractId: contract.id },
+  ], 'hero'), /not active/);
+  assert.equal(state.character.gold, goldAfterClaim);
+});
+
 test('contract progress caps at target, resets on date rollover, and claims once', () => {
   let { character, items } = makeCharacter();
   const dateKey = '2026-05-01';
