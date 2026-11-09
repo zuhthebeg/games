@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=64054dbb63">
+  <link rel="stylesheet" href="css/game.css?v=47f609cb5d">
   <script type="importmap">
     {
       "imports": {
@@ -16,8 +16,9 @@
         "./js/content/enemies.js": "./js/content/enemies.js?v=1c77ba3943",
         "./js/content/items.js": "./js/content/items.js?v=fbc07018d5",
         "./js/content/mastery.js": "./js/content/mastery.js?v=00076114a3",
+        "./js/content/objectives.js": "./js/content/objectives.js?v=9efcd2228b",
         "./js/content/skills.js": "./js/content/skills.js?v=da517f5e06",
-        "./js/content/stages.js": "./js/content/stages.js?v=140664f08e",
+        "./js/content/stages.js": "./js/content/stages.js?v=be8be6ff67",
         "./js/core/attack-assist.js": "./js/core/attack-assist.js?v=6586149f41",
         "./js/core/debug-toggle.js": "./js/core/debug-toggle.js?v=2b34bec22e",
         "./js/core/input.js": "./js/core/input.js?v=8a0a4625b5",
@@ -25,7 +26,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
         "./js/debug/panel.js": "./js/debug/panel.js?v=5c23de81fb",
         "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
-        "./js/main.js": "./js/main.js?v=076681ec36",
+        "./js/main.js": "./js/main.js?v=1f370e6508",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=4394734784",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=90c6cf90ab",
         "./js/net/clock-input-scheduler.js": "./js/net/clock-input-scheduler.js?v=61a2d824df",
@@ -33,16 +34,16 @@
         "./js/net/hit-agreement.js": "./js/net/hit-agreement.js?v=45cbf91d3e",
         "./js/net/input-queue.js": "./js/net/input-queue.js?v=f85d9e6f28",
         "./js/net/interp.js": "./js/net/interp.js?v=397084db3d",
-        "./js/net/net-session.js": "./js/net/net-session.js?v=838d030bf3",
+        "./js/net/net-session.js": "./js/net/net-session.js?v=d01a39b824",
         "./js/net/predictor.js": "./js/net/predictor.js?v=a3926537ea",
         "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
-        "./js/net/sim-version.js": "./js/net/sim-version.js?v=84830b0a6d",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=31e67ca027",
         "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
         "./js/render/dodge-window.js": "./js/render/dodge-window.js?v=7529988637",
         "./js/render/player-look.js": "./js/render/player-look.js?v=46a7229d53",
         "./js/render/quality.js": "./js/render/quality.js?v=8fc4218783",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=d5bde43545",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=827fe1aa40",
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
@@ -51,11 +52,11 @@
         "./js/save/repository.js": "./js/save/repository.js?v=1bacce0c02",
         "./js/save/settlement-lock.js": "./js/save/settlement-lock.js?v=783875fd64",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=2387a4fc1d",
+        "./js/sim/world.js": "./js/sim/world.js?v=816d25ae7c",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=8d3299a1db",
-        "./js/ui/party.js": "./js/ui/party.js?v=bda4c12c30",
+        "./js/ui/party.js": "./js/ui/party.js?v=bcdd51e689",
         "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
         "./js/ui/stage-player.js": "./js/ui/stage-player.js?v=6bbe7e3556",
         "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=238d54c747",
@@ -104,6 +105,7 @@
         <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
         <button id="hub-party-button" class="hub-party-button" data-party-finder hidden>파티</button>
       </header>
+      <aside id="objective-hud" class="objective-hud" aria-live="polite" hidden></aside>
       <aside id="party-hud" class="party-hud" hidden></aside>
       <div id="party-door-countdown" class="party-door-countdown" hidden></div>
       <div id="party-downed" class="party-downed" hidden></div>
@@ -202,6 +204,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=076681ec36"></script>
+  <script type="module" src="js/main.js?v=1f370e6508"></script>
 </body>
 </html>

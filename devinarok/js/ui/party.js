@@ -437,6 +437,9 @@ export class PartyClient {
       doorCountdown: snapshot?.doorCountdown ?? null,
       openDoors: snapshot?.openDoors ?? this.stageWorld.openDoors,
       activeEnemyIds: snapshot?.activeEnemyIds ?? null,
+      objective: snapshot?.objective === undefined
+        ? this.stageWorld.objective ?? null
+        : snapshot.objective,
       localPlayerId: this.playerId,
     });
   }

@@ -368,11 +368,13 @@ test('party rendering does not mutate the predictor player position', () => {
   client.interpolation = interpolation;
   client.reviveProgress = new Map();
   client.frameTelemetry = [];
-  client.lastSnapshot = { tick: 7, ev: [], roomIndex: 0, openDoors: [] };
+  const objective = { type: 'hunt', state: 'active', roomIndex: 2, endsTick: 900 };
+  client.lastSnapshot = { tick: 7, ev: [], roomIndex: 0, openDoors: [], objective };
 
   const view = client.viewWorld(1100);
   assert.equal(view.entities[0].x, 9);
   assert.equal(view.entities[0].z, 8);
+  assert.equal(view.objective, objective);
   assert.equal(player.x, 1);
   assert.equal(player.z, 2);
   assert.ok(client.frameTelemetry[0].renderTick < interpolation.snapshots.at(-1).tick);
@@ -1351,6 +1353,7 @@ test('net session reconstructs acknowledged snapshot deltas and requests a full 
     doorCountdown: null,
     openDoors: {},
     activeEnemyIds: [4, 5],
+    objective: { type: 'defend', state: 'active', roomIndex: 1, hp: 300, maxHp: 300 },
     ents: [{ id: 1, kind: 'player', x: 1, z: 2, dead: false }],
   });
   socket.receive({
@@ -1360,6 +1363,7 @@ test('net session reconstructs acknowledged snapshot deltas and requests a full 
     full: false,
     baseTick: 0,
     activeEnemyIds: [6],
+    objective: { type: 'defend', state: 'active', roomIndex: 1, hp: 270, maxHp: 300 },
     ents: [{ id: 1, x: 3 }],
     removed: [],
   });
@@ -1370,6 +1374,13 @@ test('net session reconstructs acknowledged snapshot deltas and requests a full 
   assert.equal(received.at(-1).roomCleared, false);
   assert.deepEqual(received.at(-1).activeEnemyIds, [6]);
   assert.deepEqual(received.at(-1).openDoors, {});
+  assert.deepEqual(received.at(-1).objective, {
+    type: 'defend',
+    state: 'active',
+    roomIndex: 1,
+    hp: 270,
+    maxHp: 300,
+  });
   assert.equal(session.snapshotAck, 2);
   session.snapshotStates.clear();
   session.snapshotMetadataStates.clear();

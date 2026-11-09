@@ -384,6 +384,21 @@ export class ArenaRenderer {
     this.partyLayer.className = 'party-name-layer';
     canvas.parentElement?.appendChild(this.partyLayer);
     this.partyMarkers = new Map();
+    this.objectiveTargetMarker = document.createElement('div');
+    this.objectiveTargetMarker.className = 'objective-target-marker';
+    this.objectiveTargetMarker.classList.add('is-hunt');
+    this.objectiveTargetMarker.textContent = '☠ 현상수배';
+    this.objectiveTargetMarker.hidden = true;
+    this.partyLayer.appendChild(this.objectiveTargetMarker);
+    this.objectiveWardMarker = document.createElement('div');
+    this.objectiveWardMarker.className = 'objective-ward-marker';
+    this.objectiveWardMarker.innerHTML = '<span>결계석</span><i><b></b></i>';
+    this.objectiveWardMarker.hidden = true;
+    this.partyLayer.appendChild(this.objectiveWardMarker);
+    this.objectivePillar = null;
+    this.objectiveWardRing = null;
+    this.objectiveChannelFill = null;
+    this.objectiveChannelRing = null;
     this.previousEntities = new Map();
     this.activeEntityIds = new Set();
     this.activeTelegraphs = new Set();
@@ -820,6 +835,9 @@ export class ArenaRenderer {
       return M0_MODELS[assetKey];
     }).filter(Boolean))];
     const requiredModels = new Set([...propModels, ...characterPaths]);
+    if (this.arena.rooms?.some((room) => room.objective)) {
+      requiredModels.add('assets/env/pillar.glb');
+    }
     if (!this.isHub && !this.isSanctuary) {
       for (const path of Object.values(M0_MODELS)) requiredModels.add(path);
     }
@@ -849,6 +867,9 @@ export class ArenaRenderer {
     }
     for (const [key, path] of Object.entries(M0_MODELS)) {
       if (loadedByPath.has(path)) this.models.set(key, loadedByPath.get(path).scene);
+    }
+    if (loadedByPath.has('assets/env/pillar.glb')) {
+      this.models.set('objective-pillar', loadedByPath.get('assets/env/pillar.glb').scene);
     }
     const animationLibraries = this.isHub || this.isSanctuary ? ['humanoid'] : ['humanoid', 'skeleton'];
     for (const [key, path] of animationLibraries.map((name) => [name, `assets/anims/${name}.glb`])) {
@@ -1680,6 +1701,30 @@ export class ArenaRenderer {
     });
   }
 
+  createObjectiveFlash(x, z, radius, now) {
+    const geometry = new THREE.RingGeometry(0.12, radius, 40);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffd47a,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, 0.055, z);
+    mesh.renderOrder = 3;
+    this.addTransient(mesh, geometry, material, {
+      startTime: now,
+      durationMs: 420,
+      update: (effect, _tick, elapsed) => {
+        const progress = THREE.MathUtils.clamp(elapsed / 420, 0, 1);
+        effect.mesh.scale.setScalar(0.45 + progress * 0.75);
+        effect.material.opacity = 0.9 * (1 - progress);
+      },
+    });
+  }
+
   createSkillTelegraph(event) {
     const { originX: x, originZ: z, radius } = event.shape;
     const colors = { quake: 0xe5be72, rain: 0x8bc9ff, meteor: 0xff8c4a };
@@ -1823,6 +1868,27 @@ export class ArenaRenderer {
       if (event.type === 'shot') this.createShot(event, now);
       if (event.type === 'impact') this.createImpact(event);
       if (event.type === 'blink' || event.type === 'bossBlink') this.createBlink(event, now);
+      if (event.type === 'objectiveFailed' && ['defend', 'channel'].includes(world.objective?.type)) {
+        const objective = world.objective;
+        const room = world.arena.rooms?.[objective.roomIndex];
+        this.createImpactRing(
+          objective.x ?? 0,
+          objective.z ?? room?.centerZ ?? 0,
+          Math.max(0.9, objective.radius ?? 0.8),
+          0xff706d,
+          world.tick,
+          world.tick + 14,
+        );
+      }
+      if (event.type === 'objectiveComplete' && world.objective?.type === 'channel') {
+        const objective = world.objective;
+        this.createObjectiveFlash(
+          objective.x ?? 0,
+          objective.z ?? world.arena.rooms?.[objective.roomIndex]?.centerZ ?? 0,
+          objective.radius,
+          now,
+        );
+      }
       if (event.type === 'hit') {
         for (const effect of this.slashes.values()) {
           if (effect.castId === event.castId) effect.hit = true;
@@ -1846,6 +1912,7 @@ export class ArenaRenderer {
 
   updatePresentation(world, now) {
     this.updatePartyMarkers(world);
+    this.updateObjectiveVisual(world);
     for (const [castKey, effect] of this.slashes) {
       const entity = world.entities.find((item) => item.id === effect.entityId);
       const tick = world.tick;
@@ -1894,6 +1961,136 @@ export class ArenaRenderer {
       effect.material.opacity = 0.68 * (1 - progress);
     }
     this.updateTransientEffects(world, now);
+  }
+
+  updateObjectiveVisual(world) {
+    const objective = world.objective;
+    const active = objective?.state === 'active' && objective.roomIndex === world.roomIndex;
+    this.objectiveTargetMarker.hidden = true;
+    this.objectiveWardMarker.hidden = true;
+    if (this.objectivePillar) this.objectivePillar.visible = false;
+    if (this.objectiveWardRing) this.objectiveWardRing.visible = false;
+    if (this.objectiveChannelFill) this.objectiveChannelFill.visible = false;
+    if (this.objectiveChannelRing) this.objectiveChannelRing.visible = false;
+    if (!active) return;
+
+    const room = world.arena.rooms?.[objective.roomIndex];
+    const x = objective.x ?? 0;
+    const z = objective.z ?? room?.centerZ ?? 0;
+    if (objective.type === 'hunt') {
+      const target = world.entities.find((entity) => entity.id === objective.targetId && !entity.dead);
+      if (target) {
+        const rect = this.canvas.getBoundingClientRect();
+        const point = this.projectedPoint.set(target.x, 1.8, target.z).project(this.camera);
+        this.objectiveTargetMarker.hidden = false;
+        const markerWidth = this.objectiveTargetMarker.offsetWidth;
+        const markerHeight = this.objectiveTargetMarker.offsetHeight;
+        const projectedX = (point.x + 1) * rect.width / 2;
+        const projectedY = (1 - point.y) * rect.height / 2;
+        const left = Math.max(markerWidth / 2 + 8, Math.min(rect.width - markerWidth / 2 - 8, projectedX));
+        const minTop = Math.max(markerHeight + 120, 146);
+        const maxTop = Math.max(minTop, rect.height - 284);
+        const top = Math.max(minTop, Math.min(maxTop, projectedY));
+        this.objectiveTargetMarker.style.left = `${left}px`;
+        this.objectiveTargetMarker.style.top = `${top}px`;
+        this.objectiveTargetMarker.hidden = point.z < -1 || point.z > 1;
+      }
+      return;
+    }
+
+    if (objective.type === 'defend') {
+      if (!this.objectivePillar) {
+        const template = this.models.get('objective-pillar');
+        if (template) {
+          const bounds = this.modelBounds.get('assets/env/pillar.glb');
+          const scale = 1.75 / (bounds?.y || 1.75);
+          this.objectivePillar = template.clone(true);
+          this.objectivePillar.scale.setScalar(scale);
+          this.objectivePillar.updateMatrixWorld(true);
+          const modelBounds = new THREE.Box3().setFromObject(this.objectivePillar);
+          this.objectivePillar.position.y -= modelBounds.min.y;
+          this.scene.add(this.objectivePillar);
+        }
+      }
+      if (!this.objectiveWardRing) {
+        const geometry = new THREE.RingGeometry(0.82, 0.95, 40);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x78d9ce,
+          transparent: true,
+          opacity: 0.76,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        this.objectiveWardRing = new THREE.Mesh(geometry, material);
+        this.objectiveWardRing.rotation.x = -Math.PI / 2;
+        this.objectiveWardRing.position.y = 0.055;
+        this.objectiveWardRing.renderOrder = 2;
+        this.scene.add(this.objectiveWardRing);
+      }
+      if (this.objectivePillar) {
+        this.objectivePillar.position.x = x;
+        this.objectivePillar.position.z = z;
+        this.objectivePillar.visible = true;
+      }
+      this.objectiveWardRing.position.x = x;
+      this.objectiveWardRing.position.z = z;
+      this.objectiveWardRing.visible = true;
+      this.objectiveWardRing.material.color.setHex(objective.hp / objective.maxHp < 0.35 ? 0xff706d : 0x78d9ce);
+      const rect = this.canvas.getBoundingClientRect();
+      const point = this.projectedPoint.set(x, 2.2, z).project(this.camera);
+      const percent = THREE.MathUtils.clamp(objective.hp / objective.maxHp, 0, 1);
+      this.objectiveWardMarker.style.left = `${(point.x + 1) * rect.width / 2}px`;
+      this.objectiveWardMarker.style.top = `${(1 - point.y) * rect.height / 2}px`;
+      this.objectiveWardMarker.querySelector('i b').style.width = `${percent * 100}%`;
+      this.objectiveWardMarker.classList.toggle('is-critical', percent < 0.35);
+      this.objectiveWardMarker.hidden = point.z < -1 || point.z > 1
+        || Math.abs(point.x) > 1.1 || Math.abs(point.y) > 1.1;
+      return;
+    }
+
+    if (objective.type === 'channel') {
+      const radius = objective.radius;
+      if (!this.objectiveChannelFill) {
+        const geometry = new THREE.CircleGeometry(radius, 48);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xe5bd66,
+          transparent: true,
+          opacity: 0.2,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        this.objectiveChannelFill = new THREE.Mesh(geometry, material);
+        this.objectiveChannelFill.rotation.x = -Math.PI / 2;
+        this.objectiveChannelFill.position.y = 0.025;
+        this.objectiveChannelFill.renderOrder = 1;
+        this.scene.add(this.objectiveChannelFill);
+      }
+      if (!this.objectiveChannelRing) {
+        const geometry = new THREE.RingGeometry(radius - 0.12, radius, 48);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x91dfff,
+          transparent: true,
+          opacity: 0.82,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        this.objectiveChannelRing = new THREE.Mesh(geometry, material);
+        this.objectiveChannelRing.rotation.x = -Math.PI / 2;
+        this.objectiveChannelRing.position.y = 0.05;
+        this.objectiveChannelRing.renderOrder = 2;
+        this.scene.add(this.objectiveChannelRing);
+      }
+      const progress = THREE.MathUtils.clamp(objective.progress / objective.required, 0, 1);
+      this.objectiveChannelFill.geometry.setDrawRange(0, Math.floor(progress * 48) * 3);
+      const pulse = (Math.sin(performance.now() * 0.006) + 1) / 2;
+      for (const mesh of [this.objectiveChannelFill, this.objectiveChannelRing]) {
+        mesh.position.x = x;
+        mesh.position.z = z;
+        mesh.visible = true;
+      }
+      this.objectiveChannelFill.material.opacity = 0.16 + pulse * 0.18;
+      this.objectiveChannelRing.material.opacity = 0.48 + pulse * 0.38;
+    }
   }
 
   updatePartyMarkers(world) {
