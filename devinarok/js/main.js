@@ -543,8 +543,9 @@ function handleAudioEvent(event, current) {
   if (event.type === 'shot') audio.play('crossbow-shot');
   if (event.type === 'impact') audio.play(event.kind === 'flame' ? 'flame' : event.kind === 'frost' ? 'frost' : 'impact');
   if (event.type === 'perfectBlock') audio.play('shield-clang');
-  else if (event.type === 'hit' && !event.predictedLocally) {
-    audio.play(event.blocked || event.guarded ? 'shield-clang' : 'impact');
+  else if (event.type === 'hit') {
+    if (event.blocked || event.guarded) audio.play('shield-clang');
+    else if (!event.predictedLocally) audio.play('impact');
   }
   if (
     (event.type === 'dodge' && (event.playerId === character?.id || event.entityId === localPlayer?.id))
