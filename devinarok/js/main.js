@@ -2079,10 +2079,12 @@ function buildSettlement(outcome, result) {
     if (!Object.hasOwn(SKILLS, skill) || !Number.isInteger(amount) || amount <= 0) continue;
     const beforeXp = character.mastery?.[skill] ?? 0;
     const afterXp = Math.min(MASTERY_MAX_XP, beforeXp + amount);
+    const gained = afterXp - beforeXp;
+    if (gained <= 0) continue;
     ops.push({ type: 'gainMastery', skill, amount });
     masteryProgressLines.push({
       skill,
-      amount,
+      amount: gained,
       previousRank: masteryRank(beforeXp),
       nextRank: masteryRank(afterXp),
     });
