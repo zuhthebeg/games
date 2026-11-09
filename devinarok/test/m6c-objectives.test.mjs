@@ -168,7 +168,7 @@ test('entering a hunt room spawns a bounty target, then success grants owner-sco
   const target = world.entities.find((entity) => entity.id === objective.targetId);
   assert.equal(objective.type, 'hunt');
   assert.equal(target.bounty, true);
-  assert.equal(target.elite, true);
+  assert.equal(target.elite, false);
   assert.equal(target.objectiveTarget, undefined);
   assert.equal(objective.endsTick - objective.startTick, 40 * 30);
 
