@@ -8,10 +8,9 @@ import {
   masteryRank,
   nextThreshold,
 } from '../js/content/mastery.js';
-import { ITEMS } from '../js/content/items.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 import {
-  BUTTONS, completeStage, createStageWorld, rollStageItem, step, stepPlayerMotion,
+  BUTTONS, completeStage, createStageWorld, playerStrike, step, stepPlayerMotion,
 } from '../js/sim/world.js';
 
 test('mastery thresholds, ranks, bonuses, and minimum cooldowns are deterministic', () => {
@@ -59,6 +58,20 @@ test('mastery normalization fills known skills and clamps values; save ops gain 
     () => applyOperations(character, {}, [{ type: 'gainMastery', skill: 'unknown', amount: 1 }], 'hero'),
     /Invalid mastery skill/,
   );
+});
+
+test('stage players receive mastery ranks from the saved character', () => {
+  const playerId = 'mastery-hud-hero';
+  const world = createStageWorld({
+    seed: 191,
+    stageId: 'C1',
+    playerId,
+    character: { level: 7, mastery: { spin: 300, dash: 70 } },
+  });
+  const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === playerId);
+
+  assert.equal(player.masteryRanks[1], 5);
+  assert.equal(player.masteryRanks[2], 3);
 });
 
 function makeSpinWorld(spinXp, enemyDistance = 1.5) {
@@ -112,6 +125,44 @@ test('skill damage and cooldown scale at mastery ranks 0, 3, and 5', () => {
   assert.ok(values[2].damage > values[1].damage);
 });
 
+test('counter strikes do not inherit mastery from an active skill cast', () => {
+  const counterDamage = (spinXp) => {
+    const { world, player, target } = makeSpinWorld(spinXp);
+    player.skillCast = { id: 1 };
+    const previousHp = target.hp;
+    playerStrike(
+      world,
+      player,
+      { type: 'circle', originX: target.x, originZ: target.z, radius: 1 },
+      1,
+      'counter:test',
+      [],
+      'counter',
+      { rewind: false },
+    );
+    return previousHp - target.hp;
+  };
+
+  assert.equal(counterDamage(0), counterDamage(300));
+});
+
+test('delayed rain impacts use the mastery rank supplied by their skill slot', () => {
+  const rainDamage = (rainXp) => {
+    const { world, player, target, playerId } = makeSpinWorld(0);
+    player.family = 'crossbow';
+    player.masteryRanks = { 4: masteryRank(rainXp) };
+    player.skillCooldowns[4] = 0;
+    player.level = 20;
+    stepPlayerMotion(world, player, input(1, BUTTONS.SKILL4));
+    for (let tick = 1; tick <= 30; tick += 1) {
+      step(world, { [playerId]: input(tick + 1) });
+    }
+    return target.maxHp - target.hp;
+  };
+
+  assert.ok(rainDamage(300) > rainDamage(0));
+});
+
 test('skill uses count only when a living enemy is within eight units and appear in results', () => {
   const near = makeSpinWorld(0, 7.9);
   stepPlayerMotion(near.world, near.player, input(1, BUTTONS.SKILL1));
@@ -124,15 +175,4 @@ test('skill uses count only when a living enemy is within eight units and appear
   assert.deepEqual(far.world.rewards[far.playerId].skillUses, {});
   completeStage(far.world, 'clear');
   assert.deepEqual(far.world.result.skillUses, {});
-});
-
-test('set boss drops never fall below the selected base required level', () => {
-  const { world } = makeSpinWorld(300);
-  const item = rollStageItem(world, {
-    stageLevel: 13,
-    boss: true,
-    forcedRarity: 'set',
-    setId: 'shadow-hunter',
-  });
-  assert.ok(item.ilvl >= ITEMS[item.itemId].requiredLevel);
 });

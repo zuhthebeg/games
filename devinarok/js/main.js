@@ -1968,7 +1968,12 @@ async function startStage(stageId, options = {}) {
     stageId: stageToStart,
     difficulty,
     playerId: character.id,
-    character: { level: character.level, potions: character.potions, equipment: equippedItems() },
+    character: {
+      level: character.level,
+      potions: character.potions,
+      equipment: equippedItems(),
+      mastery: character.mastery,
+    },
   });
   updateCloudLogoutButton();
   tutorialLastX = null;
