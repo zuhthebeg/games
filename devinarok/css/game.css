@@ -60,7 +60,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .potion-button b { position: absolute; top: -7px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; border-radius: 50%; background: #7e332c; border: 1px solid #e4a16e; color: #fff1d6; font: 700 11px/1 system-ui, sans-serif; }
 .key-hints { display: block; position: absolute; right: 16px; bottom: 14px; z-index: 2; padding: 6px 10px; border: 1px solid #a9957c55; border-radius: 10px; color: #e5d6c4; background: #16131a99; font: 11px system-ui, sans-serif; letter-spacing: .02em; pointer-events: none; }
 .npc-hotspots-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.npc-hotspot { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; padding: 6px 10px; border: 1px solid #dfb36d; border-radius: 15px; color: #fff0cf; background: #201811d9; font: 700 12px/1.2 system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 10px #0009; }
+.npc-hotspot { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; min-height: 44px; padding: 6px 10px; border: 1px solid #dfb36d; border-radius: 15px; color: #fff0cf; background: #201811d9; font: 700 12px/1.2 system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 10px #0009; }
 .npc-hotspot.is-nearby { border-color: #fff0b0; background: #7d552ddd; box-shadow: 0 0 0 2px #f0c77788, 0 2px 14px #000c; }
 #controls.hub-controls .buttons { display: none; }
 #controls.hub-controls { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 78px); }
@@ -112,11 +112,46 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .hub-ui { position: absolute; inset: auto 16px 22px; display: grid; gap: 10px; z-index: 3; pointer-events: none; }
 .hub-title { justify-self: center; padding: 8px 14px; color: #eed5aa; border: 1px solid #755c45; border-radius: 20px; background: #151117d9; font: 600 13px system-ui, sans-serif; }
 .hub-hotspots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; pointer-events: auto; }
-.hub-hotspots button { min-width: 115px; padding: 10px 12px; background: #211a20e8; border-color: #80624c; font-size: 13px; }
-.hub-panel { justify-self: center; width: min(560px, calc(100vw - 24px)); max-height: min(55vh, 440px); overflow: auto; padding: 16px; pointer-events: auto; }
+.hub-hotspots button { min-width: 115px; min-height: 44px; padding: 10px 12px; background: #211a20e8; border-color: #80624c; font-size: 13px; }
+.hub-panel { justify-self: center; width: min(560px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; padding: 16px; pointer-events: auto; }
 .hub-panel h2 { margin: 0 0 10px; color: #f2d3a2; font-size: 20px; }
 .hub-panel p, .hub-panel li { font: 13px/1.55 system-ui, sans-serif; color: #c9bec0; }
-.hub-panel button { margin: 4px; padding: 9px 12px; }
+.hub-panel button { min-height: 44px; margin: 4px; padding: 9px 12px; }
+.board-tabs, .blacksmith-tabs { display: grid; gap: 6px; margin: 0 0 10px; }
+.board-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.blacksmith-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.board-tabs button, .blacksmith-tabs button { margin: 0; }
+.board-tabs button.active, .blacksmith-tabs button.active { border-color: #e1b65d; background: #483525; }
+.contract-list { display: grid; gap: 8px; }
+.contract-card { display: grid; gap: 5px; padding: 9px 10px; border: 1px solid #554d42; border-radius: 10px; background: #171615; }
+.contract-card.claimed { opacity: .55; }
+.contract-card.complete { border-color: #d2ad58; }
+.contract-card p { margin: 0; }
+.contract-card small, .contract-footer, .material-counts { color: #d0c0a5 !important; }
+.contract-card-heading { display: flex; justify-content: space-between; color: #e9d3a5; }
+.contract-card button { justify-self: end; min-width: 112px; margin: 0; }
+.contract-card [data-claim-contract]:disabled { border-color: #564d4f; color: #8c8384; background: #29262b; opacity: .72; cursor: not-allowed; box-shadow: none; }
+.contract-progress { height: 4px; overflow: hidden; border-radius: 999px; background: #383337; }
+.contract-progress-fill { display: block; height: 100%; border-radius: inherit; }
+.contract-card.tier-easy .contract-progress-fill { background: #7ebd87; }
+.contract-card.tier-normal .contract-progress-fill { background: #89aee3; }
+.contract-card.tier-hard .contract-progress-fill { background: #d9956e; }
+.contract-claim-badge { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #211509; background: #ffd56b; font-size: 12px; }
+.contract-claim-badge[hidden] { display: none; }
+.npc-hotspot .npc-contract-badge { position: absolute; top: -6px; right: -5px; width: 18px; height: 18px; margin: 0; padding: 0; }
+.material-counts { margin: 0 0 8px !important; }
+.affix-select { grid-column: 1 / -1; justify-self: stretch; text-align: left; }
+.affix-select.selected { border-color: #e1b65d; background: #483525; }
+.affix-select.unique-affix { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #8c8384; background: #29262b; opacity: .62; }
+.affix-select.unique-affix small { color: #d0c0a5; }
+.reforge-list { display: grid; gap: 8px; }
+.reforge-result { padding: 9px; border: 1px solid currentColor; border-radius: 8px; text-align: center; }
+.reforge-footer { position: sticky; bottom: -16px; z-index: 1; display: grid; gap: 6px; margin: 8px -16px -16px; padding: 10px 16px 16px; border-top: 1px solid #56434a; background: #17131a; }
+.reforge-footer p { margin: 0; }
+.reforge-footer button { width: 100%; margin: 0; }
+.reforge-footer small { color: #d0c0a5; text-align: center; }
+.settlement-contract { padding: 5px 8px; border-left: 3px solid #8b7352; background: #342b243b; }
+.settlement-contract.complete { color: #ffe08b !important; border-color: #f3ca5f; background: #6c4e1f55; }
 .hub-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
 .hub-stage-info { min-width: 0; flex: 1 1 auto; }
 .hub-stage-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -6,11 +6,13 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=480d3247fd">
+  <link rel="stylesheet" href="css/game.css?v=47cd0a13b3">
   <script type="importmap">
     {
       "imports": {
+        "./js/content/affix-value.js": "./js/content/affix-value.js?v=157783de87",
         "./js/content/affixes.js": "./js/content/affixes.js?v=023ce75224",
+        "./js/content/contracts.js": "./js/content/contracts.js?v=e2ff0cefb8",
         "./js/content/enemies.js": "./js/content/enemies.js?v=1c77ba3943",
         "./js/content/items.js": "./js/content/items.js?v=fbc07018d5",
         "./js/content/skills.js": "./js/content/skills.js?v=da517f5e06",
@@ -22,7 +24,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
         "./js/debug/panel.js": "./js/debug/panel.js?v=5ad76d9ae9",
         "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
-        "./js/main.js": "./js/main.js?v=5e6b676630",
+        "./js/main.js": "./js/main.js?v=d245c3608f",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=4394734784",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=90c6cf90ab",
         "./js/net/clock-input-scheduler.js": "./js/net/clock-input-scheduler.js?v=61a2d824df",
@@ -34,20 +36,20 @@
         "./js/net/predictor.js": "./js/net/predictor.js?v=a3926537ea",
         "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
-        "./js/net/sim-version.js": "./js/net/sim-version.js?v=237d254cb7",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=e769788e1c",
         "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
         "./js/render/dodge-window.js": "./js/render/dodge-window.js?v=7529988637",
         "./js/render/player-look.js": "./js/render/player-look.js?v=46a7229d53",
         "./js/render/quality.js": "./js/render/quality.js?v=8fc4218783",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=aca196dfc0",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=73f65828a6",
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
-        "./js/save/ops.js": "./js/save/ops.js?v=b3968a3f69",
-        "./js/save/remote-sync.js": "./js/save/remote-sync.js?v=a1174a60c0",
+        "./js/save/ops.js": "./js/save/ops.js?v=ffb590b447",
+        "./js/save/remote-sync.js": "./js/save/remote-sync.js?v=664074ec30",
         "./js/save/repository.js": "./js/save/repository.js?v=1bacce0c02",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=027df119ab",
+        "./js/sim/world.js": "./js/sim/world.js?v=406635ccaa",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=8d3299a1db",
@@ -107,7 +109,7 @@
       <div id="hub-ui" class="hub-ui" hidden>
         <div class="hub-title">무너진 지하묘지 · 거점 여관</div>
         <div class="hub-hotspots">
-          <button data-panel="board">주인 · 게시판</button><button data-panel="blacksmith">대장장이</button>
+          <button data-panel="board">주인 · 게시판 <b id="contract-claim-badge" class="contract-claim-badge" hidden>!</b></button><button data-panel="blacksmith">대장장이</button>
           <button data-panel="merchant">상인</button><button data-panel="inventory">장비함 <b id="inventory-upgrade-badge" class="upgrade-station-badge" hidden>▲</b></button>
           <button data-panel="character">모험가</button><button data-panel="sanctuary">법당</button>
           <small id="sanctuary-party-disabled" class="sanctuary-party-disabled" hidden>파티 중에는 들어갈 수 없어요</small>
@@ -198,6 +200,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=5e6b676630"></script>
+  <script type="module" src="js/main.js?v=d245c3608f"></script>
 </body>
 </html>

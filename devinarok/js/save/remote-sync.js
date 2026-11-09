@@ -415,6 +415,33 @@ export class RemoteSync {
     return data;
   }
 
+  async reforge({ characterId, uid, index }) {
+    if (!this.userId || !this.online()) throw new Error('연결되면 강화할 수 있어요');
+    await this.flushOutbox();
+    const current = await this.repository.loadCharacter(characterId);
+    if (!current) throw new Error('character-not-found');
+    const { response, data } = await this.post('/reforge', {
+      characterId,
+      baseRev: current.rev,
+      uid,
+      index,
+    });
+    if (!response.ok) {
+      if (response.status === 409 || response.status === 422) {
+        const characters = await this.getServerCharacters();
+        const remote = characters.find((candidate) => candidate.character.id === characterId);
+        if (remote) await this.repository.replaceCharacterFromRemote({ ...remote, userId: this.userId });
+        else await this.repository.detachCharacterFromUser(characterId);
+        this.onRevert(characterId);
+      }
+      throw new Error(data.error ?? `http-${response.status}`);
+    }
+    await this.repository.replaceCharacterFromRemote({ ...data, userId: this.userId }, { backup: false });
+    this.lastSyncAt = Date.now();
+    this.setStatus('saved');
+    return data;
+  }
+
   async loginCompleted() {
     const identity = this.readIdentity();
     this.userId = identity?.userId ?? null;
