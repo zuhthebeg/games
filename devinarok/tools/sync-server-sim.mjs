@@ -68,7 +68,6 @@ async function syncToServer(serverRepository, files) {
   }
   const serverLibrarySources = [
     join(gameDirectory, serverLibrarySaveFile),
-    ...await collectFiles(join(gameDirectory, 'js/sim')),
     ...await collectFiles(join(gameDirectory, serverLibraryContentDirectory)),
   ];
   for (const source of serverLibrarySources) {
