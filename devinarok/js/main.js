@@ -2218,7 +2218,9 @@ function renderSettlement(outcome, result, {
   const objectiveStage = STAGE_LIST.find((stage) => stage.id === stageId);
   const objectiveMarkup = objectiveLabel
     ? result.objective.success
-      ? `<p class="settlement-objective">목표 · ${objectiveLabel} 달성 (+${objectiveBonusGold(objectiveStage, difficulty)}G · 희귀 장비)</p>`
+      ? outcome === 'clear'
+        ? `<p class="settlement-objective">목표 · ${objectiveLabel} 달성 (+${objectiveBonusGold(objectiveStage, difficulty)}G · 희귀 장비)</p>`
+        : `<p class="settlement-objective">목표 · ${objectiveLabel} 달성 (귀환하지 못해 보상 일부를 잃었어요)</p>`
       : `<p class="settlement-objective">목표 · ${objectiveLabel} 실패</p>`
     : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
