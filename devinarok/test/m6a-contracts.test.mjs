@@ -26,15 +26,28 @@ test('daily contracts are deterministic, dated, tiered, and use distinct types',
   assert.ok(contracts.every((contract) => contractDescription(contract)));
 });
 
-test('settlement operations start with contractDay only when the contract date changes', () => {
-  const operations = [{ type: 'gainXp', amount: 1 }, { type: 'recordClear', key: 'C1', ticks: 150 }];
+test('settlement operations guard contractDay and progress against device clock rollback', () => {
+  const operations = [
+    { type: 'gainXp', amount: 1 },
+    { type: 'contractProgress', dateKey: '2026-01-02', contractId: '2026-01-02:0', amount: 1 },
+    { type: 'contractProgress', dateKey: '2026-01-02', contractId: '2026-01-02:1', amount: 1 },
+    { type: 'recordClear', key: 'C1', ticks: 150 },
+  ];
   assert.deepEqual(
     contractDayFirst({ contracts: { dateKey: '2026-01-01' } }, '2026-01-02', operations),
+    [{ type: 'contractDay', dateKey: '2026-01-02' }, ...operations],
+  );
+  assert.deepEqual(
+    contractDayFirst({ contracts: { dateKey: null } }, '2026-01-02', operations),
     [{ type: 'contractDay', dateKey: '2026-01-02' }, ...operations],
   );
   assert.strictEqual(
     contractDayFirst({ contracts: { dateKey: '2026-01-02' } }, '2026-01-02', operations),
     operations,
+  );
+  assert.deepEqual(
+    contractDayFirst({ contracts: { dateKey: '2026-01-03' } }, '2026-01-02', operations),
+    operations.filter((operation) => operation.type !== 'contractProgress'),
   );
 });
 

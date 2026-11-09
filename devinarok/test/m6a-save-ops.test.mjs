@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AFFIXES } from '../js/content/affixes.js';
-import { contractsFor, dailyContracts } from '../js/content/contracts.js';
+import { contractDayFirst, contractsFor, dailyContracts } from '../js/content/contracts.js';
 import { applyOperations, normalizeCharacter } from '../js/save/ops.js';
 
 function makeCharacter(characterId = 'hero') {
@@ -205,6 +205,30 @@ test('contractDay only moves forward and cannot restore a claimed contract rewar
     { type: 'claimContract', dateKey: yesterday, contractId: contract.id },
   ], 'hero'), /not active/);
   assert.equal(state.character.gold, goldAfterClaim);
+});
+
+test('backdated settlement operations apply without resetting or progressing newer contracts', () => {
+  const { character, items } = makeCharacter('clock-ahead');
+  const storedDateKey = '2026-05-02';
+  const localDateKey = '2026-05-01';
+  const progress = { [`${storedDateKey}:0`]: 1 };
+  character.contracts = {
+    dateKey: storedDateKey,
+    progress,
+    claimed: [],
+    basis: { clearedStages: [], level: character.level },
+  };
+  const settlementOps = contractDayFirst(character, localDateKey, [
+    { type: 'clearStage', stageId: 'C1' },
+    { type: 'recordClear', key: 'C1', ticks: 120 },
+    { type: 'contractProgress', dateKey: localDateKey, contractId: `${localDateKey}:0`, amount: 1 },
+    { type: 'contractProgress', dateKey: localDateKey, contractId: `${localDateKey}:1`, amount: 1 },
+  ]);
+  const settled = applyOperations(character, items, settlementOps, 'clock-ahead');
+  assert.equal(settled.character.contracts.dateKey, storedDateKey);
+  assert.deepEqual(settled.character.contracts.progress, progress);
+  assert.ok(settled.character.clearedStages.includes('C1'));
+  assert.equal(settled.character.records.C1, 120);
 });
 
 test('contract progress caps at target, resets on date rollover, and claims once', () => {

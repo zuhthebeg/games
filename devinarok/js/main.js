@@ -1080,8 +1080,11 @@ function renderBoard() {
   const boardTabs = `<nav class="board-tabs" aria-label="게시판"><button data-board-tab="quests" class="${boardTab === 'quests' ? 'active' : ''}" aria-pressed="${boardTab === 'quests'}">퀘스트</button><button data-board-tab="contracts" class="${boardTab === 'contracts' ? 'active' : ''}" aria-pressed="${boardTab === 'contracts'}">의뢰</button></nav>`;
   if (boardTab === 'contracts') {
     const dateKey = kstDateKey(Date.now());
-    const contracts = contractsFor(character, dateKey);
-    const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
+    const storedDateKey = character.contracts?.dateKey;
+    const isBackdated = Boolean(storedDateKey && dateKey < storedDateKey);
+    const contractsDateKey = isBackdated ? storedDateKey : dateKey;
+    const contracts = contractsFor(character, contractsDateKey);
+    const stored = character.contracts?.dateKey === contractsDateKey ? character.contracts : { progress: {}, claimed: [] };
     const cards = contracts.map((contract) => {
       const progress = Math.min(contract.target, stored.progress?.[contract.id] ?? 0);
       const claimed = stored.claimed?.includes(contract.id);
@@ -1096,13 +1099,15 @@ function renderBoard() {
           <span class="contract-progress-fill" style="width:${progressPercent}%"></span>
         </div>
         <small>보상 · ${contract.rewards.gold}G · 정수 ${contract.rewards.essence}${contract.rewards.soul ? ` · 영혼 ${contract.rewards.soul}` : ''}</small>
-        <button data-claim-contract="${contract.id}" ${complete && !claimed ? '' : 'disabled'}>${buttonLabel}</button>
+        <button data-claim-contract="${contract.id}" ${!isBackdated && complete && !claimed ? '' : 'disabled'}>${buttonLabel}</button>
       </article>`;
     }).join('');
     const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const nextMidnight = Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate() + 1) - 9 * 60 * 60 * 1000;
     const minutes = Math.max(0, Math.ceil((nextMidnight - Date.now()) / 60000));
-    const footer = `내일 새 의뢰 · ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')} 후`;
+    const footer = isBackdated
+      ? '기기 시간을 확인해 주세요'
+      : `내일 새 의뢰 · ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')} 후`;
     hubPanel.innerHTML = `${boardTabs}<h2>매일의 의뢰</h2><div class="contract-list">${cards}</div><p class="contract-footer">${footer}</p><button data-close>닫기</button>`;
     updateContractClaimBadge();
     return;
@@ -1165,13 +1170,21 @@ function renderBoard() {
 function updateContractClaimBadge() {
   if (!character) return;
   const dateKey = kstDateKey(Date.now());
+  const badges = document.querySelectorAll('[data-contract-claim-badge], #contract-claim-badge');
+  const storedDateKey = character.contracts?.dateKey;
+  if (storedDateKey && dateKey < storedDateKey) {
+    badges.forEach((badge) => {
+      badge.hidden = true;
+    });
+    return;
+  }
   const contracts = contractsFor(character, dateKey);
   const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
   const claimable = contracts.some((contract) => (
     !stored.claimed?.includes(contract.id)
     && (stored.progress?.[contract.id] ?? 0) >= contract.target
   ));
-  document.querySelectorAll('[data-contract-claim-badge], #contract-claim-badge').forEach((badge) => {
+  badges.forEach((badge) => {
     badge.hidden = !claimable;
   });
 }
@@ -1881,7 +1894,8 @@ function renderPanel(kind, compareUid = '') {
 
 async function openBoard() {
   const dateKey = kstDateKey(Date.now());
-  if (character.contracts?.dateKey !== dateKey) {
+  const storedDateKey = character.contracts?.dateKey;
+  if (!storedDateKey || dateKey > storedDateKey) {
     await applyOps([{ type: 'contractDay', dateKey }]);
   }
   renderPanel('board');
@@ -2044,7 +2058,9 @@ function buildSettlement(outcome, result) {
     if (Number.isInteger(ticks)) ops.push({ type: 'recordClear', key, ticks });
   }
   const dateKey = kstDateKey(Date.now());
-  const contracts = contractsFor(character, dateKey);
+  const storedDateKey = character.contracts?.dateKey;
+  const isBackdated = Boolean(storedDateKey && dateKey < storedDateKey);
+  const contracts = isBackdated ? [] : contractsFor(character, dateKey);
   const stored = character.contracts?.dateKey === dateKey ? character.contracts : { progress: {}, claimed: [] };
   const contractProgressLines = [];
   for (const contract of contracts) {
