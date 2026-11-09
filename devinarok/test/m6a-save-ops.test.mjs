@@ -213,3 +213,25 @@ test('contract progress caps at target, resets on date rollover, and claims once
     /already claimed/,
   );
 });
+
+test('reforge rejects a unique affix and preserves it when reforging another affix', () => {
+  const unique = { id: 'spinCooldownSeconds', value: -2, unique: 'spinning-sigil' };
+  const character = { ...makeCharacter().character, gold: 1000, materials: { essence: 100, soul: 10 } };
+  const state = applyOperations(character, {}, [{
+    type: 'grantItem',
+    uid: 'legendary-unique',
+    itemId: 'rusted-sword',
+    rarity: 'legendary',
+    ilvl: 5,
+    legendaryId: 'spinning-sigil',
+    affixes: [unique, { id: 'attackPercent', value: 1 }],
+  }], 'hero');
+  assert.throws(() => applyOperations(state.character, state.items, [
+    { type: 'reforgeAffix', uid: 'legendary-unique', index: 0, roll: 1 },
+  ], 'hero'), { name: 'RangeError', message: 'Unique affixes cannot be reforged' });
+  const reforged = applyOperations(state.character, state.items, [
+    { type: 'reforgeAffix', uid: 'legendary-unique', index: 1, roll: 1 },
+  ], 'hero');
+  assert.deepEqual(reforged.items['legendary-unique'].affixes[0], unique);
+  assert.equal(reforged.items['legendary-unique'].legendaryId, 'spinning-sigil');
+});

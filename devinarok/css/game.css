@@ -142,6 +142,8 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .material-counts { margin: 0 0 8px !important; }
 .affix-select { grid-column: 1 / -1; justify-self: stretch; text-align: left; }
 .affix-select.selected { border-color: #e1b65d; background: #483525; }
+.affix-select.unique-affix { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #8c8384; background: #29262b; opacity: .62; }
+.affix-select.unique-affix small { color: #d0c0a5; }
 .reforge-list { display: grid; gap: 8px; }
 .reforge-result { padding: 9px; border: 1px solid currentColor; border-radius: 8px; text-align: center; }
 .reforge-footer { position: sticky; bottom: -16px; z-index: 1; display: grid; gap: 6px; margin: 8px -16px -16px; padding: 10px 16px 16px; border-top: 1px solid #56434a; background: #17131a; }

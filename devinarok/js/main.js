@@ -1822,14 +1822,25 @@ function renderBlacksmith() {
   const eligible = inventory.filter((item) => !item.slot && item.rarity !== 'common');
   const selected = eligible.find((item) => item.uid === selectedReforgeUid);
   const selectedAffix = selected?.affixes?.[selectedReforgeIndex];
+  const selectedAffixReforgeable = selectedAffix && selectedAffix.unique == null;
   const essenceCost = { magic: 2, rare: 4, legendary: 8, set: 8 }[selected?.rarity] ?? 0;
   const soulCost = selected?.rarity === 'legendary' || selected?.rarity === 'set' ? 1 : 0;
   const goldCost = selected ? 20 * selected.ilvl : 0;
-  const rows = eligible.map((item) => `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>아이템 Lv${item.ilvl}</span></div>${(item.affixes ?? []).map((affix, index) => `<button class="affix-select${selectedReforgeUid === item.uid && selectedReforgeIndex === index ? ' selected' : ''}" data-select-reforge-affix="${item.uid}" data-index="${index}" ${AFFIXES[affix.id] ? '' : 'disabled'}>${escapeHtml(AFFIXES[affix.id]?.name ?? '고유 능력')} · ${affix.value}</button>`).join('')}</div>`).join('');
+  const rows = eligible.map((item) => {
+    const affixes = (item.affixes ?? []).map((affix, index) => {
+      const name = escapeHtml(AFFIXES[affix.id]?.name ?? '고유 능력');
+      const label = `${name} · ${affix.value}`;
+      if (affix.unique != null) {
+        return `<button class="affix-select unique-affix" type="button" disabled><span>${label}</span><small>고유</small></button>`;
+      }
+      return `<button class="affix-select${selectedReforgeUid === item.uid && selectedReforgeIndex === index ? ' selected' : ''}" data-select-reforge-affix="${item.uid}" data-index="${index}" ${AFFIXES[affix.id] ? '' : 'disabled'}>${label}</button>`;
+    }).join('');
+    return `<div class="item-row"><div class="item-details">${itemDetails(item)}</div><div class="item-actions"><span>아이템 Lv${item.ilvl}</span></div>${affixes}</div>`;
+  }).join('');
   const resultMarkup = reforgeResult && reforgeResult.uid === selectedReforgeUid && reforgeResult.expiresAt > Date.now()
     ? `<p class="reforge-result rarity-${reforgeResult.rarity}">${escapeHtml(reforgeResult.oldName)} ${reforgeResult.oldValue} → ${escapeHtml(reforgeResult.newName)} ${reforgeResult.newValue}</p>`
     : '';
-  const action = selectedAffix
+  const action = selectedAffixReforgeable
     ? `<p>재련 비용 · 정수 ${essenceCost} · 영혼 ${soulCost} · 골드 ${goldCost}G</p><button data-reforge-action ${cloudOffline || character.materials?.essence < essenceCost || character.materials?.soul < soulCost || character.gold < goldCost ? 'disabled' : ''}>재련</button>${cloudOffline ? '<small>연결되면 재련할 수 있어요</small>' : ''}`
     : '<p>재련할 장비의 능력치를 선택하세요.</p>';
   const footer = `<div class="reforge-footer">${action}${resultMarkup}<button data-close>닫기</button></div>`;
