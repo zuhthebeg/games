@@ -61,7 +61,7 @@
       "geometry_rig_animation": "project-authored (cocy/Untitled): armature, skinning, 7 hand-keyed actions (idle/run/attack two-strike combo/hit/death/dodge/magic), slimmed v7 body"
     },
     "bake": "Blender 5.2.2 EEVEE, ortho 5.5453, 256px, 8 directions, 584 frames, packed to 128 physical (Pixi meta .5), 2 atlas pages",
-    "runtime_scale_comp": 1.2356,
+    "runtime_scale_comp": 1.38,
     "sockets": "hand.L tail projected per frame, physical128 pawn-local from anchor; multiplied by scale_comp in combat only",
     "pipeline_scripts": [
       "v7/v7-rig.py",
