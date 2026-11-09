@@ -113,6 +113,7 @@ export class PartyClient {
         equipment: this.equipment,
         potions: this.character.potions,
         clearedStages: this.character.clearedStages,
+        mastery: this.character.mastery,
       },
       onMessage: (message) => this.handleMessage(message),
       onStatus: (status) => this.handleStatus(status),

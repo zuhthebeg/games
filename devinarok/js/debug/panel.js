@@ -1,4 +1,5 @@
 import { ITEM_BASES, ITEMS, RARITIES } from '../content/items.js';
+import { FAMILY_SKILLS } from '../content/skills.js';
 import { isStageUnlocked, STAGE_LIST } from '../content/stages.js';
 import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
@@ -28,6 +29,8 @@ const ACTION_LABELS = {
   'level-down': '레벨 낮추기',
   'level-up': '레벨 올리기',
   'set-level': '레벨 설정',
+  'mastery-max': '숙련도 최대',
+  'mastery-reset': '숙련도 초기화',
   'gold-1000': '골드 +1,000',
   'gold-10000': '골드 +10,000',
   potions: '물약 가득 채우기',
@@ -279,6 +282,8 @@ export function mountDebugPanel(context) {
       <div class="debug-grid">
         ${actionMarkup('level-down', '−1 레벨')}
         ${actionMarkup('level-up', '+1 레벨')}
+        ${actionMarkup('mastery-max', '숙련도 최대')}
+        ${actionMarkup('mastery-reset', '숙련도 초기화')}
         <label>레벨<select data-debug-setting="level" ${reason ? 'disabled' : ''}>${options(Array.from({ length: 20 }, (_, index) => [String(index + 1), `Lv.${index + 1}`]), String(level))}</select></label>
         ${actionMarkup('gold-1000')}
         ${actionMarkup('gold-10000')}
@@ -489,6 +494,15 @@ export function mountDebugPanel(context) {
     } else if (action === 'set-level') {
       await commitDebugOps([{ type: 'setLevel', level: Number(panel.querySelector('[data-debug-setting="level"]').value) }]);
       toast = `레벨 ${context.character.level}`;
+    } else if (action === 'mastery-max' || action === 'mastery-reset') {
+      const family = characterFamily();
+      const xp = action === 'mastery-max' ? 300 : 0;
+      await commitDebugOps((FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((skill) => ({
+        type: 'setMastery',
+        skill,
+        xp,
+      })));
+      toast = action === 'mastery-max' ? '현재 계열 숙련도 최대' : '현재 계열 숙련도 초기화';
     } else if (action === 'gold-1000' || action === 'gold-10000') {
       const amount = action === 'gold-1000' ? 1000 : 10000;
       await commitDebugOps([{ type: 'grantGold', amount }]);
