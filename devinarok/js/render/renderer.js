@@ -5,6 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { ARENA } from '../sim/arena.js';
 import { COMBO_TIMELINES } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
+import { FAMILY_SKILLS } from '../content/skills.js';
 import { playerLookKey, playerModelKey } from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
 import { castVisualKey } from '../net/cast-timeline.js';
@@ -1468,6 +1469,8 @@ export class ArenaRenderer {
       }
     }
     const skillId = event.skill;
+    const rankFive = !counter && Number.isInteger(skillId)
+      && this.masteryRankForSkill(event.entityId, skillId) === 5;
     const timeline = COMBO_TIMELINES[event.step - 1];
     const duration = counter ? 8 : skillId === 1 ? 6 : skillId === 2 ? 6 : skillId === 3 ? 45 : timeline?.activeTicks;
     if (!duration) return;
@@ -1498,7 +1501,7 @@ export class ArenaRenderer {
     const curve = new THREE.CatmullRomCurve3(points, closed);
     const geometry = new THREE.TubeGeometry(curve, closed ? 40 : 28, counter ? 0.09 : skillId === 3 ? 0.085 : skillId === 1 ? 0.05 : 0.065, 6, closed);
     const material = new THREE.MeshBasicMaterial({
-      color: counter ? 0xffe08a : skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
+      color: rankFive ? 0xfff2c4 : counter ? 0xffe08a : skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
       transparent: true,
       opacity: 0.96,
       depthTest: false,
@@ -1506,6 +1509,7 @@ export class ArenaRenderer {
       fog: false,
     });
     const mesh = new THREE.Mesh(geometry, material);
+    if (rankFive) mesh.scale.setScalar(1.15);
     mesh.renderOrder = 2;
     mesh.visible = false;
     this.scene.add(mesh);
@@ -1534,6 +1538,20 @@ export class ArenaRenderer {
 
   worldEntity(entityId) {
     return this.currentWorld?.entities.find((entity) => entity.id === entityId);
+  }
+
+  masteryRankForSkill(playerId, skill) {
+    const player = this.currentWorld?.entities.find((entity) => (
+      entity.kind === 'player' && (entity.id === playerId || entity.playerId === playerId)
+    ));
+    if (!player) return 0;
+    const slot = Number.isInteger(skill)
+      ? skill
+      : (FAMILY_SKILLS[player.family] ?? []).indexOf(skill) + 1;
+    if (slot < 1) return 0;
+    const rank = player.masteryRanks?.[slot]
+      ?? (Array.isArray(player.mastery) ? player.mastery[slot - 1] : player.mastery?.[slot]);
+    return Number.isInteger(rank) ? rank : 0;
   }
 
   createDamageNumber(event) {
@@ -1620,16 +1638,24 @@ export class ArenaRenderer {
     if (this.seenShotKeys.has(key)) return;
     this.seenShotKeys.add(key);
     while (this.seenShotKeys.size > 512) this.seenShotKeys.delete(this.seenShotKeys.values().next().value);
+    const owner = this.currentWorld?.entities.find((entity) => (
+      entity.kind === 'player' && entity.playerId === event.ownerId
+    ));
+    const rankFive = owner && this.masteryRankForSkill(
+      event.ownerId,
+      owner.skillCast?.name ?? owner.skill,
+    ) === 5;
     const geometry = new THREE.CylinderGeometry(0.018, 0.018, event.length, 5);
     const material = new THREE.MeshStandardMaterial({
-      color: 0xffe9ab,
-      emissive: 0xffbd58,
+      color: rankFive ? 0xfff2c4 : 0xffe9ab,
+      emissive: rankFive ? 0xffe8a0 : 0xffbd58,
       emissiveIntensity: 1.6,
       transparent: true,
       opacity: 0.9,
       depthWrite: false,
     });
     const mesh = new THREE.Mesh(geometry, material);
+    if (rankFive) mesh.scale.setScalar(1.15);
     const direction = new THREE.Vector3(Math.cos(event.angle), 0, Math.sin(event.angle));
     mesh.position.set(event.x + direction.x * event.length / 2, 0.55, event.z + direction.z * event.length / 2);
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
@@ -1657,7 +1683,8 @@ export class ArenaRenderer {
   createSkillTelegraph(event) {
     const { originX: x, originZ: z, radius } = event.shape;
     const colors = { quake: 0xe5be72, rain: 0x8bc9ff, meteor: 0xff8c4a };
-    const color = colors[event.skillName] ?? 0xffc777;
+    const rankFive = this.masteryRankForSkill(event.ownerId, event.skillName) === 5;
+    const color = rankFive ? 0xfff2c4 : colors[event.skillName] ?? 0xffc777;
     const fillGeometry = new THREE.CircleGeometry(radius, 48);
     const fillMaterial = new THREE.MeshBasicMaterial({
       color,
@@ -1676,7 +1703,7 @@ export class ArenaRenderer {
       endTick: event.resolveTick,
       update: (effect, tick) => {
         const progress = THREE.MathUtils.clamp((tick - event.startTick) / Math.max(1, event.resolveTick - event.startTick), 0, 1);
-        effect.mesh.scale.setScalar(progress);
+        effect.mesh.scale.setScalar(progress * (rankFive ? 1.15 : 1));
       },
     });
     const ringGeometry = new THREE.RingGeometry(Math.max(0, radius - 0.18), radius, 48);
@@ -1689,6 +1716,7 @@ export class ArenaRenderer {
       side: THREE.DoubleSide,
     });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+    if (rankFive) ring.scale.setScalar(1.15);
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(x, 0.045, z);
     ring.renderOrder = 21;
@@ -1704,6 +1732,14 @@ export class ArenaRenderer {
     this.seenImpactCasts.add(key);
     while (this.seenImpactCasts.size > 256) this.seenImpactCasts.delete(this.seenImpactCasts.values().next().value);
     const { originX: x, originZ: z, radius } = event.shape;
+    const skillKey = {
+      burn: 'flame',
+      frost: 'frost',
+      quake: 'quake',
+      meteor: 'meteor',
+      rain: 'rain',
+    }[event.kind];
+    const rankFive = skillKey && this.masteryRankForSkill(event.ownerId, skillKey) === 5;
     if (event.kind === 'staff-basic') {
       const geometry = new THREE.SphereGeometry(0.19, 10, 8);
       const material = new THREE.MeshStandardMaterial({ color: 0xffd391, emissive: 0xff812f, emissiveIntensity: 1.4 });
@@ -1722,8 +1758,8 @@ export class ArenaRenderer {
         },
       });
     } else if (event.kind === 'burn') {
-      const geometry = new THREE.CircleGeometry(radius, 36);
-      const material = new THREE.MeshBasicMaterial({ color: 0xff6b2e, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
+      const geometry = new THREE.CircleGeometry(radius * (rankFive ? 1.15 : 1), 36);
+      const material = new THREE.MeshBasicMaterial({ color: rankFive ? 0xfff2c4 : 0xff6b2e, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(x, 0.025, z);
@@ -1736,16 +1772,17 @@ export class ArenaRenderer {
         },
       });
     } else {
-      const color = event.kind === 'quake' ? 0xe5be72
+      const color = rankFive ? 0xfff2c4 : event.kind === 'quake' ? 0xe5be72
         : event.kind === 'meteor' ? 0xff8c4a : 0x91dfff;
-      this.createImpactRing(x, z, radius, color, event.resolveTick, event.resolveTick + 14);
+      this.createImpactRing(x, z, radius * (rankFive ? 1.15 : 1), color, event.resolveTick, event.resolveTick + 14);
     }
   }
 
   createBlink(event, now) {
+    const rankFive = this.masteryRankForSkill(event.entityId, 'blink') === 5;
     for (const point of [event.from, event.to]) {
-      const geometry = new THREE.SphereGeometry(0.2, 8, 6);
-      const material = new THREE.MeshBasicMaterial({ color: 0xb8e8ff, transparent: true, opacity: 0.72, depthWrite: false });
+      const geometry = new THREE.SphereGeometry(rankFive ? 0.23 : 0.2, 8, 6);
+      const material = new THREE.MeshBasicMaterial({ color: rankFive ? 0xfff2c4 : 0xb8e8ff, transparent: true, opacity: 0.72, depthWrite: false });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(point.x, 0.35, point.z);
       this.addTransient(mesh, geometry, material, {

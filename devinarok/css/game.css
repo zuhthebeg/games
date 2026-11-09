@@ -133,6 +133,20 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .contract-card [data-claim-contract]:disabled { border-color: #564d4f; color: #8c8384; background: #29262b; opacity: .72; cursor: not-allowed; box-shadow: none; }
 .contract-progress { height: 4px; overflow: hidden; border-radius: 999px; background: #383337; }
 .contract-progress-fill { display: block; height: 100%; border-radius: inherit; }
+.inventory-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
+.inventory-tabs button { min-height: 44px; margin: 0; }
+.inventory-tabs button.active { border-color: #e1b65d; background: #483525; }
+.mastery-list { display: grid; gap: 7px; }
+.mastery-row { display: grid; gap: 5px; padding: 8px 10px; border: 1px solid #554d42; border-radius: 10px; background: #171615; }
+.mastery-row.locked { opacity: .65; }
+.mastery-row header, .mastery-xp { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mastery-stars { color: #f2c95f; white-space: nowrap; }
+.mastery-row small, .mastery-footer { color: #d0c0a5 !important; }
+.mastery-xp { font: 11px/1.3 system-ui, sans-serif; }
+.mastery-xp-track { flex: 1; height: 5px; overflow: hidden; border-radius: 999px; background: #383337; }
+.mastery-xp-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b27a47, #f0d271); }
+.mastery-footer { margin: 10px 0 0; font: 11px/1.4 system-ui, sans-serif; text-align: center; }
+.hub-panel:has(.mastery-list) { max-height: 80vh; overflow-y: auto; }
 .contract-card.tier-easy .contract-progress-fill { background: #7ebd87; }
 .contract-card.tier-normal .contract-progress-fill { background: #89aee3; }
 .contract-card.tier-hard .contract-progress-fill { background: #d9956e; }
@@ -152,6 +166,10 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .reforge-footer small { color: #d0c0a5; text-align: center; }
 .settlement-contract { padding: 5px 8px; border-left: 3px solid #8b7352; background: #342b243b; }
 .settlement-contract.complete { color: #ffe08b !important; border-color: #f3ca5f; background: #6c4e1f55; }
+.settlement-mastery-list { margin: 8px 0; padding: 7px 9px; border-left: 3px solid #b99754; background: #30281f66; }
+.settlement-mastery-list > strong { color: #efd48d; }
+.settlement-mastery { margin: 4px 0 !important; }
+.mastery-rank-up { color: #ffe08b; text-shadow: 0 0 8px #e9c85a88; }
 .hub-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #56434a; }
 .hub-stage-info { min-width: 0; flex: 1 1 auto; }
 .hub-stage-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -196,6 +214,9 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .potion-button { border-color: #6396a5 !important; }
 .buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"], .buttons button[data-button="128"] { background: conic-gradient(#d6a466 var(--cooldown, 0%), #29222b 0); }
 .buttons button[data-button="2"] { background: conic-gradient(#ffd478 var(--cooldown, 0%), #49372b 0); }
+.skill-rank-badge { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 19px; height: 19px; padding: 0; border: 1px solid #d9b85e; border-radius: 50%; color: #21170b; background: #f3d16b; font: 800 10px/1 system-ui, sans-serif; text-shadow: none; }
+.buttons button[data-button="128"] .skill-unlock-badge { right: auto; left: -5px; }
+.buttons button.mastery-rank-five { border-color: #fff0b5; box-shadow: 0 0 0 2px #f7d66a, 0 0 12px #ffe69b; }
 #counter-toast { position: absolute; z-index: 4; display: none; color: #ffd76f; font: 800 28px/1.1 system-ui, sans-serif; letter-spacing: .03em; white-space: nowrap; -webkit-text-stroke: 2px #20130c; paint-order: stroke fill; text-shadow: 0 3px 5px #100903, 0 0 12px #e59b35; pointer-events: none; }
 #counter-toast.active { display: block; animation: counter-pop 600ms cubic-bezier(.18,.8,.25,1) both; }
 @keyframes counter-pop { 0% { transform: translate(-50%, -100%) scale(.62); } 45% { transform: translate(-50%, -100%) scale(1.18); } 100% { transform: translate(-50%, -100%) scale(1); } }

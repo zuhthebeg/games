@@ -30,6 +30,9 @@ import { AFFIXES } from './content/affixes.js';
 import { contractDayFirst, contractDescription, contractsFor, kstDateKey } from './content/contracts.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
+import {
+  MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
+} from './content/mastery.js';
 import { rekeySettlementItems } from './save/ops.js';
 import {
   DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage, stageClearKey, STAGE_LIST,
@@ -60,6 +63,7 @@ let remoteSync;
 let character;
 let inventory = [];
 let inventoryFilter = 'all';
+let inventoryTab = 'equipment';
 let world;
 let renderer;
 let input;
@@ -964,7 +968,8 @@ function updateFamilySkillControls(family) {
     const button = $(`#controls [data-button="${buttonValues[index]}"]`);
     if (index === 3) {
       if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
-    } else if (button) button.textContent = SKILLS[name].name;
+    } else if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
+    else if (button) button.textContent = SKILLS[name].name;
   });
   $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · 4 ${SKILLS[names[3]].name} · Q 물약`;
 }
@@ -1752,6 +1757,25 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const rarityOrder = { common: 0, magic: 1, rare: 2, legendary: 3, set: 4 };
   const currentEquipment = equippedItems();
   const family = equipmentLook(currentEquipment).family;
+  const inventoryTabs = `<nav class="inventory-tabs" aria-label="장비함">${[
+    ['equipment', '장비'],
+    ['skills', '스킬'],
+  ].map(([id, label]) => `<button data-inventory-tab="${id}" class="${inventoryTab === id ? 'active' : ''}" aria-pressed="${inventoryTab === id}">${label}</button>`).join('')}</nav>`;
+  if (inventoryTab === 'skills') {
+    const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((skillKey, index) => {
+      const xp = character.mastery?.[skillKey] ?? 0;
+      const rank = masteryRank(xp);
+      const next = nextThreshold(xp);
+      const current = MASTERY_THRESHOLDS[rank];
+      const progress = next === null ? 100 : Math.max(0, Math.min(100, (xp - current) / (next - current) * 100));
+      const bonus = masteryBonus(rank);
+      const locked = index === 3 && character.level < 7;
+      return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
+    }).join('');
+    hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<div class="mastery-list">${skills}</div><p class="mastery-footer">적 근처에서 스킬을 쓰면 숙련도가 올라요 · ★5 각성 시 이펙트가 바뀌어요</p><button data-close>닫기</button>`;
+    updateInventoryUpgradeBadge();
+    return;
+  }
   const setCounts = {};
   for (const item of currentEquipment) {
     const setId = ITEMS[item.itemId]?.setId;
@@ -1804,7 +1828,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const filters = [{ key: 'all', label: '전체' }, ...EQUIPMENT_SLOTS].map((slot) => (
     `<button data-slot-filter="${slot.key}" class="${filter === slot.key ? 'active' : ''}">${slot.label}</button>`
   )).join('');
-  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2><p class="material-counts">재료 · 정수 ${character.materials?.essence ?? 0} · 영혼 ${character.materials?.soul ?? 0}</p>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
+  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<p class="material-counts">재료 · 정수 ${character.materials?.essence ?? 0} · 영혼 ${character.materials?.soul ?? 0}</p>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
   updateInventoryUpgradeBadge();
 }
 
@@ -2006,10 +2030,18 @@ function updateHud(current) {
     for (const [id, buttonValue] of [[1, 4], [2, 8], [3, 16], [4, 128]]) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
       const skill = SKILLS[skillNames[id - 1]];
-      const max = Math.max(1, Math.round(skill.cooldownTicks * (
-        1 - Math.min(60, hero.stats.skillCooldownReduction) / 100
-      )));
+      const rank = hero.masteryRanks?.[id] ?? hero.mastery?.[id - 1] ?? 0;
+      const cooldownBonus = masteryBonus(rank).cooldownPct;
+      const max = Math.max(1, Math.round(skill.cooldownTicks
+        * (1 - Math.min(60, hero.stats.skillCooldownReduction) / 100)
+        * (1 - cooldownBonus / 100)));
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
+      const rankBadge = button?.querySelector('.skill-rank-badge');
+      if (rankBadge) {
+        rankBadge.hidden = rank < 1;
+        rankBadge.textContent = String(rank);
+      }
+      button?.classList.toggle('mastery-rank-five', rank === 5);
       if (id === 4 && button) {
         const locked = character.level < 7;
         button.disabled = locked;
@@ -2036,6 +2068,19 @@ function buildSettlement(outcome, result) {
     { type: 'grantGold', amount: result.gold },
     { type: 'setPotions', count: result.potions },
   ];
+  const masteryProgressLines = [];
+  for (const [skill, amount] of Object.entries(result.skillUses ?? {})) {
+    if (!Object.hasOwn(SKILLS, skill) || !Number.isInteger(amount) || amount <= 0) continue;
+    const beforeXp = character.mastery?.[skill] ?? 0;
+    const afterXp = Math.min(MASTERY_MAX_XP, beforeXp + amount);
+    ops.push({ type: 'gainMastery', skill, amount });
+    masteryProgressLines.push({
+      skill,
+      amount,
+      previousRank: masteryRank(beforeXp),
+      nextRank: masteryRank(afterXp),
+    });
+  }
   let autoSold = 0;
   let record = false;
   if (outcome === 'clear') {
@@ -2081,7 +2126,13 @@ function buildSettlement(outcome, result) {
     ops.push({ type: 'contractProgress', dateKey, contractId: contract.id, amount });
     contractProgressLines.push({ contract, progress, complete: progress >= contract.target });
   }
-  return { ops: contractDayFirst(character, dateKey, ops), autoSold, record, contractProgressLines };
+  return {
+    ops: contractDayFirst(character, dateKey, ops),
+    autoSold,
+    record,
+    contractProgressLines,
+    masteryProgressLines,
+  };
 }
 
 function renderSettlement(outcome, result, {
@@ -2090,6 +2141,7 @@ function renderSettlement(outcome, result, {
   error = null,
   newSkill = null,
   contractProgressLines = [],
+  masteryProgressLines = [],
 } = {}) {
   const saved = !error;
   const difficulty = result.difficulty ?? currentStageDifficulty;
@@ -2119,6 +2171,14 @@ function renderSettlement(outcome, result, {
     }).join('');
     resultContent.querySelector('h2')?.insertAdjacentHTML('afterend', lines);
   }
+  if (masteryProgressLines.length) {
+    const lines = masteryProgressLines.map(({ skill, amount, previousRank, nextRank: rank }) => (
+      `<p class="settlement-mastery">${SKILLS[skill].name} +${amount}${rank > previousRank
+        ? ` <strong class="mastery-rank-up">★${previousRank} → ★${rank}!</strong>`
+        : ''}</p>`
+    )).join('');
+    resultContent.querySelector('h2')?.insertAdjacentHTML('afterend', `<section class="settlement-mastery-list"><strong>숙련도</strong>${lines}</section>`);
+  }
   if (!saved) {
     resultContent.querySelector('[data-settlement-error]').textContent = `정산 실패: ${error?.message ?? String(error)}`;
     $('#result-retry').addEventListener('click', () => attemptSettlement(outcome, result, settlementId), { once: true });
@@ -2134,6 +2194,7 @@ async function attemptSettlement(outcome, result, settlementId) {
   let autoSold = 0;
   let record = false;
   let contractProgressLines = [];
+  let masteryProgressLines = [];
   try {
     const previousLevel = character.level;
     await reloadCharacter();
@@ -2141,6 +2202,7 @@ async function attemptSettlement(outcome, result, settlementId) {
     autoSold = settlement.autoSold;
     record = settlement.record;
     contractProgressLines = settlement.contractProgressLines;
+    masteryProgressLines = settlement.masteryProgressLines;
     character = await saves.commit({
       characterId: character.id,
       baseRev: character.rev,
@@ -2166,10 +2228,14 @@ async function attemptSettlement(outcome, result, settlementId) {
       ? SKILLS[FAMILY_SKILLS[equipmentLook(equippedItems()).family]?.[3]]
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
-    renderSettlement(outcome, result, { autoSold, record, newSkill, contractProgressLines });
+    renderSettlement(outcome, result, {
+      autoSold, record, newSkill, contractProgressLines, masteryProgressLines,
+    });
   } catch (error) {
     console.error('Settlement failed', error);
-    renderSettlement(outcome, result, { autoSold, record, error, contractProgressLines });
+    renderSettlement(outcome, result, {
+      autoSold, record, error, contractProgressLines, masteryProgressLines,
+    });
   }
 }
 
@@ -2527,6 +2593,12 @@ $('#hub-ui').addEventListener('click', async (event) => {
   }
 });
 hubPanel.addEventListener('click', (event) => {
+  const inventoryTabButton = event.target.closest('[data-inventory-tab]');
+  if (inventoryTabButton) {
+    inventoryTab = inventoryTabButton.dataset.inventoryTab;
+    renderInventory();
+    return;
+  }
   const difficultyButton = event.target.closest('[data-board-difficulty]');
   if (difficultyButton) {
     boardDifficulty = difficultyButton.dataset.boardDifficulty;
