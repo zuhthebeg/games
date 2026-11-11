@@ -1,4 +1,5 @@
 // Beast Hunt — static game data (original content).
+export const COOP_HP_SCALE = Object.freeze([1, 1.6, 2.2, 2.8]);
 export const ATK = [100, 135, 175, 220, 270];
 export const ARMOR = [
   { def: 0, hp: 0 }, { def: 10, hp: 10 }, { def: 22, hp: 20 }, { def: 36, hp: 35 }, { def: 52, hp: 50 },

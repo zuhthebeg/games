@@ -1,5 +1,5 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot } from './data.js';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
@@ -25,7 +25,7 @@ const turn = (a, b, max) => { const d = angDiff(b, a); return a + clamp(d, -max,
 const ease = (k) => k * k * (3 - 2 * k);
 
 // Monster attack timings: w=windup, a=active, r=recover; min/max = usable distance; ang = max |angle| to target.
-const MA = {
+export const MA = {
   bite: { w: .55, a: .22, r: .75, min: 0, max: 6.2, ang: 1.1, dmg: 20, melee: 1 },
   sweep: { w: .8, a: .55, r: .9, min: 0, max: 7.5, ang: 9, dmg: 24, melee: 1 },
   stomp: { w: .9, a: .15, r: .95, min: 0, max: 8, ang: 1.6, dmg: 30, heavy: 1, melee: 1 },
@@ -37,7 +37,9 @@ const MA = {
 };
 
 export class Sim {
-  constructor(quest, save, seed = 1) {
+  constructor(quest, save, seed = 1, network = null) {
+    // Opt-in only: solo snapshots and execution remain byte-identical to R3.
+    if (network) this.network = { ...network };
     this.q = { ...quest }; this.def = MONSTERS[quest.mon]; this.hr = quest.hr ? HR : { hp: 1, dmg: 1, spd: 1 };
     const d = this.def, maxHp = 100 + ARMOR[save.armor - 1].hp;
     const player = { x: 0, z: -30, yaw: 0, hp: maxHp, maxHp, st: 100, stDelay: 0, state: 'idle', t: 0, inv: 0, walk: 0, moving: 0, potions: POTIONS, cur: null, hits: 0, combo: 0, mv: 1, kbx: 0, kbz: 0, clv: 0, healLeft: 0, spin: 0 };
@@ -46,6 +48,12 @@ export class Sim {
     const mhp = Math.round(d.hp * this.hr.hp);
     this.m = { x: 0, z: 12, y: 0, yaw: PI, spin: 0, hp: mhp, maxHp: mhp, state: 'idle', t: 0, dur: 0, atk: null, ak: null, last: '', think: 1, enr: false, enrT: 0, enrStage: 0, rageQ: false, walk: 0, moving: 0, stag: 0, brk: { head: 0, tail: 0, legs: 0 }, broke: { head: false, tail: false }, legTh: d.brk.legs * this.hr.hp, flag: 0, hitP: false, fired: 0, tick: 0, fx: 0, fz: 0, tx: 0, tz: 0, roared: false };
 
+    if (this.network?.role === 'world') {
+      const count = this.network.partySize ?? 1;
+      if (!Number.isInteger(count) || count < 1 || count > 4) throw new Error('Party size must be 1..4');
+      const scale = COOP_HP_SCALE[count-1];
+      this.m.hp = this.m.maxHp = Math.round(this.m.maxHp*scale); this.m.legTh *= scale;
+    }
     this.rng = seed >>> 0; this.tick = 0; this.nextEntity = 1; this.events = [];
     this.time = 0; this.carts = 0; this.over = false; this.win = false; this.endT = 0; this.ended = false;
     this.stop = 0; this.slow = 0; this.clock = 0; this.dmgDealt = 0; this.projs = []; this.arrows = []; this.cachedResult = null;
@@ -78,6 +86,7 @@ export class Sim {
   step(inputs = {}) {
     this.tick++; this.clock += FIXED_DT;
     for (const p of this.players) {
+      if (this.network && (this.network.role === 'world' || p.id !== this.network.localId)) continue;
       this.activeId = p.id;
       for (const k in p.buffer) p.buffer[k] = Math.max(0, p.buffer[k] - 1);
       p.input = { ...neutralInput(), ...inputs[p.id] };
@@ -91,13 +100,20 @@ export class Sim {
       if (p.input.lock) this.toggleLock();
     }
     let dt = FIXED_DT;
-    if (this.stop > 0) { this.stop -= FIXED_DT; dt = 0; }
+    if (this.network?.role === 'world') { this.stop = 0; this.slow = 0; }
+    else if (this.stop > 0) { this.stop -= FIXED_DT; dt = 0; }
     else if (this.slow > 0) { this.slow -= FIXED_DT; dt *= .28; }
     if (dt > 0) {
-      if (!this.over) { this.time += dt; if (this.time >= TIME_LIMIT) { this.toast('timeout','bad'); this.finish(false,2); } }
-      for (const p of this.players) { this.activeId = p.id; this.updPlayer(dt); }
-      this.updMon(dt); this.updProjs(dt);
+      if (!this.over && this.network?.role !== 'owner') { this.time += dt; if (this.time >= TIME_LIMIT) { this.toast('timeout','bad'); this.finish(false,2); } }
+      for (const p of this.players) {
+        if (this.network && (this.network.role === 'world' || p.id !== this.network.localId)) continue;
+        this.activeId = p.id; this.updPlayer(dt);
+      }
+      if (this.network?.role !== 'owner') { this.updMon(dt); this.updProjs(dt); }
     }
+    // Local hitstop never pauses the network monster timeline. The host does not
+    // run on the attacker's presentation clock. Solo keeps its original path.
+    if (this.network?.role === 'owner') { this.updMon(FIXED_DT); this.updProjs(FIXED_DT); }
     if (this.over && !this.ended) { this.endT -= FIXED_DT; if (this.endT <= 0) { this.ended = true; this.emit('result', { result: this.result() }); } }
     return this.events;
   }
@@ -106,9 +122,11 @@ export class Sim {
   snapshot() {
     const out = {};
     for (const key of ['q','players','activeId','m','rng','tick','nextEntity','time','carts','over','win','endT','ended','stop','slow','clock','dmgDealt','projs','arrows','cachedResult']) out[key] = this[key];
+    if (this.network) out.network = this.network;
     return JSON.parse(JSON.stringify(out));
   }
   restore(snapshot) {
+    if (!Object.hasOwn(snapshot,'network')) delete this.network;
     Object.assign(this, JSON.parse(JSON.stringify(snapshot))); this.def = MONSTERS[this.q.mon];
     this.hr = this.q.hr ? HR : { hp: 1, dmg: 1, spd: 1 }; this.events = []; return this;
   }
@@ -129,6 +147,7 @@ export class Sim {
   // ---------- player ----------
   startAtk(move, frac, comboIdx, myaw, hasMv) {
     const p = this.p, m = this.m;
+    if (this.network) p.attackTick = this.network.viewTick ?? this.tick;
     p.state = 'atk'; p.t = 0; p.cur = move; p.hits = 0; p.combo = comboIdx; p.spin = 0;
     p.mv = move.mv !== undefined ? move.mv : move.mv0 + (move.mv1 - move.mv0) * Math.pow(frac, 1.3); p.frac = frac;
     const dm = Math.hypot(m.x - p.x, m.z - p.z), toM = Math.atan2(m.x - p.x, m.z - p.z);
@@ -222,7 +241,7 @@ export class Sim {
     const p = this.p, m = this.m; let yaw = p.yaw;
     if (this.lock && m.state !== 'dead') yaw = p.yaw = Math.atan2(m.x - p.x, m.z - p.z);
     if (this.arrows.length >= 12) return;
-    this.arrows.push({ id: this.nextEntity++, owner: p.id, frac: p.frac, yaw, x: p.x + Math.sin(yaw) * .8, z: p.z + Math.cos(yaw) * .8, vx: Math.sin(yaw) * 70, vz: Math.cos(yaw) * 70, life: .75, raw: this.atk * p.mv * DMG_SCALE, mv: p.mv });
+    this.arrows.push({ ...(this.network ? { moveId: p.combo < 0 ? 'heavy' : 'light:' + p.combo, actionTick: p.attackTick } : {}), id: this.nextEntity++, owner: p.id, frac: p.frac, yaw, x: p.x + Math.sin(yaw) * .8, z: p.z + Math.cos(yaw) * .8, vx: Math.sin(yaw) * 70, vz: Math.cos(yaw) * 70, life: .75, raw: this.atk * p.mv * DMG_SCALE, mv: p.mv });
     this.sound('shot');
   }
   hurtPlayers(predicate, dmg, sx, sz, heavy, once = false) {
@@ -234,6 +253,7 @@ export class Sim {
     this.activeId = active;
   }
   hurt(dmg, sx, sz, heavy) {
+    if (this.network?.role === 'world' || (this.network && this.activeId !== this.network.localId)) return false;
     const p = this.p; if (p.inv > 0 || p.state === 'dead' || p.state === 'down' || this.over) return false;
     dmg = Math.max(1, Math.round(dmg * this.def.dmg * this.hr.dmg * (this.m.enr ? 1.2 : 1) * 80 / (80 + this.arm.def)));
     p.hp -= dmg; p.healLeft = 0; p.drank = false; p.spin = 0; this.emit('shake', { amount: heavy ? .7 : .4 }); this.sound('hurt');
@@ -241,13 +261,46 @@ export class Sim {
     this.burst('blood', p.x, 1.2, p.z, 6, 3, .4); this.emit('flash', { playerId: p.id });
     if (p.hp <= 0) {
       p.hp = 0; p.state = 'dead'; p.t = 0; this.carts++; this.emit('cart', { playerId: p.id, carts: this.carts }); this.sound('faint'); this.toast('faint', 'bad');
-      if (this.carts >= MAX_CARTS) this.finish(false, 2.2);
+      if (this.carts >= MAX_CARTS && this.network?.role !== 'owner') this.finish(false, 2.2);
     } else { p.state = heavy ? 'down' : 'hit'; p.t = 0; const s = heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (!heavy) p.inv = .25; }
     return true;
   }
 
+  // Network roles are opt-in; the shared attack updater below is the ONLY
+  // monster motion/contact timeline on both world and owner simulations.
+  emitMonsterState() {
+    if (this.network?.role !== 'world') return;
+    this.m.startTick = this.tick;
+    this.emit('monsterState', { startTick: this.tick, monster: JSON.parse(JSON.stringify(this.m)) });
+  }
+  receiveMonsterEvent(event, viewTick) {
+    if (this.network?.role !== 'owner') throw new Error('Owner role required');
+    this.m = JSON.parse(JSON.stringify(event.monster));
+    const late = Math.max(0, (viewTick-event.startTick)/60);
+    const wind = this.m.state === 'atk' ? this.m.atk.w*(this.m.enr ? .85 : 1) : this.m.state === 'roar' ? .5 : 0;
+    // Consume only windup. Active time always runs in full on the local screen.
+    this.m.t = wind ? Math.min(late,Math.max(0,wind-.1)) : late;
+    this.m.hitPlayers = {}; this.m.hitP = false;
+    return { late, compressed: this.m.t, active: this.m.atk?.a ?? 0 };
+  }
+  claimHit(part,raw,x,z,mv,moveId,actionTick) {
+    const m=this.m,p=this.p;
+    if(m.state==='dead') return;
+    const mult=this.def.parts[part]*(m.state==='topple'?1.1:1);
+    const damage=Math.max(1,Math.round(raw*mult*(.95+this.random()*.1)));
+    const y=this.def.dims.h*this.def.scale*(part==='legs'?.45:.95),weak=mult>=1.2;
+    this.emit('hit',{x,y:y+.6,z,damage,cls:weak?'weak':mult<.9?'dull':'',playerId:p.id});
+    this.burst(weak?'weak':'spark',x,y,z,mv>1.4?12:6,mv>1.4?7:4.5,.35);
+    this.sound(mv>1.4?'hitBig':'hit');if(weak)this.sound('weak');
+    this.stop=Math.max(this.stop,mv>1.4?.11:mv>.6?.06:.025);this.emit('shake',{amount:mv>1.4?.45:.12});
+    this.emit('hitClaim',{hostTick:this.network.viewTick??this.tick,part,raw,
+      ...(actionTick!==undefined ? {actionTick} : {}),
+      moveId:moveId??(p.combo<0?'heavy':'light:'+p.combo)});
+  }
+
   // ---------- monster ----------
-  hitMonster(part, raw, x, z, mv) {
+  hitMonster(part, raw, x, z, mv, moveId, actionTick) {
+    if (this.network?.role === 'owner') return this.claimHit(part,raw,x,z,mv,moveId,actionTick);
     const m = this.m, d = this.def; if (m.state === 'dead') return;
     const mult = d.parts[part] * (m.state === 'topple' ? 1.1 : 1), dmg = Math.max(1, Math.round(raw * mult * (.95 + this.random() * .1)));
     m.hp -= dmg; this.dmgDealt += dmg; this.p.lastDamageTick = this.tick; this.p.contribution += dmg; m.stag += dmg; const y = d.dims.h * d.scale * (part === 'legs' ? .45 : .95), weak = mult >= 1.2;
@@ -256,7 +309,7 @@ export class Sim {
     this.sound(mv > 1.4 ? 'hitBig' : 'hit'); if (weak) this.sound('weak');
     this.stop = Math.max(this.stop, mv > 1.4 ? .11 : mv > .6 ? .06 : .025); this.emit('shake', { amount: mv > 1.4 ? .45 : .12 });
     if (m.state === 'idle') this.monRoar(false);
-    const hrk = this.hr.hp; let newlyBroken = false;
+    const hrk = this.hr.hp * (this.network?.role === 'world' ? COOP_HP_SCALE[(this.network.partySize ?? 1)-1] : 1); let newlyBroken = false;
     if (part === 'head' || part === 'tail') {
       if (!m.broke[part]) { m.brk[part] += dmg; if (m.brk[part] >= d.brk[part] * hrk) { this.breakPart(part); newlyBroken = true; } }
     } else if (part === 'legs' && m.hp > 0) { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
@@ -270,8 +323,8 @@ export class Sim {
     this.emit('break', { part });
     this.toast(part === 'head' ? 'brk_head' : 'brk_tail', 'good'); this.setMon('flinch', 1.5);
   }
-  setMon(state, dur, toast) { const m = this.m; m.state = state; m.t = 0; m.dur = dur || 0; m.spin = 0; m.y = 0; m.atk = null; this.hideTele(); if (toast) { this.toast(toast, 'good'); this.sound('stomp'); } }
-  monRoar(rage) { this.emit('roar', { rage }); const m = this.m; this.setMon('roar', 1.75); m.roared = false; if (rage) { m.enr = true; m.enrT = 40; m.rageQ = false; this.toast('enrage', 'bad'); } }
+  setMon(state, dur, toast) { const m = this.m; m.state = state; m.t = 0; m.dur = dur || 0; m.spin = 0; m.y = 0; m.atk = null; this.hideTele(); if (toast) { this.toast(toast, 'good'); this.sound('stomp'); } this.emitMonsterState(); }
+  monRoar(rage) { this.emit('roar', { rage }); const m = this.m; this.setMon('roar', 1.75); m.roared = false; if (rage) { m.enr = true; m.enrT = 40; m.rageQ = false; this.toast('enrage', 'bad'); } this.emitMonsterState(); }
   monDie() { this.emit('death'); const m = this.m; m.hp = 0; this.setMon('dead', 0); this.slow = 1.3; this.toast('slain', 'good'); this.sound('hitBig'); this.projs.length = 0; this.finish(true, 4.2); }
   hideTele() { this.emit('hideTele'); }
   showTele(...args) { this.emit('telegraph', { args }); }
@@ -287,33 +340,42 @@ export class Sim {
     for (const [k, w] of c) { r -= w; if (r <= 0) { this.startMonAtk(k); return true; } }
     this.startMonAtk(c[0][0]); return true;
   }
-  startMonAtk(k) { const m = this.m; m.state = 'atk'; m.t = 0; m.ak = k; m.atk = MA[k]; m.last = k; m.flag = 0; m.hitP = false; m.hitPlayers = {}; m.fired = 0; m.tick = 0; m.spin = 0; }
+  startMonAtk(k) { const m = this.m; m.state = 'atk'; m.t = 0; m.ak = k; m.atk = MA[k]; m.last = k; m.flag = 0; m.hitP = false; m.hitPlayers = {}; m.fired = 0; m.tick = 0; m.spin = 0;
+    if (this.network?.role === 'world') m.netTarget = { x: this.p.x, z: this.p.z };
+    this.emitMonsterState();
+  }
 
   updMon(dt) {
-    this.activeId = selectTarget(this.players, this.m, this.tick)?.id ?? this.activeId; this.m.targetId = this.activeId;
+    if (this.network?.role === 'owner') this.activeId = this.network.localId;
+    else { this.activeId = selectTarget(this.players, this.m, this.tick)?.id ?? this.activeId; this.m.targetId = this.activeId; }
     const m = this.m, d = this.def, p = this.p, s = d.scale; if (m.state === 'dead') { m.t += dt; return; }
     const spd = d.speed * this.hr.spd * (m.enr ? 1.25 : 1), dx = p.x - m.x, dz = p.z - m.z, dist = Math.hypot(dx, dz), toP = Math.atan2(dx, dz), ad = angDiff(toP, m.yaw);
     m.t += dt; m.moving = 0; if (m.enr) { m.enrT -= dt; if (m.enrT <= 0) m.enr = false; }
     const alive = p.state !== 'dead';
     switch (m.state) {
-      case 'idle': if (dist < 24) this.monRoar(false); break;
+      case 'idle': if (this.network?.role !== 'owner' && dist < 24) this.monRoar(false); break;
       case 'roar':
-        if (!m.roared && m.t > .5) { m.roared = true; this.sound('roar'); this.emit('shake', { amount: .8 }); for (const hunter of this.players) if (Math.hypot(hunter.x-m.x,hunter.z-m.z) < 15 && hunter.inv <= 0 && ['idle','charge','drink'].includes(hunter.state)) { hunter.state = 'stun'; hunter.t = 0; } }
+        if (!m.roared && m.t > .5) { m.roared = true; this.sound('roar'); this.emit('shake', { amount: .8 }); for (const hunter of this.players) if ((!this.network || (this.network.role === 'owner' && hunter.id === this.network.localId)) && Math.hypot(hunter.x-m.x,hunter.z-m.z) < 15 && hunter.inv <= 0 && ['idle','charge','drink'].includes(hunter.state)) { hunter.state = 'stun'; hunter.t = 0; } }
         if (m.t > m.dur) { m.state = 'chase'; m.think = .2; } break;
       case 'chase': {
+        if (this.network?.role === 'owner') break;
         if (m.rageQ) { this.monRoar(true); break; }
         m.yaw = turn(m.yaw, toP, d.turn * (m.enr ? 1.25 : 1) * dt);
         if (dist > 4.6 * s && Math.abs(ad) < 1.1) { const v = spd * dt; m.x += Math.sin(m.yaw) * v; m.z += Math.cos(m.yaw) * v; m.walk += v; m.moving = 1; }
         m.think -= dt; if (alive && m.think <= 0) { if (!this.pickAttack(dist, ad)) m.think = .25; }
         break;
       }
-      case 'atk': this.updMonAtk(dt, dist, toP, ad, spd); break;
+      case 'atk': {
+        const target = this.network && m.netTarget;
+        const yaw = target ? Math.atan2(target.x-m.x,target.z-m.z) : toP;
+        this.updMonAtk(dt, target ? Math.hypot(target.x-m.x,target.z-m.z) : dist, yaw, target ? angDiff(yaw,m.yaw) : ad, spd); break;
+      }
       case 'flinch': case 'topple': if (m.t > m.dur) { m.think = m.state === 'topple' ? .5 : .3; m.state = 'chase'; } break;
     }
     this.clampArena(m, R_ARENA - 2);
   }
   updMonAtk(dt, dist, toP, ad, spd) {
-    const m = this.m, d = this.def, s = d.scale, p = this.p, A = m.atk, k = m.ak, dm = d.dims, er = m.enr ? .85 : 1, W = A.w * er;
+    const m = this.m, d = this.def, s = d.scale, p = (this.network && m.netTarget) || this.p, A = m.atk, k = m.ak, dm = d.dims, er = m.enr ? .85 : 1, W = A.w * er;
     const fwd = (v) => { m.x += Math.sin(m.yaw) * v; m.z += Math.cos(m.yaw) * v; };
     const wind = m.t < W, act = !wind && m.t < W + A.a, wk = m.t / W, tA = m.t - W;
     const [hx, hz] = this.mPt(0, dm.headZ + .6);
@@ -384,7 +446,7 @@ export class Sim {
         if (this.m.state !== 'dead') { let bd = 1e9; for (const c of this.mParts()) { const dd = Math.hypot(a.x - c.x, a.z - c.z) - c.r; if (dd < .3 && dd < bd) { bd = dd; hit = c; } } }
       }
       a.life -= dt;
-      if (hit) { this.activeId = a.owner; this.hitMonster(hit.n, a.raw, a.x, a.z, a.mv); }
+      if (hit) { this.activeId = a.owner; this.hitMonster(hit.n, a.raw, a.x, a.z, a.mv, a.moveId, a.actionTick); }
       if (hit || a.life <= 0) { this.arrows.splice(i, 1); }
     }
   }
