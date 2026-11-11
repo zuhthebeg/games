@@ -32,7 +32,11 @@ function inTelegraph(player, shape) {
   return false;
 }
 
-function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {}) {
+function botTick(world, seq, {
+  aimAtTarget = false,
+  perfectDodge = false,
+  ensureAttackRelease = false,
+} = {}) {
   const player = world.entities.find((entity) => entity.kind === 'player');
   const ranged = player.family === 'crossbow' || player.family === 'staff';
   const enemies = world.entities.filter((entity) => entity.kind === 'enemy' && !entity.dead && !entity.invulnerable);
@@ -101,6 +105,8 @@ function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {})
   } else if (!ranged && player.attack) {
     const timeline = COMBO_TIMELINES[player.attack.step - 1];
     if (player.attack.phase === 'recovery' && player.attack.phaseTick >= timeline.recoveryTicks - timeline.chainWindowTicks) buttons |= 1;
+  } else if (!ranged && target && ensureAttackRelease && (player.previousButtons & BUTTONS.ATTACK)) {
+    buttons = 0;
   } else if (!ranged && target) buttons |= 1;
   if (!imminent && player.counterReadyTicks > 0) {
     if (player.previousButtons & BUTTONS.ATTACK) buttons &= ~BUTTONS.ATTACK;
@@ -112,7 +118,18 @@ function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {})
   return { seq, moveX, moveZ, aim, buttons };
 }
 
-function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 5400, aimAtTarget = false, perfectDodge = false, difficulty = 'normal' }) {
+function runBot({
+  seed,
+  stageId,
+  level,
+  equipment = [],
+  potions = 5,
+  maxTicks = 5400,
+  aimAtTarget = false,
+  perfectDodge = false,
+  ensureAttackRelease = false,
+  difficulty = 'normal',
+}) {
   const id = 'bot';
   const world = createStageWorld({ seed, stageId, difficulty, playerId: id, character: { level, potions, equipment } });
   let dodges = 0;
@@ -122,7 +139,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
   let lastDamage = null;
   const playerId = world.entities.find((entity) => entity.kind === 'player')?.id;
   for (let tick = 1; tick <= maxTicks && !world.outcome; tick += 1) {
-    step(world, { [id]: botTick(world, tick, { aimAtTarget, perfectDodge }) });
+    step(world, { [id]: botTick(world, tick, { aimAtTarget, perfectDodge, ensureAttackRelease }) });
     for (const event of world.events) {
       if (event.eventId <= lastEventId) continue;
       lastEventId = event.eventId;
@@ -152,6 +169,13 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
     potionsPickedUp,
     lastDamage,
     playerPosition: player ? { x: player.x, z: player.z } : null,
+    playerState: player ? {
+      attack: player.attack,
+      aim: player.aim,
+      previousButtons: player.previousButtons,
+      attackCooldownTicks: player.attackCooldownTicks,
+      stunTicks: player.stunTicks,
+    } : null,
     remainingEnemies: world.entities
       .filter((entity) => entity.kind === 'enemy' && !entity.dead)
       .map((entity) => ({
@@ -159,6 +183,8 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
         x: Number(entity.x.toFixed(1)),
         z: Number(entity.z.toFixed(1)),
         hp: entity.hp,
+        attackPhase: entity.attackPhase,
+        invulnerable: entity.invulnerable,
         spawnTicksLeft: entity.spawnTicksLeft,
       })),
   };
@@ -655,4 +681,64 @@ test('M5d settlement caps contain legit C1, KB, and nightmare KB bot rewards', {
     });
   }
   console.log(`M5d legitimate settlement rewards: ${JSON.stringify(summaries)}`);
+});
+
+test('M7 solo level-20 standard-gear rift balance', { timeout: 300000 }, () => {
+  const gearLevel = Math.max(...ITEM_BASES.map((base) => base.requiredLevel));
+  const weapon = ITEM_BASES.find((base) => (
+    base.requiredLevel === gearLevel && base.slot === 'weapon' && base.family === 'sword'
+  ));
+  const armor = ITEM_BASES.filter((base) => (
+    base.requiredLevel === gearLevel && base.slot !== 'weapon' && !base.setId
+  )).sort((a, b) => ['head', 'body', 'hands', 'feet'].indexOf(a.slot) - ['head', 'body', 'hands', 'feet'].indexOf(b.slot));
+  assert.ok(weapon, 'standard max-level sword gear is available');
+  assert.equal(armor.length, 4);
+  const equipment = [weapon, ...armor].map((base) => ({
+    itemId: base.id,
+    rarity: 'rare',
+    affixes: base.slot === 'weapon'
+      ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+      : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+  }));
+  const rows = [1, 5, 10, 20].map((floor) => {
+    const runs = Array.from({ length: 5 }, (_, index) => runBot({
+      seed: 2700 + floor * 10 + index,
+      stageId: `R${floor}`,
+      level: 20,
+      equipment,
+      potions: 5,
+      maxTicks: 18000,
+      aimAtTarget: true,
+      ensureAttackRelease: true,
+    }));
+    const clears = runs.filter((run) => run.outcome === 'clear');
+    const averageClearSeconds = clears.length
+      ? clears.reduce((sum, run) => sum + run.seconds, 0) / clears.length
+      : null;
+    if (clears.length < runs.length) {
+      console.log(`M7 R${floor} non-clears: ${JSON.stringify(runs.filter((run) => run.outcome !== 'clear').map((run) => ({
+        outcome: run.outcome,
+        seconds: run.seconds,
+        hp: run.hp,
+        maxHp: run.maxHp,
+        roomIndex: run.roomIndex,
+        roomCleared: run.roomCleared,
+        playerPosition: run.playerPosition,
+        playerState: run.playerState,
+        remainingEnemies: run.remainingEnemies,
+      })))}`);
+    }
+    return { floor, clears: clears.length, averageClearSeconds };
+  });
+  console.log(`M7 rift balance (solo L20/L${gearLevel} sword, rare standard gear): ${JSON.stringify(rows)}`);
+  const r1 = rows.find((row) => row.floor === 1);
+  const r5 = rows.find((row) => row.floor === 5);
+  const r20 = rows.find((row) => row.floor === 20);
+  assert.ok(r1.clears >= 4, `R1 should clear at least 4/5 runs, got ${r1.clears}/5`);
+  assert.ok(r5.clears >= 4, `R5 should clear at least 4/5 runs, got ${r5.clears}/5`);
+  const r20Harder = r20.clears < r5.clears
+    || (r20.averageClearSeconds !== null && r5.averageClearSeconds !== null
+      && r20.averageClearSeconds > r5.averageClearSeconds);
+  console.log(`M7 R20 harder than R5: ${r20Harder}`);
+  assert.ok(r20Harder, 'R20 should be harder than R5');
 });

@@ -126,11 +126,21 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .hub-panel p, .hub-panel li { font: 13px/1.55 system-ui, sans-serif; color: #c9bec0; }
 .hub-panel button { min-height: 44px; margin: 4px; padding: 9px 12px; }
 .board-tabs, .blacksmith-tabs { display: grid; gap: 6px; margin: 0 0 10px; }
-.board-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.board-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .blacksmith-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .board-tabs button, .blacksmith-tabs button { margin: 0; }
 .board-tabs button.active, .blacksmith-tabs button.active { border-color: #e1b65d; background: #483525; }
 .contract-list { display: grid; gap: 8px; }
+.rift-lock-notice { padding: 14px; border: 1px solid #66513f; border-radius: 10px; background: #221b20; color: #eed5aa !important; text-align: center; }
+.rift-best-floor { margin: 0 0 8px; color: #f0d18d !important; font-size: 18px !important; font-weight: 800 !important; }
+.rift-next-floor { display: grid; gap: 4px; margin: 8px 0; padding: 10px; border: 1px solid #9c7846; border-radius: 10px; background: #34271f; }
+.rift-next-floor strong { color: #f2d3a2; }
+.rift-next-floor small { color: #c9bec0; }
+.rift-next-floor button { margin: 4px 0 0; }
+.rift-floor-list { max-height: 210px; overflow-y: auto; margin: 8px 0; padding: 0 8px; border: 1px solid #4b3b3d; border-radius: 8px; }
+.rift-floor-card.is-cleared { border-color: #66583f; }
+.rift-boss-badge { margin-left: 4px; color: #efc05e; font-size: 11px; white-space: nowrap; }
+.rift-clear-progression { color: #f0d18d !important; font-weight: 800 !important; }
 .contract-card { display: grid; gap: 5px; padding: 9px 10px; border: 1px solid #554d42; border-radius: 10px; background: #171615; }
 .contract-card.claimed { opacity: .55; }
 .contract-card.complete { border-color: #d2ad58; }

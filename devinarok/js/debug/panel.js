@@ -1,6 +1,6 @@
 import { ITEM_BASES, ITEMS, RARITIES } from '../content/items.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
-import { isStageUnlocked, STAGE_LIST } from '../content/stages.js';
+import { isStageUnlocked, STAGES, STAGE_LIST } from '../content/stages.js';
 import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
 import { debugKillRoomEnemies, debugSpawnRoomEnemy } from './combat.js';
@@ -252,7 +252,7 @@ export function mountDebugPanel(context) {
 
   function actionMarkup(action, label = ACTION_LABELS[action] ?? action) {
     if (label === action && action.startsWith('start-stage:')) {
-      const stage = STAGE_LIST.find((entry) => entry.id === action.slice('start-stage:'.length));
+      const stage = STAGES[action.slice('start-stage:'.length)];
       label = stage ? `바로 시작 · ${stage.name}` : '바로 시작';
     }
     const reason = reasonFor(action);
@@ -341,7 +341,10 @@ export function mountDebugPanel(context) {
         return `<div class="debug-stage-row"><div><strong>${label}</strong><small>권장 Lv.${stage.recommendedLevel}</small></div>${actionMarkup(action, '바로 시작')}</div>`;
       }).join('')}</section>`;
     }).join('');
-    return `<section><h2>재현 시드</h2><label>시드<input data-debug-setting="seed" type="number" min="0" max="4294967295" inputmode="numeric" placeholder="무작위" value="${escapeHtml(state.seed)}"></label><label>보스 테스트 대상<select data-debug-setting="boss-stage">${options(STAGE_LIST.filter((stage) => BOSS_STAGES.has(stage.id)).map((stage) => [stage.id, stage.name]), state.selectedBossStage)}</select></label></section>${grouped}`;
+    const riftActions = [1, 5, 10, 20]
+      .map((floor) => actionMarkup(`start-stage:R${floor}`, `${floor}층 바로 시작`))
+      .join('');
+    return `<section><h2>재현 시드</h2><label>시드<input data-debug-setting="seed" type="number" min="0" max="4294967295" inputmode="numeric" placeholder="무작위" value="${escapeHtml(state.seed)}"></label><label>보스 테스트 대상<select data-debug-setting="boss-stage">${options(STAGE_LIST.filter((stage) => BOSS_STAGES.has(stage.id)).map((stage) => [stage.id, stage.name]), state.selectedBossStage)}</select></section>${grouped}<section><h2>균열</h2><div class="debug-action-list">${riftActions}</div></section>`;
   }
 
   function renderSave() {
@@ -435,8 +438,8 @@ export function mountDebugPanel(context) {
     if (action === 'preset-boss' || action === 'preset-set') {
       const bossTest = action === 'preset-boss';
       const stage = BOSS_STAGES.has(state.selectedBossStage)
-        ? STAGE_LIST.find((entry) => entry.id === state.selectedBossStage)
-        : STAGE_LIST.find((entry) => entry.id === 'CB');
+        ? STAGES[state.selectedBossStage]
+        : STAGES.CB;
       const level = bossTest ? stage.recommendedLevel : context.character.level;
       const family = characterFamily();
       const ops = [];
@@ -558,7 +561,7 @@ export function mountDebugPanel(context) {
       toast = '진행 초기화 완료';
     } else if (action.startsWith('start-stage:')) {
       const stageId = action.slice('start-stage:'.length);
-      const stage = STAGE_LIST.find((entry) => entry.id === stageId);
+      const stage = STAGES[stageId];
       if (!stage) throw new Error('스테이지를 찾을 수 없습니다.');
       const seed = currentSeed();
       await context.applyOps(debugShortcutOperations(context.character, action));

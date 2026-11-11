@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { HUB_ARENA, PROP_FOOTPRINTS, STAGE_LIST } from '../js/content/stages.js';
+import { ALL_STAGE_LIST, HUB_ARENA, PROP_FOOTPRINTS } from '../js/content/stages.js';
 import { createHubWorld, createStageWorld, step } from '../js/sim/world.js';
 
 const PLAYER_RADIUS = 0.32;
@@ -76,7 +76,7 @@ function assertSpawnClear(point, obstacles, label) {
 }
 
 test('stage and hub props produce matching measured collision obstacles', () => {
-  for (const arena of [...STAGE_LIST, HUB_ARENA]) {
+  for (const arena of [...ALL_STAGE_LIST, HUB_ARENA]) {
     const collidableProps = arena.props.filter((prop) => (
       prop.solid !== false && PROP_FOOTPRINTS[prop.model]
     ));
@@ -107,7 +107,7 @@ test('stage and hub props produce matching measured collision obstacles', () => 
 });
 
 test('every stage room and the hub keep spawns and NPCs clear of obstacles', () => {
-  for (const stage of STAGE_LIST) {
+  for (const stage of ALL_STAGE_LIST) {
     assertSpawnClear(stage.playerSpawn, stage.obstacles.filter((obstacle) => obstacle.roomId === stage.rooms[0].id), `${stage.id} player spawn`);
     for (const room of stage.rooms) {
       const obstacles = stage.obstacles.filter((obstacle) => obstacle.roomId === room.id);
@@ -123,7 +123,7 @@ test('every stage room and the hub keep spawns and NPCs clear of obstacles', () 
 });
 
 test('each stage room reaches every enemy spawn and door on a 0.25 m grid', () => {
-  for (const stage of STAGE_LIST) {
+  for (const stage of ALL_STAGE_LIST) {
     for (const room of stage.rooms) {
       const reachable = gridReachability({
         bounds: stage.bounds,
@@ -267,7 +267,10 @@ test('the inn board and CB clear explain forest-region progression', async () =>
   assert.match(main, /2지역 · 잿빛 숲/);
   assert.match(main, /const action = cleared \? '재도전' : unlocked \? '출정' : '잠김';/);
   assert.match(main, /class="hub-stage-name"/);
-  assert.match(main, /STAGE_LIST\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id, difficulty\) : entry\.id === stage\)/);
+  assert.match(main, /selectableStages\.filter\(\(entry\) => isHost \? stageIsUnlocked\(entry\.id, difficulty\) : entry\.id === stage\)/);
+  assert.match(main, /const selectableStages = difficulty === 'normal' \? \[\.\.\.STAGE_LIST, \.\.\.RIFT_STAGE_LIST\] : STAGE_LIST;/);
+  assert.match(main, /data-board-tab="rift"/);
+  assert.match(main, /해골 왕의 옥좌를 쓰러뜨리면 열려요/);
   assert.match(css, /\.hub-row button \{ flex: 0 0 88px;/);
   assert.match(css, /\.hub-stage-name \{[^}]*white-space: nowrap;/);
   assert.match(main, /firstForestUnlock = difficulty === 'normal' && stageId === 'CB'/);
