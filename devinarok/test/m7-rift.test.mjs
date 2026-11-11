@@ -3,7 +3,7 @@ import test from 'node:test';
 import { ENEMIES } from '../js/content/enemies.js';
 import {
   ALL_STAGE_LIST, DIFFICULTIES, isStageUnlocked, latestStage, RIFT_MAX_FLOOR,
-  RIFT_STAGE_LIST, riftFloorOf, riftStageId, STAGE_LIST, STAGES,
+  RIFT_STAGE_LIST, riftFirstClearReward, riftFloorOf, riftStageId, STAGE_LIST, STAGES,
 } from '../js/content/stages.js';
 import { debugKillEnemy } from '../js/debug/combat.js';
 import { createStageWorld, hashWorld } from '../js/sim/world.js';
@@ -114,6 +114,18 @@ test('rift floors unlock sequentially after the normal Skeleton King clear only'
   assert.equal(isStageUnlocked('R2', ['KB', 'R1', 'N:KB'], 'hell'), false);
   assert.equal(isStageUnlocked('C1', [], 'normal'), true);
   assert.equal(latestStage('normal', ['KB', 'R1', 'R2']), 'C1');
+});
+
+test('rift first-clear material rewards match the specified floor milestones', () => {
+  assert.deepEqual(riftFirstClearReward(1), { essence: 3, soul: 0 });
+  assert.deepEqual(riftFirstClearReward(5), { essence: 4, soul: 1 });
+  assert.deepEqual(riftFirstClearReward(20), { essence: 9, soul: 2 });
+  assert.deepEqual(riftFirstClearReward(30), { essence: 12, soul: 2 });
+  const total = RIFT_STAGE_LIST.reduce((sum, stage) => {
+    const reward = riftFirstClearReward(riftFloorOf(stage.id));
+    return { essence: sum.essence + reward.essence, soul: sum.soul + reward.soul };
+  }, { essence: 0, soul: 0 });
+  assert.deepEqual(total, { essence: 225, soul: 9 });
 });
 
 test('R10 enemy power and gold use the R6 baseline multiplied by 1.32', () => {
