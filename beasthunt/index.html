@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6M5ZYHVM5T"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-6M5ZYHVM5T");</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>비스트헌트 — 거수 사냥 액션 RPG | Beast Hunt</title>
+<meta name="description" content="거대한 야수의 공격을 읽고 구르고 베어내는 3D 헌팅 액션 RPG. 부위 파괴로 소재를 얻어 무기와 방어구를 강화하세요. 설치 없이 브라우저에서 무료.">
+<meta name="keywords" content="비스트헌트,Beast Hunt,헌팅 액션,액션 RPG,보스 사냥,부위 파괴,웹게임">
+<link rel="canonical" href="https://game.cocy.io/beasthunt/">
+<link rel="icon" href="icon.svg">
+<meta property="og:title" content="비스트헌트 — 거수 사냥 액션 RPG">
+<meta property="og:description" content="공격을 읽고, 구르고, 베어내라. 3D 헌팅 액션 RPG">
+<meta property="og:url" content="https://game.cocy.io/beasthunt/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"비스트헌트 Beast Hunt","url":"https://game.cocy.io/beasthunt/","genre":["Action RPG","Hunting Action"],"playMode":"SinglePlayer","gamePlatform":"Web Browser","inLanguage":["ko","en","zh-Hant"],"offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<script>window.SharedWalletConfig={autoGuest:true};</script>
+<script type="importmap">
+{"imports":{
+ "three":"./vendor/three.module.min.js",
+ "bh/data":"./js/data.js?v=20261111a",
+ "bh/models":"./js/models.js?v=20261111a",
+ "bh/audio":"./js/audio.js?v=20261111a",
+ "bh/input":"./js/input.js?v=20261111a",
+ "bh/i18n":"./js/i18n.js?v=20261111a",
+ "bh/game":"./js/game.js?v=20261111a"
+}}
+</script>
+<style>
+:root{--wallet-bar-h:56px;--ink:#14110f;--panel:rgba(22,18,15,.86);--line:#5b4a36;--gold:#e9c46a;--bone:#efe6d2;--red:#e2523c;--green:#7fd08a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--bone);font-family:"Gowun Dodum",system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+[hidden]{display:none!important}
+#stage{position:fixed;left:0;right:0;bottom:0;top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+h1,h4,.qn,.up,#depart,#toast,.dn,#resTitle,.tab{font-family:"Black Han Sans","Gowun Dodum",sans-serif;font-weight:400}
+
+/* ---------- hub ---------- */
+#hub{position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none;padding:14px clamp(12px,3vw,36px) calc(12px + env(safe-area-inset-bottom))}
+#hub>*{pointer-events:auto}
+#top{display:flex;align-items:flex-start;gap:10px}
+#brand{flex:1;min-width:0}
+h1{margin:0;font-size:clamp(30px,6vw,56px);letter-spacing:.04em;line-height:.95;color:var(--bone);text-shadow:0 3px 0 #000,0 0 26px rgba(233,196,106,.35)}
+h1 i{font-style:normal;color:var(--gold)}
+#sub{font-size:14px;letter-spacing:.5em;color:var(--gold);margin-top:4px;text-shadow:0 1px 2px #000}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:14px;white-space:nowrap}
+#zenny{color:var(--gold);font-weight:700}
+#body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;width:min(440px,100%);margin-top:10px}
+.tabs{display:flex;gap:4px}
+.tab{padding:9px 20px;font-size:17px;background:rgba(22,18,15,.6);border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;color:#a89880}
+.tab.on{background:var(--panel);color:var(--gold)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:10px;overflow-y:auto;min-height:0;max-height:min(58vh,520px)}
+#quests{display:grid;gap:6px}
+.q{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;padding:9px 12px;border-radius:9px;border:1px solid #3d3226;background:linear-gradient(90deg,rgba(255,255,255,.05),transparent);border-left:5px solid #666}
+.q.b-forest{border-left-color:#6f9a45}.q.b-snow{border-left-color:#9fd3ee}.q.b-volcano{border-left-color:#e2623c}
+.q.sel{border-color:var(--gold);background:linear-gradient(90deg,rgba(233,196,106,.22),transparent)}
+.q.lock{opacity:.4;cursor:default}
+.qr{grid-column:1/3;font-size:11px;color:var(--gold);letter-spacing:.08em}
+.qn{font-size:19px}.qm{grid-column:1/3;font-size:12px;color:#b9ab94}
+#loadout{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.wp{display:flex;flex-direction:column;gap:2px;padding:7px 4px;border-radius:8px;border:1px solid #3d3226;background:rgba(0,0,0,.3);text-align:center;font-size:11px;color:#b9ab94}
+.wp b{font-size:14px;color:var(--bone)}.wp.sel{border-color:var(--gold);background:rgba(233,196,106,.18)}.wp.ar{opacity:.85}
+#depart{width:100%;margin-top:9px;padding:13px;font-size:24px;letter-spacing:.3em;color:#1b1206;background:linear-gradient(#f4d58a,#d9a441);border-radius:10px;box-shadow:0 4px 0 #7a5516,0 8px 18px rgba(0,0,0,.5)}
+#depart:active{transform:translateY(3px);box-shadow:0 1px 0 #7a5516}
+.fr{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:9px 4px;border-bottom:1px solid #33291f;align-items:center}
+.fh{display:flex;gap:8px;align-items:baseline}.fh b{font-size:16px}
+.tier{font-size:12px;color:var(--gold)}.fs{font-size:12px;color:#b9ab94;grid-column:1}
+.fc{grid-column:1;display:flex;flex-wrap:wrap;gap:3px 9px;font-size:12px}.ok{color:var(--green)}.no{color:#e58a7a}
+.up{grid-column:2;grid-row:1/4;padding:10px 14px;font-size:16px;border-radius:8px;color:#1b1206;background:linear-gradient(#f4d58a,#d9a441)}
+.up:disabled{background:#3a3229;color:#7d7262;cursor:default}.mx{grid-column:2;grid-row:1/4;color:var(--gold);font-size:13px}
+h4{margin:10px 0 6px;font-size:14px;color:var(--gold);letter-spacing:.1em}
+.mt{display:inline-block;margin:0 5px 5px 0;padding:4px 9px;border-radius:6px;background:rgba(255,255,255,.07);font-size:12px}
+#controls{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:8px;font-size:11px;color:#a89880;text-shadow:0 1px 2px #000}
+#controls b{color:var(--bone)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none}
+#hud button{pointer-events:auto}
+.pl{position:absolute;left:12px;top:10px;width:min(46vw,300px)}
+.bar{position:relative;height:13px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);border-radius:3px;overflow:hidden;transform:skewX(-14deg)}
+.bar i{position:absolute;left:0;top:0;bottom:0;transition:width .12s linear}
+#hpFill{background:linear-gradient(#8be28f,#3fae56)}#hpHeal{background:#c9584a;opacity:.0}
+#hpHeal{background:rgba(160,255,170,.45);opacity:1}
+.bar.st{height:8px;margin-top:3px;width:88%}#stFill{background:linear-gradient(#ffe27a,#e0a52c)}
+.row{display:flex;gap:12px;margin-top:6px;font-size:14px;text-shadow:0 1px 3px #000}.row b{color:var(--gold)}
+.mn{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:min(40vw,420px);text-align:center}
+.mname{font-family:"Black Han Sans",sans-serif;font-size:16px;letter-spacing:.12em;text-shadow:0 2px 3px #000;margin-bottom:3px}
+#rage{color:var(--red);margin-left:8px;animation:pulse .5s infinite alternate}
+.bar.mon{height:9px}#monFill{background:linear-gradient(#f0745a,#b62f1f)}
+#lockBtn,#pauseBtn{position:absolute;right:10px;top:8px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.3);font-size:18px}
+#lockBtn{right:58px}#lockBtn.on{border-color:var(--gold);color:var(--gold)}
+#charge{position:absolute;left:50%;bottom:22%;width:150px;height:9px;transform:translateX(-50%);background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.4);border-radius:5px;overflow:hidden}
+#chargeFill{display:block;height:100%;background:#fff}#chargeFill.lv1{background:#ffe27a}#chargeFill.lv2{background:#ff9a2a}#chargeFill.lv3{background:#ff4a2a;box-shadow:0 0 12px #ff4a2a}
+#toast{position:absolute;left:0;right:0;top:24%;text-align:center;font-size:clamp(28px,6vw,54px);letter-spacing:.14em;opacity:0;text-shadow:0 3px 0 #000,0 0 24px rgba(0,0,0,.7)}
+#toast.show{animation:toast 1.7s ease-out}#toast.good{color:var(--gold)}#toast.bad{color:var(--red)}
+#dmg{position:absolute;inset:0;overflow:hidden}
+.dn{position:absolute;font-size:22px;color:#fff;text-shadow:0 2px 0 #000,0 0 6px #000;transform:translate(-50%,-50%);animation:dn .7s ease-out forwards;pointer-events:none}
+.dn.weak{color:#ffb32a;font-size:30px}.dn.dull{color:#9aa3ad;font-size:18px}
+#flash{position:absolute;inset:0;box-shadow:inset 0 0 120px 40px rgba(226,60,40,.8);opacity:0}#flash.on{animation:flash .45s ease-out}
+@keyframes toast{0%{opacity:0;transform:scale(1.5)}12%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
+@keyframes dn{0%{opacity:0;transform:translate(-50%,-30%) scale(1.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-170%)}}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+@keyframes pulse{to{opacity:.4}}
+
+/* ---------- touch ---------- */
+#touch{position:absolute;inset:0;pointer-events:none}
+#joyZone{position:absolute;left:0;bottom:0;width:46%;height:58%;pointer-events:auto;touch-action:none}
+#joyBase{position:absolute;width:112px;height:112px;margin:-56px 0 0 -56px;left:90px;top:calc(100% - 100px);border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.28)}
+#joyBase.on{background:rgba(255,255,255,.14)}
+#joyKnob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px;border-radius:50%;background:rgba(233,196,106,.8)}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;background:rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.4);color:#fff;font-size:24px;display:grid;place-items:center}
+.tb.on{background:rgba(233,196,106,.55)}
+.tb[data-act=attack]{right:22px;bottom:calc(34px + env(safe-area-inset-bottom));width:86px;height:86px;font-size:34px;border-color:var(--gold)}
+.tb[data-act=heavy]{right:118px;bottom:calc(22px + env(safe-area-inset-bottom));width:64px;height:64px}
+.tb[data-act=roll]{right:96px;bottom:calc(98px + env(safe-area-inset-bottom));width:64px;height:64px}
+.tb[data-act=potion]{right:20px;bottom:calc(134px + env(safe-area-inset-bottom));width:54px;height:54px;font-size:20px;border-color:var(--green)}
+
+/* ---------- overlays ---------- */
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(8,6,5,.78);z-index:5}
+.card{width:min(420px,92%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center;max-height:92%;overflow:auto}
+#resTitle{font-size:38px;letter-spacing:.12em;margin:0 0 12px}.win #resTitle{color:var(--gold)}.fail #resTitle{color:var(--red)}
+#resRows div{display:flex;justify-content:space-between;padding:6px 4px;border-bottom:1px solid #33291f;font-size:15px}#resRows b{color:var(--gold)}
+.btn{display:block;width:100%;margin-top:12px;padding:12px;font-size:18px;border-radius:9px;background:linear-gradient(#f4d58a,#d9a441);color:#1b1206;font-family:"Black Han Sans",sans-serif}
+.btn.alt{background:#3a3229;color:var(--bone)}
+#pauseTitle{font-family:"Black Han Sans",sans-serif;font-size:30px;margin:0 0 6px;letter-spacing:.2em}
+body.hunting #sw-bar{display:none!important}
+body.hunting #stage{top:0}
+body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{margin-top:env(safe-area-inset-top)}
+@media (max-height:520px){.panel{max-height:46vh}h1{font-size:28px}#controls{display:none}}
+@media (min-width:900px){#body{width:440px}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv"></canvas>
+
+  <div id="hub">
+    <div id="top">
+      <div id="brand"><h1>BEAST <i>HUNT</i></h1><div id="sub"></div></div>
+      <span class="chip" id="zenny"></span>
+      <button class="chip" id="langBtn"></button>
+      <button class="chip" id="muteBtn"></button>
+    </div>
+    <div id="body">
+      <div class="tabs"><button class="tab" id="tabQuest"></button><button class="tab" id="tabForge"></button></div>
+      <div class="panel" id="panelQuest"><div id="quests"></div><div id="loadout"></div></div>
+      <div class="panel" id="panelForge" hidden><div id="forge"></div><div id="inv"></div></div>
+      <button id="depart"></button>
+      <div id="controls"></div>
+    </div>
+  </div>
+
+  <div id="hud" hidden>
+    <div class="pl">
+      <div class="bar hp"><i id="hpHeal"></i><i id="hpFill"></i></div>
+      <div class="bar st"><i id="stFill"></i></div>
+      <div class="row"><span>✚ <b id="potions"></b></span><span>♥ <b id="carts"></b></span><span>⏱ <b id="timer"></b></span></div>
+    </div>
+    <div class="mn"><div class="mname"><span id="monName"></span><span id="rage" hidden></span></div><div class="bar mon"><i id="monFill"></i></div></div>
+    <button id="lockBtn" aria-label="lock-on">◎</button><button id="pauseBtn" aria-label="pause">Ⅱ</button>
+    <div id="charge" hidden><i id="chargeFill"></i></div>
+    <div id="dmg"></div><div id="toast"></div><div id="flash"></div>
+  </div>
+
+  <div id="touch" hidden>
+    <div id="joyZone"><div id="joyBase"><div id="joyKnob"></div></div></div>
+    <button class="tb" data-act="attack">⚔</button>
+    <button class="tb" data-act="heavy">✦</button>
+    <button class="tb" data-act="roll">➤</button>
+    <button class="tb" data-act="potion">✚</button>
+  </div>
+
+  <div id="result" class="overlay" hidden><div class="card"><h2 id="resTitle"></h2><div id="resRows"></div><div id="resLoot"></div><button class="btn" id="resBack"></button></div></div>
+  <div id="pause" class="overlay" hidden><div class="card"><div id="pauseTitle"></div><button class="btn" id="resume"></button><button class="btn alt" id="abandon"></button></div></div>
+</div>
+<script src="/lib/shared-wallet.js?v=20260809pf2"></script>
+<script>
+window.addEventListener('DOMContentLoaded',function(){try{if(typeof SharedWallet!=='undefined'&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}});
+</script>
+<script type="module" src="./js/main.js?v=20261111a"></script>
+</body>
+</html>
