@@ -1,0 +1,131 @@
+{
+  "rows": [
+    {
+      "weapon": "gs",
+      "seed": 1,
+      "win": true,
+      "time": 42.26666666666555,
+      "damage": 1827
+    },
+    {
+      "weapon": "gs",
+      "seed": 2,
+      "win": true,
+      "time": 41.38333333333227,
+      "damage": 1826
+    },
+    {
+      "weapon": "gs",
+      "seed": 3,
+      "win": true,
+      "time": 41.51666666666559,
+      "damage": 1826
+    },
+    {
+      "weapon": "gs",
+      "seed": 4,
+      "win": true,
+      "time": 42.26666666666555,
+      "damage": 1831
+    },
+    {
+      "weapon": "gs",
+      "seed": 5,
+      "win": true,
+      "time": 42.26666666666555,
+      "damage": 1807
+    },
+    {
+      "weapon": "db",
+      "seed": 1,
+      "win": true,
+      "time": 51.71666666666501,
+      "damage": 1800
+    },
+    {
+      "weapon": "db",
+      "seed": 2,
+      "win": true,
+      "time": 50.88333333333173,
+      "damage": 1805
+    },
+    {
+      "weapon": "db",
+      "seed": 3,
+      "win": true,
+      "time": 50.88333333333173,
+      "damage": 1800
+    },
+    {
+      "weapon": "db",
+      "seed": 4,
+      "win": true,
+      "time": 52.133333333331656,
+      "damage": 1808
+    },
+    {
+      "weapon": "db",
+      "seed": 5,
+      "win": true,
+      "time": 53.033333333331605,
+      "damage": 1801
+    },
+    {
+      "weapon": "bow",
+      "seed": 1,
+      "win": true,
+      "time": 51.81666666666501,
+      "damage": 1806
+    },
+    {
+      "weapon": "bow",
+      "seed": 2,
+      "win": true,
+      "time": 49.299999999998484,
+      "damage": 1807
+    },
+    {
+      "weapon": "bow",
+      "seed": 3,
+      "win": true,
+      "time": 50.383333333331755,
+      "damage": 1806
+    },
+    {
+      "weapon": "bow",
+      "seed": 4,
+      "win": true,
+      "time": 48.949999999998504,
+      "damage": 1800
+    },
+    {
+      "weapon": "bow",
+      "seed": 5,
+      "win": true,
+      "time": 47.89999999999856,
+      "damage": 1802
+    }
+  ],
+  "summary": [
+    {
+      "weapon": "gs",
+      "wins": 5,
+      "time": 41.9399999999989,
+      "damage": 1823.4
+    },
+    {
+      "weapon": "db",
+      "wins": 5,
+      "time": 51.72999999999835,
+      "damage": 1802.8
+    },
+    {
+      "weapon": "bow",
+      "wins": 5,
+      "time": 49.66999999999847,
+      "damage": 1804.2
+    }
+  ],
+  "baselineCommit": "811e375a",
+  "policy": "q1, T1 weapons/armor, five seeds 1..5, invulnerability fixture, 60Hz, 260ms input expiry measured by virtual performance.now"
+}
