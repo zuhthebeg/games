@@ -1,0 +1,20 @@
+// R1 visual evidence and portal registration verification (local server only).
+import { createRequire } from 'node:module';
+const require = createRequire('/home/cocy/.openclaw/workspace/');
+const { chromium } = require('playwright');
+const out = process.argv[2] || '/home/cocy/.openclaw/workspace/tmp/beasthunt-r1';
+const browser = await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const page = await browser.newPage({viewport:{width:1200,height:630}});
+await page.goto('http://127.0.0.1:8791/beasthunt/?lowfx=1');
+await page.waitForFunction(()=>window.__bh);
+await page.evaluate(()=>{const B=window.__bh; B.save.clears.q1=B.save.clears.q2={n:1,best:99};B.start('q3');const h=B.hunt;h.p.x=6;h.p.z=1;h.ct.set(3,2,7);h.cy=.2;h.m.state='idle';h.m.think=999;h.paused=true;h.syncModels(0);h.updCam(0,true);h.r.render(h.scene,h.cam);});
+await page.locator('#cv').screenshot({path:out+'/volcano-before.png'});
+await page.screenshot({path:process.cwd()+'/beasthunt/og.png'});
+await page.evaluate(()=>{const h=window.__bh.hunt;h.hitMonster('head',1200,h.m.x,h.m.z,1);h.syncModels(0);h.r.render(h.scene,h.cam);});
+await page.locator('#cv').screenshot({path:out+'/volcano-head-broken.png'});
+await page.goto('http://127.0.0.1:8791/');
+await page.waitForFunction(()=>document.querySelectorAll('#appGrid a[href="https://game.cocy.io/beasthunt/"]').length===1);
+await page.click('[data-filter="arcade"]');
+if (await page.locator('#appGrid a[href="https://game.cocy.io/beasthunt/"]').count() !== 1) throw new Error('portal arcade missing');
+console.log('PASS portal exactly one Beast Hunt item, arcade filter included');
+await browser.close();

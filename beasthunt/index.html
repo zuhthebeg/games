@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6M5ZYHVM5T"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-6M5ZYHVM5T");</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -15,6 +16,8 @@
 <meta property="og:title" content="비스트헌트 — 거수 사냥 액션 RPG">
 <meta property="og:description" content="공격을 읽고, 구르고, 베어내라. 3D 헌팅 액션 RPG">
 <meta property="og:url" content="https://game.cocy.io/beasthunt/">
+<meta property="og:image" content="https://game.cocy.io/beasthunt/og.png">
+<meta name="twitter:image" content="https://game.cocy.io/beasthunt/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
@@ -26,12 +29,12 @@
 <script type="importmap">
 {"imports":{
  "three":"./vendor/three.module.min.js",
- "bh/data":"./js/data.js?v=20261111a",
- "bh/models":"./js/models.js?v=20261111a",
- "bh/audio":"./js/audio.js?v=20261111a",
- "bh/input":"./js/input.js?v=20261111a",
- "bh/i18n":"./js/i18n.js?v=20261111a",
- "bh/game":"./js/game.js?v=20261111a"
+ "bh/data":"./js/data.js?v=20261111r1",
+ "bh/models":"./js/models.js?v=20261111r1",
+ "bh/audio":"./js/audio.js?v=20261111r1",
+ "bh/input":"./js/input.js?v=20261111r1",
+ "bh/i18n":"./js/i18n.js?v=20261111r1",
+ "bh/game":"./js/game.js?v=20261111r1"
 }}
 </script>
 <style>
@@ -53,12 +56,12 @@ h1{margin:0;font-size:clamp(30px,6vw,56px);letter-spacing:.04em;line-height:.95;
 h1 i{font-style:normal;color:var(--gold)}
 #sub{font-size:14px;letter-spacing:.5em;color:var(--gold);margin-top:4px;text-shadow:0 1px 2px #000}
 .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:14px;white-space:nowrap}
-#zenny{color:var(--gold);font-weight:700}
+#shards{color:var(--gold);font-weight:700}
 #body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;width:min(440px,100%);margin-top:10px}
 .tabs{display:flex;gap:4px}
 .tab{padding:9px 20px;font-size:17px;background:rgba(22,18,15,.6);border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;color:#a89880}
 .tab.on{background:var(--panel);color:var(--gold)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:10px;overflow-y:auto;min-height:0;max-height:min(58vh,520px)}
+.panel{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:10px;overflow-y:auto;min-height:0;max-height:min(58vh,520px)}
 #quests{display:grid;gap:6px}
 .q{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;padding:9px 12px;border-radius:9px;border:1px solid #3d3226;background:linear-gradient(90deg,rgba(255,255,255,.05),transparent);border-left:5px solid #666}
 .q.b-forest{border-left-color:#6f9a45}.q.b-snow{border-left-color:#9fd3ee}.q.b-volcano{border-left-color:#e2623c}
@@ -66,10 +69,10 @@ h1 i{font-style:normal;color:var(--gold)}
 .q.lock{opacity:.4;cursor:default}
 .qr{grid-column:1/3;font-size:11px;color:var(--gold);letter-spacing:.08em}
 .qn{font-size:19px}.qm{grid-column:1/3;font-size:12px;color:#b9ab94}
-#loadout{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+#loadout{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
 .wp{display:flex;flex-direction:column;gap:2px;padding:7px 4px;border-radius:8px;border:1px solid #3d3226;background:rgba(0,0,0,.3);text-align:center;font-size:11px;color:#b9ab94}
 .wp b{font-size:14px;color:var(--bone)}.wp.sel{border-color:var(--gold);background:rgba(233,196,106,.18)}.wp.ar{opacity:.85}
-#depart{width:100%;margin-top:9px;padding:13px;font-size:24px;letter-spacing:.3em;color:#1b1206;background:linear-gradient(#f4d58a,#d9a441);border-radius:10px;box-shadow:0 4px 0 #7a5516,0 8px 18px rgba(0,0,0,.5)}
+#depart{flex-shrink:0;width:100%;margin-top:9px;padding:13px;font-size:24px;letter-spacing:.3em;color:#1b1206;background:linear-gradient(#f4d58a,#d9a441);border-radius:10px;box-shadow:0 4px 0 #7a5516,0 8px 18px rgba(0,0,0,.5)}
 #depart:active{transform:translateY(3px);box-shadow:0 1px 0 #7a5516}
 .fr{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:9px 4px;border-bottom:1px solid #33291f;align-items:center}
 .fh{display:flex;gap:8px;align-items:baseline}.fh b{font-size:16px}
@@ -136,24 +139,27 @@ body.hunting #sw-bar{display:none!important}
 body.hunting #stage{top:0}
 body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{margin-top:env(safe-area-inset-top)}
 @media (max-height:520px){.panel{max-height:46vh}h1{font-size:28px}#controls{display:none}}
+@media (max-width:600px){.mn{top:76px;left:12px;transform:none;width:calc(100% - 24px)}.mname{font-size:15px;letter-spacing:.03em}.pl{width:calc(100% - 130px)}#sub{letter-spacing:.12em;font-size:12px}#top{gap:5px}.chip{padding:7px 8px}#controls{font-size:10px}.wp b{font-size:12px}}
 @media (min-width:900px){#body{width:440px}}
 </style>
 </head>
 <body>
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div id="stage">
   <canvas id="cv"></canvas>
 
   <div id="hub">
     <div id="top">
       <div id="brand"><h1>BEAST <i>HUNT</i></h1><div id="sub"></div></div>
-      <span class="chip" id="zenny"></span>
+      <span class="chip" id="shards"></span>
       <button class="chip" id="langBtn"></button>
       <button class="chip" id="muteBtn"></button>
     </div>
     <div id="body">
       <div class="tabs"><button class="tab" id="tabQuest"></button><button class="tab" id="tabForge"></button></div>
-      <div class="panel" id="panelQuest"><div id="quests"></div><div id="loadout"></div></div>
+      <div class="panel" id="panelQuest"><div id="quests"></div></div>
       <div class="panel" id="panelForge" hidden><div id="forge"></div><div id="inv"></div></div>
+      <div id="loadout"></div>
       <button id="depart"></button>
       <div id="controls"></div>
     </div>
@@ -186,6 +192,6 @@ body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{m
 <script>
 window.addEventListener('DOMContentLoaded',function(){try{if(typeof SharedWallet!=='undefined'&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}});
 </script>
-<script type="module" src="./js/main.js?v=20261111a"></script>
+<script type="module" src="./js/main.js?v=20261111r1"></script>
 </body>
 </html>

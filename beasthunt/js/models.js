@@ -66,7 +66,7 @@ export function buildMonster(id) {
   const C = {
     boar: { a: 0x5a4334, b: 0x8a6e52, c: 0xe9dfc6, eye: 0xffd24a },
     frost: { a: 0xdcecf6, b: 0x4f8fc7, c: 0x9fe8ff, eye: 0x7fe9ff },
-    ember: { a: 0x7b211b, b: 0x2a1614, c: 0xff8a2a, eye: 0xffb23a },
+    ember: { a: 0x9f4434, b: 0x63576b, c: 0xff8a2a, eye: 0xffb23a },
   }[id];
   const ma = M(C.a), mb = M(C.b), eyeMat = M(0x111111, { emissive: C.eye, emissiveIntensity: 1.2 });
   const mc = M(C.c, id === 'boar' ? {} : { emissive: C.c, emissiveIntensity: id === 'ember' ? .9 : .45 });
@@ -94,7 +94,7 @@ export function buildMonster(id) {
     for (const s of [-1, 1]) addHorn(cone(.13, 1.0, 4), mc, s * .5, .8, .2, -.7, -s * .3);
     for (let i = 0; i < 5; i++) { const sp = mesh(cone(.22, 1.0, 4), mc, 0, d.bh * .9, d.hz * .5 - i * .75); sp.rotation.x = -.5; body.add(sp); }
   } else {
-    for (const s of [-1, 1]) { addHorn(cone(.2, 1.7, 5), M(0x1b1210), s * .5, .85, -.05, -1.0, -s * .35); addHorn(cone(.12, .7, 4), M(0x1b1210), s * .62, .2, 1.2, .5, -s * .7); }
+    for (const s of [-1, 1]) { addHorn(cone(.2, 1.7, 5), M(0x827386), s * .5, .85, -.05, -1.0, -s * .35); addHorn(cone(.12, .7, 4), M(0x827386), s * .62, .2, 1.2, .5, -s * .7); }
     for (let i = 0; i < 6; i++) { const sp = mesh(cone(.24, 1.1 - i * .08, 4), mb, 0, d.bh * .95, d.hz * .6 - i * .7); sp.rotation.x = -.5; body.add(sp); }
   }
   // wings (ember only, decorative)
@@ -103,7 +103,7 @@ export function buildMonster(id) {
     for (const s of [-1, 1]) {
       const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(3.4, 1.5); sh.lineTo(3.0, .2); sh.lineTo(2.3, -.5); sh.lineTo(1.5, -.2); sh.lineTo(.9, -.8); sh.lineTo(0, -.3);
       const wg = new THREE.ShapeGeometry(sh);
-      const w = new THREE.Mesh(wg, M(0x3a1512, { side: THREE.DoubleSide })); w.castShadow = true;
+      const w = new THREE.Mesh(wg, M(0x785367, { side: THREE.DoubleSide })); w.castShadow = true;
       const pv = G(s * d.bw * .6, d.bh * .7, d.hz * .25); pv.rotation.y = s > 0 ? -.25 : Math.PI + .25; pv.rotation.z = s > 0 ? .5 : -.5;
       pv.add(w); pv.add(mesh(box(3.5, .12, .12), mb, 1.7, .75, 0).rotateZ(.42)); body.add(pv); wings.push(pv);
     }
@@ -131,7 +131,7 @@ export function buildMonster(id) {
     legs.push(lg);
   }
   root.scale.setScalar(MONSTERS[id].scale);
-  return { root, body, head, jaw, tail, tailRoot, legs, wings, horns, eyeMat, eyeCol: C.eye };
+  return { root, body, head, jaw, tail, tailRoot, legs, wings, horns, brokenHornMat: M(0xffdda0, { emissive: 0xff7a35, emissiveIntensity: .5 }), eyeMat, eyeCol: C.eye };
 }
 
 function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }

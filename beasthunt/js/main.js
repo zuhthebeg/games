@@ -9,11 +9,18 @@ import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
 const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'beasthunt_save_v1';
-const fresh = () => ({ v: 1, z: 0, mats: {}, w: { gs: 1, db: 1, bow: 1 }, armor: 1, weapon: 'gs', clears: {} });
+const fresh = () => ({ v: 1, shards: 0, mats: {}, w: { gs: 1, db: 1, bow: 1 }, armor: 1, weapon: 'gs', clears: {} });
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    if (s && s.v === 1 && s.w && WTYPES[s.weapon]) return Object.assign(fresh(), s);
+    if (s && s.v === 1 && s.w && WTYPES[s.weapon]) {
+      // Preserve the save key and migrate the legacy currency field once.
+      const migrated = Object.assign(fresh(), s);
+      migrated.shards = Number.isFinite(s.shards) ? s.shards : (Number.isFinite(s.z) ? s.z : 0);
+      delete migrated.z;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
   } catch (_) { /* fall through */ }
   return fresh();
 }
@@ -57,10 +64,10 @@ function framePreview(dt) {
 
 // ---------- hub ----------
 const need = (cost) => Object.entries(cost).map(([k, n]) => ({ k, n, have: save.mats[k] || 0 }));
-const canPay = (u, kind) => save.z >= u.z && need(u[kind]).every((x) => x.have >= x.n);
+const canPay = (u, kind) => save.shards >= u.shards && need(u[kind]).every((x) => x.have >= x.n);
 function renderHub() {
   document.documentElement.lang = getLang() === 'zh-TW' ? 'zh-Hant' : getLang();
-  $('sub').textContent = t('sub'); $('zenny').textContent = save.z.toLocaleString() + ' z';
+  $('sub').textContent = t('sub'); $('shards').textContent = save.shards.toLocaleString() + ' ' + t('currency');
   $('langBtn').textContent = LANG_LABEL[getLang()]; $('muteBtn').textContent = isMuted() ? '🔇' : '🔊';
   $('tabQuest').textContent = t('tab_quest'); $('tabForge').textContent = t('tab_forge');
   $('tabQuest').classList.toggle('on', tab === 'quest'); $('tabForge').classList.toggle('on', tab === 'forge');
@@ -72,14 +79,14 @@ function renderHub() {
     return `<button class="q ${q.id === sel ? 'sel' : ''} ${open ? '' : 'lock'} b-${MONSTERS[q.mon].biome}" data-q="${q.id}" ${open ? '' : 'disabled'}>
       <span class="qr">${'★'.repeat(QUESTS.indexOf(q) % 3 + 1)} ${t('rank' + q.hr)}</span>
       <span class="qn">${open ? t('q_hunt') + ' · ' + t('mon_' + q.mon) : t('locked')}</span>
-      <span class="qm">${t('reward')}: ${q.z}z${c ? ' · ' + t('best') + ': ' + fmtT(c.best) : ''}</span></button>`;
+      <span class="qm">${t('reward')}: ${q.shards} ${t('currency')}${c ? ' · ' + t('best') + ': ' + fmtT(c.best) : ''}</span></button>`;
   }).join('');
   // loadout
   $('loadout').innerHTML = Object.keys(WTYPES).map((k) => `<button class="wp ${save.weapon === k ? 'sel' : ''}" data-w="${k}"><b>${t('w_' + k)}</b><span>${t(TIERS[save.w[k] - 1])} · ${t('atk')}: ${ATK[save.w[k] - 1]}</span></button>`).join('')
     + `<div class="wp ar"><b>${t('armor')}</b><span>${t(TIERS[save.armor - 1])} · ${t('def')}: ${ARMOR[save.armor - 1].def}</span></div>`;
   // forge
   const row = (key, name, tier, kind, stat) => {
-    const u = UPG[tier], costHtml = u ? need(u[kind]).map((x) => `<span class="${x.have >= x.n ? 'ok' : 'no'}">${matName(x.k)}: ${x.have}/${x.n}</span>`).join('') + `<span class="${save.z >= u.z ? 'ok' : 'no'}">${u.z}z</span>` : '';
+    const u = UPG[tier], costHtml = u ? need(u[kind]).map((x) => `<span class="${x.have >= x.n ? 'ok' : 'no'}">${matName(x.k)}: ${x.have}/${x.n}</span>`).join('') + `<span class="${save.shards >= u.shards ? 'ok' : 'no'}">${u.shards} ${t('currency')}</span>` : '';
     return `<div class="fr"><div class="fh"><b>${name}</b><span class="tier t${tier}">${t(TIERS[tier - 1])}${u ? ' → ' + t(TIERS[tier]) : ''}</span></div>
       <div class="fs">${stat}</div><div class="fc">${costHtml}</div>
       ${u ? `<button class="up" data-up="${key}" ${canPay(u, kind) ? '' : 'disabled'}>${t('upgrade')}</button>` : `<span class="mx">${t('max')}</span>`}</div>`;
@@ -102,7 +109,7 @@ $('hub').addEventListener('click', (e) => {
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';
     if (!u || !canPay(u, kind)) return;
-    save.z -= u.z; for (const [k, n] of Object.entries(u[kind])) save.mats[k] -= n;
+    save.shards -= u.shards; for (const [k, n] of Object.entries(u[kind])) save.mats[k] -= n;
     if (isA) save.armor++; else save.w[key]++;
     persist(); sfx('forge'); makePreview(); renderHub();
   }
@@ -137,9 +144,12 @@ $('lockBtn').onclick = () => hunt && hunt.toggleLock();
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
 document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && hunt && !hunt.over && !input.isTouch && hunt.hadLock) setPaused(true); if (document.pointerLockElement && hunt) hunt.hadLock = true; });
 
+function clearCombatUI() {
+  $('toast').className = ''; $('toast').textContent = ''; $('dmg').replaceChildren(); $('flash').className = '';
+}
 function startHunt(qid) {
   const q = QUESTS.find((x) => x.id === qid); if (!q || !unlocked(q)) return;
-  initAudio(); sfx('ui');
+  initAudio(); sfx('ui'); clearCombatUI();
   hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd);
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
@@ -149,20 +159,26 @@ function onHuntEnd(res) {
   input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
   const q = res.quest; let rec = false;
   if (res.win) {
-    save.z += q.z; for (const [k, n] of Object.entries(res.loot)) save.mats[k] = (save.mats[k] || 0) + n;
+    save.shards += q.shards; for (const [k, n] of Object.entries(res.loot)) save.mats[k] = (save.mats[k] || 0) + n;
     const c = save.clears[q.id] || (save.clears[q.id] = { n: 0, best: 1e9 }); c.n++; if (res.time < c.best) { c.best = res.time; rec = true; }
     persist();
-    try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) SharedWallet.addGold(q.gold); } catch (_) { /* wallet optional */ }
+    try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) {
+      // Result card owns reward feedback; suppress this call's duplicate debug toast only.
+      const toast = SharedWallet._debugToast;
+      try { SharedWallet._debugToast = () => {}; SharedWallet.addGold(q.gold); }
+      finally { SharedWallet._debugToast = toast; }
+    } } catch (_) { /* wallet optional */ }
   }
   if (window.gtag) window.gtag('event', 'bh_quest_end', { quest: q.id, win: res.win ? 1 : 0, time: Math.round(res.time) });
   $('resTitle').textContent = t(res.win ? 'res_win' : 'res_fail'); $('result').className = 'overlay ' + (res.win ? 'win' : 'fail');
   const rows = [[t('time'), fmtT(res.time) + (rec ? ' · ' + t('record') : '')], [t('faints'), res.carts]];
-  if (res.win) { rows.push([t('reward'), q.z + 'z'], [t('gold'), '+' + q.gold]); }
+  if (res.win) { rows.push([t('reward'), q.shards + ' ' + t('currency')], [t('gold'), '+' + q.gold]); }
   $('resRows').innerHTML = rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
   $('resLoot').innerHTML = res.win ? `<h4>${t('loot')}</h4>` + Object.entries(res.loot).map(([k, n]) => `<span class="mt">${matName(k)}: ${n}</span>`).join('') : '';
   $('result').hidden = false; $('touch').hidden = true;
 }
 function endHunt() {
+  clearCombatUI();
   if (hunt) { hunt.dispose(); hunt = null; }
   input.enabled = false; input.clear(); document.body.classList.remove('hunting');
   $('hud').hidden = true; $('touch').hidden = true; $('result').hidden = true; $('hub').hidden = false;

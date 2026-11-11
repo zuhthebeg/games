@@ -378,7 +378,7 @@
             board: ['pingtan', 'connect4', 'gomoku', 'ppingpae'],
             card: ['blackjack', 'jokerrun', 'gostop', 'mahjong'],
             puzzle: ['match3', 'sudoku', 'tileslider', 'blockpuzzle', 'minesweeper', 'blockblast'],
-            arcade: ['arpg', 'devinarok', 'spudsquad', 'snake', 'breakout', 'billiards3d', 'enhance', 'linerush', 'ladder'],
+            arcade: ['beasthunt', 'arpg', 'devinarok', 'spudsquad', 'snake', 'breakout', 'billiards3d', 'enhance', 'linerush', 'ladder'],
             tool: ['d2r', 'd2r-runewords', 'pikmin']
         };
 
@@ -398,7 +398,7 @@
         fetch('apps.json?' + Date.now())
             .then(r => r.json())
             .then(data => {
-                apps = data;
+                apps = [{"title":"비스트헌트 · 프로토타입","icon":"https://game.cocy.io/beasthunt/icon.svg","url":"https://game.cocy.io/beasthunt/","desc":"3D 거수 사냥 액션 RPG","badge":"NEW","platforms":["WEB"],"languages":["🇰🇷","🇺🇸","🇹🇼"],"category":"arcade"}, ...data];
                 renderApps();
             });
 

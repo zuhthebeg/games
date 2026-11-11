@@ -3,15 +3,15 @@ export const ATK = [100, 135, 175, 220, 270];
 export const ARMOR = [
   { def: 0, hp: 0 }, { def: 10, hp: 10 }, { def: 22, hp: 20 }, { def: 36, hp: 35 }, { def: 52, hp: 50 },
 ];
-export const TIERS = ['t_iron', 't_boar', 't_frost', 't_ember', 't_elder'];
+export const TIERS = ['t_iron', 't_boar', 't_frost', 't_ember', 't_starforge'];
 export const DMG_SCALE = 0.3;
 
 // UPG[i] = cost to go from tier i to tier i+1.
 export const UPG = [null,
-  { z: 300, w: { b_hide: 2, b_fang: 2, b_horn: 1 }, a: { b_hide: 3, b_fang: 1 } },
-  { z: 800, w: { f_hide: 2, f_fang: 2, f_horn: 1 }, a: { f_hide: 3, f_fang: 1, b_tail: 1 } },
-  { z: 1800, w: { e_hide: 2, e_fang: 2, e_horn: 1 }, a: { e_hide: 3, e_fang: 1, f_tail: 1 } },
-  { z: 4000, w: { b_gem: 1, f_gem: 1, e_gem: 1 }, a: { b_gem: 1, f_gem: 1, e_gem: 1, e_tail: 1 } },
+  { shards: 300, w: { b_hide: 2, b_fang: 2, b_horn: 1 }, a: { b_hide: 3, b_fang: 1 } },
+  { shards: 800, w: { f_hide: 2, f_fang: 2, f_horn: 1 }, a: { f_hide: 3, f_fang: 1, b_tail: 1 } },
+  { shards: 1800, w: { e_hide: 2, e_fang: 2, e_horn: 1 }, a: { e_hide: 3, e_fang: 1, f_tail: 1 } },
+  { shards: 4000, w: { b_gem: 1, f_gem: 1, e_gem: 1 }, a: { b_gem: 1, f_gem: 1, e_gem: 1, e_tail: 1 } },
 ];
 
 export const WTYPES = {
@@ -66,12 +66,12 @@ export const MONSTERS = {
 };
 
 export const QUESTS = [
-  { id: 'q1', mon: 'boar', hr: 0, z: 400, gold: 20, need: null },
-  { id: 'q2', mon: 'frost', hr: 0, z: 900, gold: 40, need: 'q1' },
-  { id: 'q3', mon: 'ember', hr: 0, z: 1600, gold: 60, need: 'q2' },
-  { id: 'q4', mon: 'boar', hr: 1, z: 1500, gold: 50, need: 'q3' },
-  { id: 'q5', mon: 'frost', hr: 1, z: 2400, gold: 70, need: 'q4' },
-  { id: 'q6', mon: 'ember', hr: 1, z: 3600, gold: 100, need: 'q5' },
+  { id: 'q1', mon: 'boar', hr: 0, shards: 400, gold: 20, need: null },
+  { id: 'q2', mon: 'frost', hr: 0, shards: 900, gold: 40, need: 'q1' },
+  { id: 'q3', mon: 'ember', hr: 0, shards: 1600, gold: 60, need: 'q2' },
+  { id: 'q4', mon: 'boar', hr: 1, shards: 1500, gold: 50, need: 'q3' },
+  { id: 'q5', mon: 'frost', hr: 1, shards: 2400, gold: 70, need: 'q4' },
+  { id: 'q6', mon: 'ember', hr: 1, shards: 3600, gold: 100, need: 'q5' },
 ];
 export const HR = { hp: 1.9, dmg: 1.45, spd: 1.1 };
 export const PREFIX = { boar: 'b', frost: 'f', ember: 'e' };

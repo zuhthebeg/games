@@ -41,6 +41,7 @@ export class Hunt {
     this.cam = new THREE.PerspectiveCamera(58, 1, .2, 420);
     this.H = buildHunter(this.wt, save.w[this.wt], save.armor); sc.add(this.H.root);
     this.G = buildMonster(quest.mon); sc.add(this.G.root);
+    if (d.biome === 'volcano') { const rim = new THREE.DirectionalLight(0x9ddcff, 2.4); rim.position.set(-12, 9, -8); sc.add(rim); }
     const maxHp = 100 + this.arm.hp;
     this.p = { x: 0, z: -30, yaw: 0, hp: maxHp, maxHp, st: 100, stDelay: 0, state: 'idle', t: 0, inv: 0, walk: 0, moving: 0, potions: POTIONS, cur: null, hits: 0, combo: 0, mv: 1, kbx: 0, kbz: 0, clv: 0, healLeft: 0, spin: 0 };
     const mhp = Math.round(d.hp * this.hr.hp);
@@ -225,17 +226,18 @@ export class Hunt {
     sfx(mv > 1.4 ? 'hitBig' : 'hit'); if (weak) sfx('weak');
     this.stop = Math.max(this.stop, mv > 1.4 ? .11 : mv > .6 ? .06 : .025); this.shake = Math.max(this.shake, mv > 1.4 ? .45 : .12);
     if (m.state === 'idle') this.monRoar(false);
-    if (m.hp <= 0) return this.monDie();
-    const hrk = this.hr.hp;
+    const hrk = this.hr.hp; let newlyBroken = false;
     if (part === 'head' || part === 'tail') {
-      if (!m.broke[part]) { m.brk[part] += dmg; if (m.brk[part] >= d.brk[part] * hrk) return this.breakPart(part); }
-    } else if (part === 'legs') { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
+      if (!m.broke[part]) { m.brk[part] += dmg; if (m.brk[part] >= d.brk[part] * hrk) { this.breakPart(part); newlyBroken = true; } }
+    } else if (part === 'legs' && m.hp > 0) { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
+    if (m.hp <= 0) return this.monDie();
+    if (newlyBroken) return;
     if (m.stag >= m.maxHp * .13 && m.state !== 'topple' && m.state !== 'roar') { m.stag = 0; this.setMon('flinch', .95); }
     const st = [.7, .35][m.enrStage]; if (st && m.hp / m.maxHp < st) { m.enrStage++; m.rageQ = true; }
   }
   breakPart(part) {
     const m = this.m, G = this.G; m.broke[part] = true; sfx('break'); this.shake = .6; this.stop = .14;
-    if (part === 'head') { G.horns.forEach((h, i) => { if (i % 2 === 0) h.visible = false; }); const [x, z] = this.mPt(0, this.def.dims.headZ); this.burst('dust', x, 2, z, 16, 6, .7); }
+    if (part === 'head') { G.horns.forEach((h) => { h.scale.set(.85, .24, .85); h.material = G.brokenHornMat; }); const [x, z] = this.mPt(0, this.def.dims.headZ); this.burst('dust', x, 2, z, 16, 6, .7); }
     else {
       const seg = G.tail[1] || G.tail[0]; this.scene.attach(seg); seg.position.y = .45 * this.def.scale; seg.rotation.set(0, seg.rotation.y, .4); this.cutTail = seg; G.tail.length = 1;
       const [x, z] = this.mPt(0, -this.def.dims.hz - 1); this.burst('blood', x, 1.5, z, 18, 6, .7);
