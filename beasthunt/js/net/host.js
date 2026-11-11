@@ -19,7 +19,7 @@ export class HostSession {
     this.owners=new Map();this.cartSeq=new Map();this.eventSeq=0;this.ended=false;
   }
   event(type,payload) {this.transport.sendEvent(envelope(type,this.hunt,this.eventSeq++,payload));}
-  initial() {this.event('full',{hostTick:this.sim.tick,snapshot:this.sim.snapshot()});}
+  initial() {this.event('full',{hostTick:this.sim.tick,snapshot:this.sim.snapshot(),cartSeq:Object.fromEntries(this.cartSeq)});}
   receive(from,p,nowMs=0) {
     if(!Object.hasOwn(this.roster,from) || !validEnvelope(p,this.hunt))return false;
     const s=this.sim;

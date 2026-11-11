@@ -1,3 +1,4 @@
+import { Coop } from './net/coop.js?v=20261112r4b';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
@@ -35,6 +36,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2))
 renderer.shadowMap.enabled = !coarse && !/[?&]lowfx=1/.test(location.search); renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const input = new Input(canvas, $('touch'));
 
+let coop = null;
 let hunt = null, sel = QUESTS[0].id, tab = 'quest', preview = null;
 const unlocked = (q) => !q.need || !!save.clears[q.need];
 { const open = QUESTS.filter(unlocked); sel = open[open.length - 1].id; }
@@ -72,7 +74,7 @@ function renderHub() {
   $('tabQuest').textContent = t('tab_quest'); $('tabForge').textContent = t('tab_forge');
   $('tabQuest').classList.toggle('on', tab === 'quest'); $('tabForge').classList.toggle('on', tab === 'forge');
   $('panelQuest').hidden = tab !== 'quest'; $('panelForge').hidden = tab !== 'forge';
-  $('depart').textContent = t('depart');
+  $('depart').textContent = t('depart'); $('coop').textContent = t('coop');
   // quests
   $('quests').innerHTML = QUESTS.map((q) => {
     const open = unlocked(q), c = save.clears[q.id];
@@ -119,6 +121,7 @@ $('tabForge').onclick = () => { tab = 'forge'; sfx('ui'); renderHub(); };
 $('langBtn').onclick = () => { nextLang(); renderHub(); };
 $('muteBtn').onclick = () => { setMuted(!isMuted()); renderHub(); };
 $('depart').onclick = () => startHunt(sel);
+$('coop').onclick = () => { if (coop) return; coop = new Coop({save, quest:()=>sel, start:startHunt, leave:()=>{coop=null;endHunt();}}); };
 
 // ---------- hunt HUD ----------
 const ui = {
@@ -134,11 +137,11 @@ const ui = {
   pause() { setPaused(true); },
 };
 function setPaused(p) {
-  if (!hunt || hunt.over) return; hunt.paused = p; $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
+  if (!hunt || hunt.over) return; $('pauseTitle').textContent=t(hunt.session?'menu':'paused'); hunt.paused = p; $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
   if (p && document.pointerLockElement) document.exitPointerLock();
 }
 $('resume').onclick = () => setPaused(false);
-$('abandon').onclick = () => { $('pause').hidden = true; endHunt(); };
+$('abandon').onclick = () => { $('pause').hidden = true; if(hunt?.session){coop?.close();return;} endHunt(); };
 $('pauseBtn').onclick = () => setPaused(true);
 $('lockBtn').onclick = () => hunt && hunt.toggleLock();
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
@@ -147,15 +150,17 @@ document.addEventListener('pointerlockchange', () => { if (!document.pointerLock
 function clearCombatUI() {
   $('toast').className = ''; $('toast').textContent = ''; $('dmg').replaceChildren(); $('flash').className = '';
 }
-function startHunt(qid) {
-  const q = QUESTS.find((x) => x.id === qid); if (!q || !unlocked(q)) return;
+function startHunt(qid, session = null) {
+  const q = QUESTS.find((x) => x.id === qid); if (!q || (!session && !unlocked(q))) return;
   initAudio(); sfx('ui'); clearCombatUI();
-  hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd);
+  hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd, session);
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
   if (window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });
 }
+const rewarded = new Set();
 function onHuntEnd(res) {
+  if (hunt?.session) { const id=coop.plan.id; if(rewarded.has(id) || sessionStorage.getItem("bh_reward:"+id))return; rewarded.add(id);sessionStorage.setItem("bh_reward:"+id,"1"); }
   input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
   const q = res.quest; let rec = false;
   if (res.win) {
@@ -175,6 +180,7 @@ function onHuntEnd(res) {
   if (res.win) { rows.push([t('reward'), q.shards + ' ' + t('currency')], [t('gold'), '+' + q.gold]); }
   $('resRows').innerHTML = rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
   $('resLoot').innerHTML = res.win ? `<h4>${t('loot')}</h4>` + Object.entries(res.loot).map(([k, n]) => `<span class="mt">${matName(k)}: ${n}</span>`).join('') : '';
+  $('resBack').textContent=t(hunt?.session?'back_lobby':'back');
   $('result').hidden = false; $('touch').hidden = true;
 }
 function endHunt() {
@@ -185,7 +191,7 @@ function endHunt() {
   const open = QUESTS.filter(unlocked); if (!open.find((q) => q.id === sel)) sel = open[open.length - 1].id;
   makePreview(); renderHub();
 }
-$('resBack').onclick = () => { sfx('ui'); endHunt(); };
+$('resBack').onclick = () => { sfx('ui'); const wasCoop=!!hunt?.session; endHunt(); if(wasCoop)coop?.waiting(); };
 
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
@@ -201,4 +207,6 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 makePreview(); renderHub(); requestAnimationFrame(loop);
-window.__bh = { get hunt() { return hunt; }, save, start: startHunt, end: endHunt, input, step(dt, n = 1) { if (!hunt) return; hunt.skipRender = true; for (let i = 0; i < n; i++) hunt.frame(dt); hunt.skipRender = false; } };
+window.__bh = { get hunt() { return hunt; }, save, start: startHunt, end: endHunt, input, get coop() { return coop; }, step(dt, n = 1) { if (!hunt) return; hunt.skipRender = true; for (let i = 0; i < n; i++) hunt.frame(dt); hunt.skipRender = false; } };
+
+if (new URLSearchParams(location.search).has("room") || sessionStorage.getItem("bh_room")) $("coop").click();

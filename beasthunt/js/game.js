@@ -17,9 +17,9 @@ const ease = (k) => k * k * (3 - 2 * k);
 const PCOL = { spark: 0xffe27a, weak: 0xff9a2a, dust: 0xb9a888, fire: 0xff7a1e, ice: 0x9fe8ff, heal: 0x7dffa0, blood: 0xd8433a };
 
 export class Hunt {
-  constructor(renderer, quest, save, ui, input, onEnd) {
+  constructor(renderer, quest, save, ui, input, onEnd, session = null) {
     this.r = renderer; this.q = quest; this.save = save; this.ui = ui; this.in = input; this.onEnd = onEnd;
-    this.sim = new Sim(quest, save, crypto.getRandomValues(new Uint32Array(1))[0]);
+    this.session = session; this.sim = session?.sim || new Sim(quest, save, crypto.getRandomValues(new Uint32Array(1))[0]);
     this.localId = this.sim.players[0].id;
     // Compatibility aliases for the HUD and existing __bh debug consumers.
     for (const key of ['q','def','hr','m','time','carts','over','win','endT','ended','stop','slow','clock','dmgDealt','projs','arrows'])
@@ -94,8 +94,8 @@ export class Hunt {
   meleeHit(...args) { return this.command('meleeHit', ...args); }
   hurt(...args) { return this.command('hurt', ...args); }
   toggleLock() { this.in.press('lock'); this.in.release('lock'); }
-  presentEvents() {
-    for (const e of this.sim.drainEvents()) {
+  presentEvents(events = this.sim.drainEvents()) {
+    for (const e of events) {
       switch (e.type) {
         case 'sound': sfx(e.name); break;
         case 'toast': this.ui.toast(e.key, e.kind); break;
@@ -140,14 +140,14 @@ export class Hunt {
 
 
   frame(rdt) {
-    if (this.paused) { this.ticker.reset(); if (!this.skipRender) this.r.render(this.scene,this.cam); return; }
-    if (this.in.take('pause')) { this.ui.pause(); this.ticker.reset(); return; }
+    if (this.paused && !this.session) { this.ticker.reset(); if (!this.skipRender) this.r.render(this.scene,this.cam); return; }
+    if (this.in.take('pause')) { this.ui.pause(); if (!this.session) { this.ticker.reset(); return; } }
     // Camera input belongs to presentation, and only its yaw enters tick commands.
     this.updCam(rdt);
     this.ticker.advance(rdt, () => {
       this.previous = this.sim.snapshot();
-      this.sim.step({ [this.localId]: this.in.sample(this.cy) });
-      this.presentEvents();
+      if (this.session) this.presentEvents(this.session.tick(this.in.sample(this.cy), performance.now()));
+      else { this.sim.step({ [this.localId]: this.in.sample(this.cy) }); this.presentEvents(); }
     });
     const dt = this.stop > 0 ? 0 : this.slow > 0 ? rdt*.28 : rdt;
     for (const q of this.parts) if (q.life > 0) { q.life -= dt; q.vy -= q.g * dt; const o = q.m.position; o.x += q.vx * dt; o.y += q.vy * dt; o.z += q.vz * dt; if (o.y < .05) { o.y = .05; q.vy *= -.3; } const k = q.life / q.max; q.m.scale.setScalar(Math.max(.01, k) * 1.2); q.m.rotation.x += dt * 9; if (q.life <= 0) q.m.visible = false; }
@@ -157,37 +157,14 @@ export class Hunt {
     const p = interpolatePose(p0,this.p,alpha), m = interpolatePose(this.previous.m,this.m,alpha);
     this.H.root.position.set(p.x,0,p.z); this.H.root.rotation.y = p.yaw + p.spin;
     this.G.root.position.set(m.x,m.y,m.z); this.G.root.rotation.y = m.yaw + m.spin;
-    this.syncProjectiles(alpha); this.updHud();
+    this.syncProjectiles(alpha); this.updHud(); this.session?.render?.(this, rdt);
     if (!this.skipRender) this.r.render(this.scene,this.cam);
   }
 
   // ---------- presentation ----------
   syncModels(dt) {
     const p = this.p, H = this.H, m = this.m, G = this.G, d = this.def.dims, t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
-    // hunter
-    const P = { arx: -.25, alx: 0, ty: 0, tx: 0, ll: 0, lr: 0, hy: .92, hrx: 0 }; let direct = false;
-    if (p.state === 'idle' && p.moving) { const s = Math.sin(p.walk * 2.4); P.ll = s * .8; P.lr = -s * .8; P.alx = -s * .6; P.arx = -.35 + s * .2; P.tx = .12 * p.moving; }
-    else if (p.state === 'atk') {
-      const a = p.cur, w = clamp(p.t / a.h0, 0, 1), b = clamp((p.t - a.h0) / (a.h1 - a.h0 + .07), 0, 1); direct = true;
-      if (a.sw === 'v') { P.arx = p.t < a.h0 ? lerp(-.3, -2.9, w) : lerp(-2.9, .5, ease(b)); P.tx = p.t < a.h0 ? lerp(0, -.25, w) : lerp(-.25, .45, ease(b)); if (this.wt === 'db') P.alx = P.arx; P.ll = .4; P.lr = -.3; }
-      else if (a.sw === 'h' || a.sw === 'h2') { const sg = a.sw === 'h' ? 1 : -1; P.arx = -1.5; if (this.wt === 'db') P.alx = -1.5; P.ty = sg * (p.t < a.h0 ? lerp(0, -1.2, w) : lerp(-1.2, 1.3, ease(b))); P.ll = .35; P.lr = -.35; }
-      else if (a.sw === 'spin') { P.arx = -1.5; P.alx = -1.5; P.tx = .2; }
-      else { P.alx = -1.55; P.arx = p.t < a.h0 ? -1.2 : -1.5; P.ty = -.35; }
-    } else if (p.state === 'charge') {
-      if (this.wt === 'bow') { P.alx = -1.55; P.arx = -1.15; P.ty = -.35; } else { P.arx = -2.9 + Math.sin(t * 40) * .03 * p.clv; P.tx = -.28; }
-      P.ll = .3; P.lr = -.3; P.hy = .86;
-    } else if (p.state === 'roll') { P.hrx = p.t / .62 * TAU; P.hy = .55; P.arx = -1; P.alx = -1; P.ll = -1.2; P.lr = -1.2; direct = true; }
-    else if (p.state === 'drink') { P.alx = -2.5; P.tx = -.2; }
-    else if (p.state === 'hit') { P.tx = -.5; P.arx = .4; P.alx = .4; }
-    else if (p.state === 'stun') { P.arx = -2.7; P.alx = -2.7; P.tx = .25; P.ty = Math.sin(t * 30) * .1; }
-    else if (p.state === 'down' || p.state === 'dead') { const up = p.state === 'down' ? clamp((p.t - .8) / .35, 0, 1) : 0; P.hrx = -PI / 2 * (1 - up); P.hy = lerp(.3, .92, up); P.arx = -.6; P.alx = -.6; }
-    const hp = this.hpose || (this.hpose = Object.assign({}, P)), kk = direct ? 1 : kf;
-    for (const k in P) hp[k] = k === 'hrx' && (p.state === 'roll' || !direct && Math.abs(hp[k]) > 3) ? P[k] : lerp(hp[k], P[k], kk);
-    H.root.position.set(p.x, 0, p.z); H.root.rotation.y = p.yaw + p.spin;
-    H.hips.position.y = hp.hy; H.hips.rotation.x = hp.hrx; H.torso.rotation.set(hp.tx, hp.ty, 0);
-    H.armR.rotation.x = hp.arx; H.armL.rotation.x = hp.alx; H.legL.rotation.x = hp.ll; H.legR.rotation.x = hp.lr;
-    H.elbows.forEach((e,i)=>{e.rotation.x = p.state === 'charge' ? -.45 : -.12-Math.abs(i ? hp.alx : hp.arx)*.14;}); H.knees.forEach((k,i)=>{k.rotation.x = Math.max(0,-(i ? hp.lr : hp.ll))*.65;});
-    H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(t * 20) % 2 === 0);
+    this.syncHunter(p, H, dt);
     // monster
     const T = Object.assign({}, this.hp0), A = m.atk, er = m.enr ? .85 : 1; let legAmp = m.moving ? .55 : 0, legF = 1.7, flail = 0, tailWag = .12;
     if (m.state === 'idle') { T.headRx = .32 + Math.sin(t * 1.3) * .08; }
@@ -216,6 +193,33 @@ export class Hunt {
     G.eyeMat.emissive.setHex(m.enr ? 0xff2200 : G.eyeCol); G.eyeMat.emissiveIntensity = m.state === 'dead' ? 0 : m.enr ? 2.4 : 1.2;
     if (m.enr && dt > 0 && Math.random() < .3) { const [x, z] = this.mPt(0, d.headZ + .8); this.burst(this.def.proj === 'ice' ? 'ice' : 'fire', x, d.h * this.def.scale, z, 1, 1.2, .5, -3); }
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;
+  }
+  syncHunter(p, H, dt, cache = this) {
+    const t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
+    // hunter
+    const P = { arx: -.25, alx: 0, ty: 0, tx: 0, ll: 0, lr: 0, hy: .92, hrx: 0 }; let direct = false;
+    if (p.state === 'idle' && p.moving) { const s = Math.sin(p.walk * 2.4); P.ll = s * .8; P.lr = -s * .8; P.alx = -s * .6; P.arx = -.35 + s * .2; P.tx = .12 * p.moving; }
+    else if (p.state === 'atk') {
+      const a = p.cur, w = clamp(p.t / a.h0, 0, 1), b = clamp((p.t - a.h0) / (a.h1 - a.h0 + .07), 0, 1); direct = true;
+      if (a.sw === 'v') { P.arx = p.t < a.h0 ? lerp(-.3, -2.9, w) : lerp(-2.9, .5, ease(b)); P.tx = p.t < a.h0 ? lerp(0, -.25, w) : lerp(-.25, .45, ease(b)); if (p.weapon === 'db') P.alx = P.arx; P.ll = .4; P.lr = -.3; }
+      else if (a.sw === 'h' || a.sw === 'h2') { const sg = a.sw === 'h' ? 1 : -1; P.arx = -1.5; if (p.weapon === 'db') P.alx = -1.5; P.ty = sg * (p.t < a.h0 ? lerp(0, -1.2, w) : lerp(-1.2, 1.3, ease(b))); P.ll = .35; P.lr = -.35; }
+      else if (a.sw === 'spin') { P.arx = -1.5; P.alx = -1.5; P.tx = .2; }
+      else { P.alx = -1.55; P.arx = p.t < a.h0 ? -1.2 : -1.5; P.ty = -.35; }
+    } else if (p.state === 'charge') {
+      if (p.weapon === 'bow') { P.alx = -1.55; P.arx = -1.15; P.ty = -.35; } else { P.arx = -2.9 + Math.sin(t * 40) * .03 * p.clv; P.tx = -.28; }
+      P.ll = .3; P.lr = -.3; P.hy = .86;
+    } else if (p.state === 'roll') { P.hrx = p.t / .62 * TAU; P.hy = .55; P.arx = -1; P.alx = -1; P.ll = -1.2; P.lr = -1.2; direct = true; }
+    else if (p.state === 'drink') { P.alx = -2.5; P.tx = -.2; }
+    else if (p.state === 'hit') { P.tx = -.5; P.arx = .4; P.alx = .4; }
+    else if (p.state === 'stun') { P.arx = -2.7; P.alx = -2.7; P.tx = .25; P.ty = Math.sin(t * 30) * .1; }
+    else if (p.state === 'down' || p.state === 'dead') { const up = p.state === 'down' ? clamp((p.t - .8) / .35, 0, 1) : 0; P.hrx = -PI / 2 * (1 - up); P.hy = lerp(.3, .92, up); P.arx = -.6; P.alx = -.6; }
+    const hp = cache.hpose || (cache.hpose = Object.assign({}, P)), kk = direct ? 1 : kf;
+    for (const k in P) hp[k] = k === 'hrx' && (p.state === 'roll' || !direct && Math.abs(hp[k]) > 3) ? P[k] : lerp(hp[k], P[k], kk);
+    H.root.position.set(p.x, 0, p.z); H.root.rotation.y = p.yaw + p.spin;
+    H.hips.position.y = hp.hy; H.hips.rotation.x = hp.hrx; H.torso.rotation.set(hp.tx, hp.ty, 0);
+    H.armR.rotation.x = hp.arx; H.armL.rotation.x = hp.alx; H.legL.rotation.x = hp.ll; H.legR.rotation.x = hp.lr;
+    H.elbows.forEach((e,i)=>{e.rotation.x = p.state === 'charge' ? -.45 : -.12-Math.abs(i ? hp.alx : hp.arx)*.14;}); H.knees.forEach((k,i)=>{k.rotation.x = Math.max(0,-(i ? hp.lr : hp.ll))*.65;});
+    H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(t * 20) % 2 === 0);
   }
   updCam(dt, snap) {
     const p = this.p, m = this.m, lk = this.in.takeLook(), sens = this.in.isTouch ? .0052 : .0026;

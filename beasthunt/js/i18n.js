@@ -1,5 +1,7 @@
 const D = {
   ko: {
+menu:"메뉴",ready:"준비",ready_cancel:"준비 취소",begin:"시작",leave:"나가기",room:"방 코드",copy_link:"링크 복사",waiting:"대기",host:"방장",quick:"빠른 입장",create_room:"방 만들기",join_room:"입장",close:"닫기",rooms:"공개 방",solo:"솔로",
+back_lobby:"로비",party: "파티",coop: "협동 · 2–4",version_mismatch: "버전: 불일치",connecting: "연결: 대기",hunt_locked: "사냥: 진행 중",disconnected: "연결: 종료",
     sub: '거수 사냥', tab_quest: '의뢰', tab_forge: '대장간', depart: '출발', locked: '잠김', reward: '보수', best: '최고 기록',
     currency: '휘석', rank0: '새벽', rank1: '황혼', q_hunt: '수렵', w_gs: '대검', w_db: '쌍검', w_bow: '활', armor: '방어구',
     t_iron: '철', t_boar: '가시엄니', t_frost: '서리갈기', t_ember: '잿불뿔', t_starforge: '별벼림',
@@ -13,6 +15,8 @@ const D = {
     k_mouse: '마우스', k_lmb: '좌클릭', k_rmb: '우클릭', k_stick: '스틱', k_drag: '드래그', k_stickfar: '스틱 끝까지',
   },
   en: {
+menu:"Menu",ready:"Ready",ready_cancel:"Not ready",begin:"Start",leave:"Leave",room:"Room code",copy_link:"Copy link",waiting:"Waiting",host:"Host",quick:"Quick join",create_room:"Create room",join_room:"Join",close:"Close",rooms:"Open rooms",solo:"Solo",
+back_lobby:"Lobby",party: "Party",coop: "Co-op · 2–4",version_mismatch: "Version: mismatch",connecting: "Connection: waiting",hunt_locked: "Hunt: in progress",disconnected: "Connection: lost",
     sub: 'Hunt the Colossi', tab_quest: 'Quests', tab_forge: 'Forge', depart: 'Depart', locked: 'Locked', reward: 'Reward', best: 'Best',
     currency: 'Luma', rank0: 'Dawn', rank1: 'Dusk', q_hunt: 'Hunt', w_gs: 'Greatblade', w_db: 'Twin Fangs', w_bow: 'Bow', armor: 'Armor',
     t_iron: 'Iron', t_boar: 'Bramble', t_frost: 'Frost', t_ember: 'Ember', t_starforge: 'Starforge',
@@ -26,6 +30,8 @@ const D = {
     k_mouse: 'Mouse', k_lmb: 'LMB', k_rmb: 'RMB', k_stick: 'Stick', k_drag: 'Drag', k_stickfar: 'Stick to edge',
   },
   'zh-TW': {
+menu:"選單",ready:"準備",ready_cancel:"取消準備",begin:"開始",leave:"離開",room:"房間代碼",copy_link:"複製連結",waiting:"等待",host:"房主",quick:"快速加入",create_room:"建立房間",join_room:"加入",close:"關閉",rooms:"公開房間",solo:"單人",
+back_lobby:"大廳",party: "隊伍",coop: "合作 · 2–4",version_mismatch: "版本: 不符",connecting: "連線: 等待",hunt_locked: "狩獵: 進行中",disconnected: "連線: 中斷",
     sub: '巨獸狩獵', tab_quest: '委託', tab_forge: '鍛造', depart: '出發', locked: '未解鎖', reward: '報酬', best: '最佳紀錄',
     currency: '輝石', rank0: '曙光', rank1: '暮光', q_hunt: '狩獵', w_gs: '大劍', w_db: '雙劍', w_bow: '弓', armor: '防具',
     t_iron: '鐵', t_boar: '棘牙', t_frost: '霜鬃', t_ember: '燼角', t_starforge: '星鑄',

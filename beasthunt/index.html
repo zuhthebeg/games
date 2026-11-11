@@ -28,12 +28,12 @@
 <script type="importmap">
 {"imports":{
  "three":"./vendor/three.module.min.js",
- "bh/data":"./js/data.js?v=20261112r3fix",
- "bh/models":"./js/models.js?v=20261112r3fix",
- "bh/audio":"./js/audio.js?v=20261112r3fix",
- "bh/input":"./js/input.js?v=20261112r3fix",
- "bh/i18n":"./js/i18n.js?v=20261112r3fix",
- "bh/game":"./js/game.js?v=20261112r3fix"
+ "bh/data":"./js/data.js?v=20261112r4b",
+ "bh/models":"./js/models.js?v=20261112r4b",
+ "bh/audio":"./js/audio.js?v=20261112r4b",
+ "bh/input":"./js/input.js?v=20261112r4b",
+ "bh/i18n":"./js/i18n.js?v=20261112r4b",
+ "bh/game":"./js/game.js?v=20261112r4b"
 }}
 </script>
 <style>
@@ -140,6 +140,8 @@ body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{m
 @media (max-height:520px){.panel{max-height:46vh}h1{font-size:28px}#controls{display:none}}
 @media (max-width:600px){.mn{top:76px;left:12px;transform:none;width:calc(100% - 24px)}.mname{font-size:15px;letter-spacing:.03em}.pl{width:calc(100% - 130px)}#sub{letter-spacing:.12em;font-size:12px}#top{gap:5px}.chip{padding:7px 8px}#controls{font-size:10px}.wp b{font-size:12px}}
 @media (min-width:900px){#body{width:440px}}
+#coop{margin-top:8px;flex-shrink:0;border-color:var(--gold)}
+#party{position:absolute;left:12px;top:116px;width:145px;font-size:11px;text-shadow:0 1px 3px #000}#party div{display:flex;gap:5px;align-items:center}#party span{width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#party meter{width:65px;height:12px}#latency{position:absolute;right:12px;top:54px;font-size:11px}#names{position:absolute;inset:0;pointer-events:none;overflow:hidden}.hunter-name{position:absolute;transform:translate(-50%,-100%);font-size:12px;color:#fff;background:#181d26bb;border-radius:4px;padding:2px 6px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#bh-quest{width:100%;padding:8px;background:#202938;color:white;border:1px solid #806737;border-radius:6px}.mpl-card{max-height:94dvh;overflow:auto}.mpl-card img{display:none}
 </style>
 </head>
 <body>
@@ -158,12 +160,12 @@ body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{m
       <div class="panel" id="panelQuest"><div id="quests"></div></div>
       <div class="panel" id="panelForge" hidden><div id="forge"></div><div id="inv"></div></div>
       <div id="loadout"></div>
-      <button id="depart"></button>
+      <button id="depart"></button><button id="coop" class="chip"></button>
       <div id="controls"></div>
     </div>
   </div>
 
-  <div id="hud" hidden>
+  <div id="names"></div><div id="hud" hidden><div id="party" hidden></div><span id="latency"></span>
     <div class="pl">
       <div class="bar hp"><i id="hpHeal"></i><i id="hpFill"></i></div>
       <div class="bar st"><i id="stFill"></i></div>
@@ -186,10 +188,12 @@ body.hunting .pl,body.hunting .mn,body.hunting #lockBtn,body.hunting #pauseBtn{m
   <div id="result" class="overlay" hidden><div class="card"><h2 id="resTitle"></h2><div id="resRows"></div><div id="resLoot"></div><button class="btn" id="resBack"></button></div></div>
   <div id="pause" class="overlay" hidden><div class="card"><div id="pauseTitle"></div><button class="btn" id="resume"></button><button class="btn alt" id="abandon"></button></div></div>
 </div>
+<script src="/lib/multiplayer.js?v=20260927rt"></script>
+<script src="/lib/mp-lobby.js?v=20260927"></script>
 <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
 <script>
 window.addEventListener('DOMContentLoaded',function(){try{if(typeof SharedWallet!=='undefined'&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}});
 </script>
-<script type="module" src="./js/main.js?v=20261112r3fix"></script>
+<script type="module" src="./js/main.js?v=20261112r4b"></script>
 </body>
 </html>

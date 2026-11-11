@@ -19,8 +19,10 @@ self.onmessage=({data})=>{
     self.postMessage({type:'ready'});
   } else if(data.type==='receive') {
     session?.receive(data.from,data.packet,data.nowMs);
+   } else if(data.type==='roster') {
+    if(session)for(const p of session.sim.players)if(!data.ids.includes(p.id)){session.owners.delete(p.id);p.state='dead';p.hp=0;}
   } else if(data.type==='snapshot') {
-    self.postMessage({type:'snapshot',request:data.request,snapshot:session?.sim.snapshot()});
+    self.postMessage({type:'snapshot',request:data.request,snapshot:session?.sim.snapshot(),metrics:session?{accepted:session.claims.accepted,rejected:session.claims.rejected,reasons:session.claims.reasons}:null});
   } else if(data.type==='stop') {
     if(timer!==null)clearInterval(timer);timer=null;session=null;
   }

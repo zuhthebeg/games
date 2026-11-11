@@ -9,7 +9,8 @@ export class GuestSession {
     this.sim=new Sim(quest,save,seed,{role:'owner',localId:uid});
     this.sim.players[0].id=uid;this.sim.activeId=uid;
     this.rep=new GuestReplication({hunt,host,localId:uid});
-    this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
+    // Diagnostic invariant: only initial spawn writes owner coordinates from network.
+    this.positionCorrections=0;this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
     this.cart=0;this.presentation=[];this.disconnected=false;this.firstHostMs=null;
   }
   state(type,payload) {this.transport.sendState(envelope(type,this.hunt,this.seq++,payload));}
@@ -29,9 +30,12 @@ export class GuestSession {
       if(!this.initialized) {
         const local=v.snapshot.players.find(p=>p.id===this.uid);
         if(!local)return false;
-        Object.assign(s.players[0],structuredClone(local));
+        // A reconnect is a fresh owner respawn, never replay a puppet's incomplete action.
+        Object.assign(s.players[0],{id:local.id,x:local.x,z:local.z});
         s.m=structuredClone(v.snapshot.m);s.projs=structuredClone(v.snapshot.projs);
-        s.carts=v.snapshot.carts;s.time=v.snapshot.time;
+        s.carts=v.snapshot.carts;s.time=v.snapshot.time;this.cart=v.cartSeq?.[this.uid]??0;
+        if(v.snapshot.over){s.m.broke={...v.snapshot.m.broke};s.finish(v.snapshot.win,0);}
+        if(["atk","roar"].includes(s.m.state))s.receiveMonsterEvent({monster:s.m,startTick:s.m.startTick},v.hostTick);
         this.rep.clock.observe(v.hostTick,nowMs);this.firstHostMs=nowMs;this.initialized=true;
       }
       return true;
@@ -72,6 +76,8 @@ export class GuestSession {
     if(!frame && this.firstHostMs!==null && nowMs-this.firstHostMs>5000 && !s.over) {
       this.disconnected=true;s.finish(false,0);
     }
+    // Absorb clock slew only while winding up. Active contact/motion remains 60Hz.
+    if(s.m.state==='atk' && s.m.atk){const W=s.m.atk.w*(s.m.enr?.85:1);if(s.m.t<W-1/60){const target=(viewTick-s.m.startTick)/60;s.m.t+=Math.max(-1/1200,Math.min(1/1200,target-s.m.t));}}
     const prev={state:s.p.state,t:s.p.t};
     s.step({[this.uid]:input});
     for(const e of s.drainEvents()) {

@@ -1,9 +1,40 @@
-# R4 cooperative core — not a released cooperative game
+# R4 cooperative integration — release acceptance still blocked
 
-This directory is a tested **headless implementation stage**. The hub, Hunt
-renderer, multiplayer lobby, wallet/result flow and remote hunter models are NOT
-connected to it. There is deliberately no cooperative entry button yet. Do not
-advertise multiplayer or deploy this stage as a finished R4.
+R4b connects the shared MultiplayerLobby (lib/mp-lobby.js, the actual spudsquad
+lobby) to the Hunt renderer, owner session, Worker world, party HUD and reward
+flow. See the R4b report for exact live evidence and outstanding acceptance.
+
+## Browser adapter
+
+- coop.js owns the shared lobby/socket and wraps onStarted/onRoster via attachRelay.
+- Authenticated rt hello exchanges protocol and loadout before Start is enabled.
+- The host publishes BH_BEGIN + __snapshot containing the immutable starting roster,
+  quest and hunt id. A directed rt plan reply recovers a missed initial announcement.
+- Host packets are delivered locally to its owner AND externally over the shared
+  relay. The world is a module Worker; remote hunter actions never run combat.
+- Reliable world packets must name the roster host. rt identity is supplied by relay.
+- Owner snapshots are applied once at initialization: refresh is a fresh respawn,
+  not a restore of the world's incomplete hunter puppet action. Repeated fulls never
+  overwrite a live owner's position. Cart sequence survives reconnect.
+- Room identity uses same-tab sessionStorage. Host leave/5-second world timeout
+  ends the guest locally. Late newcomers receive a blocked lobby, not a hunter.
+- The renderer shares syncHunter pose math with solo, derives remote action phase
+  from host start ticks, and projects text-only names into an overlay. Menu does
+  not stop coop. Windup alone absorbs bounded playback-clock phase drift.
+- Result ids are consumed before application in memory and sessionStorage; duplicate
+  result presentation cannot add materials, clears, currency or wallet gold again.
+- Guest HUD latency is measured rt ping/pong RTT, not the interpolation buffer delay.
+
+## IMPORTANT: two different production relay services
+
+The shared spudsquad WebSocket lobby connects to
+wss://relay-do-poc.zuhejbeg.workers.dev/room/:code?g=beasthunt (real deployed
+Durable Object, no mock). relay.cocy.io is the Pages REST/SSE service: its /api/games
+registry does include beasthunt, but /room/:code returns HTML HTTP 200 rather than
+WebSocket 101. Therefore testing with relay.cocy.io literally as WS host is BLOCKED.
+No server change or deployment is made by this client integration. For diagnosis,
+?bhRelay=pages selects that explicit host and reproduces the handshake failure.
+The default follows the actual shared spudsquad transport, not a fake fallback.
 
 ## Ownership
 
@@ -45,8 +76,8 @@ and type. Host event sequences are independent from the host's own hunter events
 - monster: {startTick,monster} (complete initial attack/state context).
 - full: {hostTick,snapshot}; carts:{carts}; cart:{cart:per-owner monotonic count}.
 - end:{startTick,win,broke,time,carts,delay}; break:{startTick,part}.
-- hunterAction:{startTick,id,state,yaw,moveId}; emitted but not consumed for remote
-  animation yet. That is one of the remaining renderer integration tasks.
+- hunterAction:{startTick,id,state,yaw,moveId}; consumed by coop.js for remote
+  animation, keeping the latest 32 starts on the playback clock.
 
 State/claim identity MUST use rt's authenticated from. The existing DO reliable
 relay action does not attach authenticated sender identity: attachRelay exposes
@@ -56,20 +87,14 @@ scope. A future protocol hardening should separately address reliable identity.
 
 ## Remaining before release
 
-1. Shared MultiplayerLobby with room URL, readiness and host quest selection;
-   visible version mismatch rejection and roster lifecycle.
-2. Hunt adapter using owner Sim, worker host wiring, interpolation/render time
-   integration, attack event timing under real rAF, remote hunter models/names,
-   party HP/latency HUD, no-pause multiplayer menu.
-3. Remote hunterAction animation replay (currently emitted only).
-4. Explicit host leave in roster UI, reconnect
-   with complete owned potion/stamina/attack state, lobby rematch.
-5. Client-specific result/save/wallet application exactly once and lobby return.
-6. Browser two-context full lobby-to-reward E2E at 1280/390, real relay verification,
-   active-window timing and full-contact-range proofs, rather than headless only.
-7. Attack playback currently advances 60Hz local ticks independently of the clock's
-   bounded slew; chase interpolation uses the adaptive clock. Real renderer tests
-   must address windup scheduling/drift without ever shortening active duration.
+See tmp/beasthunt-1112-r4b-result.md for measured acceptance. Current browser
+runs complete 2/3-peer flows, but raw combat frame jumps remain above 1m on
+SwiftShader, and a deliberately 1Hz host owner can submit stale claims after
+its playback clock falls behind the world (the Worker and guests continue).
+These are blockers, not covered by the headless benchmark. In particular, raw
+combat-render CV and >1m/frame counts must not be replaced with the synthetic
+constant-velocity benchmark below. Literal relay.cocy.io WS routing is a separate
+upstream deployment issue. Browser validation is not evidence for mobile OS sleep.
 
 ## Reproducible tests
 
@@ -84,3 +109,7 @@ The synthetic smoothness benchmark uses a constant 5m/s trajectory, not an actua
 combat renderer. Its table is not evidence that attack animation is smooth. Hunt
 acceptance reports both raw and eligible rates: claims arriving after authoritative
 end are intentionally rejected and excluded only from the eligible denominator.
+
+- node beasthunt/test/coop-e2e.mjs [baseUrl] (real shared DO, 2 peers)
+- BH_PEERS=3 node beasthunt/test/coop-e2e.mjs [baseUrl]
+- BH_RELAY=pages node beasthunt/test/coop-e2e.mjs [baseUrl] (literal endpoint diagnosis)
