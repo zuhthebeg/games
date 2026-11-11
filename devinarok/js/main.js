@@ -38,7 +38,7 @@ import { rekeySettlementItems } from './save/ops.js';
 import { acquireSettlement } from './save/settlement-lock.js';
 import {
   DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage,
-  RIFT_MAX_FLOOR, RIFT_STAGE_LIST, riftFloorOf, stageClearKey, STAGES, STAGE_LIST,
+  RIFT_MAX_FLOOR, RIFT_STAGE_LIST, riftFirstClearReward, riftFloorOf, stageClearKey, STAGES, STAGE_LIST,
 } from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
@@ -1126,9 +1126,11 @@ function renderBoard() {
     ), 0);
     const challengeFloor = Math.min(RIFT_MAX_FLOOR, bestFloor + 1);
     const challengeStage = STAGES[`R${challengeFloor}`];
+    const challengeReward = riftFirstClearReward(challengeFloor);
+    const rewardLine = ({ essence, soul }) => `첫 돌파 정수 ${essence}${soul > 0 ? ` · 영혼 ${soul}` : ''}`;
     const nextChallengeMarkup = bestFloor >= RIFT_MAX_FLOOR
       ? '<div class="rift-next-floor is-complete"><strong>심연 균열 정복 완료</strong><small>30층을 모두 돌파했어요 · 아래에서 다시 도전할 수 있어요</small></div>'
-      : `<div class="rift-next-floor"><strong>다음 도전 · ${challengeStage.name}</strong><small>적 강함 ×${challengeStage.powerMult.toFixed(2)}</small><button class="primary" data-sortie="${challengeStage.id}" ${stageIsUnlocked(challengeStage.id, 'normal') ? '' : 'disabled'}>${challengeFloor}층 도전</button></div>`;
+      : `<div class="rift-next-floor"><strong>다음 도전 · ${challengeStage.name}</strong><small>적 강함 ×${challengeStage.powerMult.toFixed(2)}</small><small>${rewardLine(challengeReward)}</small><button class="primary" data-sortie="${challengeStage.id}" ${stageIsUnlocked(challengeStage.id, 'normal') ? '' : 'disabled'}>${challengeFloor}층 도전</button></div>`;
     const unlocked = character.clearedStages.includes('KB');
     if (!unlocked) {
       hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-lock-notice">해골 왕의 옥좌를 쓰러뜨리면 열려요</p><button data-close>닫기</button>`;
@@ -1141,8 +1143,11 @@ function renderBoard() {
         const cleared = character.clearedStages.includes(stage.id);
         const bestTicks = character.records?.[stage.id];
         const bestLabel = Number.isInteger(bestTicks) ? ` · 최고 ${formatClearTime(bestTicks)}` : '';
+        const firstClearLabel = !cleared
+          ? ` · ${rewardLine(riftFirstClearReward(riftFloorOf(stage.id)))}`
+          : '';
         const bossBadge = stage.boss ? '<b class="rift-boss-badge">★보스</b>' : '';
-        return `<div class="hub-row rift-floor-card${cleared ? ' is-cleared' : ''}" data-stage-id="${stage.id}"><span class="hub-stage-info"><strong>${stage.name} ${bossBadge}</strong><small>${cleared ? '클리어' : '도전 가능'} · 적 강함 ×${stage.powerMult.toFixed(2)}${bestLabel}</small></span><button class="hub-sortie" data-sortie="${stage.id}">${cleared ? '재도전' : '출정'}</button></div>`;
+        return `<div class="hub-row rift-floor-card${cleared ? ' is-cleared' : ''}" data-stage-id="${stage.id}"><span class="hub-stage-info"><strong>${stage.name} ${bossBadge}</strong><small>${cleared ? '클리어' : '도전 가능'} · 적 강함 ×${stage.powerMult.toFixed(2)}${bestLabel}${firstClearLabel}</small></span><button class="hub-sortie" data-sortie="${stage.id}">${cleared ? '재도전' : '출정'}</button></div>`;
       }).join('');
     hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-best-floor">최고 ${bestFloor}층</p>${nextChallengeMarkup}<div class="rift-floor-list" aria-label="해금된 균열 층">${floors}</div><button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
     return;
@@ -2198,8 +2203,13 @@ function buildSettlement(outcome, result) {
   }
   let autoSold = 0;
   let record = false;
+  let firstRiftClear = null;
   if (outcome === 'clear') {
     const key = stageClearKey(stageId, difficulty);
+    const riftFloor = riftFloorOf(key);
+    if (riftFloor !== null && !character.clearedStages.includes(key)) {
+      firstRiftClear = riftFirstClearReward(riftFloor);
+    }
     const ticks = result.ticks;
     const previousBest = character.records?.[key];
     record = Number.isInteger(ticks) && (!Number.isInteger(previousBest) || ticks < previousBest);
@@ -2245,6 +2255,7 @@ function buildSettlement(outcome, result) {
     ops: contractDayFirst(character, dateKey, ops),
     autoSold,
     record,
+    firstRiftClear,
     contractProgressLines,
     masteryProgressLines,
   };
@@ -2255,6 +2266,7 @@ function renderSettlement(outcome, result, {
   record = false,
   error = null,
   newSkill = null,
+  firstRiftClear = null,
   contractProgressLines = [],
   masteryProgressLines = [],
 } = {}) {
@@ -2281,6 +2293,9 @@ function renderSettlement(outcome, result, {
         : '';
   const stageName = STAGES[stageId]?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
+  const firstRiftClearMarkup = outcome === 'clear' && firstRiftClear
+    ? `<p class="rift-first-clear">첫 돌파 보상 · 정수 ${firstRiftClear.essence}${firstRiftClear.soul > 0 ? ` · 영혼 ${firstRiftClear.soul}` : ''}</p>`
+    : '';
   const objectiveLabel = OBJECTIVE_LABELS[result.objective?.type];
   const objectiveStage = STAGES[stageId];
   const objectiveMarkup = objectiveLabel
@@ -2291,7 +2306,7 @@ function renderSettlement(outcome, result, {
       : `<p class="settlement-objective">목표 · ${objectiveLabel} 실패</p>`
     : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p>${objectiveMarkup}<p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p>${objectiveMarkup}<p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${firstRiftClearMarkup}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (contractProgressLines.length) {
     const lines = contractProgressLines.map(({ contract, progress, complete }) => {
       const label = contract.type === 'kills'
@@ -2323,6 +2338,7 @@ function renderSettlement(outcome, result, {
 async function attemptSettlement(outcome, result, settlementId) {
   let autoSold = 0;
   let record = false;
+  let firstRiftClear = null;
   let contractProgressLines = [];
   let masteryProgressLines = [];
   try {
@@ -2331,6 +2347,7 @@ async function attemptSettlement(outcome, result, settlementId) {
     const settlement = buildSettlement(outcome, result);
     autoSold = settlement.autoSold;
     record = settlement.record;
+    firstRiftClear = settlement.firstRiftClear;
     contractProgressLines = settlement.contractProgressLines;
     masteryProgressLines = settlement.masteryProgressLines;
     character = await saves.commit({
@@ -2359,7 +2376,7 @@ async function attemptSettlement(outcome, result, settlementId) {
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
     renderSettlement(outcome, result, {
-      autoSold, record, newSkill, contractProgressLines, masteryProgressLines,
+      autoSold, record, newSkill, firstRiftClear, contractProgressLines, masteryProgressLines,
     });
   } catch (error) {
     console.error('Settlement failed', error);
