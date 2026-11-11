@@ -104,6 +104,8 @@ export class Coop {
     this.stop();this.plan=plan;this.waitSince=performance.now();this.actions.clear();this.frames=[];
     this.owner=new GuestSession({quest,save:this.save,seed:crypto.getRandomValues(new Uint32Array(1))[0],hunt:plan.id,host:plan.host,uid:this.uid,
       transport:{sendState:p=>this.send(p,'state'),sendEvent:p=>this.send(p,'event')}});
+    // A terminal full after refresh reuses settled loot before Sim.result can roll.
+    try {const stored=sessionStorage.getItem('bh_reward:'+plan.id);if(stored&&stored!=='1')this.owner.sim.cachedResult=JSON.parse(stored).result;}catch(_) { /* legacy or unavailable storage */ }
     this.owner.seq=Date.now()*1000;
     this.owner.render=(h,dt)=>this.render(h,dt);
     if(this.uid===plan.host)this.world=new WorkerHost({quest,roster:plan.roster,seed:plan.seed,hunt:plan.id,host:plan.host},(p,channel)=>{
