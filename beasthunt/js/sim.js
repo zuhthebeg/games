@@ -382,6 +382,7 @@ export class Sim {
   }
   updMonAtk(dt, dist, toP, ad, spd) {
     const m = this.m, d = this.def, s = d.scale, p = (this.network && m.netTarget) || this.p, A = m.atk, k = m.ak, dm = d.dims, er = m.enr ? .85 : 1, W = A.w * er;
+    const coop = this.network?.role === 'world' || this.network?.role === 'owner';
     const fwd = (v) => { m.x += Math.sin(m.yaw) * v; m.z += Math.cos(m.yaw) * v; };
     const wind = m.t < W, act = !wind && m.t < W + A.a, wk = m.t / W, tA = m.t - W;
     const [hx, hz] = this.mPt(0, dm.headZ + .6);
@@ -399,12 +400,23 @@ export class Sim {
     if (act) {
       if (!m.flag) {
         m.flag = 1; m.fx = m.x; m.fz = m.z;
-        if (k === 'bite') { fwd(1.4 * s); const [bx, bz] = this.mPt(0, dm.headZ + 1.2); this.hurtPlayers(p => Math.hypot(p.x - bx,p.z - bz) < 2.5*s, A.dmg,m.x,m.z,false); this.sound('swing'); this.hideTele(); }
+        if (k === 'bite' && !coop) { fwd(1.4 * s); const [bx, bz] = this.mPt(0, dm.headZ + 1.2); this.hurtPlayers(p => Math.hypot(p.x - bx,p.z - bz) < 2.5*s, A.dmg,m.x,m.z,false); this.sound('swing'); this.hideTele(); }
+        if (k === 'bite' && coop) { m.biteTicks = 0; this.sound('swing'); this.hideTele(); }
         if (k === 'stomp') { const [x, z] = this.mPt(0, dm.headZ * .7); this.hurtPlayers(p => Math.hypot(p.x-x,p.z-z) < 5.2*s,A.dmg,x,z,true); this.burst('dust', x, .3, z, 26, 9, .7); this.sound('stomp'); this.emit('shake', { amount: .9 }); this.hideTele(); }
         if (k === 'spit') { for (const o of [-.28, 0, .28]) this.spawnProj(hx, hz, toP + o, 24, .7, A.dmg, false); this.sound('ice'); }
         if (k === 'leap') { const t = { x: m.tx, z: m.tz }; this.clampArena(t, R_ARENA - 3); m.tx = t.x; m.tz = t.z; m.yaw = Math.atan2(m.tx - m.x, m.tz - m.z); }
         if (k === 'sweep') this.sound('swingH');
         if (k === 'charge') { this.sound('roar'); this.hideTele(); }
+      }
+      // Coop owner/world share physical motion and contact, not a render-only
+      // seek. Preserve the full active duration; bite contacts once on tick three.
+      if (k === 'bite' && coop && m.biteTicks < 3) {
+        fwd(1.4 * s / 3); m.biteTicks++;
+        this.clampArena(m, R_ARENA - 2);
+        if (m.biteTicks === 3) {
+          const [bx, bz] = this.mPt(0, dm.headZ + 1.2);
+          this.hurtPlayers(p => Math.hypot(p.x - bx,p.z - bz) < 2.5*s, A.dmg,m.x,m.z,false);
+        }
       }
       const ak = tA / A.a;
       if (k === 'sweep') { m.spin = ease(ak) * TAU; if (ak > .1) this.hurtPlayers(p => Math.hypot(p.x-m.x,p.z-m.z) < this.sweepR(),A.dmg,m.x,m.z,false,true); this.hideTele(); }
