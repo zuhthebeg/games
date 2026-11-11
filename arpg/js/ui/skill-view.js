@@ -1,4 +1,4 @@
-import { ABILITIES, SKILL_USE, canUseSkill, skillDamageShare } from '../content/combat.js';
+import { ABILITIES, canUseSkill, skillDamageShare } from '../content/combat.js';
 import { lineageAllowsWeapon, normalizedWeaponForm } from '../content/player-lineages.js';
 import { skillGrowth, growthLabel } from '../content/skill-growth.js';
 import { masteryLevel, masteryLabel } from '../meta/skill-mastery.js';
@@ -100,8 +100,17 @@ export const skillUse = skillDamageShare;
 const hands = save => ITEMS[equippedItem(save,'weapon')?.id]?.handedness;
 const useClass = (id, weapon, form, save) => { const use = skillUse(id, weapon, form, save?.lineage, save && hands(save)); return use === undefined ? ' use-blocked' : use < 1 ? ' use-weak' : ''; };
 export function weaponWarnHtml(id, save) {
-  const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form, save.lineage, hands(save)), table = SKILL_USE[ABILITIES[id].family];
-  const allowed = ABILITIES[id].requiresSkeleton ? (ABILITIES[id].requiresSchool ? `해골 · ${WEAPON_NAMES[ABILITIES[id].family]} 100%` : '해골 계보 · 현재 무기 100%') : id === 'berserk' && save.lineage?.startsWith('skeleton_') ? '해골 · 모든 무기 100%' : ABILITIES[id].requiresTwohand ? '양손 검·양손 둔기 100%' : ABILITIES[id].requiresForm === 'sword' ? '한손 검·양손 검 100%' : ABILITIES[id].requiresFocus ? '지팡이 100%' : ABILITIES[id].shield ? '검 100% · 활 100% · 지팡이 100%' : ABILITIES[id].requiresForm ? '둔기 100%' : Object.entries(table).map(([w, v]) => `${WEAPON_NAMES[w]} ${Math.round(v * 100)}%`).join(' · ');
+  const weapon = weaponFamily(save), form = weaponForm(save), use = skillUse(id, weapon, form, save.lineage, hands(save));
+  // Use the card's lineage/form/handedness predicate; keep each accepted form's real share.
+  const weapons = Object.values(ITEMS).filter(def => def.kind === 'weapon' && lineageAllowsWeapon(save,def));
+  const allowed = [...new Set([['sword','검'],['blunt','둔기'],['bow','활'],['wand','지팡이'],['staff','지팡이']].flatMap(([form,name]) => {
+    const candidates = weapons.filter(def => normalizedWeaponForm(def) === form);
+    const usable = def => canUseSkill(id,def.family,form,save.lineage,def.handedness);
+    const accepted = candidates.filter(usable);
+    if (!accepted.length) return [];
+    const label = candidates.every(usable) ? name : `${accepted.every(def => def.handedness === 2) ? '양손' : '한손'} ${name}`;
+    return [...new Set(accepted.map(def => `${label} ${Math.round(skillUse(id,def.family,form,save.lineage,def.handedness) * 100)}%`))];
+  }))].join(' · ');
   return `<dl class="p2-lines weapon-warn${useClass(id, weapon, form, save)}"><div><dt>현재 무기</dt><dd>${form === 'blunt' ? '둔기' : WEAPON_NAMES[weapon]}</dd></div>`
     + `<div><dt>${use === undefined ? '사냥 중 사용' : '위력'}</dt><dd>${use === undefined ? '불가' : `${Math.round(use * 100)}%`}</dd></div>`
     + `<div><dt>사용 가능 무기</dt><dd>${allowed}</dd></div></dl>`;
