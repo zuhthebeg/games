@@ -1,5 +1,6 @@
 import { skillGrowth } from '../content/skill-growth.js';
 import { masteryLevel } from '../meta/skill-mastery.js';
+import { frost20, frostDef } from '../sim/frost-evolution.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { REGION_EDGES, REGION_ROUTE, MAPS, discoveredMaps, discoveredRegions, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
 import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
@@ -950,7 +951,15 @@ export class HubUI {
     if (['poison_arrow','cursed_hands','blood_spear','dead_explosion'].includes(id)) {
       return this.mountSheet(this.dialogHtml(ABILITIES[id].name,skillCardHtml(id,this.save,{context:'detail'}),slotPickHtml(id,this.save,'character')));
     }
-    const a = ABILITIES[id], p = a.projectile, shape = a.shape;
+    const a = ABILITIES[id], shape = a.shape;
+    let p = a.projectile;
+    if (id === 'sword_wave') {
+      const growth = skillGrowth(id, masteryLevel(this.save.skillMastery?.[id]));
+      // Growth targets includes the first hit; pierce counts additional hits.
+      p = { ...p, rangePx: growth.range, pierce: growth.targets - 1 };
+    } else if (id === 'frost_lance' && frost20({ frost_lance: masteryLevel(this.save.skillMastery?.[id]) })) {
+      p = frostDef(a).projectile;
+    }
     const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
       : a.zone ? `고정 지점 사거리 ${a.zone.range} px · ${a.zone.radius ? `반경 ${a.zone.radius} px` : `길이 ${a.zone.length} px · 폭 ${a.zone.width * 2} px`} · ${a.zone.delayMs ? `낙하 대기 ${amount(a.zone.delayMs / 1000)}초` : `지속 ${amount(a.zone.durationMs / 1000)}초`}`
       : a.executeUndead ? `대상 반경 ${a.executeUndead.radius} px · 가장 가까운 적 언데드 1체`
