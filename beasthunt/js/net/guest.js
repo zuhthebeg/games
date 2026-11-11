@@ -12,7 +12,7 @@ export class GuestSession {
     this.sim.players[0].id=uid;this.sim.activeId=uid;
     this.rep=new GuestReplication({hunt,host,localId:uid});
     // Normal live snapshots never correct owner coordinates; hard restores have their own metric.
-    this.positionCorrections=0;this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
+    this.positionCorrections=0;this.restoreGeneration=0;this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
     this.authorityCarts=0;this.displayHp=this.sim.m.hp;this.recovery=null;this.epoch=0;this.lastService=null;this.hidden=false;
     this.recoveryMetrics={count:0,durationMs:0,suppressedInputs:0,suppressedClaims:0,discardedEvents:0,timeouts:0,hardResyncs:0};
     this.cart=0;this.presentation=[];this.disconnected=false;this.firstHostMs=null;
@@ -66,6 +66,7 @@ export class GuestSession {
     return false;
   }
   terminal(e) {
+    this.recovery=null;
     if(this.sim.ended)return;
     const s=this.sim;this.terminalState=e;s.time=e.time;this.authorityCarts=Math.max(this.authorityCarts,e.carts);s.carts=this.authorityCarts;s.m.broke={...e.broke};
     if(e.win){s.m.hp=0;s.m.state='dead';this.displayHp=0;s.projs.length=0;}
@@ -90,7 +91,7 @@ export class GuestSession {
     this.hidden=hidden;
     if(this.transport.isOpen?.()===false){this.disconnected=true;if(!this.sim.over)this.sim.finish(false,0);return true;}
     const c=this.rep.clock;const debt=c.offset===null?0:nowMs*60/1000+c.offset-c.delayMs*60/1000-c.playTick;
-    if(hidden || (this.lastService!==null&&nowMs-this.lastService>250) || debt>18)this.suspend(nowMs);
+    if(hidden || (this.lastService!==null&&nowMs-this.lastService>=250) || debt>18)this.suspend(nowMs);
     this.lastService=nowMs;
     const r=this.recovery;
     if(!r)return false;
@@ -99,8 +100,8 @@ export class GuestSession {
     r.foregroundMs=this.recoveryElapsed(nowMs);r.wallAt=nowMs;r.wasHidden=hidden;
     const terminal=this.pending.find(p=>p.type==='end');if(terminal&&!this.sim.over)this.terminal(terminal.payload);
     if(r.foregroundMs>=5000 && r.phase!=='hard' && !this.sim.over){this.recoveryMetrics.timeouts++;this.hardResync(nowMs);}
-    if(r.phase==='hard' && !hidden && nowMs>=r.retryAt && this.transport.isOpen?.()!==false)this.requestHard(nowMs);
     if(this.sim.over)return true;
+    if(r.phase==='hard' && !hidden && nowMs>=r.retryAt && this.transport.isOpen?.()!==false)this.requestHard(nowMs);
     if(!hidden && r.phase==='anchor' && !r.nonce){
       r.nonce=this.uid+':'+(++this.epoch)+':'+this.seq;r.requested=nowMs;
       this.transport.sendEvent(envelope('resumeRequest',this.hunt,this.seq++,{nonce:r.nonce}));
@@ -142,6 +143,7 @@ export class GuestSession {
     const rep=this.rep;rep.monster=new TickBuffer();rep.monster.push(v.hostTick,s.m);
     rep.clock=new PlaybackClock();rep.clock.observe(v.hostTick,nowMs);rep.clock.playTick=v.hostTick;
     this.firstHostMs=nowMs;this.recoveryMetrics.durationMs+=nowMs-r.started;this.recovery=null;
+    this.restoreGeneration++;
     if(snap.over){s.over=false;this.terminal({...snap,broke:snap.m.broke});}
     this.transport.sendEvent(envelope('resumed',this.hunt,this.seq++,{}));return true;
   }

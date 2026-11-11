@@ -25,6 +25,7 @@ export class Hunt {
     for (const key of ['q','def','hr','m','time','carts','over','win','endT','ended','stop','slow','clock','dmgDealt','projs','arrows'])
       Object.defineProperty(this, key, { get: () => this.sim[key], set: value => { this.sim[key] = value; } });
     this.ticker = new FixedClock(); this.previous = this.sim.snapshot();
+    this.restoreGeneration = session?.restoreGeneration ?? 0;
     const d = this.def;
     const sc = this.scene = new THREE.Scene(), ar = this.arena = buildArena(d.biome, R_ARENA); sc.add(ar.group);
     sc.background = new THREE.Color(ar.B.sky); sc.fog = new THREE.Fog(ar.B.sky, ar.B.fog[0], ar.B.fog[1]);
@@ -149,8 +150,16 @@ export class Hunt {
       if(recovering){this.in.clear();this.sim.clearInputs();}
       if(this.session.recovery?.phase==='buffer')this.previous=this.sim.snapshot();
     }
+    // A hard restore starts a new presentation history, including owner and
+    // projectile poses. Show the authoritative snapshot once before ticking;
+    // neither a stale interpolation pair nor accumulated time crosses epochs.
+    const restored = this.session && (this.session.restoreGeneration ?? 0) !== (this.restoreGeneration ?? 0);
+    if (restored) {
+      this.restoreGeneration = this.session.restoreGeneration;
+      this.previous = this.sim.snapshot(); this.ticker.reset();
+    }
     this.fixedSteps=0;
-    this.ticker.advance(this.session?.recovery?.phase==='active'?Math.min(rdt,1/60):rdt, () => {
+    this.ticker.advance(restored ? 0 : this.session?.recovery?.phase==='active'?Math.min(rdt,1/60):rdt, () => {
       this.fixedSteps++;
       this.previous = this.sim.snapshot();
       if (this.session) this.presentEvents(this.session.tick(this.in.sample(this.cy), performance.now()));
