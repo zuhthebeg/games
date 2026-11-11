@@ -16,6 +16,9 @@ export class FixedClock {
 }
 export function interpolatePose(before, after, alpha) {
   const pose = { ...after };
+  // Respawn is a relocation, not motion through the arena. Keep ordinary roll
+  // and knockback interpolation. Respawn is the current sim's only teleport.
+  if (before.state === 'dead' && after.state !== 'dead') return pose;
   for (const k of ['x','y','z','spin']) if (typeof after[k] === 'number') pose[k] = before[k] + (after[k] - before[k]) * alpha;
   let angle = (after.yaw - before.yaw) % (Math.PI*2);
   if (angle > Math.PI) angle -= Math.PI*2; if (angle < -Math.PI) angle += Math.PI*2;

@@ -133,3 +133,35 @@ test('four local players advance by stable id with independent neutral/move comm
   for(let i=0;i<60;i++){s.step({p1:{moveZ:127},b:{moveZ:-127},c:{moveX:127},d:{}});s.drainEvents();}
   assert.ok(s.players[0].z>before[0]);assert.ok(s.players[1].z<before[1]);assert.ok(s.players[2].x<0);assert.equal(s.players[3].z,before[3]);
 });
+
+test('clearInputs cancels all players pending edges and levels, snapshot stays authoritative',()=>{
+  const s=new Sim(QUESTS[0],save('gs'));s.addPlayer('b',save('bow'));
+  for(const p of s.players)Object.assign(p,{state:'stun',t:1.15,hp:50});
+  s.step({p1:{light:true,heavy:true,dodge:true,potion:true,heavyHeld:true},b:{light:true,moveZ:127}});
+  assert.equal(typeof s.clearInputs,'function','explicit sim input reset API');
+  const old=hash(s);s.clearInputs();assert.notEqual(hash(s),old);
+  for(const p of s.players){assert.deepEqual(p.input,neutralInput());assert.deepEqual(p.buffer,{});}
+  const copy=new Sim(QUESTS[0],save('db')).restore(JSON.parse(JSON.stringify(s.snapshot())));
+  for(let i=0;i<10;i++){s.step();copy.step();assert.deepEqual(s.drainEvents(),copy.drainEvents());}
+  assert.ok(s.players.every(p=>p.state==='idle'));assert.equal(hash(s),hash(copy));
+});
+test('aged edges preserve the total 260ms deadline rather than starting another buffer',()=>{
+  for(const edge of ['light','heavy','dodge','potion']) {
+    const s=new Sim(QUESTS[0],save('gs'));Object.assign(s.p,{state:'stun',t:1.05,hp:50});
+    s.step({p1:{[edge]:true,edgeAgeMs:{[edge]:250}}});
+    const copy=new Sim(QUESTS[0],save('bow')).restore(s.snapshot());
+    for(let i=0;i<17;i++){s.step();copy.step();s.drainEvents();copy.drainEvents();}
+    assert.equal(s.p.state,'idle',edge+' must expire');assert.equal(hash(s),hash(copy));
+    const fresh=new Sim(QUESTS[0],save('gs'));fresh.step({p1:{[edge]:true,edgeAgeMs:{[edge]:260}}});
+    assert.equal(fresh.p.state,'idle',edge+' expired at exact deadline');
+  }
+});
+test('respawn does not interpolate across death position, continuous roll and knockback still interpolate',()=>{
+  const s=new Sim(QUESTS[0],save('gs'));Object.assign(s.p,{x:24,z:20,state:'dead',t:2.299,hp:0});
+  const before={...s.p};s.step();const pose=interpolatePose(before,s.p,.5);
+  assert.equal(pose.x,s.p.x);assert.equal(pose.z,s.p.z);assert.equal(before.x,24);
+  for(const state of ['roll','hit','down']) {
+    const a={x:0,z:0,yaw:0,spin:0,state},b={...a,x:2,z:4};
+    assert.equal(interpolatePose(a,b,.5).x,1);assert.equal(interpolatePose(a,b,.5).z,2);
+  }
+});

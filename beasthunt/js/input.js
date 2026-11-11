@@ -74,10 +74,12 @@ export class Input {
     return { x, y };
   }
   sample(yaw) {
-    const mv = this.move();
+    const mv = this.move(), now = performance.now(), edgeAgeMs = {};
+    for (const [edge, action] of [['light','attack'],['heavy','heavy'],['dodge','roll'],['potion','potion']])
+      edgeAgeMs[edge] = Math.max(0, now - (this.pressed[action] || 0));
     return { moveX: Math.round(mv.x*127), moveZ: Math.round(mv.y*127), aimYaw: yaw,
       light: this.take('attack'), heavy: this.take('heavy'), dodge: this.take('roll'), potion: this.take('potion'), lock: this.take('lock'),
-      heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
+      edgeAgeMs, heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
   }
   takeLook() { const r = { x: this.lx, y: this.ly }; this.lx = this.ly = 0; return r; }
 }

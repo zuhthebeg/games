@@ -3,6 +3,8 @@ import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POT
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
+// Optional edgeAgeMs maps combat edge names to age at sampling (default 0).
+// This plain replay input preserves the original total 260ms press deadline.
 export const neutralInput = () => ({ moveX: 0, moveZ: 0, aimYaw: 0, light: false, heavy: false, dodge: false, potion: false, lock: false, heavyHeld: false, sprint: false });
 // Nearest living hunter; a damage contribution in the last 5 seconds reduces
 // effective distance by 25%. Stable array order breaks exact ties.
@@ -67,6 +69,10 @@ export class Sim {
   burst(...args) { this.emit('burst', { args }); }
   jet(...args) { this.emit('jet', { args }); }
   take(action) { const n = this.p.buffer[action]; if (n > 0) { this.p.buffer[action] = 0; return true; } return false; }
+  // Pause/lifecycle boundary: an explicit authoritative mutation, included in snapshots.
+  clearInputs() {
+    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; }
+  }
   // Drain once per step; events are transient presentation output, not replay state.
   drainEvents() { const events = this.events; this.events = []; return events; }
   step(inputs = {}) {
@@ -76,7 +82,12 @@ export class Sim {
       for (const k in p.buffer) p.buffer[k] = Math.max(0, p.buffer[k] - 1);
       p.input = { ...neutralInput(), ...inputs[p.id] };
       p.input.moveX = Math.round(clamp(p.input.moveX, -127, 127)); p.input.moveZ = Math.round(clamp(p.input.moveZ, -127, 127));
-      for (const [edge, action] of [['light','attack'],['heavy','heavy'],['dodge','roll'],['potion','potion']]) if (p.input[edge]) p.buffer[action] = 16;
+      // Preserve platform edge age. Remaining lifetime is measured in fixed ticks
+      // (fractional at the boundary), never a second fresh 16-tick lifetime.
+      for (const [edge, action] of [['light','attack'],['heavy','heavy'],['dodge','roll'],['potion','potion']]) if (p.input[edge]) {
+        const age = Math.max(0, p.input.edgeAgeMs?.[edge] || 0);
+        p.buffer[action] = Math.max(0, (260 - age) / (FIXED_DT * 1000));
+      }
       if (p.input.lock) this.toggleLock();
     }
     let dt = FIXED_DT;

@@ -134,7 +134,7 @@ const ui = {
   pause() { setPaused(true); },
 };
 function setPaused(p) {
-  if (!hunt || hunt.over) return; hunt.paused = p; $('pause').hidden = !p; input.enabled = !p; input.clear();
+  if (!hunt || hunt.over) return; hunt.paused = p; $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
   if (p && document.pointerLockElement) document.exitPointerLock();
 }
 $('resume').onclick = () => setPaused(false);
