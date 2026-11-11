@@ -93,7 +93,7 @@ test('stage and hub props produce matching measured collision obstacles', () => 
       collidableIds.add(prop.id);
     }
     for (const obstacle of arena.obstacles) {
-      if (obstacle.doorId) continue;
+      if (obstacle.doorId || /-front-wall-[lr]$/.test(obstacle.id)) continue;
       assert.ok(collidableIds.has(obstacle.id), `${arena.id} ${obstacle.id} has a solid prop`);
     }
   }

@@ -2,29 +2,29 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   ENEMY_SILHOUETTES,
+  OUTLINE_STYLES,
   outlineKindFor,
   silhouetteScale,
   smoothOutlineNormals,
 } from '../js/render/outline-style.js';
 import { QUALITY_PRESETS } from '../js/render/quality.js';
 
-test('outlineKindFor maps players, enemies, bounty targets, and ignores unsupported entities', () => {
+test('outlineKindFor selects only the current enemy target and bounty targets', () => {
   assert.equal(outlineKindFor({ kind: 'loot' }), null);
   assert.equal(outlineKindFor({ kind: 'enemy', dead: true }), null);
   assert.equal(outlineKindFor({ kind: 'enemy', state: 'dead' }), null);
   assert.equal(outlineKindFor({ kind: 'unknown' }), null);
-  assert.equal(outlineKindFor({ kind: 'player', family: 'crossbow' }), 'crossbow');
-  assert.equal(outlineKindFor({ kind: 'player', family: 'staff' }), 'staff');
-  assert.equal(outlineKindFor({ kind: 'player', family: 'unsupported' }), 'sword');
-  assert.equal(outlineKindFor({ kind: 'player' }), 'sword');
-  assert.equal(outlineKindFor({ kind: 'enemy' }), 'enemy');
-  assert.equal(outlineKindFor({ kind: 'enemy', bounty: true }), 'bounty');
+  assert.equal(outlineKindFor({ kind: 'player', family: 'crossbow' }), null);
+  assert.equal(outlineKindFor({ kind: 'enemy', id: 'other' }, null, 'target'), null);
+  assert.equal(outlineKindFor({ kind: 'enemy', id: 'target' }, null, 'target'), 'enemy');
+  assert.equal(outlineKindFor({ kind: 'enemy', id: 'bounty', bounty: true }, null, 'other'), 'bounty');
   assert.equal(outlineKindFor({ kind: 'enemy', id: 'target' }, {
     objective: { type: 'hunt', state: 'active', targetId: 'target' },
-  }), 'bounty');
+  }, 'other'), 'bounty');
   assert.equal(outlineKindFor({ kind: 'enemy', id: 'target' }, {
     objective: { type: 'hunt', state: 'failed', targetId: 'target' },
-  }), 'enemy');
+  }, 'target'), 'enemy');
+  assert.deepEqual(Object.keys(OUTLINE_STYLES), ['enemy', 'bounty']);
 });
 
 test('silhouetteScale applies enemy proportions and preserves the uniform base scale elsewhere', () => {

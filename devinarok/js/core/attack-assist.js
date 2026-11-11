@@ -4,7 +4,7 @@ export function autoAttackDefault({ pointerType = '', coarsePointer = false } = 
   return pointerType === 'touch' || pointerType === 'coarse' || coarsePointer;
 }
 
-function attackReach(player) {
+export function attackReach(player) {
   if (player.family === 'crossbow') return 9;
   if (player.family === 'staff') return 7;
   return COMBO_TIMELINES[0].range + 0.3;

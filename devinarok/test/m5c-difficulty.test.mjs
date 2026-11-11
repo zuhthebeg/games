@@ -124,8 +124,8 @@ test('difficulty tiers multiply enemy XP and gold rewards', () => {
     const world = createStageWorld({ seed: 905, stageId: 'C1', difficulty });
     const enemy = stageEnemies(world)[0];
     assert.equal(debugKillEnemy(world, enemy), true);
-    const gold = world.entities.find((entity) => entity.kind === 'loot' && entity.lootType === 'gold');
-    return { xp: world.rewards.hero.xp, gold: gold.gold };
+    assert.equal(world.entities.some((entity) => entity.kind === 'loot' && entity.lootType === 'gold'), false);
+    return { xp: world.rewards.hero.xp, gold: world.rewards.hero.gold };
   });
   assert.deepEqual(results.map(({ xp }) => xp), [
     ENEMIES.minion.xp,

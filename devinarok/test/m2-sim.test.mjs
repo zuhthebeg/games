@@ -63,6 +63,7 @@ test('party rewards are per-player and instanced loot is owner-only', () => {
   b.z = 8;
   enemy.x = 1.1;
   enemy.z = 0;
+  enemy.elite = true;
   enemy.hp = 1;
   enemy.maxHp = 1;
 
@@ -72,6 +73,13 @@ test('party rewards are per-player and instanced loot is owner-only', () => {
   assert.equal(enemy.dead, true);
   assert.ok(world.rewards.p1.xp > 0);
   assert.equal(world.rewards.p1.xp, world.rewards.p2.xp);
+  const autoGold = world.events.filter((event) => (
+    event.type === 'pickup' && event.auto && event.lootType === 'gold'
+  ));
+  assert.equal(autoGold.length, 2);
+  assert.deepEqual(new Set(autoGold.map((event) => event.playerId)), new Set(['p1', 'p2']));
+  assert.equal(world.rewards.p1.gold, autoGold.find((event) => event.playerId === 'p1').gold);
+  assert.equal(world.rewards.p2.gold, autoGold.find((event) => event.playerId === 'p2').gold);
   const spawned = world.events.filter((event) => event.type === 'lootSpawn');
   assert.ok(spawned.length >= 2);
   assert.deepEqual(new Set(spawned.map((event) => event.ownerId)), new Set(['p1', 'p2']));
@@ -81,8 +89,8 @@ test('party rewards are per-player and instanced loot is owner-only', () => {
   a.x = otherPlayerLoot[0].x;
   a.z = otherPlayerLoot[0].z;
   step(world, { [a.playerId]: neutral(21) });
-  assert.ok(world.rewards.p1.gold > 0);
-  assert.equal(world.rewards.p2.gold, 0);
+  assert.equal(world.rewards.p1.gold, autoGold.find((event) => event.playerId === 'p1').gold);
+  assert.equal(world.rewards.p2.gold, autoGold.find((event) => event.playerId === 'p2').gold);
   assert.ok(world.entities.some((entity) => entity.kind === 'loot' && entity.ownerId === b.playerId));
 });
 

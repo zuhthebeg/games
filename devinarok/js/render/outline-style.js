@@ -1,22 +1,17 @@
 export const OUTLINE_STYLES = Object.freeze({
   enemy: { color: 0xd9412e, widthPx: 2.5 },
   bounty: { color: 0xffcf4a, widthPx: 3.5 },
-  sword: { color: 0xffb15a, widthPx: 2 },
-  crossbow: { color: 0x7fe08a, widthPx: 2 },
-  staff: { color: 0x7fb8ff, widthPx: 2 },
 });
 
-export function outlineKindFor(entity, world) {
+export function outlineKindFor(entity, world, targetId = null) {
   if (!entity || entity.dead || entity.state === 'dead' || entity.kind === 'loot') return null;
-  if (entity.kind === 'player') {
-    return ['sword', 'crossbow', 'staff'].includes(entity.family) ? entity.family : 'sword';
-  }
   if (entity.kind !== 'enemy') return null;
   const objective = world?.objective;
   const isHuntTarget = objective?.type === 'hunt'
     && objective.state === 'active'
     && objective.targetId === entity.id;
-  return entity.bounty || isHuntTarget ? 'bounty' : 'enemy';
+  if (entity.bounty || isHuntTarget) return 'bounty';
+  return entity.id === targetId ? 'enemy' : null;
 }
 
 export const ENEMY_SILHOUETTES = Object.freeze({

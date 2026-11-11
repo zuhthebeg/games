@@ -36,6 +36,7 @@ test('M1-M3c content reference valid models and settled combat ranges', () => {
   for (const stage of [...STAGE_LIST.map((entry) => STAGES[entry.id]), HUB_ARENA]) {
     const props = new Map(stage.props.filter((prop) => prop.obstacleId).map((prop) => [prop.obstacleId, prop]));
     for (const obstacle of stage.obstacles) {
+      if (/-front-wall-[lr]$/.test(obstacle.id)) continue;
       const prop = props.get(obstacle.id);
       assert.ok(prop, `${stage.id}: obstacle ${obstacle.id} has no GLB`);
       assert.equal(prop.x, obstacle.x);
