@@ -8,6 +8,12 @@ import { ITEMS, RARITIES } from '../content/items.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
 import { playerLookKey, playerModelKey } from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
+import {
+  OUTLINE_STYLES,
+  outlineKindFor,
+  silhouetteScale,
+  smoothOutlineNormals,
+} from './outline-style.js';
 import { castVisualKey } from '../net/cast-timeline.js';
 import { isPerfectDodgeWindowActive } from './dodge-window.js';
 
@@ -329,6 +335,7 @@ export class ArenaRenderer {
     this.telegraphEmphasis = true;
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    this.createOutlineMaterials();
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.9;
@@ -439,9 +446,11 @@ export class ArenaRenderer {
     const previousParticles = this.particleMultiplier;
     this.effectiveQuality = name;
     this.particleMultiplier = preset.particles;
+    this.outlinesEnabled = preset.outlines;
     if (this.renderer) {
       this.renderer.shadowMap.enabled = preset.shadows;
       this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, preset.pixelRatio) * this.resolutionScale);
+      this.updateOutlineUniforms();
     }
     if (this.scene.fog) {
       this.scene.fog.near = preset.fog ? this.baseFogRange.near : this.baseFogRange.near * 1.2;
@@ -464,6 +473,102 @@ export class ArenaRenderer {
       }
     }
     this.resizeCanvas();
+  }
+
+  createOutlineMaterials() {
+    this.outlineResolutionUniform = { value: new THREE.Vector2(1, 1) };
+    this.outlinePixelUniforms = new Map();
+    this.outlineMaterials = new Map();
+    this.outlineNormalGeometryCache = new WeakMap();
+    this.outlinesEnabled = Boolean(QUALITY_PRESETS[this.effectiveQuality]?.outlines);
+
+    for (const [kind, style] of Object.entries(OUTLINE_STYLES)) {
+      const outlinePxUniform = { value: style.widthPx * this.renderer.getPixelRatio() };
+      const material = new THREE.MeshBasicMaterial({
+        color: style.color,
+        side: THREE.BackSide,
+        toneMapped: false,
+        fog: false,
+      });
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.uOutlineResolution = this.outlineResolutionUniform;
+        shader.uniforms.uOutlinePx = outlinePxUniform;
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <common>',
+          '#include <common>\nattribute vec3 outlineNormal;\nuniform vec2 uOutlineResolution;\nuniform float uOutlinePx;',
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <project_vertex>',
+          `#include <project_vertex>
+#ifdef USE_SKINNING
+  vec3 outlineN = (skinMatrix * vec4(outlineNormal, 0.0)).xyz;
+#else
+  vec3 outlineN = outlineNormal;
+#endif
+vec2 outlineDir = (projectionMatrix * modelViewMatrix * vec4(outlineN, 0.0)).xy;
+float outlineLen = length(outlineDir);
+if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx * 2.0 / uOutlineResolution * gl_Position.w;`,
+        );
+      };
+      material.customProgramCacheKey = () => 'devinarok-outline';
+      this.outlineMaterials.set(kind, material);
+      this.outlinePixelUniforms.set(kind, outlinePxUniform);
+    }
+    this.updateOutlineUniforms();
+  }
+
+  updateOutlineUniforms() {
+    if (!this.renderer || !this.outlineResolutionUniform) return;
+    this.renderer.getDrawingBufferSize(this.outlineResolutionUniform.value);
+    const pixelRatio = this.renderer.getPixelRatio();
+    for (const [kind, style] of Object.entries(OUTLINE_STYLES)) {
+      const uniform = this.outlinePixelUniforms.get(kind);
+      if (uniform) uniform.value = style.widthPx * pixelRatio;
+    }
+  }
+
+  outlineGeometry(geometry) {
+    if (!geometry) return null;
+    if (this.outlineNormalGeometryCache.has(geometry)) {
+      return this.outlineNormalGeometryCache.get(geometry) ? geometry : null;
+    }
+    const positions = geometry.getAttribute('position');
+    const normals = geometry.getAttribute('normal');
+    if (!positions || !normals || positions.count !== normals.count) {
+      this.outlineNormalGeometryCache.set(geometry, false);
+      return null;
+    }
+    const positionValues = new Float32Array(positions.count * 3);
+    const normalValues = new Float32Array(normals.count * 3);
+    for (let index = 0; index < positions.count; index += 1) {
+      const offset = index * 3;
+      positionValues[offset] = positions.getX(index);
+      positionValues[offset + 1] = positions.getY(index);
+      positionValues[offset + 2] = positions.getZ(index);
+      normalValues[offset] = normals.getX(index);
+      normalValues[offset + 1] = normals.getY(index);
+      normalValues[offset + 2] = normals.getZ(index);
+    }
+    geometry.setAttribute('outlineNormal', new THREE.Float32BufferAttribute(
+      smoothOutlineNormals(positionValues, normalValues),
+      3,
+    ));
+    this.outlineNormalGeometryCache.set(geometry, true);
+    return geometry;
+  }
+
+  updateEntityOutlines(entity, visual, world) {
+    const kind = outlineKindFor(entity, world);
+    if (kind !== visual.outlineKind) {
+      const material = this.outlineMaterials.get(kind);
+      if (material) {
+        for (const { outline } of visual.outlines) outline.material = material;
+      }
+      visual.outlineKind = kind;
+    }
+    for (const { source, outline } of visual.outlines) {
+      outline.visible = this.outlinesEnabled && kind !== null && source.visible && !entity.dead;
+    }
   }
 
   setReducedMotion(value) {
@@ -1310,7 +1415,7 @@ export class ArenaRenderer {
     }
   }
 
-  createEntity(entity) {
+  createEntity(entity, world = null) {
     const entityModelKey = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
     const assetKey = entityModelKey === 'rogue' ? 'Rogue_Hooded' : entityModelKey === 'mage' ? 'Mage' : entityModelKey;
     const source = this.models.get(assetKey);
@@ -1328,7 +1433,8 @@ export class ArenaRenderer {
       }
     }
     if (entity.kind === 'player') isolateWeaponMaterials(root, materials);
-    root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
+    if (entity.kind === 'enemy') root.scale.set(...silhouetteScale(entity));
+    else root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
     const screenCenterY = modelBounds && !modelBounds.isEmpty()
       ? (modelBounds.min.y + modelBounds.max.y) / 2
@@ -1338,6 +1444,7 @@ export class ArenaRenderer {
       const shieldGeometry = new THREE.BoxGeometry(0.48, 0.68, 0.14);
       const shieldMaterial = new THREE.MeshStandardMaterial({ color: 0x79818e, metalness: 0.48, roughness: 0.52 });
       const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+      shield.scale.setScalar(1.2);
       shield.position.set(0.42, 0.8, 0.25);
       root.add(shield);
       const bossGeometry = new THREE.SphereGeometry(0.095, 6, 4);
@@ -1346,6 +1453,34 @@ export class ArenaRenderer {
       shieldBoss.position.set(0.42, 0.8, 0.33);
       root.add(shieldBoss);
       lootResources.push(shieldGeometry, shieldMaterial, bossGeometry, bossMaterial);
+    }
+    const outlines = [];
+    const outlineKind = entity.kind === 'player' || entity.kind === 'enemy'
+      ? outlineKindFor(entity, world)
+      : null;
+    if (entity.kind === 'player' || entity.kind === 'enemy') {
+      const meshNodes = [];
+      root.traverse((node) => {
+        if (node.isMesh) meshNodes.push(node);
+      });
+      const material = this.outlineMaterials.get(outlineKind) ?? this.outlineMaterials.get('enemy');
+      for (const node of meshNodes) {
+        const geometry = this.outlineGeometry(node.geometry);
+        if (!geometry) continue;
+        const outline = node.isSkinnedMesh
+          ? new THREE.SkinnedMesh(geometry, material)
+          : new THREE.Mesh(geometry, material);
+        if (node.isSkinnedMesh) outline.bind(node.skeleton, node.bindMatrix);
+        outline.position.copy(node.position);
+        outline.quaternion.copy(node.quaternion);
+        outline.scale.copy(node.scale);
+        outline.frustumCulled = node.frustumCulled;
+        outline.castShadow = false;
+        outline.receiveShadow = false;
+        outline.visible = this.outlinesEnabled && outlineKind !== null && node.visible && !entity.dead;
+        node.parent.add(outline);
+        outlines.push({ source: node, outline });
+      }
     }
     if (entity.kind === 'loot') {
       const beamGeometry = new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true);
@@ -1413,6 +1548,8 @@ export class ArenaRenderer {
       materialState,
       screenCenterY,
       lootResources,
+      outlines,
+      outlineKind,
       modelKey: entity.kind === 'player' ? entityModelKey : '',
       lookKey: entity.kind === 'player' ? playerLookKey(entity.look) : '',
       weaponMaterials: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Set(),
@@ -2484,12 +2621,12 @@ export class ArenaRenderer {
     for (const entity of world.entities) {
       activeIds.add(entity.id);
       let visual = this.entities.get(entity.id);
-      if (!visual) visual = this.createEntity(entity);
+      if (!visual) visual = this.createEntity(entity, world);
       if (entity.kind === 'player') {
         const modelKey = playerModelKey(entity);
         if (modelKey !== visual.modelKey) {
           this.removeEntityVisual(entity.id, visual);
-          visual = this.createEntity(entity);
+          visual = this.createEntity(entity, world);
         }
         const lookKey = playerLookKey(entity.look);
         if (lookKey !== visual.lookKey) {
@@ -2508,6 +2645,7 @@ export class ArenaRenderer {
       }
       visual.root.visible = !entity.dead || entity.deathTicks > 0;
       visual.shadow.visible = !entity.dead;
+      this.updateEntityOutlines(entity, visual, world);
       this.updateEntityMaterials(entity, visual, now);
     }
     for (const [id, visual] of this.entities) {
@@ -2571,6 +2709,7 @@ export class ArenaRenderer {
     const pixelRatio = QUALITY_PRESETS[this.effectiveQuality]?.pixelRatio ?? 1.5;
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, pixelRatio) * this.resolutionScale);
     this.renderer.setSize(width, height, false);
+    this.updateOutlineUniforms();
   }
 
   getLoadedBytes() {
@@ -2590,6 +2729,8 @@ export class ArenaRenderer {
     this.partyMarkers.clear();
     for (const [id, visual] of this.entities) this.removeEntityVisual(id, visual);
     this.entities.clear();
+    for (const material of this.outlineMaterials.values()) material.dispose();
+    this.outlineMaterials.clear();
     for (const effect of this.slashes.values()) {
       this.scene.remove(effect.mesh);
       effect.mesh.geometry.dispose();

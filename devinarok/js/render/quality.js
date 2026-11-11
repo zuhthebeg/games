@@ -1,7 +1,7 @@
 export const QUALITY_PRESETS = Object.freeze({
-  low: Object.freeze({ pixelRatio: 1, shadows: false, particles: 0.5, fog: false }),
-  medium: Object.freeze({ pixelRatio: 1.5, shadows: true, particles: 1, fog: true }),
-  high: Object.freeze({ pixelRatio: 2, shadows: true, particles: 1, fog: true }),
+  low: Object.freeze({ pixelRatio: 1, shadows: false, particles: 0.5, fog: false, outlines: false }),
+  medium: Object.freeze({ pixelRatio: 1.5, shadows: true, particles: 1, fog: true, outlines: true }),
+  high: Object.freeze({ pixelRatio: 2, shadows: true, particles: 1, fog: true, outlines: true }),
 });
 
 const QUALITY_LEVELS = ['low', 'medium', 'high'];
