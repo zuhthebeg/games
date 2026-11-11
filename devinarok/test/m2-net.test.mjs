@@ -18,7 +18,7 @@ import { Predictor } from '../js/net/predictor.js';
 import { playerModelKey } from '../js/render/player-look.js';
 import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
 import { BUTTONS, createStageWorld } from '../js/sim/world.js';
-import { effectiveStageLevel, STAGE_LIST } from '../js/content/stages.js';
+import { effectiveStageLevel, STAGE_LIST, STAGES } from '../js/content/stages.js';
 
 test('server counter upgrades a predicted basic cast instead of being deduplicated', () => {
   const timeline = new CastTimeline({ playerId: 'hero' });
@@ -224,6 +224,11 @@ test('party finder derives HTTP base, sorts rooms, and escapes host names', () =
   const nightmareLevel = effectiveStageLevel(STAGE_LIST.find((stage) => stage.id === 'C2'), 'nightmare');
   assert.equal(markup.split(`권장 Lv.${nightmareLevel}`).length - 1, 2);
   assert.ok(markup.includes('class="party-row-join">참가</b>'));
+  const riftMarkup = partyRoomsMarkup([
+    { roomId: 'devinarok:RIFT7', players: 1, meta: { stageId: 'R7', difficulty: 'normal' } },
+  ], 1);
+  assert.ok(riftMarkup.includes('심연 균열 7층'));
+  assert.ok(riftMarkup.includes(`권장 Lv.${STAGES.R7.recommendedLevel}`));
 });
 
 test('quick join joins a match, creates when empty, and retries a failed room once', async () => {
