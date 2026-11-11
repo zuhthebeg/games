@@ -66,6 +66,23 @@ function botTick(world, seq, { aimAtTarget = false, perfectDodge = false } = {})
       dz = door.z - player.z;
     }
   }
+  if (target && !imminent) {
+    const crossingDoor = world.arena.doors.find((door) => (
+      world.openDoors?.[door.id] && (player.z - door.z) * (target.z - door.z) < 0
+    ));
+    const gate = crossingDoor && world.arena.obstacles.find((obstacle) => obstacle.doorId === crossingDoor.id);
+    if (crossingDoor && gate) {
+      const playerSide = player.z >= crossingDoor.z ? 1 : -1;
+      const safeOffset = gate.depth / 2 + player.radius + 0.1;
+      if (Math.abs(player.z - crossingDoor.z) <= safeOffset) {
+        dx = 0;
+        dz = playerSide;
+      } else if (Math.abs(player.x - crossingDoor.x) > gate.width / 2 - player.radius) {
+        dx = crossingDoor.x - player.x;
+        dz = 0;
+      }
+    }
+  }
   const magnitude = Math.hypot(dx, dz) || 1;
   let moveX = Math.round(dx / magnitude * 127);
   let moveZ = Math.round(dz / magnitude * 127);
@@ -100,6 +117,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
   const world = createStageWorld({ seed, stageId, difficulty, playerId: id, character: { level, potions, equipment } });
   let dodges = 0;
   let perfectDodges = 0;
+  let potionsPickedUp = 0;
   let lastEventId = 0;
   let lastDamage = null;
   const playerId = world.entities.find((entity) => entity.kind === 'player')?.id;
@@ -110,6 +128,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
       lastEventId = event.eventId;
       if (event.type === 'dodge') dodges += 1;
       if (event.type === 'perfectDodge') perfectDodges += 1;
+      if (event.type === 'pickup' && event.lootType === 'potion' && event.playerId === id) potionsPickedUp += 1;
       if (event.type === 'hit' && event.targetId === playerId && event.damage > 0) {
         const source = world.entities.find((entity) => entity.id === event.sourceId);
         lastDamage = { source: source?.enemyKind ?? event.sourceId, damage: event.damage };
@@ -130,6 +149,7 @@ function runBot({ seed, stageId, level, equipment = [], potions = 5, maxTicks = 
     roomCleared: world.roomCleared,
     dodgeCount: dodges,
     perfectDodgeCount: perfectDodges,
+    potionsPickedUp,
     lastDamage,
     playerPosition: player ? { x: player.x, z: player.z } : null,
     remainingEnemies: world.entities
@@ -217,6 +237,7 @@ test('scripted input-record bot keeps C1 level-1 clears within one of the M1 bas
   const clears = runs.filter((run) => run.outcome === 'clear');
   const averageSeconds = clears.length ? clears.reduce((sum, run) => sum + run.seconds, 0) / clears.length : 0;
   console.log(`M1 bot C1 L1: ${clears.length}/10 clears; mean clear time ${averageSeconds.toFixed(1)}s`);
+  console.log(`M6g solo C1 potion pickups: ${(runs.reduce((sum, run) => sum + run.potionsPickedUp, 0) / runs.length).toFixed(2)} per run`);
   console.log(`M1 bot C1 L1 perfect dodge: ${perfectDodgeSummary(runs)}`);
   assert.equal(clears.length, 10);
   assert.ok(clears.every((run) => run.seconds <= 180));
@@ -234,6 +255,7 @@ test('scripted input-record bot keeps level-7 boss wins within one of the M1 bas
   const wins = runs.filter((run) => run.outcome === 'clear');
   const medianClearSeconds = wins.length ? median(wins.map((run) => run.seconds)) : null;
   console.log(`M1 bot CB L7 rare gear: ${wins.length}/10 wins; median ${medianClearSeconds?.toFixed(1) ?? '—'}s`);
+  console.log(`M6g solo CB potion pickups: ${(runs.reduce((sum, run) => sum + run.potionsPickedUp, 0) / runs.length).toFixed(2)} per run`);
   console.log(`M1 bot CB perfect dodge: ${perfectDodgeSummary(runs)}`);
   assert.ok(wins.length >= 7 && wins.length <= 10);
 });

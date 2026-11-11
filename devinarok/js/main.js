@@ -121,6 +121,7 @@ let sanctuaryBurnAudio = null;
 let actionToastTimer = null;
 let counterPunchTimer = null;
 let counterToastTimer = null;
+let lastGoldPickupSoundAt = -Infinity;
 
 function suppressGameGesture(event) {
   if (!world && !partyClient?.runId) return;
@@ -577,9 +578,22 @@ function handleAudioEvent(event, current) {
   if (event.type === 'doorOpen') audio.play('door-open');
   if (event.type === 'potion') audio.play('potion');
   if (event.type === 'pickup') {
-    audio.play(event.lootType === 'gold' ? 'coins' : 'confirm');
-    if (event.lootType === 'item' && ['rare', 'legendary'].includes(event.item?.rarity)) audio.play('reward-chime');
-    updateTutorial({ type: 'loot' });
+    const isLocalPickup = event.playerId === character?.id || event.entityId === localPlayer?.id;
+    if (isLocalPickup) {
+      if (event.lootType === 'gold') {
+        const now = performance.now();
+        if (now - lastGoldPickupSoundAt >= 120) {
+          audio.play('coins');
+          lastGoldPickupSoundAt = now;
+        }
+      } else {
+        audio.play(event.lootType === 'potion' ? 'potion' : 'confirm');
+      }
+      if (event.lootType === 'item' && ['rare', 'legendary'].includes(event.item?.rarity)) {
+        audio.play('reward-chime');
+      }
+      if (['item', 'potion'].includes(event.lootType)) updateTutorial({ type: 'loot' });
+    }
   }
   if (event.type === 'spawn' && event.boss) audio.play('roar', { rate: 0.62 });
   if (event.type === 'cast' && event.step) updateTutorial({ type: 'attack' });
@@ -2912,7 +2926,7 @@ if (DEV_MODE) {
         x: item.x ?? player?.x ?? 0,
         z: item.z ?? player?.z ?? 0,
         radius: 0.18,
-        item: item.lootType === 'gold' ? null : { itemId: item.itemId ?? 'rusted-sword', rarity: item.rarity ?? 'rare' },
+        item: ['gold', 'potion'].includes(item.lootType) ? null : { itemId: item.itemId ?? 'rusted-sword', rarity: item.rarity ?? 'rare' },
         gold: item.lootType === 'gold' ? item.gold ?? 50 : 0,
       };
       world.entities.push(entity);

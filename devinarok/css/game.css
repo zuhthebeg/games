@@ -71,6 +71,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .combat-vfx-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
 .damage-number { position: absolute; color: #ffd29a; font: 800 24px/1 system-ui, sans-serif; text-shadow: 0 2px 3px #1b0d0a, 0 0 12px #ff8c47; white-space: nowrap; will-change: transform, opacity; }
 .damage-number.guarded { color: #ccd3dc; text-shadow: 0 2px 3px #10141b, 0 0 10px #71839a; }
+.damage-number.gold-pickup { color: #ffe27d; font-size: 16px; text-shadow: 0 2px 4px #251800, 0 0 10px #eebc38; }
 .sanctuary-mode #controls .buttons > button:not(#sanctuary-interact) { display: none; }
 .sanctuary-mode #sanctuary-interact { display: block; min-width: 142px; padding: 12px 15px; border-color: #e1b65d; background: #6b301fe8; color: #ffedc4; font-weight: 800; }
 .sanctuary-hud { position: absolute; z-index: 4; inset: 74px 12px auto; display: flex; justify-content: flex-end; gap: 8px; pointer-events: none; }

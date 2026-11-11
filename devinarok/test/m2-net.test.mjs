@@ -94,6 +94,18 @@ test('remote player model selection falls back to knight for older snapshots', (
   assert.equal(playerModelKey({ kind: 'player', characterKind: 'Rogue_Hooded' }), 'Rogue_Hooded');
 });
 
+test('snapshot encoding preserves potion loot type for full and incremental frames', () => {
+  for (const full of [true, false]) {
+    const decoded = decodeMessage(encodeMessage({
+      t: 'snap',
+      full,
+      ents: [{ id: 12, kind: 'loot', x: 1.23, z: -4.56, ownerId: 'hero', lootType: 'potion' }],
+    }));
+    assert.equal(decoded.ents[0].lootType, 'potion');
+    assert.equal(decoded.ents[0].ownerId, 'hero');
+  }
+});
+
 test('snapshot delta merging preserves a newly seen player look', () => {
   const received = [];
   const session = new NetSession({

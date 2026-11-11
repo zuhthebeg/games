@@ -3,7 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { ARENA } from '../sim/arena.js';
-import { COMBO_TIMELINES } from '../sim/world.js';
+import { attackReach } from '../core/attack-assist.js';
+import { COMBO_TIMELINES, pickAimTarget } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
 import {
@@ -369,6 +370,7 @@ export class ArenaRenderer {
     this.fadeGroups = [];
     this.fadeObjects = [];
     this.localPlayerId = initialWorld?.entities?.find((entity) => entity.kind === 'player')?.playerId ?? null;
+    this.outlineTargetId = null;
     this.occlusionPlayerPoint = new THREE.Vector3();
     this.occlusionPropPoint = new THREE.Vector3();
     this.sideWalls = [];
@@ -568,7 +570,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   }
 
   updateEntityOutlines(entity, visual, world) {
-    const kind = outlineKindFor(entity, world);
+    const kind = outlineKindFor(entity, world, this.outlineTargetId);
     if (kind !== visual.outlineKind) {
       const material = this.outlineMaterials.get(kind);
       if (material) {
@@ -1492,10 +1494,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       lootResources.push(shieldGeometry, shieldMaterial, bossGeometry, bossMaterial);
     }
     const outlines = [];
-    const outlineKind = entity.kind === 'player' || entity.kind === 'enemy'
-      ? outlineKindFor(entity, world)
+    const outlineKind = entity.kind === 'enemy'
+      ? outlineKindFor(entity, world, this.outlineTargetId)
       : null;
-    if (entity.kind === 'player' || entity.kind === 'enemy') {
+    if (entity.kind === 'enemy') {
       const meshNodes = [];
       root.traverse((node) => {
         if (node.isMesh) meshNodes.push(node);
@@ -1520,8 +1522,13 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       }
     }
     if (entity.kind === 'loot') {
+      const isPotion = entity.lootType === 'potion';
+      const beamColor = isPotion ? 0xe0414f
+        : entity.item?.rarity === 'legendary' ? 0xff8b38
+          : entity.item?.rarity === 'rare' ? 0xf0c64f
+            : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef;
       const beamGeometry = new THREE.CylinderGeometry(0.035, 0.16, 1.25, 8, 1, true);
-      const beamMaterial = new THREE.MeshBasicMaterial({ color: entity.item?.rarity === 'legendary' ? 0xff8b38 : entity.item?.rarity === 'rare' ? 0xf0c64f : entity.item?.rarity === 'magic' ? 0x6388ff : 0x70d8ef, transparent: true, opacity: 0.72, depthWrite: false });
+      const beamMaterial = new THREE.MeshBasicMaterial({ color: beamColor, transparent: true, opacity: 0.72, depthWrite: false });
       const beam = new THREE.Mesh(
         beamGeometry,
         beamMaterial,
@@ -1530,7 +1537,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       beam.position.y = 0.75;
       root.add(beam);
       const orbGeometry = new THREE.OctahedronGeometry(0.22, 0);
-      const orbMaterial = new THREE.MeshBasicMaterial({ color: 0xffdf94 });
+      const orbMaterial = new THREE.MeshBasicMaterial({ color: isPotion ? 0xe0414f : 0xffdf94 });
       const orb = new THREE.Mesh(orbGeometry, orbMaterial);
       lootResources.push(orbGeometry, orbMaterial);
       orb.position.y = 0.18;
@@ -1543,8 +1550,16 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       labelContext.fillRect(2, 2, 316, 60);
       labelContext.font = 'bold 28px sans-serif';
       labelContext.textAlign = 'center';
-      labelContext.fillStyle = entity.lootType === 'gold' ? '#f5d17d' : '#ffffff';
-      labelContext.fillText(entity.lootType === 'gold' ? `+${entity.gold} G` : ITEMS[entity.item?.itemId]?.name ?? `${RARITIES[entity.item?.rarity]?.name ?? '장비'} 아이템`, 160, 42);
+      labelContext.fillStyle = isPotion ? '#ffd2d7' : entity.lootType === 'gold' ? '#f5d17d' : '#ffffff';
+      labelContext.fillText(
+        isPotion
+          ? '물약'
+          : entity.lootType === 'gold'
+            ? `+${entity.gold} G`
+            : ITEMS[entity.item?.itemId]?.name ?? `${RARITIES[entity.item?.rarity]?.name ?? '장비'} 아이템`,
+        160,
+        42,
+      );
       const labelTexture = new THREE.CanvasTexture(labelCanvas);
       labelTexture.colorSpace = THREE.SRGBColorSpace;
       const labelMaterial = new THREE.SpriteMaterial({ map: labelTexture, transparent: true, depthTest: false });
@@ -1751,16 +1766,26 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   }
 
   createDamageNumber(event) {
-    if (event.damage <= 0) return;
+    const pickup = event.type === 'pickup';
+    if (pickup && (
+      !event.auto || event.lootType !== 'gold' || event.playerId !== this.localPlayerId
+    )) return;
+    if (!pickup && event.damage <= 0) return;
     const element = document.createElement('span');
-    element.className = event.guarded ? 'damage-number guarded' : 'damage-number';
-    element.textContent = event.guarded ? `막음 −${event.damage}` : `−${event.damage}`;
+    element.className = pickup
+      ? 'damage-number gold-pickup'
+      : event.guarded ? 'damage-number guarded' : 'damage-number';
+    element.textContent = pickup
+      ? `+${event.gold} G`
+      : event.guarded ? `막음 −${event.damage}` : `−${event.damage}`;
     this.vfxLayer.appendChild(element);
     this.damageNumbers.push({
       element,
-      targetId: event.targetId,
+      targetId: pickup ? null : event.targetId,
+      x: pickup ? event.x : null,
+      z: pickup ? event.z : null,
       startTime: performance.now(),
-      duration: 850,
+      duration: pickup ? 700 : 850,
     });
     while (this.damageNumbers.length > 24) this.removeDamageNumber(0);
   }
@@ -2097,6 +2122,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
           if (target?.kind === 'player' && !this.reducedMotion) this.shakeUntil = now + 110;
         }
       }
+      if (event.type === 'pickup') this.createDamageNumber(event);
       if (event.type === 'death') this.createDeathPuff(event, world);
     }
     while (this.seenEventIds.size > 512) this.seenEventIds.delete(this.seenEventIds.values().next().value);
@@ -2128,13 +2154,19 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         this.removeDamageNumber(index);
         continue;
       }
-      const target = world.entities.find((entity) => entity.id === effect.targetId);
-      if (!target) {
+      const target = effect.targetId === null
+        ? null
+        : world.entities.find((entity) => entity.id === effect.targetId);
+      if (effect.targetId !== null && !target) {
         this.removeDamageNumber(index);
         continue;
       }
       const progress = elapsed / effect.duration;
-      const point = this.projectedPoint.set(target.x, 1.35 + progress * 0.65, target.z).project(this.camera);
+      const point = this.projectedPoint.set(
+        target?.x ?? effect.x,
+        1.35 + progress * 0.65,
+        target?.z ?? effect.z,
+      ).project(this.camera);
       const rect = this.canvas.getBoundingClientRect();
       effect.element.style.left = `${(point.x + 1) * rect.width / 2}px`;
       effect.element.style.top = `${(1 - point.y) * rect.height / 2}px`;
@@ -2643,6 +2675,12 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     this.lastRender = now;
     const quality = this.qualityController.recordFrame(dt * 1000);
     if (quality !== this.effectiveQuality) this.applyQualityPreset(quality);
+    const localPlayer = world.entities.find((entity) => entity.kind === 'player' && (
+      entity.playerId === this.localPlayerId || entity.id === this.localPlayerId
+    ));
+    this.outlineTargetId = localPlayer && !localPlayer.dead
+      ? pickAimTarget(world, localPlayer, attackReach(localPlayer))?.id ?? null
+      : null;
     this.updateAshParticles(dt, now);
     this.consumeEvents(world, now);
     for (const torch of this.torchLights) {
