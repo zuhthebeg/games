@@ -1,3 +1,4 @@
+import {VERSION} from '../js/net/protocol.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LoopbackNetwork} from '../js/net/transport.js';
@@ -67,7 +68,7 @@ for(const peers of [2,4])test('LTE/'+peers+' owner-reported shared three-cart fa
 test('duplicate owner cart cannot consume another shared life',()=>{
   const sent=[],host=new HostSession({quest:QUESTS[0],roster:{a:{save},b:{save}},hunt:'h',host:'a',
     transport:{sendState:()=>{},sendEvent:p=>sent.push(p)}});
-  const cart={v:1,type:'cart',hunt:'h',seq:1,payload:{cart:1}};
+  const cart={v:VERSION,type:'cart',hunt:'h',seq:1,payload:{cart:1}};
   assert.equal(host.receive('a',cart),true);assert.equal(host.receive('a',cart),false);
   assert.equal(host.sim.carts,1);assert.equal(host.sim.over,false);
 });

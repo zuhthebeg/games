@@ -1,5 +1,5 @@
 // Compact wire-only schema. This module never mutates simulation objects.
-export const VERSION = 1;
+export const VERSION = 2;
 export const SNAPSHOT_TICKS = 4;
 const q = (n, scale = 100) => Math.round(n * scale);
 export function envelope(type, hunt, seq, payload) {

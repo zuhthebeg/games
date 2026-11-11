@@ -25,6 +25,8 @@ export class GuestSession {
       if(accepted&&p.type==='world'){
         this.authorityCarts=Math.max(this.authorityCarts,this.rep.world.carts);this.sim.carts=this.authorityCarts;
         if(this.recovery&&this.rep.world.over)this.terminal({...this.rep.world,broke:this.rep.world.m.broke});
+        const candidate=this.recovery?.candidate;
+        if(candidate && candidate.seq>this.hostSeq)this.anchor(candidate.payload,candidate,nowMs);
       }
       return accepted;
     }
@@ -48,7 +50,7 @@ export class GuestSession {
         Object.assign(s.players[0],{id:local.id,x:local.x,z:local.z});
         s.m=structuredClone(v.snapshot.m);s.projs=structuredClone(v.snapshot.projs);
         this.authorityCarts=Math.max(this.authorityCarts,v.snapshot.carts);s.carts=this.authorityCarts;s.time=v.snapshot.time;this.cart=v.cartSeq?.[this.uid]??0;
-        if(v.snapshot.over){s.m.broke={...v.snapshot.m.broke};s.finish(v.snapshot.win,0);}
+        if(v.snapshot.over)this.terminal({...v.snapshot,broke:v.snapshot.m.broke});
         if(["atk","roar"].includes(s.m.state))s.receiveMonsterEvent({monster:s.m,startTick:s.m.startTick},v.hostTick);
         this.rep.clock.observe(v.hostTick,nowMs);this.firstHostMs=nowMs;this.initialized=true;
       }
@@ -72,9 +74,16 @@ export class GuestSession {
     if(this.recovery||this.sim.over||!this.initialized)return;
     const s=this.sim,m=s.m,W=m.atk?.w*(m.enr?.85:1);
     const remaining=m.state==='atk'&&m.t>=W&&m.t<W+m.atk.a?Math.ceil((W+m.atk.a-m.t)*60-1e-7):0;
-    this.recovery={phase:remaining?'active':'anchor',remaining,started:nowMs,wallGapMs:this.lastService===null?0:Math.max(0,nowMs-this.lastService),nonce:null,requested:null};
+    this.recovery={phase:remaining||s.projs.length?'active':'anchor',remaining,foregroundMs:0,wallAt:null,wasHidden:true,candidate:null,started:nowMs,wallGapMs:this.lastService===null?0:Math.max(0,nowMs-this.lastService),nonce:null,requested:null};
+    // Cancel offensive commands at the lifecycle boundary, even if no contact
+    // drain is needed. Never resume an old charge, drink trigger or attack.
+    if(['atk','charge','drink'].includes(s.p.state)){s.p.state='idle';s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
     this.recoveryMetrics.count++;this.recoveryMetrics.unservicedMs=(this.recoveryMetrics.unservicedMs??0)+this.recovery.wallGapMs;s.clearInputs();
     this.transport.sendEvent(envelope('suspend',this.hunt,this.seq++,{}));
+  }
+  recoveryElapsed(nowMs) {
+    const r=this.recovery;
+    return r ? r.foregroundMs+(r.wallAt!==null&&!r.wasHidden?Math.max(0,nowMs-r.wallAt):0) : 0;
   }
   service(nowMs,hidden=this.hidden) {
     this.hidden=hidden;
@@ -83,14 +92,18 @@ export class GuestSession {
     this.lastService=nowMs;
     const r=this.recovery;
     if(!r)return false;
+    // One foreground wall budget spans contact, anchor, buffering and retries.
+    // A hidden interval is never charged, nor does it reset spent foreground.
+    r.foregroundMs=this.recoveryElapsed(nowMs);r.wallAt=nowMs;r.wasHidden=hidden;
     const terminal=this.pending.find(p=>p.type==='end');if(terminal&&!this.sim.over)this.terminal(terminal.payload);
+    if(r.foregroundMs>=5000 && !this.sim.over){this.recoveryMetrics.timeouts++;this.disconnected=true;this.sim.finish(false,0);}
+    if(this.sim.over)return true;
     if(!hidden && r.phase==='anchor' && !r.nonce){
       r.nonce=this.uid+':'+(++this.epoch)+':'+this.seq;r.requested=nowMs;
       this.transport.sendEvent(envelope('resumeRequest',this.hunt,this.seq++,{nonce:r.nonce}));
     }
-    if(r.requested!==null && nowMs-r.requested>5000 && !this.sim.over){this.recoveryMetrics.timeouts++;this.disconnected=true;this.sim.finish(false,0);}
     if(r.phase==='buffer' && !hidden && this.rep.world?.tick>=r.anchorTick+this.rep.clock.delayMs*60/1000){
-      if(this.rep.world.tick-r.anchorTick>48){r.phase='anchor';r.nonce=null;return true;}
+      if(this.rep.world.tick-r.anchorTick>48){r.phase='anchor';r.nonce=null;r.candidate=null;return true;}
       this.rep.clock.playTick=r.anchorTick;
       this.recoveryMetrics.durationMs+=nowMs-r.started;this.recovery=null;
       this.transport.sendEvent(envelope('resumed',this.hunt,this.seq++,{}));
@@ -99,11 +112,19 @@ export class GuestSession {
   }
   anchor(v,p,nowMs) {
     const r=this.recovery,latest=this.rep.world?.tick??0;
-    if(!r || nowMs-r.requested>5000 || r.phase!=='anchor'||v.to!==this.uid||v.nonce!==r.nonce || !Number.isSafeInteger(v.hostTick) ||
-      v.hostTick<latest-12 || v.hostTick>latest+12 || !Number.isSafeInteger(v.eventFloor)||v.eventFloor!==p.seq ||
+    if(!r || this.recoveryElapsed(nowMs)>=5000 || r.phase!=='anchor'||v.to!==this.uid||v.nonce!==r.nonce || !Number.isSafeInteger(v.hostTick) ||
+      !Number.isSafeInteger(v.eventFloor)||v.eventFloor!==p.seq ||
       !v.monster||!Number.isFinite(v.monster.x)||!Number.isFinite(v.monster.z)||!Array.isArray(v.projectiles)||
       (!v.terminal&&(['atk','roar'].includes(v.monster.state)||v.projectiles.length)))return false;
-    this.hostSeq=p.seq;
+    if(p.seq<=this.hostSeq)return false;
+    if(v.hostTick<latest-12){if(r.candidate?.seq===p.seq)r.candidate=null;return false;}
+    if(v.hostTick>latest+12){
+      // Reliable anchor may overtake volatile world. Retain one candidate only;
+      // it is not applied until the unchanged freshness/sequence gates pass.
+      if(!r.candidate || p.seq>r.candidate.seq)r.candidate=structuredClone(p);
+      return false;
+    }
+    r.candidate=null;this.hostSeq=p.seq;
     if(v.terminal){this.terminal(v.terminal);return true;}
     if(this.sim.over)return false;
     this.recoveryMetrics.discardedEvents+=this.pending.filter(p=>p.type==='monster').length;
@@ -123,10 +144,15 @@ export class GuestSession {
       this.recoveryMetrics.suppressedInputs+=Object.entries(input).filter(([k,v])=>['light','heavy','dodge','potion','heavyHeld','moveX','moveZ'].includes(k)&&v).length;
       s.clearInputs();
       if(r.phase==='active'&&!this.hidden){
-        // Existing visible monster contact only; never advance owner arrows or attacks.
-        const arrows=s.arrows;s.arrows=[];s.updMon(FIXED_DT);s.updProjs(FIXED_DT);s.arrows=arrows;r.remaining--;
-        for(const e of s.drainEvents())if(e.type==='cart'){this.cart++;this.transport.sendEvent(envelope('cart',this.hunt,this.seq++,{cart:this.cart}));}else if(e.type==='hitClaim')this.recoveryMetrics.suppressedClaims++;else this.presentation.push(e);
-        if(r.remaining<=0)r.phase='anchor';
+        // Same local neutral owner updater before contact, with explicit command
+        // gates. Network snapshots still never restore owner combat state.
+        s.updPlayer(FIXED_DT,{recovery:true});
+        const arrows=s.arrows;s.arrows=[];
+        if(r.remaining>0){s.updMon(FIXED_DT);r.remaining--;}
+        // Existing local contact entities outlive monster active independently.
+        s.updProjs(FIXED_DT);s.arrows=arrows;
+        for(const e of s.drainEvents())if(e.type==='cart'){this.authorityCarts=Math.max(this.authorityCarts,s.carts);this.cart++;this.transport.sendEvent(envelope('cart',this.hunt,this.seq++,{cart:this.cart}));}else if(e.type==='hitClaim')this.recoveryMetrics.suppressedClaims++;else this.presentation.push(e);
+        if(r.remaining<=0&&!s.projs.length)r.phase='anchor';
       }
       return this.drainEvents();
     }
@@ -167,7 +193,7 @@ export class GuestSession {
     for(const e of s.drainEvents()) {
       if(e.type==='hitClaim')this.state('hit',{...e,seq:this.seq});
       else if(e.type==='cart') {
-        this.cart++;this.transport.sendEvent(envelope('cart',this.hunt,this.seq++,{cart:this.cart}));
+        this.authorityCarts=Math.max(this.authorityCarts,s.carts);this.cart++;this.transport.sendEvent(envelope('cart',this.hunt,this.seq++,{cart:this.cart}));
       } else this.presentation.push(e);
     }
     if(s.p.state!==prev.state || s.p.t<prev.t) {

@@ -154,13 +154,13 @@ export class Sim {
     if (this.lock && m.state !== 'dead' && (move.shot || dm < 10)) p.yaw = toM; else if (hasMv) p.yaw = myaw;
     if (!move.shot) this.sound(p.mv > 1.5 || this.wt === 'gs' ? 'swingH' : 'swing');
   }
-  updPlayer(dt) {
+  updPlayer(dt, {recovery = false} = {}) {
     const p = this.p, W = this.W, inp = p.input; p.t += dt; p.inv = Math.max(0, p.inv - dt); p.stDelay -= dt;
     const fx = Math.sin(inp.aimYaw), fz = Math.cos(inp.aimYaw);
     let wx = fx * inp.moveZ / 127 - fz * inp.moveX / 127, wz = fz * inp.moveZ / 127 + fx * inp.moveX / 127; const ml = Math.hypot(wx, wz), hasMv = ml > .15, myaw = hasMv ? Math.atan2(wx, wz) : p.yaw;
     if (hasMv) { wx /= ml; wz /= ml; }
     const walk = (sp) => { if (!hasMv) { p.moving = 0; return; } p.yaw = turn(p.yaw, myaw, 14 * dt); const v = sp * Math.min(1, ml) * dt; p.x += wx * v; p.z += wz * v; p.walk += v; p.moving = sp / W.speed; };
-    if (p.healLeft > 0) { const h = Math.min(p.healLeft, 45 * dt); p.healLeft -= h; p.hp = Math.min(p.maxHp, p.hp + h); }
+    if (!recovery && p.healLeft > 0) { const h = Math.min(p.healLeft, 45 * dt); p.healLeft -= h; p.hp = Math.min(p.maxHp, p.hp + h); }
     switch (p.state) {
       case 'idle': {
         const sprint = inp.sprint && hasMv && p.st > 1; if (sprint) { p.st -= 11 * dt; p.stDelay = .5; }
@@ -172,6 +172,7 @@ export class Sim {
         break;
       }
       case 'charge': {
+        if (recovery) { p.state = 'idle'; p.spin = 0; break; }
         walk(W.speed * .35); const m = this.m; if (this.lock && m.state !== 'dead') p.yaw = turn(p.yaw, Math.atan2(m.x - p.x, m.z - p.z), 8 * dt);
         const fr = clamp(p.t / W.heavy.charge, 0, 1), lv = Math.floor(fr * 3 + .001); if (lv > p.clv) { p.clv = lv; this.sound('charge'); this.burst('spark', p.x, 1.4, p.z, 5, 3, .3, 0); }
         if (this.take('roll') && p.st >= W.rollCost) { this.startRoll(myaw); break; }
@@ -179,6 +180,9 @@ export class Sim {
         break;
       }
       case 'atk': {
+        // Recovery consumes no offensive command, hit or arrow, including a
+        // previously started action. Mark it spent so resume cannot replay it.
+        if (recovery) { p.hits = p.cur?.multi || 1; if (p.t >= (p.cur?.dur ?? 0)) { p.state = 'idle'; p.spin = 0; } break; }
         const a = p.cur, n = a.multi || 1;
         if (a.sw === 'spin') { if (p.t > a.h0 && p.t < a.h1) this.advance(a.lunge / (a.h1 - a.h0) * dt); p.spin = clamp((p.t - a.h0) / (a.h1 - a.h0), 0, 1) * TAU * 2; }
         else if (a.lunge && p.t < a.h0) this.advance(a.lunge / a.h0 * dt);
@@ -202,11 +206,11 @@ export class Sim {
         if (p.t >= .62) p.state = 'idle';
         break;
       }
-      case 'drink': if (p.t > .55 && !p.drank) { p.drank = true; p.healLeft += 50; this.burst('heal', p.x, 1.2, p.z, 10, 2, .7, -2); } if (p.t >= 1.25) { p.state = 'idle'; p.drank = false; } break;
+      case 'drink': if (recovery) { p.state = 'idle'; p.drank = false; break; } if (p.t > .55 && !p.drank) { p.drank = true; p.healLeft += 50; this.burst('heal', p.x, 1.2, p.z, 10, 2, .7, -2); } if (p.t >= 1.25) { p.state = 'idle'; p.drank = false; } break;
       case 'hit': p.x += p.kbx * dt; p.z += p.kbz * dt; p.kbx *= .9; p.kbz *= .9; if (p.t >= .42) p.state = 'idle'; break;
       case 'down': p.x += p.kbx * dt; p.z += p.kbz * dt; p.kbx *= .92; p.kbz *= .92; if (p.t >= 1.15) { p.state = 'idle'; p.inv = .7; } break;
       case 'stun': if (p.t >= 1.25) p.state = 'idle'; break;
-      case 'dead': if (p.t >= 2.3 && !this.over) { p.state = 'idle'; p.hp = p.maxHp; p.st = 100; p.x = 0; p.z = -34; p.yaw = 0; p.inv = 2.5; this.emit('respawn', { playerId: p.id }); } break;
+      case 'dead': if (!recovery && p.t >= 2.3 && !this.over) { p.state = 'idle'; p.hp = p.maxHp; p.st = 100; p.x = 0; p.z = -34; p.yaw = 0; p.inv = 2.5; this.emit('respawn', { playerId: p.id }); } break;
     }
     if (p.stDelay <= 0 && p.state !== 'roll' && p.state !== 'charge') p.st = Math.min(100, p.st + 26 * dt);
     p.st = Math.max(0, p.st);
