@@ -63,6 +63,11 @@ export const PART_TINTS = Object.freeze({
   set: 0x3fd68a,
 });
 
+export const PART_SCALE = Object.freeze({
+  Skeleton_Rogue_Hood: 1.25,
+  Mage_Hat: 0.65,
+});
+
 const HEAD_FALLBACK = Object.freeze({
   sword: 'Knight_Helmet',
   staff: 'Mage_Hat',
@@ -77,7 +82,7 @@ const BODY_FALLBACK = Object.freeze({
 function partTint(itemId, rarity, activeSetId) {
   const activeSetPiece = Boolean(activeSetId && ITEMS[itemId]?.setId === activeSetId);
   const hex = PART_TINTS[activeSetPiece ? 'set' : rarity];
-  return hex === undefined ? null : { hex, intensity: activeSetPiece ? 0.6 : 0.35 };
+  return hex === undefined ? null : { hex, intensity: activeSetPiece ? 0.45 : 0.35 };
 }
 
 export function playerModelKey(entity) {

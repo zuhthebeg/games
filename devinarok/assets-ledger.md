@@ -5,7 +5,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 ## KayKit-Character-Pack-Adventures-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
 - Pinned default-branch commit: `672074b73ba276876a19e8816ecdc5241817ab47`
-- Download date: 2026-11-11
+- Download date: 2026-11-07
 - License copy: [`assets/licenses/kaykit-adventures-LICENSE.txt`](./assets/licenses/kaykit-adventures-LICENSE.txt)
 - Source license SHA-256: `ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629`
 
@@ -54,7 +54,7 @@ KayKit : Adventurers Character Pack (1.0)
 ## KayKit-Character-Pack-Skeletons-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0
 - Pinned default-branch commit: `15b62b9bad122f72926c10fb14d622c73819fa54`
-- Download date: 2026-11-11
+- Download date: 2026-11-07
 - License copy: [`assets/licenses/kaykit-skeletons-LICENSE.txt`](./assets/licenses/kaykit-skeletons-LICENSE.txt)
 - Source license SHA-256: `5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954`
 
@@ -108,7 +108,7 @@ KayKit Character Pack : Skeletons (1.0)
 ## KayKit-Dungeon-Remastered-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0
 - Pinned default-branch commit: `b0ca9bd96a8072ab36a3a5464f00ed1e06a16d07`
-- Download date: 2026-11-11
+- Download date: 2026-11-07
 - License copy: [`assets/licenses/kaykit-dungeon-LICENSE.txt`](./assets/licenses/kaykit-dungeon-LICENSE.txt)
 - Source license SHA-256: `c5f17abf619731f57f6bbff450f6484214605c13aa96bb75bbcfc70930941ff7`
 
@@ -196,7 +196,7 @@ KayKit : Dungeon Remastered (1.0)
 - Repository: https://kenney.nl/assets/nature-kit
 - Pinned source archive SHA-256: `fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d`
 - License evidence: the Nature Kit asset page lists Creative Commons CC0, and the pinned archive `License.txt` states “Creative Commons Zero, CC0”.
-- Download date: 2026-11-11
+- Download date: 2026-11-07
 - License copy: [`assets/licenses/kenney-nature-kit-LICENSE.txt`](./assets/licenses/kenney-nature-kit-LICENSE.txt)
 - Source license SHA-256: `cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d`
 
@@ -250,7 +250,7 @@ Nature Kit (2.1)
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0
 - Pinned default-branch commit: `6dc69bf6b2fa766a985754f35ec6a0324090e6c6`
 - License evidence: the official KayKit Halloween Bits asset page lists CC0; the pinned official GitHub archive `Assets/LICENSE.txt` states “License: (Creative Commons Zero, CC0).”
-- Download date: 2026-11-11
+- Download date: 2026-11-07
 - License copy: [`assets/licenses/kaykit-halloween-bits-LICENSE.txt`](./assets/licenses/kaykit-halloween-bits-LICENSE.txt)
 - Source license SHA-256: `a514c41d8d5f2a07c94c55acd29ba94f50b86837f972e37edb4cbdeb7ba0e0e0`
 
@@ -309,7 +309,7 @@ KayKit : Halloween Bits (1.0)
 - Version: `0.187.0`.
 - Tarball: https://registry.npmjs.org/three/-/three-0.187.0.tgz
 - Tarball SHA-256: `ff540832ded0cfe919764d24a3d88f3e2a05f23303f876423e4f893841e90728`
-- Download date: 2026-11-11. Build minified the npm `three.module.js` and `three.core.js` with Terser, rewrote the core relative import, and copied the four required addons unchanged.
+- Download date: 2026-11-07. Build minified the npm `three.module.js` and `three.core.js` with Terser, rewrote the core relative import, and copied the four required addons unchanged.
 
 | Output path | SHA-256 | Bytes |
 | --- | --- | ---: |

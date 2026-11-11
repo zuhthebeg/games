@@ -5,6 +5,7 @@ import {
   BODY_STYLES,
   DONOR_PARTS,
   HEAD_STYLES,
+  PART_SCALE,
   PART_TINTS,
   playerLookKey,
   resolvePlayerParts,
@@ -135,8 +136,21 @@ test('set pieces glow stronger only while their set is active', () => {
   assert.equal(activeLook.setId, 'guardian-oath');
   assert.deepEqual(activeTints.weapon, { hex: PART_TINTS.rare, intensity: 0.35 });
   assert.deepEqual(activeTints.offhand, activeTints.weapon);
-  assert.deepEqual(activeTints.head, { hex: PART_TINTS.set, intensity: 0.6 });
-  assert.deepEqual(activeTints.cape, { hex: PART_TINTS.set, intensity: 0.6 });
+  assert.deepEqual(activeTints.head, { hex: PART_TINTS.set, intensity: 0.45 });
+  assert.deepEqual(activeTints.cape, { hex: PART_TINTS.set, intensity: 0.45 });
+
+  const activeWeaponLook = equipmentLook([
+    { itemId: 'oath-sword', rarity: 'set' },
+    ...setPieces.slice(0, 3),
+  ]);
+  const activeWeaponTints = resolvePlayerParts(activeWeaponLook).tints;
+  assert.deepEqual(activeWeaponTints.weapon, { hex: PART_TINTS.set, intensity: 0.45 });
+  assert.deepEqual(activeWeaponTints.offhand, activeWeaponTints.weapon);
+});
+
+test('hood and mage hat have per-part scale corrections', () => {
+  assert.equal(PART_SCALE.Skeleton_Rogue_Hood, 1.25);
+  assert.equal(PART_SCALE.Mage_Hat, 0.65);
 });
 
 test('playerLookKey includes item IDs, rarities, and active set state', () => {

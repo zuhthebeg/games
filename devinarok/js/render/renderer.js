@@ -8,6 +8,7 @@ import { ITEMS, RARITIES } from '../content/items.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
 import {
   DONOR_PARTS,
+  PART_SCALE,
   playerLookKey,
   playerModelKey,
   resolvePlayerParts,
@@ -147,6 +148,13 @@ function applyPlayerLook(root, look = {}) {
   ].filter(([name]) => name));
   root.traverse((node) => {
     if (!PLAYER_PARTS.has(node.name)) return;
+    const baseScale = node.userData.playerPartBaseScale ??= node.scale.toArray();
+    const scaleFactor = PART_SCALE[node.name] ?? 1;
+    node.scale.set(
+      baseScale[0] * scaleFactor,
+      baseScale[1] * scaleFactor,
+      baseScale[2] * scaleFactor,
+    );
     node.visible = visibleParts.has(node.name);
     const tint = visibleParts.get(node.name);
     if (!node.isMesh || !tint) return;
@@ -569,6 +577,9 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       visual.outlineKind = kind;
     }
     for (const { source, outline } of visual.outlines) {
+      outline.position.copy(source.position);
+      outline.quaternion.copy(source.quaternion);
+      outline.scale.copy(source.scale);
       outline.visible = this.outlinesEnabled && kind !== null && source.visible && !entity.dead;
     }
   }
