@@ -1,4 +1,4 @@
-import {Sim,FIXED_DT} from '../sim.js';
+import {Sim,FIXED_DT} from '../sim.js?v=20261113r4';
 import {envelope,encodeHunter,validEnvelope} from './protocol.js';
 import {PlaybackClock} from './clock.js';
 import {TickBuffer} from './interp.js';
