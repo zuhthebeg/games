@@ -1,137 +1,71 @@
-// Beast Hunt — procedural low-poly models (no external art assets).
+// Original faceted fieldcraft: lofted anatomy, articulated joints, no external assets.
 import * as THREE from 'three';
 import { MONSTERS } from 'bh/data';
-
-const M = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, flatShading: true, roughness: .9, metalness: 0 }, o || {}));
-const mesh = (g, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.castShadow = true; return o; };
-const G = (x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); return g; };
-const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-const sph = (r, ws = 7, hs = 5) => new THREE.SphereGeometry(r, ws, hs);
-const cone = (r, h, s = 5) => new THREE.ConeGeometry(r, h, s);
-
-export const ARMOR_COL = [0x8b7355, 0x7a4b2c, 0x9cc9e3, 0xb23a22, 0x4b3a78];
-export const WPN_COL = [0xc3c7cf, 0xd9b77c, 0x9fe4ff, 0xff8440, 0xc79bff];
-
-export function buildHunter(wt, wTier, aTier) {
-  const root = G();
-  const am = M(ARMOR_COL[aTier - 1]), dark = M(0x2d2a26), skin = M(0xe2b48c);
-  const trim = M(aTier >= 5 ? 0xe8c35a : 0x5a544c, { metalness: .5, roughness: .45 });
-  const hips = G(0, .92, 0); root.add(hips);
-  const torso = G(); hips.add(torso);
-  torso.add(mesh(box(.62, .62, .38), am, 0, .38, 0));
-  torso.add(mesh(box(.66, .14, .42), trim, 0, .08, 0));
-  torso.add(mesh(box(.5, .5, .1), dark, 0, .4, -.22)); // back plate
-  const head = G(0, .88, 0); torso.add(head);
-  head.add(mesh(sph(.2), skin));
-  const helm = mesh(sph(.235, 7, 4), am, 0, .06, -.03); helm.scale.set(1, .85, 1); head.add(helm);
-  const plume = mesh(cone(.07, .32, 4), trim, 0, .3, -.08); plume.rotation.x = -.5; head.add(plume);
-  const mkArm = (s) => {
-    const a = G(s * .41, .62, 0);
-    a.add(mesh(box(.17, .6, .19), am, 0, -.28, 0)); a.add(mesh(sph(.14, 6, 4), trim));
-    const hand = G(0, -.6, 0); a.add(hand); torso.add(a); return { a, hand };
-  };
-  const R = mkArm(-1), L = mkArm(1);
-  const mkLeg = (s) => {
-    const l = G(s * .17, 0, 0);
-    l.add(mesh(box(.23, .5, .26), dark, 0, -.26, 0)); l.add(mesh(box(.25, .42, .3), am, 0, -.7, .02));
-    hips.add(l); return l;
-  };
-  const legL = mkLeg(1), legR = mkLeg(-1);
-  const wc = WPN_COL[wTier - 1];
-  const wm = M(wc, { metalness: .55, roughness: .35, emissive: wTier >= 3 ? wc : 0x000000, emissiveIntensity: wTier >= 3 ? .35 : 0 });
-  const grip = M(0x3b2b1c);
-  if (wt === 'gs') {
-    const w = G(); w.rotation.x = -1.25;
-    w.add(mesh(box(.08, .5, .08), grip)); w.add(mesh(box(.5, .09, .13), trim, 0, -.28, 0));
-    w.add(mesh(box(.27, 2.0, .07), wm, 0, -1.33, 0));
-    const tip = mesh(cone(.19, .36, 4), wm, 0, -2.5, 0); tip.rotation.x = Math.PI; tip.scale.z = .3; w.add(tip);
-    R.hand.add(w);
-  } else if (wt === 'db') {
-    for (const h of [R.hand, L.hand]) {
-      const w = G(); w.rotation.x = -1.3;
-      w.add(mesh(box(.07, .26, .07), grip)); w.add(mesh(box(.2, .06, .1), trim, 0, -.15, 0));
-      w.add(mesh(box(.13, .9, .05), wm, 0, -.62, 0)); h.add(w);
-    }
-  } else {
-    const g = new THREE.TorusGeometry(.78, .04, 5, 14, Math.PI); g.rotateX(Math.PI); g.rotateY(Math.PI / 2);
-    const b = mesh(g, wm, 0, .5, 0); L.hand.add(b);
-    const str = mesh(box(.015, .015, 1.56), M(0xeeeeee), 0, .5, 0); L.hand.add(str);
-    const quiver = mesh(box(.16, .55, .16), grip, .12, .45, -.3); quiver.rotation.z = .3; torso.add(quiver);
-  }
-  return { root, hips, torso, head, armR: R.a, armL: L.a, legL, legR };
+function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
+const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
+const G=(x=0,y=0,z=0)=>{const g=new THREE.Group();g.position.set(x,y,z);return g;};
+const mesh=(g,m,x=0,y=0,z=0)=>{const a=new THREE.Mesh(g,m);a.position.set(x,y,z);a.castShadow=true;return a;};
+const cone=(r,h,n=5)=>new THREE.ConeGeometry(r,h,n);
+const sph=(r,w=6,h=3)=>new THREE.SphereGeometry(r,w,h);
+// Cross sections along Z: [z, centreY, halfWidth, halfHeight]. Ridge-biased rings
+// give shoulder planes, a keel and a brow rather than stretched primitive ellipses.
+function loft(rings,n=8){if(rings.at(-1)[0]<rings[0][0])rings=[...rings].reverse();const p=[],ix=[];for(const [z,y,w,h] of rings)for(let j=0;j<n;j++){const a=j/n*Math.PI*2;p.push(Math.cos(a)*w,y+Math.sin(a)*h,z);}for(let i=0;i<rings.length-1;i++)for(let j=0;j<n;j++){const a=i*n+j,b=i*n+(j+1)%n,c=a+n,d=b+n;ix.push(a,b,c,b,d,c);}for(let j=1;j<n-1;j++){ix.push(0,j+1,j);const o=(rings.length-1)*n;ix.push(o,o+j,o+j+1);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
+function link(g,a,b,r0,r1,mat,n=6){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),v=B.clone().sub(A);const m=mesh(new THREE.CylinderGeometry(r1,r0,v.length(),n),mat);m.position.copy(A.add(B).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());g.add(m);return m;}
+function horn(g,points,r,mat){const list=[];for(let i=0;i<points.length-1;i++)list.push(link(g,points[i],points[i+1],r*(1-i/(points.length-1)),r*(1-(i+1)/(points.length-1)),mat,5));return list;}
+// Merge only rigid siblings, by shared material. Articulated pivots remain intact.
+function batch(root){root.traverse(g=>{if(g.isMesh)return;const bins=new Map();for(const c of [...g.children])if(c.isMesh&&!c.userData.breakable){const a=bins.get(c.material)||[];a.push(c);bins.set(c.material,a);}for(const [mat,items] of bins){if(items.length<2)continue;const gs=items.map(m=>{m.updateMatrix();return m.geometry.clone().applyMatrix4(m.matrix);});const merged=mergeGeometries(gs,false);if(merged){items.forEach(m=>{g.remove(m);m.geometry.dispose();});g.add(mesh(merged,mat));}gs.forEach(x=>x.dispose());}});}
+export const ARMOR_COL=[0x8b7355,0x7a4b2c,0x9cc9e3,0xb23a22,0x4b3a78];
+export const WPN_COL=[0xc3c7cf,0xd9b77c,0x9fe4ff,0xff8440,0xc79bff];
+export function buildHunter(wt,wTier,aTier){
+ const root=G(),hips=G(0,.92,0),torso=G();root.add(hips);hips.add(torso);
+ const am=M(ARMOR_COL[aTier-1]),dark=M(0x283238),trim=M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),skin=M(0xd6a882),steel=M(WPN_COL[wTier-1],{metalness:.6,roughness:.3});
+ const chest=mesh(loft([[-.22,.36,.23,.25],[0,.4,.34,.33],[.22,.36,.25,.25]]),am);torso.add(chest);
+ link(torso,[-.26,.12,0],[.26,.12,0],.09,.09,trim);
+ // Split, scalloped field-cloak below the shoulder blades.
+ for(const s of [-1,1]){const cloth=mesh(loft([[-.28,.42,.26,.25],[-.4,.12,.3,.27],[-.48,-.22,.34,.12]],6),dark,s*.1,0,0);torso.add(cloth);}
+ const head=G(0,.88,0);torso.add(head);head.add(mesh(sph(.19),skin));head.add(mesh(loft([[-.22,.05,.12,.16],[0,.08,.235,.22],[.2,.04,.17,.17]],8),am));
+ link(head,[-.16,.02,.19],[.16,.02,.19],.025,.025,dark);link(head,[0,.07,.21],[0,-.14,.2],.035,.02,trim);
+ horn(head,[[0,.24,-.1],[0,.38,-.15],[0,.43,-.27]],.065,trim);
+ const elbows=[],knees=[];
+ const arm=s=>{const a=G(s*.4,.62,0);torso.add(a);a.add(mesh(sph(.18),am));link(a,[0,-.05,0],[0,-.29,0],.11,.085,dark);const elbow=G(0,-.29,0);a.add(elbow);elbow.add(mesh(sph(.095),trim));link(elbow,[0,0,0],[0,-.29,.03],.105,.065,am);const hand=G(0,-.31,.03);elbow.add(hand);hand.add(mesh(sph(.085),dark));elbows.push(elbow);return {a,hand};};
+ const R=arm(-1),L=arm(1);
+ const leg=s=>{const g=G(s*.17,0,0);hips.add(g);link(g,[0,0,0],[0,-.4,0],.135,.095,dark);const k=G(0,-.4,0);g.add(k);k.add(mesh(sph(.125),trim));link(k,[0,0,0],[0,-.37,0],.12,.085,am);k.add(mesh(loft([[-.12,-.4,.1,.08],[.09,-.4,.12,.08],[.23,-.42,.07,.05]],6),dark));knees.push(k);return g;};
+ const legL=leg(1),legR=leg(-1);
+ const blade=(h,len,w)=>{const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);};
+ if(wt==='gs')blade(R.hand,2.12,.23);else if(wt==='db'){blade(R.hand,.92,.13);blade(L.hand,.92,.13);}else{const pts=[[0,-.55,-.62],[0,-.2,-.8],[0,.2,-.55],[0,.5,0],[0,.2,.55],[0,-.2,.8],[0,-.55,.62]];horn(L.hand,pts,.055,steel);link(L.hand,pts[0],pts.at(-1),.008,.008,trim,3);link(torso,[.18,.14,-.32],[.3,.7,-.32],.12,.14,dark);for(let i=0;i<3;i++)link(torso,[.18+i*.06,.5,-.32],[.18+i*.06,.94,-.32],.012,.012,trim,3);}
+ batch(root);return {root,hips,torso,head,armR:R.a,armL:L.a,legL,legR,elbows,knees};
 }
-
-export function buildMonster(id) {
-  const d = MONSTERS[id].dims, root = G(), body = G(0, d.h, 0); root.add(body);
-  const C = {
-    boar: { a: 0x5a4334, b: 0x8a6e52, c: 0xe9dfc6, eye: 0xffd24a },
-    frost: { a: 0xdcecf6, b: 0x4f8fc7, c: 0x9fe8ff, eye: 0x7fe9ff },
-    ember: { a: 0x9f4434, b: 0x63576b, c: 0xff8a2a, eye: 0xffb23a },
-  }[id];
-  const ma = M(C.a), mb = M(C.b), eyeMat = M(0x111111, { emissive: C.eye, emissiveIntensity: 1.2 });
-  const mc = M(C.c, id === 'boar' ? {} : { emissive: C.c, emissiveIntensity: id === 'ember' ? .9 : .45 });
-  const trunk = mesh(sph(1, 9, 6), ma); trunk.scale.set(d.bw, d.bh, d.hz); body.add(trunk);
-  const belly = mesh(sph(1, 8, 5), id === 'ember' ? mc : mb, 0, -d.bh * .28, .1); belly.scale.set(d.bw * .8, d.bh * .7, d.hz * .85); body.add(belly);
-  const hump = mesh(sph(1, 7, 5), ma, 0, d.bh * .45, d.hz * .35); hump.scale.set(d.bw * .8, d.bh * .7, d.hz * .5); body.add(hump);
-  // head
-  const head = G(0, .05, d.headZ - .7); body.add(head);
-  const hs = id === 'boar' ? 1.1 : 1;
-  const neck = mesh(sph(.8, 6, 5), ma, 0, 0, -.5); neck.scale.set(1, 1, 1.5); head.add(neck);
-  head.add(mesh(box(1.25 * hs, 1.05 * hs, 1.3), ma, 0, .05, .5));
-  head.add(mesh(box(.85 * hs, .55, .9), mb, 0, .05, 1.45));
-  const jaw = G(0, -.38, .45); head.add(jaw); jaw.add(mesh(box(.8 * hs, .26, 1.5), mb, 0, -.1, .6));
-  for (const s of [-1, 1]) {
-    head.add(mesh(sph(.13, 5, 4), eyeMat, s * .55 * hs, .32, .95));
-    const tooth = mesh(cone(.09, .34, 4), M(0xf2ead8), s * .3, -.3, 1.7); tooth.rotation.x = Math.PI; head.add(tooth);
-  }
-  const horns = [];
-  const addHorn = (g, m, x, y, z, rx, rz) => { const h = mesh(g, m, x, y, z); h.rotation.set(rx, 0, rz); head.add(h); horns.push(h); return h; };
-  if (id === 'boar') {
-    for (const s of [-1, 1]) { addHorn(cone(.17, 1.25, 5), M(C.c), s * .72, -.1, 1.55, .9, -s * .45); const ear = mesh(cone(.2, .45, 4), ma, s * .55, .75, .1); head.add(ear); }
-    for (let i = 0; i < 7; i++) { const sp = mesh(cone(.2, .9 - i * .06, 4), mb, 0, d.bh * .95 - i * .04, d.hz * .7 - i * .55); sp.rotation.x = -.35; body.add(sp); }
-  } else if (id === 'frost') {
-    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; const sp = mesh(cone(.16, 1.2, 4), mc, Math.cos(a) * .85, Math.sin(a) * .8, -.45); sp.rotation.set(-1.1 * Math.sin(a) - .2, 0, -a + Math.PI / 2 - Math.PI / 2); sp.lookAt(Math.cos(a) * 3, Math.sin(a) * 3, -2.4); sp.rotateX(Math.PI / 2); head.add(sp); }
-    for (const s of [-1, 1]) addHorn(cone(.13, 1.0, 4), mc, s * .5, .8, .2, -.7, -s * .3);
-    for (let i = 0; i < 5; i++) { const sp = mesh(cone(.22, 1.0, 4), mc, 0, d.bh * .9, d.hz * .5 - i * .75); sp.rotation.x = -.5; body.add(sp); }
-  } else {
-    for (const s of [-1, 1]) { addHorn(cone(.2, 1.7, 5), M(0x827386), s * .5, .85, -.05, -1.0, -s * .35); addHorn(cone(.12, .7, 4), M(0x827386), s * .62, .2, 1.2, .5, -s * .7); }
-    for (let i = 0; i < 6; i++) { const sp = mesh(cone(.24, 1.1 - i * .08, 4), mb, 0, d.bh * .95, d.hz * .6 - i * .7); sp.rotation.x = -.5; body.add(sp); }
-  }
-  // wings (ember only, decorative)
-  const wings = [];
-  if (id === 'ember') {
-    for (const s of [-1, 1]) {
-      const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(3.4, 1.5); sh.lineTo(3.0, .2); sh.lineTo(2.3, -.5); sh.lineTo(1.5, -.2); sh.lineTo(.9, -.8); sh.lineTo(0, -.3);
-      const wg = new THREE.ShapeGeometry(sh);
-      const w = new THREE.Mesh(wg, M(0x785367, { side: THREE.DoubleSide })); w.castShadow = true;
-      const pv = G(s * d.bw * .6, d.bh * .7, d.hz * .25); pv.rotation.y = s > 0 ? -.25 : Math.PI + .25; pv.rotation.z = s > 0 ? .5 : -.5;
-      pv.add(w); pv.add(mesh(box(3.5, .12, .12), mb, 1.7, .75, 0).rotateZ(.42)); body.add(pv); wings.push(pv);
-    }
-  }
-  // tail (nested chain so it can curl and be severed)
-  const tail = [], segLen = d.tailLen / d.tailN; let parent = G(0, .1, -d.hz * .88); body.add(parent); const tailRoot = parent;
-  for (let i = 0; i < d.tailN; i++) {
-    const k = 1 - i / d.tailN * .72, w = d.tailW * 2 * k;
-    const sg = G(0, 0, i === 0 ? 0 : -segLen); parent.add(sg);
-    sg.add(mesh(box(w, w * .85, segLen * 1.08), i % 2 ? mb : ma, 0, 0, -segLen / 2));
-    if (id !== 'boar' && i > 0) { const sp = mesh(cone(w * .3, w * .9, 4), id === 'frost' ? mc : mb, 0, w * .6, -segLen / 2); sg.add(sp); }
-    tail.push(sg); parent = sg;
-  }
-  const tipG = id === 'boar' ? mesh(sph(.3, 5, 4), mb, 0, 0, -segLen) : id === 'frost' ? mesh(cone(.3, 1.1, 4), mc, 0, 0, -segLen - .3) : mesh(sph(.55, 6, 4), mb, 0, 0, -segLen - .2);
-  if (id === 'frost') tipG.rotation.x = -Math.PI / 2;
-  parent.add(tipG);
-  // legs: FL, FR, BL, BR
-  const legs = [], py = -d.bh * .3, L = d.h + py;
-  for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
-    const lg = G(sx * d.legX * .9, py, sz * d.legZ); body.add(lg);
-    lg.add(mesh(box(.62, L * .58, .78), ma, 0, -L * .27, 0));
-    lg.add(mesh(box(.44, L * .5, .5), mb, 0, -L * .72, .05));
-    lg.add(mesh(box(.6, .22, .85), mb, 0, -L + .11, .16));
-    for (const cx of [-.2, 0, .2]) { const cl = mesh(cone(.07, .3, 4), M(0xf2ead8), cx, -L + .1, .62); cl.rotation.x = Math.PI / 2; lg.add(cl); }
-    legs.push(lg);
-  }
-  root.scale.setScalar(MONSTERS[id].scale);
-  return { root, body, head, jaw, tail, tailRoot, legs, wings, horns, brokenHornMat: M(0xffdda0, { emissive: 0xff7a35, emissiveIntensity: .5 }), eyeMat, eyeCol: C.eye };
+export function buildMonster(id){
+ const d=MONSTERS[id].dims,root=G(),body=G(0,d.h,0);root.add(body);
+ const boar=id==='boar',frost=id==='frost',ember=id==='ember';
+ const C=boar?[0x624731,0x352f2a,0xdac49c,0xffd36b]:frost?[0xc4d9e2,0x48667d,0x8ad9ea,0x88eaff]:[0x943e32,0x352f44,0xe6a36b,0xffb23a];
+ const ma=M(C[0]),mb=M(C[1]),mc=M(C[2]),black=M(0x17242b),tooth=M(0xf4e5c2),eyeMat=M(0x141c22,{emissive:C[3],emissiveIntensity:1.2});
+ const rings=boar?[[-2,-.2,.55,.65],[-1.2,0,1.3,1.05],[.3,.25,1.5,1.45],[1.25,.1,1.15,1.25],[1.9,-.12,.68,.7]]:frost?[[-2.2,.35,.48,.55],[-1.25,.45,.7,.65],[.25,.4,.75,.75],[1.2,.65,.85,.95],[1.85,.9,.5,.7]]:[[-2,-.25,.6,.65],[-1.1,.05,1.25,1.15],[0,.9,1.1,1.5],[.9,1.65,.75,1.3],[1.4,2.25,.5,.85]];
+ body.add(mesh(loft(rings),ma));
+ // A continuous ventral keel gives intentional tonal planes, not a second oval.
+ body.add(mesh(loft(boar?[[-1.5,-.55,.7,.3],[.4,-.7,1.05,.35],[1.5,-.35,.45,.3]]:frost?[[-1.8,.05,.4,.3],[.1,-.12,.55,.3],[1.5,.25,.45,.4]]:[[-1,-.6,.6,.35],[.25,.2,.65,.6],[1.35,1.7,.35,.6]],6),mb));
+ const head=G(0,boar?-.2:frost?1.15:2.5,d.headZ-.7);body.add(head);
+ link(head,[0,-.15,-1.2],[0,.05,.1],boar?.7:frost?.48:.52,boar?.65:.4,ma);
+ head.add(mesh(loft(boar?[[-.4,.05,.7,.6],[.65,-.03,.68,.48],[1.4,-.23,.5,.32],[1.65,-.2,.43,.3]]:frost?[[-.5,.1,.48,.55],[.3,.1,.53,.43],[1.1,-.08,.3,.22],[1.45,-.1,.22,.18]]:[[-.6,.1,.5,.55],[.2,.1,.58,.45],[1.05,-.12,.37,.28],[1.65,-.15,.18,.15]]),ma));
+ head.add(mesh(loft([[1.38,-.16,.3,.22],[1.7,-.18,.26,.2]],6),black));
+ const jaw=G(0,-.35,.25);head.add(jaw);jaw.add(mesh(loft([[-.35,0,.33,.12],[.8,-.02,.35,.13],[1.35,.04,.16,.07]],6),mb));
+ for(const s of [-1,1]){head.add(mesh(sph(.105,5,3),eyeMat,s*(boar?.62:.46),.22,.47));link(head,[s*.22,.39,.1],[s*.6,.35,.6],.1,.045,mb);for(let i=0;i<3;i++)link(jaw,[s*.26,.13,.45+i*.25],[s*.25,.29,.46+i*.25],.065,0,tooth,4);}
+ const horns=[];
+ for(const s of [-1,1]){const h=G();head.add(h);const points=boar?[[s*.52,-.25,1.2],[s*.85,-.08,1.7],[s*.8,.45,1.98],[s*.59,.75,1.92]]:frost?[[s*.42,.38,-.2],[s*.66,.85,-.34],[s*.5,1.12,-.48]]:[[s*.45,.4,-.2],[s*.72,1.1,-.65],[s*.82,1.65,-1],[s*.52,1.95,-.92]];
+ // Each breakable horn is one mesh so bilateral damage keeps the original contract.
+ horn(h,points,boar?.19:frost?.15:.22,mc);batch(h);const hornMesh=h.children[0];head.attach(hornMesh);head.remove(h);const base=new THREE.Vector3(...points[0]);hornMesh.geometry.translate(-base.x,-base.y,-base.z);hornMesh.position.copy(base);hornMesh.userData.breakable=true;horns.push(hornMesh);
+ const ear=mesh(loft([[-.1,0,.17,.12],[0,.48,.11,.16],[.12,.7,.015,.015]],5),mb,s*(boar?.65:.48),.45,-.25);ear.rotation.z=s*(boar?-.55:-.2);head.add(ear);}
+ if(frost){for(let i=0;i<11;i++){const a=i/11*Math.PI*2;const y=Math.sin(a),x=Math.cos(a);horn(head,[[x*.45,y*.45,-.5],[x*.95,y*.95,-.8],[x*1.2,y*1.25,-1.25]],.29,i%3?mb:mc);}for(let i=0;i<5;i++)horn(body,[[0,1.05,1-i*.65],[.12,1.95-i*.08,.8-i*.65],[0,2.2-i*.1,.6-i*.65]],.19,mc);}
+ if(boar){for(let i=0;i<8;i++)for(const s of [-1,1])horn(body,[[s*.25,1.45-i*.12,1-i*.36],[s*.45,1.95-i*.12,.85-i*.36],[s*.55,2.05-i*.12,.6-i*.36]],.15,mb);}
+ const legs=[],knees=[];
+ const coords=ember?[[1,-1],[-1,-1]]:[[1,1],[-1,1],[1,-1],[-1,-1]];
+ for(const [sx,sz] of coords){const y=boar?-.65:frost?.25:.05,z=ember?-1:sz*d.legZ,x=sx*d.legX;const l=G(x,y,z);body.add(l);const len=d.h+y;const knee=G(sx*.09,-len*.47,boar?0:-.28);l.add(mesh(sph(boar?.36:ember?.5:.23),ma));link(l,[0,0,0],[sx*.09,-len*.47,boar?0:-.28],ember?.48:boar?.28:.2,boar?.22:.15,ma);l.add(knee);knee.add(mesh(sph(boar?.23:.19),mb));const ankle=[0,-len*.45,boar?.1:.32];link(knee,[0,0,0],ankle,boar?.2:.14,boar?.16:.11,mb);knee.add(mesh(loft([[-.16,-len*.45,.2,.13],[.3,-len*.45,.25,.12],[.6,-len*.46,.12,.07]],6),mb));for(const cx of [-.15,0,.15])link(knee,[cx,-len*.45,.38],[cx,-len*.48,.72],.075,0,tooth,4);legs.push(l);knees.push(knee);}
+ const wings=[];
+ if(ember){for(const s of [-1,1]){const w=G(s*.68,1.7,.1);body.add(w);const pts=[[0,0,0],[s*1.35,.8,-.2],[s*3.8,2.4,-.7],[s*3.1,.1,-1.15],[s*2.4,.4,-1.3],[s*1.5,-.8,-1.5],[s*.8,-.35,-1.1],[0,-.75,-.7]];const p=[];for(let i=1;i<pts.length-1;i++)p.push(...pts[0],...pts[i],...pts[i+1]);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();w.add(mesh(g,M(0xa76e58,{side:THREE.DoubleSide})));link(w,pts[0],pts[1],.23,.15,ma);link(w,pts[1],pts[2],.15,.025,mc);for(const i of [3,5,7])link(w,pts[1],pts[i],.07,.02,mb);horn(w,[pts[1],[s*1.6,1.3,0],[s*1.8,1.35,.3]],.13,tooth);wings.push(w);}}
+ const tail=[],segLen=d.tailLen/d.tailN;let parent=G(0,boar?-.1:frost?.35:-.2,-d.hz*.88);body.add(parent);const tailRoot=parent;
+ for(let i=0;i<d.tailN;i++){const sg=G(0,0,i?-segLen:0);parent.add(sg);const r=d.tailW*(1-i/d.tailN*.82);sg.add(mesh(loft([[.05,0,r,r*.85],[-segLen*.5,.04,r*.75,r*.65],[-segLen,.05,d.tailW*(1-(i+1)/d.tailN*.82),d.tailW*(1-(i+1)/d.tailN*.82)*.85]],6),i%2?mb:ma));if(!boar&&i>0)horn(sg,[[0,r,-segLen*.3],[0,r+.35,-segLen*.55],[0,r+.4,-segLen*.85]],r*.35,mc);tail.push(sg);parent=sg;}
+ const tip=mesh(frost?cone(.22,.7,5):sph(boar?.18:.25),mb,0,0,-segLen);if(frost)tip.rotation.x=-Math.PI/2;parent.add(tip);root.scale.setScalar(MONSTERS[id].scale);batch(root);
+ return {root,body,head,jaw,legs,knees,wings,tail,tailRoot,horns,headBaseY:head.position.y,brokenHornMat:M(0xffdda0,{emissive:0xff7a35,emissiveIntensity:.5}),eyeMat,eyeCol:C[3]};
 }
 
 function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
@@ -142,7 +76,7 @@ export const BIOMES = {
   volcano: { sky: 0x3b2226, fog: [50, 140], g: [0x3c3131, 0x4a3633, 0x2f2727], sun: 0xffb27a, amb: [0x8a5a50, 0x2a1512], mote: 0xff9a3c, far: 0x241416 },
 };
 
-export function buildArena(biome, R) {
+export function buildArena(biome, R, low = /[?&]lowfx=1/.test(location.search)) {
   const B = BIOMES[biome], group = G();
   const geo = new THREE.PlaneGeometry(190, 190, 60, 60); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color(), c2 = new THREE.Color();
@@ -157,7 +91,7 @@ export function buildArena(biome, R) {
   const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }));
   ground.receiveShadow = true; group.add(ground);
   const dummy = new THREE.Object3D();
-  const inst = (g, m, n, fn) => { const im = new THREE.InstancedMesh(g, m, n); for (let i = 0; i < n; i++) { fn(i, dummy); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); } im.castShadow = true; group.add(im); return im; };
+  const inst = (g, m, n, fn) => { n = low ? Math.ceil(n * .5) : n; const im = new THREE.InstancedMesh(g, m, n); for (let i = 0; i < n; i++) { fn(low ? i * 2 : i, dummy); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); } im.castShadow = true; group.add(im); return im; };
   const ring = (i, n, r0, r1) => { const a = i / n * Math.PI * 2 + hash(i, 3) * .5, r = r0 + hash(i, 9) * (r1 - r0); return [Math.cos(a) * r, Math.sin(a) * r, r]; };
   const yAt = (r) => r > R + 5 ? Math.pow(r - R - 5, 1.25) * .32 : 0;
   // boundary stones
@@ -176,10 +110,14 @@ export function buildArena(biome, R) {
   }
   // tufts / shards inside the arena (no collision)
   inst(cone(.14, .5, 3), M(biome === 'forest' ? 0x86b356 : biome === 'snow' ? 0xb6cad9 : 0x5a3a34), 220, (i, o) => { const a = hash(i, 11) * 6.283, r = Math.sqrt(hash(i, 12)) * (R + 3); o.position.set(Math.cos(a) * r, .22, Math.sin(a) * r); o.scale.setScalar(.7 + hash(i, 13)); o.rotation.set(hash(i, 14) * .5 - .25, hash(i, 15) * 6, hash(i, 16) * .5 - .25); });
+  // Sparse collision-free field props, dense perimeter.
+  inst(new THREE.DodecahedronGeometry(1,0), M(biome === 'snow' ? 0xf1f6fa : biome === 'forest' ? 0x7b8170 : 0x292b32), 34, (i,o)=>{const a=hash(i,41)*6.283,r=12+hash(i,42)*(R-15),s=.25+hash(i,43)*.65;o.position.set(Math.cos(a)*r,s*.3,Math.sin(a)*r);o.scale.set(s*1.5,s*.65,s);o.rotation.set(0,a,.2);});
+  if(biome === 'snow') inst(loft([[0,0,.32,.32],[.2,1,.25,.3],[.4,2.8,.03,.04]],5),M(0x98d1e4),24,(i,o)=>{const [x,z,r]=ring(i,24,R-3,R+8);o.position.set(x,yAt(r),z);o.scale.setScalar(.7+hash(i,44));o.rotation.set(0,hash(i,45)*6,0);});
+  if(biome === 'volcano') inst(loft([[-1,0,.04,.008],[0,0,.12,.01],[1,0,.025,.008]],4),M(0xff692d,{emissive:0xff490c,emissiveIntensity:1.3}),28,(i,o)=>{const a=hash(i,46)*6.283,r=8+hash(i,47)*(R-9);o.position.set(Math.cos(a)*r,.015,Math.sin(a)*r);o.rotation.set(0,a,0);o.scale.set(1,1,2+hash(i,48)*3);});
   // far silhouettes
   inst(cone(1, 1, 5), new THREE.MeshBasicMaterial({ color: B.far, fog: true }), 26, (i, o) => { const a = i / 26 * 6.283, r = 118 + hash(i, 21) * 14, h = 30 + hash(i, 22) * 34; o.position.set(Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r); o.scale.set(24 + hash(i, 23) * 16, h, 24 + hash(i, 24) * 16); o.rotation.set(0, hash(i, 25) * 6, 0); });
   // drifting motes (pollen / snow / embers)
-  const N = 260, mp = new Float32Array(N * 3);
+  const N = low ? 90 : 260, mp = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) { mp[i * 3] = (hash(i, 31) - .5) * 110; mp[i * 3 + 1] = hash(i, 32) * 16; mp[i * 3 + 2] = (hash(i, 33) - .5) * 110; }
   const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
   const motes = new THREE.Points(mg, new THREE.PointsMaterial({ color: B.mote, size: biome === 'snow' ? .22 : .16, transparent: true, opacity: .85, depthWrite: false }));

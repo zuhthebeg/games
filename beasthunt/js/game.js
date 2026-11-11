@@ -95,7 +95,7 @@ export class Hunt {
   mParts() {
     const d = this.def.dims, s = this.def.scale, out = [], add = (n, lx, lz, r) => { const [x, z] = this.mPt(lx, lz); out.push({ n, x, z, r: r * s }); };
     add('head', 0, d.headZ, 1.15); add('body', 0, d.hz * .45, d.bw * 1.02); add('body', 0, -d.hz * .45, d.bw * 1.02);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add('legs', sx * d.legX * 1.05, sz * d.legZ, .78);
+    for (const sx of [-1, 1]) for (const sz of (this.q.mon === 'ember' ? [-1] : [-1, 1])) add('legs', sx * d.legX * 1.05, this.q.mon === 'ember' ? -1 : sz * d.legZ, .78);
     if (this.m.broke.tail) add('body', 0, -d.hz - .5, .7);
     else { const n = Math.max(2, Math.round(d.tailLen / 1.3)); for (let i = 0; i < n; i++) add('tail', 0, -d.hz - .5 - (i + .5) * (d.tailLen / n), .85); }
     return out;
@@ -412,6 +412,7 @@ export class Hunt {
     H.root.position.set(p.x, 0, p.z); H.root.rotation.y = p.yaw + p.spin;
     H.hips.position.y = hp.hy; H.hips.rotation.x = hp.hrx; H.torso.rotation.set(hp.tx, hp.ty, 0);
     H.armR.rotation.x = hp.arx; H.armL.rotation.x = hp.alx; H.legL.rotation.x = hp.ll; H.legR.rotation.x = hp.lr;
+    H.elbows.forEach((e,i)=>{e.rotation.x = p.state === 'charge' ? -.45 : -.12-Math.abs(i ? hp.alx : hp.arx)*.14;}); H.knees.forEach((k,i)=>{k.rotation.x = Math.max(0,-(i ? hp.lr : hp.ll))*.65;});
     H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(t * 20) % 2 === 0);
     // monster
     const T = Object.assign({}, this.hp0), A = m.atk, er = m.enr ? .85 : 1; let legAmp = m.moving ? .55 : 0, legF = 1.7, flail = 0, tailWag = .12;
@@ -434,9 +435,10 @@ export class Hunt {
     const bob = m.moving ? Math.abs(Math.sin(m.walk * legF)) * .12 : Math.sin(t * 1.6) * .03;
     G.body.position.y = d.h + mp.bodyY + bob; G.body.rotation.set(mp.bodyRx, 0, mp.bodyRz);
     G.head.position.z = d.headZ - .7 + mp.headZ; G.head.rotation.x = mp.headRx; G.jaw.rotation.x = mp.jaw;
-    G.legs.forEach((l, i) => { if (m.state === 'atk' && m.ak === 'charge' && m.t < m.atk.w * er && i === 0) return; const ph = (i === 0 || i === 3) ? 0 : PI; l.rotation.x = flail ? Math.sin(t * 13 + i * 1.7) * .5 * flail : Math.sin(m.walk * legF + ph) * legAmp; });
+    G.legs.forEach((l, i) => { if (m.state === 'atk' && m.ak === 'charge' && m.t < m.atk.w * er && i === 0) return; const ph = G.legs.length === 2 ? i * PI : (i === 0 || i === 3) ? 0 : PI; l.rotation.x = flail ? Math.sin(t * 13 + i * 1.7) * .5 * flail : Math.sin(m.walk * legF + ph) * legAmp; });
+    G.knees.forEach((k,i)=>{k.rotation.x = Math.max(0,Math.sin(m.walk*legF + (i%2)*PI)) * legAmp*.65 + (m.state === 'atk' && m.ak === 'leap' ? .4 : 0);});
     G.tail.forEach((sg, i) => { sg.rotation.y = Math.sin(t * 1.6 + i * .6) * tailWag + mp.tailCurl; sg.rotation.x = mp.tailLift + (i === 0 ? .05 : .03); });
-    G.wings.forEach((w, i) => { w.rotation.x = Math.sin(t * 2 + i) * .08 + (m.enr ? -.35 : 0); });
+    G.wings.forEach((w, i) => { w.rotation.x = Math.sin(t * 2) * .08 + (m.state === 'roar' ? -.4 : m.state === 'atk' ? -.2 : .05); w.rotation.z = (i ? -1 : 1) * (m.moving ? Math.sin(m.walk*legF)*.12 : .04); });
     G.eyeMat.emissive.setHex(m.enr ? 0xff2200 : G.eyeCol); G.eyeMat.emissiveIntensity = m.state === 'dead' ? 0 : m.enr ? 2.4 : 1.2;
     if (m.enr && dt > 0 && Math.random() < .3) { const [x, z] = this.mPt(0, d.headZ + .8); this.burst(this.def.proj === 'ice' ? 'ice' : 'fire', x, d.h * this.def.scale, z, 1, 1.2, .5, -3); }
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;

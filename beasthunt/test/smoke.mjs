@@ -9,6 +9,8 @@ const errors = [];
 let fail = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fail++; };
 for (const vp of [{ width: 1280, height: 720 }, { width: 390, height: 780, touch: true }]) {
   const ctx = await browser.newContext({ viewport: vp, hasTouch: !!vp.touch, isMobile: !!vp.touch });
+  // Keep auth/ads/report-only CSP from third parties outside this game smoke.
+  await ctx.route('**/*', route => new URL(route.request().url()).origin === new URL(base).origin ? route.continue() : route.abort());
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(vp.width + ' pageerror ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ERR_|Failed to load resource|relay|net::/i.test(m.text())) errors.push(vp.width + ' console ' + m.text()); });
@@ -117,6 +119,14 @@ for (const vp of [{ width: 1280, height: 720 }, { width: 390, height: 780, touch
     await page.waitForTimeout(400); await page.screenshot({ path: `${shot}/hunt-${vp.width}.png`, timeout: 20000 }).catch((e) => console.log('shot skipped', e.message.split('\n')[0]));
     await page.evaluate(() => window.__bh.end());
   }
+  const models = await page.evaluate(async () => (await import('./test/model-gates.js')).assessModels());
+  for (const row of models.rows) {
+    ok(row.monster <= 6000, vp.width + ' ' + row.id + ' monster triangle budget ' + row.monster);
+    ok(row.player <= 3000 && row.hunterBudgets.every(n => n <= 3000), vp.width + ' hunter triangle budget ' + row.player);
+    ok(row.scene <= 60000 && row.fullScene <= 60000 && row.calls <= 160, vp.width + ' scene budget ' + row.scene + ' calls ' + row.calls);
+    for (const part of row.parts) ok(part.hit, vp.width + ' ' + row.id + ' actual meleeHit ' + part.part);
+  }
+  for (const pair of models.iou) ok(pair.value < .6, vp.width + ' silhouette ' + pair.a + '/' + pair.b + ' IoU ' + pair.value.toFixed(4));
   await page.evaluate(() => localStorage.setItem('beasthunt_save_v1', JSON.stringify({v:1,z:1234,mats:{b_gem:2},w:{gs:3,db:2,bow:1},armor:2,weapon:'db',clears:{q1:{n:4,best:25}}})));
   await page.reload({waitUntil:'load'}); await page.waitForFunction(() => window.__bh);
   ok(await page.evaluate(() => {const s=window.__bh.save;return s.shards===1234 && !('z' in s) && s.mats.b_gem===2 && s.w.gs===3 && s.weapon==='db' && s.armor===2 && s.clears.q1.n===4 && JSON.parse(localStorage.getItem('beasthunt_save_v1')).shards===1234;}), vp.width + ' lossless legacy save migration');
