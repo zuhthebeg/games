@@ -47,7 +47,7 @@ export class Coop {
     if(!this.owner){this.profiles.set(this.uid,this.profile());ws.sendRt({bhHello:this.profile()});}
     if(this.uid!==this.roster.hostUser && (!this.lastPing || performance.now()-this.lastPing>1000)){this.lastPing=performance.now();ws.sendRt({bhPing:this.lastPing});}
     this.decorate();
-    if(this.owner && !this.owner.initialized && performance.now()-this.waitSince>5000)this.lostHost();
+    if(this.owner && this.lobby._ws?._ws?.readyState>=2)this.lostHost();
   }
   decorate(){
     const mode=document.querySelector('#mpl-mode');if(mode){
@@ -103,7 +103,7 @@ export class Coop {
     const quest=QUESTS.find(q=>q.id===plan.quest);if(!quest)return;
     this.stop();this.plan=plan;this.waitSince=performance.now();this.actions.clear();this.frames=[];
     this.owner=new GuestSession({quest,save:this.save,seed:crypto.getRandomValues(new Uint32Array(1))[0],hunt:plan.id,host:plan.host,uid:this.uid,
-      transport:{sendState:p=>this.send(p,'state'),sendEvent:p=>this.send(p,'event')}});
+      transport:{sendState:p=>this.send(p,'state'),sendEvent:p=>this.send(p,'event'),isOpen:()=>this.lobby._ws?._ws?.readyState===1}});
     // A terminal full after refresh reuses settled loot before Sim.result can roll.
     try {const stored=sessionStorage.getItem('bh_reward:'+plan.id);if(stored&&stored!=='1')this.owner.sim.cachedResult=JSON.parse(stored).result;}catch(_) { /* legacy or unavailable storage */ }
     this.owner.seq=Date.now()*1000;
@@ -151,7 +151,7 @@ export class Coop {
     }
     // textContent prevents roster nicknames from becoming HTML.
     hud.replaceChildren();for(const p of rows){const row=document.createElement('div'),name=document.createElement('span'),bar=document.createElement('meter');name.textContent=this.plan.roster[p.id]?.name||p.id;bar.max=p.maxHp;bar.value=p.hp;row.append(name,bar);hud.append(row);}
-    document.getElementById('latency').textContent=(o.disconnected||o.recovery)?t('connecting'):Math.round(this.uid===this.plan.host?0:(this.rtt||0))+' ms';
+    document.getElementById('latency').textContent=o.recovery?.phase==='hard'?t('syncing'):(o.disconnected||o.recovery)?t('connecting'):Math.round(this.uid===this.plan.host?0:(this.rtt||0))+' ms';
     this.frames.push({at:performance.now(),x:h.G.root.position.x,z:h.G.root.position.z,state:h.m.state,dt,fixedSteps:h.fixedSteps,visible:h.G.root.visible,hostTick:o.rep.world?.tick,playTick:view,ownerTick:h.sim.tick,phase:h.m.ak,attackTime:h.m.t,eventSeq:o.hostSeq,epoch:o.epoch,recovery:o.recovery?.phase??null,ownerCorrections:o.positionCorrections});if(this.frames.length>36000)this.frames.shift();
   }
   stop(){this.world?.close();this.world=null;this.owner=null;for(const r of this.remotes.values())r.label.remove();this.remotes.clear();document.getElementById('party').hidden=true;document.getElementById('latency').textContent='';}

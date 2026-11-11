@@ -4,17 +4,17 @@ import {PlaybackClock} from './clock.js';
 import {TickBuffer} from './interp.js';
 import {GuestReplication} from './replication.js';
 // All hunter input is executed here before any network response can arrive.
-// Never restore world snapshots over a live local hunter.
+// Only nonce-fenced hard recovery may restore a live local hunter.
 export class GuestSession {
   constructor({quest,save,seed=1,hunt,host,uid,transport}) {
     Object.assign(this,{hunt,host,uid,transport});
     this.sim=new Sim(quest,save,seed,{role:'owner',localId:uid});
     this.sim.players[0].id=uid;this.sim.activeId=uid;
     this.rep=new GuestReplication({hunt,host,localId:uid});
-    // Diagnostic invariant: only initial spawn writes owner coordinates from network.
+    // Normal live snapshots never correct owner coordinates; hard restores have their own metric.
     this.positionCorrections=0;this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
     this.authorityCarts=0;this.displayHp=this.sim.m.hp;this.recovery=null;this.epoch=0;this.lastService=null;this.hidden=false;
-    this.recoveryMetrics={count:0,durationMs:0,suppressedInputs:0,suppressedClaims:0,discardedEvents:0,timeouts:0};
+    this.recoveryMetrics={count:0,durationMs:0,suppressedInputs:0,suppressedClaims:0,discardedEvents:0,timeouts:0,hardResyncs:0};
     this.cart=0;this.presentation=[];this.disconnected=false;this.firstHostMs=null;
   }
   state(type,payload) {this.transport.sendState(envelope(type,this.hunt,this.seq++,payload));}
@@ -38,6 +38,7 @@ export class GuestSession {
     if(['break','end'].includes(p.type) && !Number.isFinite(v.startTick))return false;
     if(p.type==='carts' && (!Number.isInteger(v.carts) || v.carts<0 || v.carts>3))return false;
     if(p.type==='resumeAnchor')return this.anchor(v,p,nowMs);
+    if(p.type==='full' && v.hard)return this.hardFull(v,p,nowMs);
     this.hostSeq=p.seq;
     if(p.type==='full') {
       if(!v.snapshot?.m || !Array.isArray(v.snapshot.players))return false;
@@ -87,8 +88,9 @@ export class GuestSession {
   }
   service(nowMs,hidden=this.hidden) {
     this.hidden=hidden;
+    if(this.transport.isOpen?.()===false){this.disconnected=true;if(!this.sim.over)this.sim.finish(false,0);return true;}
     const c=this.rep.clock;const debt=c.offset===null?0:nowMs*60/1000+c.offset-c.delayMs*60/1000-c.playTick;
-    if(hidden || (this.lastService!==null&&nowMs-this.lastService>100) || debt>18)this.suspend(nowMs);
+    if(hidden || (this.lastService!==null&&nowMs-this.lastService>250) || debt>18)this.suspend(nowMs);
     this.lastService=nowMs;
     const r=this.recovery;
     if(!r)return false;
@@ -96,7 +98,8 @@ export class GuestSession {
     // A hidden interval is never charged, nor does it reset spent foreground.
     r.foregroundMs=this.recoveryElapsed(nowMs);r.wallAt=nowMs;r.wasHidden=hidden;
     const terminal=this.pending.find(p=>p.type==='end');if(terminal&&!this.sim.over)this.terminal(terminal.payload);
-    if(r.foregroundMs>=5000 && !this.sim.over){this.recoveryMetrics.timeouts++;this.disconnected=true;this.sim.finish(false,0);}
+    if(r.foregroundMs>=5000 && r.phase!=='hard' && !this.sim.over){this.recoveryMetrics.timeouts++;this.hardResync(nowMs);}
+    if(r.phase==='hard' && !hidden && nowMs>=r.retryAt && this.transport.isOpen?.()!==false)this.requestHard(nowMs);
     if(this.sim.over)return true;
     if(!hidden && r.phase==='anchor' && !r.nonce){
       r.nonce=this.uid+':'+(++this.epoch)+':'+this.seq;r.requested=nowMs;
@@ -109,6 +112,38 @@ export class GuestSession {
       this.transport.sendEvent(envelope('resumed',this.hunt,this.seq++,{}));
     }
     return true;
+  }
+  hardResync(nowMs) {
+    const r=this.recovery;if(!r||r.phase==='hard')return;
+    r.phase='hard';r.candidate=null;r.nonce=null;r.attempts=0;r.retryAt=nowMs;
+    this.pending=[];this.sim.clearInputs();this.sim.drainEvents();this.presentation=[];
+    this.recoveryMetrics.hardResyncs++;
+  }
+  requestHard(nowMs) {
+    const r=this.recovery;r.nonce=this.uid+':'+(++this.epoch)+':'+this.seq;
+    r.requested=nowMs;r.retryAt=nowMs+Math.min(2000,500*2**Math.min(r.attempts++,2));
+    this.transport.sendEvent(envelope('hardResync',this.hunt,this.seq++,{nonce:r.nonce,epoch:this.epoch}));
+  }
+  hardFull(v,p,nowMs) {
+    const r=this.recovery,s=this.sim,snap=v.snapshot;
+    if(!r||r.phase!=='hard'||v.to!==this.uid||v.nonce!==r.nonce||v.epoch!==this.epoch||
+      !Number.isSafeInteger(v.hostTick)||v.eventFloor!==p.seq||!snap?.m||!Array.isArray(snap.players)||
+      !snap.players.some(p=>p.id===this.uid)||s.over)return false;
+    // World combat state is authoritative only for this nonce-fenced escape hatch.
+    // Keep owner execution role and local settlement cache, not the world's role/result lifecycle.
+    const network=s.network,cachedResult=s.cachedResult,ended=s.ended;
+    s.restore(snap);s.network=network;s.activeId=this.uid;s.ended=ended;s.cachedResult=cachedResult;
+    // Puppets do not execute owner attacks: their cur/t are not replayable.
+    // Apply the same offensive cancellation as suspend after restoring the full owner.
+    if(['atk','charge','drink'].includes(s.p.state)){s.p.state='idle';s.p.t=0;s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
+    this.hostSeq=p.seq;this.cart=v.cartSeq?.[this.uid]??this.cart;
+    this.authorityCarts=Math.max(this.authorityCarts,s.carts);s.carts=this.authorityCarts;
+    this.pending=[];s.clearInputs();this.presentation=[];this.displayHp=s.m.hp;
+    const rep=this.rep;rep.monster=new TickBuffer();rep.monster.push(v.hostTick,s.m);
+    rep.clock=new PlaybackClock();rep.clock.observe(v.hostTick,nowMs);rep.clock.playTick=v.hostTick;
+    this.firstHostMs=nowMs;this.recoveryMetrics.durationMs+=nowMs-r.started;this.recovery=null;
+    if(snap.over){s.over=false;this.terminal({...snap,broke:snap.m.broke});}
+    this.transport.sendEvent(envelope('resumed',this.hunt,this.seq++,{}));return true;
   }
   anchor(v,p,nowMs) {
     const r=this.recovery,latest=this.rep.world?.tick??0;
@@ -180,11 +215,10 @@ export class GuestSession {
       s.m.hp=s.over&&s.win?0:this.rep.world.m.hp;s.m.maxHp=this.rep.world.m.maxHp;
       this.displayHp=s.over&&s.win?0:frame.hp;
       this.authorityCarts=Math.max(this.authorityCarts,frame.carts);s.carts=this.authorityCarts;if(!s.over)s.time=frame.time;
-      this.disconnected=frame.disconnected;
-      if(this.disconnected && !s.over) s.finish(false,0);
+      if(frame.disconnected && !s.over){this.suspend(nowMs);this.hardResync(nowMs);return this.drainEvents();}
     }
     if(!frame && this.firstHostMs!==null && nowMs-this.firstHostMs>5000 && !s.over) {
-      this.disconnected=true;s.finish(false,0);
+      this.suspend(nowMs);this.hardResync(nowMs);return this.drainEvents();
     }
     // Absorb clock slew only while winding up. Active contact/motion remains 60Hz.
     if(s.m.state==='atk' && s.m.atk){const W=s.m.atk.w*(s.m.enr?.85:1);if(s.m.t<W-1/60){const target=(viewTick-s.m.startTick)/60;s.m.t+=Math.max(-1/1200,Math.min(1/1200,target-s.m.t));}}

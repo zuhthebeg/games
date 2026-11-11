@@ -16,7 +16,7 @@ export class HostSession {
     this.rep=new HostReplication({hunt,transport});
     this.incoming=new GuestReplication({hunt,host,localId:'__world__'});
     this.claims=new HitClaims();this.claims.record(s);
-    this.resumes=new Map();this.suspended=new Set();this.controlSeq=new Map();
+    this.hardEpoch=new Map();this.resumes=new Map();this.suspended=new Set();this.controlSeq=new Map();
     this.owners=new Map();this.cartSeq=new Map();this.eventSeq=0;this.ended=false;
   }
   event(type,payload) {this.transport.sendEvent(envelope(type,this.hunt,this.eventSeq++,payload));}
@@ -24,6 +24,15 @@ export class HostSession {
   receive(from,p,nowMs=0) {
     if(!Object.hasOwn(this.roster,from) || !validEnvelope(p,this.hunt))return false;
     const s=this.sim;
+    if(p.type==='hardResync') {
+      const {nonce,epoch}=p.payload;
+      if(typeof nonce!=='string'||nonce.length>160||!Number.isSafeInteger(epoch)||epoch<1||
+        epoch<=(this.hardEpoch.get(from)??0)||p.seq<=(this.controlSeq.get(from)??-1))return false;
+      this.hardEpoch.set(from,epoch);this.controlSeq.set(from,p.seq);
+      this.suspended.add(from);this.resumes.delete(from);this.owners.delete(from);
+      this.event('full',{hard:true,to:from,nonce,epoch,hostTick:s.tick,eventFloor:this.eventSeq,
+        snapshot:s.snapshot(),cartSeq:Object.fromEntries(this.cartSeq)});return true;
+    }
     if(['suspend','resumeRequest','resumed'].includes(p.type)) {
       if(p.seq<=(this.controlSeq.get(from)??-1))return false;
       this.controlSeq.set(from,p.seq);

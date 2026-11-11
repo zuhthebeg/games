@@ -15,9 +15,14 @@ flow. See the R4b report for exact live evidence and outstanding acceptance.
 - Reliable world packets must name the roster host. rt identity is supplied by relay.
 - Owner snapshots are applied once at initialization: refresh is a fresh respawn,
   not a restore of the world's incomplete hunter puppet action. Repeated fulls never
-  overwrite a live owner's position. Cart sequence survives reconnect.
-- Room identity uses same-tab sessionStorage. Host leave/5-second world timeout
-  ends the guest locally. Late newcomers receive a blocked lobby, not a hunter.
+  overwrite a live owner's position. The sole exception is a nonce/epoch-fenced
+  hard-resync full after the foreground recovery budget expires. Cart sequence survives reconnect.
+- Room identity uses same-tab sessionStorage. Host leave/actual transport close
+  ends the guest locally. World silence and the 5-second foreground recovery budget
+  instead freeze contact/input and request a full hard resync (500/1000/2000ms capped
+  backoff, fresh nonce/epoch each attempt). Ordinary visible hitches suspend only
+  above 250ms; hidden and >18-tick debt still suspend immediately. The HUD shows
+  only a short syncing label. Late newcomers receive a blocked lobby, not a hunter.
 - The renderer shares syncHunter pose math with solo, derives remote action phase
   from host start ticks, and projects text-only names into an overlay. Menu does
   not stop coop. Windup alone absorbs bounded playback-clock phase drift.
