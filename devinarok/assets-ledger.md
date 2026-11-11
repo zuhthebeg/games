@@ -5,7 +5,7 @@ Runtime assets are vendored locally; there are no hotlinks or runtime fetches ou
 ## KayKit-Character-Pack-Adventures-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
 - Pinned default-branch commit: `672074b73ba276876a19e8816ecdc5241817ab47`
-- Download date: 2026-11-07
+- Download date: 2026-11-11
 - License copy: [`assets/licenses/kaykit-adventures-LICENSE.txt`](./assets/licenses/kaykit-adventures-LICENSE.txt)
 - Source license SHA-256: `ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629`
 
@@ -54,7 +54,7 @@ KayKit : Adventurers Character Pack (1.0)
 ## KayKit-Character-Pack-Skeletons-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0
 - Pinned default-branch commit: `15b62b9bad122f72926c10fb14d622c73819fa54`
-- Download date: 2026-11-07
+- Download date: 2026-11-11
 - License copy: [`assets/licenses/kaykit-skeletons-LICENSE.txt`](./assets/licenses/kaykit-skeletons-LICENSE.txt)
 - Source license SHA-256: `5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954`
 
@@ -108,7 +108,7 @@ KayKit Character Pack : Skeletons (1.0)
 ## KayKit-Dungeon-Remastered-1.0
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0
 - Pinned default-branch commit: `b0ca9bd96a8072ab36a3a5464f00ed1e06a16d07`
-- Download date: 2026-11-07
+- Download date: 2026-11-11
 - License copy: [`assets/licenses/kaykit-dungeon-LICENSE.txt`](./assets/licenses/kaykit-dungeon-LICENSE.txt)
 - Source license SHA-256: `c5f17abf619731f57f6bbff450f6484214605c13aa96bb75bbcfc70930941ff7`
 
@@ -196,7 +196,7 @@ KayKit : Dungeon Remastered (1.0)
 - Repository: https://kenney.nl/assets/nature-kit
 - Pinned source archive SHA-256: `fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d`
 - License evidence: the Nature Kit asset page lists Creative Commons CC0, and the pinned archive `License.txt` states “Creative Commons Zero, CC0”.
-- Download date: 2026-11-07
+- Download date: 2026-11-11
 - License copy: [`assets/licenses/kenney-nature-kit-LICENSE.txt`](./assets/licenses/kenney-nature-kit-LICENSE.txt)
 - Source license SHA-256: `cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d`
 
@@ -250,7 +250,7 @@ Nature Kit (2.1)
 - Repository: https://github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0
 - Pinned default-branch commit: `6dc69bf6b2fa766a985754f35ec6a0324090e6c6`
 - License evidence: the official KayKit Halloween Bits asset page lists CC0; the pinned official GitHub archive `Assets/LICENSE.txt` states “License: (Creative Commons Zero, CC0).”
-- Download date: 2026-11-07
+- Download date: 2026-11-11
 - License copy: [`assets/licenses/kaykit-halloween-bits-LICENSE.txt`](./assets/licenses/kaykit-halloween-bits-LICENSE.txt)
 - Source license SHA-256: `a514c41d8d5f2a07c94c55acd29ba94f50b86837f972e37edb4cbdeb7ba0e0e0`
 
@@ -309,7 +309,7 @@ KayKit : Halloween Bits (1.0)
 - Version: `0.187.0`.
 - Tarball: https://registry.npmjs.org/three/-/three-0.187.0.tgz
 - Tarball SHA-256: `ff540832ded0cfe919764d24a3d88f3e2a05f23303f876423e4f893841e90728`
-- Download date: 2026-11-07. Build minified the npm `three.module.js` and `three.core.js` with Terser, rewrote the core relative import, and copied the four required addons unchanged.
+- Download date: 2026-11-11. Build minified the npm `three.module.js` and `three.core.js` with Terser, rewrote the core relative import, and copied the four required addons unchanged.
 
 | Output path | SHA-256 | Bytes |
 | --- | --- | ---: |
@@ -323,12 +323,14 @@ KayKit : Halloween Bits (1.0)
 
 ## M0 arena load budget
 
-The M0 GLB load set totals **1,406,176 bytes** (1.34 MiB) against a 5 MiB budget.
+The M0 GLB load set totals **1,685,096 bytes** (1.61 MiB) against a 5 MiB budget.
 
 - `assets/chars/Knight.glb`: 155,500 bytes
 - `assets/chars/Barbarian.glb`: 140,736 bytes
 - `assets/chars/Rogue_Hooded.glb`: 133,348 bytes
 - `assets/chars/Mage.glb`: 128,548 bytes
+- `assets/chars/Skeleton_Warrior.glb`: 145,396 bytes
+- `assets/chars/Skeleton_Rogue.glb`: 133,524 bytes
 - `assets/anims/humanoid.glb`: 233,068 bytes
 - `assets/env/floor_wood_large_dark.glb`: 23,264 bytes
 - `assets/env/floor_wood_large.glb`: 23,232 bytes
@@ -355,7 +357,7 @@ The M0 GLB load set totals **1,406,176 bytes** (1.34 MiB) against a 5 MiB budget
 
 ## M1 stage asset budget
 
-Loaded runtime assets: inn-hub 3,366,560 bytes; C1 3,110,921 bytes; C2 3,059,853 bytes; C3 3,155,381 bytes; CB 2,827,877 bytes; F1 2,846,837 bytes; F2 2,846,913 bytes; F3 2,833,813 bytes; FB 2,826,673 bytes; K1 2,922,908 bytes; K2 3,006,952 bytes; K3 2,956,888 bytes; KB 2,931,032 bytes. The per-stage limit is 4,718,592 bytes.
+Loaded runtime assets: inn-hub 3,645,480 bytes; C1 3,110,921 bytes; C2 3,059,853 bytes; C3 3,155,381 bytes; CB 2,827,877 bytes; F1 2,846,837 bytes; F2 2,846,913 bytes; F3 2,833,813 bytes; FB 2,826,673 bytes; K1 2,922,908 bytes; K2 3,006,952 bytes; K3 2,956,888 bytes; KB 2,931,032 bytes. The per-stage limit is 4,718,592 bytes.
 
 ## M3b forest stage asset budget
 
@@ -415,6 +417,31 @@ All OpenGameArt source pages below state CC0; license evidence is preserved in [
 | Source and license evidence | Source file → output file | Output SHA-256 | Bytes |
 | --- | --- | --- | ---: |
 | OpenGameArt, [Fire Crackling](https://opengameart.org/content/fire-crackling), source page lists CC0; evidence copy [`assets/licenses/opengameart-fire-crackling-license.txt`](./assets/licenses/opengameart-fire-crackling-license.txt) | `fire-1.ogg` → `assets/audio/fire-crackle.ogg` | `f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb` | 22,784 |
+
+## M3c sanctuary audio
+
+| Source and license evidence | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| OpenGameArt, [Fire Crackling](https://opengameart.org/content/fire-crackling), source page lists CC0; evidence copy [`assets/licenses/opengameart-fire-crackling-license.txt`](./assets/licenses/opengameart-fire-crackling-license.txt) | `fire-1.ogg` → `assets/audio/fire-crackle.ogg` | `f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb` | 22,784 |
+
+## M4 regional music and gameplay audio
+
+All OpenGameArt source pages below state CC0; license evidence is preserved in [`assets/licenses/opengameart-m4-audio-license.txt`](./assets/licenses/opengameart-m4-audio-license.txt). The three regional loops are each below 1.5 MB and are lazy-loaded by region.
+
+| Source and license evidence | Source artifact SHA-256 | Source file → output file | Output SHA-256 | Bytes |
+| --- | --- | --- | --- | ---: |
+| [Iremos Forest Theme Loop](https://opengameart.org/content/iremos-forest-theme-loop), CC0 | `52103c8ef155224a9faeb3a834efe589a27ec0eeb929fdfa855e23d365f8fc01` | `iremos_forest_in_game.ogg` → `assets/audio/forest-bgm.ogg` | `52103c8ef155224a9faeb3a834efe589a27ec0eeb929fdfa855e23d365f8fc01` | 507,717 |
+| [Abandoned Castle Music (Loop)](https://opengameart.org/content/abandoned-castle-music-loop), CC0 | `4dd6b975f65d3e60417d5f15e9a915078e38cfd6f5203fb5636bb389d2f8c4e2` | `abandoned_castle_music_-_starninjas_6.ogg` → `assets/audio/castle-bgm.ogg` | `4dd6b975f65d3e60417d5f15e9a915078e38cfd6f5203fb5636bb389d2f8c4e2` | 395,160 |
+| [Sacred Springs Music (Loop)](https://opengameart.org/content/sacred-springs-music-loop), CC0 | `a6f817941c7e30c0fb5d2064b162d9630c53e35953d17fd1ae9e6eab327e3b4a` | `ancient_springs_-_starninjas_0.ogg` → `assets/audio/sanctuary-bgm.ogg` | `a6f817941c7e30c0fb5d2064b162d9630c53e35953d17fd1ae9e6eab327e3b4a` | 334,657 |
+| [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), CC0 | `119f9061a566c72c1c58444b03f8685b833079ef268dda02fe742eb34d3bc68f` | `magical_1.ogg` → `assets/audio/spell-cast.ogg` | `119f9061a566c72c1c58444b03f8685b833079ef268dda02fe742eb34d3bc68f` | 59,071 |
+| [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), CC0 | `9fac648a1de869cf9ca2f4b3f1cd47f1766a3ee9d2fdec45831234401d7b2392` | `magical_3.ogg` → `assets/audio/spell-fire.ogg` | `9fac648a1de869cf9ca2f4b3f1cd47f1766a3ee9d2fdec45831234401d7b2392` | 38,266 |
+| [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), CC0 | `b7862d109b4013dfb2a389a10f8917203beb0efc458444bc5a1b8ada605cc118` | `magical_4.ogg` → `assets/audio/spell-frost.ogg` | `b7862d109b4013dfb2a389a10f8917203beb0efc458444bc5a1b8ada605cc118` | 79,091 |
+| [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), CC0 | `0a18ee3460cf3fd79c3771bbf94c20c26d34b65ab60d0b0e15694ffcad815955` | `magical_6.ogg` → `assets/audio/spell-blink.ogg` | `0a18ee3460cf3fd79c3771bbf94c20c26d34b65ab60d0b0e15694ffcad815955` | 37,434 |
+| [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), CC0 | `2817da4f5df69ff993baffd6594a2f2a069f85ee2a02019f97db2246e350a76b` | `magical_7.ogg` → `assets/audio/spell-summon.ogg` | `2817da4f5df69ff993baffd6594a2f2a069f85ee2a02019f97db2246e350a76b` | 76,383 |
+| [Their Coming](https://opengameart.org/content/their-coming-generic-horn-sound), CC0 | `4f2e3500b4f06470727012e36709931d3edfc186d78999cee59674a521d06538` | `theircoming3.ogg` → `assets/audio/boss-telegraph.ogg` | `4f2e3500b4f06470727012e36709931d3edfc186d78999cee59674a521d06538` | 119,570 |
+| [New Thing Get!](https://opengameart.org/content/new-thing-get), CC0 | `dbebe58b4fcd7c3a3ecfd887a40f0160ae82ed2d0375c187b9e8c49e596fd724` | `newthingget.ogg` → `assets/audio/level-up.ogg` | `dbebe58b4fcd7c3a3ecfd887a40f0160ae82ed2d0375c187b9e8c49e596fd724` | 173,459 |
+| [10 Impact/Shield Blocks](https://opengameart.org/content/10-impactshield-blocks), CC0, credit appreciated to StarNinjas | `4592764795344ae010561b0191b059a0e7ed8c2d2e6c0e96171debaa346cf311` | `impact.1.ogg` → `assets/audio/shield-clang.ogg` | `00787cc514099b2e7f7b6b77a973f8c484863ef640326ebb318ba5d7791bf48e` | 14,102 |
+| [Fantasy Weapons and Apparel SFX Library](https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library), CC0 | `81cc6317f21b68f8e7f2b23a5a0f5f33c301c39ee41347307eec02201be989e5` | `arrow-feathers-01.wav` → `assets/audio/crossbow-shot.ogg` | `7d0acdfbce1f2e0fd94f5a1e39eeea1e2684f8817dc3f9fecc8ccfadce6c3782` | 11,623 |
 
 ## M3c sanctuary audio
 

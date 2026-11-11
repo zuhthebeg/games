@@ -6,7 +6,12 @@ import { ARENA } from '../sim/arena.js';
 import { COMBO_TIMELINES } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
-import { playerLookKey, playerModelKey } from './player-look.js';
+import {
+  DONOR_PARTS,
+  playerLookKey,
+  playerModelKey,
+  resolvePlayerParts,
+} from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
 import {
   OUTLINE_STYLES,
@@ -47,16 +52,15 @@ const PLAYER_PARTS = new Set([
   '2H_Staff',
   'Knight_Helmet',
   'Knight_Cape',
+  'Barbarian_Hat',
+  'Barbarian_Cape',
   'Rogue_Cape',
   'Mage_Hat',
   'Mage_Cape',
+  'Skeleton_Warrior_Helmet',
+  'Skeleton_Rogue_Hood',
+  'Skeleton_Rogue_Cape',
 ]);
-const WEAPON_PARTS = new Set(['1H_Sword', '2H_Sword', '1H_Crossbow', '2H_Crossbow', '1H_Wand', '2H_Staff']);
-const WEAPON_TINTS = {
-  magic: 0x2a4dff,
-  rare: 0xb8901a,
-  legendary: 0xff6a1a,
-};
 const FOREST_TARGET_BOUNDS = {
   'assets/env/forest/tree_pineTallA.glb': [2.5, 5, 2.5],
   'assets/env/forest/tree_pineTallB.glb': [2.8, 5.5, 2.8],
@@ -120,9 +124,9 @@ function createForestGroundTexture() {
   return texture;
 }
 
-function isolateWeaponMaterials(root, materials) {
+function isolatePlayerPartMaterials(root, materials) {
   root.traverse((node) => {
-    if (!node.isMesh || !WEAPON_PARTS.has(node.name)) return;
+    if (!node.isMesh || !PLAYER_PARTS.has(node.name)) return;
     const clone = (material) => {
       const isolated = material.clone();
       materials.push(isolated);
@@ -133,24 +137,22 @@ function isolateWeaponMaterials(root, materials) {
 }
 
 function applyPlayerLook(root, look = {}) {
-  const weapon = look.weapon ?? '1H_Sword';
-  const offhand = look.offhand ?? (weapon === '1H_Sword' ? 'Round_Shield' : null);
+  const parts = resolvePlayerParts(look);
+  const partTints = new Map();
+  const visibleParts = new Map([
+    [parts.weapon, parts.tints.weapon],
+    [parts.offhand, parts.tints.offhand],
+    [parts.head, parts.tints.head],
+    [parts.cape, parts.tints.cape],
+  ].filter(([name]) => name));
   root.traverse((node) => {
     if (!PLAYER_PARTS.has(node.name)) return;
-    node.visible = node.name === weapon
-      || node.name === offhand
-      || (node.name === 'Knight_Helmet' && Boolean(look.helmet))
-      || (node.name === 'Knight_Cape' && Boolean(look.cape))
-      || (node.name === 'Rogue_Cape' && Boolean(look.cape))
-      || (node.name === 'Mage_Hat' && Boolean(look.helmet))
-      || (node.name === 'Mage_Cape' && Boolean(look.cape));
+    node.visible = visibleParts.has(node.name);
+    const tint = visibleParts.get(node.name);
+    if (!node.isMesh || !tint) return;
+    for (const material of [node.material].flat()) partTints.set(material, tint);
   });
-  const weaponMaterials = new Set();
-  root.getObjectByName(weapon)?.traverse((node) => {
-    if (!node.isMesh) return;
-    for (const material of [node.material].flat()) weaponMaterials.add(material);
-  });
-  return weaponMaterials;
+  return partTints;
 }
 
 function createGroundContinuationTexture(theme) {
@@ -941,6 +943,12 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       return M0_MODELS[assetKey];
     }).filter(Boolean))];
     const requiredModels = new Set([...propModels, ...characterPaths]);
+    if (this.isHub || this.isSanctuary) {
+      for (const donor of new Set(DONOR_PARTS.map(({ donor }) => donor))) {
+        const path = M0_MODELS[donor];
+        if (path) requiredModels.add(path);
+      }
+    }
     if (this.arena.rooms?.some((room) => room.objective)) {
       requiredModels.add('assets/env/pillar.glb');
     }
@@ -1415,11 +1423,29 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }
   }
 
+  graftPlayerParts(root) {
+    const existingParts = new Set();
+    root.traverse((node) => existingParts.add(node.name));
+    for (const { node, donor, bone } of DONOR_PARTS) {
+      if (existingParts.has(node)) continue;
+      const donorPart = this.models.get(donor)?.getObjectByName(node);
+      const parent = root.getObjectByName(bone);
+      if (!donorPart || !parent) continue;
+      const graft = donorPart.clone();
+      graft.position.copy(donorPart.position);
+      graft.quaternion.copy(donorPart.quaternion);
+      graft.scale.copy(donorPart.scale);
+      parent.add(graft);
+      existingParts.add(node);
+    }
+  }
+
   createEntity(entity, world = null) {
     const entityModelKey = entity.kind === 'player' ? playerModelKey(entity) : entity.model ?? entity.enemyKind;
     const assetKey = entityModelKey === 'rogue' ? 'Rogue_Hooded' : entityModelKey === 'mage' ? 'Mage' : entityModelKey;
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
+    if (entity.kind === 'player') this.graftPlayerParts(root);
     const materials = cloneMaterials(root);
     if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
       root.traverse((node) => {
@@ -1432,7 +1458,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         if (material.color) material.color.lerp(tint, 0.45);
       }
     }
-    if (entity.kind === 'player') isolateWeaponMaterials(root, materials);
+    if (entity.kind === 'player') isolatePlayerPartMaterials(root, materials);
     if (entity.kind === 'enemy') root.scale.set(...silhouetteScale(entity));
     else root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
@@ -1552,7 +1578,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       outlineKind,
       modelKey: entity.kind === 'player' ? entityModelKey : '',
       lookKey: entity.kind === 'player' ? playerLookKey(entity.look) : '',
-      weaponMaterials: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Set(),
+      partTints: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Map(),
     };
     this.entities.set(entity.id, visual);
     return visual;
@@ -2297,9 +2323,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       } else if (entity.kind === 'enemy' && (entity.slowTicks ?? 0) > 0) {
         material.emissive.setHex(0x9edfff);
         material.emissiveIntensity = 0.55;
-      } else if (visual.weaponMaterials.has(material) && WEAPON_TINTS[entity.look?.weaponRarity]) {
-        material.emissive.setHex(WEAPON_TINTS[entity.look.weaponRarity]);
-        material.emissiveIntensity = 0.35;
+      } else if (visual.partTints.has(material)) {
+        const tint = visual.partTints.get(material);
+        material.emissive.setHex(tint.hex);
+        material.emissiveIntensity = tint.intensity;
       } else {
         material.emissive.copy(original.emissive);
         material.emissiveIntensity = original.emissiveIntensity;
@@ -2631,7 +2658,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         const lookKey = playerLookKey(entity.look);
         if (lookKey !== visual.lookKey) {
           visual.lookKey = lookKey;
-          visual.weaponMaterials = applyPlayerLook(visual.root, entity.look);
+          visual.partTints = applyPlayerLook(visual.root, entity.look);
         }
       }
       const old = before.get(entity.id) ?? entity;

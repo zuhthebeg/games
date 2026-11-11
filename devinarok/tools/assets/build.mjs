@@ -511,6 +511,8 @@ const m0LoadedFiles = [
   'assets/chars/Barbarian.glb',
   'assets/chars/Rogue_Hooded.glb',
   'assets/chars/Mage.glb',
+  'assets/chars/Skeleton_Warrior.glb',
+  'assets/chars/Skeleton_Rogue.glb',
   'assets/anims/humanoid.glb',
   ...HUB_ARENA.props.map((prop) => prop.model),
   ...(HUB_ARENA.npcs ?? []).map((npc) => `assets/chars/${npc.model === 'knight' ? 'Knight' : npc.model}.glb`),
