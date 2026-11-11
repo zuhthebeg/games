@@ -1,0 +1,4 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {safeLobby} from '../js/net/safe-lobby.js';
+test('first roster, ready updates and user fallback escape display only',()=>{const nick='<img src onerror=a=1>',uid='<img src onerror=b=1>';let rendered;const lobby={uid:'me',nick, _roster:{hostUser:uid,players:[{user:uid,nick,ready:false}]},_syncLobby(){rendered=this._roster.players.map(p=>p.nick||p.user).join('');assert.equal(this._roster.hostUser,uid);assert.equal(this._roster.players[0].user,uid);}};const original=lobby._roster;safeLobby(lobby);for(const fallback of [false,true]){original.players[0].nick=fallback?'':nick;for(const ready of [true,false]){original.players[0].ready=ready;lobby._syncLobby();assert.ok(!rendered.includes('<'));assert.equal(lobby._roster,original);assert.equal(lobby.nick,nick);}}});

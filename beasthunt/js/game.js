@@ -144,7 +144,14 @@ export class Hunt {
     if (this.in.take('pause')) { this.ui.pause(); if (!this.session) { this.ticker.reset(); return; } }
     // Camera input belongs to presentation, and only its yaw enters tick commands.
     this.updCam(rdt);
-    this.ticker.advance(rdt, () => {
+    if(this.session){
+      const recovering=this.session.service(performance.now(),document.hidden);
+      if(recovering){this.in.clear();this.sim.clearInputs();}
+      if(this.session.recovery?.phase==='buffer')this.previous=this.sim.snapshot();
+    }
+    this.fixedSteps=0;
+    this.ticker.advance(this.session?.recovery?.phase==='active'?Math.min(rdt,1/60):rdt, () => {
+      this.fixedSteps++;
       this.previous = this.sim.snapshot();
       if (this.session) this.presentEvents(this.session.tick(this.in.sample(this.cy), performance.now()));
       else { this.sim.step({ [this.localId]: this.in.sample(this.cy) }); this.presentEvents(); }
@@ -157,7 +164,10 @@ export class Hunt {
     const p = interpolatePose(p0,this.p,alpha), m = interpolatePose(this.previous.m,this.m,alpha);
     this.H.root.position.set(p.x,0,p.z); this.H.root.rotation.y = p.yaw + p.spin;
     this.G.root.position.set(m.x,m.y,m.z); this.G.root.rotation.y = m.yaw + m.spin;
-    this.syncProjectiles(alpha); this.updHud(); this.session?.render?.(this, rdt);
+    // Recovery is an explicit re-entry boundary, not a visible monster seek.
+    this.syncProjectiles(alpha);
+    if(this.session){const covered=this.session.recovery && this.session.recovery.phase!=='active';this.G.root.visible=!covered;if(covered)for(const q of [...this.projPool,...this.arrowPool])q.visible=false;}
+    this.updHud(); this.session?.render?.(this, rdt);
     if (!this.skipRender) this.r.render(this.scene,this.cam);
   }
 
@@ -235,7 +245,7 @@ export class Hunt {
   updHud() {
     const p = this.p, m = this.m, e = this.ui.el, left = Math.max(0, TIME_LIMIT - this.time);
     e.hp.style.width = (p.hp / p.maxHp * 100) + '%'; e.hpHeal.style.width = (Math.min(p.maxHp, p.hp + p.healLeft) / p.maxHp * 100) + '%';
-    e.st.style.width = p.st + '%'; e.mon.style.width = (m.hp / m.maxHp * 100) + '%';
+    e.st.style.width = p.st + '%'; e.mon.style.width = ((this.session?.displayHp ?? m.hp) / m.maxHp * 100) + '%';
     e.timer.textContent = Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0');
     e.potions.textContent = p.potions; e.carts.textContent = (MAX_CARTS - this.carts);
     e.rage.hidden = !m.enr; e.lock.classList.toggle('on', this.lock);

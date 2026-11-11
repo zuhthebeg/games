@@ -16,6 +16,7 @@ export class HostSession {
     this.rep=new HostReplication({hunt,transport});
     this.incoming=new GuestReplication({hunt,host,localId:'__world__'});
     this.claims=new HitClaims();this.claims.record(s);
+    this.resumes=new Map();this.suspended=new Set();this.controlSeq=new Map();
     this.owners=new Map();this.cartSeq=new Map();this.eventSeq=0;this.ended=false;
   }
   event(type,payload) {this.transport.sendEvent(envelope(type,this.hunt,this.eventSeq++,payload));}
@@ -23,6 +24,14 @@ export class HostSession {
   receive(from,p,nowMs=0) {
     if(!Object.hasOwn(this.roster,from) || !validEnvelope(p,this.hunt))return false;
     const s=this.sim;
+    if(['suspend','resumeRequest','resumed'].includes(p.type)) {
+      if(p.seq<=(this.controlSeq.get(from)??-1))return false;
+      this.controlSeq.set(from,p.seq);
+      if(p.type==='resumed'){this.suspended.delete(from);this.resumes.delete(from);return true;}
+      this.suspended.add(from);
+      if(p.type==='resumeRequest' && typeof p.payload.nonce==='string')this.resumes.set(from,p.payload.nonce);
+      this.resumeAnchors();return true;
+    }
     if(p.type==='hunter') {
       if(!this.incoming.receive(from,p,nowMs))return false;
       const v=decodeHunter(p),prev=this.owners.get(from),player=s.players.find(p=>p.id===from);
@@ -35,6 +44,7 @@ export class HostSession {
       return true;
     }
     if(p.type==='hit') {
+      if(this.suspended.has(from))return false;
       const player=s.players.find(p=>p.id===from),hit=this.claims.validate(from,p.payload,player,s);
       if(!hit.ok)return false;
       s.activeId=from;s.hitMonster(hit.part,hit.raw,hit.x,hit.z,hit.mv);
@@ -58,9 +68,24 @@ export class HostSession {
       p.x=o.value.x+o.vx*age;p.z=o.value.z+o.vz*age;
     }
     const before=s.m.state;
+    // Suspended puppets are not world AI candidates; owner state stays untouched.
+    const excluded=s.players.filter(p=>this.suspended.has(p.id)).map(p=>[p,p.state]);
+    for(const [p] of excluded)p.state='dead';
     s.step();
+    for(const [p,state] of excluded)p.state=state;
+    this.resumeAnchors();
     if(s.m.state!==before && s.m.startTick!==s.tick)s.m.startTick=s.tick;
     this.claims.record(s);this.flush();this.rep.afterTick(s);
+  }
+  resumeAnchors() {
+    const s=this.sim;
+    if(!s.over && (['atk','roar'].includes(s.m.state)||s.projs.length))return;
+    for(const [to,nonce] of this.resumes){
+      this.event('resumeAnchor',{to,nonce,hostTick:s.tick,eventFloor:this.eventSeq,
+        monster:structuredClone(s.m),projectiles:structuredClone(s.projs),carts:s.carts,time:s.time,
+        terminal:s.over?{win:s.win,broke:{...s.m.broke},carts:s.carts,time:s.time}:null});
+      this.resumes.delete(to);
+    }
   }
   flush() {
     const s=this.sim;

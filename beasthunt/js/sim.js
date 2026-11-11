@@ -347,7 +347,9 @@ export class Sim {
 
   updMon(dt) {
     if (this.network?.role === 'owner') this.activeId = this.network.localId;
-    else { this.activeId = selectTarget(this.players, this.m, this.tick)?.id ?? this.activeId; this.m.targetId = this.activeId; }
+    else { const target=selectTarget(this.players, this.m, this.tick);
+      if(this.network?.role==='world' && !target && !['atk','roar','dead'].includes(this.m.state)){this.m.targetId=null;this.m.moving=0;return;}
+      this.activeId = target?.id ?? this.activeId; this.m.targetId = this.activeId; }
     const m = this.m, d = this.def, p = this.p, s = d.scale; if (m.state === 'dead') { m.t += dt; return; }
     const spd = d.speed * this.hr.spd * (m.enr ? 1.25 : 1), dx = p.x - m.x, dz = p.z - m.z, dist = Math.hypot(dx, dz), toP = Math.atan2(dx, dz), ad = angDiff(toP, m.yaw);
     m.t += dt; m.moving = 0; if (m.enr) { m.enrT -= dt; if (m.enrT <= 0) m.enr = false; }

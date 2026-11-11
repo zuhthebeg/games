@@ -144,7 +144,7 @@ $('resume').onclick = () => setPaused(false);
 $('abandon').onclick = () => { $('pause').hidden = true; if(hunt?.session){coop?.close();return;} endHunt(); };
 $('pauseBtn').onclick = () => setPaused(true);
 $('lockBtn').onclick = () => hunt && hunt.toggleLock();
-document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { hunt?.session?.suspend(performance.now()); setPaused(true); } });
 document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && hunt && !hunt.over && !input.isTouch && hunt.hadLock) setPaused(true); if (document.pointerLockElement && hunt) hunt.hadLock = true; });
 
 function clearCombatUI() {
@@ -160,10 +160,17 @@ function startHunt(qid, session = null) {
 }
 const rewarded = new Set();
 function onHuntEnd(res) {
-  if (hunt?.session) { const id=coop.plan.id; if(rewarded.has(id) || sessionStorage.getItem("bh_reward:"+id))return; rewarded.add(id);sessionStorage.setItem("bh_reward:"+id,"1"); }
+  let duplicate=false, resultKey=null;
+  if (hunt?.session) {
+    const id=coop.plan.id;resultKey="bh_reward:"+id;
+    const stored=sessionStorage.getItem(resultKey);
+    duplicate=rewarded.has(id)||!!stored;
+    if(stored && stored!=="1") {try {res=JSON.parse(stored).result;} catch (_) { /* legacy marker */ }}
+    if(!duplicate){rewarded.add(id);sessionStorage.setItem(resultKey,JSON.stringify({result:res}));}
+  }
   input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
   const q = res.quest; let rec = false;
-  if (res.win) {
+  if (res.win && !duplicate) {
     save.shards += q.shards; for (const [k, n] of Object.entries(res.loot)) save.mats[k] = (save.mats[k] || 0) + n;
     const c = save.clears[q.id] || (save.clears[q.id] = { n: 0, best: 1e9 }); c.n++; if (res.time < c.best) { c.best = res.time; rec = true; }
     persist();
@@ -174,7 +181,7 @@ function onHuntEnd(res) {
       finally { SharedWallet._debugToast = toast; }
     } } catch (_) { /* wallet optional */ }
   }
-  if (window.gtag) window.gtag('event', 'bh_quest_end', { quest: q.id, win: res.win ? 1 : 0, time: Math.round(res.time) });
+  if (!duplicate && window.gtag) window.gtag('event', 'bh_quest_end', { quest: q.id, win: res.win ? 1 : 0, time: Math.round(res.time) });
   $('resTitle').textContent = t(res.win ? 'res_win' : 'res_fail'); $('result').className = 'overlay ' + (res.win ? 'win' : 'fail');
   const rows = [[t('time'), fmtT(res.time) + (rec ? ' · ' + t('record') : '')], [t('faints'), res.carts]];
   if (res.win) { rows.push([t('reward'), q.shards + ' ' + t('currency')], [t('gold'), '+' + q.gold]); }

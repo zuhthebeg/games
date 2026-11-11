@@ -113,3 +113,22 @@ end are intentionally rejected and excluded only from the eligible denominator.
 - node beasthunt/test/coop-e2e.mjs [baseUrl] (real shared DO, 2 peers)
 - BH_PEERS=3 node beasthunt/test/coop-e2e.mjs [baseUrl]
 - BH_RELAY=pages node beasthunt/test/coop-e2e.mjs [baseUrl] (literal endpoint diagnosis)
+
+### Suspension recovery epoch (R4 repair)
+Normal playback retains +/-5% slew and 60-tick claim history. A hidden document,
+owner service wall gap >100ms, or estimated playback debt >18 ticks closes input
+and claim production. A visible active attack completes only its remaining fixed
+ticks after foreground return; new owner attacks/arrows are not advanced there.
+The owner sends suspend, then nonce-bound resumeRequest. The host excludes that
+puppet from new target selection, and supplies resumeAnchor only outside atk/roar
+and without projectiles (or supplies terminal immediately). Anchor includes hunt,
+nonce, host tick, event sequence floor, monster/projectiles, carts/time/terminal.
+Only unseen old monster events/buffers/arrows are discarded at that explicit epoch.
+No owner pose, HP, stamina, inventory, equipment, cart sequence, or RNG is restored.
+After one interpolation buffer fills, playTick resumes at the anchor; new attack
+windup uses the existing >=100ms receiveMonsterEvent floor, active remains 60Hz.
+No anchor within five seconds of foreground request fails closed. Terminal does
+not wait for playback catch-up. This is bounded reconnect, not seamless hidden play.
+Diagnostics distinguish raw render jumps, recovery epochs, and claim schema
+stale/future/nonfinite. Authored bite still has an intrinsic 1.4m fixed-tick step;
+raw >1m render gate remains unresolved, not waived as network jitter.

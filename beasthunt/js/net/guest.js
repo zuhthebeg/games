@@ -1,5 +1,7 @@
 import {Sim,FIXED_DT} from '../sim.js';
 import {envelope,encodeHunter,validEnvelope} from './protocol.js';
+import {PlaybackClock} from './clock.js';
+import {TickBuffer} from './interp.js';
 import {GuestReplication} from './replication.js';
 // All hunter input is executed here before any network response can arrive.
 // Never restore world snapshots over a live local hunter.
@@ -11,44 +13,125 @@ export class GuestSession {
     this.rep=new GuestReplication({hunt,host,localId:uid});
     // Diagnostic invariant: only initial spawn writes owner coordinates from network.
     this.positionCorrections=0;this.seq=0;this.hostSeq=-1;this.pending=[];this.initialized=false;
+    this.authorityCarts=0;this.displayHp=this.sim.m.hp;this.recovery=null;this.epoch=0;this.lastService=null;this.hidden=false;
+    this.recoveryMetrics={count:0,durationMs:0,suppressedInputs:0,suppressedClaims:0,discardedEvents:0,timeouts:0};
     this.cart=0;this.presentation=[];this.disconnected=false;this.firstHostMs=null;
   }
   state(type,payload) {this.transport.sendState(envelope(type,this.hunt,this.seq++,payload));}
   receive(from,p,nowMs) {
     if(!validEnvelope(p,this.hunt))return false;
-    if(p.type==='world' || p.type==='hunter')return this.rep.receive(from,p,nowMs);
-    if(!['full','carts','monster','break','end'].includes(p.type) || from!==this.host || p.seq<=this.hostSeq)return false;
+    if(p.type==='world' || p.type==='hunter'){
+      const accepted=this.rep.receive(from,p,nowMs);
+      if(accepted&&p.type==='world'){
+        this.authorityCarts=Math.max(this.authorityCarts,this.rep.world.carts);this.sim.carts=this.authorityCarts;
+        if(this.recovery&&this.rep.world.over)this.terminal({...this.rep.world,broke:this.rep.world.m.broke});
+      }
+      return accepted;
+    }
+    if(!['resumeAnchor','full','carts','monster','break','end'].includes(p.type) || from!==this.host || p.seq<=this.hostSeq)return false;
     const s=this.sim,v=p.payload;
     if(p.type==='monster' && (!Number.isFinite(v.startTick) || !v.monster ||
       !Number.isFinite(v.monster.x) || !Number.isFinite(v.monster.z) ||
       (v.monster.state==='atk' && !v.monster.atk)))return false;
     if(['break','end'].includes(p.type) && !Number.isFinite(v.startTick))return false;
     if(p.type==='carts' && (!Number.isInteger(v.carts) || v.carts<0 || v.carts>3))return false;
+    if(p.type==='resumeAnchor')return this.anchor(v,p,nowMs);
     this.hostSeq=p.seq;
     if(p.type==='full') {
       if(!v.snapshot?.m || !Array.isArray(v.snapshot.players))return false;
+      this.authorityCarts=Math.max(this.authorityCarts,v.snapshot.carts);s.carts=this.authorityCarts;
+      if(this.initialized && v.snapshot.over){this.terminal({...v.snapshot,broke:v.snapshot.m.broke});return true;}
       if(!this.initialized) {
         const local=v.snapshot.players.find(p=>p.id===this.uid);
         if(!local)return false;
         // A reconnect is a fresh owner respawn, never replay a puppet's incomplete action.
         Object.assign(s.players[0],{id:local.id,x:local.x,z:local.z});
         s.m=structuredClone(v.snapshot.m);s.projs=structuredClone(v.snapshot.projs);
-        s.carts=v.snapshot.carts;s.time=v.snapshot.time;this.cart=v.cartSeq?.[this.uid]??0;
+        this.authorityCarts=Math.max(this.authorityCarts,v.snapshot.carts);s.carts=this.authorityCarts;s.time=v.snapshot.time;this.cart=v.cartSeq?.[this.uid]??0;
         if(v.snapshot.over){s.m.broke={...v.snapshot.m.broke};s.finish(v.snapshot.win,0);}
         if(["atk","roar"].includes(s.m.state))s.receiveMonsterEvent({monster:s.m,startTick:s.m.startTick},v.hostTick);
         this.rep.clock.observe(v.hostTick,nowMs);this.firstHostMs=nowMs;this.initialized=true;
       }
       return true;
     }
-    if(p.type==='carts') {s.carts=v.carts;return true;}
+    if(p.type==='carts') {this.authorityCarts=Math.max(this.authorityCarts,v.carts);s.carts=this.authorityCarts;return true;}
+    if(p.type==='end' && this.recovery){this.terminal(v);return true;}
+    if(this.recovery?.phase!=='buffer' && this.recovery && p.type==='monster'){this.recoveryMetrics.discardedEvents++;return true;}
     if(['monster','end','break'].includes(p.type)) {
       this.pending.push(p);return true;
     }
     return false;
   }
+  terminal(e) {
+    if(this.sim.ended)return;
+    const s=this.sim;this.terminalState=e;s.time=e.time;this.authorityCarts=Math.max(this.authorityCarts,e.carts);s.carts=this.authorityCarts;s.m.broke={...e.broke};
+    if(e.win){s.m.hp=0;s.m.state='dead';this.displayHp=0;s.projs.length=0;}
+    s.finish(e.win,0);s.endT=0;this.pending=[];
+  }
+  suspend(nowMs) {
+    if(this.recovery||this.sim.over||!this.initialized)return;
+    const s=this.sim,m=s.m,W=m.atk?.w*(m.enr?.85:1);
+    const remaining=m.state==='atk'&&m.t>=W&&m.t<W+m.atk.a?Math.ceil((W+m.atk.a-m.t)*60-1e-7):0;
+    this.recovery={phase:remaining?'active':'anchor',remaining,started:nowMs,wallGapMs:this.lastService===null?0:Math.max(0,nowMs-this.lastService),nonce:null,requested:null};
+    this.recoveryMetrics.count++;this.recoveryMetrics.unservicedMs=(this.recoveryMetrics.unservicedMs??0)+this.recovery.wallGapMs;s.clearInputs();
+    this.transport.sendEvent(envelope('suspend',this.hunt,this.seq++,{}));
+  }
+  service(nowMs,hidden=this.hidden) {
+    this.hidden=hidden;
+    const c=this.rep.clock;const debt=c.offset===null?0:nowMs*60/1000+c.offset-c.delayMs*60/1000-c.playTick;
+    if(hidden || (this.lastService!==null&&nowMs-this.lastService>100) || debt>18)this.suspend(nowMs);
+    this.lastService=nowMs;
+    const r=this.recovery;
+    if(!r)return false;
+    const terminal=this.pending.find(p=>p.type==='end');if(terminal&&!this.sim.over)this.terminal(terminal.payload);
+    if(!hidden && r.phase==='anchor' && !r.nonce){
+      r.nonce=this.uid+':'+(++this.epoch)+':'+this.seq;r.requested=nowMs;
+      this.transport.sendEvent(envelope('resumeRequest',this.hunt,this.seq++,{nonce:r.nonce}));
+    }
+    if(r.requested!==null && nowMs-r.requested>5000 && !this.sim.over){this.recoveryMetrics.timeouts++;this.disconnected=true;this.sim.finish(false,0);}
+    if(r.phase==='buffer' && !hidden && this.rep.world?.tick>=r.anchorTick+this.rep.clock.delayMs*60/1000){
+      if(this.rep.world.tick-r.anchorTick>48){r.phase='anchor';r.nonce=null;return true;}
+      this.rep.clock.playTick=r.anchorTick;
+      this.recoveryMetrics.durationMs+=nowMs-r.started;this.recovery=null;
+      this.transport.sendEvent(envelope('resumed',this.hunt,this.seq++,{}));
+    }
+    return true;
+  }
+  anchor(v,p,nowMs) {
+    const r=this.recovery,latest=this.rep.world?.tick??0;
+    if(!r || nowMs-r.requested>5000 || r.phase!=='anchor'||v.to!==this.uid||v.nonce!==r.nonce || !Number.isSafeInteger(v.hostTick) ||
+      v.hostTick<latest-12 || v.hostTick>latest+12 || !Number.isSafeInteger(v.eventFloor)||v.eventFloor!==p.seq ||
+      !v.monster||!Number.isFinite(v.monster.x)||!Number.isFinite(v.monster.z)||!Array.isArray(v.projectiles)||
+      (!v.terminal&&(['atk','roar'].includes(v.monster.state)||v.projectiles.length)))return false;
+    this.hostSeq=p.seq;
+    if(v.terminal){this.terminal(v.terminal);return true;}
+    if(this.sim.over)return false;
+    this.recoveryMetrics.discardedEvents+=this.pending.filter(p=>p.type==='monster').length;
+    this.pending=this.pending.filter(p=>p.type!=='monster' && p.payload.startTick>v.hostTick);
+    this.sim.m=structuredClone(v.monster);this.sim.projs=structuredClone(v.projectiles);this.sim.arrows=[];
+    this.authorityCarts=Math.max(this.authorityCarts,v.carts);this.sim.carts=this.authorityCarts;this.sim.time=v.time;
+    const rep=this.rep;rep.monster=new TickBuffer();rep.monster.push(v.hostTick,v.monster);
+    rep.clock=new PlaybackClock();rep.clock.observe(v.hostTick,nowMs);rep.clock.playTick=v.hostTick;
+    r.anchorTick=v.hostTick;r.phase='buffer';return true;
+  }
   tick(input,nowMs) {
-    if(!this.initialized)return [];
-    const s=this.sim,frame=this.rep.frame(FIXED_DT,nowMs);
+    if(!this.initialized || this.sim.ended)return [];
+    this.service(nowMs);
+    const s=this.sim;
+    if(this.recovery && !s.over){
+      const r=this.recovery;
+      this.recoveryMetrics.suppressedInputs+=Object.entries(input).filter(([k,v])=>['light','heavy','dodge','potion','heavyHeld','moveX','moveZ'].includes(k)&&v).length;
+      s.clearInputs();
+      if(r.phase==='active'&&!this.hidden){
+        // Existing visible monster contact only; never advance owner arrows or attacks.
+        const arrows=s.arrows;s.arrows=[];s.updMon(FIXED_DT);s.updProjs(FIXED_DT);s.arrows=arrows;r.remaining--;
+        for(const e of s.drainEvents())if(e.type==='cart'){this.cart++;this.transport.sendEvent(envelope('cart',this.hunt,this.seq++,{cart:this.cart}));}else if(e.type==='hitClaim')this.recoveryMetrics.suppressedClaims++;else this.presentation.push(e);
+        if(r.remaining<=0)r.phase='anchor';
+      }
+      return this.drainEvents();
+    }
+    if(s.over && this.recovery){s.step({});return [...this.drainEvents(),...s.drainEvents()];}
+    const frame=this.rep.frame(FIXED_DT,nowMs);
     const viewTick=frame?.tick??this.rep.clock.playTick??s.tick;
     s.network.viewTick=viewTick;
     // The action path is ordered; only process events once their host tick is
@@ -58,7 +141,7 @@ export class GuestSession {
       if(packet.type==='monster')s.receiveMonsterEvent(e,viewTick);
       else if(packet.type==='break')this.presentation.push({type:'break',part:e.part});
       else if(packet.type==='end' && !s.over) {
-        s.time=e.time;s.carts=e.carts;s.m.broke={...e.broke};
+        s.time=e.time;this.authorityCarts=Math.max(this.authorityCarts,e.carts);s.carts=this.authorityCarts;s.m.broke={...e.broke};
         if(e.win){s.m.hp=0;s.m.state='dead';s.projs.length=0;}
         s.finish(e.win,e.delay);
       }
@@ -68,8 +151,9 @@ export class GuestSession {
       if(!['atk','roar'].includes(s.m.state) && !['atk','roar'].includes(m.state)) {
         for(const k of ['x','y','z','yaw','spin','state','t'])s.m[k]=m[k];
       }
-      s.m.hp=this.rep.world.m.hp;s.m.maxHp=this.rep.world.m.maxHp;
-      s.carts=frame.carts;if(!s.over)s.time=frame.time;
+      s.m.hp=s.over&&s.win?0:this.rep.world.m.hp;s.m.maxHp=this.rep.world.m.maxHp;
+      this.displayHp=s.over&&s.win?0:frame.hp;
+      this.authorityCarts=Math.max(this.authorityCarts,frame.carts);s.carts=this.authorityCarts;if(!s.over)s.time=frame.time;
       this.disconnected=frame.disconnected;
       if(this.disconnected && !s.over) s.finish(false,0);
     }

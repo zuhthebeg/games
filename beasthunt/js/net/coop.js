@@ -1,3 +1,4 @@
+import {safeLobby} from './safe-lobby.js';
 import * as THREE from 'three';
 import {QUESTS,WTYPES} from 'bh/data';
 import {buildHunter} from 'bh/models';
@@ -15,11 +16,11 @@ export class Coop {
     this.roster={players:[]};this.owner=null;this.world=null;this.plan=null;
     this.bytes=0;this.since=performance.now();this.frames=[];
     this.uid=sessionStorage.getItem('bh_uid') || crypto.randomUUID();sessionStorage.setItem('bh_uid',this.uid);
-    this.lobby=new MultiplayerLobby({gameType:'beasthunt',gameName:'BEAST HUNT',minPlayers:2,maxPlayers:4,
+    this.lobby=safeLobby(new MultiplayerLobby({gameType:'beasthunt',gameName:'BEAST HUNT',minPlayers:2,maxPlayers:4,
       room:new URLSearchParams(location.search).get('room')||sessionStorage.getItem('bh_room')||undefined,
-      workerBase:new URLSearchParams(location.search).get('bhRelay')==='pages'?'wss://relay.cocy.io':'wss://relay-do-poc.zuhejbeg.workers.dev',userId:this.uid,getPlayerData:()=>this.profile(),
+      workerBase:'wss://relay-do-poc.zuhejbeg.workers.dev',userId:this.uid,getPlayerData:()=>this.profile(),
       onLeave:()=>this.close(),onLocal:()=>this.close(),
-      onGameEvent:(type,e)=>{if(type==='event')this.event(e);}});
+      onGameEvent:(type,e)=>{if(type==='event')this.event(e);}}));
     this.timer=setInterval(()=>this.service(),200);
   }
   profile(){return {v:VERSION,save:{weapon:this.save.weapon,w:{...this.save.w},armor:this.save.armor}};}
@@ -148,8 +149,8 @@ export class Coop {
     }
     // textContent prevents roster nicknames from becoming HTML.
     hud.replaceChildren();for(const p of rows){const row=document.createElement('div'),name=document.createElement('span'),bar=document.createElement('meter');name.textContent=this.plan.roster[p.id]?.name||p.id;bar.max=p.maxHp;bar.value=p.hp;row.append(name,bar);hud.append(row);}
-    document.getElementById('latency').textContent=o.disconnected?t('disconnected'):Math.round(this.uid===this.plan.host?0:(this.rtt||0))+' ms';
-    this.frames.push({at:performance.now(),x:h.G.root.position.x,z:h.G.root.position.z,state:h.m.state});if(this.frames.length>36000)this.frames.shift();
+    document.getElementById('latency').textContent=(o.disconnected||o.recovery)?t('connecting'):Math.round(this.uid===this.plan.host?0:(this.rtt||0))+' ms';
+    this.frames.push({at:performance.now(),x:h.G.root.position.x,z:h.G.root.position.z,state:h.m.state,dt,fixedSteps:h.fixedSteps,visible:h.G.root.visible,hostTick:o.rep.world?.tick,playTick:view,ownerTick:h.sim.tick,phase:h.m.ak,attackTime:h.m.t,eventSeq:o.hostSeq,epoch:o.epoch,recovery:o.recovery?.phase??null,ownerCorrections:o.positionCorrections});if(this.frames.length>36000)this.frames.shift();
   }
   stop(){this.world?.close();this.world=null;this.owner=null;for(const r of this.remotes.values())r.label.remove();this.remotes.clear();document.getElementById('party').hidden=true;document.getElementById('latency').textContent='';}
   waiting(){this.stop();this.plan=null;this.lobby.goToWaitingRoom();this.decorate();}
