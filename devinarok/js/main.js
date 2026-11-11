@@ -1126,6 +1126,9 @@ function renderBoard() {
     ), 0);
     const challengeFloor = Math.min(RIFT_MAX_FLOOR, bestFloor + 1);
     const challengeStage = STAGES[`R${challengeFloor}`];
+    const nextChallengeMarkup = bestFloor >= RIFT_MAX_FLOOR
+      ? '<div class="rift-next-floor is-complete"><strong>심연 균열 정복 완료</strong><small>30층을 모두 돌파했어요 · 아래에서 다시 도전할 수 있어요</small></div>'
+      : `<div class="rift-next-floor"><strong>다음 도전 · ${challengeStage.name}</strong><small>적 강함 ×${challengeStage.powerMult.toFixed(2)}</small><button class="primary" data-sortie="${challengeStage.id}" ${stageIsUnlocked(challengeStage.id, 'normal') ? '' : 'disabled'}>${challengeFloor}층 도전</button></div>`;
     const unlocked = character.clearedStages.includes('KB');
     if (!unlocked) {
       hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-lock-notice">해골 왕의 옥좌를 쓰러뜨리면 열려요</p><button data-close>닫기</button>`;
@@ -1141,7 +1144,7 @@ function renderBoard() {
         const bossBadge = stage.boss ? '<b class="rift-boss-badge">★보스</b>' : '';
         return `<div class="hub-row rift-floor-card${cleared ? ' is-cleared' : ''}" data-stage-id="${stage.id}"><span class="hub-stage-info"><strong>${stage.name} ${bossBadge}</strong><small>${cleared ? '클리어' : '도전 가능'} · 적 강함 ×${stage.powerMult.toFixed(2)}${bestLabel}</small></span><button class="hub-sortie" data-sortie="${stage.id}">${cleared ? '재도전' : '출정'}</button></div>`;
       }).join('');
-    hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-best-floor">최고 ${bestFloor}층</p><div class="rift-next-floor"><strong>다음 도전 · ${challengeStage.name}</strong><small>적 강함 ×${challengeStage.powerMult.toFixed(2)}</small><button class="primary" data-sortie="${challengeStage.id}" ${stageIsUnlocked(challengeStage.id, 'normal') ? '' : 'disabled'}>${challengeFloor}층 도전</button></div><div class="rift-floor-list" aria-label="해금된 균열 층">${floors}</div><button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-best-floor">최고 ${bestFloor}층</p>${nextChallengeMarkup}<div class="rift-floor-list" aria-label="해금된 균열 층">${floors}</div><button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
     return;
   }
   if (boardTab === 'contracts') {

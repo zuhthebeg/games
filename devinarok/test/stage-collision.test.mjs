@@ -271,6 +271,8 @@ test('the inn board and CB clear explain forest-region progression', async () =>
   assert.match(main, /const selectableStages = difficulty === 'normal' \? \[\.\.\.STAGE_LIST, \.\.\.RIFT_STAGE_LIST\] : STAGE_LIST;/);
   assert.match(main, /data-board-tab="rift"/);
   assert.match(main, /해골 왕의 옥좌를 쓰러뜨리면 열려요/);
+  assert.match(main, /bestFloor >= RIFT_MAX_FLOOR/);
+  assert.ok(main.includes('<div class="rift-next-floor is-complete"><strong>심연 균열 정복 완료</strong><small>30층을 모두 돌파했어요 · 아래에서 다시 도전할 수 있어요</small></div>'));
   assert.match(css, /\.hub-row button \{ flex: 0 0 88px;/);
   assert.match(css, /\.hub-stage-name \{[^}]*white-space: nowrap;/);
   assert.match(main, /firstForestUnlock = difficulty === 'normal' && stageId === 'CB'/);
