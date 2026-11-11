@@ -1,4 +1,4 @@
-import { DIFFICULTIES, effectiveStageLevel, STAGE_LIST } from '../content/stages.js';
+import { DIFFICULTIES, effectiveStageLevel, STAGES, STAGE_LIST } from '../content/stages.js';
 import { escapeHtml } from './escape-html.js';
 
 const DEFAULT_SERVER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
@@ -70,7 +70,7 @@ export function partyRoomsMarkup(rooms, playerLevel, { disabled = false } = {}) 
     const code = String(room.meta?.code ?? String(room.roomId ?? '').split(':').at(-1)).slice(0, 6);
     const hostName = escapeHtml(String(room.meta?.hostName ?? '이름 없는 기사').slice(0, 32));
     const hostLevel = Math.max(1, Math.min(99, Number(room.meta?.hostLevel) || 1));
-    const stage = STAGE_LIST.find((entry) => entry.id === room.meta?.stageId) ?? STAGE_LIST[0];
+    const stage = STAGES[room.meta?.stageId] ?? STAGE_LIST[0];
     const difficultyId = DIFFICULTIES[room.meta?.difficulty] ? room.meta.difficulty : 'normal';
     const difficulty = DIFFICULTIES[difficultyId].label;
     const recommendedLevel = difficultyId === 'normal'

@@ -37,7 +37,8 @@ import {
 import { rekeySettlementItems } from './save/ops.js';
 import { acquireSettlement } from './save/settlement-lock.js';
 import {
-  DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage, stageClearKey, STAGE_LIST,
+  DIFFICULTIES, HUB_ARENA, effectiveStageLevel, isDifficultyUnlocked, isStageUnlocked, latestStage,
+  RIFT_MAX_FLOOR, RIFT_STAGE_LIST, riftFloorOf, stageClearKey, STAGES, STAGE_LIST,
 } from './content/stages.js';
 import {
   BUTTONS, COMBO_TIMELINES, DODGE_COOLDOWN_TICKS, calculatePlayerStats, completeStage, createHubWorld,
@@ -947,11 +948,12 @@ async function enterSanctuary() {
 }
 
 function updateBossIntro(stageId) {
-  const region = STAGE_LIST.find((stage) => stage.id === stageId)?.region ?? 1;
+  const stage = STAGES[stageId];
+  const region = stage?.region ?? 1;
   $('#boss-intro-region').textContent = region === 3 ? '해골 왕의 성채' : region === 2 ? '잿빛 숲' : '무너진 지하묘지';
-  $('#boss-intro-name').textContent = stageId === 'KB'
+  $('#boss-intro-name').textContent = stage?.rooms[0]?.waves[0]?.enemy === 'skeletonking'
     ? '해골 왕'
-    : region === 2 ? '잿빛 숲의 사령술사' : '해골 기사단장';
+    : stage?.rooms[0]?.waves[0]?.enemy === 'ashwarden' ? '잿빛 숲의 사령술사' : '해골 기사단장';
 }
 
 async function loadAudioForScene(scene) {
@@ -961,7 +963,7 @@ async function loadAudioForScene(scene) {
 }
 
 function musicForScene(scene) {
-  const stageRegion = STAGE_LIST.find((stage) => stage.id === scene)?.region;
+  const stageRegion = STAGES[scene]?.region;
   return scene === 'sanctuary' ? 'sanctuary-bgm'
     : stageRegion === 2 ? 'forest-bgm'
       : stageRegion === 3 ? 'castle-bgm'
@@ -1117,7 +1119,34 @@ const EQUIPMENT_SLOTS = [
 
 function renderBoard() {
   const difficulty = boardDifficulty;
-  const boardTabs = `<nav class="board-tabs" aria-label="게시판"><button data-board-tab="quests" class="${boardTab === 'quests' ? 'active' : ''}" aria-pressed="${boardTab === 'quests'}">퀘스트</button><button data-board-tab="contracts" class="${boardTab === 'contracts' ? 'active' : ''}" aria-pressed="${boardTab === 'contracts'}">의뢰</button></nav>`;
+  const boardTabs = `<nav class="board-tabs" aria-label="게시판"><button data-board-tab="quests" class="${boardTab === 'quests' ? 'active' : ''}" aria-pressed="${boardTab === 'quests'}">퀘스트</button><button data-board-tab="contracts" class="${boardTab === 'contracts' ? 'active' : ''}" aria-pressed="${boardTab === 'contracts'}">의뢰</button><button data-board-tab="rift" class="${boardTab === 'rift' ? 'active' : ''}" aria-pressed="${boardTab === 'rift'}">균열</button></nav>`;
+  if (boardTab === 'rift') {
+    const bestFloor = RIFT_STAGE_LIST.reduce((best, stage) => (
+      character.clearedStages.includes(stage.id) ? Math.max(best, riftFloorOf(stage.id)) : best
+    ), 0);
+    const challengeFloor = Math.min(RIFT_MAX_FLOOR, bestFloor + 1);
+    const challengeStage = STAGES[`R${challengeFloor}`];
+    const nextChallengeMarkup = bestFloor >= RIFT_MAX_FLOOR
+      ? '<div class="rift-next-floor is-complete"><strong>심연 균열 정복 완료</strong><small>30층을 모두 돌파했어요 · 아래에서 다시 도전할 수 있어요</small></div>'
+      : `<div class="rift-next-floor"><strong>다음 도전 · ${challengeStage.name}</strong><small>적 강함 ×${challengeStage.powerMult.toFixed(2)}</small><button class="primary" data-sortie="${challengeStage.id}" ${stageIsUnlocked(challengeStage.id, 'normal') ? '' : 'disabled'}>${challengeFloor}층 도전</button></div>`;
+    const unlocked = character.clearedStages.includes('KB');
+    if (!unlocked) {
+      hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-lock-notice">해골 왕의 옥좌를 쓰러뜨리면 열려요</p><button data-close>닫기</button>`;
+      return;
+    }
+    const floors = [...RIFT_STAGE_LIST]
+      .filter((stage) => stageIsUnlocked(stage.id, 'normal'))
+      .reverse()
+      .map((stage) => {
+        const cleared = character.clearedStages.includes(stage.id);
+        const bestTicks = character.records?.[stage.id];
+        const bestLabel = Number.isInteger(bestTicks) ? ` · 최고 ${formatClearTime(bestTicks)}` : '';
+        const bossBadge = stage.boss ? '<b class="rift-boss-badge">★보스</b>' : '';
+        return `<div class="hub-row rift-floor-card${cleared ? ' is-cleared' : ''}" data-stage-id="${stage.id}"><span class="hub-stage-info"><strong>${stage.name} ${bossBadge}</strong><small>${cleared ? '클리어' : '도전 가능'} · 적 강함 ×${stage.powerMult.toFixed(2)}${bestLabel}</small></span><button class="hub-sortie" data-sortie="${stage.id}">${cleared ? '재도전' : '출정'}</button></div>`;
+      }).join('');
+    hubPanel.innerHTML = `${boardTabs}<h2>심연 균열</h2><p class="rift-best-floor">최고 ${bestFloor}층</p>${nextChallengeMarkup}<div class="rift-floor-list" aria-label="해금된 균열 층">${floors}</div><button data-party-finder class="party-entry"><span><strong>같이 출정</strong><small>동료와 함께 출정합니다.</small></span><b>파티 찾기 →</b></button><button data-close>닫기</button>`;
+    return;
+  }
   if (boardTab === 'contracts') {
     const dateKey = kstDateKey(Date.now());
     const storedDateKey = character.contracts?.dateKey;
@@ -1182,7 +1211,7 @@ function renderBoard() {
     const lockText = !tierUnlocked ? tierLock
       : !unlocked && difficulty === 'normal' ? normalLockText
       : !unlocked && regionGate && !character.clearedStages.includes(stageClearKey(regionGate, difficulty))
-        ? `${STAGE_LIST.find((entry) => entry.id === regionGate)?.name ?? ''}(${tier.label})을 쓰러뜨리면 열려요`
+        ? `${STAGES[regionGate]?.name ?? ''}(${tier.label})을 쓰러뜨리면 열려요`
         : !unlocked ? `${previousStage?.name ?? ''}(${tier.label})을 쓰러뜨리면 열려요`
           : cleared ? '클리어' : '도전 가능';
     const bestTicks = character.records?.[key];
@@ -1425,7 +1454,8 @@ function renderPartyLobby() {
   const difficultyOptions = Object.entries(DIFFICULTIES)
     .filter(([id]) => isHost ? isDifficultyUnlocked(id, character.clearedStages) : id === difficulty)
     .map(([id, entry]) => `<option value="${id}" ${id === difficulty ? 'selected' : ''}>${entry.label}</option>`).join('');
-  const stageOptions = STAGE_LIST.filter((entry) => isHost ? stageIsUnlocked(entry.id, difficulty) : entry.id === stage)
+  const selectableStages = difficulty === 'normal' ? [...STAGE_LIST, ...RIFT_STAGE_LIST] : STAGE_LIST;
+  const stageOptions = selectableStages.filter((entry) => isHost ? stageIsUnlocked(entry.id, difficulty) : entry.id === stage)
     .map((entry) => `<option value="${entry.id}" ${entry.id === stage ? 'selected' : ''}>${entry.name}</option>`).join('');
   const members = party.map((member) => {
     const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
@@ -1552,8 +1582,8 @@ async function startPartyStage(message) {
   stopWorld();
   $('#hub-party-button').hidden = true;
   currentStageId = message.stageId;
-  currentStageDifficulty = message.difficulty ?? 'normal';
-  const selectedStage = STAGE_LIST.find((entry) => entry.id === message.stageId);
+  const selectedStage = STAGES[message.stageId];
+  currentStageDifficulty = selectedStage?.rift ? 'normal' : message.difficulty ?? 'normal';
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
   if (message.stageId === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
   settlementState.settled = false;
@@ -1566,13 +1596,13 @@ async function startPartyStage(message) {
   $('#controls').classList.remove('hub-controls');
   $('#party-hud').hidden = false;
   $('#party-rtt').hidden = false;
-  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(message.stageId);
-  $('#boss-name').textContent = message.stageId === 'KB'
+  $('#boss-hud').hidden = !selectedStage?.boss;
+  $('#boss-name').textContent = selectedStage?.rooms[0]?.waves[0]?.enemy === 'skeletonking'
     ? '해골 왕'
-    : message.stageId === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+    : selectedStage?.rooms[0]?.waves[0]?.enemy === 'ashwarden' ? '잿빛 숲의 사령술사' : '해골 기사단장';
   updateBossIntro(message.stageId);
   updateFamilySkillControls(equipmentLook(equippedItems()).family);
-  $('#stage-name').textContent = STAGE_LIST.find((entry) => entry.id === message.stageId)?.name ?? message.stageId;
+  $('#stage-name').textContent = selectedStage?.name ?? message.stageId;
   world = partyClient.viewWorld() ?? partyClient.stageWorld;
   tutorialLastX = null;
   tutorialLastZ = null;
@@ -1973,7 +2003,7 @@ async function openBoard() {
 }
 
 async function startStage(stageId, options = {}) {
-  const difficulty = options.difficulty ?? 'normal';
+  const difficulty = STAGES[stageId]?.rift ? 'normal' : options.difficulty ?? 'normal';
   if (!stageIsUnlocked(stageId, difficulty) && !DEV_MODE && !debugEnabled) return;
   const tutorialSortie = debugEnabled
     ? { stageId, beginCombat: false }
@@ -1983,7 +2013,7 @@ async function startStage(stageId, options = {}) {
     updateTutorial({ type: 'beginCombat' });
     await tutorialSaveChain;
   }
-  const selectedStage = STAGE_LIST.find((entry) => entry.id === stageToStart);
+  const selectedStage = STAGES[stageToStart];
   localStorage.setItem('devinarok.lastStageRegion', String(selectedStage?.region ?? 1));
   if (stageToStart === 'F1') localStorage.setItem('devinarok.f1-entered', '1');
   if (stageToStart === 'K1') localStorage.setItem('devinarok.k1-entered', '1');
@@ -2001,10 +2031,10 @@ async function startStage(stageId, options = {}) {
   resultPanel.hidden = true;
   $('#controls').hidden = false;
   $('#controls').classList.remove('hub-controls');
-  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(stageToStart);
-  $('#boss-name').textContent = stageToStart === 'KB'
+  $('#boss-hud').hidden = !selectedStage?.boss;
+  $('#boss-name').textContent = selectedStage?.rooms[0]?.waves[0]?.enemy === 'skeletonking'
     ? '해골 왕'
-    : stageToStart === 'FB' ? '잿빛 숲의 사령술사' : '해골 기사단장';
+    : selectedStage?.rooms[0]?.waves[0]?.enemy === 'ashwarden' ? '잿빛 숲의 사령술사' : '해골 기사단장';
   updateBossIntro(stageToStart);
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
@@ -2033,7 +2063,7 @@ async function startStage(stageId, options = {}) {
   audio.setMusic(music, { crossfadeMs: 1000 });
   $('#stage-name').textContent = world.arena.name;
   renderTutorialCard();
-  if (['CB', 'FB', 'KB'].includes(stageToStart)) {
+  if (selectedStage?.boss) {
     $('#boss-intro').hidden = false;
     setTimeout(() => { $('#boss-intro').hidden = true; }, 2800);
   }
@@ -2106,7 +2136,7 @@ function updateHud(current) {
     dodgeButton?.style.setProperty('--cooldown', `${(hero.dodgeCooldownTicks / DODGE_COOLDOWN_TICKS) * 100}%`);
     $('#controls .attack-button')?.classList.toggle('counter-ready', hero.counterReadyTicks > 0);
   }
-  $('#boss-hud').hidden = !['CB', 'FB', 'KB'].includes(current.stageId);
+  $('#boss-hud').hidden = !STAGES[current.stageId]?.boss;
   const boss = current.entities.find((entity) => entity.boss);
   if (boss) $('#boss-fill').style.width = `${boss.hp / boss.maxHp * 100}%`;
   updateObjectiveHud(current);
@@ -2234,7 +2264,13 @@ function renderSettlement(outcome, result, {
   const earnedItems = outcome === 'clear' && result.items.length
     ? `<ul class="settlement-items">${result.items.map((item) => `<li class="rarity-${item.rarity}">${itemName(item)} · ${RARITIES[item.rarity]?.name ?? item.rarity}</li>`).join('')}</ul>`
     : '';
-  const progression = outcome === 'clear' && stageId === 'KB' && difficulty === 'normal'
+  const riftFloor = riftFloorOf(stageId);
+  const bestRiftFloor = RIFT_STAGE_LIST.reduce((best, stage) => (
+    character.clearedStages.includes(stage.id) ? Math.max(best, riftFloorOf(stage.id)) : best
+  ), outcome === 'clear' && riftFloor !== null ? riftFloor : 0);
+  const progression = outcome === 'clear' && riftFloor !== null
+    ? `<p class="rift-clear-progression">균열 ${riftFloor}층 돌파 · 최고 ${bestRiftFloor}층</p>`
+    : outcome === 'clear' && stageId === 'KB' && difficulty === 'normal'
     ? '<p>모든 지역을 정복했어요 · 악몽 난이도가 열렸어요</p>'
     : outcome === 'clear' && stageId === 'KB' && difficulty === 'nightmare'
       ? '<p>지옥 난이도가 열렸어요</p>'
@@ -2243,10 +2279,10 @@ function renderSettlement(outcome, result, {
       : outcome === 'clear' && firstForestUnlock
         ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
         : '';
-  const stageName = STAGE_LIST.find((stage) => stage.id === stageId)?.name ?? '';
+  const stageName = STAGES[stageId]?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const objectiveLabel = OBJECTIVE_LABELS[result.objective?.type];
-  const objectiveStage = STAGE_LIST.find((stage) => stage.id === stageId);
+  const objectiveStage = STAGES[stageId];
   const objectiveMarkup = objectiveLabel
     ? result.objective.success
       ? outcome === 'clear'
@@ -2716,7 +2752,8 @@ hubUi.addEventListener('submit', (event) => {
 });
 hubPanel.addEventListener('change', (event) => {
   if (event.target.id === 'party-stage-select') {
-    partyClient?.selectStage(event.target.value, partyClient.lobby?.difficulty ?? 'normal');
+    const stageId = event.target.value;
+    partyClient?.selectStage(stageId, STAGES[stageId]?.rift ? 'normal' : partyClient.lobby?.difficulty ?? 'normal');
   }
   if (event.target.id === 'party-difficulty-select') {
     const difficulty = event.target.value;

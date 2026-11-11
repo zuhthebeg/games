@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { STAGE_LIST } from '../js/content/stages.js';
+import { ALL_STAGE_LIST } from '../js/content/stages.js';
 import { createStageWorld, step } from '../js/sim/world.js';
 
 function prepareRoom(stage, roomIndex) {
@@ -21,7 +21,7 @@ function prepareRoom(stage, roomIndex) {
 test('front wall segments stop players beside every stage doorway', () => {
   const xPositions = [-6, -4, -2.5, 2.5, 4, 6];
   let checkedWalls = 0;
-  for (const stage of STAGE_LIST) {
+  for (const stage of ALL_STAGE_LIST) {
     for (const room of stage.rooms.slice(0, -1)) {
       const wallZ = room.centerZ - stage.depth / stage.rooms.length / 2 - 0.5;
       for (const x of xPositions) {
@@ -45,7 +45,7 @@ test('front wall segments stop players beside every stage doorway', () => {
 });
 
 test('an opened doorway remains passable through its gate gap', () => {
-  for (const stage of STAGE_LIST) {
+  for (const stage of ALL_STAGE_LIST) {
     for (const room of stage.rooms.slice(0, -1)) {
       const { world, player } = prepareRoom(stage, room.index);
       const door = world.arena.doors.find((entry) => entry.fromRoom === room.id);
