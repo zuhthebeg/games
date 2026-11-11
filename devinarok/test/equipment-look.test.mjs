@@ -80,6 +80,27 @@ test('weapon families select their character and KayKit equipment meshes', () =>
   });
 });
 
+test('equipmentLook activates sets only for the matching weapon family', () => {
+  const oathArmor = [
+    { itemId: 'oath-helm', slot: 'head' },
+    { itemId: 'oath-plate', slot: 'body' },
+    { itemId: 'oath-gauntlets', slot: 'hands' },
+    { itemId: 'oath-greaves', slot: 'feet' },
+  ];
+
+  assert.equal(equipmentLook([
+    { itemId: 'rusted-crossbow', slot: 'weapon' },
+    ...oathArmor,
+  ]).setId, null);
+
+  const swordLook = equipmentLook([
+    { itemId: 'rusted-sword', slot: 'weapon' },
+    ...oathArmor,
+  ]);
+  assert.equal(swordLook.weapon, '1H_Sword');
+  assert.equal(swordLook.setId, 'guardian-oath');
+});
+
 test('hub player starts at full gear-scaled HP after leaving an injured stage', () => {
   const equipment = [
     { itemId: 'ossuary-helm', slot: 'head', rarity: 'rare', affixes: [{ id: 'maxHp', value: 20 }] },
