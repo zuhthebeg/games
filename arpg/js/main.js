@@ -855,12 +855,15 @@ try {
         }
       }
       if (count === 5 && accumulator >= TICK_MS) accumulator %= TICK_MS;
-      renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
-      if (running) {
-        hud.update(world, elapsed / 1000);
-        hud.syncRitual(ritualState, world.entities[0] ? nearestRitual(world.entities[0].x, world.entities[0].y) : null);
+      // Sanctuary exit disposes the world during the tick; keep the common RAF tail.
+      if (world) {
+        renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
+        if (running) {
+          hud.update(world, elapsed / 1000);
+          hud.syncRitual(ritualState, world.entities[0] ? nearestRitual(world.entities[0].x, world.entities[0].y) : null);
+        }
+        showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
       }
-      showKnightArtStatus(hud, renderer.views.get(world.entities[0].id)?.visual.debug);
     } else if (!hidden && world && (resultPresentation.pending || (!coopSession && world.entities[0].terminal
       && ['death_knight','skeleton_knight'].includes(renderer.views.get(world.entities[0].id)?.visual.debug.presentation)))) {
       // Result UI owns settlement. Finish this kit's death/idle presentation
