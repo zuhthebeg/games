@@ -106,9 +106,9 @@ export class HUD {
     if (this.sanctuary) {
       this.nodes.notice.textContent = '비전투 공간 · 보상·저장 없음';
       this.noticeLeft = Infinity;
-      this.nodes.scroll.setAttribute('aria-label', '여관으로 돌아가기');
-      this.nodes.scroll.title = '여관으로 돌아가기 · R';
     }
+    this.nodes.scroll.setAttribute('aria-label', this.sanctuary ? '여관으로 돌아가기' : '귀환');
+    this.nodes.scroll.title = this.sanctuary ? '여관으로 돌아가기 · R' : '귀환 · R';
     this.nodes['stage-name'].textContent = this.stage;
     this.update(world, 0);
   }
