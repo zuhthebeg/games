@@ -69,6 +69,20 @@ test('lineage changes are allowed before a weapon is equipped', () => {
   assert.equal(state.character.lineageChanges, 1);
 });
 
+test('unequipping allows a lineage change in the same operation batch', () => {
+  let state = create();
+  state = apply(state, [
+    { type: 'grantItem', uid: 'sword', itemId: 'rusted-sword' },
+    { type: 'equip', uid: 'sword', slot: 'weapon' },
+  ]);
+  state = apply(state, [
+    { type: 'unequip', slot: 'weapon' },
+    { type: 'changeLineage', lineage: 'skeleton_archer' },
+  ]);
+  assert.equal(state.character.lineage, 'skeleton_archer');
+  assert.equal(state.character.equipment.weapon, null);
+});
+
 test('lineage changes enforce weapon family, first-free cost, and later gold cost', () => {
   let state = create();
   state = apply(state, [
