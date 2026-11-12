@@ -337,7 +337,7 @@ test('party client sends an explicit leave message', () => {
   assert.deepEqual(sent, [{ t: 'leave' }]);
 });
 
-test('party hello character includes saved mastery', () => {
+test('party hello character includes saved mastery and talents', () => {
   const originalConnect = NetSession.prototype.connect;
   let session;
   NetSession.prototype.connect = function connect() {
@@ -351,6 +351,7 @@ test('party hello character includes saved mastery', () => {
       potions: 2,
       clearedStages: ['C1'],
       mastery: { spin: 73 },
+      talents: { sword: { 'sw-edge': 2 }, crossbow: {}, staff: {} },
     },
   });
 
@@ -362,6 +363,7 @@ test('party hello character includes saved mastery', () => {
       potions: 2,
       clearedStages: ['C1'],
       mastery: { spin: 73 },
+      talents: { sword: { 'sw-edge': 2 }, crossbow: {}, staff: {} },
     });
   } finally {
     client.close();

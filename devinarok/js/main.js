@@ -34,6 +34,9 @@ import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import {
   MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
 } from './content/mastery.js';
+import {
+  RIFT_BOSS_TALENT_FLOORS, TALENTS, TALENT_MAX_RANK, normalizedTalents, talentPoints, talentResetCost, talentSpent,
+} from './content/talents.js';
 import { rekeySettlementItems } from './save/ops.js';
 import { acquireSettlement } from './save/settlement-lock.js';
 import {
@@ -67,6 +70,10 @@ let character;
 let inventory = [];
 let inventoryFilter = 'all';
 let inventoryTab = 'equipment';
+let inventoryTalentFamily = null;
+let talentResetConfirmFamily = null;
+let talentResetConfirmExpiresAt = 0;
+let talentResetConfirmTimer = null;
 let world;
 let renderer;
 let input;
@@ -698,7 +705,7 @@ function refreshSoloStagePlayer() {
   const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const equipment = equippedItems();
-  const stats = calculatePlayerStats(character.level, equipment);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents);
   const look = equipmentLook(equipment);
   refreshStagePlayerCharacter(player, character, equipment, look, stats);
 }
@@ -713,7 +720,7 @@ function refreshHubPlayer() {
   const equipment = equippedItems();
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
-  const stats = calculatePlayerStats(character.level, equipment);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents);
   const look = applyHubEquipmentLook(player, equipment);
   Object.assign(player, {
     level: character.level,
@@ -774,6 +781,7 @@ async function enterHub() {
     playerId: character.id,
     level: character.level,
     equipment: equippedItems(),
+    talents: character.talents,
   });
   const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (hero) Object.assign(hero, equipmentLook(equippedItems()));
@@ -916,6 +924,7 @@ async function enterSanctuary() {
     playerId: character.id,
     level: character.level,
     equipment: equippedItems(),
+    talents: character.talents,
   });
   world.arena = SANCTUARY_ARENA;
   const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
@@ -1067,9 +1076,9 @@ const COMPARISON_STATS = [
 function itemDeltas(item) {
   const slot = ITEMS[item.itemId]?.slot ?? 'weapon';
   const currentEquipment = equippedItems();
-  const current = calculatePlayerStats(character.level, currentEquipment);
+  const current = calculatePlayerStats(character.level, currentEquipment, character.talents);
   const replaced = currentEquipment.filter((equipped) => equipped.slot !== slot);
-  const next = calculatePlayerStats(character.level, [...replaced, item]);
+  const next = calculatePlayerStats(character.level, [...replaced, item], character.talents);
   return COMPARISON_STATS.flatMap(([key, label, format, direction = 1]) => {
     const delta = next[key] - current[key];
     return Math.abs(delta) < 1e-9 ? [] : [{ key, label, delta, good: delta * direction > 0, value: format(delta) }];
@@ -1100,13 +1109,24 @@ function upgradeStatText(item) {
 
 function updateInventoryUpgradeBadge() {
   const badge = $('#inventory-upgrade-badge');
-  if (!badge) return;
   const hasUpgrade = inventory.some((item) => !item.slot && itemIsUpgrade(item));
-  badge.hidden = !hasUpgrade;
+  if (badge) badge.hidden = !hasUpgrade;
   $('#hub-ui [data-panel="inventory"]')?.classList.toggle(
     'tutorial-pulse',
     hasUpgrade && tutorialState?.step === 'equipment',
   );
+  const talentBadge = $('#inventory-talent-badge');
+  if (talentBadge) {
+    const family = character ? equipmentLook(equippedItems()).family : null;
+    talentBadge.hidden = !character || talentPoints(character) <= talentSpent(character.talents, family);
+  }
+}
+
+function resetTalentResetConfirmation() {
+  clearTimeout(talentResetConfirmTimer);
+  talentResetConfirmTimer = null;
+  talentResetConfirmFamily = null;
+  talentResetConfirmExpiresAt = 0;
 }
 
 const EQUIPMENT_SLOTS = [
@@ -1842,6 +1862,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const inventoryTabs = `<nav class="inventory-tabs" aria-label="장비함">${[
     ['equipment', '장비'],
     ['skills', '스킬'],
+    ['talents', '계보'],
   ].map(([id, label]) => `<button data-inventory-tab="${id}" class="${inventoryTab === id ? 'active' : ''}" aria-pressed="${inventoryTab === id}">${label}</button>`).join('')}</nav>`;
   if (inventoryTab === 'skills') {
     const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((skillKey, index) => {
@@ -1855,6 +1876,11 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
       return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
     }).join('');
     hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<div class="mastery-list">${skills}</div><p class="mastery-footer">적 근처에서 스킬을 쓰면 숙련도가 올라요 · ★5 각성 시 이펙트가 바뀌어요</p><button data-close>닫기</button>`;
+    updateInventoryUpgradeBadge();
+    return;
+  }
+  if (inventoryTab === 'talents') {
+    renderTalentInventory(family, inventoryTabs);
     updateInventoryUpgradeBadge();
     return;
   }
@@ -1912,6 +1938,46 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   )).join('');
   hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<p class="material-counts">재료 · 정수 ${character.materials?.essence ?? 0} · 영혼 ${character.materials?.soul ?? 0}</p>${setBonusSection}<section class="equipped-strip"><strong>착용 중</strong><div class="equipment-slot-grid">${slotCards}</div></section><nav class="inventory-filters" aria-label="장비 슬롯">${filters}</nav><div class="inventory-list">${rows || `<p>${filter === 'all' ? '보관 중인 장비가 없습니다.' : '이 슬롯에 장비가 없습니다.'}</p>`}</div><button data-close>닫기</button>`;
   updateInventoryUpgradeBadge();
+}
+
+function renderTalentInventory(equippedFamily, inventoryTabs) {
+  const family = Object.hasOwn(TALENTS, inventoryTalentFamily) ? inventoryTalentFamily : equippedFamily;
+  inventoryTalentFamily = family;
+  const familyLabels = { sword: '검', crossbow: '석궁', staff: '지팡이' };
+  const points = talentPoints(character);
+  const allocation = normalizedTalents(character.talents)[family];
+  const spent = talentSpent(character.talents, family);
+  const remaining = Math.max(0, points - spent);
+  const cost = talentResetCost(character.level);
+  const families = Object.keys(TALENTS).map((key) => (
+    `<button data-talent-family="${key}" class="${family === key ? 'active' : ''}" aria-pressed="${family === key}">${familyLabels[key]}</button>`
+  )).join('');
+  const labels = {
+    maxHpPct: '최대 체력',
+    attackPct: '공격력',
+    counterDamagePct: '반격 피해',
+    defense: '방어',
+    skillCooldownReduction: '기술 대기시간 감소',
+    lifesteal: '흡혈',
+    critChance: '치명타 확률',
+    critDamage: '치명타 피해',
+    attackSpeed: '공격 속도',
+    moveSpeedPct: '이동 속도',
+    dodgeCooldownReduction: '회피 대기시간 감소',
+  };
+  const rows = TALENTS[family].map(({ id, name, stat, perRank }) => {
+    const rank = allocation[id] ?? 0;
+    const format = (value) => Number.isInteger(perRank) ? String(Math.round(value)) : value.toFixed(1);
+    const suffix = stat === 'defense' ? '' : '%';
+    const effect = `${labels[stat]} +${format(rank * perRank)}${suffix}`;
+    const next = rank < TALENT_MAX_RANK
+      ? `<span>(다음 +${format((rank + 1) * perRank)}${suffix})</span>`
+      : '';
+    return `<article class="talent-row"><div class="talent-row-copy"><header><strong>${name}</strong><span class="talent-ranks" aria-label="${rank}/${TALENT_MAX_RANK}">${'●'.repeat(rank)}${'○'.repeat(TALENT_MAX_RANK - rank)}</span></header><p>${effect} ${next}</p></div><button data-allocate-talent="${id}" ${rank >= TALENT_MAX_RANK || remaining === 0 ? 'disabled' : ''} aria-label="${name} 투자">+</button></article>`;
+  }).join('');
+  const confirming = talentResetConfirmFamily === family && Date.now() < talentResetConfirmExpiresAt;
+  const resetLabel = confirming ? '한 번 더 누르면 초기화' : `초기화 · ${cost}G`;
+  hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<nav class="talent-family-tabs" aria-label="무기 계열">${families}</nav><p class="talent-points">${familyLabels[family]} 계보 · 남은 포인트 ${remaining} / ${points}</p><div class="talent-list">${rows}</div><div class="talent-footer"><button data-reset-talents ${spent === 0 || character.gold < cost ? 'disabled' : ''}>${resetLabel}</button><small>포인트 = 레벨업 + 균열 보스층 첫 돌파</small></div><button data-close>닫기</button>`;
 }
 
 function renderBlacksmith() {
@@ -1973,7 +2039,11 @@ function renderPanel(kind, compareUid = '') {
   hubPanel.dataset.kind = kind;
   if (kind === 'board') renderBoard();
   if (kind === 'party-finder') openPartyFinder();
-  if (kind === 'inventory') renderInventory(compareUid);
+  if (kind === 'inventory') {
+    inventoryTalentFamily = equipmentLook(equippedItems()).family;
+    resetTalentResetConfirmation();
+    renderInventory(compareUid);
+  }
   if (kind === 'blacksmith') renderBlacksmith();
   if (kind === 'merchant') {
     const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150, set: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
@@ -1983,7 +2053,7 @@ function renderPanel(kind, compareUid = '') {
     hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>계열 체험 무기</h3>${familyWeapons}${rows}<button data-close>닫기</button>`;
   }
   if (kind === 'character') {
-    const stats = calculatePlayerStats(character.level, equippedItems());
+    const stats = calculatePlayerStats(character.level, equippedItems(), character.talents);
     const family = equipmentLook(equippedItems()).family;
     const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
     const skillDescriptions = skillNames.map((name, index) => (
@@ -2054,6 +2124,7 @@ async function startStage(stageId, options = {}) {
       potions: character.potions,
       equipment: equippedItems(),
       mastery: character.mastery,
+      talents: character.talents,
     },
   });
   updateCloudLogoutButton();
@@ -2294,7 +2365,7 @@ function renderSettlement(outcome, result, {
   const stageName = STAGES[stageId]?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const firstRiftClearMarkup = outcome === 'clear' && firstRiftClear
-    ? `<p class="rift-first-clear">첫 돌파 보상 · 정수 ${firstRiftClear.essence}${firstRiftClear.soul > 0 ? ` · 영혼 ${firstRiftClear.soul}` : ''}</p>`
+    ? `<p class="rift-first-clear">첫 돌파 보상 · 정수 ${firstRiftClear.essence}${firstRiftClear.soul > 0 ? ` · 영혼 ${firstRiftClear.soul}` : ''}${RIFT_BOSS_TALENT_FLOORS.includes(riftFloor) ? ' · 계보 포인트 +1' : ''}</p>`
     : '';
   const objectiveLabel = OBJECTIVE_LABELS[result.objective?.type];
   const objectiveStage = STAGES[stageId];
@@ -2737,9 +2808,54 @@ $('#hub-ui').addEventListener('click', async (event) => {
     renderPanel('merchant');
   }
 });
-hubPanel.addEventListener('click', (event) => {
+hubPanel.addEventListener('click', async (event) => {
+  const talentFamilyButton = event.target.closest('[data-talent-family]');
+  if (talentFamilyButton) {
+    resetTalentResetConfirmation();
+    inventoryTalentFamily = talentFamilyButton.dataset.talentFamily;
+    renderInventory();
+    return;
+  }
+  const allocateTalentButton = event.target.closest('[data-allocate-talent]');
+  if (allocateTalentButton) {
+    try {
+      await applyOps([{
+        type: 'allocateTalent',
+        family: inventoryTalentFamily,
+        talentId: allocateTalentButton.dataset.allocateTalent,
+      }]);
+    } catch (error) {
+      showActionToast(error?.message ?? '계보를 강화하지 못했어요');
+    }
+    renderInventory();
+    return;
+  }
+  const resetTalentsButton = event.target.closest('[data-reset-talents]');
+  if (resetTalentsButton) {
+    const family = inventoryTalentFamily;
+    if (talentResetConfirmFamily === family && Date.now() < talentResetConfirmExpiresAt) {
+      resetTalentResetConfirmation();
+      try {
+        await applyOps([{ type: 'resetTalents', family }]);
+      } catch (error) {
+        showActionToast(error?.message ?? '계보를 초기화하지 못했어요');
+      }
+      renderInventory();
+    } else {
+      resetTalentResetConfirmation();
+      talentResetConfirmFamily = family;
+      talentResetConfirmExpiresAt = Date.now() + 3000;
+      talentResetConfirmTimer = setTimeout(() => {
+        resetTalentResetConfirmation();
+        if (hubPanel.dataset.kind === 'inventory' && inventoryTab === 'talents') renderInventory();
+      }, 3000);
+      renderInventory();
+    }
+    return;
+  }
   const inventoryTabButton = event.target.closest('[data-inventory-tab]');
   if (inventoryTabButton) {
+    resetTalentResetConfirmation();
     inventoryTab = inventoryTabButton.dataset.inventoryTab;
     renderInventory();
     return;
