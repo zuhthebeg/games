@@ -1,3 +1,39 @@
+.lineage-creation {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
+  padding: 0.65rem;
+  border: 1px solid #51434a;
+  border-radius: 0.65rem;
+}
+
+.lineage-creation label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem;
+  border-radius: 0.45rem;
+  background: #201b22;
+}
+
+.lineage-creation label span,
+.lineage-change-list,
+.lineage-change-row {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.lineage-creation small,
+.lineage-change-list small,
+.lineage-progress,
+.lineage-passive {
+  color: #c5b9c6;
+}
+
+.bone-revival-status.is-used {
+  color: #89838b;
+  filter: grayscale(1);
+}
 :root { color-scheme: dark; font-family: Georgia, "Malgun Gothic", serif; background: #100e13; color: #f2ece5; }
 * { box-sizing: border-box; }
 html, body { height: 100%; }

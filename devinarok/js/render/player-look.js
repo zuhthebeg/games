@@ -1,4 +1,5 @@
 import { ITEMS } from '../content/items.js';
+import { LINEAGES } from '../content/lineages.js';
 
 export const DONOR_PARTS = Object.freeze([
   { node: 'Knight_Helmet', donor: 'knight', bone: 'head' },
@@ -86,7 +87,7 @@ function partTint(itemId, rarity, activeSetId) {
 }
 
 export function playerModelKey(entity) {
-  return entity.characterKind || 'knight';
+  return LINEAGES[entity.lineage]?.model ?? entity.characterKind ?? 'knight';
 }
 
 export function resolvePlayerParts(look = {}) {

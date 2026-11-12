@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=982b178188">
+  <link rel="stylesheet" href="css/game.css?v=68afae779e">
   <script type="importmap">
     {
       "imports": {
@@ -15,6 +15,7 @@
         "./js/content/contracts.js": "./js/content/contracts.js?v=e2ff0cefb8",
         "./js/content/enemies.js": "./js/content/enemies.js?v=1c77ba3943",
         "./js/content/items.js": "./js/content/items.js?v=ec949a948e",
+        "./js/content/lineages.js": "./js/content/lineages.js?v=cb853e55e9",
         "./js/content/mastery.js": "./js/content/mastery.js?v=00076114a3",
         "./js/content/objectives.js": "./js/content/objectives.js?v=9efcd2228b",
         "./js/content/skills.js": "./js/content/skills.js?v=66579b2e69",
@@ -27,7 +28,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
         "./js/debug/panel.js": "./js/debug/panel.js?v=e5a50df704",
         "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
-        "./js/main.js": "./js/main.js?v=3fdb501dea",
+        "./js/main.js": "./js/main.js?v=fda51a5330",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=4394734784",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=90c6cf90ab",
         "./js/net/clock-input-scheduler.js": "./js/net/clock-input-scheduler.js?v=61a2d824df",
@@ -38,28 +39,28 @@
         "./js/net/net-session.js": "./js/net/net-session.js?v=d01a39b824",
         "./js/net/predicted-hits.js": "./js/net/predicted-hits.js?v=9858a811f8",
         "./js/net/predictor.js": "./js/net/predictor.js?v=a3926537ea",
-        "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
+        "./js/net/protocol.js": "./js/net/protocol.js?v=e13660b979",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
-        "./js/net/sim-version.js": "./js/net/sim-version.js?v=319157be7d",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=12e62b443d",
         "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
         "./js/render/dodge-window.js": "./js/render/dodge-window.js?v=7529988637",
         "./js/render/outline-style.js": "./js/render/outline-style.js?v=35f2b64d02",
-        "./js/render/player-look.js": "./js/render/player-look.js?v=2798f8b9ca",
+        "./js/render/player-look.js": "./js/render/player-look.js?v=e59a45901a",
         "./js/render/quality.js": "./js/render/quality.js?v=1cac60e619",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=60ce6a584f",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=657d5dad7b",
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
-        "./js/save/ops.js": "./js/save/ops.js?v=bbb1e9f5a7",
+        "./js/save/ops.js": "./js/save/ops.js?v=dbdfbc2f52",
         "./js/save/remote-sync.js": "./js/save/remote-sync.js?v=664074ec30",
         "./js/save/repository.js": "./js/save/repository.js?v=1bacce0c02",
         "./js/save/settlement-lock.js": "./js/save/settlement-lock.js?v=783875fd64",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=0f0365b7a3",
+        "./js/sim/world.js": "./js/sim/world.js?v=d2e75ed28f",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=502b2bd62e",
-        "./js/ui/party.js": "./js/ui/party.js?v=de8acd0f7e",
+        "./js/ui/party.js": "./js/ui/party.js?v=881467990f",
         "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
         "./js/ui/stage-player.js": "./js/ui/stage-player.js?v=6bbe7e3556",
         "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=238d54c747",
@@ -88,8 +89,14 @@
       <div id="save-warning" class="warning" hidden></div>
       <form id="create-form" class="panel" hidden>
         <label>기사의 이름<input name="name" maxlength="12" minlength="1" required placeholder="이름 (1–12자)"></label>
-        <p>남은 클래스 선택은 다음 여정에서 열립니다.</p>
-        <button class="primary" type="submit">기사 · 검으로 시작</button>
+        <fieldset class="lineage-creation">
+          <legend>계보 선택</legend>
+          <label><input type="radio" name="lineage" value="human" checked><span><strong>인간</strong><small>검·석궁·지팡이 모두</small><small>계보 잠금 없이 자유롭게 전투</small></span></label>
+          <label><input type="radio" name="lineage" value="skeleton_knight"><span><strong>해골 기사</strong><small>검 전용 · 뼈 부활</small><small>Lv20 + 균열 10층 → 데스나이트</small></span></label>
+          <label><input type="radio" name="lineage" value="skeleton_archer"><span><strong>해골 궁수</strong><small>석궁 전용 · 뼈 부활</small><small>Lv20 + 균열 10층 → 데스 아처</small></span></label>
+          <label><input type="radio" name="lineage" value="skeleton_mage"><span><strong>해골 마법사</strong><small>지팡이 전용 · 뼈 부활</small><small>Lv20 + 균열 10층 → 리치</small></span></label>
+        </fieldset>
+        <button class="primary" type="submit">모험가로 시작</button>
       </form>
       <div id="character-card" class="panel" hidden>
         <div class="eyebrow">기록된 모험가</div>
@@ -102,7 +109,7 @@
     <section id="game-screen" hidden>
       <canvas id="scene"></canvas>
       <header class="hud">
-        <div class="hero-readout"><span id="hud-name">기사</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
+        <div class="hero-readout"><span id="hud-name">기사</span><span id="bone-revival-status" class="bone-revival-status" hidden>🦴 뼈 부활</span><span id="hud-hp">HP 100 / 100</span><div class="hp-track"><i id="hp-fill"></i></div><div class="xp-track"><i id="xp-fill"></i></div></div>
         <div class="counter"><span id="stage-name">여관</span><span id="party-rtt" hidden></span><span id="cloud-save-badge" class="cloud-save-badge" hidden></span></div>
         <div id="boss-hud" hidden><span id="boss-name">해골 기사단장</span><div class="hp-track"><i id="boss-fill"></i></div></div>
         <button id="pause-button" class="icon-button" aria-label="일시 정지">Ⅱ</button>
@@ -207,6 +214,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=3fdb501dea"></script>
+  <script type="module" src="js/main.js?v=fda51a5330"></script>
 </body>
 </html>

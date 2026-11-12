@@ -30,6 +30,9 @@ import { AFFIXES } from './content/affixes.js';
 import { contractDayFirst, contractDescription, contractsFor, kstDateKey } from './content/contracts.js';
 import { OBJECTIVE_LABELS, objectiveBonusGold } from './content/objectives.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
+import {
+  isEvolved, LINEAGES, lineageAllowsFamily, lineageChangeCost, lineageDisplayName, lineageOf,
+} from './content/lineages.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import {
   MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
@@ -74,6 +77,9 @@ let inventoryTalentFamily = null;
 let talentResetConfirmFamily = null;
 let talentResetConfirmExpiresAt = 0;
 let talentResetConfirmTimer = null;
+let lineageChangeConfirmId = null;
+let lineageChangeConfirmExpiresAt = 0;
+let lineageChangeConfirmTimer = null;
 let world;
 let renderer;
 let input;
@@ -582,6 +588,10 @@ function handleAudioEvent(event, current) {
     audio.play('enemy-death');
   }
   if (event.type === 'death') audio.play('enemy-death');
+  if (
+    event.type === 'boneRevival'
+    && event.playerId === (partyClient?.runId ? partyClient.playerId : character?.id)
+  ) showActionToast('뼈 부활!');
   if (event.type === 'lootSpawn' && ['rare', 'legendary'].includes(event.item?.rarity)) audio.play('reward-chime');
   if (event.type === 'doorOpen') audio.play('door-open');
   if (event.type === 'potion') audio.play('potion');
@@ -631,7 +641,7 @@ async function refreshTitle() {
   characterCard.hidden = !character;
   if (character) {
     tutorialState = createTutorialState(character.tutorial);
-    $('#character-name').textContent = character.name;
+    $('#character-name').textContent = lineageDisplayName(character.name, character);
     $('#character-level').textContent = `기사 · Lv.${character.level} · 경험치 ${character.xp}`;
     $('#character-debug-used').hidden = !character.debugUsed;
   }
@@ -705,7 +715,7 @@ function refreshSoloStagePlayer() {
   const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const equipment = equippedItems();
-  const stats = calculatePlayerStats(character.level, equipment, character.talents);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents, characterFamily());
   const look = equipmentLook(equipment);
   refreshStagePlayerCharacter(player, character, equipment, look, stats);
 }
@@ -715,20 +725,28 @@ function equippedItems() {
   return inventory.filter((item) => ids.has(item.uid));
 }
 
+function characterFamily() {
+  return LINEAGES[lineageOf(character)]?.family ?? equipmentLook(equippedItems()).family;
+}
+
 function refreshHubPlayer() {
   if (!character || world?.mode !== 'hub') return;
   const equipment = equippedItems();
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
-  const stats = calculatePlayerStats(character.level, equipment, character.talents);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents, characterFamily());
   const look = applyHubEquipmentLook(player, equipment);
   Object.assign(player, {
     level: character.level,
+    lineage: lineageOf(character),
+    evolved: isEvolved(character),
+    family: characterFamily(),
     stats,
     maxHp: stats.maxHp,
     hp: stats.maxHp,
   });
   updateInventoryUpgradeBadge();
+  updateFamilySkillControls(characterFamily());
   updateHud(world);
 }
 
@@ -775,16 +793,21 @@ async function enterHub() {
   $('#stage-name').textContent = localStorage.getItem('devinarok.lastStageRegion') === '2'
     ? '잿빛 숲 · 거점 여관'
     : '거점 여관';
-  $('#hud-name').textContent = character.name;
+  $('#hud-name').textContent = lineageDisplayName(character.name, character);
   world = createHubWorld({
     seed: 724103,
     playerId: character.id,
     level: character.level,
     equipment: equippedItems(),
     talents: character.talents,
+    lineage: character.lineage,
+    clearedStages: character.clearedStages,
   });
   const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
-  if (hero) Object.assign(hero, equipmentLook(equippedItems()));
+  if (hero) {
+    Object.assign(hero, equipmentLook(equippedItems()));
+    hero.family = characterFamily();
+  }
   input = new InputLayer({ canvas: $('#scene'), controls: $('#controls') });
   renderer = new ArenaRenderer($('#scene'), () => {}, HUB_ARENA, DEV_COLLISION_OVERLAY, world);
   renderer.localPlayerId = character.id;
@@ -925,11 +948,14 @@ async function enterSanctuary() {
     level: character.level,
     equipment: equippedItems(),
     talents: character.talents,
+    lineage: character.lineage,
+    clearedStages: character.clearedStages,
   });
   world.arena = SANCTUARY_ARENA;
   const hero = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (hero) {
     Object.assign(hero, equipmentLook(equippedItems()));
+    hero.family = characterFamily();
     hero.x = SANCTUARY_ARENA.playerSpawn.x;
     hero.z = SANCTUARY_ARENA.playerSpawn.z;
     hero.facing = -Math.PI / 2;
@@ -1076,9 +1102,11 @@ const COMPARISON_STATS = [
 function itemDeltas(item) {
   const slot = ITEMS[item.itemId]?.slot ?? 'weapon';
   const currentEquipment = equippedItems();
-  const current = calculatePlayerStats(character.level, currentEquipment, character.talents);
+  const current = calculatePlayerStats(character.level, currentEquipment, character.talents, characterFamily());
   const replaced = currentEquipment.filter((equipped) => equipped.slot !== slot);
-  const next = calculatePlayerStats(character.level, [...replaced, item], character.talents);
+  const nextEquipment = [...replaced, item];
+  const nextFamily = slot === 'weapon' ? equipmentLook(nextEquipment).family : characterFamily();
+  const next = calculatePlayerStats(character.level, nextEquipment, character.talents, nextFamily);
   return COMPARISON_STATS.flatMap(([key, label, format, direction = 1]) => {
     const delta = next[key] - current[key];
     return Math.abs(delta) < 1e-9 ? [] : [{ key, label, delta, good: delta * direction > 0, value: format(delta) }];
@@ -1117,7 +1145,7 @@ function updateInventoryUpgradeBadge() {
   );
   const talentBadge = $('#inventory-talent-badge');
   if (talentBadge) {
-    const family = character ? equipmentLook(equippedItems()).family : null;
+    const family = character ? characterFamily() : null;
     talentBadge.hidden = !character || talentPoints(character) <= talentSpent(character.talents, family);
   }
 }
@@ -1626,7 +1654,7 @@ async function startPartyStage(message) {
     ? '해골 왕'
     : selectedStage?.rooms[0]?.waves[0]?.enemy === 'ashwarden' ? '잿빛 숲의 사령술사' : '해골 기사단장';
   updateBossIntro(message.stageId);
-  updateFamilySkillControls(equipmentLook(equippedItems()).family);
+  updateFamilySkillControls(characterFamily());
   $('#stage-name').textContent = selectedStage?.name ?? message.stageId;
   world = partyClient.viewWorld() ?? partyClient.stageWorld;
   tutorialLastX = null;
@@ -1649,9 +1677,16 @@ async function startPartyStage(message) {
 function updatePartyHud(client = partyClient, snapshot = client?.lastSnapshot) {
   if (partyHudCaptureFrozen || !client || !client.stageWorld || !snapshot) return;
   const partyPlayers = (snapshot.ents ?? []).filter((entity) => entity.kind === 'player');
+  const localPlayer = partyPlayers.find((member) => member.playerId === client.playerId);
+  const boneStatus = $('#bone-revival-status');
+  boneStatus.hidden = !localPlayer?.lineage || localPlayer.lineage === 'human';
+  boneStatus.classList.toggle('is-used', localPlayer?.boneRevivalReady === false);
   const partyHud = $('#party-hud');
   partyHud.innerHTML = partyPlayers.map((member) => {
-    const name = escapeHtml(String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32));
+    const name = escapeHtml(lineageDisplayName(
+      String(member.name ?? member.playerId ?? '이름 없는 기사').slice(0, 32),
+      member,
+    ));
     const level = Math.max(1, Math.min(99, Number(member.level) || 1));
     const hp = Math.max(0, Number(member.hp) || 0);
     const maxHp = Math.max(1, Number(member.maxHp) || 1);
@@ -1858,7 +1893,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
   const slotOrder = new Map(EQUIPMENT_SLOTS.map((slot, index) => [slot.key, index]));
   const rarityOrder = { common: 0, magic: 1, rare: 2, legendary: 3, set: 4 };
   const currentEquipment = equippedItems();
-  const family = equipmentLook(currentEquipment).family;
+  const family = characterFamily();
   const inventoryTabs = `<nav class="inventory-tabs" aria-label="장비함">${[
     ['equipment', '장비'],
     ['skills', '스킬'],
@@ -1915,8 +1950,13 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
     const equipped = Boolean(item.slot);
     const compare = compareUid === item.uid ? compareDeltas(item) : '';
     const upgrade = !equipped && itemIsUpgrade(item);
+    const family = equipmentLook([{ ...item, slot: 'weapon' }]).family;
+    const characterLineage = LINEAGES[lineageOf(character)];
+    const lineageLocked = slot === 'weapon' && !lineageAllowsFamily(characterLineage.id, family);
+    const lockedFamilyName = { sword: '검', crossbow: '석궁', staff: '지팡이' }[characterLineage.family];
+    const lockMessage = lineageLocked ? `<small>${characterLineage.name}는 ${lockedFamilyName}만 쓸 수 있어요</small>` : '';
     const deltas = equipped ? '' : `<div class="inventory-delta-chips">${itemDeltas(item).map(({ label, delta, good, value }) => `<span class="${good ? 'delta-up' : 'delta-down'}">${label} ${delta > 0 ? '+' : ''}${value}</span>`).join('') || '<span>변화 없음</span>'}</div>`;
-    return `<div class="item-row ${compare ? 'selected' : ''}"><div class="item-details">${itemDetails(item)}${equipped ? '<span class="equipped-badge">착용 중</span>' : ''}${upgrade ? '<span class="upgrade-badge">▲ 더 좋음</span>' : ''}</div><div class="item-actions"><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${(item.requiredLevel ?? base?.requiredLevel) > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></div>${deltas}${compare}</div>`;
+    return `<div class="item-row ${compare ? 'selected' : ''}"><div class="item-details">${itemDetails(item)}${equipped ? '<span class="equipped-badge">착용 중</span>' : ''}${upgrade ? '<span class="upgrade-badge">▲ 더 좋음</span>' : ''}${lockMessage}</div><div class="item-actions"><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${lineageLocked || (item.requiredLevel ?? base?.requiredLevel) > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></div>${deltas}${compare}</div>`;
   }).join('');
   const slotCards = EQUIPMENT_SLOTS.map((slot) => {
     const equipped = inventory.find((item) => item.slot === slot.key);
@@ -1950,7 +1990,7 @@ function renderTalentInventory(equippedFamily, inventoryTabs) {
   const remaining = Math.max(0, points - spent);
   const cost = talentResetCost(character.level);
   const families = Object.keys(TALENTS).map((key) => (
-    `<button data-talent-family="${key}" class="${family === key ? 'active' : ''}" aria-pressed="${family === key}">${familyLabels[key]}</button>`
+    `<button data-talent-family="${key}" class="${family === key ? 'active' : ''}" aria-pressed="${family === key}" ${lineageAllowsFamily(lineageOf(character), key) ? '' : 'disabled title="계보가 허용하지 않는 무기 계열이에요"'}>${familyLabels[key]}${lineageAllowsFamily(lineageOf(character), key) ? '' : ' 🔒'}</button>`
   )).join('');
   const labels = {
     maxHpPct: '최대 체력',
@@ -2040,7 +2080,7 @@ function renderPanel(kind, compareUid = '') {
   if (kind === 'board') renderBoard();
   if (kind === 'party-finder') openPartyFinder();
   if (kind === 'inventory') {
-    inventoryTalentFamily = equipmentLook(equippedItems()).family;
+    inventoryTalentFamily = characterFamily();
     resetTalentResetConfirmation();
     renderInventory(compareUid);
   }
@@ -2053,8 +2093,33 @@ function renderPanel(kind, compareUid = '') {
     hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>계열 체험 무기</h3>${familyWeapons}${rows}<button data-close>닫기</button>`;
   }
   if (kind === 'character') {
-    const stats = calculatePlayerStats(character.level, equippedItems(), character.talents);
-    const family = equipmentLook(equippedItems()).family;
+    const stats = calculatePlayerStats(character.level, equippedItems(), character.talents, characterFamily());
+    const family = characterFamily();
+    const lineageId = lineageOf(character);
+    const lineage = LINEAGES[lineageId];
+    const evolved = isEvolved(character);
+    const clearedR10 = character.clearedStages?.includes('R10');
+    const lineageName = evolved ? lineage.evolvedName : lineage.name;
+    const passive = {
+      human: '모든 무기 계열을 사용할 수 있어요.',
+      skeleton_knight: '반격 적중 시 체력을 회복해요.',
+      skeleton_archer: '완벽 회피 후 관통 사격이 늘어요.',
+      skeleton_mage: '기술로 적을 처치하면 다른 기술이 빨라져요.',
+    }[lineageId];
+    const changingCost = lineageChangeCost(character);
+    const equippedWeapon = inventory.find((item) => item.uid === character.equipment?.weapon);
+    const equippedWeaponFamily = equippedWeapon
+      ? equipmentLook([{ ...equippedWeapon, slot: 'weapon' }]).family
+      : null;
+    const lineageButtons = Object.values(LINEAGES).filter(({ id }) => id !== lineageId).map((target) => {
+      const allowed = !equippedWeaponFamily || lineageAllowsFamily(target.id, equippedWeaponFamily);
+      const confirming = lineageChangeConfirmId === target.id && Date.now() < lineageChangeConfirmExpiresAt;
+      const label = confirming ? '한 번 더 눌러 변경' : `${target.name} · ${changingCost === 0 ? '첫 변경 무료' : `${changingCost}G`}`;
+      const familyName = { sword: '검', crossbow: '석궁', staff: '지팡이' }[target.family];
+      const reason = allowed ? '' : `장착한 무기로는 변경할 수 없어요 · ${familyName}을(를) 장착해야 ${target.name}가 될 수 있어요`;
+      return `<div class="lineage-change-row"><button data-change-lineage="${target.id}" ${!allowed || character.gold < changingCost ? 'disabled' : ''}>${label}</button>${reason ? `<small>${reason}</small>` : ''}</div>`;
+    }).join('');
+    const lineageSection = `<section class="lineage-section"><h3>계보 · ${lineageName}</h3><p class="lineage-progress">Lv ${character.level}/20 · 균열 10층 ${clearedR10 ? '돌파' : '미돌파'}</p><p class="lineage-passive">${passive}</p><div class="lineage-change-list">${lineageButtons}</div></section>`;
     const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
     const skillDescriptions = skillNames.map((name, index) => (
       `<li><strong>${SKILLS[name].name}</strong> · ${FAMILY_SKILL_COPY[family][index]}</li>`
@@ -2063,7 +2128,7 @@ function renderPanel(kind, compareUid = '') {
       const item = inventory.find((entry) => entry.slot === slot.key);
       return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
     }).join('');
-    hubPanel.innerHTML = `<h2>${escapeHtml(character.name)} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p><h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `<h2>${escapeHtml(lineageDisplayName(character.name, character))} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p>${lineageSection}<h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
   }
   hubPanel.focus();
 }
@@ -2113,7 +2178,7 @@ async function startStage(stageId, options = {}) {
   updateBossIntro(stageToStart);
   $('#party-hud').hidden = true;
   $('#party-rtt').hidden = true;
-  updateFamilySkillControls(equipmentLook(equippedItems()).family);
+  updateFamilySkillControls(characterFamily());
   world = createStageWorld({
     seed: options.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
     stageId: stageToStart,
@@ -2125,6 +2190,8 @@ async function startStage(stageId, options = {}) {
       equipment: equippedItems(),
       mastery: character.mastery,
       talents: character.talents,
+      lineage: character.lineage,
+      clearedStages: character.clearedStages,
     },
   });
   updateCloudLogoutButton();
@@ -2180,7 +2247,10 @@ function updateHud(current) {
   const hero = current.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id)
     ?? current.entities.find((entity) => entity.kind === 'player');
   if (hero) {
-    $('#hud-name').textContent = `${character.name} · Lv.${character.level}`;
+    $('#hud-name').textContent = `${lineageDisplayName(character.name, character)} · Lv.${character.level}`;
+    const boneStatus = $('#bone-revival-status');
+    boneStatus.hidden = current.mode !== 'stage' || !hero.lineage || hero.lineage === 'human';
+    boneStatus.classList.toggle('is-used', hero.boneRevivalReady === false);
     $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
     $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
     $('#potion-count').textContent = String(hero.potions);
@@ -2336,6 +2406,7 @@ function renderSettlement(outcome, result, {
   autoSold = 0,
   record = false,
   error = null,
+  lineageEvolvedNow = false,
   newSkill = null,
   firstRiftClear = null,
   contractProgressLines = [],
@@ -2361,7 +2432,10 @@ function renderSettlement(outcome, result, {
       ? '<p>3지역 · 해골 왕의 성채가 열렸어요</p>'
       : outcome === 'clear' && firstForestUnlock
         ? '<p>2지역 · 잿빛 숲이 열렸어요</p>'
-        : '';
+      : '';
+  const lineageEvolution = outcome === 'clear' && lineageEvolvedNow
+    ? `<p class="lineage-evolution">계보 진화 · ${LINEAGES[lineageOf(character)].evolvedName}</p>`
+    : '';
   const stageName = STAGES[stageId]?.name ?? '';
   const recordMarkup = outcome === 'clear' && record ? '<p class="new-record">신기록!</p>' : '';
   const firstRiftClearMarkup = outcome === 'clear' && firstRiftClear
@@ -2377,7 +2451,7 @@ function renderSettlement(outcome, result, {
       : `<p class="settlement-objective">목표 · ${objectiveLabel} 실패</p>`
     : '';
   const resultContent = $('.overlay #result-panel .panel') ?? $('#result-panel .panel');
-  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p>${objectiveMarkup}<p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${firstRiftClearMarkup}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
+  resultContent.innerHTML = `<div class="eyebrow">${outcome === 'clear' ? '작전 성공' : outcome === 'death' ? '전투 불능' : '후퇴'}</div><h2>${stageName} · ${DIFFICULTIES[difficulty]?.label ?? difficulty}</h2>${recordMarkup}<p>경험치 +${result.xp} · 획득 골드 ${result.gold}G${result.goldLost ? ` · 손실 ${result.goldLost}G` : ''}</p>${objectiveMarkup}<p>획득 장비 ${outcome === 'clear' ? result.items.length : 0}개${autoSold ? ` · 가방 초과 자동 판매 +${autoSold}G` : ''}</p>${newSkill ? `<p>새 스킬: ${newSkill.name}</p>` : ''}${progression}${lineageEvolution}${firstRiftClearMarkup}${earnedItems}${result.lostItems?.length ? `<p>두고 온 장비: ${result.lostItems.map((item) => itemName(item)).join(', ')}</p>` : ''}${saved ? `<p>현재 Lv.${character.level} · 골드 ${character.gold}G</p><button id="result-return" class="primary">여관으로</button>` : '<p class="settlement-error" data-settlement-error></p><button id="result-retry" class="primary">다시 시도</button><button id="result-discard">포기하고 여관으로 (보상 손실)</button>'}`;
   if (contractProgressLines.length) {
     const lines = contractProgressLines.map(({ contract, progress, complete }) => {
       const label = contract.type === 'kills'
@@ -2415,6 +2489,7 @@ async function attemptSettlement(outcome, result, settlementId) {
   try {
     const previousLevel = character.level;
     await reloadCharacter();
+    const evolvedBefore = isEvolved(character);
     const settlement = buildSettlement(outcome, result);
     autoSold = settlement.autoSold;
     record = settlement.record;
@@ -2439,15 +2514,16 @@ async function attemptSettlement(outcome, result, settlementId) {
       },
       cloudUserId: character.cloudUserId === remoteSync?.userId ? remoteSync.userId : undefined,
     });
+    const lineageEvolvedNow = !evolvedBefore && isEvolved(character);
     remoteSync?.localCommit();
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
     const newSkill = previousLevel < 7 && character.level >= 7
-      ? SKILLS[FAMILY_SKILLS[equipmentLook(equippedItems()).family]?.[3]]
+      ? SKILLS[FAMILY_SKILLS[characterFamily()]?.[3]]
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
     renderSettlement(outcome, result, {
-      autoSold, record, newSkill, firstRiftClear, contractProgressLines, masteryProgressLines,
+      autoSold, record, newSkill, firstRiftClear, contractProgressLines, masteryProgressLines, lineageEvolvedNow,
     });
   } catch (error) {
     console.error('Settlement failed', error);
@@ -2467,12 +2543,14 @@ async function settleStage(outcome = world?.outcome, result = world?.result, ide
 
 createForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const name = new FormData(createForm).get('name');
+  const formData = new FormData(createForm);
+  const name = formData.get('name');
+  const lineage = formData.get('lineage');
   const id = crypto.randomUUID();
   await saves.commit({
     characterId: id,
     baseRev: 0,
-    ops: [{ type: 'createCharacter', name, kind: 'knight' }],
+    ops: [{ type: 'createCharacter', name, kind: 'knight', lineage }],
     context: { kind: 'hub' },
     cloudUserId: remoteSync?.cloudUserIdForNewCharacter(),
   });
@@ -2809,6 +2887,34 @@ $('#hub-ui').addEventListener('click', async (event) => {
   }
 });
 hubPanel.addEventListener('click', async (event) => {
+  const changeLineageButton = event.target.closest('[data-change-lineage]');
+  if (changeLineageButton) {
+    const nextLineage = changeLineageButton.dataset.changeLineage;
+    if (lineageChangeConfirmId === nextLineage && Date.now() < lineageChangeConfirmExpiresAt) {
+      clearTimeout(lineageChangeConfirmTimer);
+      lineageChangeConfirmId = null;
+      lineageChangeConfirmExpiresAt = 0;
+      try {
+        await applyOps([{ type: 'changeLineage', lineage: nextLineage }]);
+        refreshHubPlayer();
+        showActionToast('계보를 변경했어요');
+      } catch (error) {
+        showActionToast(error?.message ?? '계보를 변경하지 못했어요');
+      }
+      renderPanel('character');
+    } else {
+      clearTimeout(lineageChangeConfirmTimer);
+      lineageChangeConfirmId = nextLineage;
+      lineageChangeConfirmExpiresAt = Date.now() + 3000;
+      lineageChangeConfirmTimer = setTimeout(() => {
+        lineageChangeConfirmId = null;
+        lineageChangeConfirmExpiresAt = 0;
+        if (hubPanel.dataset.kind === 'character') renderPanel('character');
+      }, 3000);
+      renderPanel('character');
+    }
+    return;
+  }
   const talentFamilyButton = event.target.closest('[data-talent-family]');
   if (talentFamilyButton) {
     resetTalentResetConfirmation();

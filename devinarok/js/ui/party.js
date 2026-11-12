@@ -4,6 +4,7 @@ import { NetSession } from '../net/net-session.js';
 import { Predictor } from '../net/predictor.js';
 import { predictStrikeHits } from '../net/predicted-hits.js';
 import { buildRangedAimInput } from '../net/ranged-aim.js';
+import { lineageOf } from '../content/lineages.js';
 import { createStageWorld } from '../sim/world.js';
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -120,6 +121,7 @@ export class PartyClient {
       name: this.character.name,
       character: {
         level: this.character.level,
+        lineage: lineageOf(this.character),
         equipment: this.equipment,
         potions: this.character.potions,
         clearedStages: this.character.clearedStages,

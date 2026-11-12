@@ -6,6 +6,7 @@ import { ARENA } from '../sim/arena.js';
 import { attackReach } from '../core/attack-assist.js';
 import { COMBO_TIMELINES, pickAimTarget } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
+import { LINEAGES, lineageDisplayName, lineageOf } from '../content/lineages.js';
 import { FAMILY_SKILLS } from '../content/skills.js';
 import {
   DONOR_PARTS,
@@ -25,6 +26,11 @@ import { castVisualKey } from '../net/cast-timeline.js';
 import { isPerfectDodgeWindowActive } from './dodge-window.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
+const LINEAGE_COLORS = Object.freeze({
+  skeleton_knight: 0xc8463c,
+  skeleton_archer: 0x4fae6a,
+  skeleton_mage: 0x8a5ad6,
+});
 const M0_MODELS = {
   knight: 'assets/chars/Knight.glb',
   Barbarian: 'assets/chars/Barbarian.glb',
@@ -957,6 +963,9 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }).filter(Boolean))];
     const requiredModels = new Set([...propModels, ...characterPaths]);
     if (this.isHub || this.isSanctuary) {
+      for (const lineage of Object.values(LINEAGES)) {
+        if (lineage.model && M0_MODELS[lineage.model]) requiredModels.add(M0_MODELS[lineage.model]);
+      }
       for (const donor of new Set(DONOR_PARTS.map(({ donor }) => donor))) {
         const path = M0_MODELS[donor];
         if (path) requiredModels.add(path);
@@ -1436,10 +1445,16 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }
   }
 
-  graftPlayerParts(root) {
+  graftPlayerParts(root, lineage = 'human') {
     const existingParts = new Set();
     root.traverse((node) => existingParts.add(node.name));
+    const compatible = {
+      skeleton_knight: new Set(['Skeleton_Warrior_Helmet']),
+      skeleton_archer: new Set(['Skeleton_Rogue_Hood', 'Skeleton_Rogue_Cape']),
+      skeleton_mage: new Set(),
+    }[lineage];
     for (const { node, donor, bone } of DONOR_PARTS) {
+      if (compatible && !compatible.has(node)) continue;
       if (existingParts.has(node)) continue;
       const donorPart = this.models.get(donor)?.getObjectByName(node);
       const parent = root.getObjectByName(bone);
@@ -1458,7 +1473,39 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const assetKey = entityModelKey === 'rogue' ? 'Rogue_Hooded' : entityModelKey === 'mage' ? 'Mage' : entityModelKey;
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
-    if (entity.kind === 'player') this.graftPlayerParts(root);
+    const lineageId = entity.kind === 'player' ? lineageOf(entity) : null;
+    if (entity.kind === 'player') this.graftPlayerParts(root, lineageId);
+    if (entity.kind === 'player' && entity.evolved) {
+      const head = root.getObjectByName('head');
+      if (head) {
+        for (const x of [-0.045, 0.045]) {
+          const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.026, 8, 6),
+            new THREE.MeshBasicMaterial({ color: LINEAGE_COLORS[lineageId] ?? 0xff4938 }),
+          );
+          eye.position.set(x, 0.055, 0.075);
+          head.add(eye);
+        }
+      }
+    }
+    if (entity.kind === 'player' && lineageId !== 'human') {
+      const color = LINEAGE_COLORS[lineageId];
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.5, 0.68, 40),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.68,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.09;
+      ring.renderOrder = 2;
+      root.add(ring);
+    }
     const materials = cloneMaterials(root);
     if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
       root.traverse((node) => {
@@ -1472,8 +1519,18 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       }
     }
     if (entity.kind === 'player') isolatePlayerPartMaterials(root, materials);
+    if (entity.kind === 'player' && entity.evolved) {
+      const tint = new THREE.Color(LINEAGE_COLORS[lineageId] ?? 0xe7d9bf);
+      for (const material of materials) {
+        if (!material.emissive) continue;
+        material.emissive.lerp(tint, 0.18);
+        material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.16);
+      }
+    }
     if (entity.kind === 'enemy') root.scale.set(...silhouetteScale(entity));
-    else root.scale.setScalar(entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
+    else root.scale.setScalar(entity.kind === 'player'
+      ? (entity.modelScale ?? 0.95) * (entity.evolved ? 1.08 : 1)
+      : entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
     const screenCenterY = modelBounds && !modelBounds.isEmpty()
       ? (modelBounds.min.y + modelBounds.max.y) / 2
@@ -2124,6 +2181,14 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       }
       if (event.type === 'pickup') this.createDamageNumber(event);
       if (event.type === 'death') this.createDeathPuff(event, world);
+      if (event.type === 'boneRevival') {
+        const player = world.entities.find((entity) => entity.id === event.entityId);
+        if (player) {
+          const color = LINEAGE_COLORS[lineageOf(player)] ?? 0xe7d9bf;
+          this.createImpactRing(player.x, player.z, 0.72, color, world.tick, world.tick + 18);
+          this.createImpactRing(player.x, player.z, 0.42, 0xe7d9bf, world.tick + 2, world.tick + 16);
+        }
+      }
     }
     while (this.seenEventIds.size > 512) this.seenEventIds.delete(this.seenEventIds.values().next().value);
     while (this.seenCastKeys.size > 256) this.seenCastKeys.delete(this.seenCastKeys.values().next().value);
@@ -2334,7 +2399,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         this.partyMarkers.set(player.id, marker);
       }
       marker.classList.toggle('downed', Boolean(player.downed));
-      marker.querySelector('span').textContent = `${player.name ?? player.playerId} · Lv.${player.level ?? 1}`;
+      marker.querySelector('span').textContent = `${lineageDisplayName(player.name ?? player.playerId, player)} · Lv.${player.level ?? 1}`;
       marker.querySelector('.revive-track').hidden = !player.downed;
       marker.querySelector('.revive-track i').style.width = `${Math.min(100, (player.reviveProgress ?? 0) / 60 * 100)}%`;
       const point = this.projectedPoint.set(player.x, 2.1, player.z).project(this.camera);
@@ -2366,6 +2431,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       } else if (entity.kind === 'enemy' && (entity.slowTicks ?? 0) > 0) {
         material.emissive.setHex(0x9edfff);
         material.emissiveIntensity = 0.55;
+      } else if (entity.evolved && entity.lineage !== 'human') {
+        const color = { skeleton_knight: 0xc8463c, skeleton_archer: 0x4fae6a, skeleton_mage: 0x8a5ad6 }[entity.lineage];
+        material.emissive.setHex(color);
+        material.emissiveIntensity = 0.22;
       } else if (visual.partTints.has(material)) {
         const tint = visual.partTints.get(material);
         material.emissive.setHex(tint.hex);

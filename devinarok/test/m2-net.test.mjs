@@ -359,6 +359,7 @@ test('party hello character includes saved mastery and talents', () => {
     assert.equal(client.joinRoom('ABC234'), 'ABC234');
     assert.deepEqual(session.character, {
       level: 4,
+      lineage: 'human',
       equipment: [],
       potions: 2,
       clearedStages: ['C1'],
