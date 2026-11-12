@@ -13,3 +13,12 @@ test('refreshing stage character stats preserves sortie potion count', () => {
   assert.equal(player.potions, 1);
   assert.equal(player.maxHp, 60);
 });
+
+test('refreshing an unarmed skeleton archer preserves the crossbow family', () => {
+  const player = { hp: 90, family: 'crossbow' };
+  const character = { level: 1, lineage: 'skeleton_archer' };
+
+  refreshStagePlayerCharacter(player, character, [], { family: 'sword' }, { maxHp: 100 });
+
+  assert.equal(player.family, 'crossbow');
+});

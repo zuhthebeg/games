@@ -156,4 +156,7 @@ test('hub player character follows the equipped weapon on entry and equipment ch
   applyHubEquipmentLook(player, []);
   assert.equal(player.family, 'sword');
   assert.equal(player.characterKind, 'knight');
+
+  applyHubEquipmentLook(player, [], { lineage: 'skeleton_archer' });
+  assert.equal(player.family, 'crossbow');
 });

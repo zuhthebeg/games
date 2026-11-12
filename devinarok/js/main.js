@@ -31,7 +31,7 @@ import { contractDayFirst, contractDescription, contractsFor, kstDateKey } from 
 import { OBJECTIVE_LABELS, objectiveBonusGold } from './content/objectives.js';
 import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } from './content/items.js';
 import {
-  isEvolved, LINEAGES, lineageAllowsFamily, lineageChangeCost, lineageDisplayName, lineageOf,
+  isEvolved, LINEAGES, lineageAllowsFamily, lineageChangeCost, lineageDisplayName, lineageOf, playerFamily,
 } from './content/lineages.js';
 import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
 import {
@@ -715,8 +715,9 @@ function refreshSoloStagePlayer() {
   const player = world?.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
   const equipment = equippedItems();
-  const stats = calculatePlayerStats(character.level, equipment, character.talents, characterFamily());
   const look = equipmentLook(equipment);
+  const family = playerFamily(character, look);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents, family);
   refreshStagePlayerCharacter(player, character, equipment, look, stats);
 }
 
@@ -726,7 +727,7 @@ function equippedItems() {
 }
 
 function characterFamily() {
-  return LINEAGES[lineageOf(character)]?.family ?? equipmentLook(equippedItems()).family;
+  return playerFamily(character, equipmentLook(equippedItems()));
 }
 
 function refreshHubPlayer() {
@@ -734,19 +735,20 @@ function refreshHubPlayer() {
   const equipment = equippedItems();
   const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === character.id);
   if (!player) return;
-  const stats = calculatePlayerStats(character.level, equipment, character.talents, characterFamily());
-  const look = applyHubEquipmentLook(player, equipment);
+  const look = applyHubEquipmentLook(player, equipment, character);
+  const family = playerFamily(character, look);
+  const stats = calculatePlayerStats(character.level, equipment, character.talents, family);
   Object.assign(player, {
     level: character.level,
     lineage: lineageOf(character),
     evolved: isEvolved(character),
-    family: characterFamily(),
+    family,
     stats,
     maxHp: stats.maxHp,
     hp: stats.maxHp,
   });
   updateInventoryUpgradeBadge();
-  updateFamilySkillControls(characterFamily());
+  updateFamilySkillControls(family);
   updateHud(world);
 }
 
