@@ -72,11 +72,18 @@ export class HUD {
     const skills = world.entities[0].skills;
     SLOT_NODES.forEach((key, i) => {
       const node = this.nodes[key], id = skills[i] || loadout[i] || null;
-      node.hidden = !id;
+      node.hidden = this.sanctuary || !id;
       node.classList.toggle('blocked', !skills[i] && !!id);
       node.querySelector('.slot-blocked')?.remove();
       node.querySelector('.icon, .skill-icon')?.remove();
-      if (!id) return;
+      if (!id) {
+        node.removeAttribute('aria-label');
+        node.title = '';
+        node.querySelector('.skill-label')?.remove();
+        node.lastElementChild.textContent = '';
+        node.style.setProperty('--progress', '0%');
+        return;
+      }
       node.insertAdjacentHTML('afterbegin', skillIcon(id));
       const name = ABILITIES[id].name;
       node.setAttribute('aria-label', name);
@@ -86,7 +93,7 @@ export class HUD {
       label.textContent = name;
       if (!skills[i]) node.insertAdjacentHTML('afterbegin', '<i class="slot-blocked" aria-hidden="true">✕</i>');
     });
-    for (const key of [...SLOT_NODES, 'dodge', 'attack', 'green', 'green-active', 'potion', 'mana', 'ritual']) this.nodes[key].hidden = this.sanctuary;
+    for (const key of ['dodge', 'attack', 'green', 'green-active', 'potion', 'mana', 'ritual']) this.nodes[key].hidden = this.sanctuary;
     this.nodes.ritual.hidden = true;
     this.ritualPanel?.remove();
     this.ritualPanel = null;
