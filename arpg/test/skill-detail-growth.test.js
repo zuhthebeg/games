@@ -66,12 +66,14 @@ for (const [level, pierce] of [[19, 2], [20, 3], [30, 3]]) {
 
 // SHA-256 snapshots of complete pre-fix detail HTML, generated at 811e375a.
 // Each skill includes every eligible lineage and all mastery levels 1..30.
+// PF1 poison_field alone refreshed after exact pre/post comparison: only its
+// common radius/duration row changes; poison-field-detail.test.js checks real zones.
 const BASELINE = {
   "poison_arrow": "54fd54dc5e1ccfe312af923f2210577cb30d9d0163480046785404f7f1371430",
   "cursed_hands": "a4ea45e7617f63a60aa33320169dbfa054cf1ec9a587892a3d81b13ebe3696f7",
   "blood_spear": "1c00fafda7400d7a6c426fa28247cda599711a93c4df7430e654b2484388101d",
   "dead_explosion": "f3ae493e8a9453533894de1c12a0c2ea439e8bb25d55caa22f9aee8d8ee0e2d4",
-  "poison_field": "eb218d7b234b2e8392d053ee2048c7da343b5928c4353e114ce00738ca8ba44b",
+  "poison_field": "79c89b3935fb330652cba56629f008e578cda82bfdf831035708ca99c3fe5eca",
   "curse": "9b84f8c49f27b32be63a2e3dd9692817b1f35b7b8032fa2347998a0e7ac1b7d2",
   "invisibility": "2c59838a557b40f33f5a2b6232fe3ec6b925209fed27ff3bedc51eb596758451",
   "berserk": "1656d38d7b83a63e7c37eb2d919351cfeb47fb67a41b59a289b425893d261d6f",
@@ -96,7 +98,7 @@ const BASELINE = {
   "ember_bolt": "af6fd6c87ff537e718800c162df41a955de718ae51cb6f2c234c7dbb55860983"
 };
 for (const [id, expected] of Object.entries(BASELINE)) {
-  test('unchanged full detail HTML: ' + id, () => {
+  test((id === 'poison_field' ? 'PF1 exact full detail HTML: ' : 'unchanged full detail HTML: ') + id, () => {
     const html = [];
     for (const lineage of ['human', 'skeleton_knight', 'skeleton_mage', 'skeleton_archer']) {
       for (let level = 1; level <= 30; level++) {
