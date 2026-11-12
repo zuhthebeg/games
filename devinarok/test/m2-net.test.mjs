@@ -16,7 +16,9 @@ import { PartyClient, partyServerUrl } from '../js/ui/party.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from '../js/ui/party-finder.js';
 import { Predictor } from '../js/net/predictor.js';
 import { playerModelKey } from '../js/render/player-look.js';
-import { decodeMessage, encodeMessage, PROTOCOL_VERSION, roundToHundredth } from '../js/net/protocol.js';
+import {
+  decodeMessage, encodeMessage, ENTITY_FIELDS, PROTOCOL_VERSION, roundToHundredth,
+} from '../js/net/protocol.js';
 import { BUTTONS, createStageWorld } from '../js/sim/world.js';
 import { effectiveStageLevel, STAGE_LIST, STAGES } from '../js/content/stages.js';
 
@@ -813,6 +815,68 @@ test('protocol omits default fields in full keyframes and restores them on decod
   }));
   assert.equal(delta.ents[0].dead, false);
   assert.equal(delta.ents[0].attackRemaining, 0);
+});
+
+test('lineage snapshots use extras and preserve delta fields without overflowing the entity mask', () => {
+  assert.ok(ENTITY_FIELDS.length <= 31);
+
+  const decodedFull = decodeMessage(encodeMessage({
+    t: 'snap',
+    full: true,
+    ents: [{
+      id: 1,
+      kind: 'player',
+      counterReadyTicks: 42,
+      lineage: 'skeleton_archer',
+      evolved: true,
+    }],
+  }));
+  assert.equal(decodedFull.ents[0].counterReadyTicks, 42);
+  assert.equal(decodedFull.ents[0].lineage, 'skeleton_archer');
+  assert.equal(decodedFull.ents[0].evolved, true);
+
+  const defaultFull = decodeMessage(encodeMessage({
+    t: 'snap', full: true, ents: [{ id: 2, kind: 'player' }],
+  }));
+  assert.equal(defaultFull.ents[0].lineage, 'human');
+  assert.equal(defaultFull.ents[0].evolved, false);
+
+  const received = [];
+  const session = new NetSession({
+    url: 'ws://example.invalid/room',
+    WebSocketCtor: FakeSocket,
+    autoFlushInputs: false,
+    autoPing: false,
+    onMessage: (message) => received.push(message),
+  });
+  const socket = session.connect();
+  socket.open();
+  socket.receive({
+    t: 'snap',
+    tick: 0,
+    ack: 0,
+    full: true,
+    ents: [{
+      id: 1,
+      kind: 'player',
+      counterReadyTicks: 42,
+      lineage: 'skeleton_archer',
+      evolved: true,
+    }],
+  });
+  socket.receive({
+    t: 'snap',
+    tick: 1,
+    ack: 0,
+    full: false,
+    baseTick: 0,
+    ents: [{ id: 1, lineage: 'skeleton_mage', evolved: false }],
+    removed: [],
+  });
+  assert.equal(received.at(-1).ents[0].counterReadyTicks, 42);
+  assert.equal(received.at(-1).ents[0].lineage, 'skeleton_mage');
+  assert.equal(received.at(-1).ents[0].evolved, false);
+  session.close();
 });
 
 test('input queue waits for gaps without repeating or skipping inputs', () => {
