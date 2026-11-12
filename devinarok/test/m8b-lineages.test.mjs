@@ -247,6 +247,36 @@ test('evolved counter and mage passives trigger once per successful action/cast'
   assert.deepEqual(mage.skillCooldowns, { 1: 60, 2: 30, 3: 10, 4: 0 });
 });
 
+test('evolved Lich refunds each cast only once when casts interleave', () => {
+  const world = createStageWorld({
+    seed: 12, stageId: 'C1',
+    character: { lineage: 'skeleton_mage', level: 20, clearedStages: ['R10'] },
+  });
+  const mage = playerIn(world);
+  mage.stats.attack = 10000;
+  mage.skillCooldowns = { 1: 120, 2: 120, 3: 120, 4: 120 };
+  const enemy = world.entities.find((entity) => entity.kind === 'enemy' && !entity.dead);
+  enemy.x = mage.x + 0.5;
+  enemy.z = mage.z;
+  const killWithCast = (castId, skillId) => {
+    enemy.dead = false;
+    enemy.hp = 1;
+    enemy.spawnTicksLeft = 0;
+    enemy.invulnerable = false;
+    playerStrike(world, mage, {
+      type: 'circle', originX: enemy.x, originZ: enemy.z, radius: 0.5,
+    }, 1, castId, [], skillId, { rewind: false });
+  };
+
+  killWithCast('cast-a', 1);
+  assert.deepEqual(mage.skillCooldowns, { 1: 120, 2: 90, 3: 90, 4: 90 });
+  killWithCast('cast-b', 2);
+  assert.deepEqual(mage.skillCooldowns, { 1: 90, 2: 90, 3: 60, 4: 60 });
+  killWithCast('cast-a', 1);
+  assert.deepEqual(mage.skillCooldowns, { 1: 90, 2: 90, 3: 60, 4: 60 });
+  assert.deepEqual(mage.lichRefundedCastIds, ['cast-a', 'cast-b']);
+});
+
 test('fixed snapshots retain lineage, evolution, and revival readiness', () => {
   const world = createStageWorld({
     seed: 5, stageId: 'C1',
@@ -257,13 +287,13 @@ test('fixed snapshots retain lineage, evolution, and revival readiness', () => {
     t: 'snap', full: true, ents: [{
       id: player.id, kind: 'player', lineage: player.lineage, evolved: player.evolved,
       boneRevivalReady: player.boneRevivalReady,
-      lastLichCooldownCastId: 'cast-1',
+      lichRefundedCastIds: ['cast-1'],
     }],
   }));
   assert.equal(snapshot.ents[0].lineage, 'skeleton_archer');
   assert.equal(snapshot.ents[0].evolved, true);
   assert.equal(snapshot.ents[0].boneRevivalReady, true);
-  assert.equal(snapshot.ents[0].lastLichCooldownCastId, 'cast-1');
+  assert.deepEqual(snapshot.ents[0].lichRefundedCastIds, ['cast-1']);
 });
 
 test('evolved archer gains two pierce shots from a perfect dodge', () => {
