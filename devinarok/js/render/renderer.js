@@ -31,6 +31,21 @@ const LINEAGE_COLORS = Object.freeze({
   skeleton_archer: 0x4fae6a,
   skeleton_mage: 0x8a5ad6,
 });
+const LINEAGE_EYE_GEOMETRY = new THREE.SphereGeometry(0.04, 8, 6);
+const LINEAGE_RING_GEOMETRY = new THREE.RingGeometry(0.5, 0.68, 40);
+const LINEAGE_EYE_MATERIALS = Object.freeze(Object.fromEntries(
+  Object.entries(LINEAGE_COLORS).map(([id, color]) => [id, new THREE.MeshBasicMaterial({ color })]),
+));
+const LINEAGE_RING_MATERIALS = Object.freeze(Object.fromEntries(
+  Object.entries(LINEAGE_COLORS).map(([id, color]) => [id, new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.68,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  })]),
+));
 const M0_MODELS = {
   knight: 'assets/chars/Knight.glb',
   Barbarian: 'assets/chars/Barbarian.glb',
@@ -1475,37 +1490,6 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const lineageId = entity.kind === 'player' ? lineageOf(entity) : null;
     if (entity.kind === 'player') this.graftPlayerParts(root, lineageId);
-    if (entity.kind === 'player' && entity.evolved) {
-      const head = root.getObjectByName('head');
-      if (head) {
-        for (const x of [-0.045, 0.045]) {
-          const eye = new THREE.Mesh(
-            new THREE.SphereGeometry(0.04, 8, 6),
-            new THREE.MeshBasicMaterial({ color: LINEAGE_COLORS[lineageId] ?? 0xff4938 }),
-          );
-          eye.position.set(x, 0.055, 0.075);
-          head.add(eye);
-        }
-      }
-    }
-    if (entity.kind === 'player' && lineageId !== 'human') {
-      const color = LINEAGE_COLORS[lineageId];
-      const ring = new THREE.Mesh(
-        new THREE.RingGeometry(0.5, 0.68, 40),
-        new THREE.MeshBasicMaterial({
-          color,
-          transparent: true,
-          opacity: 0.68,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-          toneMapped: false,
-        }),
-      );
-      ring.rotation.x = -Math.PI / 2;
-      ring.position.y = 0.09;
-      ring.renderOrder = 2;
-      root.add(ring);
-    }
     const materials = cloneMaterials(root);
     if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
       root.traverse((node) => {
@@ -1519,6 +1503,24 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       }
     }
     if (entity.kind === 'player') isolatePlayerPartMaterials(root, materials);
+    if (entity.kind === 'player' && entity.evolved) {
+      const head = root.getObjectByName('head');
+      if (head) {
+        const eyeMaterial = LINEAGE_EYE_MATERIALS[lineageId] ?? LINEAGE_EYE_MATERIALS.skeleton_knight;
+        for (const x of [-0.045, 0.045]) {
+          const eye = new THREE.Mesh(LINEAGE_EYE_GEOMETRY, eyeMaterial);
+          eye.position.set(x, 0.055, 0.075);
+          head.add(eye);
+        }
+      }
+    }
+    if (entity.kind === 'player' && lineageId !== 'human') {
+      const ring = new THREE.Mesh(LINEAGE_RING_GEOMETRY, LINEAGE_RING_MATERIALS[lineageId]);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.09;
+      ring.renderOrder = 2;
+      root.add(ring);
+    }
     if (entity.kind === 'player' && entity.evolved) {
       const tint = new THREE.Color(LINEAGE_COLORS[lineageId] ?? 0xe7d9bf);
       for (const material of materials) {
