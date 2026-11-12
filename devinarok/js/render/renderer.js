@@ -1480,7 +1480,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       if (head) {
         for (const x of [-0.045, 0.045]) {
           const eye = new THREE.Mesh(
-            new THREE.SphereGeometry(0.026, 8, 6),
+            new THREE.SphereGeometry(0.04, 8, 6),
             new THREE.MeshBasicMaterial({ color: LINEAGE_COLORS[lineageId] ?? 0xff4938 }),
           );
           eye.position.set(x, 0.055, 0.075);
@@ -1523,8 +1523,8 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       const tint = new THREE.Color(LINEAGE_COLORS[lineageId] ?? 0xe7d9bf);
       for (const material of materials) {
         if (!material.emissive) continue;
-        material.emissive.lerp(tint, 0.18);
-        material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.16);
+        material.emissive.lerp(tint, 0.005);
+        material.emissiveIntensity = 0.005;
       }
     }
     if (entity.kind === 'enemy') root.scale.set(...silhouetteScale(entity));
@@ -2434,7 +2434,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       } else if (entity.evolved && entity.lineage !== 'human') {
         const color = { skeleton_knight: 0xc8463c, skeleton_archer: 0x4fae6a, skeleton_mage: 0x8a5ad6 }[entity.lineage];
         material.emissive.setHex(color);
-        material.emissiveIntensity = 0.22;
+        material.emissiveIntensity = 0.005;
       } else if (visual.partTints.has(material)) {
         const tint = visual.partTints.get(material);
         material.emissive.setHex(tint.hex);

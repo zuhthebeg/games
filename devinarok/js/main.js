@@ -2106,6 +2106,11 @@ function renderPanel(kind, compareUid = '') {
       skeleton_archer: '완벽 회피 후 관통 사격이 늘어요.',
       skeleton_mage: '기술로 적을 처치하면 다른 기술이 빨라져요.',
     }[lineageId];
+    const passiveLabel = lineageId === 'human'
+      ? passive
+      : `${evolved ? '진화 능력: ' : '진화 후: '}${passive}`;
+    const panelTitle = `${escapeHtml(lineageDisplayName(character.name, character))}`
+      + `${lineageId === 'human' ? ` · ${FAMILY_NAMES[family]}` : ''} Lv.${character.level}`;
     const changingCost = lineageChangeCost(character);
     const equippedWeapon = inventory.find((item) => item.uid === character.equipment?.weapon);
     const equippedWeaponFamily = equippedWeapon
@@ -2116,10 +2121,11 @@ function renderPanel(kind, compareUid = '') {
       const confirming = lineageChangeConfirmId === target.id && Date.now() < lineageChangeConfirmExpiresAt;
       const label = confirming ? '한 번 더 눌러 변경' : `${target.name} · ${changingCost === 0 ? '첫 변경 무료' : `${changingCost}G`}`;
       const familyName = { sword: '검', crossbow: '석궁', staff: '지팡이' }[target.family];
-      const reason = allowed ? '' : `장착한 무기로는 변경할 수 없어요 · ${familyName}을(를) 장착해야 ${target.name}가 될 수 있어요`;
+      const familyParticle = familyName === '지팡이' ? '를' : '을';
+      const reason = allowed ? '' : `${familyName}${familyParticle} 장착해야 ${target.name}가 될 수 있어요`;
       return `<div class="lineage-change-row"><button data-change-lineage="${target.id}" ${!allowed || character.gold < changingCost ? 'disabled' : ''}>${label}</button>${reason ? `<small>${reason}</small>` : ''}</div>`;
     }).join('');
-    const lineageSection = `<section class="lineage-section"><h3>계보 · ${lineageName}</h3><p class="lineage-progress">Lv ${character.level}/20 · 균열 10층 ${clearedR10 ? '돌파' : '미돌파'}</p><p class="lineage-passive">${passive}</p><div class="lineage-change-list">${lineageButtons}</div></section>`;
+    const lineageSection = `<section class="lineage-section"><h3>계보 · ${lineageName}</h3><p class="lineage-progress">Lv ${character.level}/20 · 균열 10층 ${clearedR10 ? '돌파' : '미돌파'}</p><p class="lineage-passive">${passiveLabel}</p><div class="lineage-change-list">${lineageButtons}</div></section>`;
     const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
     const skillDescriptions = skillNames.map((name, index) => (
       `<li><strong>${SKILLS[name].name}</strong> · ${FAMILY_SKILL_COPY[family][index]}</li>`
@@ -2128,7 +2134,7 @@ function renderPanel(kind, compareUid = '') {
       const item = inventory.find((entry) => entry.slot === slot.key);
       return `<li>${slot.label}: ${item ? `${escapeHtml(itemName(item))} +${item.enhance ?? 0} · ${escapeHtml(itemStat(item).split(' · ')[0])}` : '비어 있음'}</li>`;
     }).join('');
-    hubPanel.innerHTML = `<h2>${escapeHtml(lineageDisplayName(character.name, character))} · ${FAMILY_NAMES[family]} Lv.${character.level}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p>${lineageSection}<h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
+    hubPanel.innerHTML = `<h2>${panelTitle}</h2><p>계열: ${FAMILY_NAMES[family]}</p><p>경험치 ${character.xp}/${Math.round(60 * character.level ** 1.6)} · 골드 ${character.gold}G</p><p>HP ${stats.maxHp} · 공격 ${stats.attack} · 방어 ${stats.defense} · 치명타 ${stats.critChance}% · 치명타 피해 ${Math.round(stats.critDamage * 100)}%</p><p>이동 속도 ${stats.moveSpeed.toFixed(1)} · 물약 ${character.potions}/5</p>${lineageSection}<h3>계열 기술</h3><ul class="character-equipment">${skillDescriptions}</ul><h3>장착한 장비</h3><ul class="character-equipment">${gear}</ul><button data-close>닫기</button>`;
   }
   hubPanel.focus();
 }

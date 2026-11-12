@@ -62,6 +62,13 @@ test('character creation accepts known lineages and rejects unknown ids', () => 
   assert.throws(() => create('unknown'), TypeError);
 });
 
+test('lineage changes are allowed before a weapon is equipped', () => {
+  const state = apply(create(), [{ type: 'changeLineage', lineage: 'skeleton_knight' }]);
+  assert.equal(state.character.lineage, 'skeleton_knight');
+  assert.equal(state.character.equipment.weapon, null);
+  assert.equal(state.character.lineageChanges, 1);
+});
+
 test('lineage changes enforce weapon family, first-free cost, and later gold cost', () => {
   let state = create();
   state = apply(state, [
