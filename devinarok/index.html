@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=8baa791c76">
+  <link rel="stylesheet" href="css/game.css?v=982b178188">
   <script type="importmap">
     {
       "imports": {
@@ -19,6 +19,7 @@
         "./js/content/objectives.js": "./js/content/objectives.js?v=9efcd2228b",
         "./js/content/skills.js": "./js/content/skills.js?v=66579b2e69",
         "./js/content/stages.js": "./js/content/stages.js?v=1c7dad1ab2",
+        "./js/content/talents.js": "./js/content/talents.js?v=f7bdeb370b",
         "./js/core/attack-assist.js": "./js/core/attack-assist.js?v=1af361b913",
         "./js/core/debug-toggle.js": "./js/core/debug-toggle.js?v=2b34bec22e",
         "./js/core/input.js": "./js/core/input.js?v=8a0a4625b5",
@@ -26,7 +27,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
         "./js/debug/panel.js": "./js/debug/panel.js?v=e5a50df704",
         "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
-        "./js/main.js": "./js/main.js?v=9d2b5a0408",
+        "./js/main.js": "./js/main.js?v=3fdb501dea",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=4394734784",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=90c6cf90ab",
         "./js/net/clock-input-scheduler.js": "./js/net/clock-input-scheduler.js?v=61a2d824df",
@@ -39,7 +40,7 @@
         "./js/net/predictor.js": "./js/net/predictor.js?v=a3926537ea",
         "./js/net/protocol.js": "./js/net/protocol.js?v=13ed2ceffb",
         "./js/net/ranged-aim.js": "./js/net/ranged-aim.js?v=06a059ce06",
-        "./js/net/sim-version.js": "./js/net/sim-version.js?v=fbf4838002",
+        "./js/net/sim-version.js": "./js/net/sim-version.js?v=319157be7d",
         "./js/render/audio.js": "./js/render/audio.js?v=efe9aad52a",
         "./js/render/dodge-window.js": "./js/render/dodge-window.js?v=7529988637",
         "./js/render/outline-style.js": "./js/render/outline-style.js?v=35f2b64d02",
@@ -49,16 +50,16 @@
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
-        "./js/save/ops.js": "./js/save/ops.js?v=03f436cff5",
+        "./js/save/ops.js": "./js/save/ops.js?v=bbb1e9f5a7",
         "./js/save/remote-sync.js": "./js/save/remote-sync.js?v=664074ec30",
         "./js/save/repository.js": "./js/save/repository.js?v=1bacce0c02",
         "./js/save/settlement-lock.js": "./js/save/settlement-lock.js?v=783875fd64",
         "./js/sim/arena.js": "./js/sim/arena.js?v=3ca45c214b",
-        "./js/sim/world.js": "./js/sim/world.js?v=b290910e93",
+        "./js/sim/world.js": "./js/sim/world.js?v=0f0365b7a3",
         "./js/ui/escape-html.js": "./js/ui/escape-html.js?v=ed63f4557e",
         "./js/ui/hub-player.js": "./js/ui/hub-player.js?v=96c966263a",
         "./js/ui/party-finder.js": "./js/ui/party-finder.js?v=502b2bd62e",
-        "./js/ui/party.js": "./js/ui/party.js?v=2ea0354d11",
+        "./js/ui/party.js": "./js/ui/party.js?v=de8acd0f7e",
         "./js/ui/pause-menu.js": "./js/ui/pause-menu.js?v=7beb0a08fa",
         "./js/ui/stage-player.js": "./js/ui/stage-player.js?v=6bbe7e3556",
         "./js/ui/tutorial.js": "./js/ui/tutorial.js?v=238d54c747",
@@ -116,7 +117,7 @@
         <div class="hub-title">무너진 지하묘지 · 거점 여관</div>
         <div class="hub-hotspots">
           <button data-panel="board">주인 · 게시판 <b id="contract-claim-badge" class="contract-claim-badge" hidden>!</b></button><button data-panel="blacksmith">대장장이</button>
-          <button data-panel="merchant">상인</button><button data-panel="inventory">장비함 <b id="inventory-upgrade-badge" class="upgrade-station-badge" hidden>▲</b></button>
+          <button data-panel="merchant">상인</button><button data-panel="inventory">장비함 <b id="inventory-upgrade-badge" class="upgrade-station-badge" hidden>▲</b><b id="inventory-talent-badge" class="contract-claim-badge" hidden>!</b></button>
           <button data-panel="character">모험가</button><button data-panel="sanctuary">법당</button>
           <small id="sanctuary-party-disabled" class="sanctuary-party-disabled" hidden>파티 중에는 들어갈 수 없어요</small>
         </div>
@@ -206,6 +207,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=9d2b5a0408"></script>
+  <script type="module" src="js/main.js?v=3fdb501dea"></script>
 </body>
 </html>

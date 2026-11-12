@@ -123,6 +123,7 @@ function runBot({
   stageId,
   level,
   equipment = [],
+  talents = null,
   potions = 5,
   maxTicks = 5400,
   aimAtTarget = false,
@@ -131,7 +132,9 @@ function runBot({
   difficulty = 'normal',
 }) {
   const id = 'bot';
-  const world = createStageWorld({ seed, stageId, difficulty, playerId: id, character: { level, potions, equipment } });
+  const world = createStageWorld({
+    seed, stageId, difficulty, playerId: id, character: { level, potions, equipment, talents },
+  });
   let dodges = 0;
   let perfectDodges = 0;
   let potionsPickedUp = 0;
@@ -741,4 +744,42 @@ test('M7 solo level-20 standard-gear rift balance', { timeout: 300000 }, () => {
       && r20.averageClearSeconds > r5.averageClearSeconds);
   console.log(`M7 R20 harder than R5: ${r20Harder}`);
   assert.ok(r20Harder, 'R20 should be harder than R5');
+});
+
+test('M8a informational R25 sword talent balance bot', { timeout: 300000 }, () => {
+  const gearLevel = Math.max(...ITEM_BASES.map((base) => base.requiredLevel));
+  const weapon = ITEM_BASES.find((base) => (
+    base.requiredLevel === gearLevel && base.slot === 'weapon' && base.family === 'sword'
+  ));
+  const armor = ITEM_BASES.filter((base) => (
+    base.requiredLevel === gearLevel && base.slot !== 'weapon' && !base.setId
+  )).sort((a, b) => ['head', 'body', 'hands', 'feet'].indexOf(a.slot) - ['head', 'body', 'hands', 'feet'].indexOf(b.slot));
+  const equipment = [weapon, ...armor].map((base) => ({
+    itemId: base.id,
+    rarity: 'rare',
+    affixes: base.slot === 'weapon'
+      ? [{ id: 'attackPercent', value: 8 }, { id: 'critChance', value: 3 }]
+      : [{ id: 'maxHp', value: 40 }, { id: 'defense', value: 6 }],
+  }));
+  const talents = {
+    sword: { 'sw-vigor': 5, 'sw-edge': 5, 'sw-bulwark': 5, 'sw-leech': 4 },
+    crossbow: {},
+    staff: {},
+  };
+  const runs = Array.from({ length: 5 }, (_, index) => runBot({
+    seed: 8250 + index,
+    stageId: 'R25',
+    level: 20,
+    equipment,
+    talents,
+    potions: 5,
+    maxTicks: 18000,
+    aimAtTarget: true,
+    ensureAttackRelease: true,
+  }));
+  const clears = runs.filter((run) => run.outcome === 'clear');
+  const averageClearSeconds = clears.length
+    ? clears.reduce((sum, run) => sum + run.seconds, 0) / clears.length
+    : null;
+  console.log(`M8a R25 L20 rare standard gear + 19 sword talents: ${clears.length}/5 clears; average ${averageClearSeconds?.toFixed(1) ?? '—'}s`);
 });

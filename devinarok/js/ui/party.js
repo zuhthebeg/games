@@ -124,6 +124,7 @@ export class PartyClient {
         potions: this.character.potions,
         clearedStages: this.character.clearedStages,
         mastery: this.character.mastery,
+        talents: this.character.talents,
       },
       onMessage: (message) => this.handleMessage(message),
       onStatus: (status) => this.handleStatus(status),
@@ -224,6 +225,7 @@ export class PartyClient {
             level: this.character.level,
             equipment: this.equipment,
             potions: this.character.potions,
+            talents: this.character.talents,
           }
         : { level: member.level ?? 1, equipment: [], potions: 3 },
     }));
