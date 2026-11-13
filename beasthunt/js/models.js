@@ -36,10 +36,32 @@ function buildProceduralHunter(wt,wTier,aTier){
  const leg=s=>{const g=G(s*.17,0,0);hips.add(g);link(g,[0,0,0],[0,-.4,0],.135,.095,dark);const k=G(0,-.4,0);g.add(k);k.add(mesh(sph(.125),trim));link(k,[0,0,0],[0,-.37,0],.12,.085,am);k.add(mesh(loft([[-.12,-.4,.1,.08],[.09,-.4,.12,.08],[.23,-.42,.07,.05]],6),dark));knees.push(k);return g;};
  const legL=leg(1),legR=leg(-1);
  const blade=(h,len,w)=>hunterBlade(h,len,w,dark,trim,steel);
- if(wt==='gs')blade(R.hand,2.12,.23);else if(wt==='db'){blade(R.hand,.92,.13);blade(L.hand,.92,.13);}else{const pts=[[0,-.55,-.62],[0,-.2,-.8],[0,.2,-.55],[0,.5,0],[0,.2,.55],[0,-.2,.8],[0,-.55,.62]];horn(L.hand,pts,.055,steel);link(L.hand,pts[0],pts.at(-1),.008,.008,trim,3);link(torso,[.18,.14,-.32],[.3,.7,-.32],.12,.14,dark);for(let i=0;i<3;i++)link(torso,[.18+i*.06,.5,-.32],[.18+i*.06,.94,-.32],.012,.012,trim,3);}
+ if(wt==='gs')hunterBlade(R.hand,2.12,.23,dark,trim,steel,true);else if(wt==='db'){blade(R.hand,.92,.13);blade(L.hand,.92,.13);}else{const pts=[[0,-.55,-.62],[0,-.2,-.8],[0,.2,-.55],[0,.5,0],[0,.2,.55],[0,-.2,.8],[0,-.55,.62]];horn(L.hand,pts,.055,steel);link(L.hand,pts[0],pts.at(-1),.008,.008,trim,3);link(torso,[.18,.14,-.32],[.3,.7,-.32],.12,.14,dark);for(let i=0;i<3;i++)link(torso,[.18+i*.06,.5,-.32],[.18+i*.06,.94,-.32],.012,.012,trim,3);}
  batch(root);return {root,hips,torso,head,armR:R.a,armL:L.a,legL,legR,elbows,knees};
 }
-function hunterBlade(h,len,w,dark,trim,steel){const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.name='hunter-blade';b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);return g;}
+function hunterBlade(h,len,w,dark,trim,steel,refined=false){if(refined)return greatswordBlade(h,len,w,dark,trim,steel);const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.name='hunter-blade';b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);return g;}
+// Same 98-triangle sword budget: 28 blade + 8 edges + 8 pommel replace
+// the previous 20 blade + 24 decorative spine. DB retains its original geometry.
+function greatswordBlade(h,len,w,dark,trim,steel){
+ const g=G();g.rotation.x=-1.25;h.add(g);
+ link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);
+ horn(g,[[-w*1.2,-.20,-.02],[0,-.29,.035],[w*1.2,-.20,-.02]],.065,trim);
+ const face=steel.clone();face.color.multiplyScalar(.48);face.roughness=.42;
+ const b=mesh(loft([[0,0,w*.67,.022],[.20,0,w,.036],[len*.76,0,w*.56,.026],[len,0,0,0]],4),face,0,-.31,0);
+ b.name='hunter-blade';b.rotation.x=Math.PI/2;g.add(b);
+ // Narrow bright bevels make edge and dark face unambiguous at game scale.
+ const vertices=[];for(const side of [-1,1]){
+  const points=[[.2,w],[len*.76,w*.56],[len,0]];
+  for(let i=0;i<2;i++){const [z0,x0]=points[i],[z1,x1]=points[i+1];
+   const a=[side*x0,0,z0],bb=[side*Math.max(0,x0-.018),-.009,z0],c=[side*x1,0,z1],d=[side*Math.max(0,x1-.018),-.009,z1];
+   vertices.push(...a,...bb,...c,...bb,...d,...c);
+  }
+ }
+ const e=new THREE.BufferGeometry();e.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));e.computeVertexNormals();
+ const edge=mesh(e,steel.clone());edge.name='hunter-edge';edge.material.side=THREE.DoubleSide;b.add(edge);
+ const pommel=mesh(new THREE.OctahedronGeometry(.065,0),trim,0,.17,0);pommel.scale.set(.8,1.3,.8);g.add(pommel);
+ g.userData.weaponColor=steel.color.getHex();return g;
+}
 // A stable procedural root is available immediately, including on 404/offline.
 // Upgrading children preserves owner/guest/root visibility contracts.
 let gsLoad, gsAsset;
@@ -47,7 +69,7 @@ export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterGS() {
  if (!gsLoad) {
   const start=performance.now(); hunterGSLoad.status='loading';
-  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r7',import.meta.url).href)
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r8a',import.meta.url).href)
    .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
  }
@@ -57,13 +79,13 @@ export function buildHunter(wt,wTier,aTier) {
  return wt==='gs' ? buildHunterGS(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
 }
 export function buildHunterGS(wTier,aTier) {
- const H=buildProceduralHunter('gs',wTier,aTier);
+ const H=buildProceduralHunter('gs',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
  const upgrade=asset=>{
   if(!asset)return H;
   const model=cloneSkeleton(asset.scene);
   // Existing scene disposal owns its resources, never the cached template.
   model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
-  const sword=hunterBlade(G(),2.12,.23,M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
+  const sword=hunterBlade(G(),2.12,.23,M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}),true);
   sword.rotation.set(0,0,0);
   H.gs=createGSMotion(model,asset.animations,sword);
   for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
@@ -169,12 +191,14 @@ export function buildArena(biome, R, low = /[?&]lowfx=1/.test(location.search)) 
 }
 
 function paladinMaterial(source,tier){
- const m=source.clone();m.color.setScalar(1.8);m.emissive.setHex(0x35404a);m.emissiveIntensity=.24;
+ const m=source.clone();m.userData.gsCharge={value:0};m.userData.gsChargeColor={value:new THREE.Color(0xffffff)};m.color.setScalar(1.8);m.emissive.setHex(0x35404a);m.emissiveIntensity=.24;
  m.onBeforeCompile=shader=>{
+ shader.uniforms.gsCharge=m.userData.gsCharge;shader.uniforms.gsChargeColor=m.userData.gsChargeColor;
  shader.uniforms.armorTint={value:new THREE.Color(ARMOR_COL[tier-1])};
  shader.vertexShader='varying vec3 armorPosition;\n'+shader.vertexShader;
  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narmorPosition=position;');
- shader.fragmentShader='uniform vec3 armorTint;\nvarying vec3 armorPosition;\n'+shader.fragmentShader;
+ shader.fragmentShader='uniform float gsCharge;uniform vec3 gsChargeColor;uniform vec3 armorTint;\nvarying vec3 armorPosition;\n'+shader.fragmentShader;
  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat gray=dot(diffuseColor.rgb,vec3(.299,.587,.114));float sat=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));float mask=(1.-smoothstep(.07,.2,sat))*smoothstep(.65,1.05,armorPosition.y)*(1.-smoothstep(1.38,1.49,armorPosition.y));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(gray*.65+.18)*(.35+armorTint*2.2),mask*.82);');
- };m.customProgramCacheKey=()=> 'paladin-armor-mask';return m;
+ shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\nfloat chargeRim=pow(1.-abs(dot(normal,normalize(vViewPosition))),2.);totalEmissiveRadiance+=gsChargeColor*chargeRim*gsCharge;');
+ };m.customProgramCacheKey=()=> 'paladin-armor-charge-rim';return m;
 }
