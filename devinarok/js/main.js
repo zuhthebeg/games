@@ -33,7 +33,7 @@ import { equipmentLook, FAMILY_STARTER_WEAPONS, ITEM_SETS, ITEMS, RARITIES } fro
 import {
   isEvolved, LINEAGES, lineageAllowsFamily, lineageChangeCost, lineageDisplayName, lineageOf, playerFamily,
 } from './content/lineages.js';
-import { FAMILY_SKILLS, SKILLS } from './content/skills.js';
+import { FAMILY_SKILLS, SKILLS, skillsFor } from './content/skills.js';
 import {
   MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
 } from './content/mastery.js';
@@ -539,7 +539,12 @@ function playCastSound(event) {
       crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot', 4: 'crossbow-shot' },
       staff: { 1: 'flame', 2: 'frost', 3: 'blink', 4: 'impact' },
     };
-    audio.play(sounds[event.family]?.[event.skill] ?? 'staff-cast');
+    const lineageSounds = {
+      deadBurst: 'impact',
+      poisonArrow: 'crossbow-shot',
+      cursedHands: 'summon',
+    };
+    audio.play(lineageSounds[event.skillKey] ?? sounds[event.family]?.[event.skill] ?? 'staff-cast');
   } else if (event.family === 'staff') audio.play('staff-cast');
   else if (event.family !== 'crossbow') audio.play('sword-swing');
 }
@@ -1029,14 +1034,24 @@ const STAT_NAMES = {
 };
 
 const FAMILY_NAMES = { sword: '기사', crossbow: '석궁', staff: '지팡이' };
+const SKELETON_FAMILY_STARTER_WEAPONS = [
+  { itemId: 'rusted-sword', price: 30 },
+  ...FAMILY_STARTER_WEAPONS,
+];
 const FAMILY_SKILL_COPY = {
   sword: ['주변을 베어 적을 공격합니다.', '앞으로 돌진해 찌릅니다.', '피해를 줄이고 적의 공격을 막습니다.', '전방에 지진을 일으켜 적을 기절시킵니다.'],
   crossbow: ['직선상의 적을 관통합니다.', '뒤로 물러나며 사격합니다.', '다섯 방향으로 산탄을 발사합니다.', '지정 지점에 화살비를 퍼붓습니다.'],
   staff: ['지점에 화염 장판을 남깁니다.', '주변에 냉기 파동을 퍼뜨려 둔화시킵니다.', '이동 방향으로 순간이동합니다.', '지정 지점에 운석을 떨어뜨립니다.'],
 };
+const LINEAGE_SKILL_COPY = {
+  deadBurst: '체력을 바쳐 주변의 적을 밀쳐냅니다.',
+  poisonArrow: '가장 가까운 적 하나에게 맹독을 남깁니다.',
+  cursedHands: '지정한 지점의 적을 저주해 움직임을 묶습니다.',
+};
 
-function updateFamilySkillControls(family) {
-  const names = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+function updateFamilySkillControls(family, lineage = lineageOf(character)) {
+  const baseNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+  const names = skillsFor(family, lineage);
   const buttonValues = [4, 8, 16, 128];
   names.forEach((name, index) => {
     const button = $(`#controls [data-button="${buttonValues[index]}"]`);
@@ -1044,12 +1059,19 @@ function updateFamilySkillControls(family) {
       if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
     } else if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
     else if (button) button.textContent = SKILLS[name].name;
+    const tag = button?.querySelector('.lineage-skill-badge');
+    if (name !== baseNames[index] && button && !tag) {
+      const badge = document.createElement('small');
+      badge.className = 'lineage-skill-badge';
+      badge.textContent = '해골 전용';
+      button.append(badge);
+    } else if (name === baseNames[index]) tag?.remove();
   });
   $('#key-hints').textContent = `J 공격 · K 회피 · 1 ${SKILLS[names[0]].name} · 2 ${SKILLS[names[1]].name} · 3 ${SKILLS[names[2]].name} · 4 ${SKILLS[names[3]].name} · Q 물약`;
 }
 
 function showFamilyChangeToast(family) {
-  const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((name) => SKILLS[name].name).join(' · ');
+  const skills = skillsFor(family, lineageOf(character)).map((name) => SKILLS[name].name).join(' · ');
   const message = `${FAMILY_NAMES[family]} 계열로 바뀌었어요 · 스킬: ${skills}`;
   if (world?.mode === 'hub' && !hubPanel.hidden) {
     hubPanel.querySelector('.family-change-toast')?.remove();
@@ -1902,7 +1924,8 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
     ['talents', '계보'],
   ].map(([id, label]) => `<button data-inventory-tab="${id}" class="${inventoryTab === id ? 'active' : ''}" aria-pressed="${inventoryTab === id}">${label}</button>`).join('')}</nav>`;
   if (inventoryTab === 'skills') {
-    const skills = (FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((skillKey, index) => {
+    const baseSkills = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+    const skills = skillsFor(family, lineageOf(character)).map((skillKey, index) => {
       const xp = character.mastery?.[skillKey] ?? 0;
       const rank = masteryRank(xp);
       const next = nextThreshold(xp);
@@ -1910,7 +1933,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
       const progress = next === null ? 100 : Math.max(0, Math.min(100, (xp - current) / (next - current) * 100));
       const bonus = masteryBonus(rank);
       const locked = index === 3 && character.level < 7;
-      return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
+      return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}${skillKey !== baseSkills[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
     }).join('');
     hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<div class="mastery-list">${skills}</div><p class="mastery-footer">적 근처에서 스킬을 쓰면 숙련도가 올라요 · ★5 각성 시 이펙트가 바뀌어요</p><button data-close>닫기</button>`;
     updateInventoryUpgradeBadge();
@@ -1956,7 +1979,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
     const characterLineage = LINEAGES[lineageOf(character)];
     const lineageLocked = slot === 'weapon' && !lineageAllowsFamily(characterLineage.id, family);
     const lockedFamilyName = { sword: '검', crossbow: '석궁', staff: '지팡이' }[characterLineage.family];
-    const lockMessage = lineageLocked ? `<small>${characterLineage.name}는 ${lockedFamilyName}만 쓸 수 있어요</small>` : '';
+    const lockMessage = lineageLocked ? `<small class="lineage-lock-badge">착용 불가 · ${lockedFamilyName} 전용</small>` : '';
     const deltas = equipped ? '' : `<div class="inventory-delta-chips">${itemDeltas(item).map(({ label, delta, good, value }) => `<span class="${good ? 'delta-up' : 'delta-down'}">${label} ${delta > 0 ? '+' : ''}${value}</span>`).join('') || '<span>변화 없음</span>'}</div>`;
     return `<div class="item-row ${compare ? 'selected' : ''}"><div class="item-details">${itemDetails(item)}${equipped ? '<span class="equipped-badge">착용 중</span>' : ''}${upgrade ? '<span class="upgrade-badge">▲ 더 좋음</span>' : ''}${lockMessage}</div><div class="item-actions"><button data-compare="${item.uid}">비교</button>${equipped ? `<button data-unequip="${slot}">해제</button>` : `<button data-equip="${item.uid}" data-slot="${slot}" ${lineageLocked || (item.requiredLevel ?? base?.requiredLevel) > character.level ? 'disabled' : ''}>착용</button>`}<button data-sell="${item.uid}" ${equipped ? 'disabled' : ''}>판매</button></div>${deltas}${compare}</div>`;
   }).join('');
@@ -2089,10 +2112,18 @@ function renderPanel(kind, compareUid = '') {
   if (kind === 'blacksmith') renderBlacksmith();
   if (kind === 'merchant') {
     const rows = inventory.filter((item) => !item.slot).map((item) => `<div class="hub-row"><span>${itemName(item)}<small>판매가 ${Math.round(({ common: 5, magic: 15, rare: 45, legendary: 150, set: 150 }[item.rarity] ?? 5) * (1 + item.ilvl / 10))}G</small></span><button data-sell="${item.uid}">판매</button></div>`).join('');
-    const familyWeapons = FAMILY_STARTER_WEAPONS.map(({ itemId, price }) => (
-      `<div class="hub-row"><span>${escapeHtml(ITEMS[itemId].name)}<small>체험 · 공용 · ${price}G</small></span><button data-buy-family-weapon="${itemId}" ${character.gold < price || inventory.length >= 40 ? 'disabled' : ''}>구매</button></div>`
+    const lineage = LINEAGES[lineageOf(character)];
+    const isSkeleton = Boolean(lineage.family);
+    const starterWeapons = isSkeleton
+      ? SKELETON_FAMILY_STARTER_WEAPONS
+        .filter(({ itemId }) => ITEMS[itemId].family === lineage.family)
+      : FAMILY_STARTER_WEAPONS;
+    const starterFamilyName = { sword: '검', crossbow: '석궁', staff: '지팡이' }[lineage.family];
+    const familyWeapons = starterWeapons.map(({ itemId, price }) => (
+      `<div class="hub-row"><span>${escapeHtml(ITEMS[itemId].name)}<small>체험 · ${isSkeleton ? `${starterFamilyName} 전용` : '공용'} · ${price}G</small></span><button data-buy-family-weapon="${itemId}" ${character.gold < price || inventory.length >= 40 ? 'disabled' : ''}>구매</button></div>`
     )).join('');
-    hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>계열 체험 무기</h3>${familyWeapons}${rows}<button data-close>닫기</button>`;
+    const familyWeaponHint = isSkeleton ? `<small class="lineage-weapon-hint">${lineage.name}는 ${starterFamilyName}만 쓸 수 있어요</small>` : '';
+    hubPanel.innerHTML = `<h2>상인</h2><p>골드 ${character.gold}G · 물약 ${character.potions}/5 · 물약 25G</p><button data-buy-potion>물약 구매</button><h3>${isSkeleton ? '계열 무기' : '계열 체험 무기'}</h3>${familyWeaponHint}${familyWeapons}${rows}<button data-close>닫기</button>`;
   }
   if (kind === 'character') {
     const stats = calculatePlayerStats(character.level, equippedItems(), character.talents, characterFamily());
@@ -2128,9 +2159,10 @@ function renderPanel(kind, compareUid = '') {
       return `<div class="lineage-change-row"><button data-change-lineage="${target.id}" ${!allowed || character.gold < changingCost ? 'disabled' : ''}>${label}</button>${reason ? `<small>${reason}</small>` : ''}</div>`;
     }).join('');
     const lineageSection = `<section class="lineage-section"><h3>계보 · ${lineageName}</h3><p class="lineage-progress">Lv ${character.level}/20 · 균열 10층 ${clearedR10 ? '돌파' : '미돌파'}</p><p class="lineage-passive">${passiveLabel}</p><div class="lineage-change-list">${lineageButtons}</div></section>`;
-    const skillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+    const baseSkillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
+    const skillNames = skillsFor(family, lineageId);
     const skillDescriptions = skillNames.map((name, index) => (
-      `<li><strong>${SKILLS[name].name}</strong> · ${FAMILY_SKILL_COPY[family][index]}</li>`
+      `<li><strong>${SKILLS[name].name}</strong>${name !== baseSkillNames[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''} · ${LINEAGE_SKILL_COPY[name] ?? FAMILY_SKILL_COPY[family][index]}</li>`
     )).join('');
     const gear = EQUIPMENT_SLOTS.map((slot) => {
       const item = inventory.find((entry) => entry.slot === slot.key);
@@ -2262,7 +2294,7 @@ function updateHud(current) {
     $('#hud-hp').textContent = `HP ${hero.hp} / ${hero.maxHp}`;
     $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
     $('#potion-count').textContent = String(hero.potions);
-    const skillNames = FAMILY_SKILLS[hero.family ?? 'sword'] ?? FAMILY_SKILLS.sword;
+    const skillNames = skillsFor(hero.family ?? 'sword', hero.lineage);
     for (const [id, buttonValue] of [[1, 4], [2, 8], [3, 16], [4, 128]]) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
       const skill = SKILLS[skillNames[id - 1]];
@@ -2527,7 +2559,7 @@ async function attemptSettlement(outcome, result, settlementId) {
     if (character.level > previousLevel) audio.play('reward-chime');
     inventory = await saves.listItems(character.id);
     const newSkill = previousLevel < 7 && character.level >= 7
-      ? SKILLS[FAMILY_SKILLS[characterFamily()]?.[3]]
+      ? SKILLS[skillsFor(characterFamily(), lineageOf(character))[3]]
       : null;
     if (newSkill) showActionToast(`새 스킬: ${newSkill.name}`);
     renderSettlement(outcome, result, {
@@ -2885,7 +2917,10 @@ $('#hub-ui').addEventListener('click', async (event) => {
     renderPanel('merchant');
   }
   if (button.dataset.buyFamilyWeapon) {
-    const starter = FAMILY_STARTER_WEAPONS.find(({ itemId }) => itemId === button.dataset.buyFamilyWeapon);
+    const lineageFamily = LINEAGES[lineageOf(character)].family;
+    const availableStarters = lineageFamily ? SKELETON_FAMILY_STARTER_WEAPONS : FAMILY_STARTER_WEAPONS;
+    const starter = availableStarters.find(({ itemId }) => itemId === button.dataset.buyFamilyWeapon);
+    if (lineageFamily && ITEMS[starter?.itemId]?.family !== lineageFamily) return;
     if (!starter || character.gold < starter.price || inventory.length >= 40) return;
     await applyOps([
       { type: 'spendGold', amount: starter.price },

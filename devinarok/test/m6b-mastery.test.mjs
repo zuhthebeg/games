@@ -35,6 +35,7 @@ test('mastery normalization fills known skills and clamps values; save ops gain 
   assert.deepEqual(normalized.mastery, {
     spin: 300, dash: 0, guard: 0, quake: 0, pierce: 0, vault: 0,
     volley: 0, rain: 0, flame: 0, frost: 0, blink: 0, meteor: 0,
+    deadBurst: 0, poisonArrow: 0, cursedHands: 0,
   });
 
   const character = {

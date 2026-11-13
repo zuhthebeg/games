@@ -29,6 +29,19 @@
 .lineage-passive {
   color: #c5b9c6;
 }
+.lineage-skill-tag,
+.lineage-lock-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border: 1px solid #72618b;
+  border-radius: 999px;
+  color: #dfd0ff !important;
+  background: #2b2336;
+  font: 700 9px/1.4 system-ui, sans-serif !important;
+  white-space: nowrap;
+}
+.lineage-weapon-hint { display: block; margin: 0 0 5px; color: #d9c8ef !important; }
 
 .bone-revival-status.is-used {
   color: #89838b;
@@ -285,6 +298,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"], .buttons button[data-button="128"] { background: conic-gradient(#d6a466 var(--cooldown, 0%), #29222b 0); }
 .buttons button[data-button="2"] { background: conic-gradient(#ffd478 var(--cooldown, 0%), #49372b 0); }
 .skill-rank-badge { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 19px; height: 19px; padding: 0; border: 1px solid #d9b85e; border-radius: 50%; color: #21170b; background: #f3d16b; font: 800 10px/1 system-ui, sans-serif; text-shadow: none; }
+.buttons button .lineage-skill-badge { position: absolute; right: 50%; bottom: -6px; transform: translateX(50%); padding: 1px 4px; border-radius: 999px; color: #e0d2ff; background: #392b49; font: 700 8px/1.2 system-ui, sans-serif; white-space: nowrap; pointer-events: none; }
 .buttons button[data-button="128"] .skill-unlock-badge { right: auto; left: -5px; }
 .buttons button.mastery-rank-five { border-color: #fff0b5; box-shadow: 0 0 0 2px #f7d66a, 0 0 12px #ffe69b; }
 #counter-toast { position: absolute; z-index: 4; display: none; color: #ffd76f; font: 800 28px/1.1 system-ui, sans-serif; letter-spacing: .03em; white-space: nowrap; -webkit-text-stroke: 2px #20130c; paint-order: stroke fill; text-shadow: 0 3px 5px #100903, 0 0 12px #e59b35; pointer-events: none; }
