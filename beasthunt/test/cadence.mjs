@@ -5,7 +5,7 @@ const {chromium}=createRequire('/home/cocy/.openclaw/workspace/')('playwright');
 const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 try {
  const page=await browser.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>{ window.requestAnimationFrame=()=>0; });
+ await page.addInitScript(()=>{ window.requestAnimationFrame=()=>0; const t0=performance.now(); performance.now=()=>t0; });
  await page.route('**/*',r=>r.request().url().startsWith('http://127.0.0.1:8791/')?r.continue():r.abort());
  await page.goto('http://127.0.0.1:8791/beasthunt/?lowfx=1');await page.waitForFunction(()=>window.__bh);
  const result=await page.evaluate(()=>{
