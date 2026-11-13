@@ -194,6 +194,60 @@ test('poisonArrow reapplication refreshes one owner-target effect and stops when
   assert.equal(dying.world.events.filter((event) => event.type === 'strike').length, strikeCount);
 });
 
+test('poisonArrow skill strike resolves while a basic crossbow attack is active', () => {
+  const { world, player, enemies } = makeWorld('skeleton_archer', [{ x: 3, z: 0 }]);
+  const [target] = enemies;
+  tick(world, BUTTONS.ATTACK);
+  runTicks(world, 7);
+  tick(world, BUTTONS.ATTACK);
+  runTicks(world, 3);
+  tick(world, BUTTONS.SKILL3);
+  runTicks(world, SKILLS.poisonArrow.windupTicks - 2);
+  assert.equal(player.attack.phase, 'active');
+  assert.equal(player.skillCast.tick, SKILLS.poisonArrow.windupTicks - 1);
+  const castId = player.skillCast.castId;
+  const hpBeforeRelease = target.hp;
+
+  tick(world);
+
+  const skillHit = world.events.find((event) => (
+    event.type === 'hit'
+    && event.targetId === target.id
+    && event.skill === SKILLS.poisonArrow.id
+    && event.castId === castId
+  ));
+  assert.ok(skillHit);
+  assert.ok(skillHit.damage > 0);
+  assert.ok(target.hp < hpBeforeRelease);
+  assert.ok(world.pendingImpacts.some((impact) => (
+    impact.kind === 'poison' && impact.id === castId && impact.targetEntityId === target.id
+  )));
+});
+
+test('cursedHands resolves while a basic staff attack is active', () => {
+  const { world, player, enemies } = makeWorld('skeleton_mage', [{ x: 5, z: 0 }]);
+  const [target] = enemies;
+  tick(world, BUTTONS.ATTACK);
+  runTicks(world, 10);
+  tick(world, BUTTONS.ATTACK);
+  runTicks(world, 2);
+  tick(world, BUTTONS.SKILL2);
+  runTicks(world, SKILLS.cursedHands.windupTicks - 2);
+  assert.equal(player.attack.phase, 'active');
+  assert.equal(player.skillCast.tick, SKILLS.cursedHands.windupTicks - 1);
+  const castId = player.skillCast.castId;
+
+  tick(world);
+
+  assert.ok(target.rootedTicks > 0);
+  assert.ok(world.events.some((event) => (
+    event.type === 'hit'
+    && event.targetId === target.id
+    && event.skill === SKILLS.cursedHands.id
+    && event.castId === castId
+  )));
+});
+
 test('cursedHands roots ordinary and boss enemies for their exact durations without stopping attacks', () => {
   const rooted = makeWorld('skeleton_mage', [
     { x: 5, z: 0, stunnedTicks: 0 },
