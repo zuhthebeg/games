@@ -1077,7 +1077,8 @@ export class HubUI {
 
   showSortie(stage, devWeapon = null) {
     if (!devWeapon && !mapUnlocked(this.save, stage)) throw new Error('아직 잠긴 맵입니다.');
-    if (this.sortieStage !== stage) this.sortieThreat = 1;
+    // A shared hub can retain another character's now-locked selection.
+    if (this.sortieStage !== stage || this.sortieThreat > unlockedThreat(this.save, stage)) this.sortieThreat = 1;
     this.sortieStage = stage;
     this.devWeapon = devWeapon;
     const threat = this.sortieThreat || 1;
