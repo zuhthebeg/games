@@ -2,6 +2,7 @@ import { skillGrowth } from '../content/skill-growth.js';
 import { masteryLevel } from '../meta/skill-mastery.js';
 import { frost20, frostDef } from '../sim/frost-evolution.js';
 import { pierce20, pierceDef } from '../sim/pierce-evolution.js';
+import { ember20, emberDef, EMBER } from '../sim/ember-evolution.js';
 import { knightFormName } from '../content/player-lineages.js';
 import { REGION_EDGES, REGION_ROUTE, MAPS, discoveredMaps, discoveredRegions, mapUnlocked, mapState, availableStages, regionFor } from '../content/world-map.js';
 import { SIDE_QUESTS, OBJECTIVE_QUESTS } from '../content/quest-expansion.js';
@@ -963,7 +964,11 @@ export class HubUI {
     } else if (id === 'pierce_shot' && pierce20({ pierce_shot: masteryLevel(this.save.skillMastery?.[id]) })) {
       p = pierceDef(a).projectile;
     }
-    const zone = id === 'poison_field' || id === 'firewall'
+    const evolvedEmber = id === 'ember_bolt' && ember20({ ember_bolt: masteryLevel(this.save.skillMastery?.[id]) });
+    // emberDef retains the base projectile; the evolved delivery takes precedence.
+    if (evolvedEmber) p = null;
+    const zone = evolvedEmber ? { ...emberDef(a).zone, range: EMBER.range }
+      : id === 'poison_field' || id === 'firewall'
       ? { ...a.zone, ...skillGrowth(id, masteryLevel(this.save.skillMastery?.[id])) } : a.zone;
     const range = p ? `사거리 ${p.rangePx} px · ${p.count}발 · 관통 ${p.pierce}회${p.explode ? ` · 폭발 반경 ${p.explode.radius} px` : ''}`
       : zone ? `고정 지점 사거리 ${zone.range} px · ${zone.radius ? `반경 ${zone.radius} px` : `길이 ${zone.length} px · 폭 ${zone.width * 2} px`} · ${zone.delayMs ? `낙하 대기 ${amount(zone.delayMs / 1000)}초` : `지속 ${amount(zone.durationMs / 1000)}초`}`
