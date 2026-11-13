@@ -81,7 +81,7 @@ export class Sim {
   take(action) { const n = this.p.buffer[action]; if (n > 0) { this.p.buffer[action] = 0; return true; } return false; }
   // Pause/lifecycle boundary: an explicit authoritative mutation, included in snapshots.
   clearInputs() {
-    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; delete p.bPending; delete p.guardArm; delete p.heavyPressAt; delete p.heavyReleasedAfter; }
+    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; delete p.bPending; delete p.guardArm; delete p.heavyPressAt; delete p.heavyReleasedAfter; delete p.guardRelease; }
   }
   // Drain once per step; events are transient presentation output, not replay state.
   drainEvents() { const events = this.events; this.events = []; return events; }
@@ -103,7 +103,7 @@ export class Sim {
         // Buffer wait is not part of the physical hold duration. Remember an
         // early release until the normal 70% link threshold consumes the edge.
         if(p.input.heavy){p.heavyPressAt=this.clock-Math.max(0,p.input.edgeAgeMs?.heavy||0)/1000;delete p.heavyReleasedAfter;}
-        if(p.heavyPressAt!==undefined && !p.input.heavyHeld && p.heavyReleasedAfter===undefined) p.heavyReleasedAfter=Math.max(0,this.clock-p.heavyPressAt);
+        if(p.heavyPressAt!==undefined && !p.input.heavyHeld && p.heavyReleasedAfter===undefined) p.heavyReleasedAfter=Number.isFinite(p.input.heavyHoldMs) ? Math.max(0,p.input.heavyHoldMs)/1000 : Math.max(0,this.clock-p.heavyPressAt);
         if(!p.buffer.heavy && !p.bPending){delete p.heavyPressAt;delete p.heavyReleasedAfter;}
       }
       if (p.input.lock) this.toggleLock();
@@ -175,12 +175,22 @@ export class Sim {
     // No speculative attack: tap fires on release; charge begins after 180ms.
     if (this.wt === 'gs' && !recovery) {
       if (p.bPending) {
+        const canLink=p.state==='idle'||p.state==='atk'&&p.hits>=(p.cur.multi||1)&&p.t>=p.cur.dur*.7;
+        // Preserve existing defensive priority before resolving a delayed B.
+        if(canLink && p.buffer.roll>0 && p.st>=W.rollCost){this.take('roll');this.startRoll(myaw);}
+        else if(p.state==='idle' && p.buffer.potion>0 && p.potions>0 && p.hp<p.maxHp){
+          this.take('potion');delete p.bPending;p.potions--;p.state='drink';p.t=0;this.sound('potion');
+        }
+      }
+      if (p.bPending) {
         p.bPending.time += dt;
         if (!inp.heavyHeld || p.bPending.time > .18 + 1e-9) {
           const b = p.bPending; delete p.bPending;
           if (p.state === 'idle' || p.state === 'atk' && p.hits >= (p.cur.multi || 1) && p.t >= p.cur.dur*.7) {
-            if (!inp.heavyHeld && b.time <= .18 + 1e-9) this.startCombo(1, myaw, hasMv);
-            else this.beginCharge(myaw,hasMv);
+            if (!inp.heavyHeld && (Number.isFinite(inp.heavyHoldMs)?inp.heavyHoldMs/1000:b.time) <= .18 + 1e-9) {
+              const node=b.toNode??(p.state==='atk'&&p.combo>=0?W.combo.next[p.combo][1]:3);
+              this.startAtk(W.light[node]||W.combo.moves[node],0,node,myaw,hasMv);
+            } else this.beginCharge(myaw,hasMv);
           }
         }
       }
@@ -248,7 +258,7 @@ export class Sim {
       case 'drink': if (recovery) { p.state = 'idle'; p.drank = false; break; } if (p.t > .55 && !p.drank) { p.drank = true; p.healLeft += 50; this.burst('heal', p.x, 1.2, p.z, 10, 2, .7, -2); } if (p.t >= 1.25) { p.state = 'idle'; p.drank = false; } break;
       case 'hit': p.x += p.kbx * dt; p.z += p.kbz * dt; p.kbx *= .9; p.kbz *= .9; if (p.t >= .42) p.state = 'idle'; break;
       case 'down': p.x += p.kbx * dt; p.z += p.kbz * dt; p.kbx *= .92; p.kbz *= .92; if (p.t >= 1.15) { p.state = 'idle'; p.inv = .7; } break;
-      case 'stun': if (p.t >= 1.25) p.state = 'idle'; break;
+      case 'stun': if (p.t >= 1.25) {p.state = 'idle';delete p.guardBroken;} break;
       case 'dead': if (!recovery && p.t >= 2.3 && !this.over) { p.state = 'idle'; p.hp = p.maxHp; p.st = 100; p.x = 0; p.z = -34; p.yaw = 0; p.inv = 2.5; this.emit('respawn', { playerId: p.id }); } break;
     }
     if (p.stDelay <= 0 && p.state !== 'roll' && p.state !== 'charge' && p.state !== 'guard') p.st = Math.min(100, p.st + 26 * dt);
@@ -274,7 +284,7 @@ export class Sim {
       delete p.heavyPressAt;delete p.heavyReleasedAfter;
       if(released!==undefined){if(released<=.18+1e-9)this.startCombo(1,myaw,hasMv);else this.beginCharge(myaw,hasMv);}
       else if(age>.18+1e-9)this.beginCharge(myaw,hasMv);
-      else if(!p.bPending)p.bPending={time:age};
+      else if(!p.bPending)p.bPending={time:age,toNode:p.state==='atk'&&p.combo>=0?this.W.combo.next[p.combo][1]:3};
       return;
     }
     const p = this.p, h = this.W.heavy;
@@ -313,6 +323,7 @@ export class Sim {
   hurt(dmg, sx, sz, heavy) {
     if (this.network?.role === 'world' || (this.network && this.activeId !== this.network.localId)) return false;
     const p = this.p; if (p.inv > 0 || p.state === 'dead' || p.state === 'down' || this.over) return false;
+    const keepBreak=this.wt==='gs' && p.state==='stun' && p.guardBroken, breakT=p.t;
     dmg = Math.max(1, Math.round(dmg * this.def.dmg * this.hr.dmg * (this.m.enr ? 1.2 : 1) * 80 / (80 + this.arm.def)));
     let guarded=false,broken=false;
     if(this.wt==='gs' && p.state==='guard' && !p.guardRelease && Math.abs(angDiff(Math.atan2(sx-p.x,sz-p.z),p.yaw))<=70*PI/180+1e-9){
@@ -325,9 +336,11 @@ export class Sim {
     let dx = p.x - sx, dz = p.z - sz; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
     this.burst('blood', p.x, 1.2, p.z, 6, 3, .4); this.emit('flash', { playerId: p.id });
     if (p.hp <= 0) {
-      p.hp = 0; p.state = 'dead'; p.t = 0; this.carts++; this.emit('cart', { playerId: p.id, carts: this.carts }); this.sound('faint'); this.toast('faint', 'bad');
+      delete p.guardBroken; p.hp = 0; p.state = 'dead'; p.t = 0; this.carts++; this.emit('cart', { playerId: p.id, carts: this.carts }); this.sound('faint'); this.toast('faint', 'bad');
       if (this.carts >= MAX_CARTS && this.network?.role !== 'owner') this.finish(false, 2.2);
-    } else { p.state = broken ? 'stun' : guarded ? 'guard' : heavy ? 'down' : 'hit'; p.t = 0; const s = guarded ? 2 : heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (!heavy && !guarded) p.inv = .25; }
+    } else { p.state = broken ? 'stun' : guarded ? 'guard' : heavy ? 'down' : 'hit'; p.t = 0; const s = guarded ? 2 : heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (broken || !heavy && !guarded) p.inv = .25;
+      if(broken)p.guardBroken=true;
+      else if(keepBreak){p.state='stun';p.t=breakT;} }
     return true;
   }
 

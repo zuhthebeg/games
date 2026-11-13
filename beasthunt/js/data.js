@@ -19,9 +19,9 @@ export const WTYPES = {
   gs: {
     speed: 5.4, rollCost: 24,
     light: [
-      { dur: .78, h0: .30, h1: .46, mv: .92, reach: 3.7, arc: 1.3, lunge: 2.2, sw: 'v' },
-      { dur: .80, h0: .30, h1: .48, mv: 1.058, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
-      { dur: 1.10, h0: .48, h1: .66, mv: 1.656, reach: 4.0, arc: 1.3, lunge: 2.6, sw: 'v' },
+      { dur: .78, h0: .30, h1: .46, mv: 1.0, reach: 3.7, arc: 1.3, lunge: 2.2, sw: 'v' },
+      { dur: .80, h0: .30, h1: .48, mv: 1.15, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
+      { dur: 1.10, h0: .48, h1: .66, mv: 1.8, reach: 4.0, arc: 1.3, lunge: 2.6, sw: 'v' },
     ],
     // Numeric A nodes preserve legacy combo snapshots; B nodes use 3/4.
     combo: {

@@ -63,10 +63,10 @@ export class Input {
       b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false });
     });
   }
-  press(a) { this.pressed[a] = performance.now(); this.held[a] = true; }
-  release(a) { this.held[a] = false; }
+  press(a) { const now=performance.now(); this.pressed[a] = now; this.held[a] = true; if(a==='heavy'){this.heavyDownAt=now;delete this.heavyHoldMs;} }
+  release(a) { if(a==='heavy' && this.held[a] && this.heavyDownAt!==undefined)this.heavyHoldMs=Math.max(0,performance.now()-this.heavyDownAt); this.held[a] = false; }
   take(a, win = 260) { const t = this.pressed[a]; if (t && performance.now() - t < win) { this.pressed[a] = 0; return true; } return false; }
-  clear() { this.pressed = {}; this.held = {}; this.keys = {}; this.lx = this.ly = 0; this.joy.x = this.joy.y = 0; }
+  clear() { delete this.heavyDownAt;delete this.heavyHoldMs; this.pressed = {}; this.held = {}; this.keys = {}; this.lx = this.ly = 0; this.joy.x = this.joy.y = 0; }
   move() {
     let x = this.joy.x, y = this.joy.y;
     for (const k in MOVE) if (this.keys[k]) { x += MOVE[k][0]; y += MOVE[k][1]; }
@@ -79,7 +79,7 @@ export class Input {
       edgeAgeMs[edge] = Math.max(0, now - (this.pressed[action] || 0));
     return { moveX: Math.round(mv.x*127), moveZ: Math.round(mv.y*127), aimYaw: yaw,
       light: this.take('attack'), heavy: this.take('heavy'), dodge: this.take('roll'), potion: this.take('potion'), lock: this.take('lock'),
-      edgeAgeMs, attackHeld: !!this.held.attack, heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
+      edgeAgeMs, ...(Number.isFinite(this.heavyHoldMs)?{heavyHoldMs:this.heavyHoldMs}:{}), attackHeld: !!this.held.attack, heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
   }
   takeLook() { const r = { x: this.lx, y: this.ly }; this.lx = this.ly = 0; return r; }
 }
