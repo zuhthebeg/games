@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Sim } from '../js/sim.js';
-import { QUESTS, ATK, DMG_SCALE } from '../js/data.js';
+import { QUESTS, ATK, DMG_SCALE, WTYPES } from '../js/data.js';
 import { envelope, encodeMonster, decodeMonster, encodeHunter, byteLength, LatestState, compatible } from '../js/net/protocol.js';
 import { PlaybackClock } from '../js/net/clock.js';
 import { TickBuffer, HpDisplay } from '../js/net/interp.js';
@@ -98,7 +98,7 @@ function claimFixture(weapon='gs') {
   const v=new HitClaims();
   for(let tick=0;tick<=180;tick++){s.tick=tick;v.record(s);}
   const part=s.mParts()[0];Object.assign(s.p,{x:part.x,z:part.z-2});
-  return {s,v,c:{seq:1,hostTick:180,part:'head',raw:ATK[0]*(weapon==='gs'?1:.4)*DMG_SCALE,moveId:'light:0'}};
+  return {s,v,c:{seq:1,hostTick:180,part:'head',raw:ATK[0]*WTYPES[weapon].light[0].mv*DMG_SCALE,moveId:'light:0'}};
 }
 test('hit claims reject range, raw, duplicate, interval, old history and dead monster',()=>{
   for(const [reason,mutate] of [

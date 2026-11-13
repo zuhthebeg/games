@@ -477,7 +477,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
  const gs=H.gs;if(!gs)return false;
  H.root.position.set(p.x||0,0,p.z||0);H.root.rotation.y=(p.yaw||0)+(p.spin||0);
  H.root.visible=!(p.inv>0&&p.state!=='roll'&&Math.floor(clock*20)%2===0);
- const name=gsClipName(p),meta=GS_CLIPS[name],action=gs.actions[name];
+ const wanted=gsClipName(p),name=wanted==='guard'&&!gs.actions.guard?'charge':wanted,action=gs.actions[name],meta=GS_CLIPS[name]||{...GS_CLIPS.charge,duration:action.getClip().duration};
  const restart=gs.key!==name || p.state==='atk'&&(p.t<gs.lastT-.00001||p.combo!==gs.combo);
  if(restart){
   const immediate=p.state==='atk'||!gs.key;

@@ -1,5 +1,5 @@
-import {Sim} from '../sim.js?v=20261113r6';
-import {MAX_CARTS} from '../data.js?v=20261113r6';
+import {Sim} from '../sim.js?v=20261113r7';
+import {MAX_CARTS} from '../data.js?v=20261113r7';
 import {envelope,validEnvelope,decodeHunter} from './protocol.js';
 import {HostReplication,GuestReplication} from './replication.js';
 import {HitClaims} from './claims.js';
@@ -44,7 +44,7 @@ export class HostSession {
     if(p.type==='hunter') {
       if(!this.incoming.receive(from,p,nowMs))return false;
       const v=decodeHunter(p),prev=this.owners.get(from),player=s.players.find(p=>p.id===from);
-      if(!['idle','atk','charge','roll','drink','hit','down','stun','dead'].includes(v.state))return false;
+      if(!['idle','atk','charge','guard','roll','drink','hit','down','stun','dead'].includes(v.state))return false;
       const ticks=prev ? v.tick-prev.value.tick : 0;
       let vx=ticks>0 ? (v.x-prev.value.x)/ticks : 0,vz=ticks>0 ? (v.z-prev.value.z)/ticks : 0;
       if(Math.hypot(vx,vz)>.3 || (prev?.value.state==='dead' && v.state!=='dead'))vx=vz=0;

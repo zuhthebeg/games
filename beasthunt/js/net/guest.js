@@ -1,4 +1,4 @@
-import {Sim,FIXED_DT} from '../sim.js?v=20261113r6';
+import {Sim,FIXED_DT} from '../sim.js?v=20261113r7';
 import {envelope,encodeHunter,validEnvelope} from './protocol.js';
 import {PlaybackClock} from './clock.js';
 import {TickBuffer} from './interp.js';
@@ -79,7 +79,7 @@ export class GuestSession {
     this.recovery={phase:remaining||s.projs.length?'active':'anchor',remaining,foregroundMs:0,wallAt:null,wasHidden:true,candidate:null,started:nowMs,wallGapMs:this.lastService===null?0:Math.max(0,nowMs-this.lastService),nonce:null,requested:null};
     // Cancel offensive commands at the lifecycle boundary, even if no contact
     // drain is needed. Never resume an old charge, drink trigger or attack.
-    if(['atk','charge','drink'].includes(s.p.state)){s.p.state='idle';s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
+    if(['atk','charge','guard','drink'].includes(s.p.state)){s.p.state='idle';s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
     this.recoveryMetrics.count++;this.recoveryMetrics.unservicedMs=(this.recoveryMetrics.unservicedMs??0)+this.recovery.wallGapMs;s.clearInputs();
     this.transport.sendEvent(envelope('suspend',this.hunt,this.seq++,{}));
   }
@@ -136,7 +136,7 @@ export class GuestSession {
     s.restore(snap);s.network=network;s.activeId=this.uid;s.ended=ended;s.cachedResult=cachedResult;
     // Puppets do not execute owner attacks: their cur/t are not replayable.
     // Apply the same offensive cancellation as suspend after restoring the full owner.
-    if(['atk','charge','drink'].includes(s.p.state)){s.p.state='idle';s.p.t=0;s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
+    if(['atk','charge','guard','drink'].includes(s.p.state)){s.p.state='idle';s.p.t=0;s.p.spin=0;s.p.drank=false;s.p.hits=s.p.cur?.multi||1;}
     this.hostSeq=p.seq;this.cart=v.cartSeq?.[this.uid]??this.cart;
     this.authorityCarts=Math.max(this.authorityCarts,s.carts);s.carts=this.authorityCarts;
     this.pending=[];s.clearInputs();this.presentation=[];this.displayHp=s.m.hp;
@@ -178,7 +178,7 @@ export class GuestSession {
     const s=this.sim;
     if(this.recovery && !s.over){
       const r=this.recovery;
-      this.recoveryMetrics.suppressedInputs+=Object.entries(input).filter(([k,v])=>['light','heavy','dodge','potion','heavyHeld','moveX','moveZ'].includes(k)&&v).length;
+      this.recoveryMetrics.suppressedInputs+=Object.entries(input).filter(([k,v])=>['light','heavy','dodge','potion','heavyHeld','attackHeld','moveX','moveZ'].includes(k)&&v).length;
       s.clearInputs();
       if(r.phase==='active'&&!this.hidden){
         // Same local neutral owner updater before contact, with explicit command

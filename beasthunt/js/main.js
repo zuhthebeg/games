@@ -1,4 +1,4 @@
-import { Coop } from './net/coop.js?v=20261113r6';
+import { Coop } from './net/coop.js?v=20261113r7';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';

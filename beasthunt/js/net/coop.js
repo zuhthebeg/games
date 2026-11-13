@@ -143,7 +143,7 @@ export class Coop {
       const a=this.actions.get(id)?.filter(a=>a.payload.startTick<=view).at(-1)?.payload;
       const start=a&&a.startTick<=view&&a.state===p.state?a.startTick:p.startTick;
       p.t=Math.max(0,(view-start)/60);p.walk=view/60*6;p.moving=r.last&&Math.hypot(p.x-r.last.x,p.z-r.last.z)>.0001?1:0;p.inv=0;p.clv=Math.min(3,p.t/(WTYPES[p.weapon].heavy.charge||1)*3);
-      const W=WTYPES[p.weapon];p.cur=a?.moveId==='heavy'?W.heavy:W.light[Number(a?.moveId?.split(':')[1])||0];
+      const W=WTYPES[p.weapon];p.cur=a?.moveId==='heavy'?W.heavy:(W.light[Number(a?.moveId?.split(':')[1])||0] || W.combo?.moves[Number(a?.moveId?.split(':')[1])]);
       if(!p.cur)p.cur=W.light[0];
       h.syncHunter(p,r.H,dt,r);r.last={x:p.x,z:p.z};rows.push({id,...p});
       const ndc=new THREE.Vector3(p.x,2.6,p.z).project(h.cam);r.label.hidden=ndc.z>1||Math.abs(ndc.x)>1||Math.abs(ndc.y)>1;

@@ -1,8 +1,10 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js?v=20261113r6';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js?v=20261113r7';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
+// Optional attackHeld is the sampled attack level (absent on legacy input = false).
+// Keep it optional in neutralInput so unchanged db/bow and idle replays stay exact.
 // Optional edgeAgeMs maps combat edge names to age at sampling (default 0).
 // This plain replay input preserves the original total 260ms press deadline.
 export const neutralInput = () => ({ moveX: 0, moveZ: 0, aimYaw: 0, light: false, heavy: false, dodge: false, potion: false, lock: false, heavyHeld: false, sprint: false });
@@ -79,7 +81,7 @@ export class Sim {
   take(action) { const n = this.p.buffer[action]; if (n > 0) { this.p.buffer[action] = 0; return true; } return false; }
   // Pause/lifecycle boundary: an explicit authoritative mutation, included in snapshots.
   clearInputs() {
-    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; }
+    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; delete p.bPending; delete p.guardArm; delete p.heavyPressAt; delete p.heavyReleasedAfter; }
   }
   // Drain once per step; events are transient presentation output, not replay state.
   drainEvents() { const events = this.events; this.events = []; return events; }
@@ -96,6 +98,13 @@ export class Sim {
       for (const [edge, action] of [['light','attack'],['heavy','heavy'],['dodge','roll'],['potion','potion']]) if (p.input[edge]) {
         const age = Math.max(0, p.input.edgeAgeMs?.[edge] || 0);
         p.buffer[action] = Math.max(0, (260 - age) / (FIXED_DT * 1000));
+      }
+      if(p.weapon==='gs'){
+        // Buffer wait is not part of the physical hold duration. Remember an
+        // early release until the normal 70% link threshold consumes the edge.
+        if(p.input.heavy){p.heavyPressAt=this.clock-Math.max(0,p.input.edgeAgeMs?.heavy||0)/1000;delete p.heavyReleasedAfter;}
+        if(p.heavyPressAt!==undefined && !p.input.heavyHeld && p.heavyReleasedAfter===undefined) p.heavyReleasedAfter=Math.max(0,this.clock-p.heavyPressAt);
+        if(!p.buffer.heavy && !p.bPending){delete p.heavyPressAt;delete p.heavyReleasedAfter;}
       }
       if (p.input.lock) this.toggleLock();
     }
@@ -147,6 +156,7 @@ export class Sim {
   // ---------- player ----------
   startAtk(move, frac, comboIdx, myaw, hasMv) {
     const p = this.p, m = this.m;
+    delete p.guardArm; delete p.guardRelease; delete p.bPending;
     if (this.network) p.attackTick = this.network.viewTick ?? this.tick;
     p.state = 'atk'; p.t = 0; p.cur = move; p.hits = 0; p.combo = comboIdx; p.spin = 0;
     p.mv = move.mv !== undefined ? move.mv : move.mv0 + (move.mv1 - move.mv0) * Math.pow(frac, 1.3); p.frac = frac;
@@ -161,14 +171,38 @@ export class Sim {
     if (hasMv) { wx /= ml; wz /= ml; }
     const walk = (sp) => { if (!hasMv) { p.moving = 0; return; } p.yaw = turn(p.yaw, myaw, 14 * dt); const v = sp * Math.min(1, ml) * dt; p.x += wx * v; p.z += wz * v; p.walk += v; p.moving = sp / W.speed; };
     if (!recovery && p.healLeft > 0) { const h = Math.min(p.healLeft, 45 * dt); p.healLeft -= h; p.hp = Math.min(p.maxHp, p.hp + h); }
+    // B decision is local-owner simulation state, bounded to one pending press.
+    // No speculative attack: tap fires on release; charge begins after 180ms.
+    if (this.wt === 'gs' && !recovery) {
+      if (p.bPending) {
+        p.bPending.time += dt;
+        if (!inp.heavyHeld || p.bPending.time > .18 + 1e-9) {
+          const b = p.bPending; delete p.bPending;
+          if (p.state === 'idle' || p.state === 'atk' && p.hits >= (p.cur.multi || 1) && p.t >= p.cur.dur*.7) {
+            if (!inp.heavyHeld && b.time <= .18 + 1e-9) this.startCombo(1, myaw, hasMv);
+            else this.beginCharge(myaw,hasMv);
+          }
+        }
+      }
+    }
     switch (p.state) {
       case 'idle': {
         const sprint = inp.sprint && hasMv && p.st > 1; if (sprint) { p.st -= 11 * dt; p.stDelay = .5; }
         walk(W.speed * (sprint ? 1.45 : 1));
         if (this.take('roll') && p.st >= W.rollCost) { this.startRoll(myaw); break; }
-        if (this.take('potion') && p.potions > 0 && p.hp < p.maxHp) { p.potions--; p.state = 'drink'; p.t = 0; this.sound('potion'); break; }
-        if (this.take('attack')) { this.startAtk(W.light[0], 0, 0, myaw, hasMv); break; }
+        if (this.take('potion') && p.potions > 0 && p.hp < p.maxHp) { delete p.bPending; p.potions--; p.state = 'drink'; p.t = 0; this.sound('potion'); break; }
+        if (this.take('attack')) { this.startAtk(W.light[0], 0, 0, myaw, hasMv); if(this.wt==='gs' && inp.attackHeld) p.guardArm=true; break; }
         if (this.take('heavy')) this.startHeavy(myaw, hasMv);
+        break;
+      }
+      case 'guard': {
+        if(recovery){p.state='idle';delete p.guardRelease;break;}
+        walk(W.speed*.35);
+        if(this.lock && this.m.state!=='dead') p.yaw=turn(p.yaw,Math.atan2(this.m.x-p.x,this.m.z-p.z),8*dt);
+        if(this.take('roll') && p.st>=W.rollCost){delete p.guardRelease;this.startRoll(myaw);break;}
+        if(inp.attackHeld) delete p.guardRelease;
+        else {p.guardRelease=(p.guardRelease||0)+dt;if(p.guardRelease>=.12-1e-9){p.state='idle';p.t=0;delete p.guardRelease;}}
+        p.x+=p.kbx*dt;p.z+=p.kbz*dt;p.kbx*=.7;p.kbz*=.7;
         break;
       }
       case 'charge': {
@@ -183,6 +217,10 @@ export class Sim {
         // Recovery consumes no offensive command, hit or arrow, including a
         // previously started action. Mark it spent so resume cannot replay it.
         if (recovery) { p.hits = p.cur?.multi || 1; if (p.t >= (p.cur?.dur ?? 0)) { p.state = 'idle'; p.spin = 0; } break; }
+        if(p.guardArm){
+          if(!inp.attackHeld) delete p.guardArm;
+          else if(p.t>=.20-1e-9){delete p.guardArm;p.state='guard';p.t=0;p.spin=0;p.kbx=p.kbz=0;break;}
+        }
         const a = p.cur, n = a.multi || 1;
         if (a.sw === 'spin') { if (p.t > a.h0 && p.t < a.h1) this.advance(a.lunge / (a.h1 - a.h0) * dt); p.spin = clamp((p.t - a.h0) / (a.h1 - a.h0), 0, 1) * TAU * 2; }
         else if (a.lunge && p.t < a.h0) this.advance(a.lunge / a.h0 * dt);
@@ -194,7 +232,8 @@ export class Sim {
         }
         if (p.hits >= n && p.t >= a.dur * .7) {
           if (this.take('roll') && p.st >= W.rollCost) { this.startRoll(myaw); break; }
-          if (p.combo >= 0 && p.combo + 1 < W.light.length && this.take('attack')) { this.startAtk(W.light[p.combo + 1], 0, p.combo + 1, myaw, hasMv); break; }
+          if(this.wt==='gs' && p.combo>=0 && this.take('attack')){this.startCombo(0,myaw,hasMv);break;}
+          if (this.wt!=='gs' && p.combo >= 0 && p.combo + 1 < W.light.length && this.take('attack')) { this.startAtk(W.light[p.combo + 1], 0, p.combo + 1, myaw, hasMv); break; }
           if (a.shot && this.take('attack')) { this.startAtk(W.light[0], 0, 0, myaw, hasMv); break; }
           if (this.take('heavy')) { this.startHeavy(myaw, hasMv); break; }
         }
@@ -212,7 +251,7 @@ export class Sim {
       case 'stun': if (p.t >= 1.25) p.state = 'idle'; break;
       case 'dead': if (!recovery && p.t >= 2.3 && !this.over) { p.state = 'idle'; p.hp = p.maxHp; p.st = 100; p.x = 0; p.z = -34; p.yaw = 0; p.inv = 2.5; this.emit('respawn', { playerId: p.id }); } break;
     }
-    if (p.stDelay <= 0 && p.state !== 'roll' && p.state !== 'charge') p.st = Math.min(100, p.st + 26 * dt);
+    if (p.stDelay <= 0 && p.state !== 'roll' && p.state !== 'charge' && p.state !== 'guard') p.st = Math.min(100, p.st + 26 * dt);
     p.st = Math.max(0, p.st);
     // body collision with the monster
     const m = this.m;
@@ -223,19 +262,34 @@ export class Sim {
     this.clampArena(p, R_ARENA);
   }
   advance(v) { const p = this.p; p.x += Math.sin(p.yaw) * v; p.z += Math.cos(p.yaw) * v; }
-  startRoll(yaw) { const p = this.p; p.state = 'roll'; p.t = 0; p.yaw = yaw; p.st -= this.W.rollCost; p.stDelay = .7; p.inv = Math.max(p.inv, .38); p.spin = 0; p.clv = 0; this.sound('roll'); this.burst('dust', p.x, .2, p.z, 4, 2, .4, 0); }
+  startRoll(yaw) { const p = this.p; delete p.guardArm; delete p.guardRelease; delete p.bPending; p.state = 'roll'; p.t = 0; p.yaw = yaw; p.st -= this.W.rollCost; p.stDelay = .7; p.inv = Math.max(p.inv, .38); p.spin = 0; p.clv = 0; this.sound('roll'); this.burst('dust', p.x, .2, p.z, 4, 2, .4, 0); }
+  startCombo(button,myaw,hasMv) {
+    const p=this.p,W=this.W,node=p.state==='atk'&&p.combo>=0 ? W.combo.next[p.combo][button] : button===0?0:3;
+    this.startAtk(W.light[node] || W.combo.moves[node],0,node,myaw,hasMv);
+  }
+  beginCharge(myaw,hasMv){const p=this.p;p.state='charge';p.t=0;p.clv=0;if(hasMv)p.yaw=myaw;}
   startHeavy(myaw, hasMv) {
+    if(this.wt==='gs'){
+      const p=this.p,age=p.heavyPressAt===undefined?0:Math.max(0,this.clock-p.heavyPressAt),released=p.heavyReleasedAfter;
+      delete p.heavyPressAt;delete p.heavyReleasedAfter;
+      if(released!==undefined){if(released<=.18+1e-9)this.startCombo(1,myaw,hasMv);else this.beginCharge(myaw,hasMv);}
+      else if(age>.18+1e-9)this.beginCharge(myaw,hasMv);
+      else if(!p.bPending)p.bPending={time:age};
+      return;
+    }
     const p = this.p, h = this.W.heavy;
     if (h.charge > 0) { p.state = 'charge'; p.t = 0; p.clv = 0; if (hasMv) p.yaw = myaw; }
     else if (p.st >= h.cost) { p.st -= h.cost; p.stDelay = .8; this.startAtk(h, 0, -1, myaw, hasMv); }
   }
   meleeHit(a) {
-    const p = this.p; if (this.m.state === 'dead') return false; let best = null, bd = 1e9;
+    const p = this.p; if (this.m.state === 'dead') return false; let best = null, bd = 1e9, special=null, sdBest=1e9;
     for (const c of this.mParts()) {
       const dx = c.x - p.x, dz = c.z - p.z, d = Math.hypot(dx, dz); if (d > a.reach + c.r) continue;
       const ad = Math.abs(angDiff(Math.atan2(dx, dz), p.yaw)), slack = Math.asin(Math.min(1, c.r / Math.max(d, c.r)));
       if (ad > a.arc / 2 + slack) continue; const sd = d - c.r + ad * .6; if (sd < bd) { bd = sd; best = c; }
+      if(this.wt==='gs' && (c.n==='tail'||c.n==='head'&&!this.m.broke.head) && sd<sdBest){special=c;sdBest=sd;}
     }
+    if(best?.n==='body' && special) best=special;
     if (!best) return false;
     const dx = best.x - p.x, dz = best.z - p.z, d = Math.hypot(dx, dz) || 1, k = Math.max(0, d - best.r * .7) / d;
     this.hitMonster(best.n, this.atk * p.mv * DMG_SCALE, p.x + dx * k, p.z + dz * k, p.mv);
@@ -260,13 +314,20 @@ export class Sim {
     if (this.network?.role === 'world' || (this.network && this.activeId !== this.network.localId)) return false;
     const p = this.p; if (p.inv > 0 || p.state === 'dead' || p.state === 'down' || this.over) return false;
     dmg = Math.max(1, Math.round(dmg * this.def.dmg * this.hr.dmg * (this.m.enr ? 1.2 : 1) * 80 / (80 + this.arm.def)));
-    p.hp -= dmg; p.healLeft = 0; p.drank = false; p.spin = 0; this.emit('shake', { amount: heavy ? .7 : .4 }); this.sound('hurt');
+    let guarded=false,broken=false;
+    if(this.wt==='gs' && p.state==='guard' && !p.guardRelease && Math.abs(angDiff(Math.atan2(sx-p.x,sz-p.z),p.yaw))<=70*PI/180+1e-9){
+      guarded=true;const cost=dmg*.9;broken=p.st<cost;p.st=Math.max(0,p.st-cost);p.stDelay=2;
+      dmg=Math.max(1,Math.round(dmg*(broken?.6:.15)));heavy=false;
+      this.emit('guard',{playerId:p.id,broken,damage:dmg,cost});
+    }
+    delete p.guardArm;delete p.bPending;
+    p.hp -= dmg; p.healLeft = 0; p.drank = false; p.spin = 0; this.emit('shake', { amount: guarded ? .12 : heavy ? .7 : .4 }); this.sound('hurt');
     let dx = p.x - sx, dz = p.z - sz; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
     this.burst('blood', p.x, 1.2, p.z, 6, 3, .4); this.emit('flash', { playerId: p.id });
     if (p.hp <= 0) {
       p.hp = 0; p.state = 'dead'; p.t = 0; this.carts++; this.emit('cart', { playerId: p.id, carts: this.carts }); this.sound('faint'); this.toast('faint', 'bad');
       if (this.carts >= MAX_CARTS && this.network?.role !== 'owner') this.finish(false, 2.2);
-    } else { p.state = heavy ? 'down' : 'hit'; p.t = 0; const s = heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (!heavy) p.inv = .25; }
+    } else { p.state = broken ? 'stun' : guarded ? 'guard' : heavy ? 'down' : 'hit'; p.t = 0; const s = guarded ? 2 : heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (!heavy && !guarded) p.inv = .25; }
     return true;
   }
 

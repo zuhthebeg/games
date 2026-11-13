@@ -1,4 +1,4 @@
-import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261113r6';
+import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261113r7';
 const finite=n=>typeof n==='number' && Number.isFinite(n);
 // The caller provides the authenticated rt sender and its roster-bound loadout.
 // Validation is pure with respect to Sim: accepted claims are applied by host only.
@@ -22,7 +22,7 @@ export class HitClaims {
     }
     const W=WTYPES[player.weapon];
     const moveId=c.moveId;
-    const move=moveId==='heavy' ? W?.heavy : /^light:[0-9]+$/.test(moveId) ? W?.light[Number(moveId.slice(6))] : null;
+    const move=moveId==='heavy' ? W?.heavy : /^light:[0-9]+$/.test(moveId) ? (W?.light[Number(moveId.slice(6))] || W?.combo?.moves[Number(moveId.slice(6))]) : null;
     if(!move || !Number.isInteger(player.tier) || !ATK[player.tier-1]) return no('move');
     const maxMv=move.mv ?? move.mv1;
     if(c.raw>ATK[player.tier-1]*maxMv*DMG_SCALE+.001) return no('raw');

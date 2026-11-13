@@ -79,7 +79,7 @@ export class Input {
       edgeAgeMs[edge] = Math.max(0, now - (this.pressed[action] || 0));
     return { moveX: Math.round(mv.x*127), moveZ: Math.round(mv.y*127), aimYaw: yaw,
       light: this.take('attack'), heavy: this.take('heavy'), dodge: this.take('roll'), potion: this.take('potion'), lock: this.take('lock'),
-      edgeAgeMs, heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
+      edgeAgeMs, attackHeld: !!this.held.attack, heavyHeld: !!this.held.heavy, sprint: !!this.held.sprint };
   }
   takeLook() { const r = { x: this.lx, y: this.ly }; this.lx = this.ly = 0; return r; }
 }

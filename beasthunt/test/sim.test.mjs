@@ -85,7 +85,8 @@ test('input quantization, edge buffer expiry and held heavy release',()=>{
   const s=new Sim(QUESTS[0],save('gs'));s.step({p1:{moveX:999.1,moveZ:-99.6}});
   assert.equal(s.p.input.moveX,127);assert.equal(s.p.input.moveZ,-100);
   s.p.state='stun';s.p.t=0;s.step({p1:{light:true}});for(let i=0;i<17;i++)s.step();assert.equal(s.p.buffer.attack,0);
-  s.p.state='idle';s.step({p1:{heavy:true,heavyHeld:true}});assert.equal(s.p.state,'charge');
+  s.p.state='idle';s.step({p1:{heavy:true,heavyHeld:true}});assert.equal(s.p.state,'idle');
+  for(let i=0;i<11;i++)s.step({p1:{heavyHeld:true}});assert.equal(s.p.state,'charge');
   s.step({p1:{heavyHeld:false}});assert.equal(s.p.state,'atk');
 });
 test('result randomness round-trips and result is idempotent',()=>{
@@ -112,7 +113,7 @@ test('render interpolation uses shortest yaw and never mutates sim state',()=>{
 test('sim dependency graph contains no three/DOM/audio/platform randomness',()=>{
   const sim=fs.readFileSync(new URL('../js/sim.js',import.meta.url),'utf8');
   assert.doesNotMatch(sim,/\b(?:THREE|window|document|performance|requestAnimationFrame)\b|Math\.random|from\s+['"][^'"]*(?:three|models|audio|input)/);
-  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261113r6']);
+  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261113r7']);
 });
 
 test('live snapshot preserves charged moves, hitstop, enemy shots and arrow ownership',()=>{

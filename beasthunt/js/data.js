@@ -19,10 +19,17 @@ export const WTYPES = {
   gs: {
     speed: 5.4, rollCost: 24,
     light: [
-      { dur: .78, h0: .30, h1: .46, mv: 1.0, reach: 3.7, arc: 1.3, lunge: 2.2, sw: 'v' },
-      { dur: .80, h0: .30, h1: .48, mv: 1.15, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
-      { dur: 1.10, h0: .48, h1: .66, mv: 1.8, reach: 4.0, arc: 1.3, lunge: 2.6, sw: 'v' },
+      { dur: .78, h0: .30, h1: .46, mv: .92, reach: 3.7, arc: 1.3, lunge: 2.2, sw: 'v' },
+      { dur: .80, h0: .30, h1: .48, mv: 1.058, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
+      { dur: 1.10, h0: .48, h1: .66, mv: 1.656, reach: 4.0, arc: 1.3, lunge: 2.6, sw: 'v' },
     ],
+    // Numeric A nodes preserve legacy combo snapshots; B nodes use 3/4.
+    combo: {
+      next: [[1,3],[2,4],[0,4],[1,4],[0,3]],
+      moves: [null,null,null,
+        { dur:.70,h0:.24,h1:.36,mv:1.15,reach:3.9,arc:1.2,lunge:2.4,sw:'other' },
+        { dur:1.20,h0:.40,h1:.90,mv:1.55,reach:4,arc:Math.PI*2,lunge:1.4,sw:'spin' }],
+    },
     heavy: { charge: 1.5, mv0: 1.3, mv1: 3.8, dur: .95, h0: .28, h1: .46, reach: 4.1, arc: 1.3, lunge: 3, sw: 'v' },
   },
   db: {

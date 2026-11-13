@@ -47,7 +47,7 @@ export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterGS() {
  if (!gsLoad) {
   const start=performance.now(); hunterGSLoad.status='loading';
-  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r6',import.meta.url).href)
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r7',import.meta.url).href)
    .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
  }
