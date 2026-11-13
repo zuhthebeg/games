@@ -62,7 +62,7 @@ export function buildHunterGS(wTier,aTier) {
   if(!asset)return H;
   const model=cloneSkeleton(asset.scene);
   // Existing scene disposal owns its resources, never the cached template.
-  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=M(ARMOR_COL[aTier-1]);o.castShadow=true;o.frustumCulled=false;}});
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
   const sword=hunterBlade(G(),2.12,.23,M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
   sword.rotation.set(0,0,0);
   H.gs=createGSMotion(model,asset.animations,sword);
@@ -166,4 +166,15 @@ export function buildArena(biome, R, low = /[?&]lowfx=1/.test(location.search)) 
     a.needsUpdate = true;
   };
   return { group, update, B };
+}
+
+function paladinMaterial(source,tier){
+ const m=source.clone();m.color.setScalar(1.8);m.emissive.setHex(0x35404a);m.emissiveIntensity=.24;
+ m.onBeforeCompile=shader=>{
+ shader.uniforms.armorTint={value:new THREE.Color(ARMOR_COL[tier-1])};
+ shader.vertexShader='varying vec3 armorPosition;\n'+shader.vertexShader;
+ shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narmorPosition=position;');
+ shader.fragmentShader='uniform vec3 armorTint;\nvarying vec3 armorPosition;\n'+shader.fragmentShader;
+ shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat gray=dot(diffuseColor.rgb,vec3(.299,.587,.114));float sat=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));float mask=(1.-smoothstep(.07,.2,sat))*smoothstep(.65,1.05,armorPosition.y)*(1.-smoothstep(1.38,1.49,armorPosition.y));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(gray*.65+.18)*(.35+armorTint*2.2),mask*.82);');
+ };m.customProgramCacheKey=()=> 'paladin-armor-mask';return m;
 }

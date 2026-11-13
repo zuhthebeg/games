@@ -19,8 +19,8 @@ test('GS statuses fit sim presentation windows; roll and drink have independent 
  assert.equal(gsClipName({state:'idle',moving:0}),'idle');assert.equal(gsClipName({state:'idle',moving:1}),'walk');
  assert.equal(gsClipName({state:'atk',cur:{sw:'v'}}),'v');assert.equal(gsClipName({state:'atk',cur:{sw:'bow'}}),'other');
 });
-test('GS runtime artifact contains one rig, all selected animations and no images',()=>{
+test('GS runtime artifact contains one rig, all selected animations and one embedded diffuse',()=>{
  const b=readFileSync(new URL('../assets/hunter-gs.glb',import.meta.url));const g=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)));
- assert.equal(b.toString('ascii',0,4),'glTF');assert.ok(b.length<=2500000);assert.equal(g.images?.length||0,0);assert.equal(g.skins.length,1);
+ assert.equal(b.toString('ascii',0,4),'glTF');assert.ok(b.length<=2500000);assert.equal(g.images.length,1);assert.equal(g.images[0].mimeType,"image/jpeg");assert.ok(meta.guard&&meta.guardHit&&meta.heavy);assert.equal(g.skins.length,1);
  assert.deepEqual(g.animations.map(a=>a.name).sort(),Object.keys(meta).sort());
 });
