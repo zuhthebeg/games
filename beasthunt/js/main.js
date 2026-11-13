@@ -6,7 +6,7 @@ import { Hunt } from 'bh/game';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261113r8a';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS } from 'bh/models';
-import { initAudio, sfx, setMuted, isMuted } from 'bh/audio';
+import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
 const $ = (id) => document.getElementById(id);
@@ -109,7 +109,7 @@ function renderHub() {
 $('hub').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; initAudio();
   if (b.dataset.q) { sel = b.dataset.q; sfx('ui'); makePreview(); renderHub(); }
-  else if (b.dataset.w) { save.weapon = b.dataset.w; persist(); sfx('ui'); makePreview(); renderHub(); }
+  else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); persist(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';
     if (!u || !canPay(u, kind)) return;
@@ -139,7 +139,7 @@ const ui = {
   pause() { setPaused(true); },
 };
 function setPaused(p) {
-  if (!hunt || hunt.over) return; $('pauseTitle').textContent=t(hunt.session?'menu':'paused'); hunt.paused = p; $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
+  if (!hunt || hunt.over) return; $('pauseTitle').textContent=t(hunt.session?'menu':'paused'); hunt.paused = p; if(p)hunt?.stopAudio?.(); $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
   if (p && document.pointerLockElement) document.exitPointerLock();
 }
 $('resume').onclick = () => setPaused(false);
@@ -156,7 +156,11 @@ function startHunt(qid, session = null) {
   const q = QUESTS.find((x) => x.id === qid); if (!q || (!session && !unlocked(q))) return;
   initAudio(); sfx('ui'); clearCombatUI();
   hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd, session);
+<<<<<<< HEAD
   attachGSChargePresentation(hunt);
+=======
+  if(session)hunt.observeAudioSocket(coop?.ws?._ws,coop?.plan?.roster||{});
+>>>>>>> dae2cc9d (feat(beasthunt): lazy generated greatsword sound palette and listening page)
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
   if (window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });
@@ -171,7 +175,7 @@ function onHuntEnd(res) {
     if(stored && stored!=="1") {try {res=JSON.parse(stored).result;} catch (_) { /* legacy marker */ }}
     if(!duplicate){rewarded.add(id);sessionStorage.setItem(resultKey,JSON.stringify({result:res}));}
   }
-  input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
+  hunt?.stopAudio?.(); input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
   const q = res.quest; let rec = false;
   if (res.win && !duplicate) {
     save.shards += q.shards; for (const [k, n] of Object.entries(res.loot)) save.mats[k] = (save.mats[k] || 0) + n;

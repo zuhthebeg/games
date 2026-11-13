@@ -4,7 +4,8 @@ import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
 import { Sim, R_ARENA } from './sim.js?v=20261113r7';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261113r7';
 import { buildHunter, buildMonster, buildArena, syncHunterGS } from 'bh/models';
-import { sfx } from 'bh/audio';
+import { sfx, stopSfx, stopAllGS, preloadGS } from 'bh/audio';
+import { GSSoundView } from './gs-sound.js?v=20261113r8b';
 
 import { GSImpacts, crossedImpact, isHeavy, chargeTier } from 'bh/gs-impact';
 export { R_ARENA };
@@ -22,6 +23,7 @@ export class Hunt {
     this.r = renderer; this.q = quest; this.save = save; this.ui = ui; this.in = input; this.onEnd = onEnd;
     this.session = session; this.sim = session?.sim || new Sim(quest, save, crypto.getRandomValues(new Uint32Array(1))[0]);
     this.localId = this.sim.players[0].id;
+    this.gsSound = new GSSoundView(sfx,stopSfx); if(this.p.weapon==='gs')void preloadGS();
     // Compatibility aliases for the HUD and existing __bh debug consumers.
     for (const key of ['q','def','hr','m','time','carts','over','win','endT','ended','stop','slow','clock','dmgDealt','projs','arrows'])
       Object.defineProperty(this, key, { get: () => this.sim[key], set: value => { this.sim[key] = value; } });
@@ -100,9 +102,12 @@ export class Hunt {
     for (const e of events) {
       switch (e.type) {
         case 'sound': {
-          const heavy=isHeavy(this.p)&&['hit','hitBig'].includes(e.name), tier=chargeTier(this.p);
-          sfx(e.name,heavy?{pitch:.88-tier*.09,volume:1+tier*.15}:undefined); break;
+          // Monster swings have no hunter identity; only remap while hunter is attacking.
+          const source=this.sim.players.find(p=>p.id===e.playerId)||this.p;
+          const monsterSwing=['swing','swingH'].includes(e.name)&&(source.state!=='atk'||source.t>1/60+.001);
+          this.gsSound.event(e,monsterSwing?{...source,weapon:null}:source,this.p); break;
         }
+        case 'guard': this.gsSound.event(e,this.sim.players.find(p=>p.id===e.playerId)||this.p,this.p); break;
         case 'toast': this.ui.toast(e.key, e.kind); break;
         case 'flash': this.ui.flash(); break;
         case 'hit': this.ui.dmg(new THREE.Vector3(e.x,e.y,e.z).project(this.cam),e.damage,e.cls); break;
@@ -113,10 +118,33 @@ export class Hunt {
         case 'hideTele': this.hideTele(); break;
         case 'telegraph': this.showTele(...e.args); break;
         case 'respawn': if (e.playerId === this.localId) this.cy = 0; break;
-        case 'break': this.breakVisual(e.part); break;
+        case 'break': this.breakVisual(e.part); if(this.session)this.gsSound.event({type:'sound',name:'break'},this.p,this.p); break;
         case 'result': sfx(e.result.win ? 'win' : 'fail'); this.onEnd(e.result); break;
       }
     }
+  }
+  observeAudioSocket(socket, roster) {
+    if(!socket?.addEventListener)return;
+    this.audioClaims=[];const seen=new Map();
+    const listener=ev=>{try{
+      const d=JSON.parse(ev.data),q=d.data?.bh,from=d.from,c=q?.payload;
+      if(d.type!=='rt'||q?.type!=='hit'||q.v!==2||q.hunt!==this.session?.hunt||from===this.localId||roster[from]?.save.weapon!=='gs'||!Number.isSafeInteger(q.seq)||q.seq<=(seen.get(from)??-1))return;
+      if(!Number.isFinite(c?.hostTick)||!Number.isFinite(c.raw)||c.raw<=0||!Object.hasOwn(this.def.parts,c.part))return;
+      seen.set(from,q.seq);this.audioClaims.push({from,c});if(this.audioClaims.length>16)this.audioClaims.shift();
+    }catch{} };
+    socket.addEventListener('message',listener);this.detachAudio=()=>socket.removeEventListener('message',listener);
+  }
+  remoteAudioHits() {
+    if(this.over||this.paused||document.hidden){if(this.audioClaims)this.audioClaims=[];return;}
+    const view=this.session?.rep.clock.playTick;if(!Number.isFinite(view)||!this.audioClaims)return;
+    this.audioClaims=this.audioClaims.filter(({from,c})=>{
+      if(c.hostTick>view)return c.hostTick-view<60;
+      if(view-c.hostTick>30)return false;
+      const p=this.session.rep.hunters.get(from)?.sample(view);
+      // Audible prediction only, like the local hit cue; no claims/HP/wire mutation.
+      if(p){this.gsSound.event({type:'sound',name:'hit'},p,this.p);if(this.def.parts[c.part]*(this.m.state==='topple'?1.1:1)>=1.2)this.gsSound.event({type:'sound',name:'weak'},p,this.p);}
+      return false;
+    });
   }
   breakVisual(part) {
     const G = this.G;
@@ -171,6 +199,8 @@ export class Hunt {
     });
     // Wall-time view pause only: fixed ticks and input above always continue.
     if ((this.impactStop || 0) > 0) { this.impactStop = Math.max(0,this.impactStop-rdt); this.updHud(); return; }
+    this.remoteAudioHits?.();
+    if(this.session)this.gsSound?.prune(new Set([this.localId,...this.session.rep.hunters.keys()]));
     this.gsImpacts?.update(rdt);
     const dt = this.stop > 0 ? 0 : this.slow > 0 ? rdt*.28 : rdt;
     for (const q of this.parts) if (q.life > 0) { q.life -= dt; q.vy -= q.g * dt; const o = q.m.position; o.x += q.vx * dt; o.y += q.vy * dt; o.z += q.vz * dt; if (o.y < .05) { o.y = .05; q.vy *= -.3; } const k = q.life / q.max; q.m.scale.setScalar(Math.max(.01, k) * 1.2); q.m.rotation.x += dt * 9; if (q.life <= 0) q.m.visible = false; }
@@ -221,6 +251,7 @@ export class Hunt {
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;
   }
   syncHunter(p, H, dt, cache = this) {
+    if(!this.over && !this.paused && !document.hidden)this.gsSound?.update(p,this.p,p.id!==this.localId);
     const skinned=p.weapon==='gs' && H.gs && syncHunterGS(p,H,dt,this.clock);
     if (p.state==='charge') H.chargeLevel=Math.min(2,Math.floor(p.clv||0));
     if (crossedImpact(p,H)) {
@@ -229,6 +260,7 @@ export class Hunt {
       H.root.updateWorldMatrix(true,true);
       const point=blade?.localToWorld(new THREE.Vector3(0,0,2.12));
       const f=this.gsImpacts.spawn(visual,point);
+      this.gsSound?.slam(p,this.p,f.tier);
       if (!this.gsImpacts.low) this.burst('dust',f.x,.15,f.z,6+f.tier*3,2.5+f.tier,.55);
       if (p.id === this.localId) { this.impactStop=[.06,.09,.12][f.tier]; this.shake=Math.max(this.shake,.55+f.tier*.25); this.fovPunch=1.2+f.tier*.8; this.cam.fov=58-this.fovPunch; this.cam.updateProjectionMatrix(); }
     }
@@ -281,6 +313,7 @@ export class Hunt {
     e.rage.hidden = !m.enr; e.lock.classList.toggle('on', this.lock);
     const ch = p.state === 'charge'; e.charge.hidden = !ch; if (ch) { const fr = clamp(p.t / this.W.heavy.charge, 0, 1); e.chargeFill.style.width = fr * 100 + '%'; e.chargeFill.className = 'lv' + Math.floor(fr * 3 + .001); }
   }
+  stopAudio() { stopAllGS(); }
   resize(w, h) { this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
-  dispose() { this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
+  dispose() { this.detachAudio?.(); this.gsSound?.dispose(); stopAllGS(); this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
 }

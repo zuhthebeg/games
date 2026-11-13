@@ -1,0 +1,114 @@
+[
+  {
+    "name": "r8b-gs_swing_b-3.wav",
+    "prompt": "Immediately audible at the beginning: A quick short thrust of a massive steel sword, compact low swish and metallic vibration, isolated dry sound, no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84103
+  },
+  {
+    "name": "r8b-gs_swing_b-4.wav",
+    "prompt": "Immediately audible at the beginning: A quick short thrust of a massive steel sword, compact low swish and metallic vibration, isolated dry sound, no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84104
+  },
+  {
+    "name": "r8b-gs_hit-3.wav",
+    "prompt": "Immediately audible at the beginning: A heavy steel blade cutting thick leather and flesh with a solid weighty thud and short sharp slice, isolated game foley, no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84113
+  },
+  {
+    "name": "r8b-gs_hit-4.wav",
+    "prompt": "Immediately audible at the beginning: A heavy steel blade cutting thick leather and flesh with a solid weighty thud and short sharp slice, isolated game foley, no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84114
+  },
+  {
+    "name": "r8b-gs_hit_weak-3.wav",
+    "prompt": "Immediately audible at the beginning: A sharp steel sword slash impact, bright brief metallic ring over a solid leather cutting thud, isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84123
+  },
+  {
+    "name": "r8b-gs_hit_weak-4.wav",
+    "prompt": "Immediately audible at the beginning: A sharp steel sword slash impact, bright brief metallic ring over a solid leather cutting thud, isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84124
+  },
+  {
+    "name": "r8b-gs_charge_3-3.wav",
+    "prompt": "Immediately audible at the beginning: An intense brief rising ringing steel blade resonance, a powerful metallic energy pulse, isolated no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84133
+  },
+  {
+    "name": "r8b-gs_charge_3-4.wav",
+    "prompt": "Immediately audible at the beginning: An intense brief rising ringing steel blade resonance, a powerful metallic energy pulse, isolated no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84134
+  },
+  {
+    "name": "r8b-gs_charge_release-3.wav",
+    "prompt": "Immediately audible at the beginning: A sharp metallic reverse swell inhaling air followed by a tiny steel click, massive sword release preparation, dry isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84143
+  },
+  {
+    "name": "r8b-gs_charge_release-4.wav",
+    "prompt": "Immediately audible at the beginning: A sharp metallic reverse swell inhaling air followed by a tiny steel click, massive sword release preparation, dry isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84144
+  },
+  {
+    "name": "r8b-gs_guard_break-3.wav",
+    "prompt": "Immediately audible at the beginning: An extremely heavy metal strike with a sharp steel cracking and shattering sound, low impact and brief metallic debris, isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84153
+  },
+  {
+    "name": "r8b-gs_guard_break-4.wav",
+    "prompt": "Immediately audible at the beginning: An extremely heavy metal strike with a sharp steel cracking and shattering sound, low impact and brief metallic debris, isolated no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84154
+  },
+  {
+    "name": "r8b-gs_roll-3.wav",
+    "prompt": "Immediately audible at the beginning: A single armored body rolling on dry earth, short cloth scrape and subtle steel armor rattle, close dry foley, no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84163
+  },
+  {
+    "name": "r8b-gs_roll-4.wav",
+    "prompt": "Immediately audible at the beginning: A single armored body rolling on dry earth, short cloth scrape and subtle steel armor rattle, close dry foley, no voice no music. One distinct isolated effect with a natural short decay. No silence before the action.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 84164
+  }
+]

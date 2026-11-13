@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>대검 소리 청취</title>
+<style>body{font:16px system-ui;max-width:860px;margin:24px auto;padding:0 16px;background:#171715;color:#efe9db}button,input{font:inherit;min-height:44px}button{margin:4px;padding:8px 14px;background:#34342b;color:inherit;border:1px solid #777;border-radius:6px}section{border-top:1px solid #555;padding:12px 0}small{display:block;color:#c6c5b6}pre{white-space:pre-wrap}a{color:#e5c27b}</style>
+<h1>대검 소리 청취</h1><p>첫 재생은 준비 전 합성음으로 대체될 수 있어. 준비 후 다시 눌러 샘플을 비교해 줘. 청취 판정은 cocy 필요.</p>
+<label>볼륨 <input id="volume" type="range" min="0" max="1" step=".01" value=".5"></label><button id="prepare">샘플 준비</button><button id="stop">모두 정지</button><p id="status" role="status">대기</p><main id="sounds"></main>
+<details><summary>출처·라이선스·생성 프롬프트</summary><p>MOSS-SoundEffect v2.0 로컬 생성. 외부 CC0 보조 미사용.</p><a href="assets/audio/LICENSES.md">라이선스 근거</a> · <a href="assets/audio/PROMPTS.md">프롬프트·시드·선별 기록</a><pre id="prompts"></pre></details>
+<script type="module">
+import {initAudio,sfx,preloadGS,setVolume,stopAllGS,GS_SAMPLES} from './js/audio.js?v=20261113r8b';
+const $=id=>document.getElementById(id);let ready=false;
+$('volume').oninput=e=>setVolume(e.target.value);
+$('prepare').onclick=async()=>{initAudio();$('status').textContent='준비 중';await preloadGS();ready=true;$('status').textContent='준비 요청 완료 (실패 파일은 합성음 대체)';};
+$('stop').onclick=()=>{stopAllGS();$('status').textContent='정지';};
+for(const [name,pool]of Object.entries(GS_SAMPLES)){
+ const section=document.createElement('section'), title=document.createElement('strong');title.textContent=name;section.append(title);
+ for(const variant of [-1,...pool.map((_,i)=>i)]){const b=document.createElement('button');b.textContent=variant<0?'랜덤':'변형 '+(variant+1);b.onclick=()=>{initAudio();if(name==='gs_charge_loop')stopAllGS();const result=sfx(name,{...(variant<0?{}:{variant}),loop:name==='gs_charge_loop',key:'test-loop'});$('status').textContent=name+' · '+result+(ready?'':' · 준비 전');};section.append(b);}
+ $('sounds').append(section);
+}
+fetch('assets/audio/PROMPTS.md').then(r=>r.text()).then(s=>$('prompts').textContent=s);
+addEventListener('pagehide',stopAllGS);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopAllGS();});
+</script></html>

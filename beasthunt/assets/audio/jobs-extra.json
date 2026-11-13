@@ -1,0 +1,18 @@
+[
+  {
+    "name": "r8b-gs_hit_weak-5.wav",
+    "prompt": "A single heavy sword hits a thick metal and leather shield, sharp bright metallic clang with a sustained resonant ringing decay and a solid low thud underneath. Close dry isolated realistic sound. The strike happens immediately. No voice, no music.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 85125
+  },
+  {
+    "name": "r8b-gs_hit_weak-6.wav",
+    "prompt": "A single heavy sword hits a thick metal and leather shield, sharp bright metallic clang with a sustained resonant ringing decay and a solid low thud underneath. Close dry isolated realistic sound. The strike happens immediately. No voice, no music.",
+    "seconds": 2,
+    "steps": 100,
+    "cfg_scale": 4,
+    "seed": 85126
+  }
+]
