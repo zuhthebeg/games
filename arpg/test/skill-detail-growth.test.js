@@ -68,6 +68,8 @@ for (const [level, pierce] of [[19, 2], [20, 3], [30, 3]]) {
 // Each skill includes every eligible lineage and all mastery levels 1..30.
 // PF1 poison_field alone refreshed after exact pre/post comparison: only its
 // common radius/duration row changes; poison-field-detail.test.js checks real zones.
+// FW1 firewall alone refreshed after exact pre/post comparison: only its common
+// duration row changes; firewall-detail.test.js checks real zone lifetimes.
 const BASELINE = {
   "poison_arrow": "54fd54dc5e1ccfe312af923f2210577cb30d9d0163480046785404f7f1371430",
   "cursed_hands": "a4ea45e7617f63a60aa33320169dbfa054cf1ec9a587892a3d81b13ebe3696f7",
@@ -91,14 +93,14 @@ const BASELINE = {
   "rain_arrow": "c47689270b2002e0e15b2cc1f5bf5dae59629e838a1b86dc96077ae8368f2ccd",
   "spinning_shot": "a7b45c276665b40aae95fd8e69fcc0eada4b23b6ecc85f2193fb1a5c973bca62",
   "meteor": "6c65eb80494652539c4ef2e58d4ace916f884da3187d571a1fc3db35d6b6dd9c",
-  "firewall": "6dacb0f2dd47aa81ffa4d3fde2d2cecc38a580690d7633e5f059a60a6937a059",
+  "firewall": "d9ee27bdac3e204a4407321c993f3788a1ae1db22a0e273c30371407402b43a4",
   "flame_ring": "db86d89adbfc2d97ac0eeb7289a64c5020765c5eb03f6827b85daac3e141f761",
   "lunge": "c69e4e317bdbac152e4eb31a09fb07b726e1b7b590815e16d725806124f7ffa2",
   "volley": "2f75166072229214dd834b8a710489290ee3f8cebac5982524d475edb74e5963",
   "ember_bolt": "af6fd6c87ff537e718800c162df41a955de718ae51cb6f2c234c7dbb55860983"
 };
 for (const [id, expected] of Object.entries(BASELINE)) {
-  test((id === 'poison_field' ? 'PF1 exact full detail HTML: ' : 'unchanged full detail HTML: ') + id, () => {
+  test((id === 'poison_field' ? 'PF1 exact full detail HTML: ' : id === 'firewall' ? 'FW1 exact full detail HTML: ' : 'unchanged full detail HTML: ') + id, () => {
     const html = [];
     for (const lineage of ['human', 'skeleton_knight', 'skeleton_mage', 'skeleton_archer']) {
       for (let level = 1; level <= 30; level++) {
