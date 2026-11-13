@@ -7,7 +7,7 @@ import { attackReach } from '../core/attack-assist.js';
 import { COMBO_TIMELINES, pickAimTarget } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
 import { LINEAGES, lineageDisplayName, lineageOf } from '../content/lineages.js';
-import { FAMILY_SKILLS } from '../content/skills.js';
+import { SKILLS, skillsFor } from '../content/skills.js';
 import {
   DONOR_PARTS,
   PART_SCALE,
@@ -1817,7 +1817,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     if (!player) return 0;
     const slot = Number.isInteger(skill)
       ? skill
-      : (FAMILY_SKILLS[player.family] ?? []).indexOf(skill) + 1;
+      : skillsFor(player.family, player.lineage).indexOf(skill) + 1;
     if (slot < 1) return 0;
     const rank = player.masteryRanks?.[slot]
       ?? (Array.isArray(player.mastery) ? player.mastery[slot - 1] : player.mastery?.[slot]);
@@ -1923,12 +1923,13 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     ));
     const rankFive = owner && this.masteryRankForSkill(
       event.ownerId,
-      owner.skillCast?.name ?? owner.skill,
+      event.skillKey ?? owner.skillCast?.name ?? owner.skill,
     ) === 5;
+    const poisonArrow = event.skillKey === 'poisonArrow';
     const geometry = new THREE.CylinderGeometry(0.018, 0.018, event.length, 5);
     const material = new THREE.MeshStandardMaterial({
-      color: rankFive ? 0xfff2c4 : 0xffe9ab,
-      emissive: rankFive ? 0xffe8a0 : 0xffbd58,
+      color: poisonArrow ? 0x9be879 : rankFive ? 0xfff2c4 : 0xffe9ab,
+      emissive: poisonArrow ? 0x46d437 : rankFive ? 0xffe8a0 : 0xffbd58,
       emissiveIntensity: 1.6,
       transparent: true,
       opacity: 0.9,
@@ -1940,6 +1941,106 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     mesh.position.set(event.x + direction.x * event.length / 2, 0.55, event.z + direction.z * event.length / 2);
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
     this.addTransient(mesh, geometry, material, { startTime: now, durationMs: 80 });
+  }
+
+  createPoisonPuff(event) {
+    const { originX: x, originZ: z } = event.shape;
+    const geometry = new THREE.SphereGeometry(0.13, 8, 6);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0x71e249,
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, 0.55, z);
+    mesh.scale.set(1, 0.72, 1);
+    this.addTransient(mesh, geometry, material, {
+      startTick: event.resolveTick,
+      endTick: event.resolveTick + 12,
+      update: (effect, tick) => {
+        const progress = THREE.MathUtils.clamp((tick - event.resolveTick) / 12, 0, 1);
+        effect.mesh.scale.set(1 + progress * 1.8, 0.72 + progress, 1 + progress * 1.8);
+        effect.material.opacity = 0.8 * (1 - progress);
+      },
+    });
+  }
+
+  createDeadBurst(event) {
+    const { originX: x, originZ: z, radius } = event.shape;
+    this.createImpactRing(x, z, radius, 0xe5dfcb, event.resolveTick, event.resolveTick + 20);
+    for (let index = 0; index < 8; index += 1) {
+      const angle = index * Math.PI / 4;
+      const geometry = new THREE.OctahedronGeometry(0.16, 0);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xe5dfcb,
+        emissive: 0x665846,
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0.95,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      this.addTransient(mesh, geometry, material, {
+        startTick: event.resolveTick,
+        endTick: event.resolveTick + 18,
+        update: (effect, tick) => {
+          const progress = THREE.MathUtils.clamp((tick - event.resolveTick) / 18, 0, 1);
+          const distance = radius * (0.25 + progress * 0.75);
+          effect.mesh.position.set(x + Math.cos(angle) * distance, 0.2 + Math.sin(progress * Math.PI) * 0.7, z + Math.sin(angle) * distance);
+          effect.mesh.rotation.set(progress * Math.PI, angle + progress * Math.PI, progress * Math.PI * 0.7);
+          effect.mesh.scale.setScalar(1 - progress * 0.65);
+          effect.material.opacity = 0.95 * (1 - progress);
+        },
+      });
+    }
+  }
+
+  createCursedHands(event) {
+    const { originX: x, originZ: z, radius } = event.shape;
+    const endsTick = event.endsTick ?? event.resolveTick + SKILLS.cursedHands.rootTicks;
+    this.createImpactRing(x, z, radius, 0x9b68d8, event.resolveTick, endsTick);
+    const geometry = new THREE.CircleGeometry(radius * 0.88, 32);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0x6532a0,
+      transparent: true,
+      opacity: 0.24,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const circle = new THREE.Mesh(geometry, material);
+    circle.rotation.x = -Math.PI / 2;
+    circle.position.set(x, 0.035, z);
+    this.addTransient(circle, geometry, material, {
+      startTick: event.resolveTick,
+      endTick: endsTick,
+      update: (effect, tick) => {
+        const progress = THREE.MathUtils.clamp((tick - event.resolveTick) / Math.max(1, endsTick - event.resolveTick), 0, 1);
+        effect.material.opacity = 0.24 * (0.75 + Math.sin(tick * 0.35) * 0.25) * (1 - progress * 0.25);
+      },
+    });
+    for (let index = 0; index < 6; index += 1) {
+      const angle = index * Math.PI / 3;
+      const fingerGeometry = new THREE.ConeGeometry(0.13, 0.62, 5);
+      const fingerMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8f54c6,
+        emissive: 0x35154f,
+        transparent: true,
+        opacity: 0.82,
+      });
+      const finger = new THREE.Mesh(fingerGeometry, fingerMaterial);
+      finger.position.set(x + Math.cos(angle) * radius * 0.68, 0.28, z + Math.sin(angle) * radius * 0.68);
+      finger.rotation.z = -Math.cos(angle) * 0.42;
+      finger.rotation.x = Math.sin(angle) * 0.42;
+      this.addTransient(finger, fingerGeometry, fingerMaterial, {
+        startTick: event.resolveTick,
+        endTick: endsTick,
+        update: (effect, tick) => {
+          const progress = THREE.MathUtils.clamp((tick - event.resolveTick) / Math.max(1, endsTick - event.resolveTick), 0, 1);
+          effect.mesh.scale.y = 0.7 + Math.sin(tick * 0.24 + index) * 0.12;
+          effect.material.opacity = 0.82 * (1 - progress * 0.35);
+        },
+      });
+    }
   }
 
   createImpactRing(x, z, radius, color, startTick, endTick) {
@@ -2031,6 +2132,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   }
 
   createImpact(event) {
+    if (event.kind === 'poison-puff') {
+      this.createPoisonPuff(event);
+      return;
+    }
     const key = `${event.ownerId}:${event.castSeq}`;
     if (this.seenImpactCasts.has(key)) return;
     this.seenImpactCasts.add(key);
@@ -2038,6 +2143,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const { originX: x, originZ: z, radius } = event.shape;
     const skillKey = {
       burn: 'flame',
+      poison: 'poisonArrow',
+      'poison-puff': 'poisonArrow',
+      deadBurst: 'deadBurst',
+      cursedHands: 'cursedHands',
       frost: 'frost',
       quake: 'quake',
       meteor: 'meteor',
@@ -2075,6 +2184,12 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
           effect.material.opacity = 0.15 + (Math.sin(tick * 0.55) + 1) * 0.045;
         },
       });
+    } else if (event.kind === 'deadBurst') {
+      this.createDeadBurst(event);
+    } else if (event.kind === 'cursedHands') {
+      this.createCursedHands(event);
+    } else if (event.kind === 'poison') {
+      this.createPoisonPuff(event);
     } else {
       const color = rankFive ? 0xfff2c4 : event.kind === 'quake' ? 0xe5be72
         : event.kind === 'meteor' ? 0xff8c4a : 0x91dfff;

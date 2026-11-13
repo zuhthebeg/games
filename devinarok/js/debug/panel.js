@@ -1,5 +1,5 @@
 import { ITEM_BASES, ITEMS, RARITIES } from '../content/items.js';
-import { FAMILY_SKILLS } from '../content/skills.js';
+import { skillsFor } from '../content/skills.js';
 import { isStageUnlocked, STAGES, STAGE_LIST } from '../content/stages.js';
 import { createHubWorld, completeStage, rollStageItem } from '../sim/world.js';
 import { escapeHtml } from '../ui/escape-html.js';
@@ -500,7 +500,7 @@ export function mountDebugPanel(context) {
     } else if (action === 'mastery-max' || action === 'mastery-reset') {
       const family = characterFamily();
       const xp = action === 'mastery-max' ? 300 : 0;
-      await commitDebugOps((FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword).map((skill) => ({
+      await commitDebugOps(skillsFor(family, context.character?.lineage).map((skill) => ({
         type: 'setMastery',
         skill,
         xp,
