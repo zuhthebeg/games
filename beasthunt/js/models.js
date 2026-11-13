@@ -4,7 +4,8 @@ import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-export { syncHunterGS };
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261113r9';
+export { syncHunterGS, syncHunterBow };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
 const G=(x=0,y=0,z=0)=>{const g=new THREE.Group();g.position.set(x,y,z);return g;};
@@ -75,8 +76,40 @@ export function loadHunterGS() {
  }
  return gsLoad;
 }
+let bowLoad, bowAsset;
+export const hunterBowLoad = { status: 'idle', ms: 0, error: null };
+export function loadHunterBow() {
+ if (!bowLoad) {
+  const start=performance.now(); hunterBowLoad.status='loading';
+  bowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-bow.glb?v=20261113r9',import.meta.url).href)
+   .then(asset=>{bowAsset=asset;hunterBowLoad.status='ready';hunterBowLoad.ms=performance.now()-start;return asset;})
+   .catch(error=>{hunterBowLoad.status='failed';hunterBowLoad.error=String(error);return null;});
+ }
+ return bowLoad;
+}
+// Bow prop in left-hand socket space: +Y limb, grip at origin, belly to -X.
+function hunterBowProp(dark,trim,steel){
+ const g=G();
+ horn(g,[[.22,-.62,.02],[.12,-.5,.01],[.02,-.28,0],[0,0,0],[.02,.28,0],[.12,.5,.01],[.22,.62,.02]],.05,steel);
+ link(g,[0,-.08,-.02],[0,.08,-.02],.055,.055,dark);
+ g.userData.weaponColor=steel.color.getHex();return g;
+}
 export function buildHunter(wt,wTier,aTier) {
- return wt==='gs' ? buildHunterGS(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
+ return wt==='gs' ? buildHunterGS(wTier,aTier) : wt==='bow' ? buildHunterBow(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
+}
+export function buildHunterBow(wTier,aTier) {
+ const H=buildProceduralHunter('bow',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
+ const upgrade=asset=>{
+  if(!asset)return H;
+  const model=cloneSkeleton(asset.scene);
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
+  const bow=hunterBowProp(M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
+  H.bow=createBowMotion(model,asset.animations,bow);
+  for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
+  H.root.add(model); return H;
+ };
+ H.ready=bowAsset ? Promise.resolve(upgrade(bowAsset)) : loadHunterBow().then(upgrade);
+ return H;
 }
 export function buildHunterGS(wTier,aTier) {
  const H=buildProceduralHunter('gs',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
