@@ -1,11 +1,12 @@
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261113r5';
-import { FixedClock, interpolatePose } from './fixed.js?v=20261113r5';
+import { Sim, R_ARENA } from './sim.js?v=20261113r6';
+import { FixedClock, interpolatePose } from './fixed.js?v=20261113r6';
 import { buildHunter, buildMonster, buildArena, syncHunterGS } from 'bh/models';
 import { sfx } from 'bh/audio';
 
+import { GSImpacts, crossedImpact, isHeavy, chargeTier } from 'bh/gs-impact';
 export { R_ARENA };
 const PI = Math.PI, TAU = PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -59,7 +60,7 @@ export class Hunt {
     this.pm = {}; for (const k in PCOL) this.pm[k] = new THREE.MeshBasicMaterial({ color: PCOL[k] });
     const pg = new THREE.OctahedronGeometry(.2, 0); this.parts = [];
     for (let i = 0; i < 170; i++) { const m = new THREE.Mesh(pg, this.pm.spark); m.visible = false; sc.add(m); this.parts.push({ m, life: 0, max: 1, vx: 0, vy: 0, vz: 0, g: 0 }); }
-    this.pi = 0;
+    this.pi = 0; this.gsImpacts = new GSImpacts(sc, /[?&]lowfx=1/.test(location.search));
     const sg = new THREE.SphereGeometry(1, 8, 6); this.projPool = [];
     for (let i = 0; i < 8; i++) { const m = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: 0xffffff })); m.visible = false; sc.add(m); this.projPool.push(m); }
     const ag = new THREE.BoxGeometry(.07, .07, 1.2); this.arrowPool = [];
@@ -98,7 +99,10 @@ export class Hunt {
   presentEvents(events = this.sim.drainEvents()) {
     for (const e of events) {
       switch (e.type) {
-        case 'sound': sfx(e.name); break;
+        case 'sound': {
+          const heavy=isHeavy(this.p)&&['hit','hitBig'].includes(e.name), tier=chargeTier(this.p);
+          sfx(e.name,heavy?{pitch:.88-tier*.09,volume:1+tier*.15}:undefined); break;
+        }
         case 'toast': this.ui.toast(e.key, e.kind); break;
         case 'flash': this.ui.flash(); break;
         case 'hit': this.ui.dmg(new THREE.Vector3(e.x,e.y,e.z).project(this.cam),e.damage,e.cls); break;
@@ -165,6 +169,9 @@ export class Hunt {
       if (this.session) this.presentEvents(this.session.tick(this.in.sample(this.cy), performance.now()));
       else { this.sim.step({ [this.localId]: this.in.sample(this.cy) }); this.presentEvents(); }
     });
+    // Wall-time view pause only: fixed ticks and input above always continue.
+    if ((this.impactStop || 0) > 0) { this.impactStop = Math.max(0,this.impactStop-rdt); this.updHud(); return; }
+    this.gsImpacts?.update(rdt);
     const dt = this.stop > 0 ? 0 : this.slow > 0 ? rdt*.28 : rdt;
     for (const q of this.parts) if (q.life > 0) { q.life -= dt; q.vy -= q.g * dt; const o = q.m.position; o.x += q.vx * dt; o.y += q.vy * dt; o.z += q.vz * dt; if (o.y < .05) { o.y = .05; q.vy *= -.3; } const k = q.life / q.max; q.m.scale.setScalar(Math.max(.01, k) * 1.2); q.m.rotation.x += dt * 9; if (q.life <= 0) q.m.visible = false; }
     this.arena.update(dt,this.clock); this.syncModels(dt);
@@ -214,7 +221,18 @@ export class Hunt {
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;
   }
   syncHunter(p, H, dt, cache = this) {
-    if (p.weapon === 'gs' && H.gs && syncHunterGS(p, H, dt, this.clock)) return;
+    const skinned=p.weapon==='gs' && H.gs && syncHunterGS(p,H,dt,this.clock);
+    if (p.state==='charge') H.chargeLevel=Math.min(2,Math.floor(p.clv||0));
+    if (crossedImpact(p,H)) {
+      const visual=p.id===this.localId?p:{...p,frac:((H.chargeLevel||0)+.1)/3};
+      const blade=H.gs?.sword.getObjectByName('hunter-blade');
+      H.root.updateWorldMatrix(true,true);
+      const point=blade?.localToWorld(new THREE.Vector3(0,0,2.12));
+      const f=this.gsImpacts.spawn(visual,point);
+      if (!this.gsImpacts.low) this.burst('dust',f.x,.15,f.z,6+f.tier*3,2.5+f.tier,.55);
+      if (p.id === this.localId) { this.impactStop=[.06,.09,.12][f.tier]; this.shake=Math.max(this.shake,.55+f.tier*.25); this.fovPunch=1.2+f.tier*.8; this.cam.fov=58-this.fovPunch; this.cam.updateProjectionMatrix(); }
+    }
+    if (skinned) return;
     const t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
     // hunter
     const P = { arx: -.25, alx: 0, ty: 0, tx: 0, ll: 0, lr: 0, hy: .92, hrx: 0 }; let direct = false;
@@ -247,8 +265,10 @@ export class Hunt {
     let dist = this.cd;
     if (this.lock && m.state !== 'dead') { const dm = Math.hypot(m.x - p.x, m.z - p.z); if (dm > 2.5) this.cy = turn(this.cy, Math.atan2(m.x - p.x, m.z - p.z), 3.2 * dt * (Math.abs(lk.x) > 0 ? 0 : 1)); dist += clamp(dm * .12, 0, 3.5); }
     const tk = snap ? 1 : 1 - Math.exp(-11 * dt); this.ct.x = lerp(this.ct.x, p.x, tk); this.ct.z = lerp(this.ct.z, p.z, tk);
-    const fx = Math.sin(this.cy), fz = Math.cos(this.cy), ch = Math.cos(this.cp), sh = this.shake; this.shake = Math.max(0, this.shake - dt * 2.4);
+    const fx = Math.sin(this.cy), fz = Math.cos(this.cy), ch = Math.cos(this.cp), sh = this.shake; this.shake = Math.max(0, this.shake - (this.impactStop>0?0:dt) * 2.4);
     this.cam.position.set(this.ct.x - fx * dist * ch + (Math.random() - .5) * sh * .5, 1.7 + dist * Math.sin(this.cp) + (Math.random() - .5) * sh * .5, this.ct.z - fz * dist * ch);
+    this.fovPunch=Math.max(0,(this.fovPunch||0)-(this.impactStop>0?0:dt)*15);
+    const fov=58-this.fovPunch;if(this.cam.fov!==fov){this.cam.fov=fov;this.cam.updateProjectionMatrix();}
     this.cam.lookAt(this.ct.x + fx * 2.5, 1.9, this.ct.z + fz * 2.5);
     this.sun.target.position.set(p.x, 0, p.z); this.sun.position.set(p.x + 16, 30, p.z + 10);
   }

@@ -39,7 +39,7 @@ function buildProceduralHunter(wt,wTier,aTier){
  if(wt==='gs')blade(R.hand,2.12,.23);else if(wt==='db'){blade(R.hand,.92,.13);blade(L.hand,.92,.13);}else{const pts=[[0,-.55,-.62],[0,-.2,-.8],[0,.2,-.55],[0,.5,0],[0,.2,.55],[0,-.2,.8],[0,-.55,.62]];horn(L.hand,pts,.055,steel);link(L.hand,pts[0],pts.at(-1),.008,.008,trim,3);link(torso,[.18,.14,-.32],[.3,.7,-.32],.12,.14,dark);for(let i=0;i<3;i++)link(torso,[.18+i*.06,.5,-.32],[.18+i*.06,.94,-.32],.012,.012,trim,3);}
  batch(root);return {root,hips,torso,head,armR:R.a,armL:L.a,legL,legR,elbows,knees};
 }
-function hunterBlade(h,len,w,dark,trim,steel){const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);return g;}
+function hunterBlade(h,len,w,dark,trim,steel){const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.name='hunter-blade';b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);return g;}
 // A stable procedural root is available immediately, including on 404/offline.
 // Upgrading children preserves owner/guest/root visibility contracts.
 let gsLoad, gsAsset;
@@ -47,7 +47,7 @@ export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterGS() {
  if (!gsLoad) {
   const start=performance.now(); hunterGSLoad.status='loading';
-  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r5',import.meta.url).href)
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r6',import.meta.url).href)
    .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
  }

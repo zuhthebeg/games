@@ -1,4 +1,4 @@
-import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261113r5';
+import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261113r6';
 const finite=n=>typeof n==='number' && Number.isFinite(n);
 // The caller provides the authenticated rt sender and its roster-bound loadout.
 // Validation is pure with respect to Sim: accepted claims are applied by host only.

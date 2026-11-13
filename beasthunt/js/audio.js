@@ -1,5 +1,6 @@
 // Tiny synthesized SFX (no asset files).
 let ctx = null, master = null, muted = false;
+let pitch = 1, gain = 1;
 export function initAudio() {
   if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
   try {
@@ -10,12 +11,14 @@ export function initAudio() {
 export function setMuted(m) { muted = m; }
 export function isMuted() { return muted; }
 function tone(type, f0, f1, dur, vol, delay = 0) {
+  f0 *= pitch; f1 *= pitch; vol *= gain;
   const t = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
   o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
 }
 function noise(dur, vol, freq, q = 1, delay = 0, type = 'bandpass') {
+  freq *= pitch; vol *= gain;
   const t = ctx.currentTime + delay, n = Math.floor(ctx.sampleRate * dur);
   const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
@@ -46,7 +49,8 @@ const S = {
   ui() { tone('triangle', 660, 880, .06, .12); },
   forge() { tone('square', 900, 400, .07, .25); noise(.12, .4, 3000, 3); tone('triangle', 1320, 1320, .35, .15, .1); },
 };
-export function sfx(name) {
+export function sfx(name, options = {}) {
   if (!ctx || muted || !S[name]) return;
-  try { S[name](); } catch (_) { /* ignore */ }
+  pitch = options.pitch ?? 1; gain = options.volume ?? 1;
+  try { S[name](); } catch (_) { /* ignore */ } finally { pitch = gain = 1; }
 }
