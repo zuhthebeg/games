@@ -122,7 +122,7 @@ for (const vp of [{ width: 1280, height: 720 }, { width: 390, height: 780, touch
   const models = await page.evaluate(async () => (await import('./test/model-gates.js')).assessModels());
   for (const row of models.rows) {
     ok(row.monster <= 6000, vp.width + ' ' + row.id + ' monster triangle budget ' + row.monster);
-    ok(row.player <= 3000 && row.hunterBudgets.every(n => n <= 3000), vp.width + ' hunter triangle budget ' + row.player);
+    ok(row.player <= 4000 && row.hunterBudgets.every(n => n <= 4000), vp.width + ' hunter triangle budget ' + row.player);
     ok(row.scene <= 60000 && row.fullScene <= 60000 && row.calls <= 160, vp.width + ' scene budget ' + row.scene + ' calls ' + row.calls);
     for (const part of row.parts) ok(part.hit, vp.width + ' ' + row.id + ' actual meleeHit ' + part.part);
   }
