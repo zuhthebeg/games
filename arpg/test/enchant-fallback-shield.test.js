@@ -194,3 +194,60 @@ for (const key of ['capacity_flat', 'str_flat']) {
     assert.deepEqual(save, before);
   });
 }
+
+// B1: a compatible wand must not retain a shield when that newly rejects a valid save.
+for (const [offset, keepsShield] of [[-1, true], [0, true], [1, false]]) {
+  test('EF1 B1 wand fallback at 120% capacity ' + (offset >= 0 ? '+' : '') + offset + ' potion units', () => {
+    const save = fixture('soulfire_wand');
+    save.stacks.return_scroll = 0; // Exact 0.1kg boundary, not a fractional-scroll offset.
+    const light = enchant(save, save.equipped.weapon, STONE);
+    assert.equal(light.result.outcome, 'destroyed');
+    const limit = capacity(light.save) * 1.2;
+    save.stacks.potion += Math.round((limit - carriedWeight(light.save)) / ITEMS.potion.weight) + offset;
+    assert.ok(validateSave(save), 'input is valid even immediately above the post-fallback boundary');
+    const before = structuredClone(save), attempt = enchant(save, save.equipped.weapon, STONE);
+    assert.equal(attempt.result.outcome, 'destroyed');
+    assert.equal(equippedItem(attempt.save, 'weapon').id, 'soulfire_wand');
+    assert.equal(validateSave(attempt.save), true, 'base-valid wand result must stay persistable');
+    assert.equal(attempt.save.equipped.offhand, keepsShield ? 'fixture:shield' : null);
+    const withShield = structuredClone(attempt.save); withShield.equipped.offhand = 'fixture:shield';
+    assert.equal(carriedWeight(withShield), limit + offset * ITEMS.potion.weight);
+    assert.equal(attempt.save.stacks.potion, save.stacks.potion);
+    assert.deepEqual(attempt.save.stash, save.stash);
+    assert.deepEqual(attempt.save.items, before.items.filter(i => i.uid !== save.equipped.weapon));
+    assert.deepEqual(attempt.result, light.result);
+    assert.deepEqual(save, before);
+    assert.deepEqual(enchant(save, save.equipped.weapon, STONE), attempt);
+    const memory = memoryStore(); memory.store.save(attempt.save);
+    assert.equal(memory.writes, 1); assert.deepEqual(memory.store.load(), attempt.save);
+  });
+}
+
+test('EF1 B1 independent max-input wand fixture no longer rejects its saved result', t => {
+  const save = fixture('soulfire_wand');
+  save.stacks.potion += Math.floor((capacity(save) * 1.2 - carriedWeight(save)) / ITEMS.potion.weight);
+  assert.ok(validateSave(save));
+  assert.equal(carriedWeight(save), 145.97);
+  const before = structuredClone(save), attempt = enchant(save, save.equipped.weapon, STONE);
+  assert.equal(attempt.result.outcome, 'destroyed');
+  assert.equal(validateSave(attempt.save), true, 'independent B1 must be fixed');
+  assert.equal(attempt.save.equipped.offhand, null);
+  assert.equal(carriedWeight(attempt.save), 142.41);
+  assert.equal(capacity(attempt.save) * 1.2, 146);
+  assert.deepEqual(attempt.save.items, before.items.filter(i => i.uid !== save.equipped.weapon));
+  assert.deepEqual(attempt.save.stash, save.stash);
+  assert.deepEqual(save, before);
+  const memory = memoryStore(); memory.store.save(save);
+  let renders = 0, appends = 0;
+  const hub = Object.assign(Object.create(HubUI.prototype), {
+    save, persist: next => memory.store.save(next),
+    showForge() { renders++; assert.equal(memory.writes, 2); assert.equal(this.lastEnchant.outcome, 'destroyed'); },
+  });
+  hub.root = presentationDom(t, () => { appends++; assert.equal(memory.writes, 2); });
+  try {
+    hub.action('enhance', { uid: save.equipped.weapon, stone: STONE });
+    assert.equal(memory.writes, 2); assert.equal(renders, 1); assert.equal(appends, 1);
+    assert.deepEqual(hub.save, { ...attempt.save, seenMaterials: [STONE] });
+    assert.deepEqual(memory.store.load(), hub.save);
+  } finally { hub.enchantFx?.close(); }
+});

@@ -3,7 +3,7 @@ import { deriveMods } from './stats.js';
 // Outcomes are seeded by (account, item, attempt counter), and the result is part of the
 // returned save, so a reload during the animation cannot reroll an attempt.
 import { SLOTS, ENCHANT, STONE, ENCHANT_STONES, rng, weighted } from './economy.js';
-import { ITEMS, START_WEAPONS, cloneSave, uniqueUid, meetsRequirement, permitsShield } from './items.js';
+import { ITEMS, START_WEAPONS, cloneSave, uniqueUid, meetsRequirement, permitsShield, carriedWeight, capacity } from './items.js';
 
 export const isRisky = (level) => level >= ENCHANT.safe;
 
@@ -81,7 +81,9 @@ export function enchant(save, uid, stoneId) {
         next.equipped.weapon = starter.uid;
       }
     }
-    if (next.equipped.offhand && !permitsShield(ITEMS[next.items.find(i=>i.uid===next.equipped.weapon)?.id])) next.equipped.offhand=null;
+    // A compatible shield may remain only within the existing equip/save weight limit.
+    if (next.equipped.offhand && (!permitsShield(ITEMS[next.items.find(i=>i.uid===next.equipped.weapon)?.id])
+      || carriedWeight(next) > capacity(next) * 1.2)) next.equipped.offhand=null;
     const refund = preview.refund[STONE];
     if (refund) next.stacks[STONE] = (next.stacks[STONE] || 0) + refund;
     return { save: next, result: { outcome: 'destroyed', uid, id: preview.item.id, from, to: null, risky: true, refund: preview.refund } };
