@@ -248,6 +248,52 @@ test('cursedHands resolves while a basic staff attack is active', () => {
   )));
 });
 
+test('poisonArrow ticks hit a moving target at current position despite six-tick view lag', () => {
+  const { world, player, enemies } = makeWorld('skeleton_archer', [{ x: 3, z: 0 }]);
+  const [target] = enemies;
+  world.tick = 6;
+  const movingTick = (buttons = 0) => {
+    const nextTick = world.tick + 1;
+    target.x += 0.5;
+    const historicalX = target.x - 2.5;
+    world.enemyHistory = Array.from({ length: 13 }, (_, index) => ({
+      tick: nextTick - 12 + index,
+      enemies: [{
+        id: target.id,
+        x: historicalX,
+        z: target.z,
+        radius: target.radius,
+        dead: false,
+      }],
+    }));
+    tick(world, buttons, { viewTick: nextTick - 6 });
+  };
+
+  movingTick(BUTTONS.SKILL3);
+  for (let index = 0; index < SKILLS.poisonArrow.windupTicks - 1; index += 1) movingTick();
+  assert.equal(player.viewLag, 6);
+  const poison = world.pendingImpacts.find((impact) => impact.kind === 'poison');
+  assert.ok(poison);
+  const hpAfterArrow = target.hp;
+
+  for (let index = 0; index < SKILLS.poisonArrow.poisonTicks; index += 1) movingTick();
+
+  const poisonHits = world.events.filter((event) => (
+    event.type === 'hit'
+    && event.targetId === target.id
+    && event.skill === SKILLS.poisonArrow.id
+    && event.castId === poison.id
+    && event.tick > poison.resolveTick
+  ));
+  assert.equal(poisonHits.length, 5);
+  assert.deepEqual(
+    poisonHits.map((event) => event.tick),
+    Array.from({ length: 5 }, (_, index) => poison.resolveTick + (index + 1) * SKILLS.poisonArrow.poisonEvery),
+  );
+  assert.ok(target.hp < hpAfterArrow);
+  assert.equal(world.pendingImpacts.some((impact) => impact.kind === 'poison'), false);
+});
+
 test('cursedHands roots ordinary and boss enemies for their exact durations without stopping attacks', () => {
   const rooted = makeWorld('skeleton_mage', [
     { x: 5, z: 0, stunnedTicks: 0 },
