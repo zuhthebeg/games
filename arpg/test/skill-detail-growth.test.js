@@ -68,6 +68,8 @@ for (const [level, pierce] of [[19, 2], [20, 3], [30, 3]]) {
 // Each skill includes every eligible lineage and all mastery levels 1..30.
 // PF1 poison_field alone refreshed after exact pre/post comparison: only its
 // common radius/duration row changes; poison-field-detail.test.js checks real zones.
+// PS1 pierce_shot alone refreshed after actual-cast assertions and exact pre/post
+// comparison: only mastery20+ common pierce4 becomes pierce5.
 // FW1 firewall alone refreshed after exact pre/post comparison: only its common
 // duration row changes; firewall-detail.test.js checks real zone lifetimes.
 const BASELINE = {
@@ -85,7 +87,7 @@ const BASELINE = {
   "armor_break": "21a4b80b3b156cb22d1bdd7b0f9cbda4429c5cb4e35896c14a921d395b2981b9",
   "triple_arrow": "c288d7652f5ff539e6c8741347f881dae9164faee0f587d5ed5913c764d503e9",
   "evasion_shot": "918e582b5ea4e8ab1188638687451f80f0585ad36113dd83461b4666ad4cd44a",
-  "pierce_shot": "5a4792e5d51b814efb0d0ad13cfac57a0bce5461f3cb3cf3c6658cfad0f7fe53",
+  "pierce_shot": "a29ddfa90ce8573b766c78fbb0b44590cd84e04af9f4223709639e50605ab526",
   "blast_arrow": "5402a00a8ea4cb8333597359bcf79b53068eba9907179a95adceaef9c443d6d1",
   "protective_shield": "39c6997ff33be8a692a83bec0f62c5325c7207345c3a2f2aa03264466acd3fde",
   "turn_undead": "7040d4e32484e8195fb058d7a1fccff5e1eaeff484b2b16c2e53918ad1f37d6b",
@@ -100,7 +102,7 @@ const BASELINE = {
   "ember_bolt": "af6fd6c87ff537e718800c162df41a955de718ae51cb6f2c234c7dbb55860983"
 };
 for (const [id, expected] of Object.entries(BASELINE)) {
-  test((id === 'poison_field' ? 'PF1 exact full detail HTML: ' : id === 'firewall' ? 'FW1 exact full detail HTML: ' : 'unchanged full detail HTML: ') + id, () => {
+  test((id === 'poison_field' ? 'PF1 exact full detail HTML: ' : id === 'firewall' ? 'FW1 exact full detail HTML: ' : id === 'pierce_shot' ? 'PS1 exact full detail HTML: ' : 'unchanged full detail HTML: ') + id, () => {
     const html = [];
     for (const lineage of ['human', 'skeleton_knight', 'skeleton_mage', 'skeleton_archer']) {
       for (let level = 1; level <= 30; level++) {
