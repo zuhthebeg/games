@@ -224,6 +224,7 @@ export class HubUI {
 
   // keepScroll: an in-place re-render of the same page (a +/− or slot tap) keeps the reading position and the pressed control.
   show(html, page, { shell = false, keepScroll = false } = {}) {
+    this.pageToken = {}; // A new render revokes async ownership, even on the same page.
     this.pendingEquipment = null;
     const keep = keepScroll && this.root.dataset.page === page;
     const scroll = keep ? this.root.querySelector('.inn-shell>.content')?.scrollTop || 0 : 0;
@@ -295,13 +296,19 @@ export class HubUI {
   async showCloudRanking() {
     if (!this.cloud) return;
     this.showInnPanel('🏆 랭킹', '<p role="status">불러오는 중</p>', 'cloud-ranking');
+    const pageToken = this.pageToken; // Each request owns only its loading render.
+    const ownsPage = () => this.pageToken === pageToken && !this.root.hidden;
     try {
       const rows = await this.cloud.rankings();
+      if (!ownsPage()) return;
       const country = code => /^[A-Z]{2}$/.test(code || '') ? [...code].map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') : '';
       const mine = localStorage.getItem('relay_userId');
       const content = rows.map(row => `<div class="ranking-row${row.userId === mine ? ' mine' : ''}"><b>${row.rank}</b> <span>${country(row.country)} ${escape(row.nickname)}</span> <span>Lv.${row.level}</span> <span>${row.stage && STAGES[row.stage] ? escape(STAGES[row.stage].name) : '-'}</span> <span>${row.power}</span></div>`).join('');
       this.showInnPanel('🏆 랭킹', content ? `<div class="ranking-row heading"><b>#</b><span>닉네임</span><span>레벨</span><span>스테이지</span><span>전투력</span></div>${content}` : '<p>기록 없음</p>', 'cloud-ranking');
-    } catch { this.showInnPanel('🏆 랭킹', '<p>불러오지 못함</p>', 'cloud-ranking'); }
+    } catch {
+      if (!ownsPage()) return;
+      this.showInnPanel('🏆 랭킹', '<p>불러오지 못함</p>', 'cloud-ranking');
+    }
   }
 
   showSaveLocked() {
