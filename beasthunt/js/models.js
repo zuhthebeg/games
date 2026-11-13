@@ -1,6 +1,10 @@
 // Original faceted fieldcraft: lofted anatomy, articulated joints, no external assets.
 import * as THREE from 'three';
 import { MONSTERS } from 'bh/data';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
+export { syncHunterGS };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
 const G=(x=0,y=0,z=0)=>{const g=new THREE.Group();g.position.set(x,y,z);return g;};
@@ -16,7 +20,7 @@ function horn(g,points,r,mat){const list=[];for(let i=0;i<points.length-1;i++)li
 function batch(root){root.traverse(g=>{if(g.isMesh)return;const bins=new Map();for(const c of [...g.children])if(c.isMesh&&!c.userData.breakable){const a=bins.get(c.material)||[];a.push(c);bins.set(c.material,a);}for(const [mat,items] of bins){if(items.length<2)continue;const gs=items.map(m=>{m.updateMatrix();return m.geometry.clone().applyMatrix4(m.matrix);});const merged=mergeGeometries(gs,false);if(merged){items.forEach(m=>{g.remove(m);m.geometry.dispose();});g.add(mesh(merged,mat));}gs.forEach(x=>x.dispose());}});}
 export const ARMOR_COL=[0x8b7355,0x7a4b2c,0x9cc9e3,0xb23a22,0x4b3a78];
 export const WPN_COL=[0xc3c7cf,0xd9b77c,0x9fe4ff,0xff8440,0xc79bff];
-export function buildHunter(wt,wTier,aTier){
+function buildProceduralHunter(wt,wTier,aTier){
  const root=G(),hips=G(0,.92,0),torso=G();root.add(hips);hips.add(torso);
  const am=M(ARMOR_COL[aTier-1]),dark=M(0x283238),trim=M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),skin=M(0xd6a882),steel=M(WPN_COL[wTier-1],{metalness:.6,roughness:.3});
  const chest=mesh(loft([[-.22,.36,.23,.25],[0,.4,.34,.33],[.22,.36,.25,.25]]),am);torso.add(chest);
@@ -31,9 +35,42 @@ export function buildHunter(wt,wTier,aTier){
  const R=arm(-1),L=arm(1);
  const leg=s=>{const g=G(s*.17,0,0);hips.add(g);link(g,[0,0,0],[0,-.4,0],.135,.095,dark);const k=G(0,-.4,0);g.add(k);k.add(mesh(sph(.125),trim));link(k,[0,0,0],[0,-.37,0],.12,.085,am);k.add(mesh(loft([[-.12,-.4,.1,.08],[.09,-.4,.12,.08],[.23,-.42,.07,.05]],6),dark));knees.push(k);return g;};
  const legL=leg(1),legR=leg(-1);
- const blade=(h,len,w)=>{const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);};
+ const blade=(h,len,w)=>hunterBlade(h,len,w,dark,trim,steel);
  if(wt==='gs')blade(R.hand,2.12,.23);else if(wt==='db'){blade(R.hand,.92,.13);blade(L.hand,.92,.13);}else{const pts=[[0,-.55,-.62],[0,-.2,-.8],[0,.2,-.55],[0,.5,0],[0,.2,.55],[0,-.2,.8],[0,-.55,.62]];horn(L.hand,pts,.055,steel);link(L.hand,pts[0],pts.at(-1),.008,.008,trim,3);link(torso,[.18,.14,-.32],[.3,.7,-.32],.12,.14,dark);for(let i=0;i<3;i++)link(torso,[.18+i*.06,.5,-.32],[.18+i*.06,.94,-.32],.012,.012,trim,3);}
  batch(root);return {root,hips,torso,head,armR:R.a,armL:L.a,legL,legR,elbows,knees};
+}
+function hunterBlade(h,len,w,dark,trim,steel){const g=G();g.rotation.x=-1.25;h.add(g);link(g,[0,.14,0],[0,-.25,0],.045,.045,dark);horn(g,[[-w*.9,-.25,0],[0,-.31,.03],[w*.9,-.25,0]],.065,trim);const b=mesh(loft([[0,0,w,.045],[len*.75,0,w*.65,.04],[len,0,.005,.005]],4),steel,0,-.31,0);b.rotation.x=Math.PI/2;g.add(b);link(g,[0,-.32,.05],[0,-len*.85,.05],.022,.006,trim);return g;}
+// A stable procedural root is available immediately, including on 404/offline.
+// Upgrading children preserves owner/guest/root visibility contracts.
+let gsLoad, gsAsset;
+export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
+export function loadHunterGS() {
+ if (!gsLoad) {
+  const start=performance.now(); hunterGSLoad.status='loading';
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r5',import.meta.url).href)
+   .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
+   .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
+ }
+ return gsLoad;
+}
+export function buildHunter(wt,wTier,aTier) {
+ return wt==='gs' ? buildHunterGS(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
+}
+export function buildHunterGS(wTier,aTier) {
+ const H=buildProceduralHunter('gs',wTier,aTier);
+ const upgrade=asset=>{
+  if(!asset)return H;
+  const model=cloneSkeleton(asset.scene);
+  // Existing scene disposal owns its resources, never the cached template.
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=M(ARMOR_COL[aTier-1]);o.castShadow=true;o.frustumCulled=false;}});
+  const sword=hunterBlade(G(),2.12,.23,M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
+  sword.rotation.set(0,0,0);
+  H.gs=createGSMotion(model,asset.animations,sword);
+  for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
+  H.root.add(model); return H;
+ };
+ H.ready=gsAsset ? Promise.resolve(upgrade(gsAsset)) : loadHunterGS().then(upgrade);
+ return H;
 }
 export function buildMonster(id){
  const d=MONSTERS[id].dims,root=G(),body=G(0,d.h,0);root.add(body);

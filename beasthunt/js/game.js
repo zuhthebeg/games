@@ -1,9 +1,9 @@
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261113r4';
-import { FixedClock, interpolatePose } from './fixed.js?v=20261113r4';
-import { buildHunter, buildMonster, buildArena } from 'bh/models';
+import { Sim, R_ARENA } from './sim.js?v=20261113r5';
+import { FixedClock, interpolatePose } from './fixed.js?v=20261113r5';
+import { buildHunter, buildMonster, buildArena, syncHunterGS } from 'bh/models';
 import { sfx } from 'bh/audio';
 
 export { R_ARENA };
@@ -214,6 +214,7 @@ export class Hunt {
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;
   }
   syncHunter(p, H, dt, cache = this) {
+    if (p.weapon === 'gs' && H.gs && syncHunterGS(p, H, dt, this.clock)) return;
     const t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
     // hunter
     const P = { arx: -.25, alx: 0, ty: 0, tx: 0, ll: 0, lr: 0, hy: .92, hrx: 0 }; let direct = false;

@@ -1,10 +1,10 @@
-import { Coop } from './net/coop.js?v=20261113r4';
+import { Coop } from './net/coop.js?v=20261113r5';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
 import { Input } from 'bh/input';
-import { buildMonster, buildHunter, BIOMES } from 'bh/models';
+import { buildMonster, buildHunter, BIOMES, syncHunterGS } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
@@ -53,7 +53,7 @@ function makePreview() {
   const G = buildMonster(q.mon); scene.add(G.root);
   const H = buildHunter(save.weapon, save.w[save.weapon], save.armor); H.root.position.set(4.6, 0, 4.2); H.root.rotation.y = -2.2; H.armR.rotation.x = -.5; scene.add(H.root);
   const cam = new THREE.PerspectiveCamera(42, 1, .2, 200);
-  preview = { scene, cam, G, d, t: 0 }; resize();
+  preview = { scene, cam, G, H, d, t: 0 }; resize();
 }
 function framePreview(dt) {
   const p = preview; p.t += dt; const a = p.t * .22 + .9, wide = stage.clientWidth > stage.clientHeight * 1.15, r = (wide ? 15 : 21) * p.d.scale;
@@ -61,6 +61,7 @@ function framePreview(dt) {
   if (wide) p.cam.setViewOffset(stage.clientWidth, stage.clientHeight, -stage.clientWidth * .2, 0, stage.clientWidth, stage.clientHeight); else p.cam.clearViewOffset();
   p.G.tail.forEach((s, i) => { s.rotation.y = Math.sin(p.t * 1.5 + i * .6) * .14; });
   p.G.head.rotation.x = Math.sin(p.t * .9) * .1; p.G.body.position.y = p.d.dims.h + Math.sin(p.t * 1.6) * .04; p.G.jaw.rotation.x = .1 + Math.max(0, Math.sin(p.t * .5)) * .25;
+  if (save.weapon === 'gs') syncHunterGS({ state:'idle',t:p.t,x:4.6,z:4.2,yaw:-2.2,spin:0,inv:0,moving:0 }, p.H, dt, p.t);
   renderer.render(p.scene, p.cam);
 }
 
