@@ -113,7 +113,7 @@ test('render interpolation uses shortest yaw and never mutates sim state',()=>{
 test('sim dependency graph contains no three/DOM/audio/platform randomness',()=>{
   const sim=fs.readFileSync(new URL('../js/sim.js',import.meta.url),'utf8');
   assert.doesNotMatch(sim,/\b(?:THREE|window|document|performance|requestAnimationFrame)\b|Math\.random|from\s+['"][^'"]*(?:three|models|audio|input)/);
-  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261113r7']);
+  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261113r8']);
 });
 
 test('live snapshot preserves charged moves, hitstop, enemy shots and arrow ownership',()=>{

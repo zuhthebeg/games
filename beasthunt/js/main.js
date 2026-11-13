@@ -1,9 +1,9 @@
-import { Coop } from './net/coop.js?v=20261113r8a';
+import { Coop } from './net/coop.js?v=20261113r8';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachGSChargePresentation } from './gs-charge.js?v=20261113r8a';
+import { attachGSChargePresentation } from './gs-charge.js?v=20261113r8';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
@@ -156,11 +156,8 @@ function startHunt(qid, session = null) {
   const q = QUESTS.find((x) => x.id === qid); if (!q || (!session && !unlocked(q))) return;
   initAudio(); sfx('ui'); clearCombatUI();
   hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd, session);
-<<<<<<< HEAD
   attachGSChargePresentation(hunt);
-=======
   if(session)hunt.observeAudioSocket(coop?.ws?._ws,coop?.plan?.roster||{});
->>>>>>> dae2cc9d (feat(beasthunt): lazy generated greatsword sound palette and listening page)
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
   if (window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });

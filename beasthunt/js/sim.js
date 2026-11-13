@@ -1,5 +1,5 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js?v=20261113r7';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js?v=20261113r8';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.

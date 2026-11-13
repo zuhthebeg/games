@@ -5,7 +5,7 @@
 <label>볼륨 <input id="volume" type="range" min="0" max="1" step=".01" value=".5"></label><button id="prepare">샘플 준비</button><button id="stop">모두 정지</button><p id="status" role="status">대기</p><main id="sounds"></main>
 <details><summary>출처·라이선스·생성 프롬프트</summary><p>MOSS-SoundEffect v2.0 로컬 생성. 외부 CC0 보조 미사용.</p><a href="assets/audio/LICENSES.md">라이선스 근거</a> · <a href="assets/audio/PROMPTS.md">프롬프트·시드·선별 기록</a><pre id="prompts"></pre></details>
 <script type="module">
-import {initAudio,sfx,preloadGS,setVolume,stopAllGS,GS_SAMPLES} from './js/audio.js?v=20261113r8b';
+import {initAudio,sfx,preloadGS,setVolume,stopAllGS,GS_SAMPLES} from './js/audio.js?v=20261113r8';
 const $=id=>document.getElementById(id);let ready=false;
 $('volume').oninput=e=>setVolume(e.target.value);
 $('prepare').onclick=async()=>{initAudio();$('status').textContent='준비 중';await preloadGS();ready=true;$('status').textContent='준비 요청 완료 (실패 파일은 합성음 대체)';};
