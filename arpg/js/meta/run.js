@@ -181,11 +181,12 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     for (const [id, count] of Object.entries(tempLoot.stacks)) {
       next.stacks[id] = (next.stacks[id] || 0) + count;
     }
-    for (const item of tempLoot.items) {
+    for (const [index, item] of tempLoot.items.entries()) {
       // UID collision recovery is deterministic, including repeated round seeds.
       const uid = next.items.some((candidate) => candidate.uid === item.uid)
         ? uniqueUid(next, item.uid) : item.uid;
       next.items.push({ ...item, uid });
+      receipt.lootKept.items[index] = { ...receipt.lootKept.items[index], uid };
     }
   }
   if (terminal === 'clear') {
