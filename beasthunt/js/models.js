@@ -206,14 +206,52 @@ export function buildMonster(id){
  return {root,body,head,jaw,legs,knees,wings,tail,tailRoot,horns,headBaseY:head.position.y,brokenHornMat:M(0xffdda0,{emissive:0xff7a35,emissiveIntensity:.5}),eyeMat,eyeCol:C[3]};
 }
 
+// Giant bone cleaver for the Warrok greatsword clips (R13a, render-only).
+// Socket space: grip point at origin, blade along +Y, flat normal +Z.
+function buildWarrokCleaver() {
+ const g=G(),bone=M(0xd9cfae,{roughness:.9}),dark=M(0x2b2620);
+ link(g,[0,-.75,0],[0,.38,0],.048,.05,dark);
+ g.add(mesh(sph(.08,5,3),bone,0,-.8,0));
+ g.add(mesh(sph(.075,5,3),bone,0,.42,0));
+ const b=mesh(loft([[0,0,.1,.03],[.35,0,.2,.028],[.8,0,.27,.024],[1,0,.03,.008]],6),bone,0,.35,0);
+ b.rotation.set(-Math.PI/2,0,Math.PI);g.add(b);
+ const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35,0);g.add(tip);
+ const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
+ return g;
+}
+// Socket Group parented to the right-hand bone; measured on the bind pose, so
+// no guessed constants: grip at palm centre, blade along the fist's knuckle
+// line (Index1->Pinky1), flat normal along the palm normal. Bone space is cm,
+// so the socket counter-scales to let children be authored in metres.
+function warrokWeaponSocket(model) {
+ const bones={};model.traverse(o=>{if(o.isBone)bones[o.name]=o;});
+ const RH=bones['mixamorigRightHand'];
+ const kn=['Index1','Middle1','Ring1','Pinky1'].map(n=>bones['mixamorigRightHand'+n]);
+ if(!RH||kn.some(b=>!b)||!bones['mixamorigRightHandMiddle2'])return null;
+ const palm=kn.reduce((a,b)=>a.add(b.position),new THREE.Vector3()).multiplyScalar(.125);
+ const bladeAxis=kn[0].position.clone().sub(kn[3].position).normalize();
+ const finger=bones['mixamorigRightHandMiddle2'].getWorldPosition(new THREE.Vector3()).sub(bones['mixamorigRightHandMiddle1'].getWorldPosition(new THREE.Vector3())).normalize().applyQuaternion(RH.getWorldQuaternion(new THREE.Quaternion()).invert());
+ const normal=bladeAxis.clone().cross(finger).normalize();
+ const socket=new THREE.Group();socket.name='warrok-weapon-socket';
+ socket.scale.setScalar(1/RH.getWorldScale(new THREE.Vector3()).x);
+ socket.position.copy(palm);
+ const X=new THREE.Vector3().crossVectors(bladeAxis,normal).normalize();
+ socket.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X,bladeAxis,normal));
+ const weapon=buildWarrokCleaver();socket.add(weapon);socket.userData.weapon=weapon;
+ RH.add(socket);return socket;
+}
+
 // Warrok W Kurniawan skinned boss. A dim capsule stands in only while the local
 // GLB streams in; the real model replaces it, so no fake anatomy is animated.
 export function buildWarrok() {
  const d = MONSTERS.warrok.dims, root = G(), body = G(0, d.h, 0); root.add(body);
  const ph = mesh(new THREE.CapsuleGeometry(d.bw * .7, d.h * .9, 4, 10), M(0x2c3428)); body.add(ph);
- const W = { root, body, head: body, jaw: G(), legs: [], knees: [], wings: [], tail: [], tailRoot: body, horns: [], headBaseY: 0, brokenHornMat: M(0x000000), eyeMat: M(0x000000), eyeCol: 0, warrok: null };
+ const W = { root, body, head: body, jaw: G(), legs: [], knees: [], wings: [], tail: [], tailRoot: body, horns: [], headBaseY: 0, brokenHornMat: M(0x000000), eyeMat: M(0x000000), eyeCol: 0, warrok: null, weapon: null, weaponSocket: null };
  let disposed = false;
- W.dispose = () => { disposed = true; W.warrok?.mixer.stopAllAction(); };
+ W.dispose = () => {
+  disposed = true; W.warrok?.mixer.stopAllAction();
+  W.weaponSocket?.traverse(o => { o.geometry?.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m?.dispose()); });
+ };
  const upgrade = asset => {
   if (!asset || disposed) return W;
   const model = cloneSkeleton(asset.scene);
@@ -225,6 +263,8 @@ export function buildWarrok() {
   const box = new THREE.Box3().setFromObject(model);
   const h = box.max.y - box.min.y, k = (d.h * 2) / h;
   model.scale.setScalar(k); model.position.y = -box.min.y * k;
+  const socket = warrokWeaponSocket(model);
+  if (socket) { W.weaponSocket = socket; W.weapon = socket.userData.weapon; }
   W.warrok = createWarrokMotion(model, asset.animations);
   for (const c of [...body.children]) { body.remove(c); c.geometry?.dispose(); c.material?.dispose(); }
   body.position.y = 0; body.add(model);

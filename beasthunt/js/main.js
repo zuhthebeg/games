@@ -3,7 +3,7 @@ import { Coop } from './net/coop.js?v=20261114r11';
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachHuntDebug } from './hunt-debug.js?v=20261115wd';
+import { attachHuntDebug } from './hunt-debug.js?v=20261115ww';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok } from 'bh/models';
