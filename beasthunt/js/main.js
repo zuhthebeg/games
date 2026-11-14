@@ -1,11 +1,11 @@
-import { Coop } from './net/coop.js?v=20261113r8';
+import { Coop } from './net/coop.js?v=20261114r10';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachGSChargePresentation } from './gs-charge.js?v=20261113r8';
+import { attachGSChargePresentation } from './gs-charge.js?v=20261114r10';
 import { Input } from 'bh/input';
-import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, loadHunterBow } from 'bh/models';
+import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
@@ -63,7 +63,7 @@ function framePreview(dt) {
   p.G.tail.forEach((s, i) => { s.rotation.y = Math.sin(p.t * 1.5 + i * .6) * .14; });
   p.G.head.rotation.x = Math.sin(p.t * .9) * .1; p.G.body.position.y = p.d.dims.h + Math.sin(p.t * 1.6) * .04; p.G.jaw.rotation.x = .1 + Math.max(0, Math.sin(p.t * .5)) * .25;
   const pose={ state:'idle',t:p.t,x:4.6,z:4.2,yaw:-2.2,spin:0,inv:0,moving:0 };
-  if (save.weapon === 'gs') syncHunterGS(pose, p.H, dt, p.t); else if (save.weapon === 'bow') syncHunterBow(pose, p.H, dt, p.t);
+  if (save.weapon === 'gs') syncHunterGS(pose, p.H, dt, p.t); else if (save.weapon === 'bow') syncHunterBow(pose, p.H, dt, p.t); else if (save.weapon === 'db') syncHunterDb(pose, p.H, dt, p.t);
   renderer.render(p.scene, p.cam);
 }
 
@@ -110,7 +110,7 @@ function renderHub() {
 $('hub').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; initAudio();
   if (b.dataset.q) { sel = b.dataset.q; sfx('ui'); makePreview(); renderHub(); }
-  else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow')void loadHunterBow(); persist(); sfx('ui'); makePreview(); renderHub(); }
+  else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow')void loadHunterBow(); else if(save.weapon==='db')void loadHunterDb(); persist(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';
     if (!u || !canPay(u, kind)) return;

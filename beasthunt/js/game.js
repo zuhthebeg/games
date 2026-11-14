@@ -1,11 +1,11 @@
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261113r8';
-import { FixedClock, interpolatePose } from './fixed.js?v=20261113r8';
-import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow } from 'bh/models';
+import { Sim, R_ARENA } from './sim.js?v=20261114r10';
+import { FixedClock, interpolatePose } from './fixed.js?v=20261114r10';
+import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS } from 'bh/audio';
-import { GSSoundView } from './gs-sound.js?v=20261113r8';
+import { GSSoundView } from './gs-sound.js?v=20261114r10';
 
 import { GSImpacts, crossedImpact, isHeavy, chargeTier } from 'bh/gs-impact';
 export { R_ARENA };
@@ -252,7 +252,7 @@ export class Hunt {
   }
   syncHunter(p, H, dt, cache = this) {
     if(!this.over && !this.paused && !document.hidden)this.gsSound?.update(p,this.p,p.id!==this.localId);
-    const skinned=p.weapon==='gs' ? !!(H.gs && syncHunterGS(p,H,dt,this.clock)) : p.weapon==='bow' ? !!(H.bow && syncHunterBow(p,H,dt,this.clock)) : false;
+    const skinned=p.weapon==='gs' ? !!(H.gs && syncHunterGS(p,H,dt,this.clock)) : p.weapon==='bow' ? !!(H.bow && syncHunterBow(p,H,dt,this.clock)) : p.weapon==='db' ? !!(H.db && syncHunterDb(p,H,dt,this.clock)) : false;
     if (p.state==='charge') H.chargeLevel=Math.min(2,Math.floor(p.clv||0));
     if (crossedImpact(p,H)) {
       const visual=p.id===this.localId?p:{...p,frac:((H.chargeLevel||0)+.1)/3};

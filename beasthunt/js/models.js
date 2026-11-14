@@ -4,8 +4,9 @@ import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261113r9';
-export { syncHunterGS, syncHunterBow };
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261114r10';
+import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261114r10';
+export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
 const G=(x=0,y=0,z=0)=>{const g=new THREE.Group();g.position.set(x,y,z);return g;};
@@ -70,7 +71,7 @@ export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterGS() {
  if (!gsLoad) {
   const start=performance.now(); hunterGSLoad.status='loading';
-  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261113r8',import.meta.url).href)
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261114r10',import.meta.url).href)
    .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
  }
@@ -81,11 +82,22 @@ export const hunterBowLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterBow() {
  if (!bowLoad) {
   const start=performance.now(); hunterBowLoad.status='loading';
-  bowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-bow.glb?v=20261113r9',import.meta.url).href)
+  bowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-bow.glb?v=20261114r10',import.meta.url).href)
    .then(asset=>{bowAsset=asset;hunterBowLoad.status='ready';hunterBowLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterBowLoad.status='failed';hunterBowLoad.error=String(error);return null;});
  }
  return bowLoad;
+}
+let dbLoad, dbAsset;
+export const hunterDbLoad = { status: 'idle', ms: 0, error: null };
+export function loadHunterDb() {
+ if (!dbLoad) {
+  const start=performance.now(); hunterDbLoad.status='loading';
+  dbLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-db.glb?v=20261114r10',import.meta.url).href)
+   .then(asset=>{dbAsset=asset;hunterDbLoad.status='ready';hunterDbLoad.ms=performance.now()-start;return asset;})
+   .catch(error=>{hunterDbLoad.status='failed';hunterDbLoad.error=String(error);return null;});
+ }
+ return dbLoad;
 }
 // Bow prop in left-hand socket space: +Y limb, grip at origin, belly to -X.
 function hunterBowProp(dark,trim,steel){
@@ -95,7 +107,7 @@ function hunterBowProp(dark,trim,steel){
  g.userData.weaponColor=steel.color.getHex();return g;
 }
 export function buildHunter(wt,wTier,aTier) {
- return wt==='gs' ? buildHunterGS(wTier,aTier) : wt==='bow' ? buildHunterBow(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
+ return wt==='gs' ? buildHunterGS(wTier,aTier) : wt==='bow' ? buildHunterBow(wTier,aTier) : wt==='db' ? buildHunterDb(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
 }
 export function buildHunterBow(wTier,aTier) {
  const H=buildProceduralHunter('bow',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
@@ -109,6 +121,28 @@ export function buildHunterBow(wTier,aTier) {
   H.root.add(model); return H;
  };
  H.ready=bowAsset ? Promise.resolve(upgrade(bowAsset)) : loadHunterBow().then(upgrade);
+ return H;
+}
+export function buildHunterDb(wTier,aTier) {
+ const H=buildProceduralHunter('db',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
+ const upgrade=asset=>{
+  if(!asset)return H;
+  const model=cloneSkeleton(asset.scene);
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
+  const db={};
+  for(const side of ['Right','Left']){
+   // 32 triangles each: blade 20, grip 12; total body + props 3889.
+   const blade=G(),steel=M(WPN_COL[wTier-1],{metalness:.6,roughness:.3});
+   const shape=mesh(loft([[0,0,.085,.025],[.58,0,.065,.018],[.76,0,0,0]],4),steel);
+   shape.rotation.x=Math.PI/2;shape.position.y=-.10;blade.add(shape);
+   link(blade,[0,.09,0],[0,-.10,0],.035,.035,M(0x283238),3);
+   db[side]=blade;
+  }
+  H.db=createDbMotion(model,asset.animations,db);
+  for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
+  H.root.add(model); return H;
+ };
+ H.ready=dbAsset ? Promise.resolve(upgrade(dbAsset)) : loadHunterDb().then(upgrade);
  return H;
 }
 export function buildHunterGS(wTier,aTier) {
