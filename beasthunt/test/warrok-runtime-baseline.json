@@ -1,0 +1,21 @@
+{
+  "base": "cf54aee2",
+  "asset": "assets/warrok.glb",
+  "sha256": "8af1fc53791dd67db100d7a5d732dc82c77d9f3095c53d9f8f638bb2ce4170fd",
+  "joints": 81,
+  "images": 3,
+  "clips": 13,
+  "vertices": 7568,
+  "normalization": {
+    "before": 496.12604522956093,
+    "after": 2.0980824900207287,
+    "targetBindHeight": 5
+  },
+  "cache": {
+    "bh/models": "./js/models.js?v=20261115wd",
+    "bh/game": "./js/game.js?v=20261115wd",
+    "main": "./js/main.js?v=20261115wd",
+    "debug": "./hunt-debug.js?v=20261115wd"
+  },
+  "scope": "CPU skin/bounds and material metadata only; no native browser, pixels or visual PASS"
+}

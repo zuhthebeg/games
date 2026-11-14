@@ -212,15 +212,21 @@ export function buildWarrok() {
  const d = MONSTERS.warrok.dims, root = G(), body = G(0, d.h, 0); root.add(body);
  const ph = mesh(new THREE.CapsuleGeometry(d.bw * .7, d.h * .9, 4, 10), M(0x2c3428)); body.add(ph);
  const W = { root, body, head: body, jaw: G(), legs: [], knees: [], wings: [], tail: [], tailRoot: body, horns: [], headBaseY: 0, brokenHornMat: M(0x000000), eyeMat: M(0x000000), eyeCol: 0, warrok: null };
+ let disposed = false;
+ W.dispose = () => { disposed = true; W.warrok?.mixer.stopAllAction(); };
  const upgrade = asset => {
-  if (!asset) return W;
+  if (!asset || disposed) return W;
   const model = cloneSkeleton(asset.scene);
   model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  // SkeletonUtils clones start with stale bone world matrices. Skinned bounds
+  // read those matrices: update the whole hierarchy before measuring, otherwise
+  // normalization grows Warrok ~236x and lifts his animated skin out of view.
+  model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const h = box.max.y - box.min.y, k = (d.h * 2) / h;
   model.scale.setScalar(k); model.position.y = -box.min.y * k;
   W.warrok = createWarrokMotion(model, asset.animations);
-  for (const c of [...body.children]) body.remove(c);
+  for (const c of [...body.children]) { body.remove(c); c.geometry?.dispose(); c.material?.dispose(); }
   body.position.y = 0; body.add(model);
   return W;
  };

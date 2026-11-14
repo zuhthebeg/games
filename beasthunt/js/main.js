@@ -3,6 +3,7 @@ import { Coop } from './net/coop.js?v=20261114r11';
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
+import { attachHuntDebug } from './hunt-debug.js?v=20261115wd';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok } from 'bh/models';
@@ -46,7 +47,7 @@ const unlocked = (q) => DEBUG || !q.need || !!save.clears[q.need];
 // ---------- preview scene (hub backdrop) ----------
 function makePreview() {
   const q = QUESTS.find((x) => x.id === sel), d = MONSTERS[q.mon], B = BIOMES[d.biome];
-  if (preview) preview.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  if (preview) { preview.G.dispose?.(); preview.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
   const scene = new THREE.Scene(); scene.background = new THREE.Color(B.sky).multiplyScalar(.55); scene.fog = new THREE.Fog(scene.background, 20, 60);
   scene.add(new THREE.HemisphereLight(B.amb[0], B.amb[1], 1.1));
   const sun = new THREE.DirectionalLight(B.sun, 2.2); sun.position.set(8, 14, 10); scene.add(sun);
@@ -158,11 +159,13 @@ document.addEventListener('pointerlockchange', () => { if (!document.pointerLock
 function clearCombatUI() {
   $('toast').className = ''; $('toast').textContent = ''; $('dmg').replaceChildren(); $('flash').className = '';
 }
-function startHunt(qid, session = null) {
+function startHunt(qid, session = null, debugOptions = null) {
   const q = QUESTS.find((x) => x.id === qid); if (!q || (!session && !unlocked(q))) return;
+  if (hunt) endHunt();
   initAudio(); sfx('ui'); clearCombatUI();
   hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd, session);
   attachGSChargePresentation(hunt);
+  attachHuntDebug(hunt, {search:location.search, mount:$('stage'), initial:debugOptions, restart:options=>startHunt(qid,null,options)});
   if(session)hunt.observeAudioSocket(coop?.ws?._ws,coop?.plan?.roster||{});
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
@@ -203,7 +206,7 @@ function onHuntEnd(res) {
 }
 function endHunt() {
   clearCombatUI();
-  if (hunt) { hunt.dispose(); hunt = null; }
+  if (hunt) { hunt.debug?.dispose(); hunt.dispose(); hunt = null; }
   input.enabled = false; input.clear(); document.body.classList.remove('hunting');
   $('hud').hidden = true; $('touch').hidden = true; $('result').hidden = true; $('hub').hidden = false;
   const open = QUESTS.filter(unlocked); if (!open.find((q) => q.id === sel)) sel = open[open.length - 1].id;
