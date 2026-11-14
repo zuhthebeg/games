@@ -101,6 +101,15 @@ export function weightDescription(weight, limit) {
 }
 
 export class HubUI {
+  get save() { return this._save; }
+  set save(next) {
+    // Transactions clone saves; only a character lifetime change clears its UI result.
+    const previous = this._save;
+    if (!next || !previous || (next.lineage || 'human') !== (previous.lineage || 'human')
+      || next.createdAt !== previous.createdAt) this.autoBuyResult = '';
+    this._save = next;
+  }
+
   constructor({ save, persist, startRound, startSanctuary, resetSave, onOverlay, recoverVitals = () => {}, canInteract = () => true, initialCharacters = null, saveLock = null }) {
     this.initialCharacters = initialCharacters;
     this.saveLock = saveLock;
