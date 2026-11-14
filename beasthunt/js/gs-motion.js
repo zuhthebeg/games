@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { recoveryClips, groundRecovery } from './motion-authoring.js';
 import { gsClipName, gsClipTime } from 'bh/gs-phase';
 import { GS_EDGE, gsEdgeRoll } from './gs-edge.js?v=20261113r8';
 // Baked source markers (seconds) and measured right-hand-local grip axes.
@@ -28,7 +29,7 @@ for(const [name,edge] of Object.entries(GS_EDGE)) Object.assign(GS_CLIPS[name],e
 const Y=new THREE.Vector3(0,1,0), V=()=>new THREE.Vector3(), Q=()=>new THREE.Quaternion();
 export function createGSMotion(model, clips, sword) {
  const mixer=new THREE.AnimationMixer(model), actions={};
- for(const source of clips){const clip=source.name==='charge'?(clips.find(c=>c.name==='h2')||source).clone():source;if(source.name==='charge')clip.name='charge';const a=mixer.clipAction(clip);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.paused=true;actions[clip.name]=a;}
+ for(const source of recoveryClips(clips)){const clip=source.name==='charge'?(clips.find(c=>c.name==='h2')||source).clone():source;if(source.name==='charge')clip.name='charge';const a=mixer.clipAction(clip);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.paused=true;actions[clip.name]=a;}
  const bones={};model.traverse(o=>{if(o.isBone)bones[o.name.replace('mixamorig:','').replace('mixamorig','')]=o;});
  const socket=new THREE.Group();socket.name='gs-right-hand-socket';socket.scale.setScalar(1 / bones.RightHand.getWorldScale(V()).x);bones.RightHand.add(socket);socket.add(sword);
  // Right palm midpoint; bone units are cm, socket children are metres.
@@ -112,6 +113,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
  gs.lastPos={x:p.x,z:p.z};
  // Paused actions seek from authoritative state, mixer time only drives fades.
  gs.mixer.update(Math.max(0,dt));
+ groundRecovery(gs,p);
  const axis=new THREE.Vector3(...meta.gripAxis);
  // The jump slam rotates the grip relative to the wrist; its mean axis cannot
  // represent both the overhead hold and ground contact. Other clips stay intact.

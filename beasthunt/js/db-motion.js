@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { dualBladeClips, whirlwindTurns, groundPivot, groundRecovery } from './motion-authoring.js';
 // Presentation-only Mixamo one-hand sword clips; h2 is an X-reflected h.
 // Timings generated from the bake inventory. Authoritative state stays untouched.
 export const DB_CLIPS = {"idle":{"duration":3,"impact":null,"mirrored":false},"walkF":{"duration":0.9,"impact":null,"mirrored":false},"walkB":{"duration":0.6333333333333333,"impact":null,"mirrored":false},"walkL":{"duration":0.7,"impact":null,"mirrored":false},"walkR":{"duration":0.7333333333333333,"impact":null,"mirrored":false},"h":{"duration":1.3,"impact":[0.36666666666666664,0.6],"mirrored":false},"h2":{"duration":1.3,"impact":[0.36666666666666664,0.6],"mirrored":true},"h3":{"duration":1,"impact":[0.3,0.5],"mirrored":false},"v":{"duration":2.2666666666666666,"impact":[0.9,1.2],"mirrored":false},"spin":{"duration":3.1666666666666665,"impact":[0.8333333333333334,2.066666666666667],"mirrored":false},"roll":{"duration":1.6,"impact":null,"mirrored":false},"drink":{"duration":3,"impact":null,"mirrored":false},"hit":{"duration":1.1666666666666667,"impact":null,"mirrored":false},"stun":{"duration":1.6333333333333333,"impact":null,"mirrored":false},"down":{"duration":1.9666666666666666,"impact":null,"mirrored":false},"dead":{"duration":2.566666666666667,"impact":null,"mirrored":false}};
@@ -9,7 +10,7 @@ const clamp = THREE.MathUtils.clamp;
 
 export function createDbMotion(model, clips, db) {
   const mixer = new THREE.AnimationMixer(model), actions = {};
-  for (const source of clips) {
+  for (const source of dualBladeClips(clips)) {
     const a = mixer.clipAction(source); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.paused = true; actions[source.name] = a;
   }
   const bones = {}; model.traverse(o => { if (o.isBone) bones[o.name.replace('mixamorig:', '').replace('mixamorig', '')] = o; });
@@ -47,7 +48,7 @@ export function dbClipTime(p, name, meta) {
 
 export function syncHunterDb(p, H, dt, clock = 0) {
   const b = H.db; if (!b) return false;
-  H.root.position.set(p.x || 0, 0, p.z || 0); H.root.rotation.y = (p.yaw || 0) + (p.spin || 0);
+  H.root.position.set(p.x || 0, 0, p.z || 0); H.root.rotation.y = (p.yaw || 0) + (p.state === 'atk' && p.cur?.sw === 'spin' ? whirlwindTurns((p.t-p.cur.h0)/Math.max(1e-8,p.cur.h1-p.cur.h0))*Math.PI*2 : (p.spin || 0));
   H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(clock * 20) % 2 === 0);
   const wanted = dbClipName(p), name = wanted === 'walk' ? 'walkF' : wanted, action = b.actions[name], meta = DB_CLIPS[name] || { duration: action ? action.getClip().duration : 1 };
   const restart = b.key !== wanted || p.state === 'atk' && (p.t < b.lastT - .00001 || p.combo !== b.combo);
@@ -83,6 +84,9 @@ export function syncHunterDb(p, H, dt, clock = 0) {
   if (action && wanted !== 'walk') { action.time = time; b.clipTime = time; } else if (wanted === 'walk') b.clipTime = time;
   b.lastPos = { x: p.x, z: p.z };
   b.mixer.update(Math.max(0, dt));
+  groundRecovery(b,{state:'idle'});
+  groundPivot(b,p.state==='atk' && p.cur?.sw==='spin');
+  groundRecovery(b,p);
   for (const side of ['Right','Left']) b.blades[side].visible=!UNARMED.includes(p.state);
   return true;
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { recoveryClips, groundRecovery } from './motion-authoring.js';
 // Baked source markers (seconds), left-hand-local bow axes and right-hand
 // nock samples. Generated from tmp/beasthunt-mixamo-bow/clips.json.
 export const BOW_CLIPS = {"idle":{"duration":3.7666666666666666,"impact":null},"walkF":{"duration":1.2,"impact":null},"walkB":{"duration":1.4666666666666666,"impact":null},"walkL":{"duration":1.2,"impact":null},"walkR":{"duration":1.3,"impact":null},"shot":{"duration":1.0666666666666667,"impact":[0.4,0.4]},"charge":{"duration":3.066666666666667,"impact":null,"drawEnd":0.5},"release":{"duration":0.4666666666666667,"impact":[0.06666666666666667,0.1]},"roll":{"duration":1.6333333333333333,"impact":null},"drink":{"duration":3.033333333333333,"impact":null},"hit":{"duration":1.2,"impact":null},"stun":{"duration":1.6666666666666667,"impact":null},"down":{"duration":2.0,"impact":null},"dead":{"duration":2.6,"impact":null}};
@@ -9,7 +10,7 @@ const clamp = THREE.MathUtils.clamp;
 
 export function createBowMotion(model, clips, bow) {
   const mixer = new THREE.AnimationMixer(model), actions = {};
-  for (const source of clips) {
+  for (const source of recoveryClips(clips)) {
     const a = mixer.clipAction(source); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.paused = true; actions[source.name] = a;
   }
   const bones = {}; model.traverse(o => { if (o.isBone) bones[o.name.replace('mixamorig:', '').replace('mixamorig', '')] = o; });
@@ -47,13 +48,13 @@ function bowClipTime(p, name, meta) {
 }
 
 // String mesh: two thin links tipTop->nock->tipBottom, plus a nocked arrow.
-// The nock tracks the right hand only while the pose projects a real draw —
-// idle keeps the string straight like the source animation.
+// Aim-idle/walk sources hold a drawn string. Right palm owns the nock until
+// the authoritative shot marker; released string returns between the tips.
 // Units are metres in socket space; constants from tmp/beasthunt-mixamo-bow/clips.json.
 const TIP_T = new THREE.Vector3(.22, .62, .02), TIP_B = new THREE.Vector3(.22, -.62, .02), TIP_M = new THREE.Vector3(.22, 0, .02);
-const PULL_DIR = new THREE.Vector3(-.786, .472, -.377), AIM_DIR = new THREE.Vector3(.9, .44, .03);
-const STR_MAX = 1.34, GRIP_PROJ = .12, DRAW_FULL = .59;
-function updateString(b, dt) {
+const AIM_DIR = new THREE.Vector3(-1, 0, 0);
+const DRAW_FULL = .72;
+function updateString(b, p) {
   const g = b.bow;
   if (!b.string) {
     const sm = new THREE.MeshBasicMaterial({ color: 0x2a2118 });
@@ -64,15 +65,16 @@ function updateString(b, dt) {
     g.add(b.string.top, b.string.bot, b.nockArrow);
   }
   const sock = b.socket; sock.updateWorldMatrix(true, false);
-  const hand = b.bones.RightHand.getWorldPosition(V()).applyMatrix4(sock.matrixWorld.clone().invert());
-  const proj = hand.clone().sub(TIP_M).dot(PULL_DIR);
-  const held = proj > GRIP_PROJ;
-  const target = held ? hand : TIP_M;
-  b.nockPos = b.nockPos ? b.nockPos.lerp(target, Math.min(1, dt * (held ? 22 : 14))) : target.clone();
-  const nock = b.nockPos;
-  const total = TIP_T.distanceTo(nock) + nock.distanceTo(TIP_B);
-  if (total > STR_MAX) nock.copy(TIP_M).lerp(nock, STR_MAX / total);
-  b.draw = clamp(proj / DRAW_FULL, 0, 1);
+  // Palm contact, not wrist bone origin. Aiming clips are already fully drawn.
+  // No max-length clamp or temporal lag may detach nock from the string hand.
+  const palm = b.bones.RightHand.getWorldPosition(V()).add(b.bones.RightHandMiddle1.getWorldPosition(V())).multiplyScalar(.5);
+  const hand = sock.worldToLocal(palm);
+  const releaseAt = p.cur?.h0 ?? 0;
+  const released = p.state === 'atk' && p.t >= releaseAt;
+  const held = !released && ['idle','charge','atk'].includes(p.state);
+  const nock = held ? hand : TIP_M;
+  b.nockPos = nock.clone(); b.stringHeld = held;
+  b.draw = held ? clamp(TIP_M.distanceTo(nock) / DRAW_FULL,0,1) : 0;
   const setLink = (m, a, c) => {
     const d = c.clone().sub(a), len = Math.max(d.length(), 1e-4);
     m.position.copy(a).addScaledVector(d, .5); m.scale.set(1, len, 1);
@@ -80,7 +82,8 @@ function updateString(b, dt) {
   };
   setLink(b.string.top, TIP_T, nock); setLink(b.string.bot, TIP_B, nock);
   const ad = b.draw > .1 ? TIP_M.clone().sub(nock).normalize() : AIM_DIR;
-  b.nockArrow.position.copy(nock).addScaledVector(ad, .3);
+  b.nockArrow.visible = held;
+  b.nockArrow.position.copy(nock).addScaledVector(ad, .31);
   b.nockArrow.scale.set(1, .62, 1);
   b.nockArrow.quaternion.setFromUnitVectors(Y, ad);
 }
@@ -93,7 +96,7 @@ export function syncHunterBow(p, H, dt, clock = 0) {
   const restart = b.key !== wanted || p.state === 'atk' && (p.t < b.lastT - .00001 || p.combo !== b.combo);
   if (restart) {
     const immediate = p.state === 'atk' || !b.key;
-    for (const a of Object.values(b.actions)) if (a !== action && !a._walk) { if (immediate) a.stop(); else a.fadeOut(.1); }
+    for (const a of Object.values(b.actions)) if (a !== action && (immediate || !a._walk)) { if (immediate) { a.stop(); a.enabled=false; a._walk=false; } else a.fadeOut(.1); }
     if (action) {
       action.reset(); action.paused = true; action.enabled = true; action.setEffectiveWeight(1); action.play();
       if (!immediate) action.fadeIn(.1);
@@ -123,11 +126,19 @@ export function syncHunterBow(p, H, dt, clock = 0) {
   if (action && wanted !== 'walk') { action.time = time; b.clipTime = time; } else if (wanted === 'walk') b.clipTime = time;
   b.lastPos = { x: p.x, z: p.z };
   b.mixer.update(Math.max(0, dt));
-  // Bow limb axis = world up expressed in the left hand frame; the wrist
-  // already carries the animation's tilt.
-  const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(b.bones.LeftHand.getWorldQuaternion(Q()).invert()).normalize();
-  b.socket.quaternion.setFromUnitVectors(Y, axis);
+  groundRecovery(b,p);
+  // Geometry bends +X toward the tips/string. Point +X back toward the
+  // string hand, not arbitrary hand-local X (which put string over the grip).
+  // Keep a vertical limb axis in the palm-to-palm plane.
+  b.model.updateWorldMatrix(true,true);
+  const left = b.socket.getWorldPosition(V());
+  const right = b.bones.RightHand.getWorldPosition(V()).add(b.bones.RightHandMiddle1.getWorldPosition(V())).multiplyScalar(.5);
+  const x = right.sub(left).normalize();
+  const y = Y.clone().addScaledVector(x,-x.y).normalize();
+  const z = x.clone().cross(y).normalize(); y.copy(z).cross(x).normalize();
+  const world = Q().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z));
+  b.socket.quaternion.copy(b.bones.LeftHand.getWorldQuaternion(Q()).invert().multiply(world));
   b.bow.visible = !UNARMED.includes(p.state);
-  if (b.bow.visible) updateString(b, dt);
+  if (b.bow.visible) updateString(b, p);
   return true;
 }
