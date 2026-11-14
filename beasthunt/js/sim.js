@@ -1,5 +1,5 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE } from './data.js?v=20261114r10';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE, ROLL_HIT_MULT } from './data.js?v=20261114r10';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
@@ -323,8 +323,10 @@ export class Sim {
   hurt(dmg, sx, sz, heavy) {
     if (this.network?.role === 'world' || (this.network && this.activeId !== this.network.localId)) return false;
     const p = this.p; if (p.inv > 0 || p.state === 'dead' || p.state === 'down' || this.over) return false;
+    const rolling=p.state==='roll';
     const keepBreak=this.wt==='gs' && p.state==='stun' && p.guardBroken, breakT=p.t;
     dmg = Math.max(1, Math.round(dmg * this.def.dmg * this.hr.dmg * (this.m.enr ? 1.2 : 1) * 80 / (80 + this.arm.def)));
+    if(rolling)dmg=Math.max(1,Math.round(dmg*ROLL_HIT_MULT));
     let guarded=false,broken=false;
     if(this.wt==='gs' && p.state==='guard' && !p.guardRelease && Math.abs(angDiff(Math.atan2(sx-p.x,sz-p.z),p.yaw))<=70*PI/180+1e-9){
       guarded=true;const cost=dmg*.9;broken=p.st<cost;p.st=Math.max(0,p.st-cost);p.stDelay=2;
@@ -338,6 +340,10 @@ export class Sim {
     if (p.hp <= 0) {
       delete p.guardBroken; p.hp = 0; p.state = 'dead'; p.t = 0; this.carts++; this.emit('cart', { playerId: p.id, carts: this.carts }); this.sound('faint'); this.toast('faint', 'bad');
       if (this.carts >= MAX_CARTS && this.network?.role !== 'owner') this.finish(false, 2.2);
+    } else if(rolling) {
+      // A glancing contact must not turn the remaining dodge into hit/down.
+      // Reuse the existing 250ms light-hit grace, without restarting roll time.
+      p.inv=Math.max(p.inv,.25);
     } else { p.state = broken ? 'stun' : guarded ? 'guard' : heavy ? 'down' : 'hit'; p.t = 0; const s = guarded ? 2 : heavy ? 13 : 6; p.kbx = dx * s; p.kbz = dz * s; if (broken || !heavy && !guarded) p.inv = .25;
       if(broken)p.guardBroken=true;
       else if(keepBreak){p.state='stun';p.t=breakT;} }

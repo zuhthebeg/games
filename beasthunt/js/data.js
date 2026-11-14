@@ -6,6 +6,8 @@ export const ARMOR = [
 ];
 export const TIERS = ['t_iron', 't_boar', 't_frost', 't_ember', 't_starforge'];
 export const DMG_SCALE = 0.3;
+// Late-roll contact mitigation after the existing 0.38s invulnerability.
+export const ROLL_HIT_MULT = .5;
 
 // UPG[i] = cost to go from tier i to tier i+1.
 export const UPG = [null,
