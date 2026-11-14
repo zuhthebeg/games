@@ -10,8 +10,10 @@ export function seenMaterials(save) {
   return seen;
 }
 
-export function noteMaterials(save) {
+export function noteMaterials(save, previous = {}) {
   const seen = seenMaterials(save);
+  // A transaction may spend the last copy before its first discovery is persisted.
+  for (const id of seenMaterials(previous)) seen.add(id);
   const before = save.seenMaterials || [];
   if (seen.size === before.length) return save;
   return { ...save, seenMaterials: [...seen].sort() };

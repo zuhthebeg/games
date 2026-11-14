@@ -264,7 +264,7 @@ export class HubUI {
 
   commit(next) {
     if (this.canInteract?.() === false) throw new Error('언데드 디버그 저장 금지');
-    next = noteMaterials(next);
+    next = noteMaterials(next, this.save || {});
     this.persist(next);
     this.save = next;
   }
