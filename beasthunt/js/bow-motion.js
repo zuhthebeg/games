@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { recoveryClips, groundRecovery } from './motion-authoring.js';
+import { recoveryClips, groundRecovery } from './motion-authoring.js?v=20261114r11';
 // Baked source markers (seconds), left-hand-local bow axes and right-hand
 // nock samples. Generated from tmp/beasthunt-mixamo-bow/clips.json.
 export const BOW_CLIPS = {"idle":{"duration":3.7666666666666666,"impact":null},"walkF":{"duration":1.2,"impact":null},"walkB":{"duration":1.4666666666666666,"impact":null},"walkL":{"duration":1.2,"impact":null},"walkR":{"duration":1.3,"impact":null},"shot":{"duration":1.0666666666666667,"impact":[0.4,0.4]},"charge":{"duration":3.066666666666667,"impact":null,"drawEnd":0.5},"release":{"duration":0.4666666666666667,"impact":[0.06666666666666667,0.1]},"roll":{"duration":1.6333333333333333,"impact":null},"drink":{"duration":3.033333333333333,"impact":null},"hit":{"duration":1.2,"impact":null},"stun":{"duration":1.6666666666666667,"impact":null},"down":{"duration":2.0,"impact":null},"dead":{"duration":2.6,"impact":null}};

@@ -10,7 +10,7 @@ for(const missing of [false,true]){
  if(missing)await page.route('**/hunter-db.glb*',r=>r.fulfill({status:404,body:'missing'}));
  await page.goto('http://127.0.0.1:8791/beasthunt/?lowfx=1');await page.waitForFunction(()=>window.__bh);
  const result=await page.evaluate(async missing=>{
- const T=await import('three'),M=await import('bh/models'),D=await import('/beasthunt/js/db-motion.js?v=20261114r10'),{WTYPES}=await import('bh/data');
+ const T=await import('three'),M=await import('bh/models'),D=await import('/beasthunt/js/db-motion.js?v=20261114r11'),{WTYPES}=await import('bh/data');
  const a=M.buildHunter('db',1,1),b=M.buildHunter('db',1,1);await Promise.all([a.ready,b.ready]);
  if(missing)return {fallback:!a.db&&a.root.children.length>0&&M.hunterDbLoad.status==='failed'};
  let maxGrip=0,tris=0;const markers=[],names=[];

@@ -1,9 +1,9 @@
-import { Coop } from './net/coop.js?v=20261114r10';
+import { Coop } from './net/coop.js?v=20261114r11';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachGSChargePresentation } from './gs-charge.js?v=20261114r10';
+import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js';
-import { recoveryClips, groundRecovery } from './motion-authoring.js';
+import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js?v=20261114r11';
+import { recoveryClips, groundRecovery } from './motion-authoring.js?v=20261114r11';
 import { gsClipName, gsClipTime } from 'bh/gs-phase';
 import { GS_EDGE, gsEdgeRoll } from './gs-edge.js?v=20261113r8';
 // Baked source markers (seconds) and measured right-hand-local grip axes.
