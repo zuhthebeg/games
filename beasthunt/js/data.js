@@ -1,10 +1,10 @@
 // Beast Hunt — static game data (original content).
 export const COOP_HP_SCALE = Object.freeze([1, 1.6, 2.2, 2.8]);
-export const ATK = [100, 135, 175, 220, 270];
+export const ATK = [100, 135, 175, 220, 270, 330];
 export const ARMOR = [
-  { def: 0, hp: 0 }, { def: 10, hp: 10 }, { def: 22, hp: 20 }, { def: 36, hp: 35 }, { def: 52, hp: 50 },
+  { def: 0, hp: 0 }, { def: 10, hp: 10 }, { def: 22, hp: 20 }, { def: 36, hp: 35 }, { def: 52, hp: 50 }, { def: 66, hp: 70 },
 ];
-export const TIERS = ['t_iron', 't_boar', 't_frost', 't_ember', 't_starforge'];
+export const TIERS = ['t_iron', 't_boar', 't_frost', 't_ember', 't_starforge', 't_warrok'];
 export const DMG_SCALE = 0.3;
 // Late-roll contact mitigation after the existing 0.38s invulnerability.
 export const ROLL_HIT_MULT = .5;
@@ -15,6 +15,7 @@ export const UPG = [null,
   { shards: 800, w: { f_hide: 2, f_fang: 2, f_horn: 1 }, a: { f_hide: 3, f_fang: 1, b_tail: 1 } },
   { shards: 1800, w: { e_hide: 2, e_fang: 2, e_horn: 1 }, a: { e_hide: 3, e_fang: 1, f_tail: 1 } },
   { shards: 4000, w: { b_gem: 1, f_gem: 1, e_gem: 1 }, a: { b_gem: 1, f_gem: 1, e_gem: 1, e_tail: 1 } },
+  { shards: 5500, w: { w_hide: 3, w_fang: 2, w_gem: 1 }, a: { w_hide: 4, w_horn: 2, w_claw: 1 } },
 ];
 
 export const WTYPES = {
@@ -73,6 +74,13 @@ export const MONSTERS = {
     brk: { head: 480, tail: 420, legs: 520 },
     atks: { bite: 2.5, sweep: 2.5, charge: 1.5, fireball: 3, breath: 2.5, leap: 1.5 },
   },
+  warrok: {
+    hp: 6800, scale: 1.0, speed: 5.2, turn: 2.0, dmg: 1.65, biome: 'volcano', proj: 'fire', biped: true,
+    dims: { h: 2.5, bw: 1.5, bh: 2.0, hz: 1.0, headZ: .9, tailLen: 0, tailN: 0, tailW: 0, legX: .6, legZ: .4, armX: 1.6, armZ: .2, sweepR: 3.6, legCoords: [[1, 0], [-1, 0]] },
+    parts: { head: 1.35, body: .9, legs: .8, arms: 1.05 },
+    brk: { head: 520, arms: 420, legs: 560 },
+    atks: { bite: 3, stomp: 2.4, sweep: 2, charge: 2, spit: 2.2, leap: 1.5 },
+  },
 };
 
 export const QUESTS = [
@@ -82,9 +90,11 @@ export const QUESTS = [
   { id: 'q4', mon: 'boar', hr: 1, shards: 1500, gold: 50, need: 'q3' },
   { id: 'q5', mon: 'frost', hr: 1, shards: 2400, gold: 70, need: 'q4' },
   { id: 'q6', mon: 'ember', hr: 1, shards: 3600, gold: 100, need: 'q5' },
+  { id: 'q7', mon: 'warrok', hr: 0, shards: 4200, gold: 120, need: 'q6' },
+  { id: 'q8', mon: 'warrok', hr: 1, shards: 5600, gold: 150, need: 'q7' },
 ];
 export const HR = { hp: 1.9, dmg: 1.45, spd: 1.1 };
-export const PREFIX = { boar: 'b', frost: 'f', ember: 'e' };
+export const PREFIX = { boar: 'b', frost: 'f', ember: 'e', warrok: 'w' };
 export const TIME_LIMIT = 600;
 export const MAX_CARTS = 3;
 export const POTIONS = 5;
@@ -95,6 +105,7 @@ export function rollLoot(q, broke, rnd = Math.random) {
   for (let i = 0; i < 3 + (q.hr ? 1 : 0); i++) add(rnd() < .55 ? p + '_hide' : p + '_fang');
   if (broke.head) add(p + '_horn');
   if (broke.tail) add(p + '_tail');
+  if (broke.arms) add(p + '_claw');
   if (q.hr) add(p + '_gem');
   return out;
 }

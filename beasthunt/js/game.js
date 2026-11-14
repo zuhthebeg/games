@@ -148,6 +148,12 @@ export class Hunt {
   }
   breakVisual(part) {
     const G = this.G;
+    if (G.warrok !== undefined) {
+      const d = this.def.dims;
+      const [x, z] = part === 'head' ? this.mPt(0, d.headZ + .8) : this.mPt(0, d.armZ);
+      this.burst(part === 'head' ? 'dust' : 'blood', x, part === 'head' ? d.h * this.def.scale * .95 : d.h * this.def.scale * .6, z, 18, 6, .7);
+      return;
+    }
     if (part === 'head') {
       G.horns.forEach(h => { h.scale.set(.85,.24,.85); h.material = G.brokenHornMat; });
       const [x,z] = this.mPt(0,this.def.dims.headZ); this.burst('dust',x,2,z,16,6,.7);
@@ -222,6 +228,13 @@ export class Hunt {
     const p = this.p, H = this.H, m = this.m, G = this.G, d = this.def.dims, t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
     this.syncHunter(p, H, dt);
     // monster
+    if (G.warrok !== undefined) {
+      G.root.position.set(m.x, m.y, m.z); G.root.rotation.y = m.yaw + m.spin;
+      if (G.warrok) G.warrok.sync(m, dt, m.enr);
+      this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 2.4); this.lockRing.rotation.y = t * .8;
+      if (m.enr && dt > 0 && Math.random() < .3) { const [x, z] = this.mPt(0, d.headZ + .8); this.burst(this.def.proj === 'ice' ? 'ice' : 'fire', x, d.h * this.def.scale, z, 1, 1.2, .5, -3); }
+      return;
+    }
     const T = Object.assign({}, this.hp0), A = m.atk, er = m.enr ? .85 : 1; let legAmp = m.moving ? .55 : 0, legF = 1.7, flail = 0, tailWag = .12;
     if (m.state === 'idle') { T.headRx = .32 + Math.sin(t * 1.3) * .08; }
     else if (m.state === 'roar') { const k = m.t > .35 && m.t < 1.45; T.bodyRx = -.22; T.headRx = k ? -.75 : -.2; T.jaw = k ? .9 : .1; T.tailLift = .3; }

@@ -6,6 +6,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
 import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261114r11';
 import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261114r11';
+import { createWarrokMotion } from './warrok-motion.js?v=20261114wk';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
@@ -161,7 +162,18 @@ export function buildHunterGS(wTier,aTier) {
  H.ready=gsAsset ? Promise.resolve(upgrade(gsAsset)) : loadHunterGS().then(upgrade);
  return H;
 }
+let warrokLoad = null, warrokAsset = null;
+export const warrokLoadState = { status: 'idle', ms: 0, error: null };
+export function loadWarrok() {
+ if (warrokLoad) return warrokLoad;
+ const start = performance.now(); warrokLoadState.status = 'loading';
+ warrokLoad = new GLTFLoader().loadAsync(new URL('../assets/warrok.glb?v=20261114wk', import.meta.url).href)
+  .then(asset => { warrokAsset = asset; warrokLoadState.status = 'ready'; warrokLoadState.ms = performance.now() - start; return asset; })
+  .catch(error => { warrokLoadState.status = 'failed'; warrokLoadState.error = String(error); return null; });
+ return warrokLoad;
+}
 export function buildMonster(id){
+ if (id === 'warrok') return buildWarrok();
  const d=MONSTERS[id].dims,root=G(),body=G(0,d.h,0);root.add(body);
  const boar=id==='boar',frost=id==='frost',ember=id==='ember';
  const C=boar?[0x624731,0x352f2a,0xdac49c,0xffd36b]:frost?[0xc4d9e2,0x48667d,0x8ad9ea,0x88eaff]:[0x943e32,0x352f44,0xe6a36b,0xffb23a];
@@ -192,6 +204,28 @@ export function buildMonster(id){
  for(let i=0;i<d.tailN;i++){const sg=G(0,0,i?-segLen:0);parent.add(sg);const r=d.tailW*(1-i/d.tailN*.82);sg.add(mesh(loft([[.05,0,r,r*.85],[-segLen*.5,.04,r*.75,r*.65],[-segLen,.05,d.tailW*(1-(i+1)/d.tailN*.82),d.tailW*(1-(i+1)/d.tailN*.82)*.85]],6),i%2?mb:ma));if(!boar&&i>0)horn(sg,[[0,r,-segLen*.3],[0,r+.35,-segLen*.55],[0,r+.4,-segLen*.85]],r*.35,mc);tail.push(sg);parent=sg;}
  const tip=mesh(frost?cone(.22,.7,5):sph(boar?.18:.25),mb,0,0,-segLen);if(frost)tip.rotation.x=-Math.PI/2;parent.add(tip);root.scale.setScalar(MONSTERS[id].scale);batch(root);
  return {root,body,head,jaw,legs,knees,wings,tail,tailRoot,horns,headBaseY:head.position.y,brokenHornMat:M(0xffdda0,{emissive:0xff7a35,emissiveIntensity:.5}),eyeMat,eyeCol:C[3]};
+}
+
+// Warrok W Kurniawan skinned boss. A dim capsule stands in only while the local
+// GLB streams in; the real model replaces it, so no fake anatomy is animated.
+export function buildWarrok() {
+ const d = MONSTERS.warrok.dims, root = G(), body = G(0, d.h, 0); root.add(body);
+ const ph = mesh(new THREE.CapsuleGeometry(d.bw * .7, d.h * .9, 4, 10), M(0x2c3428)); body.add(ph);
+ const W = { root, body, head: body, jaw: G(), legs: [], knees: [], wings: [], tail: [], tailRoot: body, horns: [], headBaseY: 0, brokenHornMat: M(0x000000), eyeMat: M(0x000000), eyeCol: 0, warrok: null };
+ const upgrade = asset => {
+  if (!asset) return W;
+  const model = cloneSkeleton(asset.scene);
+  model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  const box = new THREE.Box3().setFromObject(model);
+  const h = box.max.y - box.min.y, k = (d.h * 2) / h;
+  model.scale.setScalar(k); model.position.y = -box.min.y * k;
+  W.warrok = createWarrokMotion(model, asset.animations);
+  for (const c of [...body.children]) body.remove(c);
+  body.position.y = 0; body.add(model);
+  return W;
+ };
+ W.ready = warrokAsset ? Promise.resolve(upgrade(warrokAsset)) : loadWarrok().then(upgrade);
+ return W;
 }
 
 function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }

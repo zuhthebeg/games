@@ -5,7 +5,7 @@ import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
-import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb } from 'bh/models';
+import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
@@ -60,8 +60,12 @@ function framePreview(dt) {
   const p = preview; p.t += dt; const a = p.t * .22 + .9, wide = stage.clientWidth > stage.clientHeight * 1.15, r = (wide ? 15 : 21) * p.d.scale;
   p.cam.position.set(Math.sin(a) * r, 5.2, Math.cos(a) * r); p.cam.lookAt(0, wide ? 2.2 : 3.4, 0);
   if (wide) p.cam.setViewOffset(stage.clientWidth, stage.clientHeight, -stage.clientWidth * .2, 0, stage.clientWidth, stage.clientHeight); else p.cam.clearViewOffset();
-  p.G.tail.forEach((s, i) => { s.rotation.y = Math.sin(p.t * 1.5 + i * .6) * .14; });
-  p.G.head.rotation.x = Math.sin(p.t * .9) * .1; p.G.body.position.y = p.d.dims.h + Math.sin(p.t * 1.6) * .04; p.G.jaw.rotation.x = .1 + Math.max(0, Math.sin(p.t * .5)) * .25;
+  if (p.G.warrok !== undefined) {
+    if (p.G.warrok) p.G.warrok.sync({ state: 'idle', t: p.t, dur: 0, enr: false, moving: 0, atk: null, ak: null }, dt, false);
+  } else {
+    p.G.tail.forEach((s, i) => { s.rotation.y = Math.sin(p.t * 1.5 + i * .6) * .14; });
+    p.G.head.rotation.x = Math.sin(p.t * .9) * .1; p.G.body.position.y = p.d.dims.h + Math.sin(p.t * 1.6) * .04; p.G.jaw.rotation.x = .1 + Math.max(0, Math.sin(p.t * .5)) * .25;
+  }
   const pose={ state:'idle',t:p.t,x:4.6,z:4.2,yaw:-2.2,spin:0,inv:0,moving:0 };
   if (save.weapon === 'gs') syncHunterGS(pose, p.H, dt, p.t); else if (save.weapon === 'bow') syncHunterBow(pose, p.H, dt, p.t); else if (save.weapon === 'db') syncHunterDb(pose, p.H, dt, p.t);
   renderer.render(p.scene, p.cam);
@@ -109,7 +113,7 @@ function renderHub() {
 }
 $('hub').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; initAudio();
-  if (b.dataset.q) { sel = b.dataset.q; sfx('ui'); makePreview(); renderHub(); }
+  if (b.dataset.q) { sel = b.dataset.q; if (MONSTERS[QUESTS.find((x) => x.id === sel)?.mon]?.biped) void loadWarrok(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow')void loadHunterBow(); else if(save.weapon==='db')void loadHunterDb(); persist(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';

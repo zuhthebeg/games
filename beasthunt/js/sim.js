@@ -48,7 +48,13 @@ export class Sim {
     Object.assign(player, { id: 'p1', weapon: save.weapon, tier: save.w[save.weapon], armor: save.armor, lock: true, input: neutralInput(), buffer: {}, lastDamageTick: -100000, contribution: 0 });
     this.players = [player]; this.activeId = player.id;
     const mhp = Math.round(d.hp * this.hr.hp);
-    this.m = { x: 0, z: 12, y: 0, yaw: PI, spin: 0, hp: mhp, maxHp: mhp, state: 'idle', t: 0, dur: 0, atk: null, ak: null, last: '', think: 1, enr: false, enrT: 0, enrStage: 0, rageQ: false, walk: 0, moving: 0, stag: 0, brk: { head: 0, tail: 0, legs: 0 }, broke: { head: false, tail: false }, legTh: d.brk.legs * this.hr.hp, flag: 0, hitP: false, fired: 0, tick: 0, fx: 0, fz: 0, tx: 0, tz: 0, roared: false };
+    const brkParts = { head: 0, legs: 0 };
+    if (d.brk.tail != null) brkParts.tail = 0;
+    if (d.brk.arms != null) brkParts.arms = 0;
+    const broke = { head: false };
+    if (brkParts.tail != null) broke.tail = false;
+    if (brkParts.arms != null) broke.arms = false;
+    this.m = { x: 0, z: 12, y: 0, yaw: PI, spin: 0, hp: mhp, maxHp: mhp, state: 'idle', t: 0, dur: 0, atk: null, ak: null, last: '', think: 1, enr: false, enrT: 0, enrStage: 0, rageQ: false, walk: 0, moving: 0, stag: 0, brk: brkParts, broke, legTh: d.brk.legs * this.hr.hp, flag: 0, hitP: false, fired: 0, tick: 0, fx: 0, fz: 0, tx: 0, tz: 0, roared: false };
 
     if (this.network?.role === 'world') {
       const count = this.network.partySize ?? 1;
@@ -145,12 +151,16 @@ export class Sim {
   mParts() {
     const d = this.def.dims, s = this.def.scale, out = [], add = (n, lx, lz, r) => { const [x, z] = this.mPt(lx, lz); out.push({ n, x, z, r: r * s }); };
     add('head', 0, d.headZ, 1.15); add('body', 0, d.hz * .45, d.bw * 1.02); add('body', 0, -d.hz * .45, d.bw * 1.02);
-    for (const sx of [-1, 1]) for (const sz of (this.q.mon === 'ember' ? [-1] : [-1, 1])) add('legs', sx * d.legX * 1.05, this.q.mon === 'ember' ? -1 : sz * d.legZ, .78);
-    if (this.m.broke.tail) add('body', 0, -d.hz - .5, .7);
-    else { const n = Math.max(2, Math.round(d.tailLen / 1.3)); for (let i = 0; i < n; i++) add('tail', 0, -d.hz - .5 - (i + .5) * (d.tailLen / n), .85); }
+    const legCoords = d.legCoords || (this.q.mon === 'ember' ? [[1, -1], [-1, -1]] : [[1, d.legZ], [-1, d.legZ], [1, -d.legZ], [-1, -d.legZ]]);
+    for (const [sx, lz] of legCoords) add('legs', sx * d.legX * 1.05, lz, .78);
+    if (d.armX) for (const sx of [-1, 1]) add('arms', sx * d.armX, d.armZ, .85);
+    if (d.tailLen > 0) {
+      if (this.m.broke.tail) add('body', 0, -d.hz - .5, .7);
+      else { const n = Math.max(2, Math.round(d.tailLen / 1.3)); for (let i = 0; i < n; i++) add('tail', 0, -d.hz - .5 - (i + .5) * (d.tailLen / n), .85); }
+    }
     return out;
   }
-  sweepR() { const d = this.def.dims; return (d.hz + (this.m.broke.tail ? 1.4 : d.tailLen) + .6) * this.def.scale; }
+  sweepR() { const d = this.def.dims; return (d.sweepR ?? (d.hz + (this.m.broke.tail ? 1.4 : d.tailLen) + .6)) * this.def.scale; }
   clampArena(o, R) { const r = Math.hypot(o.x, o.z); if (r > R) { o.x *= R / r; o.z *= R / r; return true; } return false; }
 
   // ---------- player ----------
@@ -394,7 +404,7 @@ export class Sim {
     this.stop = Math.max(this.stop, mv > 1.4 ? .11 : mv > .6 ? .06 : .025); this.emit('shake', { amount: mv > 1.4 ? .45 : .12 });
     if (m.state === 'idle') this.monRoar(false);
     const hrk = this.hr.hp * (this.network?.role === 'world' ? COOP_HP_SCALE[(this.network.partySize ?? 1)-1] : 1); let newlyBroken = false;
-    if (part === 'head' || part === 'tail') {
+    if (part !== 'legs' && d.brk[part] != null) {
       if (!m.broke[part]) { m.brk[part] += dmg; if (m.brk[part] >= d.brk[part] * hrk) { this.breakPart(part); newlyBroken = true; } }
     } else if (part === 'legs' && m.hp > 0) { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
     if (m.hp <= 0) return this.monDie();
@@ -405,7 +415,7 @@ export class Sim {
   breakPart(part) {
     this.m.broke[part] = true; this.sound('break'); this.emit('shake', { amount: .6 }); this.stop = .14;
     this.emit('break', { part });
-    this.toast(part === 'head' ? 'brk_head' : 'brk_tail', 'good'); this.setMon('flinch', 1.5);
+    this.toast('brk_' + part, 'good'); this.setMon('flinch', 1.5);
   }
   setMon(state, dur, toast) { const m = this.m; m.state = state; m.t = 0; m.dur = dur || 0; m.spin = 0; m.y = 0; m.atk = null; this.hideTele(); if (toast) { this.toast(toast, 'good'); this.sound('stomp'); } this.emitMonsterState(); }
   monRoar(rage) { this.emit('roar', { rage }); const m = this.m; this.setMon('roar', 1.75); m.roared = false; if (rage) { m.enr = true; m.enrT = 40; m.rageQ = false; this.toast('enrage', 'bad'); } this.emitMonsterState(); }
@@ -483,7 +493,7 @@ export class Sim {
         if (k === 'bite' && !coop) { fwd(1.4 * s); const [bx, bz] = this.mPt(0, dm.headZ + 1.2); this.hurtPlayers(p => Math.hypot(p.x - bx,p.z - bz) < 2.5*s, A.dmg,m.x,m.z,false); this.sound('swing'); this.hideTele(); }
         if (k === 'bite' && coop) { m.biteTicks = 0; this.sound('swing'); this.hideTele(); }
         if (k === 'stomp') { const [x, z] = this.mPt(0, dm.headZ * .7); this.hurtPlayers(p => Math.hypot(p.x-x,p.z-z) < 5.2*s,A.dmg,x,z,true); this.burst('dust', x, .3, z, 26, 9, .7); this.sound('stomp'); this.emit('shake', { amount: .9 }); this.hideTele(); }
-        if (k === 'spit') { for (const o of [-.28, 0, .28]) this.spawnProj(hx, hz, toP + o, 24, .7, A.dmg, false); this.sound('ice'); }
+        if (k === 'spit') { for (const o of [-.28, 0, .28]) this.spawnProj(hx, hz, toP + o, 24, .7, A.dmg, false); this.sound(this.def.proj === 'ice' ? 'ice' : 'fire'); }
         if (k === 'leap') { const t = { x: m.tx, z: m.tz }; this.clampArena(t, R_ARENA - 3); m.tx = t.x; m.tz = t.z; m.yaw = Math.atan2(m.tx - m.x, m.tz - m.z); }
         if (k === 'sweep') this.sound('swingH');
         if (k === 'charge') { this.sound('roar'); this.hideTele(); }
