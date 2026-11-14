@@ -1,7 +1,7 @@
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261114r11';
+import { Sim, R_ARENA } from './sim.js?v=20261114fix';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261114r11';
 import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS } from 'bh/audio';

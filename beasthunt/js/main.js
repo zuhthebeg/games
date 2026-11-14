@@ -39,7 +39,8 @@ const input = new Input(canvas, $('touch'));
 
 let coop = null;
 let hunt = null, sel = QUESTS[0].id, tab = 'quest', preview = null;
-const unlocked = (q) => !q.need || !!save.clears[q.need];
+const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+const unlocked = (q) => DEBUG || !q.need || !!save.clears[q.need];
 { const open = QUESTS.filter(unlocked); sel = open[open.length - 1].id; }
 
 // ---------- preview scene (hub backdrop) ----------
@@ -76,7 +77,7 @@ const need = (cost) => Object.entries(cost).map(([k, n]) => ({ k, n, have: save.
 const canPay = (u, kind) => save.shards >= u.shards && need(u[kind]).every((x) => x.have >= x.n);
 function renderHub() {
   document.documentElement.lang = getLang() === 'zh-TW' ? 'zh-Hant' : getLang();
-  $('sub').textContent = t('sub'); $('shards').textContent = save.shards.toLocaleString() + ' ' + t('currency');
+  $('sub').textContent = t('sub') + (DEBUG ? ' · DEBUG' : ''); $('shards').textContent = save.shards.toLocaleString() + ' ' + t('currency');
   $('langBtn').textContent = LANG_LABEL[getLang()]; $('muteBtn').textContent = isMuted() ? '🔇' : '🔊';
   $('tabQuest').textContent = t('tab_quest'); $('tabForge').textContent = t('tab_forge');
   $('tabQuest').classList.toggle('on', tab === 'quest'); $('tabForge').classList.toggle('on', tab === 'forge');
@@ -165,7 +166,7 @@ function startHunt(qid, session = null) {
   if(session)hunt.observeAudioSocket(coop?.ws?._ws,coop?.plan?.roster||{});
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
   document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
-  if (window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });
+  if (!DEBUG && window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });
 }
 const rewarded = new Set();
 function onHuntEnd(res) {
@@ -179,6 +180,7 @@ function onHuntEnd(res) {
   }
   hunt?.stopAudio?.(); input.enabled = false; if (document.pointerLockElement) document.exitPointerLock();
   const q = res.quest; let rec = false;
+  const trial = DEBUG && !hunt?.session; if (trial) duplicate = true;
   if (res.win && !duplicate) {
     save.shards += q.shards; for (const [k, n] of Object.entries(res.loot)) save.mats[k] = (save.mats[k] || 0) + n;
     const c = save.clears[q.id] || (save.clears[q.id] = { n: 0, best: 1e9 }); c.n++; if (res.time < c.best) { c.best = res.time; rec = true; }
@@ -192,10 +194,10 @@ function onHuntEnd(res) {
   }
   if (!duplicate && window.gtag) window.gtag('event', 'bh_quest_end', { quest: q.id, win: res.win ? 1 : 0, time: Math.round(res.time) });
   $('resTitle').textContent = t(res.win ? 'res_win' : 'res_fail'); $('result').className = 'overlay ' + (res.win ? 'win' : 'fail');
-  const rows = [[t('time'), fmtT(res.time) + (rec ? ' · ' + t('record') : '')], [t('faints'), res.carts]];
-  if (res.win) { rows.push([t('reward'), q.shards + ' ' + t('currency')], [t('gold'), '+' + q.gold]); }
+  const rows = [[t('time'), fmtT(res.time) + (rec ? ' · ' + t('record') : '') + (trial ? ' · DEBUG' : '')], [t('faints'), res.carts]];
+  if (res.win && !trial) { rows.push([t('reward'), q.shards + ' ' + t('currency')], [t('gold'), '+' + q.gold]); }
   $('resRows').innerHTML = rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
-  $('resLoot').innerHTML = res.win ? `<h4>${t('loot')}</h4>` + Object.entries(res.loot).map(([k, n]) => `<span class="mt">${matName(k)}: ${n}</span>`).join('') : '';
+  $('resLoot').innerHTML = res.win && !trial ? `<h4>${t('loot')}</h4>` + Object.entries(res.loot).map(([k, n]) => `<span class="mt">${matName(k)}: ${n}</span>`).join('') : '';
   $('resBack').textContent=t(hunt?.session?'back_lobby':'back');
   $('result').hidden = false; $('touch').hidden = true;
 }

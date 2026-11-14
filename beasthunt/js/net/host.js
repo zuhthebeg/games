@@ -1,5 +1,5 @@
-import {Sim} from '../sim.js?v=20261114r11';
-import {MAX_CARTS} from '../data.js?v=20261114r11';
+import {Sim} from '../sim.js?v=20261114fix';
+import {MAX_CARTS} from '../data.js?v=20261114fix';
 import {envelope,validEnvelope,decodeHunter} from './protocol.js';
 import {HostReplication,GuestReplication} from './replication.js';
 import {HitClaims} from './claims.js';
