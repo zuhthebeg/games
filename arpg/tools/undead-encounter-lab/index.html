@@ -2,7 +2,8 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#202923;color:#eee;font:14px system-ui}canvas{display:block;touch-action:none}header{position:fixed;z-index:2;inset:0 0 auto;padding:10px 12px;background:#17201ee8;pointer-events:none}h1{font-size:16px;margin:0 0 4px}p{margin:3px 0;font-size:12px}#status{font-variant-numeric:tabular-nums}#actions{position:fixed;right:12px;bottom:20px;display:flex;gap:8px;z-index:3}button{min-width:62px;min-height:52px;border:1px solid #a9bba9;background:#253d36;color:white;border-radius:10px;font:inherit;touch-action:none}button.held{background:#617962}button:disabled{opacity:.55}#restart{position:fixed;top:126px;right:12px;z-index:3}#joystick{position:fixed;width:84px;height:84px;margin:-42px;border:1px solid #bdd6bd;border-radius:50%;pointer-events:none;z-index:4}#joystick i{display:block;width:28px;height:28px;margin:27px;background:#afcbb9;border-radius:50%}#movepad{position:fixed;left:18px;bottom:24px;width:100px;height:100px;border:1px solid #9aad9a;border-radius:50%;touch-action:none;z-index:3}#movepad i{display:block;width:26px;height:26px;margin:36px;background:#aac0ac;border-radius:50%}#movepad[hidden]{display:none}
 </style>
-<body><header><h1>테스트 · 저장 안 됨</h1><p>우측 해골 기사 · 좌측 인간 모험가 AI · 단일 격리 전투</p><p>WASD/방향키 이동 · J 공격 · K 돌진 베기 · 터치: 좌측 드래그 + 우측 버튼</p><p>회피 미지원: 해골 전사 아틀라스에 dodge 클립 없음. Space/Shift는 이 전투에서 발동하지 않음.</p><p>보상·해금·원본 스테이지·세이브 연결 없음 · T 자동공격은 이 탭에서만</p><p id="status" role="status">준비 중…</p></header><button id="restart">다시 시작</button><div id="joystick" hidden><i></i></div><div id="movepad" hidden><i></i></div><div id="actions"><button id="attack" data-input="attack">공격 J</button><button data-input="skillEdge">돌진 베기 K</button><button disabled title="실제 dodge 클립 없음">회피 없음</button></div><script type="importmap">{
+<body><header><h1>테스트 · 저장 안 됨</h1><p>우측 해골 기사 · 좌측 인간 모험가 AI · 단일 격리 전투</p><p>WASD/방향키 이동 · J 공격 · K 돌진 베기 · 터치: 좌측 드래그 + 우측 버튼</p><p>회피 미지원: 해골 전사 아틀라스에 dodge 클립 없음. Space/Shift는 이 전투에서 발동하지 않음.</p><p>보상·해금·원본 스테이지·세이브 연결 없음 · T 자동공격은 이 탭에서만</p><p id="status" role="status">준비 중…</p></header><button id="restart">다시 시작</button><div id="joystick" hidden><i></i></div><div id="movepad" hidden><i></i></div><div id="actions"><button id="attack" data-input="attack">공격 J</button><button data-input="skillEdge">돌진 베기 K</button><button disabled title="실제 dodge 클립 없음">회피 없음</button></div><script type="importmap">
+{
   "imports": {
     "/arpg/js/audio-profile.js": "/arpg/js/audio-profile.js?v=52bce5aecc",
     "/arpg/js/audio.js": "/arpg/js/audio.js?v=085c7e18db",
@@ -35,15 +36,15 @@
     "/arpg/js/meta/cloud-save.js": "/arpg/js/meta/cloud-save.js?v=ad49328e66",
     "/arpg/js/meta/compare.js": "/arpg/js/meta/compare.js?v=1530fee7d1",
     "/arpg/js/meta/economy.js": "/arpg/js/meta/economy.js?v=120a73c2df",
-    "/arpg/js/meta/enchant.js": "/arpg/js/meta/enchant.js?v=64144807aa",
+    "/arpg/js/meta/enchant.js": "/arpg/js/meta/enchant.js?v=d6f9e883e9",
     "/arpg/js/meta/initial-characters.js": "/arpg/js/meta/initial-characters.js?v=37010a7b53",
     "/arpg/js/meta/items.js": "/arpg/js/meta/items.js?v=303fcab951",
     "/arpg/js/meta/knight-equipment.js": "/arpg/js/meta/knight-equipment.js?v=073a8b77da",
     "/arpg/js/meta/progression.js": "/arpg/js/meta/progression.js?v=25f4ec8ba7",
     "/arpg/js/meta/quest-progress.js": "/arpg/js/meta/quest-progress.js?v=bf529b8adf",
     "/arpg/js/meta/quiz.js": "/arpg/js/meta/quiz.js?v=9adf788c42",
-    "/arpg/js/meta/recipe-discovery.js": "/arpg/js/meta/recipe-discovery.js?v=48a3549c18",
-    "/arpg/js/meta/run.js": "/arpg/js/meta/run.js?v=012d72f204",
+    "/arpg/js/meta/recipe-discovery.js": "/arpg/js/meta/recipe-discovery.js?v=a646d6bc1d",
+    "/arpg/js/meta/run.js": "/arpg/js/meta/run.js?v=14dfc330e8",
     "/arpg/js/meta/save.js": "/arpg/js/meta/save.js?v=857add645f",
     "/arpg/js/meta/selected-character.js": "/arpg/js/meta/selected-character.js?v=61c98ac65d",
     "/arpg/js/meta/shop.js": "/arpg/js/meta/shop.js?v=945cd570e3",
@@ -137,7 +138,7 @@
     "/arpg/js/ui/craft-fx.js": "/arpg/js/ui/craft-fx.js?v=63d83ecc84",
     "/arpg/js/ui/enchant-fx.js": "/arpg/js/ui/enchant-fx.js?v=89c99d0475",
     "/arpg/js/ui/gear-view.js": "/arpg/js/ui/gear-view.js?v=2f0758d08c",
-    "/arpg/js/ui/hub.js": "/arpg/js/ui/hub.js?v=62de07f44f",
+    "/arpg/js/ui/hub.js": "/arpg/js/ui/hub.js?v=fd6983e818",
     "/arpg/js/ui/hud.js": "/arpg/js/ui/hud.js?v=f20b11af5e",
     "/arpg/js/ui/icons.js": "/arpg/js/ui/icons.js?v=d1cd67a978",
     "/arpg/js/ui/item-art.js": "/arpg/js/ui/item-art.js?v=ea74f53a85",
@@ -150,4 +151,5 @@
     "/arpg/tools/undead-encounter-lab/encounter.js": "/arpg/tools/undead-encounter-lab/encounter.js?v=7be78a71fa",
     "/arpg/tools/undead-encounter-lab/presentation.js": "/arpg/tools/undead-encounter-lab/presentation.js?v=54dbf9dbfa"
   }
-}</script><script type="module" src="./lab.js?v=d38963567e"></script></body></html>
+}
+</script><script type="module" src="./lab.js?v=d38963567e"></script></body></html>
