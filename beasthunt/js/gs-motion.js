@@ -45,6 +45,20 @@ export function createGSMotion(model, clips, sword, options={}) {
  createChargeWalk(gs,clips.find(c=>c.name==='walk'));
  return gs;
 }
+// Maria heavy: hand-local grip axis steering the world blade tip (-Y) toward
+// the p.yaw floor slam point. The horizontal heading blends on the unit circle
+// while the vertical component interpolates separately, so the follow-through
+// sweeps the tip along the floor back to the authored arc instead of under it.
+function mariaSlamAxis(gs,p,axis,w){
+ const sock=gs.socket.getWorldPosition(V()),handW=gs.socket.parent.getWorldQuaternion(Q()),handQ=handW.clone().invert();
+ const len=2.43,floor=.04,fx=Math.sin(p.yaw||0),fz=Math.cos(p.yaw||0);
+ const auth=axis.clone().applyQuaternion(handW).negate(),ah=Math.hypot(auth.x,auth.z)||1e-6;
+ let hx=p.x+fx*2-sock.x,hz=p.z+fz*2-sock.z;const hl=Math.hypot(hx,hz);
+ if(hl<1e-6){hx=fx;hz=fz;}else{hx/=hl;hz/=hl;}
+ const u=1-w,bx=hx*w+auth.x/ah*u,bz=hz*w+auth.z/ah*u,bl=Math.hypot(bx,bz)||1e-6;
+ const dir=new THREE.Vector3(bx/bl,(floor-sock.y)/len*w+auth.y*u,bz/bl).normalize();
+ return dir.applyQuaternion(handQ).negate();
+}
 function rotateWorld(bone, from, to) {
  const parent=bone.parent.getWorldQuaternion(Q()), world=bone.getWorldQuaternion(Q());
  const delta=Q().setFromUnitVectors(from.normalize(),to.normalize());
@@ -146,7 +160,16 @@ export function syncHunterGS(p,H,dt,clock=0) {
   const width=time > meta.impact[0] ? .07 : .18;
   const w=Math.exp(-Math.pow((time-meta.impact[0])/width,2));axis.lerp(contact,w);
  }
- if(gs.maria){axis.copy(mariaAxis(gs,name,time));if(gs.mariaReleaseAxis&&gs.mariaRelease){const u=THREE.MathUtils.clamp(time/.1,0,1);axis.copy(gs.mariaReleaseAxis.clone().lerp(axis,u*u*(3-2*u)).normalize());}}
+ if(gs.maria){
+  axis.copy(mariaAxis(gs,name,time));
+  // The imported slam keeps its source-side ground contact. Steer the grip so
+  // the blade tip lands ahead of p.yaw like every other weapon's slam.
+  if(name==='heavy'&&meta.impact){
+   const w=Math.exp(-Math.pow((time-meta.impact[0])/(time>meta.impact[0]?.07:.18),2));
+   if(w>1e-4)axis.copy(mariaSlamAxis(gs,p,axis,w));
+  }
+  if(gs.mariaReleaseAxis&&gs.mariaRelease){const u=THREE.MathUtils.clamp(time/.1,0,1);axis.copy(gs.mariaReleaseAxis.clone().lerp(axis,u*u*(3-2*u)).normalize());}
+ }
  gs.socket.quaternion.setFromUnitVectors(Y,axis.normalize());
  gs.sword.visible=!['roll','drink','dead','down'].includes(p.state);
  gs.wasUnarmed=['roll','drink','dead','down'].includes(p.state);
@@ -164,7 +187,11 @@ export function syncHunterGS(p,H,dt,clock=0) {
  if(gs.ikEnabled){if(gs.maria)mariaContact(gs);else solveLeftArm(gs);}else gs.ikDistance=0;
  // Bilateral contact can lower the right palm; re-evaluate the slam direction
  // against that final palm height, retaining the original h0 floor marker.
- if(!gs.maria && name==='heavy' && gs.ikEnabled){
+ if(gs.maria && name==='heavy' && meta.impact && gs.ikEnabled){
+  const w=Math.exp(-Math.pow((time-meta.impact[0])/(time>meta.impact[0]?.07:.18),2));
+  // The contact solve can move the sword hand; re-aim against the final hand.
+  if(w>1e-4){gs.socket.quaternion.setFromUnitVectors(Y,mariaSlamAxis(gs,p,mariaAxis(gs,name,time),w));mariaContact(gs);}
+ }else if(!gs.maria && name==='heavy' && gs.ikEnabled){
   const w=Math.exp(-Math.pow((time-meta.impact[0])/(time>meta.impact[0]?.07:.18),2));
   if(w>.9999){
    const handQ=gs.socket.parent.getWorldQuaternion(Q());
