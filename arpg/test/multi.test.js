@@ -166,6 +166,8 @@ test('lobby keeps startConfig callable and catches started-before-hook without o
       this._ws = { _started: true, getMyUserId: () => 'host', sendRt() {}, sendAction() {}, leave() {} };
     }
     _syncLobby() {} _renderLobby() {} _hideModeSelect() {} _hideLobby() {} _hideResult() {}
+    // Match the shared lobby lifecycle surface; retain started-before-hook assertions.
+    _connect() {} _enterRoom() {} _renderModeSelect() {}
   }
   try {
     Object.defineProperty(globalThis, 'window', { configurable: true, value: { MultiplayerLobby: FakeLobby } });
