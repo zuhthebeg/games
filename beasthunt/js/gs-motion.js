@@ -1,5 +1,6 @@
+import { prepareMaria, mariaMeta, mariaAxis, mariaRoll, mariaContact, saveMariaPose, restoreMariaPose, beginMariaFrame, blendMariaRelease, endMariaFrame } from './maria-gs.js?v=20261114maria';
 import * as THREE from 'three';
-import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js?v=20261114r11';
+import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js?v=20261114maria';
 import { recoveryClips, groundRecovery } from './motion-authoring.js?v=20261114r11';
 import { gsClipName, gsClipTime } from 'bh/gs-phase';
 import { GS_EDGE, gsEdgeRoll } from './gs-edge.js?v=20261113r8';
@@ -28,9 +29,10 @@ export const GS_CLIPS = {
 GS_CLIPS.charge={...GS_CLIPS.h2,impact:null,windup:[.25,.55]};
 for(const [name,edge] of Object.entries(GS_EDGE)) Object.assign(GS_CLIPS[name],edge);
 const Y=new THREE.Vector3(0,1,0), V=()=>new THREE.Vector3(), Q=()=>new THREE.Quaternion();
-export function createGSMotion(model, clips, sword) {
+export function createGSMotion(model, clips, sword, options={}) {
+ const maria=options.maria?prepareMaria(model,clips):null;if(maria)clips=maria.clips;
  const mixer=new THREE.AnimationMixer(model), actions={};
- for(const source of recoveryClips(clips)){const clip=source.name==='charge'?(clips.find(c=>c.name==='h2')||source).clone():source;if(source.name==='charge')clip.name='charge';const a=mixer.clipAction(clip);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.paused=true;actions[clip.name]=a;}
+ for(const source of (maria?clips:recoveryClips(clips))){const clip=!maria&&source.name==='charge'?(clips.find(c=>c.name==='h2')||source).clone():source;if(source.name==='charge')clip.name='charge';const a=mixer.clipAction(clip);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.paused=true;actions[clip.name]=a;}
  const bones={};model.traverse(o=>{if(o.isBone)bones[o.name.replace('mixamorig:','').replace('mixamorig','')]=o;});
  const socket=new THREE.Group();socket.name='gs-right-hand-socket';socket.scale.setScalar(1 / bones.RightHand.getWorldScale(V()).x);bones.RightHand.add(socket);socket.add(sword);
  // Right palm midpoint; bone units are cm, socket children are metres.
@@ -38,7 +40,8 @@ export function createGSMotion(model, clips, sword) {
  const target=new THREE.Object3D();target.name='gs-left-grip';target.position.set(0,.13,0);socket.add(target);
  const chargeMats=[],bladeMats=[];model.traverse(o=>{if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.userData.gsCharge)chargeMats.push(m);});sword.traverse(o=>{if(['hunter-blade','hunter-edge'].includes(o.name))bladeMats.push(o.material);});
  const low=/[?&]lowfx=1/.test(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const gs={model,mixer,actions,bones,socket,target,sword,chargeMats,bladeMats,low,reduced,key:null,lastT:0,combo:null,clipTime:0,ikDistance:0,ikMax:0,walkPhase:0,chargeStage:-1,chargePulseAge:1};
+ const gs={maria,model,mixer,actions,bones,socket,target,sword,chargeMats,bladeMats,low,reduced,key:null,lastT:0,combo:null,clipTime:0,ikDistance:0,ikMax:0,walkPhase:0,chargeStage:-1,chargePulseAge:1};
+ if(maria){socket.position.set(0.000014597739209420979,5.723743438720703,-0.0007479626801796257);model.userData.character='Maria';}
  createChargeWalk(gs,clips.find(c=>c.name==='walk'));
  return gs;
 }
@@ -89,12 +92,14 @@ export function solveLeftArm(gs) {
 export function syncHunterGS(p,H,dt,clock=0) {
  const gs=H.gs;if(!gs)return false;
  resetChargeWalk(gs);
+ if(gs.maria)restoreMariaPose(gs);
  const chargeRestart=p.state==='charge'&&gs.lastPos?.state==='charge'&&p.t<gs.lastT-.00001;
  if(p.state!=='charge'||chargeRestart){gs.chargeWalkHeld=false;gs.chargeWalkPhase=0;gs.chargeWalkSamplePhase=0;}
  H.root.position.set(p.x||0,0,p.z||0);H.root.rotation.y=(p.yaw||0)+(p.spin||0);
  H.root.visible=!(p.inv>0&&p.state!=='roll'&&Math.floor(clock*20)%2===0);
- const wanted=gsClipName(p),name=wanted==='guard'&&!gs.actions.guard?'charge':wanted,action=gs.actions[name],meta=GS_CLIPS[name]||{...GS_CLIPS.charge,duration:action.getClip().duration};
+ const wanted=gsClipName(p),name=wanted==='guard'&&!gs.actions.guard?'charge':wanted,action=gs.actions[name],meta=(gs.maria?mariaMeta[name]:GS_CLIPS[name])||{...GS_CLIPS.charge,duration:action.getClip().duration};
  const restart=gs.key!==name || p.state==='atk'&&(p.t<gs.lastT-.00001||p.combo!==gs.combo);
+ if(gs.maria)beginMariaFrame(gs,p,restart);
  if(restart){
   const immediate=p.state==='atk'||!gs.key;
   // The unarmed roll/drink/down poses may place the right hand out of reach.
@@ -118,7 +123,8 @@ export function syncHunterGS(p,H,dt,clock=0) {
  const previous=gs.lastPos;gs.lastPos={x:p.x,z:p.z,state:p.state};
  // Paused actions seek from authoritative state, mixer time only drives fades.
  gs.mixer.update(Math.max(0,dt));
- groundRecovery(gs,p);
+ if(gs.maria)saveMariaPose(gs);else groundRecovery(gs,p);
+ if(gs.maria)blendMariaRelease(gs,p,time);
  applyChargeWalk(gs,p,dt,chargeRestart?null:previous);
  const axis=new THREE.Vector3(...meta.gripAxis);
  // The jump slam rotates the grip relative to the wrist; its mean axis cannot
@@ -129,7 +135,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
   axis.set(...a0).lerp(new THREE.Vector3(...a1),THREE.MathUtils.clamp((time-t0)/(t1-t0),0,1));
  }
  // +Y is the lower handle, -Y the existing blade. Clipped axes avoid grip drift.
- if(name==='heavy'){
+ if(!gs.maria && name==='heavy'){
   // Correct the weapon's contact direction without moving the rig/sim root.
   // Mixamo has no blade mesh: the actual long blade must meet the ground,
   // rather than continue the source wrist's spinning grip through the floor.
@@ -140,6 +146,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
   const width=time > meta.impact[0] ? .07 : .18;
   const w=Math.exp(-Math.pow((time-meta.impact[0])/width,2));axis.lerp(contact,w);
  }
+ if(gs.maria){axis.copy(mariaAxis(gs,name,time));if(gs.mariaReleaseAxis&&gs.mariaRelease){const u=THREE.MathUtils.clamp(time/.1,0,1);axis.copy(gs.mariaReleaseAxis.clone().lerp(axis,u*u*(3-2*u)).normalize());}}
  gs.socket.quaternion.setFromUnitVectors(Y,axis.normalize());
  gs.sword.visible=!['roll','drink','dead','down'].includes(p.state);
  gs.wasUnarmed=['roll','drink','dead','down'].includes(p.state);
@@ -154,10 +161,10 @@ export function syncHunterGS(p,H,dt,clock=0) {
  for(const m of gs.chargeMats){m.userData.gsCharge.value=gs.low?0:ratio*(.18+pulse*.65);m.userData.gsChargeColor.value.setHex(tierColor);}
  // Micro vibration about the handle axis, not a tip/grip displacement.
  const vibration=stage===3&&!gs.low&&!gs.reduced?Math.sin(clock*55)*.009:0;
- if(gs.ikEnabled)solveLeftArm(gs);else gs.ikDistance=0;
+ if(gs.ikEnabled){if(gs.maria)mariaContact(gs);else solveLeftArm(gs);}else gs.ikDistance=0;
  // Bilateral contact can lower the right palm; re-evaluate the slam direction
  // against that final palm height, retaining the original h0 floor marker.
- if(name==='heavy' && gs.ikEnabled){
+ if(!gs.maria && name==='heavy' && gs.ikEnabled){
   const w=Math.exp(-Math.pow((time-meta.impact[0])/(time>meta.impact[0]?.07:.18),2));
   if(w>.9999){
    const handQ=gs.socket.parent.getWorldQuaternion(Q());
@@ -170,6 +177,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
  // Roll around the longitudinal handle axis only, after final heavy contact IK.
  // The offhand target lies on this axis: neither hand nor tip moves.
  const phase=meta.impact?(time-meta.impact[0])/(meta.impact[1]-meta.impact[0]):0;
- gs.edgeRoll=p.state==='charge'?0:gsEdgeRoll(name,phase);gs.socket.rotateY(gs.edgeRoll+vibration);
+ gs.edgeRoll=p.state==='charge'?0:gs.maria?mariaRoll(name,time):gsEdgeRoll(name,phase);gs.socket.rotateY(gs.edgeRoll+vibration);
+ if(gs.maria){gs.model.updateWorldMatrix(true,true);endMariaFrame(gs,p,axis);}
  return true;
 }

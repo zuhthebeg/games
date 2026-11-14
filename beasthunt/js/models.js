@@ -71,7 +71,7 @@ export const hunterGSLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterGS() {
  if (!gsLoad) {
   const start=performance.now(); hunterGSLoad.status='loading';
-  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-gs.glb?v=20261114r11',import.meta.url).href)
+  gsLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-maria-gs.glb?v=20261114maria',import.meta.url).href)
    .then(asset=>{gsAsset=asset;hunterGSLoad.status='ready';hunterGSLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterGSLoad.status='failed';hunterGSLoad.error=String(error);return null;});
  }
@@ -151,10 +151,10 @@ export function buildHunterGS(wTier,aTier) {
   if(!asset)return H;
   const model=cloneSkeleton(asset.scene);
   // Existing scene disposal owns its resources, never the cached template.
-  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>source.clone());if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
   const sword=hunterBlade(G(),2.12,.23,M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}),true);
   sword.rotation.set(0,0,0);
-  H.gs=createGSMotion(model,asset.animations,sword);
+  H.gs=createGSMotion(model,asset.animations,sword,{maria:true});
   for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
   H.root.add(model); return H;
  };

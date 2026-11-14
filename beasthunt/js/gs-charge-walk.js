@@ -5,7 +5,11 @@ const boneName=name=>name.replace('mixamorig:','').replace('mixamorig','');
 // A same-foot cycle travels ~1.65m at this rig's scale (not clip seconds).
 export function createChargeWalk(gs,clip){
  gs.chargeWalkTracks=(clip?.tracks||[]).filter(t=>/^(?:mixamorig:?)?(?:Hips|(?:Left|Right)(?:UpLeg|Leg|Foot|Toe[a-zA-Z_]*))[.]quaternion$/.test(t.name)).map(t=>({bone:gs.bones[boneName(t.name.split('.')[0])],sample:t.createInterpolant()})).filter(t=>t.bone);
- gs.chargeWalkDuration=clip?.duration||0;gs.chargeWalkPhase=0;gs.chargeWalkSamplePhase=0;gs.chargeWalkStride=1.65;
+ gs.chargeWalkYaw=0;gs.chargeWalkDuration=clip?.duration||0;gs.chargeWalkPhase=0;gs.chargeWalkSamplePhase=0;gs.chargeWalkStride=gs.maria?1.5650990009307861:1.65;
+ if(gs.maria){
+  gs.chargeWalkTracks=gs.chargeWalkTracks.filter(t=>t.bone!==gs.bones.Hips);
+  gs.mariaHipTracks=gs.actions.charge.getClip().tracks.filter(t=>/Hips[.](position|quaternion)$/.test(t.name)).map(t=>({property:t.name.split('.').at(-1),sample:t.createInterpolant()}));
+}
  gs.chargeWalkPose=gs.chargeWalkTracks.map(t=>({bone:t.bone,quaternion:Q()}));
  gs.chargeWalkSpine={position:V(),quaternion:Q()};
 }
@@ -29,20 +33,21 @@ export function applyChargeWalk(gs,p,dt,previous){
   const yaw=THREE.MathUtils.euclideanModulo(Math.atan2(dx,dz)-(p.yaw||0)-(p.spin||0)+Math.PI,2*Math.PI)-Math.PI;
   // Backpedal rather than twisting the waist through 180 degrees.
   const reverse=Math.abs(yaw)>Math.PI/2+1e-6;
-  gs.chargeWalkYaw=yaw+(reverse?(yaw>0?-Math.PI:Math.PI):0);
+  gs.chargeWalkYaw=gs.maria?0:yaw+(reverse?(yaw>0?-Math.PI:Math.PI):0);
   gs.chargeWalkPhase+=dist/gs.chargeWalkStride;
   gs.chargeWalkSamplePhase+=(reverse?-1:1)*dist/gs.chargeWalkStride;
   gs.chargeWalkActive=true;gs.chargeWalkHeld=true;
   gs.chargeWalkSpeed=dt>0?dist/dt:0;
  }
  // Hold the exact foot cycle on halt; charge upper body keeps progressing.
- if(!gs.chargeWalkHeld)return;
+ if(!gs.chargeWalkHeld&&!gs.maria)return;
  for(const pose of gs.chargeWalkPose)pose.quaternion.copy(pose.bone.quaternion);
  const spine=gs.bones.Spine,hips=gs.bones.Hips;
  gs.chargeWalkSpine.position.copy(spine.position);gs.chargeWalkSpine.quaternion.copy(spine.quaternion);
  gs.model.updateWorldMatrix(true,true);
  const upperWorld=spine.getWorldQuaternion(Q()),upperPosition=spine.getWorldPosition(V());
  const phase=THREE.MathUtils.euclideanModulo(gs.chargeWalkSamplePhase,1);
+ if(gs.maria){for(const tr of gs.mariaHipTracks)hips[tr.property].fromArray(tr.sample.evaluate(phase*gs.chargeWalkDuration));}
  for(const tr of gs.chargeWalkTracks)tr.bone.quaternion.fromArray(tr.sample.evaluate(phase*gs.chargeWalkDuration)).normalize();
  gs.model.updateWorldMatrix(true,true);
  const world=hips.getWorldQuaternion(Q()).premultiply(Q().setFromAxisAngle(Y,gs.chargeWalkYaw));
