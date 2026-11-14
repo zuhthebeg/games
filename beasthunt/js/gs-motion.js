@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js';
 import { recoveryClips, groundRecovery } from './motion-authoring.js';
 import { gsClipName, gsClipTime } from 'bh/gs-phase';
 import { GS_EDGE, gsEdgeRoll } from './gs-edge.js?v=20261113r8';
@@ -38,6 +39,7 @@ export function createGSMotion(model, clips, sword) {
  const chargeMats=[],bladeMats=[];model.traverse(o=>{if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.userData.gsCharge)chargeMats.push(m);});sword.traverse(o=>{if(['hunter-blade','hunter-edge'].includes(o.name))bladeMats.push(o.material);});
  const low=/[?&]lowfx=1/.test(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const gs={model,mixer,actions,bones,socket,target,sword,chargeMats,bladeMats,low,reduced,key:null,lastT:0,combo:null,clipTime:0,ikDistance:0,ikMax:0,walkPhase:0,chargeStage:-1,chargePulseAge:1};
+ createChargeWalk(gs,clips.find(c=>c.name==='walk'));
  return gs;
 }
 function rotateWorld(bone, from, to) {
@@ -86,6 +88,9 @@ export function solveLeftArm(gs) {
 }
 export function syncHunterGS(p,H,dt,clock=0) {
  const gs=H.gs;if(!gs)return false;
+ resetChargeWalk(gs);
+ const chargeRestart=p.state==='charge'&&gs.lastPos?.state==='charge'&&p.t<gs.lastT-.00001;
+ if(p.state!=='charge'||chargeRestart){gs.chargeWalkHeld=false;gs.chargeWalkPhase=0;gs.chargeWalkSamplePhase=0;}
  H.root.position.set(p.x||0,0,p.z||0);H.root.rotation.y=(p.yaw||0)+(p.spin||0);
  H.root.visible=!(p.inv>0&&p.state!=='roll'&&Math.floor(clock*20)%2===0);
  const wanted=gsClipName(p),name=wanted==='guard'&&!gs.actions.guard?'charge':wanted,action=gs.actions[name],meta=GS_CLIPS[name]||{...GS_CLIPS.charge,duration:action.getClip().duration};
@@ -110,10 +115,11 @@ export function syncHunterGS(p,H,dt,clock=0) {
   const ra=gs.actions.run;if(!ra.isRunning()){ra.reset().play();ra.paused=true;}ra.enabled=true;
   ra.setEffectiveWeight(run);action.setEffectiveWeight(1-run);ra.time=(time/meta.duration)*GS_CLIPS.run.duration;
  }else if(gs.key!=='run')gs.actions.run.stop();
- gs.lastPos={x:p.x,z:p.z};
+ const previous=gs.lastPos;gs.lastPos={x:p.x,z:p.z,state:p.state};
  // Paused actions seek from authoritative state, mixer time only drives fades.
  gs.mixer.update(Math.max(0,dt));
  groundRecovery(gs,p);
+ applyChargeWalk(gs,p,dt,chargeRestart?null:previous);
  const axis=new THREE.Vector3(...meta.gripAxis);
  // The jump slam rotates the grip relative to the wrist; its mean axis cannot
  // represent both the overhead hold and ground contact. Other clips stay intact.
