@@ -24,7 +24,8 @@ export function resetChargeWalk(gs){
 }
 export function applyChargeWalk(gs,p,dt,previous){
  gs.chargeWalkActive=false;gs.chargeWalkSpeed=0;
- if(p.state!=='charge'||!gs.chargeWalkDuration||!previous||previous.state!=='charge')return;
+ if(p.state!=='charge'||!gs.chargeWalkDuration)return;
+ if(!previous||previous.state!=='charge'){if(!gs.maria)return;previous={x:p.x,z:p.z,state:'charge'};}
  const dx=p.x-previous.x,dz=p.z-previous.z,dist=Math.hypot(dx,dz);
  // Ignore respawn/teleport corrections, but accept real low-FPS travel and
  // remote deltas without a moving/walk flag. Repeated positions freeze phase.
