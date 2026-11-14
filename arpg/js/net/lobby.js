@@ -36,6 +36,7 @@ export class CoopLobby {
   constructor({ profile, config, onSession, onLeave, ...callbacks }) {
     Object.assign(this, { profile, config, onSession, onLeave, callbacks });
     this.session = null; this.pending = []; this.partyProfiles = {};
+    this.socketHandlers = new WeakMap();
   }
   open() {
     const query = new URLSearchParams(location.search);
@@ -53,35 +54,77 @@ export class CoopLobby {
     this.lobby._syncLobby = () => { syncLobby(); this.renderConfig(); };
     const renderLobby = this.lobby._renderLobby.bind(this.lobby);
     this.lobby._renderLobby = () => { renderLobby(); this.renderConfig(); };
-    // Same started + roster.started fallback as spudsquad: relay has no initial state callback.
-    this.hookTimer = setInterval(() => {
-      const ws = this.lobby?._ws;
-      if (!ws || ws._arpgHook) return;
-      ws._arpgHook = true; this.uid = ws.getMyUserId(); this.transport = ws; this.partyProfiles[this.uid] = this.profile;
-      const started = ws.onStarted, roster = ws.onRoster, closed = ws.onRoomClosed, reconnected = ws.onReconnected;
-      ws.onReconnected = () => { reconnected?.(); this.session?.resume(); };
-      ws.onStarted = data => { started?.(data); this.started(data.config); };
-      ws.onRoster = data => {
-        roster?.(data);
-        const ids = new Set(data.players.map(p => p.user || p.uid));
-        for (const id of Object.keys(this.partyProfiles)) if (!ids.has(id)) delete this.partyProfiles[id];
-        ws.sendRt({ t: 'party-profile', profile: this.profile }); this.renderConfig();
-        if (data.started && !this.session) this.started();
-        this.session?.roster(data);
+    // Shared lobby stays alive when a non-invite room is left. Hook each new
+    // wrapper immediately; retain observation for null/replacement transitions.
+    const connect = this.lobby._connect.bind(this.lobby);
+    this.lobby._connect = () => {
+      if (this.closed) return;
+      this.lobby._roster = { players: [], hostUser: null, connections: 1, started: false };
+      connect(); this.syncTransport();
+    };
+    for (const method of ['_enterRoom', '_renderModeSelect']) {
+      const original = this.lobby[method].bind(this.lobby);
+      this.lobby[method] = (...args) => {
+        if (this.closed) return;
+        this.syncTransport();
+        return original(...args);
       };
-      ws.onRt = (from, data) => {
-        if (data?.t === 'party-profile' && this.lobby._roster.players.some(p => (p.user || p.uid) === from) && validLobbyProfile(data.profile)) {
-          this.partyProfiles[from] = data.profile; this.renderConfig();
-        }
-        this.session?.rt(from, data);
+    }
+    this.hookTimer = setInterval(() => this.syncTransport(), 50);
+  }
+  currentTransport(ws) { return !this.closed && this.transport === ws && this.lobby?._ws === ws; }
+  clearRoom() {
+    clearInterval(this.profileTimer); this.profileTimer = null;
+    this.transport = null; this.uid = null; this.binding = null;
+    this.session = null; this.pending = []; this.partyProfiles = {};
+  }
+  syncTransport() {
+    if (this.closed) return;
+    const ws = this.lobby?._ws || null;
+    if (ws === (this.transport || null)) return;
+    this.clearRoom();
+    if (!ws) return;
+    this.uid = ws.getMyUserId(); this.transport = ws; this.partyProfiles[this.uid] = this.profile;
+    const binding = this.binding = {};
+    const current = () => this.binding === binding && this.currentTransport(ws);
+    if (!this.socketHandlers.has(ws)) this.socketHandlers.set(ws, {});
+    const handlers = this.socketHandlers.get(ws);
+    // Guard shared callbacks too: an old wrapper must not mutate the new roster
+    // or hide its UI. Keep their receiver/arguments and RT handler intact.
+    const wrap = (key, after) => {
+      if (!Object.hasOwn(handlers, key)) handlers[key] = ws[key];
+      const original = handlers[key];
+      ws[key] = (...args) => {
+        if (!current()) return;
+        original?.apply(ws, args);
+        if (current()) after?.(...args);
       };
-      ws.sendRt({ t: 'party-profile', profile: this.profile });
-      this.profileTimer = setInterval(() => { if (!this.session) ws.sendRt({ t: 'party-profile', profile: this.profile }); }, 500);
-      ws.onRoomClosed = data => { closed?.(data); if (this.session) this.callbacks.onLost('방장이 나갔다. 진행분은 귀환 처리됩니다.'); };
-      this.renderConfig();
-      if (this.lobby._roster?.started || ws._started) this.started();
-      clearInterval(this.hookTimer); this.hookTimer = null;
-    }, 50);
+    };
+    wrap('onReconnected', () => this.session?.resume());
+    wrap('onStarted', data => this.started(data.config));
+    wrap('onRoster', data => {
+      const ids = new Set(data.players.map(p => p.user || p.uid));
+      for (const id of Object.keys(this.partyProfiles)) if (!ids.has(id)) delete this.partyProfiles[id];
+      ws.sendRt({ t: 'party-profile', profile: this.profile }); this.renderConfig();
+      if (data.started && !this.session) this.started();
+      this.session?.roster(data);
+    });
+    wrap('onRt', (from, data) => {
+      if (data?.t === 'party-profile' && this.lobby._roster.players.some(p => (p.user || p.uid) === from) && validLobbyProfile(data.profile)) {
+        this.partyProfiles[from] = data.profile; this.renderConfig();
+      }
+      this.session?.rt(from, data);
+    });
+    for (const key of ['onEvent', 'onOpen', 'onPresence', 'onPreStartFail', 'onNotice', 'onStateChange']) wrap(key);
+    wrap('onRoomClosed', () => {
+      if (this.session) this.callbacks.onLost('방장이 나갔다. 진행분은 귀환 처리됩니다.');
+    });
+    ws.sendRt({ t: 'party-profile', profile: this.profile });
+    this.profileTimer = setInterval(() => {
+      if (current() && !this.session) ws.sendRt({ t: 'party-profile', profile: this.profile });
+    }, 500);
+    this.renderConfig();
+    if (this.lobby._roster?.started || ws._started) this.started();
   }
   renderConfig() {
     const card = document.querySelector('#mpl-lobby .mpl-card');
@@ -129,18 +172,22 @@ export class CoopLobby {
   }
 
   started(config) {
-    if (this.session) return;
+    if (this.closed || this.session) return;
     const roster = this.lobby._roster;
     this.makeSession(roster, config?.stageId ? config : this.config);
   }
   makeSession(roster, config) {
+    if (this.closed) return;
+    const transport = this.transport, binding = this.binding;
+    const current = () => !this.closed && this.binding === binding && this.transport === transport && (!this.lobby || this.currentTransport(transport));
+    clearInterval(this.profileTimer); this.profileTimer = null;
     this.session = new CoopSession({ uid: this.uid, host: roster.hostUser,
       players: roster.players.map(p => p.user || p.uid), profile: this.profile, config,
-      sendRt: p => this.transport.sendRt(p), sendAction: a => this.transport.sendAction(a), onTransportStale: () => this.reconnect(), ...this.callbacks });
+      sendRt: p => { if (current()) transport.sendRt(p); }, sendAction: a => { if (current()) transport.sendAction(a); }, onTransportStale: () => { if (current()) this.reconnect(); }, ...this.callbacks });
     this.onSession(this.session);
     for (const action of this.pending.splice(0)) this.session.action(action);
   }
-  action(a) { if (this.session) this.session.action(a); else if (a) this.pending.push(a); }
+  action(a) { if (this.closed) return; if (this.session) this.session.action(a); else if (a) this.pending.push(a); }
   openTest(query) {
     this.uid = query.get('coopTest');
     this.transport = connectBroadcast({ room: query.get('room') || 'local', uid: this.uid, host: 'host',
@@ -161,12 +208,14 @@ export class CoopLobby {
     else ws._scheduleReconnect?.();
   }
   close() {
-    clearInterval(this.hookTimer); this.hookTimer = null; clearInterval(this.profileTimer);
+    if (this.closed) return;
+    this.closed = true;
+    clearInterval(this.hookTimer); this.hookTimer = null;
     if (this.lobby) {
       this.lobby._inGame = false; this.lobby._hideModeSelect(); this.lobby._hideLobby(); this.lobby._hideResult();
     }
-    const transport = this.transport || this.lobby?._ws;
+    const transport = this.lobby?._ws || this.transport;
+    this.clearRoom();
     transport?.leave?.(); transport?.close?.();
-    this.session = null;
   }
 }
