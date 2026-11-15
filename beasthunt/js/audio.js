@@ -62,7 +62,7 @@ export const GS_SAMPLES = Object.freeze(Object.fromEntries([
   'gs_swing_light','gs_swing_b','gs_swing_spin','gs_hit','gs_hit_part','gs_hit_weak',
   'gs_charge_1','gs_charge_2','gs_charge_3','gs_charge_loop','gs_charge_release',
   'gs_slam','gs_guard_block','gs_guard_break','gs_roll',
-].map(name => [name, [1,2].map(i => new URL('../assets/audio/'+name+'-'+i+'.ogg', import.meta.url).href)])));
+].map(name => [name, [1,2].map(i => new URL('../assets/audio/'+name+'-'+i+'.ogg?v=20261115sx', import.meta.url).href)])));
 const fallback = {gs_swing_light:'swingH',gs_swing_b:'swingH',gs_swing_spin:'swingH',gs_hit:'hit',gs_hit_part:'break',gs_hit_weak:'weak',gs_charge_1:'charge',gs_charge_2:'charge',gs_charge_3:'charge',gs_charge_loop:'charge',gs_charge_release:'swingH',gs_slam:'hitBig',gs_guard_block:'forge',gs_guard_break:'break',gs_roll:'roll'};
 const cache = new Map(), last = new Map(), voices = new Set(), loops = new Map();
 export function loadSample(url) {
