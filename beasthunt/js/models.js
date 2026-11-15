@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
 import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261115er';
-import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261115ar';
+import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261115vf';
 import { createWarrokMotion } from './warrok-motion.js?v=20261114wk';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
@@ -114,7 +114,7 @@ export const hunterDbLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterDb() {
  if (!dbLoad) {
   const start=performance.now(); hunterDbLoad.status='loading';
-  dbLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-arissa-db.glb?v=20261115ar',import.meta.url).href)
+  dbLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-arissa-db.glb?v=20261115vf',import.meta.url).href)
    .then(asset=>{dbAsset=asset;hunterDbLoad.status='ready';hunterDbLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterDbLoad.status='failed';hunterDbLoad.error=String(error);return null;});
  }
@@ -285,6 +285,7 @@ function buildWarrokCleaver() {
  b.rotation.set(-Math.PI/2,0,Math.PI);g.add(b);
  const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35,0);g.add(tip);
  const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
+ g.scale.setScalar(1.8); // scale around the unchanged measured palm grip
  return g;
 }
 // Socket Group parented to the right-hand bone; measured on the bind pose, so
@@ -329,7 +330,7 @@ export function buildWarrok() {
   // normalization grows Warrok ~236x and lifts his animated skin out of view.
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
-  const h = box.max.y - box.min.y, k = (d.h * 2) / h;
+  const h = box.max.y - box.min.y, k = (d.h * 2) / h * 1.25; // render-only; simulation dims unchanged
   model.scale.setScalar(k); model.position.y = -box.min.y * k;
   const socket = warrokWeaponSocket(model);
   if (socket) { W.weaponSocket = socket; W.weapon = socket.userData.weapon; }

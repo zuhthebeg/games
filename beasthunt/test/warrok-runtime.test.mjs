@@ -32,7 +32,11 @@ test('production Hunt Warrok: delayed fallback, true skinned scale and every ani
  let placeholderDisposed=0;h.G.body.children[0].geometry.addEventListener('dispose',()=>placeholderDisposed++);
  resolveLoad();await h.G.ready;assert.equal(placeholderDisposed,1,'streamed placeholder geometry must be released');
  assert.ok(h.G.warrok);assert.ok(h.G.warrok.model.scale.x<3,'normalization must measure updated cloned bones, not identity bone matrices');
- const staticBox=bounds(h);assert.ok(staticBox.max.y-staticBox.min.y<6);
+ const staticBox=bounds(h);
+ // Old 6m envelope scaled by 1.25 plus the blade+pommel excess beyond body scaling.
+ assert.ok(staticBox.max.y-staticBox.min.y<6*1.25+(1.35+.8)*(1.8-1.25));
+ const fixture=JSON.parse(fs.readFileSync(new URL('./warrok-runtime-baseline.json',import.meta.url)));
+ assert.ok(Math.abs(h.G.warrok.model.scale.x-fixture.normalization.after*1.25)<1e-10);
  for(const mode of ['idle','walk','run','bite','stomp','sweep','charge','leap','spit','fireball','breath','roar','flinch','topple','dead']){
   h.m.state='idle';h.m.t=0;h.m.moving=0;h.m.enr=false;h.m.atk=null;
   if(['walk','run'].includes(mode)){h.m.state='chase';h.m.moving=1;h.m.enr=mode==='run';}

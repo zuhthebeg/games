@@ -8,7 +8,7 @@ globalThis.self=globalThis;globalThis.location={search:''};globalThis.matchMedia
 globalThis.document={hidden:false};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
-const {syncHunterDb,groundArissa,DB_CLIPS}=await import('../js/db-motion.js?v=20261115ar');
+const {syncHunterDb,groundArissa,DB_CLIPS}=await import('../js/db-motion.js?v=20261115vf');
 const path=n=>new URL('../assets/'+n,import.meta.url);
 async function parse(n){const b=fs.readFileSync(path(n)),loader=new GLTFLoader();loader.register(()=>({name:'CPU_TEXTURE_PLACEHOLDER',loadTexture:async()=>new T.Texture()}));return loader.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');}
 const arissa=await parse('hunter-arissa-db.glb'),paladin=await parse('hunter-db.glb');
@@ -66,13 +66,13 @@ test('Arissa exact approved bytes, sixteen unchanged original clip names and clo
  assert.equal(arissa.animations.length,16);assert.deepEqual(arissa.animations.map(c=>c.name),paladin.animations.map(c=>c.name));
  for(const c of arissa.animations)assert.ok(Math.abs(c.duration-paladin.animations.find(x=>x.name===c.name).duration)<1e-6,c.name);
  const root=new URL('../',import.meta.url),html=fs.readFileSync(new URL('index.html',root),'utf8'),models=fs.readFileSync(new URL('js/models.js',root),'utf8');
- for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v=20261115ar'));
- assert.ok(models.includes('db-motion.js?v=20261115ar'));assert.ok(models.includes('hunter-arissa-db.glb?v=20261115ar'));
- for(const n of ['main','game'])assert.ok(fs.readFileSync(new URL('js/'+n+'.js',root),'utf8').includes('20261115ar'));
+ for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v=20261115vf'));
+ assert.ok(models.includes('db-motion.js?v=20261115vf'));assert.ok(models.includes('hunter-arissa-db.glb?v=20261115vf'));
+ for(const n of ['main','game'])assert.ok(fs.readFileSync(new URL('js/'+n+'.js',root),'utf8').includes('20261115vf'));
  measurements.clips=arissa.animations.map(c=>({name:c.name,duration:c.duration}));
 });
 test('Arissa measured target palm/axis sockets reproduce supplied bind measurements with tiny active grip residual',async()=>{
- const {h,b}=await actor();const expected={Right:{p:[.48907649517059326,5.097354412078857,-.35972025990486145],q:[.019901467526767393,.05907292022110105,.7323719455198647,.6780454668400053]},Left:{p:[-.4890799820423126,5.097392559051514,-.3591868281364441],q:[.7323757910235428,.6780436612302508,.019936500103683547,.05903414394850448]}};
+ const {h,b}=await actor();const expected={"Left":{"p":[-0.4890799820423126,5.097392559051514,-0.3591868281364441],"q":[0.9968275782231345,0.04952055235640821,0.05319032275869156,0.03245433334615181]},"Right":{"p":[0.48907649517059326,5.097354412078857,-0.35972025990486145],"q":[0.053188410541512056,0.03250648084974927,0.9968258582375177,0.049523025310140245]}};
  for(const side of ['Left','Right']){assert.ok(b.sockets[side].position.distanceTo(new T.Vector3(...expected[side].p))<1e-10);assert.ok(b.sockets[side].quaternion.angleTo(new T.Quaternion(...expected[side].q))<1e-6);}
  for(const name of ['h','h2','h3','v','spin']){
   const cur={sw:name==='h3'?'h':name,h0:.2,h1:.7,dur:1};

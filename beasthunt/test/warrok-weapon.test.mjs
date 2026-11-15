@@ -82,7 +82,12 @@ test('Warrok cleaver: socketed grip, clip-swept reach/ground/left-hand metrics, 
  assert.ok(fistMax<=.3,'grip inside fist shell, nearest hand vert '+fistMax.toFixed(3)+'m');
  assert.ok(tipMinAtk>=-.05,'attack clip tip penetration '+tipMinAtk.toFixed(3)+'m >= -0.05m');
  const sweepR=MONSTERS.warrok.dims.sweepR;
- assert.ok(reachMax<=sweepR+.3,'tip horizontal reach '+reachMax.toFixed(2)+'m <= sweepR+0.3');
+ // Triangle inequality: scale the previous accepted reach envelope, then
+ // add only the physical blade-length delta not already scaled with the body.
+ const renderReach = 1.25*(sweepR+.3) + (2.43-1.25*1.35);
+ assert.ok(reachMax<=renderReach,'render-only tip reach '+reachMax.toFixed(2)+'m <= '+renderReach);
+ assert.ok(Math.abs(weapon.scale.x-1.8)<1e-12);
+ assert.ok(Math.abs(tip.position.y*weapon.scale.y-2.43)<1e-12);
  h.dispose();
 });
 

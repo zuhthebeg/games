@@ -1,4 +1,4 @@
-// Presentation entry generation: 20261115ar (Arissa DB).
+// Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
 import { Coop } from './net/coop.js?v=20261114r11';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';

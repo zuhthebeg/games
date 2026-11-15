@@ -21,11 +21,12 @@ export function createDbMotion(model, clips, db, { arissa = false } = {}) {
     socket.position.copy(bones[side+'HandMiddle1'].position).multiplyScalar(.5);
     if (arissa) {
       // Measure this bind skeleton, not the Paladin constants. Production tip
-      // is socket -Y; Pinky1->Index1 radial axis and fingers define its plane.
+      // is socket -Y; wrist->Middle1 is the outward blade axis. The
+      // knuckle line still measures the palm plane (not the blade length).
       const local = name => hand.worldToLocal(bones[side+name].getWorldPosition(V()));
       const radial = local('HandIndex1').sub(local('HandPinky1')).normalize();
       const finger = local('HandMiddle1').normalize();
-      const normal = radial.clone().cross(finger).normalize(), y = radial.clone().negate();
+      const normal = radial.clone().cross(finger).normalize(), y = finger.clone().negate();
       const width = y.clone().cross(normal).normalize(); normal.copy(width).cross(y).normalize();
       socket.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(width,y,normal));
     } else socket.quaternion.setFromUnitVectors(Y,new THREE.Vector3(side==='Right'?1:-1,0,0));
