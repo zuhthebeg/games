@@ -71,10 +71,12 @@ test('graded bow claims enforce actual per-stage ceiling and reject invalid indi
  for(const [node,mv]of [[0,.35],[1,.4],[2,.5]]){
   const s=sim('bow',{role:'world',partySize:1});s.tick=100;s.p.x=s.p.z=0;
   const claims=new HitClaims();claims.record(s);
-  const c={seq:1,hostTick:100,actionTick:80,part:'body',raw:100*mv*.3,moveId:'light:'+node};
+  // Higher-stage ceilings require an accepted legal predecessor, not trust.
+  for(let prev=0;prev<node;prev++)assert.equal(claims.validate('p1',{seq:prev+1,hostTick:100,actionTick:80-(node-prev)*19,part:'body',raw:10,moveId:'light:'+prev},s.p,s).ok,true);
+  const c={seq:node+1,hostTick:100,actionTick:80,part:'body',raw:100*mv*.3,moveId:'light:'+node};
   assert.equal(claims.validate('p1',c,s.p,s).ok,true,'node '+node);
   assert.equal(new HitClaims().validate('p1',{...c,raw:c.raw+.01},s.p,s).reason,'raw');
-  assert.equal(claims.validate('p1',{...c,seq:2},s.p,s).reason,'interval');
+  assert.equal(claims.validate('p1',{...c,seq:node+2},s.p,s).reason,'interval');
  }
 });
 
@@ -121,7 +123,11 @@ for(const weapon of ['gs','db','bow'])test(weapon+' owner stage claims apply exa
    }
   }
   assert.equal(claims,1);assert.equal(hp-host.sim.m.hp,expected[node]);assert.equal(owner.m.hp,ownerHp);
-  for(let i=0;i<60;i++){host.sim.tick++;host.claims.record(host.sim);owner.network.viewTick=host.sim.tick;assert.equal(tick(owner).filter(e=>e.type==='hitClaim').length,0,'no repeated impact');}
+  // Preserve the 60-tick no-repeat assertion on an exact owner continuation.
+  // Waiting those 60 ticks before the NEXT graded claim encoded expired chains.
+  const quiet=sim(weapon,{...owner.network}).restore(owner.snapshot());
+  for(let i=0;i<60;i++)assert.equal(tick(quiet).filter(e=>e.type==='hitClaim').length,0,'no repeated impact');
+  while(owner.p.state==='atk'){host.sim.tick++;host.claims.record(host.sim);owner.network.viewTick=host.sim.tick;assert.equal(tick(owner).filter(e=>e.type==='hitClaim').length,0,'no repeated impact during legal recovery');}
  }
  assert.equal(host.claims.accepted,expected.length);
 });
@@ -161,7 +167,10 @@ test('bow stage changes cannot duplicate a shot identity or bypass firing cadenc
 test('bow legitimate different-stage release can arrive before an older in-flight shot',()=>{
  const s=sim('bow',{role:'world',partySize:1});s.tick=100;s.p.x=s.p.z=0;
  const claims=new HitClaims();claims.record(s);
- for(const [seq,actionTick,moveId]of [[1,80,'light:1'],[2,59,'light:0']])assert.equal(claims.validate('p1',{seq,hostTick:100,actionTick,part:'body',raw:10,moveId},s.p,s).ok,true);
+ const c={hostTick:100,part:'body',raw:10};
+ assert.equal(claims.validate('p1',{...c,seq:1,actionTick:80,moveId:'light:1'},s.p,s).ok,false,'inert until predecessor');
+ const first=claims.validate('p1',{...c,seq:2,actionTick:59,moveId:'light:0'},s.p,s);
+ assert.equal(first.ok,true);assert.equal(first.ready.length,1);assert.equal(claims.accepted,2);
 });
 
 test('GS spin real first contact does not truncate remaining active interval or repeat contact on linking',()=>{
@@ -181,5 +190,5 @@ test('queued snapshot must name the actual active normal move, not a heavy or id
 });
 
 test('R20 authenticated bow stage 1/2 raw ceilings and cross-lane spam at host entry',()=>{
-const roster={a:{save:save('bow')},b:{save:save('gs')}};const host=new HostSession({quest:{mon:'boar'},roster,hunt:'auth',host:'b',seed:1,transport:{sendState(){},sendEvent(){}}});const s=host.sim;s.tick=100;s.p.x=s.p.z=0;s.mParts=()=>[{n:'body',x:0,z:1,r:.5}];host.claims.record(s);let seq=1;const send=(from,node,actionTick,raw)=>host.receive(from,envelope('hit','auth',seq,{seq:seq++,hostTick:100,actionTick,part:'body',raw,moveId:'light:'+node}));const hp=s.m.hp;assert.equal(send('outsider',1,60,12),false);assert.equal(s.m.hp,hp);assert.equal(send('a',1,60,12.01),false);assert.equal(send('a',1,60,12),true);assert.equal(send('a',2,61,15),false);assert.equal(send('a',0,62,10),false);assert.equal(send('a',2,90,15),true);assert.equal(host.claims.accepted,2);
+const roster={a:{save:save('bow')},b:{save:save('gs')}};const host=new HostSession({quest:{mon:'boar'},roster,hunt:'auth',host:'b',seed:1,transport:{sendState(){},sendEvent(){}}});const s=host.sim;s.tick=100;s.p.x=s.p.z=0;s.mParts=()=>[{n:'body',x:0,z:1,r:.5}];host.claims.record(s);let seq=1;const send=(from,node,actionTick,raw)=>host.receive(from,envelope('hit','auth',seq,{seq:seq++,hostTick:100,actionTick,part:'body',raw,moveId:'light:'+node}));const hp=s.m.hp;assert.equal(send('outsider',1,60,12),false);assert.equal(s.m.hp,hp);assert.equal(send('a',1,60,12.01),false);assert.equal(send('a',1,60,12),false,'fresh stage 1 is inert');assert.equal(s.m.hp,hp);assert.equal(send('a',0,40,10),true,'legal predecessor also resolves the deferred stage 1');assert.equal(send('a',2,61,15),false);assert.equal(send('a',0,62,10),false);assert.equal(send('a',2,90,15),true);assert.equal(host.claims.accepted,3);assert.equal(hp-s.m.hp,37);
 });
