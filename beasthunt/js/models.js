@@ -6,7 +6,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
 import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261115er';
 import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261115vf';
-import { createWarrokMotion } from './warrok-motion.js?v=20261114wk';
+import { createWarrokMotion } from './warrok-motion.js?v=20261115vf';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
@@ -331,12 +331,12 @@ export function buildWarrok() {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const h = box.max.y - box.min.y, k = (d.h * 2) / h * 1.25; // render-only; simulation dims unchanged
-  model.scale.setScalar(k); model.position.y = -box.min.y * k;
+  model.scale.setScalar(k); model.position.y = 0; // warrok.ground is the sole floor owner
   const socket = warrokWeaponSocket(model);
   if (socket) { W.weaponSocket = socket; W.weapon = socket.userData.weapon; }
   W.warrok = createWarrokMotion(model, asset.animations);
   for (const c of [...body.children]) { body.remove(c); c.geometry?.dispose(); c.material?.dispose(); }
-  body.position.y = 0; body.add(model);
+  body.position.y = 0; body.add(model); W.warrok.ground();
   return W;
  };
  W.ready = warrokAsset ? Promise.resolve(upgrade(warrokAsset)) : loadWarrok().then(upgrade);

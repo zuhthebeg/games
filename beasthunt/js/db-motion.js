@@ -20,15 +20,18 @@ export function createDbMotion(model, clips, db, { arissa = false } = {}) {
     socket.scale.setScalar(1 / hand.getWorldScale(V()).x); hand.add(socket);
     socket.position.copy(bones[side+'HandMiddle1'].position).multiplyScalar(.5);
     if (arissa) {
-      // Measure this bind skeleton, not the Paladin constants. Production tip
-      // is socket -Y; wrist->Middle1 is the outward blade axis. The
-      // knuckle line still measures the palm plane (not the blade length).
+      // Candidate C: exact accepted Paladin local +/-X socket axis. The
+      // measured Arissa palm origin stays unchanged. Preserve its palm plane
+      // with a blade-only long-axis roll, which cannot change tip direction.
       const local = name => hand.worldToLocal(bones[side+name].getWorldPosition(V()));
       const radial = local('HandIndex1').sub(local('HandPinky1')).normalize();
       const finger = local('HandMiddle1').normalize();
-      const normal = radial.clone().cross(finger).normalize(), y = finger.clone().negate();
-      const width = y.clone().cross(normal).normalize(); normal.copy(width).cross(y).normalize();
-      socket.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(width,y,normal));
+      const normal = radial.clone().cross(finger).normalize();
+      socket.quaternion.setFromUnitVectors(Y,new THREE.Vector3(side==='Right'?1:-1,0,0));
+      // Express the measured plane normal in socket coordinates, projected
+      // perpendicular to Y. Only the plane rolls; socket/palm and blade axis do not.
+      normal.applyQuaternion(socket.quaternion.clone().invert()); normal.y=0; normal.normalize();
+      blades[side].quaternion.setFromAxisAngle(Y,Math.atan2(normal.x,normal.z));
     } else socket.quaternion.setFromUnitVectors(Y,new THREE.Vector3(side==='Right'?1:-1,0,0));
     socket.add(blades[side]); sockets[side]=socket;
   }

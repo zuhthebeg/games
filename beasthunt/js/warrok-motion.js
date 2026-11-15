@@ -2,6 +2,7 @@
 // Looping clips free-run; one-shot states seek by sim time so restores and
 // interpolation never drift the pose away from the authoritative timeline.
 import * as THREE from 'three';
+import { createWarrokFloor } from './warrok-floor.js?v=20261115vf';
 
 const ATK_CLIP = { bite: 'swipe', stomp: 'smash', sweep: 'spin', charge: 'rush', leap: 'leap', spit: 'cast', fireball: 'cast', breath: 'cast' };
 const ONESHOT = { roar: 1, swipe: 1, smash: 1, spin: 1, rush: 1, leap: 1, cast: 1, flinch: 1, topple: 1, dead: 1 };
@@ -13,7 +14,7 @@ export function createWarrokMotion(model, clips) {
     const a = mixer.clipAction(c);
     actions[c.name] = a;
   }
-  const W = { model, mixer, actions, cur: null, key: '' };
+  const W = { model, mixer, actions, cur: null, key: '', ground: createWarrokFloor(model) };
 
   function show(name, { loop = true, fade = .22, timeScale = 1 } = {}) {
     const a = actions[name];
@@ -31,6 +32,8 @@ export function createWarrokMotion(model, clips) {
 
   // m is the interpolated presentation copy of the authoritative monster state.
   W.sync = (m, dt, enraged) => {
+    // Sole presentation floor owner: restore before every paused/blended evaluation.
+    model.position.y = 0;
     let want = 'idle', dur = 0, oneShot = false;
     if (m.state === 'roar') { want = 'roar'; dur = m.dur || 1.75; oneShot = true; }
     else if (m.state === 'flinch') { want = 'flinch'; dur = m.dur || .95; oneShot = true; }
@@ -46,7 +49,7 @@ export function createWarrokMotion(model, clips) {
     const key = m.state + ':' + want;
     if (key !== W.key) { W.key = key; W.entered = true; }
     const a = actions[want];
-    if (!a) { mixer.update(dt); return; }
+    if (!a) { mixer.update(dt); W.ground(); return; }
     if (oneShot) {
       if (W.cur !== a || W.entered) {
         const clip = a.getClip();
@@ -65,6 +68,7 @@ export function createWarrokMotion(model, clips) {
       show(want, { loop: true });
       mixer.update(dt);
     }
+    W.ground();
   };
   return W;
 }

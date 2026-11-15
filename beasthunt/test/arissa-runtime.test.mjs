@@ -72,8 +72,17 @@ test('Arissa exact approved bytes, sixteen unchanged original clip names and clo
  measurements.clips=arissa.animations.map(c=>({name:c.name,duration:c.duration}));
 });
 test('Arissa measured target palm/axis sockets reproduce supplied bind measurements with tiny active grip residual',async()=>{
- const {h,b}=await actor();const expected={"Left":{"p":[-0.4890799820423126,5.097392559051514,-0.3591868281364441],"q":[0.9968275782231345,0.04952055235640821,0.05319032275869156,0.03245433334615181]},"Right":{"p":[0.48907649517059326,5.097354412078857,-0.35972025990486145],"q":[0.053188410541512056,0.03250648084974927,0.9968258582375177,0.049523025310140245]}};
+ const {h,b}=await actor();const expected={"Left":{"p":[-0.4890799820423126,5.097392559051514,-0.3591868281364441],"q":[0,0,0.7071067811865475,0.7071067811865475]},"Right":{"p":[0.48907649517059326,5.097354412078857,-0.35972025990486145],"q":[0,0,-0.7071067811865475,0.7071067811865475]}};
  for(const side of ['Left','Right']){assert.ok(b.sockets[side].position.distanceTo(new T.Vector3(...expected[side].p))<1e-10);assert.ok(b.sockets[side].quaternion.angleTo(new T.Quaternion(...expected[side].q))<1e-6);}
+ // Candidate C pins only the revised axis; original palm tolerances are unchanged.
+ for(const side of ['Left','Right']){
+  const hand=b.bones[side+'Hand'],local=n=>hand.worldToLocal(b.bones[side+n].getWorldPosition(V()));
+  const normal=local('HandIndex1').sub(local('HandPinky1')).normalize().cross(local('HandMiddle1').normalize()).normalize();
+  const y=new T.Vector3(0,1,0).applyQuaternion(b.sockets[side].quaternion);
+  normal.addScaledVector(y,-normal.dot(y)).normalize();
+  const actual=new T.Vector3(0,0,1).applyQuaternion(b.blades[side].quaternion).applyQuaternion(b.sockets[side].quaternion);
+  assert.ok(actual.dot(normal)>1-1e-12,side+' measured palm plane');
+ }
  for(const name of ['h','h2','h3','v','spin']){
   const cur={sw:name==='h3'?'h':name,h0:.2,h1:.7,dur:1};
   for(const [t,expected] of [[cur.h0,DB_CLIPS[name].impact[0]],[cur.h1,DB_CLIPS[name].impact[1]]]){
@@ -133,7 +142,7 @@ test('Arissa active blade edge measurement is reported, not silently fixed or cl
  const {h,b}=await actor();const edge={};
  for(const name of ['h','h3','spin'])for(const side of ['Left','Right']){const [a,z]=DB_CLIPS[name].impact,values=[];const cur={sw:name==='h3'?'h':name,h0:a,h1:z,dur:DB_CLIPS[name].duration};
   const tip=t=>{syncHunterDb(pose('atk',t,{cur,combo:name==='h3'?2:0}),h,0);h.root.updateMatrixWorld(true);return b.sockets[side].localToWorld(new T.Vector3(0,-.86,0));};
-  for(let i=0;i<Math.ceil(z*239);i++){const t=(i+.371)/239;if(t<a||t>z)continue;const v=tip(t+.001).sub(tip(t-.001)).multiplyScalar(500);tip(t);const n=new T.Vector3(0,0,1).applyQuaternion(b.sockets[side].getWorldQuaternion(new T.Quaternion()));if(v.length()>.1)values.push(Math.abs(n.dot(v.normalize())));}
+  for(let i=0;i<Math.ceil(z*239);i++){const t=(i+.371)/239;if(t<a||t>z)continue;const v=tip(t+.001).sub(tip(t-.001)).multiplyScalar(500);tip(t);const n=new T.Vector3(0,0,1).applyQuaternion(b.blades[side].getWorldQuaternion(new T.Quaternion()));if(v.length()>.1)values.push(Math.abs(n.dot(v.normalize())));}
   edge[name+' '+side]={max:Math.max(...values),mean:values.reduce((a,v)=>a+v,0)/values.length,samples:values.length};assert.ok(values.length>0);assert.ok(values.every(x=>Number.isFinite(x)&&x<=1.00000001));
  }
  measurements.edge=edge;h.dispose();
