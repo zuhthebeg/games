@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "image": "particles.webp",
+  "width": 1024,
+  "height": 1024,
+  "columns": 4,
+  "rows": 4,
+  "cellSize": 256,
+  "cells": {
+    "circle_05": 0,
+    "flare_01": 1,
+    "fire_01": 2,
+    "flame_04": 3,
+    "flame_05": 4,
+    "smoke_07": 5,
+    "spark_04": 6,
+    "star_07": 7,
+    "scorch_02": 8,
+    "dirt_02": 9,
+    "magic_02": 10,
+    "magic_01": 11,
+    "twirl_02": 12,
+    "trace_05": 13,
+    "slash_02": 14,
+    "circle_03": 15
+  }
+}

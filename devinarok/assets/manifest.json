@@ -107,7 +107,19 @@
     "assets/env/wall_cracked.glb": 49796,
     "assets/env/wall_doorway.glb": 35960,
     "assets/env/wall_half.glb": 24252,
-    "assets/env/wall_shelves.glb": 48252
+    "assets/env/wall_shelves.glb": 48252,
+    "assets/licenses/22skill-icons-ReadMe.txt": 373,
+    "assets/licenses/fireball-Effekseer-LICENSE_TOOL.txt": 12357,
+    "assets/licenses/fireball-EffekseerForGodot4-MIT.txt": 1066,
+    "assets/licenses/fireball-THIRD_PARTY_NOTICES.md": 2065,
+    "assets/licenses/fireball-skill-MIT.txt": 1098,
+    "assets/licenses/kenney-particle-pack-LICENSE.txt": 645,
+    "assets/vfx/fireball/atlas.json": 3153,
+    "assets/vfx/fireball/atlas.webp": 79776,
+    "assets/vfx/particles.json": 458,
+    "assets/vfx/particles.webp": 157844,
+    "assets/vfx/skill-icons.json": 2230,
+    "assets/vfx/skill-icons.webp": 116016
   },
   "sha256": {
     "assets/anims/humanoid.glb": "56cbc41842a101a5ed6bea741c100fef1b8dfe19000ee3bf01a00d39e530dffa",
@@ -216,7 +228,19 @@
     "assets/env/wall_cracked.glb": "32580469ef9c13c7d52da4ed322c6607002258fd66be9576e386b0e1a2fe2226",
     "assets/env/wall_doorway.glb": "9b6cdb51723050bad139f8cae369d5433c819f026ed75ff09061030d7da76347",
     "assets/env/wall_half.glb": "9419ed49b9f1f9837b39044d5eb964b87e49c776da4e017cbd768de44c24f378",
-    "assets/env/wall_shelves.glb": "a9736f2edcee2ff6fb6df1198e2edc21e9b6849ff3894a7c4106d56f5e385a16"
+    "assets/env/wall_shelves.glb": "a9736f2edcee2ff6fb6df1198e2edc21e9b6849ff3894a7c4106d56f5e385a16",
+    "assets/licenses/22skill-icons-ReadMe.txt": "ddb8022db9df2f031b004b06bf4363458c176e47bf69d76a5a5c05064a09a3d2",
+    "assets/licenses/fireball-Effekseer-LICENSE_TOOL.txt": "ec1867cbec3854b22773e8931e4a08b0b31b197a993709e15c55b21d9586addf",
+    "assets/licenses/fireball-EffekseerForGodot4-MIT.txt": "53bd3a1acbe5953c4e2a54921d3f1db7c0aab15e80dfee7019717747025ea782",
+    "assets/licenses/fireball-THIRD_PARTY_NOTICES.md": "3f313c4b43169aa9df668a488a865f1ff770681f502b3abb196817b9c2543d1b",
+    "assets/licenses/fireball-skill-MIT.txt": "fd88a933eeab07f5361a4869892468709b391e745367a292620c8b1289dc0961",
+    "assets/licenses/kenney-particle-pack-LICENSE.txt": "dabd7cc9f78caf9dd0e0c2dbf27eca9c22383bed5bf035bc26341a246b748cc6",
+    "assets/vfx/fireball/atlas.json": "12903650b8885fb800f9030c4dc3075698ebd2d8e0387be9544190a656999ce2",
+    "assets/vfx/fireball/atlas.webp": "017b7baf75343fa1b79474875493b27227a92b8361886a535ec4fe7e9eb8f0bb",
+    "assets/vfx/particles.json": "8152bda5f2d2023c84283e20b5fbf5884ccc64b1db8d49218b2b486f4aba16b8",
+    "assets/vfx/particles.webp": "9b91e7c79df15727864971934d6c8f92d281fb5bd795945d758d73daee7f180c",
+    "assets/vfx/skill-icons.json": "295b03a643c03c717afb8eb1bf4f0d51734a0fb27267dad5935a6fbfc5b11d91",
+    "assets/vfx/skill-icons.webp": "b321cd04526070cc7895e631a57716351474be06e330424e531224b3eb31839f"
   },
   "m0LoadedFiles": [
     "assets/chars/Knight.glb",
