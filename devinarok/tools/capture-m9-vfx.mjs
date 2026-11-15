@@ -3,7 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const outputDir = '/home/ubuntu/devinarok-shots/m9-vfx';
 const baseUrl = 'http://127.0.0.1:18370/devinarok/?dev=1&debug=1';
-const cdpPort = process.env.CDP_PORT ?? '9225';
+const cdpPort = process.env.CDP_PORT ?? '9224';
 const errors = [];
 await mkdir(outputDir, { recursive: true });
 
@@ -98,6 +98,7 @@ async function stepTicks(client, count, buttons = 0) {
     const player = api.world.entities.find((entity) => entity.kind === 'player');
     let seq = player.lastInput.seq + 1;
     for (let index = 0; index < ${count}; index += 1) {
+      player.level = Math.max(player.level, 10);
       player.skillCooldowns = { 1: 0, 2: 0, 3: 0, 4: 0 };
       player.hp = player.maxHp;
       const previous = structuredClone(api.world);
@@ -127,11 +128,45 @@ async function configure(client, lineage, family) {
   })()`);
 }
 
-async function cast(client, lineage, family, button, windupTicks, name) {
+async function clearEffects(client) {
+  await client.evaluate(`(() => {
+    const renderer = window.__devinarok.renderer;
+    renderer.vfx?.clear();
+    for (let index = renderer.transientEffects.length - 1; index >= 0; index -= 1) {
+      const effect = renderer.transientEffects[index];
+      if (effect.startTime === null && effect.durationMs === null && effect.endTick === null) continue;
+      renderer.scene.remove(effect.mesh);
+      effect.geometry.dispose();
+      effect.material.dispose();
+      renderer.transientEffects.splice(index, 1);
+    }
+    for (const decal of renderer.telegraphs.values()) {
+      renderer.scene.remove(decal.mesh);
+      decal.mesh.traverse((node) => {
+        node.geometry?.dispose();
+        if (node.material) for (const material of [node.material].flat()) material.dispose();
+      });
+    }
+    renderer.telegraphs.clear();
+    for (const effect of renderer.slashes.values()) {
+      renderer.scene.remove(effect.mesh);
+      effect.mesh.geometry.dispose();
+      effect.mesh.material.dispose();
+    }
+    renderer.slashes.clear();
+    renderer.damageNumbers.forEach((effect) => effect.element.remove());
+    renderer.damageNumbers = [];
+    while (renderer.deathPuffs.length) renderer.removeDeathPuff(renderer.deathPuffs.length - 1);
+  })()`);
+}
+
+async function cast(client, lineage, family, button, windupTicks, name, postTicks = 0) {
   await configure(client, lineage, family);
+  await clearEffects(client);
   await stepTicks(client, 1, button);
   await stepTicks(client, Math.max(1, windupTicks + 1));
-  await screenshot(client, name, { lineage, family, button, windupTicks });
+  if (postTicks > 0) await stepTicks(client, postTicks);
+  await screenshot(client, name, { lineage, family, button, windupTicks, postTicks });
 }
 
 let browser;
@@ -168,6 +203,7 @@ try {
   await client.evaluate(`window.__devinarok.startStage('C1')`);
   await waitFor(client, `window.__devinarok.world?.mode === 'stage' && Boolean(window.__devinarok.renderer?.entities.size)`);
   await client.evaluate('window.__devinarok.loop.pause()');
+  await stepTicks(client, 90);
   await client.evaluate(`(() => {
     document.querySelector('#debug-trigger')?.click();
     document.querySelector('#debug-tab-combat')?.click();
@@ -193,31 +229,47 @@ try {
   await configure(client, 'skeleton_mage', 'staff');
   await client.evaluate(`window.__devinarok.renderer.setQualityMode('high')`);
   await stepTicks(client, 1, 128);
-  await stepTicks(client, 14);
+  await screenshot(client, 'meteor-cast', { skill: 'meteor', quality: 'high', phase: 'cast' });
+  await stepTicks(client, 11);
+  await screenshot(client, 'meteor-tick-12', { skill: 'meteor', quality: 'high', tick: 12 });
+  await stepTicks(client, 3);
   await screenshot(client, 'meteor-telegraph-mid-fall', { skill: 'meteor', quality: 'high', phase: 'mid-fall' });
-  await stepTicks(client, 15);
+  await stepTicks(client, 9);
+  await screenshot(client, 'meteor-tick-24', { skill: 'meteor', quality: 'high', tick: 24 });
+  await stepTicks(client, 6);
   await screenshot(client, 'meteor-impact', { skill: 'meteor', quality: 'high', phase: 'impact' });
-  await renderFrames(client, 10);
+  await stepTicks(client, 1);
+  await screenshot(client, 'meteor-impact-tick-31', { skill: 'meteor', quality: 'high', tick: 31 });
+  await renderFrames(client, 9);
   await screenshot(client, 'meteor-impact-plus-300ms', { skill: 'meteor', quality: 'high', phase: 'aftermath-300ms' });
-  await renderFrames(client, 24);
+  await renderFrames(client, 21);
   await screenshot(client, 'meteor-impact-plus-1s', { skill: 'meteor', quality: 'high', phase: 'aftermath-1s' });
+  await renderFrames(client, 9);
+  await screenshot(client, 'meteor-impact-plus-1-2s', { skill: 'meteor', quality: 'high', phase: 'aftermath-1-2s' });
 
-  await cast(client, 'human', 'staff', 4, 6, 'flame-field');
+  await cast(client, 'human', 'staff', 4, 6, 'flame-field', 18);
   await cast(client, 'human', 'staff', 8, 5, 'frost-wave');
   await cast(client, 'skeleton_archer', 'crossbow', 128, 10, 'rain-field');
-  await cast(client, 'human', 'sword', 128, 14, 'quake-impact');
+  await cast(client, 'human', 'sword', 128, 14, 'quake-impact', 18);
   await cast(client, 'skeleton_knight', 'sword', 128, 10, 'dead-burst');
   await cast(client, 'skeleton_mage', 'staff', 8, 8, 'cursed-hands');
   await cast(client, 'human', 'staff', 16, 1, 'blink-endpoints');
 
   await configure(client, 'skeleton_mage', 'staff');
+  await clearEffects(client);
   await client.evaluate(`(() => {
     const api = window.__devinarok;
     const player = api.world.entities.find((entity) => entity.kind === 'player');
-    const enemy = api.world.entities.find((entity) => entity.kind === 'enemy' && !entity.dead);
-    if (!enemy) throw new Error('No enemy available for the critical-hit capture');
+    const enemy = {
+      id: 'm9-critical-hit-target',
+      kind: 'enemy',
+      x: player.x + 1.2,
+      y: 0,
+      z: player.z,
+      height: 1.7,
+    };
     const previous = structuredClone(api.world);
-    api.world.events = [{
+    const event = {
       eventId: 'm9-critical-hit-capture',
       type: 'hit',
       castId: 'm9-critical-hit-capture',
@@ -227,7 +279,13 @@ try {
       critical: true,
       predictedLocally: false,
       guarded: false,
-    }];
+    };
+    const captureWorld = {
+      ...api.world,
+      entities: [...api.world.entities, enemy],
+      events: [event],
+    };
+    api.renderer.consumeEvents(captureWorld, performance.now());
     api.render(previous);
   })()`);
   await renderFrames(client, 3);
@@ -243,6 +301,7 @@ try {
   await client.evaluate(`window.__devinarok.startStage('C1')`);
   await waitFor(client, `window.__devinarok.world?.mode === 'stage'`);
   await client.evaluate('window.__devinarok.loop.pause()');
+  await stepTicks(client, 90);
   await client.evaluate(`window.__devinarok.renderer.setQualityMode('low')`);
   await configure(client, 'skeleton_mage', 'staff');
   await stepTicks(client, 1, 128);
@@ -250,7 +309,7 @@ try {
   await screenshot(client, 'meteor-impact-low-quality', { skill: 'meteor', quality: 'low', phase: 'impact' });
 
   if (errors.length) throw new Error(`Browser errors: ${errors.join('; ')}`);
-  console.log(JSON.stringify({ captures: 18, outputDir, errors }, null, 2));
+  console.log(JSON.stringify({ outputDir, errors }, null, 2));
 } finally {
   if (client?.socket) client.socket.close();
   if (browser && browserContextId) {

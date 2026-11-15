@@ -2250,16 +2250,34 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       cell: event.skillName === 'meteor' ? 'magic_02' : 'circle_03',
       x,
       z,
-      radius: radius * 0.95,
+      radius: radius * (event.skillName === 'meteor' ? 1 : 0.95),
       color,
-      opacity: event.skillName === 'meteor' ? 0.7 : 0.42,
+      opacity: event.skillName === 'meteor' ? 0.95 : 0.62,
+      opacityScale: event.skillName === 'meteor' ? 1 : 1.25,
       startTick: event.startTick,
       endTick: event.resolveTick,
       fadeIn: 0.16,
       fadeOut: 0.16,
       rotationSpeed: event.skillName === 'meteor' ? 0.8 : 0,
     });
-    if (event.skillName === 'meteor') this.vfx?.startMeteor(event, rankFive);
+    if (event.skillName === 'meteor') {
+      this.vfx?.decal({
+        cell: 'circle_05',
+        x,
+        z,
+        radius: radius * 0.24,
+        endRadius: radius * 0.88,
+        color: 0xff7133,
+        opacity: 0.5,
+        startOpacity: 0.15,
+        endOpacity: 0.5,
+        opacityScale: 1,
+        startTick: event.startTick,
+        endTick: event.resolveTick,
+        fadeOut: 0.05,
+      });
+      this.vfx?.startMeteor(event, rankFive);
+    }
     const fillGeometry = new THREE.CircleGeometry(radius, 48);
     const fillMaterial = new THREE.MeshBasicMaterial({
       color,
@@ -2403,7 +2421,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       });
     } else if (event.kind === 'burn') {
       const geometry = new THREE.CircleGeometry(radius * (rankFive ? 1.15 : 1), 36);
-      const material = new THREE.MeshBasicMaterial({ color: rankFive ? 0xfff2c4 : 0xff6b2e, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
+      const material = new THREE.MeshBasicMaterial({ color: rankFive ? 0xfff2c4 : 0xff6b2e, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(x, 0.025, z);
@@ -2412,7 +2430,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         endTick: event.endsTick,
         update: (effect, tick) => {
           effect.mesh.scale.setScalar(0.92 + Math.sin(tick * 0.55) * 0.08);
-          effect.material.opacity = 0.15 + (Math.sin(tick * 0.55) + 1) * 0.045;
+          effect.material.opacity = 0.22 + (Math.sin(tick * 0.55) + 1) * 0.08;
         },
       });
       this.vfx?.decal({
@@ -2421,7 +2439,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         z,
         radius: radius * (rankFive ? 1.2 : 1),
         color: rankFive ? 0xffdb9e : 0xff6b2e,
-        opacity: 0.36,
+        opacity: 0.56,
         startTick: event.resolveTick,
         endTick: event.endsTick,
         fadeIn: 0.1,
@@ -2433,28 +2451,41 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         preset: 'flame',
         x,
         z,
-        radius: radius * 0.82,
+        radius: radius * 0.96,
         y: 0.16,
-        rate: 25,
+        rate: 40,
         startTick: event.resolveTick,
         endTick: event.endsTick,
         options: {
           cell: 'flame_05',
           color: rankFive ? 0xffd99a : 0xff6b2e,
-          startSize: rankFive ? 0.62 : 0.52,
-          lifeMs: 560,
-          upward: [0.4, 1.6],
+          startSize: rankFive ? 0.95 : 0.82,
+          endSize: 0.12,
+          lifeMs: 700,
+          upward: [0.8, 2.4],
         },
       });
       this.vfx?.decal({
         cell: 'scorch_02',
         x,
         z,
-        radius: radius * 0.7,
-        color: 0x713b2a,
-        opacity: 0.45,
+        radius: radius * 0.95,
+        color: 0x2a160f,
+        opacity: 0.85,
+        opacityScale: 1,
         lifeMs: 3000,
         fadeOut: 0.25,
+        blend: 'normal',
+      });
+      this.vfx?.decal({
+        cell: 'circle_05',
+        x,
+        z,
+        radius: radius * 0.6,
+        color: 0xff762e,
+        opacity: 0.72,
+        lifeMs: 900,
+        fadeOut: 0.4,
       });
     } else if (event.kind === 'deadBurst') {
       this.createDeadBurst(event);
@@ -2492,13 +2523,17 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         speed: [1.2, 4.5],
         upward: [0.2, 1.6],
         color: 0xa9eaff,
+        cell: 'slash_02',
+        startSize: 0.45,
+        endSize: 0.04,
+        stretch: 2.1,
         lifeMs: [420, 720],
       });
       this.vfx?.burst({ preset: 'smoke', count: 7, x, y: 0.18, z, spreadRadius: 0.7, speed: [0.1, 0.8], upward: [0.1, 0.4], color: 0xb9e6f3, lifeMs: [500, 850] });
       if (event.ownerId === this.localPlayerId) this.addShake(0.08, 120);
     } else if (event.kind === 'quake') {
-      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 0.85, color: 0x9d7546, opacity: 0.58, lifeMs: 1500 });
-      this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.25, color: 0xe5be72, opacity: 0.78, lifeMs: 520 });
+      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 1.15, color: 0x1b0e09, opacity: 0.95, opacityScale: 1, lifeMs: 1500, blend: 'normal' });
+      this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.25, color: 0xe5be72, opacity: 0.95, lifeMs: 520 });
       this.vfx?.burst({ preset: 'dirt', count: 20, x, y: 0.16, z, spreadRadius: radius * 0.25, speed: [1.2, 5], upward: [1, 4.8], color: 0xb38a58, lifeMs: [500, 900] });
       this.vfx?.burst({ preset: 'smoke', count: 10, x, y: 0.12, z, spreadRadius: radius * 0.45, speed: [0.2, 1.4], upward: [0.15, 0.75], color: 0x90775f, lifeMs: [500, 950] });
       if (event.ownerId === this.localPlayerId) this.addShake(0.22, 220);
@@ -2506,13 +2541,49 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       const scale = rankFive ? 1.2 : 1;
       const color = rankFive ? 0xffe8ae : 0xff873b;
       this.vfx?.flash(x, 0.8, z, color, 5.5, 180);
-      this.vfx?.flipbook('impact', x, 0.65, z, radius * 2.2 * scale, { color: rankFive ? 0xffefc4 : 0xffffff });
-      this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.3 * scale, color, opacity: 0.9, lifeMs: 520 });
-      this.vfx?.burst({ preset: 'ember', count: 36, x, y: 0.42, z, speed: [1.5, 6], upward: [1, 5.5], colors: rankFive ? [0xffefc4, 0xffc05e, 0xff6d36] : [0xffc05e, 0xff8434, 0xff4c2e], lifeMs: [520, 1100] });
-      this.vfx?.burst({ preset: 'dirt', count: 14, x, y: 0.16, z, speed: [1.4, 5], upward: [1.2, 4.8], color: 0x75523f, lifeMs: [600, 1000] });
-      this.vfx?.burst({ preset: 'smoke', count: 8, x, y: 0.2, z, spreadRadius: radius * 0.42, speed: [0.2, 1.2], upward: [0.35, 1.2], color: 0x40343a, startSize: 0.6, endSize: 1.45, lifeMs: 1200 });
-      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 0.82 * scale, color: 0x5b3026, opacity: 0.68, lifeMs: 3000, fadeOut: 0.22 });
-      if (event.ownerId === this.localPlayerId) this.addShake(0.32, 300);
+      this.vfx?.emit('star', x, 0.9, z, {
+        cell: 'flare_01', color: 0xfff5d8, startSize: radius * 3.2, endSize: radius * 1.1,
+        sizeScale: 1, lifeMs: 160, alpha: 0.98, fadeIn: 0,
+      });
+      this.vfx?.emit('star', x, 0.85, z, {
+        cell: 'circle_05', color: 0xff7d32, startSize: radius * 3.2, endSize: radius * 0.9,
+        sizeScale: 1, lifeMs: 160, alpha: 0.86, fadeIn: 0,
+      });
+      this.vfx?.flipbook('impact', x, 0.65, z, radius * 2 * scale, { color: rankFive ? 0xffefc4 : 0xffffff });
+      this.vfx?.decal({
+        cell: 'circle_03', x, z, radius: 0.2, endRadius: radius * 1.5 * scale,
+        color, opacity: 1, lifeMs: 450, fadeOut: 0.35,
+      });
+      this.createImpactRing(x, z, radius * 1.25 * scale, 0xfff3d2, event.resolveTick, event.resolveTick + 8);
+      this.vfx?.burst({
+        preset: 'ember', count: this.vfx?.scaleCount(60) ?? 60, x, y: 0.42, z,
+        speed: [3, 9], upward: [1.2, 6], startSize: 0.5, endSize: 0.04, sizeScale: 1,
+        colors: rankFive ? [0xffefc4, 0xffc05e, 0xff6d36] : [0xffc05e, 0xff8434, 0xff4c2e], lifeMs: [520, 1100],
+      });
+      this.vfx?.burst({
+        preset: 'flame', count: this.vfx?.scaleCount(16) ?? 16, x, y: 0.32, z,
+        spreadRadius: radius * 0.12, speed: [0.4, 1.4], upward: [2, 4], startSize: 1.2, endSize: 0.2,
+        sizeScale: 1, lifeMs: 700, cell: 'flame_04', color: 0xff842f,
+      });
+      this.vfx?.burst({
+        preset: 'dirt', count: this.vfx?.scaleCount(20) ?? 20, x, y: 0.16, z,
+        speed: [1.4, 5], upward: [1.2, 4.8], color: 0x75523f,
+        startSize: 0.35, endSize: 0.06, sizeScale: 1, lifeMs: [600, 1000],
+      });
+      this.vfx?.burst({
+        preset: 'smoke', count: this.vfx?.scaleCount(12) ?? 12, x, y: 0.2, z,
+        spreadRadius: radius * 0.42, speed: [0.2, 1.2], upward: [0.35, 1.2],
+        color: 0x40343a, startSize: 1.2, endSize: 3, sizeScale: 1, lifeMs: 1600,
+      });
+      this.vfx?.decal({
+        cell: 'scorch_02', x, z, radius: radius * 0.95 * scale,
+        color: 0x2a160f, opacity: 0.85, opacityScale: 1, lifeMs: 4000, fadeOut: 0.2, blend: 'normal',
+      });
+      this.vfx?.decal({
+        cell: 'circle_05', x, z, radius: radius * 0.6 * scale,
+        color: 0xff7c2e, opacity: 0.88, lifeMs: 900, fadeOut: 0.4,
+      });
+      if (event.ownerId === this.localPlayerId) this.addShake(0.38, 320);
     } else if (event.kind === 'rain') {
       const rainEndTick = event.endsTick ?? event.resolveTick + (event.hitEvery ?? 8) * (event.hitsRemaining ?? 5);
       this.vfx?.decal({
@@ -2669,6 +2740,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
               upward: event.critical ? [0.8, 3.4] : [0.4, 2],
               colors: event.critical ? [0xffa13c, 0xffdb7a, 0xfff2c4] : [0xfff1cb, 0xffd987],
               startSize: event.critical ? 0.32 : 0.22,
+              sizeScale: 1.4,
               lifeMs: event.critical ? [380, 680] : [300, 520],
             });
             if (event.critical) {

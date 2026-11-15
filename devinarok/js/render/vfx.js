@@ -74,6 +74,8 @@ const PARTICLE_FRAGMENT_SHADER = `
   }
 `;
 const TAU = Math.PI * 2;
+const PARTICLE_SIZE_SCALE = 1.8;
+const BASE_PARTICLE_CAP = 700;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const randomRange = (value, random) => (
   Array.isArray(value) ? value[0] + random() * (value[1] - value[0]) : value
@@ -203,6 +205,10 @@ export class VfxSystem {
     this.lowQuality = quality === 'low';
   }
 
+  scaleCount(count) {
+    return Math.max(1, Math.ceil(count * this.maxParticles / BASE_PARTICLE_CAP));
+  }
+
   emit(presetName, x, y, z, options = {}) {
     const preset = VFX_PRESETS[presetName] ?? VFX_PRESETS.spark;
     const particle = this.particlePool.acquire();
@@ -211,6 +217,7 @@ export class VfxSystem {
     const color = options.color ?? preset.color ?? 0xffffff;
     this._color.set(color);
     const size = randomRange(options.size ?? preset.startSize, random);
+    const sizeScale = options.sizeScale ?? PARTICLE_SIZE_SCALE;
     const velocity = options.velocity ?? preset.velocity ?? {};
     particle.x = x;
     particle.y = y;
@@ -220,8 +227,8 @@ export class VfxSystem {
     particle.vz = options.vz ?? velocity.z ?? 0;
     particle.gravity = options.gravity ?? preset.gravity ?? 0;
     particle.drag = options.drag ?? preset.drag ?? 0;
-    particle.startSize = options.startSize ?? size;
-    particle.endSize = randomRange(options.endSize ?? preset.endSize ?? size * 0.1, random);
+    particle.startSize = (options.startSize ?? size) * sizeScale;
+    particle.endSize = randomRange(options.endSize ?? preset.endSize ?? size * 0.1, random) * sizeScale;
     particle.width = particle.startSize;
     particle.height = particle.startSize * (options.stretch ?? preset.stretch ?? 1);
     particle.rotation = options.rotation ?? random() * TAU;
@@ -278,7 +285,7 @@ export class VfxSystem {
   }
 
   createDecalSlot() {
-    const material = new THREE.MeshBasicMaterial({
+    const materialOptions = {
       map: this.particleTexture,
       color: 0xffffff,
       transparent: true,
@@ -287,14 +294,18 @@ export class VfxSystem {
       depthTest: true,
       side: THREE.DoubleSide,
       toneMapped: false,
-    });
-    const mesh = new THREE.Mesh(this.decalGeometries?.[0] ?? new THREE.PlaneGeometry(1, 1), material);
+    };
+    const materials = {
+      additive: new THREE.MeshBasicMaterial({ ...materialOptions, blending: THREE.AdditiveBlending }),
+      normal: new THREE.MeshBasicMaterial({ ...materialOptions, blending: THREE.NormalBlending }),
+    };
+    const mesh = new THREE.Mesh(this.decalGeometries?.[0] ?? new THREE.PlaneGeometry(1, 1), materials.additive);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = 0.03;
     mesh.renderOrder = 1;
     mesh.visible = false;
     this.scene.add(mesh);
-    return { mesh, material, ageMs: 0, lifeMs: 1, startTick: null, endTick: null, opacity: 1 };
+    return { mesh, material: materials.additive, materials, ageMs: 0, lifeMs: 1, startTick: null, endTick: null, opacity: 1 };
   }
 
   decal(spec) {
@@ -302,13 +313,18 @@ export class VfxSystem {
     if (!slot) return null;
     const cell = cellIndex(spec.cell);
     slot.mesh.geometry = this.decalGeometries[cell] ?? this.decalGeometries[0];
+    slot.material = slot.materials[spec.blend === 'normal' ? 'normal' : 'additive'];
+    slot.mesh.material = slot.material;
     slot.mesh.position.set(spec.x, spec.y ?? 0.03, spec.z);
     slot.mesh.rotation.set(-Math.PI / 2, 0, spec.rotation ?? 0);
     slot.mesh.scale.setScalar((spec.radius ?? 1) * 2);
     slot.mesh.visible = true;
     slot.mesh.renderOrder = spec.renderOrder ?? 1;
     slot.material.color.set(spec.color ?? 0xffffff);
-    slot.opacity = spec.opacity ?? 0.8;
+    const opacityScale = spec.opacityScale ?? 1.25;
+    slot.opacity = clamp((spec.opacity ?? 0.8) * opacityScale, 0, 1);
+    slot.startOpacity = clamp((spec.startOpacity ?? spec.opacity ?? 0.8) * opacityScale, 0, 1);
+    slot.endOpacity = clamp((spec.endOpacity ?? spec.opacity ?? 0.8) * opacityScale, 0, 1);
     slot.material.opacity = slot.opacity;
     slot.ageMs = 0;
     slot.lifeMs = Math.max(1, spec.lifeMs ?? 900);
@@ -357,8 +373,9 @@ export class VfxSystem {
     slot.y = y;
     slot.z = z;
     slot.tint = options.color ?? 0xffffff;
+    slot.contentScale = clip.contentScale ?? 1;
     slot.mesh.position.set(x, y, z);
-    slot.mesh.scale.set(size, size * 0.65, 1);
+    slot.mesh.scale.set(size * slot.contentScale, size * 0.65 * slot.contentScale, 1);
     slot.material.color.set(slot.tint);
     slot.mesh.visible = true;
     this.setFlipbookFrame(slot, 0);
@@ -414,7 +431,7 @@ export class VfxSystem {
     const { originX: x, originZ: z, radius } = event.shape;
     this.meteors.set(key, {
       x, z, radius, startTick: event.startTick, resolveTick: event.resolveTick,
-      trailAccumulator: 0, smokeAccumulator: 0, coreAccumulator: 0, rankFive,
+      trailAccumulator: 0, smokeAccumulator: 0, coreAccumulator: 0, sparkAccumulator: 0, rankFive,
     });
   }
 
@@ -462,54 +479,85 @@ export class VfxSystem {
     for (const [key, meteor] of this.meteors) {
       const duration = Math.max(1, meteor.resolveTick - meteor.startTick);
       const progress = clamp((renderTick - meteor.startTick) / duration, 0, 1);
-      if (progress >= 1) {
-        this.meteors.delete(key);
-        continue;
-      }
-      const x = meteor.x - 3 + 3 * progress;
-      const y = 13 - 12.2 * progress;
-      const z = meteor.z - 2 + 2 * progress;
+      const arrived = progress >= 1;
+      const eased = progress ** 1.6;
+      const x = meteor.x - 4 + 4 * eased;
+      const y = 16 - 15.2 * eased;
+      const z = meteor.z - 3 + 3 * eased;
       meteor.trailAccumulator += dtMs;
       meteor.smokeAccumulator += dtMs;
       meteor.coreAccumulator += dtMs;
-      while (meteor.trailAccumulator >= 25) {
-        meteor.trailAccumulator -= 25;
-        this.emit('flame', x, y, z, {
-          cell: progress < 0.65 ? 'fire_01' : 'flame_04',
+      meteor.sparkAccumulator += dtMs;
+      while (meteor.trailAccumulator >= 16) {
+        meteor.trailAccumulator -= 16;
+        const offsetX = (this.random() - 0.5) * 0.3;
+        const offsetZ = (this.random() - 0.5) * 0.3;
+        this.emit('flame', x + offsetX, y, z + offsetZ, {
+          cell: 'flame_04',
           color: meteor.rankFive ? 0xffefad : 0xff7624,
-          startSize: meteor.rankFive ? 0.38 : 0.32,
-          endSize: 0.04,
-          lifeMs: 520,
+          startSize: 0.9,
+          endSize: 0.1,
+          sizeScale: 1,
+          lifeMs: 450,
           vx: -0.15,
           vy: -0.45,
           vz: -0.1,
           spin: 1.4,
           alignVelocity: true,
-          stretch: 1.8,
+          stretch: 1.35,
         });
       }
-      while (meteor.smokeAccumulator >= 75) {
-        meteor.smokeAccumulator -= 75;
+      while (meteor.sparkAccumulator >= 50) {
+        meteor.sparkAccumulator -= 50;
+        for (let index = 0; index < 2; index += 1) {
+          this.emit('spark', x, y, z, {
+            cell: 'spark_04',
+            color: index ? 0xffa03e : 0xffebaa,
+            startSize: 0.32,
+            endSize: 0.04,
+            sizeScale: 1,
+            lifeMs: 260,
+            speed: 0.9,
+            vx: (this.random() - 0.5) * 2,
+            vy: -0.35 + this.random(),
+            vz: (this.random() - 0.5) * 2,
+          });
+        }
+      }
+      while (meteor.smokeAccumulator >= 65) {
+        meteor.smokeAccumulator -= 65;
         this.emit('smoke', x - 0.1, y - 0.12, z, {
           color: 0x40343a,
-          startSize: 0.42,
-          endSize: 0.9,
-          lifeMs: 1050,
+          startSize: 0.8,
+          endSize: 1.8,
+          sizeScale: 1,
+          lifeMs: 900,
           vx: -0.2,
-          vy: 0.5,
+          vy: 0.8,
           vz: -0.12,
         });
       }
-      while (meteor.coreAccumulator >= 50) {
-        meteor.coreAccumulator -= 50;
-        this.emit('spark', x, y, z, {
-          cell: 'circle_05',
-          color: meteor.rankFive ? 0xfff4c9 : 0xffc258,
-          startSize: meteor.rankFive ? 1.44 : 1.2,
-          endSize: 0.85,
-          lifeMs: 95,
-          alpha: 0.95,
+      while (meteor.coreAccumulator >= 33) {
+        meteor.coreAccumulator -= 33;
+        this.emit('flame', x, y, z, {
+          cell: 'circle_05', color: 0xfff0c0, startSize: 2.4, endSize: 2.1,
+          sizeScale: 1, lifeMs: 120, alpha: 0.95, fadeIn: 0.01,
         });
+        this.emit('flame', x, y - 0.05, z, {
+          cell: 'fire_01', color: 0xff842d, startSize: 1.8, endSize: 1.45,
+          sizeScale: 1, lifeMs: 120, alpha: 0.95, fadeIn: 0.01,
+        });
+      }
+      if (arrived) {
+        this.emit('flame', meteor.x, 0.8, meteor.z, {
+          cell: 'circle_05', color: 0xfff0c0, startSize: 2.4, endSize: 2.1,
+          sizeScale: 1, lifeMs: 120, alpha: 0.95, fadeIn: 0.01,
+        });
+        this.emit('flame', meteor.x, 0.75, meteor.z, {
+          cell: 'fire_01', color: 0xff842d, startSize: 1.8, endSize: 1.45,
+          sizeScale: 1, lifeMs: 120, alpha: 0.95, fadeIn: 0.01,
+        });
+        this.meteors.delete(key);
       }
     }
   }
@@ -603,7 +651,8 @@ export class VfxSystem {
       }
       const fadeIn = slot.fadeIn > 0 ? clamp(progress / slot.fadeIn, 0, 1) : 1;
       const fadeOut = slot.fadeOut <= 0 ? 1 : clamp((1 - progress) / slot.fadeOut, 0, 1);
-      slot.material.opacity = slot.opacity * fadeIn * fadeOut;
+      const opacity = slot.startOpacity + (slot.endOpacity - slot.startOpacity) * progress;
+      slot.material.opacity = opacity * fadeIn * fadeOut;
       const radius = slot.startRadius + (slot.endRadius - slot.startRadius) * progress;
       slot.mesh.scale.setScalar(radius * 2);
       slot.mesh.rotateZ(slot.rotationSpeed * dtMs / 1000);
@@ -702,7 +751,8 @@ export class VfxSystem {
     for (const geometry of this.decalGeometries) geometry.dispose();
     for (const slot of this.decalSlots) {
       this.scene.remove(slot.mesh);
-      slot.material.dispose();
+      slot.materials.additive.dispose();
+      slot.materials.normal.dispose();
     }
     for (const slot of this.flipbookSlots) {
       this.scene.remove(slot.mesh);

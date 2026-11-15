@@ -173,6 +173,28 @@ def build_skill_icons():
     return output, OUTPUT_DIR / "skill-icons.json"
 
 
+def stamp_fireball_content_scale():
+    atlas_path = OUTPUT_DIR / "fireball" / "atlas.webp"
+    metadata_path = OUTPUT_DIR / "fireball" / "atlas.json"
+    metadata = json.loads(metadata_path.read_text())
+    image = Image.open(atlas_path).convert("RGBA")
+    alpha = image.getchannel("A")
+    clip = metadata["clips"]["impact"]
+    frame_width, frame_height = metadata["frameSize"]
+    content_width = 1
+    content_height = 1
+    for name in clip["frames"]:
+        frame = metadata["frames"][name]["frame"]
+        box = alpha.crop((frame["x"], frame["y"], frame["x"] + frame["w"], frame["y"] + frame["h"])) \
+            .point(lambda value: 255 if value > 32 else 0).getbbox()
+        if box:
+            content_width = max(content_width, box[2] - box[0])
+            content_height = max(content_height, box[3] - box[1])
+    clip["contentScale"] = round(min(frame_width / content_width, frame_height / content_height), 4)
+    metadata_path.write_text(json.dumps(metadata, separators=(",", ":")) + "\n")
+    return metadata_path
+
+
 def update_manifest(outputs):
     manifest_path = GAME_DIR / "assets" / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
@@ -189,6 +211,7 @@ def update_manifest(outputs):
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     outputs = [*build_particles(), *build_skill_icons()]
+    fireball_metadata = stamp_fireball_content_scale()
     for required in [
         OUTPUT_DIR / "fireball" / "atlas.webp",
         OUTPUT_DIR / "fireball" / "atlas.json",
@@ -198,7 +221,7 @@ def main():
             raise FileNotFoundError(required)
     outputs.extend([
         OUTPUT_DIR / "fireball" / "atlas.webp",
-        OUTPUT_DIR / "fireball" / "atlas.json",
+        fireball_metadata,
     ])
     update_manifest(outputs)
     for path in [*outputs, *(GAME_DIR / path for path in ASSET_LICENSES)]:
