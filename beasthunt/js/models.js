@@ -281,9 +281,13 @@ function buildWarrokCleaver() {
  link(g,[0,-.75,0],[0,.38,0],.048,.05,dark);
  g.add(mesh(sph(.08,5,3),bone,0,-.8,0));
  g.add(mesh(sph(.075,5,3),bone,0,.42,0));
+ // Extend only the blade above its unchanged .35m root. The total palm-to-tip
+ // target is 1.35*2 locally (4.86m at 1.8); blade span = 1.35*2-.35.
+ const bladeFactor=2,bladeSpan=1.35*bladeFactor-.35;
  const b=mesh(loft([[0,0,.1,.03],[.35,0,.2,.028],[.8,0,.27,.024],[1,0,.03,.008]],6),bone,0,.35,0);
+ b.name='warrok-cleaver-blade';b.scale.set(1.5,1.5,bladeSpan);
  b.rotation.set(-Math.PI/2,0,Math.PI);g.add(b);
- const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35,0);g.add(tip);
+ const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35*bladeFactor,0);g.add(tip);
  const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
  g.scale.setScalar(1.8); // scale around the unchanged measured palm grip
  return g;

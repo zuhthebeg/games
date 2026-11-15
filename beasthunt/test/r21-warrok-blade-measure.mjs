@@ -1,0 +1,33 @@
+// CPU-only exact production GLB/mixer/sync-path oracle; no visual approval.
+import fs from 'node:fs';
+import {T,V} from './r20-pose-helpers.mjs';
+const {Hunt}=await import('bh/game');
+import {QUESTS,MONSTERS} from '../js/data.js';
+const el=new Proxy({}, {get:(o,k)=>o[k]??={style:{},classList:{toggle(){}}}});
+const h=new Hunt({shadowMap:{enabled:false},render(){}},QUESTS[6],{weapon:'db',w:{db:1,gs:1,bow:1},armor:1},{el,setMon(){},toast(){},dmg(){},flash(){}},{isTouch:false,take(){return false;},takeLook(){return{x:0,y:0};},sample(){return{};}},()=>{});
+h.frame(1/60);await h.G.ready;
+const W=h.G,b=W.warrok,model=b.model,bones={};model.traverse(o=>{if(o.isBone)bones[o.name.replace('mixamorig','')]=o;});
+const blade=W.weapon.getObjectByName('warrok-cleaver-blade'),tip=W.weapon.getObjectByName('warrok-weapon-tip'),pommel=W.weapon.getObjectByName('warrok-weapon-pommel');
+const meshes=[];model.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
+const RH=bones.RightHand,palm=['Index1','Middle1','Ring1','Pinky1'].reduce((v,n)=>v.add(bones['RightHand'+n].position),V()).multiplyScalar(.125);
+const torso=[];for(const m of meshes){const a=m.geometry.attributes,ids=[];for(let i=0;i<a.position.count;i++){let mass=0;for(let k=0;k<4;k++)if(/Hips|Spine|Neck|Head/.test(m.skeleton.bones[a.skinIndex.getComponent(i,k)]?.name||''))mass+=a.skinWeight.getComponent(i,k);if(mass>.5)ids.push(i);}torso.push({m,ids});}
+const cam=h.cam;cam.updateMatrixWorld(true);const frustum=new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse));
+const out={method:'65 samples per exported clip plus 65 per production mode; exact nearest blade triangle surface versus CPU-skinned torso vertices (torso-majority weights > .5)',bodyScale:model.scale.x,samples:65,variants:{}};
+const modes=['idle','walk','run','bite','stomp','sweep','charge','leap','spit','fireball','breath','roar','flinch','topple','dead'];
+function row(){return {samples:0,tipMin:Infinity,pommelMin:Infinity,geometryMin:Infinity,reachMax:0,gripMax:0,fistMax:0,torsoMin:Infinity,finite:true,frustumMisses:0,frustumVertexViolations:0,frustumWorstDistance:0};}
+function sample(r){h.scene.updateMatrixWorld(true);for(const m of meshes)m.skeleton.update(); const gw=W.weaponSocket.getWorldPosition(V()),tw=tip.getWorldPosition(V()),pw=pommel.getWorldPosition(V()),hp=bones.Hips.getWorldPosition(V());r.samples++;r.tipMin=Math.min(r.tipMin,tw.y);r.pommelMin=Math.min(r.pommelMin,pw.y);r.reachMax=Math.max(r.reachMax,Math.hypot(tw.x-hp.x,tw.z-hp.z));r.gripMax=Math.max(r.gripMax,gw.distanceTo(RH.localToWorld(palm.clone())));r.finite&&=W.weaponSocket.matrixWorld.elements.every(Number.isFinite)&&W.weapon.matrixWorld.elements.every(Number.isFinite);
+ const vs=[],box=new T.Box3();W.weapon.traverse(o=>{if(o.isMesh){for(let j=0;j<o.geometry.attributes.position.count;j++){const p=V().fromBufferAttribute(o.geometry.attributes.position,j).applyMatrix4(o.matrixWorld);box.expandByPoint(p);r.geometryMin=Math.min(r.geometryMin,p.y);if(o===blade)vs.push(p);let d=Infinity;for(const plane of frustum.planes)d=Math.min(d,plane.distanceToPoint(p));if(d<0){r.frustumVertexViolations++;r.frustumWorstDistance=Math.min(r.frustumWorstDistance,d);}}}});if(!frustum.intersectsBox(box))r.frustumMisses++;
+ const bi=blade.geometry.index,triangles=[];for(let j=0;j<bi.count;j+=3){const t=new T.Triangle(vs[bi.getX(j)],vs[bi.getX(j+1)],vs[bi.getX(j+2)]);triangles.push({t,box:new T.Box3().setFromPoints([t.a,t.b,t.c])});}
+ let nearestSurfaceSq=r.torsoMin*r.torsoMin;const closest=V();
+ for(const {m,ids} of torso){m.skeleton.update();const v=V();for(const j of ids){m.getVertexPosition(j,v).applyMatrix4(m.matrixWorld);for(const {t,box} of triangles){box.clampPoint(v,closest);if(closest.distanceToSquared(v)>=nearestSurfaceSq)continue;t.closestPointToPoint(v,closest);nearestSurfaceSq=Math.min(nearestSurfaceSq,closest.distanceToSquared(v));}}}r.torsoMin=Math.sqrt(nearestSurfaceSq);
+ let nearest=Infinity;for(const m of meshes){const a=m.geometry.attributes,rhi=m.skeleton.bones.indexOf(RH),v=V();for(let j=0;j<a.position.count;j++){let weight=0,bi=-1;for(let k=0;k<4;k++)if(a.skinWeight.getComponent(j,k)>weight){weight=a.skinWeight.getComponent(j,k);bi=a.skinIndex.getComponent(j,k);}if(bi===rhi){m.getVertexPosition(j,v).applyMatrix4(m.matrixWorld);nearest=Math.min(nearest,v.distanceTo(gw));}}}r.fistMax=Math.max(r.fistMax,nearest);
+}
+for(const factor of [1,2,1.8,1.6,1.4,1.2]){
+ blade.scale.set(factor===1?1:1.5,factor===1?1:1.5,1.35*factor-.35);tip.position.y=1.35*factor;const result={factor,tipLength:2.43*factor,reachLimit:1.25*(MONSTERS.warrok.dims.sweepR+.3)+(2.43*factor-1.25*1.35),exported:{},production:{},violations:[]};
+ for(const [name,a] of Object.entries(b.actions)){b.mixer.stopAllAction();a.reset().setLoop(T.LoopOnce,1).play();a.clampWhenFinished=true;a.paused=true;const r=row();for(let i=0;i<65;i++){model.position.y=0;a.time=a.getClip().duration*i/64;b.mixer.update(0);b.ground();sample(r);}result.exported[name]=r;}
+ b.mixer.stopAllAction();b.cur=null;b.key='';
+ for(const mode of modes){h.m.state='idle';h.m.t=0;h.m.moving=0;h.m.enr=false;h.m.atk=null;if(['walk','run'].includes(mode)){h.m.state='chase';h.m.moving=1;h.m.enr=mode==='run';}else if(['roar','flinch','topple','dead'].includes(mode)){h.m.state=mode;h.m.dur=4.6;}else if(mode!=='idle')h.sim.startMonAtk(mode);const r=row(),duration=h.m.atk?h.m.atk.w+h.m.atk.a+h.m.atk.r:['idle','walk','run'].includes(mode)?b.actions[mode].getClip().duration:4.6;for(let i=0;i<65;i++){h.m.t=i/64*duration;h.syncModels(duration/64);h.scene.updateMatrixWorld(true);sample(r);}result.production[mode]=r;}
+ for(const path of ['exported','production'])for(const [name,r]of Object.entries(result[path])){const floor=['smash','stomp','leap'].includes(name)?-.15:-.05;for(const [gate,pass]of Object.entries({tipFloor:r.tipMin>=floor,pommelFloor:r.pommelMin>=-.05,grip:r.gripMax<=.02,fist:r.fistMax<=.3,finite:r.finite,frustum:r.frustumMisses===0&&r.frustumVertexViolations===0,reach:r.reachMax<=result.reachLimit}))if(!pass)result.violations.push({path,clip:name,gate,value:gate==='tipFloor'?r.tipMin:gate==='pommelFloor'?r.pommelMin:gate==='reach'?r.reachMax:gate==='frustum'?r.frustumMisses:null,limit:gate==='tipFloor'?floor:gate==='pommelFloor'?-.05:gate==='reach'?result.reachLimit:null});}
+ result.pass=result.violations.length===0;out.variants[factor]=result;console.log(JSON.stringify({factor,pass:result.pass,violations:result.violations}));
+}
+W.dispose();h.dispose();fs.writeFileSync(process.env.R21_METRICS||'/tmp/beasthunt-r21-warrok-blade-metrics.json',JSON.stringify(out,null,2));
