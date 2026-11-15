@@ -8,7 +8,7 @@ import { attachHuntDebug } from './hunt-debug.js?v=20261115ww';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok, disposeHunterActors } from 'bh/models';
-import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
+import { initAudio, sfx, setMuted, isMuted, preloadGS, preloadWeapon } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
 const $ = (id) => document.getElementById(id);
@@ -117,7 +117,7 @@ function renderHub() {
 $('hub').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; initAudio();
   if (b.dataset.q) { sel = b.dataset.q; if (MONSTERS[QUESTS.find((x) => x.id === sel)?.mon]?.biped) void loadWarrok(); sfx('ui'); makePreview(); renderHub(); }
-  else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow')void loadHunterBow(); else if(save.weapon==='db')void loadHunterDb(); persist(); sfx('ui'); makePreview(); renderHub(); }
+  else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow'){void preloadWeapon('bow');void loadHunterBow();} else if(save.weapon==='db'){void preloadWeapon('db');void loadHunterDb();} persist(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';
     if (!u || !canPay(u, kind)) return;

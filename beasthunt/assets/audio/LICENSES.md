@@ -34,3 +34,25 @@ Source: **Sonniss — GDC 2019 Game Audio Bundle**, licensed under the **Sonniss
 License summary: commercial and non-commercial project use, modification and shipment as part of a larger project are allowed; attribution is not required. The sounds may not be sold, shared or redistributed as standalone sound assets, a sound library or another competing sound product. This is not CC0, and the source recordings are not being relicensed. AI/ML training, embedding, similarity-model use or other model processing of these recordings was not performed or authorized by this integration.
 
 Trim, deterministic pitch/rate adjustment, fades, loudness/peak mastering and the guard three-layer spectral/time mix were performed offline with ffmpeg and Python standard-library tooling only. Subjective approval of these final edits remains with cocy; numeric tests are not a listening verdict.
+
+
+## Approved BOW / dual-blade game edits — R19, 2026-11-15
+
+Ten short mono 24kHz Ogg/Vorbis game edits in weapons/. Sonniss GDC 2017/2019/2020 bundles; the same Sonniss Free Audio License and integrated-game-use restrictions above apply. Not CC0. No raw recordings, private previews or source libraries are included. No AI/ML/embedding/audio inference was used.
+
+| Game cue | Approved private audition ID | Library / bundle year |
+|---|---|---|
+| db_swing-3 | db-swing 03 | Airborne Sound — Organic Whooshes / 2019 |
+| db_swing-4 | db-swing 04 | Airborne Sound — Airy Whooshes / 2019 |
+| db_swing-5 | db-swing 05 | Rock The Speakerbox — Melee / 2019 |
+| db_hit-1 | db-hit 01 | Sound Spark LLC — Gore / 2019 |
+| db_clink-1 | db-clink 01 | SmartSoundFX — Medieval / 2020 |
+| db_clink-2 | db-clink 02 | Double Trouble Audio — Medieval Armor and Impacts / 2017 |
+| db_clink-3 | db-clink 03 | 344 Audio — Medieval Battle / 2020 |
+| bow_release-1 | bow-release 01 | Eiravaein Works — Nocked / 2019 |
+| bow_flight-3 | bow-flight 03 | SoundFxwizard — PARTICLES An Organic & Granular Journey / 2020 |
+| bow_hit-1 | bow-hit 01 | SmartSoundFX — Medieval / 2020 |
+
+Selection approved by cocy (33040). Swing 03 is fabric-glove whoosh, 05 rope; bow release is an explicitly audition-approved crossbow snap, not a claim of longbow identity. Flight is an arrow-labelled particle-design recording. No independent variants are manufactured by pitch cloning. Bow draw was not selected: existing charge synthesis remains. DB clinks are prepared but have **no trigger**: the game has no DB guard/hard-contact cue, and this integration invents none.
+
+Original 24bit WAV selection windows were SHA/ZIP-CRC verified, cut, mono-resampled, faded 1ms in / 25ms out, and linearly level-adjusted (decoded true-peak safety first). No companding, limiting, time stretch or pitch alteration. References chosen before processing: R18 GS light mean for swing/release, hit mean for DB/arrow hit, guard mean minus 6dB for clinks, light minus 6dB for flight. Short undefined integrated LUFS uses the unchanged gapless repeat-3s EBU metric. Some crest-rich cuts remain below reference rather than compressing away character; exact measured differences and edited-file hashes are in the R19 test fixture. Approval of source previews is not a final edited/in-game listening verdict. All thirty R18 GS OGG bytes, pools, URLs and GS event adapter are unchanged.

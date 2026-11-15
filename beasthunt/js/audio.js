@@ -1,4 +1,4 @@
-// Synthesized defaults plus lazy greatsword samples. No network at module evaluation.
+// Synthesized defaults plus lazy weapon samples. No network at module evaluation.
 let ctx = null, master = null, muted = false;
 let pitch = 1, gain = 1, capture = null;
 export function initAudio() {
@@ -64,6 +64,13 @@ export const GS_SAMPLES = Object.freeze(Object.fromEntries([
   'gs_slam','gs_guard_block','gs_guard_break','gs_roll',
 ].map(name => [name, [1,2].map(i => new URL('../assets/audio/'+name+'-'+i+'.ogg?v=20261115sx', import.meta.url).href)])));
 const fallback = {gs_swing_light:'swingH',gs_swing_b:'swingH',gs_swing_spin:'swingH',gs_hit:'hit',gs_hit_part:'break',gs_hit_weak:'weak',gs_charge_1:'charge',gs_charge_2:'charge',gs_charge_3:'charge',gs_charge_loop:'charge',gs_charge_release:'swingH',gs_slam:'hitBig',gs_guard_block:'forge',gs_guard_break:'break',gs_roll:'roll'};
+// Independent approved recordings only. GS manifest/URL generation is unchanged.
+export const WEAPON_SAMPLES = Object.freeze(Object.fromEntries(Object.entries({
+  db_swing:[3,4,5], db_hit:[1], db_clink:[1,2,3],
+  bow_release:[1], bow_flight:[3], bow_hit:[1],
+}).map(([name,ids])=>[name,Object.freeze(ids.map(i=>new URL('../assets/audio/weapons/'+name+'-'+i+'.ogg?v=20261115s19',import.meta.url).href))])));
+const samples = {...GS_SAMPLES,...WEAPON_SAMPLES};
+Object.assign(fallback,{db_swing:'swing',db_hit:'hit',db_clink:'forge',bow_release:'shot',bow_flight:'swing',bow_hit:'hit'});
 const cache = new Map(), last = new Map(), voices = new Set(), loops = new Map();
 export function loadSample(url) {
   if (!ctx) return Promise.resolve(null);
@@ -77,8 +84,16 @@ const ready = new Map();
 function request(url) { return loadSample(url).then(b => { if (b) ready.set(url,b); return b; }); }
 // Explicit user GS selection/start only. Serial low-priority fetching avoids bursts.
 export async function preloadGS() { if (!ctx) return; for (const pool of Object.values(GS_SAMPLES)) for (const url of pool) await request(url); }
+// Selection/start only, never module evaluation or ordinary boot.
+// Untriggered DB clinks remain available, not speculatively preloaded.
+export async function preloadWeapon(weapon) {
+  if(weapon==='gs')return preloadGS();
+  if(!ctx || !['db','bow'].includes(weapon))return;
+  for(const [name,pool] of Object.entries(WEAPON_SAMPLES))
+    if(name.startsWith(weapon+'_')&&name!=='db_clink')for(const url of pool)await request(url);
+}
 function choose(name, options) {
-  const pool=GS_SAMPLES[name]; let i=Number.isInteger(options.variant)?Math.max(0,Math.min(pool.length-1,options.variant)):Math.floor(Math.random()*pool.length);
+  const pool=samples[name]; let i=Number.isInteger(options.variant)?Math.max(0,Math.min(pool.length-1,options.variant)):Math.floor(Math.random()*pool.length);
   if (!Number.isInteger(options.variant) && i===last.get(name)) i=(i+1)%pool.length;
   last.set(name,i);return pool[i];
 }
@@ -101,8 +116,8 @@ function playSample(name,url,options) {
   source.onended=()=>{voices.delete(v);if(options.key&&loops.get(options.key)===v)loops.delete(options.key);source.disconnect();g.disconnect();};source.start();return true;
 }
 export function sfx(name, options = {}) {
-  if (!GS_SAMPLES[name]) { synth(name,options); return 'synth'; }
-  if (!ctx || muted || (options.volume??1)<=0) return 'inactive';
+  if (!samples[name]) { synth(name,options); return 'synth'; }
+  if (!ctx || muted || (options.volume??1)<=0 || (WEAPON_SAMPLES[name]&&masterVolume<=0)) return 'inactive';
   if(options.loop && options.key && loops.has(options.key)){loops.get(options.key).g.gain.value=(options.volume??1)*.71*.12;return 'looping';}
   if (!admit())return 'limited';
   const url=choose(name,options);void request(url);

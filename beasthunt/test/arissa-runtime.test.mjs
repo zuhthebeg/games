@@ -66,7 +66,7 @@ test('Arissa exact approved bytes, sixteen unchanged original clip names and clo
  assert.equal(arissa.animations.length,16);assert.deepEqual(arissa.animations.map(c=>c.name),paladin.animations.map(c=>c.name));
  for(const c of arissa.animations)assert.ok(Math.abs(c.duration-paladin.animations.find(x=>x.name===c.name).duration)<1e-6,c.name);
  const root=new URL('../',import.meta.url),html=fs.readFileSync(new URL('index.html',root),'utf8'),models=fs.readFileSync(new URL('js/models.js',root),'utf8');
- for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v=20261115vf'));
+ for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v='+(n==='models'?'20261115vf':'20261115s19')));
  assert.ok(models.includes('db-motion.js?v=20261115vf'));assert.ok(models.includes('hunter-arissa-db.glb?v=20261115vf'));
  for(const n of ['main','game'])assert.ok(fs.readFileSync(new URL('js/'+n+'.js',root),'utf8').includes('20261115vf'));
  measurements.clips=arissa.animations.map(c=>({name:c.name,duration:c.duration}));
