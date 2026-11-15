@@ -2,6 +2,12 @@ import { ITEMS } from '../content/items.js';
 import { LINEAGES } from '../content/lineages.js';
 
 export const DONOR_PARTS = Object.freeze([
+  { node: '1H_Sword', donor: 'knight', bone: 'handslot.r' },
+  { node: '2H_Sword', donor: 'knight', bone: 'handslot.r' },
+  { node: '1H_Crossbow', donor: 'Rogue_Hooded', bone: 'handslot.r' },
+  { node: '2H_Crossbow', donor: 'Rogue_Hooded', bone: 'handslot.r' },
+  { node: '1H_Wand', donor: 'Mage', bone: 'handslot.r' },
+  { node: '2H_Staff', donor: 'Mage', bone: 'handslot.r' },
   { node: 'Knight_Helmet', donor: 'knight', bone: 'head' },
   { node: 'Knight_Cape', donor: 'knight', bone: 'chest' },
   { node: 'Barbarian_Hat', donor: 'Barbarian', bone: 'head' },
@@ -17,6 +23,10 @@ export const DONOR_PARTS = Object.freeze([
   { node: 'Rectangle_Shield', donor: 'knight', bone: 'handslot.l' },
   { node: 'Spike_Shield', donor: 'knight', bone: 'handslot.l' },
 ]);
+
+export function resolvePlayerBone(root, bone) {
+  return root.getObjectByName(bone) ?? root.getObjectByName(bone.replace(/\./g, ''));
+}
 
 export const HEAD_STYLES = Object.freeze({
   'patched-hood': 'Skeleton_Rogue_Hood',
@@ -90,7 +100,7 @@ export function playerModelKey(entity) {
   return LINEAGES[entity.lineage]?.model ?? entity.characterKind ?? 'knight';
 }
 
-export function resolvePlayerParts(look = {}) {
+export function resolvePlayerParts(look = {}, lineage = 'human') {
   const family = look.family ?? 'sword';
   const weapon = look.weapon ?? '1H_Sword';
   const offhand = look.offhand && family === 'sword' && weapon === '1H_Sword'
@@ -99,7 +109,12 @@ export function resolvePlayerParts(look = {}) {
   const headStyle = look.head
     ? HEAD_STYLES[look.head] ?? HEAD_FALLBACK[family] ?? null
     : null;
-  const head = family === 'crossbow' && headStyle === 'Skeleton_Rogue_Hood' ? null : headStyle;
+  const lineageHead = lineage === 'skeleton_mage' && headStyle === 'Mage_Hat'
+    ? 'Skeleton_Mage_Hat'
+    : headStyle;
+  const head = lineage === 'human' && family === 'crossbow' && lineageHead === 'Skeleton_Rogue_Hood'
+    ? null
+    : lineageHead;
   const cape = look.body
     ? BODY_STYLES[look.body] ?? BODY_FALLBACK[family] ?? null
     : null;
@@ -119,8 +134,9 @@ export function resolvePlayerParts(look = {}) {
   };
 }
 
-export function playerLookKey(look = {}) {
+export function playerLookKey(look = {}, lineage = 'human') {
   return [
+    lineage,
     look.family ?? 'sword',
     look.weapon ?? '1H_Sword',
     look.offhand ?? '',

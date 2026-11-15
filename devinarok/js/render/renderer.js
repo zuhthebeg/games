@@ -13,6 +13,7 @@ import {
   PART_SCALE,
   playerLookKey,
   playerModelKey,
+  resolvePlayerBone,
   resolvePlayerParts,
 } from './player-look.js';
 import { AutoQualityController, QUALITY_PRESETS } from './quality.js';
@@ -81,6 +82,7 @@ const PLAYER_PARTS = new Set([
   'Mage_Hat',
   'Mage_Cape',
   'Skeleton_Warrior_Helmet',
+  'Skeleton_Mage_Hat',
   'Skeleton_Rogue_Hood',
   'Skeleton_Rogue_Cape',
 ]);
@@ -159,8 +161,8 @@ function isolatePlayerPartMaterials(root, materials) {
   });
 }
 
-function applyPlayerLook(root, look = {}) {
-  const parts = resolvePlayerParts(look);
+function applyPlayerLook(root, look = {}, lineage = 'human') {
+  const parts = resolvePlayerParts(look, lineage);
   const partTints = new Map();
   const visibleParts = new Map([
     [parts.weapon, parts.tints.weapon],
@@ -1460,19 +1462,13 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }
   }
 
-  graftPlayerParts(root, lineage = 'human') {
+  graftPlayerParts(root) {
     const existingParts = new Set();
     root.traverse((node) => existingParts.add(node.name));
-    const compatible = {
-      skeleton_knight: new Set(['Skeleton_Warrior_Helmet']),
-      skeleton_archer: new Set(['Skeleton_Rogue_Hood', 'Skeleton_Rogue_Cape']),
-      skeleton_mage: new Set(),
-    }[lineage];
     for (const { node, donor, bone } of DONOR_PARTS) {
-      if (compatible && !compatible.has(node)) continue;
       if (existingParts.has(node)) continue;
       const donorPart = this.models.get(donor)?.getObjectByName(node);
-      const parent = root.getObjectByName(bone);
+      const parent = resolvePlayerBone(root, bone);
       if (!donorPart || !parent) continue;
       const graft = donorPart.clone();
       graft.position.copy(donorPart.position);
@@ -1489,7 +1485,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const lineageId = entity.kind === 'player' ? lineageOf(entity) : null;
-    if (entity.kind === 'player') this.graftPlayerParts(root, lineageId);
+    if (entity.kind === 'player') this.graftPlayerParts(root);
     const materials = cloneMaterials(root);
     if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
       root.traverse((node) => {
@@ -1662,8 +1658,8 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       outlines,
       outlineKind,
       modelKey: entity.kind === 'player' ? entityModelKey : '',
-      lookKey: entity.kind === 'player' ? playerLookKey(entity.look) : '',
-      partTints: entity.kind === 'player' ? applyPlayerLook(root, entity.look) : new Map(),
+      lookKey: entity.kind === 'player' ? playerLookKey(entity.look, lineageId) : '',
+      partTints: entity.kind === 'player' ? applyPlayerLook(root, entity.look, lineageId) : new Map(),
     };
     this.entities.set(entity.id, visual);
     return visual;
@@ -2890,10 +2886,11 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
           this.removeEntityVisual(entity.id, visual);
           visual = this.createEntity(entity, world);
         }
-        const lookKey = playerLookKey(entity.look);
+        const lineageId = lineageOf(entity);
+        const lookKey = playerLookKey(entity.look, lineageId);
         if (lookKey !== visual.lookKey) {
           visual.lookKey = lookKey;
-          visual.partTints = applyPlayerLook(visual.root, entity.look);
+          visual.partTints = applyPlayerLook(visual.root, entity.look, lineageId);
         }
       }
       const old = before.get(entity.id) ?? entity;
