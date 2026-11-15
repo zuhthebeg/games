@@ -1,3 +1,4 @@
+import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js';
 import * as THREE from 'three';
 import { dualBladeClips, whirlwindTurns, groundPivot, groundRecovery } from './motion-authoring.js?v=20261114r11';
 // Presentation-only Mixamo one-hand sword clips; h2 is an X-reflected h.
@@ -60,6 +61,7 @@ export function dbClipTime(p, name, meta) {
 
 export function syncHunterDb(p, H, dt, clock = 0) {
   const b = H.db; if (!b) return false;
+  restoreNormalPose(b);
   // Zero-first: paused evaluation must never consume last frame's lift.
   if (b.arissa) b.model.position.y = 0;
   H.root.position.set(p.x || 0, 0, p.z || 0); H.root.rotation.y = (p.yaw || 0) + (p.state === 'atk' && p.cur?.sw === 'spin' ? whirlwindTurns((p.t-p.cur.h0)/Math.max(1e-8,p.cur.h1-p.cur.h0))*Math.PI*2 : (p.spin || 0));
@@ -70,7 +72,7 @@ export function syncHunterDb(p, H, dt, clock = 0) {
   // and impact markers; Paladin retains its existing mapper/helper path.
   const baseMeta = DB_CLIPS[name] || { duration: action ? action.getClip().duration : 1 };
   const meta = b.arissa && action ? { ...baseMeta, duration: action.getClip().duration } : baseMeta;
-  const restart = b.key !== wanted || p.state === 'atk' && (p.t < b.lastT - .00001 || p.combo !== b.combo);
+  const restart = b.key !== wanted || normalRestart(b,p);
   if (restart) {
     const immediate = p.state === 'atk' || !b.key;
     for (const a of Object.values(b.actions)) if (a !== action && (immediate || !a._walk)) { if (immediate) { a.stop(); a.enabled=false; a._walk=false; } else a.fadeOut(.1); }
@@ -103,6 +105,7 @@ export function syncHunterDb(p, H, dt, clock = 0) {
   if (action && wanted !== 'walk') { action.time = time; b.clipTime = time; } else if (wanted === 'walk') b.clipTime = time;
   b.lastPos = { x: p.x, z: p.z };
   b.mixer.update(Math.max(0, dt));
+ blendNormalPose(b,p,restart);
   if (b.arissa) groundArissa(b);
   else {
     groundRecovery(b,{state:'idle'});

@@ -285,7 +285,7 @@ function buildWarrokCleaver() {
  b.rotation.set(-Math.PI/2,0,Math.PI);g.add(b);
  const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35,0);g.add(tip);
  const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
- g.scale.setScalar(1.8); // scale around the unchanged measured palm grip
+ g.scale.setScalar(3.6); // R20: exact whole-weapon x2 around the unchanged measured palm grip
  return g;
 }
 // Socket Group parented to the right-hand bone; measured on the bind pose, so
