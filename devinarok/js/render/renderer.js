@@ -25,6 +25,7 @@ import {
 } from './outline-style.js';
 import { castVisualKey } from '../net/cast-timeline.js';
 import { isPerfectDodgeWindowActive } from './dodge-window.js';
+import { VfxSystem } from './vfx.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const LINEAGE_COLORS = Object.freeze({
@@ -414,6 +415,8 @@ export class ArenaRenderer {
     this.hitstopUntil = 0;
     this.hitstopStartedAt = 0;
     this.shakeUntil = 0;
+    this.shakeAmplitude = 0;
+    this.shakeDurationMs = 110;
     this.predictedFlashUntil = new Map();
     this.enemyClipPreview = null;
     this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -476,11 +479,24 @@ export class ArenaRenderer {
     this.applyQualityPreset(this.qualityController.quality);
   }
 
+  addShake(amplitude, durationMs) {
+    if (this.reducedMotion) return;
+    const now = performance.now();
+    const remaining = Math.max(0, this.shakeUntil - now);
+    const currentAmplitude = remaining > 0
+      ? this.shakeAmplitude * remaining / Math.max(1, this.shakeDurationMs)
+      : 0;
+    this.shakeAmplitude = Math.max(currentAmplitude, amplitude);
+    this.shakeDurationMs = Math.max(remaining, durationMs);
+    this.shakeUntil = now + this.shakeDurationMs;
+  }
+
   applyQualityPreset(name) {
     const preset = QUALITY_PRESETS[name] ?? QUALITY_PRESETS.medium;
     const previousParticles = this.particleMultiplier;
     this.effectiveQuality = name;
     this.particleMultiplier = preset.particles;
+    this.vfx?.setQuality(name, this.reducedMotion);
     this.outlinesEnabled = preset.outlines;
     if (this.renderer) {
       this.renderer.shadowMap.enabled = preset.shadows;
@@ -611,6 +627,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
 
   setReducedMotion(value) {
     this.reducedMotion = Boolean(value);
+    this.vfx?.setQuality(this.effectiveQuality, this.reducedMotion);
   }
 
   setTelegraphEmphasis(value) {
@@ -969,6 +986,29 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const manifest = await fetch(ASSET('assets/manifest.json'), { cache: 'no-store' }).then((response) => response.json());
     assetHashes = manifest.sha256 ?? {};
     this.loadedBytes = manifest.m1StageLoadedBytes?.[this.arena.id] ?? manifest.m0LoadedBytes;
+    const textureLoader = new THREE.TextureLoader();
+    const [particleTexture, fireballTexture, fireballResponse] = await Promise.all([
+      textureLoader.loadAsync(assetUrl('assets/vfx/particles.webp')),
+      textureLoader.loadAsync(assetUrl('assets/vfx/fireball/atlas.webp')),
+      fetch(assetUrl('assets/vfx/fireball/atlas.json')),
+    ]);
+    if (!fireballResponse.ok) throw new Error('fireball atlas metadata failed to load');
+    fireballTexture.colorSpace = THREE.SRGBColorSpace;
+    this.vfx = new VfxSystem(this.scene, {
+      particleTexture,
+      fireballTexture,
+      fireballAtlas: await fireballResponse.json(),
+      quality: this.effectiveQuality,
+      reducedMotion: this.reducedMotion,
+    });
+    if (new URLSearchParams(window.location.search).get('debug') === '1') {
+      this.vfxStatsProvider = () => ({
+        ...this.vfx?.getStats(),
+        frameMs: this.lastFrameMs ?? 0,
+        peakFrameMs: this.peakFrameMs ?? 0,
+      });
+      window.__devinarokVfxStats = this.vfxStatsProvider;
+    }
     const propModels = [...new Set([
       ...this.arena.props.map((prop) => prop.model).filter(Boolean),
       ...(this.arena.npcs ?? []).map((npc) => M0_MODELS[npc.model]),
@@ -1917,11 +1957,12 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const owner = this.currentWorld?.entities.find((entity) => (
       entity.kind === 'player' && entity.playerId === event.ownerId
     ));
+    const skillKey = event.skillKey ?? owner?.skillCast?.name;
     const rankFive = owner && this.masteryRankForSkill(
       event.ownerId,
-      event.skillKey ?? owner.skillCast?.name ?? owner.skill,
+      skillKey ?? owner.skill,
     ) === 5;
-    const poisonArrow = event.skillKey === 'poisonArrow';
+    const poisonArrow = skillKey === 'poisonArrow';
     const geometry = new THREE.CylinderGeometry(0.018, 0.018, event.length, 5);
     const material = new THREE.MeshStandardMaterial({
       color: poisonArrow ? 0x9be879 : rankFive ? 0xfff2c4 : 0xffe9ab,
@@ -1937,10 +1978,49 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     mesh.position.set(event.x + direction.x * event.length / 2, 0.55, event.z + direction.z * event.length / 2);
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
     this.addTransient(mesh, geometry, material, { startTime: now, durationMs: 80 });
+    if (['pierce', 'volley', 'poisonArrow'].includes(skillKey)) {
+      const tint = poisonArrow ? 0x9cff68 : rankFive ? 0xfff2c4 : 0xd9f6ff;
+      for (let index = 0; index < 7; index += 1) {
+        const distance = event.length * index / 7;
+        this.vfx?.emit('spark', event.x + direction.x * distance, 0.62, event.z + direction.z * distance, {
+          cell: 'trace_05',
+          color: tint,
+          startSize: poisonArrow ? 0.72 : 0.62,
+          endSize: 0.18,
+          stretch: 3.2,
+          rotation: -event.angle,
+          lifeMs: 170,
+          alpha: 0.8,
+        });
+      }
+      this.vfx?.burst({
+        preset: 'spark',
+        count: 6,
+        x: event.x + direction.x * event.length,
+        y: 0.48,
+        z: event.z + direction.z * event.length,
+        color: tint,
+        speed: [0.5, 2.4],
+        upward: [0.3, 1.5],
+        lifeMs: 340,
+      });
+    }
   }
 
   createPoisonPuff(event) {
     const { originX: x, originZ: z } = event.shape;
+    this.vfx?.burst({
+      preset: 'poison',
+      count: 9,
+      x,
+      y: 0.5,
+      z,
+      spreadRadius: 0.18,
+      speed: [0.2, 1.8],
+      upward: [0.15, 1.2],
+      colors: [0x9aff55, 0x4dc33a, 0xd5ff8b],
+      lifeMs: [320, 720],
+    });
     const geometry = new THREE.SphereGeometry(0.13, 8, 6);
     const material = new THREE.MeshBasicMaterial({
       color: 0x71e249,
@@ -1965,6 +2045,50 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   createDeadBurst(event) {
     const { originX: x, originZ: z, radius } = event.shape;
     this.createImpactRing(x, z, radius, 0xe5dfcb, event.resolveTick, event.resolveTick + 20);
+    this.vfx?.decal({
+      cell: 'circle_03',
+      x,
+      z,
+      radius: 0.2,
+      endRadius: radius * 1.25,
+      color: 0xd7e79b,
+      opacity: 0.85,
+      lifeMs: 520,
+    });
+    this.vfx?.decal({
+      cell: 'twirl_02',
+      x,
+      z,
+      radius: radius * 0.62,
+      color: 0x72a23f,
+      opacity: 0.6,
+      rotationSpeed: 1.7,
+      lifeMs: 820,
+    });
+    this.vfx?.burst({
+      preset: 'bone',
+      count: 18,
+      x,
+      y: 0.24,
+      z,
+      speed: [1.5, 5.5],
+      upward: [0.8, 3.8],
+      colors: [0xe8e2cc, 0xb9d46a, 0xf1ecd9],
+      lifeMs: [420, 800],
+      stretch: 2.2,
+      gravity: 2.5,
+    });
+    this.vfx?.burst({
+      preset: 'darkSmoke',
+      count: 8,
+      x,
+      y: 0.2,
+      z,
+      spreadRadius: radius * 0.35,
+      speed: [0.2, 1.5],
+      upward: [0.15, 0.8],
+      color: 0x31452d,
+    });
     for (let index = 0; index < 8; index += 1) {
       const angle = index * Math.PI / 4;
       const geometry = new THREE.OctahedronGeometry(0.16, 0);
@@ -1994,6 +2118,42 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   createCursedHands(event) {
     const { originX: x, originZ: z, radius } = event.shape;
     const endsTick = event.endsTick ?? event.resolveTick + SKILLS.cursedHands.rootTicks;
+    this.vfx?.decal({
+      cell: 'magic_01',
+      x,
+      z,
+      radius: radius * 0.9,
+      color: 0xa855f7,
+      opacity: 0.72,
+      startTick: event.resolveTick,
+      endTick: endsTick,
+      fadeIn: 0.08,
+      fadeOut: 0.18,
+      rotationSpeed: -0.6,
+    });
+    this.vfx?.burst({
+      preset: 'star',
+      count: 14,
+      x,
+      y: 0.3,
+      z,
+      spreadRadius: radius * 0.3,
+      speed: [0.5, 2.7],
+      upward: [0.3, 1.8],
+      color: 0xc084fc,
+    });
+    this.vfx?.startEmitter({
+      id: `${event.ownerId}:${event.castSeq}:cursed`,
+      preset: 'wisp',
+      x,
+      z,
+      radius: radius * 0.82,
+      y: 0.16,
+      rate: 15,
+      startTick: event.resolveTick,
+      endTick: endsTick,
+      options: { color: 0xa855f7, cell: 'flame_05', startSize: 0.34, lifeMs: 700, upward: [0.25, 0.9] },
+    });
     this.createImpactRing(x, z, radius, 0x9b68d8, event.resolveTick, endsTick);
     const geometry = new THREE.CircleGeometry(radius * 0.88, 32);
     const material = new THREE.MeshBasicMaterial({
@@ -2086,11 +2246,25 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const colors = { quake: 0xe5be72, rain: 0x8bc9ff, meteor: 0xff8c4a };
     const rankFive = this.masteryRankForSkill(event.ownerId, event.skillName) === 5;
     const color = rankFive ? 0xfff2c4 : colors[event.skillName] ?? 0xffc777;
+    this.vfx?.decal({
+      cell: event.skillName === 'meteor' ? 'magic_02' : 'circle_03',
+      x,
+      z,
+      radius: radius * 0.95,
+      color,
+      opacity: event.skillName === 'meteor' ? 0.7 : 0.42,
+      startTick: event.startTick,
+      endTick: event.resolveTick,
+      fadeIn: 0.16,
+      fadeOut: 0.16,
+      rotationSpeed: event.skillName === 'meteor' ? 0.8 : 0,
+    });
+    if (event.skillName === 'meteor') this.vfx?.startMeteor(event, rankFive);
     const fillGeometry = new THREE.CircleGeometry(radius, 48);
     const fillMaterial = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.14,
       depthTest: false,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -2127,6 +2301,53 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     });
   }
 
+  createSkillCastVfx(event) {
+    const skillKey = event.skillKey;
+    const player = this.worldEntity(event.entityId);
+    if (!player) return;
+    const rankFive = this.masteryRankForSkill(event.playerId, skillKey) === 5;
+    if (skillKey === 'spin') {
+      for (let index = 0; index < 2; index += 1) {
+        this.vfx?.emit('spark', player.x, 0.72, player.z, {
+          cell: 'slash_02',
+          color: rankFive ? 0xfff0b0 : 0xffd36d,
+          startSize: 2.6,
+          endSize: 1.7,
+          rotation: player.facing + index * Math.PI,
+          spin: index ? -2.8 : 2.8,
+          lifeMs: 420,
+          alpha: 0.9,
+        });
+      }
+      this.vfx?.burst({ preset: 'spark', count: 14, x: player.x, y: 0.7, z: player.z, spreadRadius: 0.8, speed: [1, 3.2], upward: [0.4, 1.8], color: 0xffe4a2 });
+    } else if (skillKey === 'dash') {
+      const distance = SKILLS.dash.dashDistance;
+      for (let index = 0; index < 6; index += 1) {
+        const along = index / 6 * distance;
+        this.vfx?.emit('spark', player.x - Math.cos(player.facing) * along, 0.68, player.z - Math.sin(player.facing) * along, {
+          cell: 'trace_05',
+          color: 0xd8f7ff,
+          startSize: 0.66,
+          endSize: 0.1,
+          rotation: -player.facing,
+          stretch: 3,
+          lifeMs: 260,
+        });
+      }
+      this.vfx?.burst({ preset: 'dirt', count: 8, x: player.x, y: 0.1, z: player.z, speed: [0.5, 2], upward: [0.2, 1.1], color: 0xb6a087 });
+    } else if (event.skillId === 'counter') {
+      this.vfx?.flash(player.x, 0.9, player.z, 0xffdb75, 2.6, 120);
+      this.vfx?.emit('star', player.x, 0.9, player.z, {
+        cell: 'flare_01',
+        color: 0xffdb75,
+        startSize: 1.1,
+        endSize: 0.1,
+        lifeMs: 170,
+      });
+      this.vfx?.burst({ preset: 'star', count: 10, x: player.x, y: 0.95, z: player.z, spreadRadius: 0.4, speed: [0.4, 2], upward: [0.2, 1.3], color: 0xffe08a });
+    }
+  }
+
   createImpact(event) {
     if (event.kind === 'poison-puff') {
       this.createPoisonPuff(event);
@@ -2159,9 +2380,23 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         endTick: event.resolveTick,
         update: (effect, tick) => {
           const progress = THREE.MathUtils.clamp((tick - event.fireTick) / Math.max(1, event.resolveTick - event.fireTick), 0, 1);
-          effect.mesh.position.set(event.sourceX + (x - event.sourceX) * progress, 0.8 + Math.sin(progress * Math.PI) * 0.35, event.sourceZ + (z - event.sourceZ) * progress);
+          const projectileX = event.sourceX + (x - event.sourceX) * progress;
+          const projectileZ = event.sourceZ + (z - event.sourceZ) * progress;
+          effect.mesh.position.set(projectileX, 0.8 + Math.sin(progress * Math.PI) * 0.35, projectileZ);
+          if (tick % 2 === 0) {
+            this.vfx?.emit('flame', projectileX, effect.mesh.position.y, projectileZ, {
+              cell: 'fire_01',
+              color: 0xff9c47,
+              startSize: 0.3,
+              endSize: 0.05,
+              lifeMs: 400,
+              vy: 0.1,
+            });
+          }
           if (tick >= event.resolveTick) {
             this.createImpactRing(x, z, radius, 0xffd17a, event.resolveTick, event.resolveTick + 10);
+            this.vfx?.burst({ preset: 'ember', count: 12, x, y: 0.45, z, spreadRadius: 0.25, speed: [1, 3], upward: [0.4, 2], lifeMs: 520, color: 0xffb35b });
+            this.vfx?.burst({ preset: 'spark', count: 8, x, y: 0.25, z, spreadRadius: 0.5, speed: [0.6, 2], upward: [0.2, 1.5], lifeMs: 360 });
             effect.endTick = event.resolveTick;
           }
         },
@@ -2180,12 +2415,120 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
           effect.material.opacity = 0.15 + (Math.sin(tick * 0.55) + 1) * 0.045;
         },
       });
+      this.vfx?.decal({
+        cell: 'magic_01',
+        x,
+        z,
+        radius: radius * (rankFive ? 1.2 : 1),
+        color: rankFive ? 0xffdb9e : 0xff6b2e,
+        opacity: 0.36,
+        startTick: event.resolveTick,
+        endTick: event.endsTick,
+        fadeIn: 0.1,
+        fadeOut: 0.18,
+        rotationSpeed: 0.25,
+      });
+      this.vfx?.startEmitter({
+        id: `${event.ownerId}:${event.castSeq}:flame`,
+        preset: 'flame',
+        x,
+        z,
+        radius: radius * 0.82,
+        y: 0.16,
+        rate: 25,
+        startTick: event.resolveTick,
+        endTick: event.endsTick,
+        options: {
+          cell: 'flame_05',
+          color: rankFive ? 0xffd99a : 0xff6b2e,
+          startSize: rankFive ? 0.62 : 0.52,
+          lifeMs: 560,
+          upward: [0.4, 1.6],
+        },
+      });
+      this.vfx?.decal({
+        cell: 'scorch_02',
+        x,
+        z,
+        radius: radius * 0.7,
+        color: 0x713b2a,
+        opacity: 0.45,
+        lifeMs: 3000,
+        fadeOut: 0.25,
+      });
     } else if (event.kind === 'deadBurst') {
       this.createDeadBurst(event);
+      if (event.ownerId === this.localPlayerId) this.addShake(0.2, 200);
     } else if (event.kind === 'cursedHands') {
       this.createCursedHands(event);
     } else if (event.kind === 'poison') {
       this.createPoisonPuff(event);
+    } else if (event.kind === 'frost') {
+      this.vfx?.decal({
+        cell: 'circle_03',
+        x,
+        z,
+        radius: 0.2,
+        endRadius: radius * 1.3,
+        color: 0x75d7ff,
+        opacity: 0.88,
+        lifeMs: 480,
+      });
+      this.vfx?.decal({
+        cell: 'magic_02',
+        x,
+        z,
+        radius: radius * 0.86,
+        color: 0x9de6ff,
+        opacity: 0.5,
+        lifeMs: 800,
+      });
+      this.vfx?.burst({
+        preset: 'ice',
+        count: 14,
+        x,
+        y: 0.34,
+        z,
+        speed: [1.2, 4.5],
+        upward: [0.2, 1.6],
+        color: 0xa9eaff,
+        lifeMs: [420, 720],
+      });
+      this.vfx?.burst({ preset: 'smoke', count: 7, x, y: 0.18, z, spreadRadius: 0.7, speed: [0.1, 0.8], upward: [0.1, 0.4], color: 0xb9e6f3, lifeMs: [500, 850] });
+      if (event.ownerId === this.localPlayerId) this.addShake(0.08, 120);
+    } else if (event.kind === 'quake') {
+      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 0.85, color: 0x9d7546, opacity: 0.58, lifeMs: 1500 });
+      this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.25, color: 0xe5be72, opacity: 0.78, lifeMs: 520 });
+      this.vfx?.burst({ preset: 'dirt', count: 20, x, y: 0.16, z, spreadRadius: radius * 0.25, speed: [1.2, 5], upward: [1, 4.8], color: 0xb38a58, lifeMs: [500, 900] });
+      this.vfx?.burst({ preset: 'smoke', count: 10, x, y: 0.12, z, spreadRadius: radius * 0.45, speed: [0.2, 1.4], upward: [0.15, 0.75], color: 0x90775f, lifeMs: [500, 950] });
+      if (event.ownerId === this.localPlayerId) this.addShake(0.22, 220);
+    } else if (event.kind === 'meteor') {
+      const scale = rankFive ? 1.2 : 1;
+      const color = rankFive ? 0xffe8ae : 0xff873b;
+      this.vfx?.flash(x, 0.8, z, color, 5.5, 180);
+      this.vfx?.flipbook('impact', x, 0.65, z, radius * 2.2 * scale, { color: rankFive ? 0xffefc4 : 0xffffff });
+      this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.3 * scale, color, opacity: 0.9, lifeMs: 520 });
+      this.vfx?.burst({ preset: 'ember', count: 36, x, y: 0.42, z, speed: [1.5, 6], upward: [1, 5.5], colors: rankFive ? [0xffefc4, 0xffc05e, 0xff6d36] : [0xffc05e, 0xff8434, 0xff4c2e], lifeMs: [520, 1100] });
+      this.vfx?.burst({ preset: 'dirt', count: 14, x, y: 0.16, z, speed: [1.4, 5], upward: [1.2, 4.8], color: 0x75523f, lifeMs: [600, 1000] });
+      this.vfx?.burst({ preset: 'smoke', count: 8, x, y: 0.2, z, spreadRadius: radius * 0.42, speed: [0.2, 1.2], upward: [0.35, 1.2], color: 0x40343a, startSize: 0.6, endSize: 1.45, lifeMs: 1200 });
+      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 0.82 * scale, color: 0x5b3026, opacity: 0.68, lifeMs: 3000, fadeOut: 0.22 });
+      if (event.ownerId === this.localPlayerId) this.addShake(0.32, 300);
+    } else if (event.kind === 'rain') {
+      const rainEndTick = event.endsTick ?? event.resolveTick + (event.hitEvery ?? 8) * (event.hitsRemaining ?? 5);
+      this.vfx?.decal({
+        cell: 'magic_02',
+        x,
+        z,
+        radius: radius * 1.05,
+        color: 0x83cbff,
+        opacity: 0.62,
+        startTick: event.resolveTick,
+        endTick: rainEndTick,
+        fadeIn: 0.08,
+        fadeOut: 0.18,
+        rotationSpeed: 0.45,
+      });
+      this.vfx?.startRain(event);
     } else {
       const color = rankFive ? 0xfff2c4 : event.kind === 'quake' ? 0xe5be72
         : event.kind === 'meteor' ? 0xff8c4a : 0x91dfff;
@@ -2196,6 +2539,27 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   createBlink(event, now) {
     const rankFive = this.masteryRankForSkill(event.entityId, 'blink') === 5;
     for (const point of [event.from, event.to]) {
+      this.vfx?.decal({
+        cell: 'twirl_02',
+        x: point.x,
+        z: point.z,
+        radius: 0.75,
+        color: rankFive ? 0xfff2c4 : 0xa16aff,
+        opacity: 0.75,
+        lifeMs: 520,
+        rotationSpeed: 1.5,
+      });
+      this.vfx?.burst({
+        preset: 'star',
+        count: 9,
+        x: point.x,
+        y: 0.45,
+        z: point.z,
+        spreadRadius: 0.45,
+        speed: [0.5, 2.3],
+        upward: [0.2, 1.4],
+        color: rankFive ? 0xfff2c4 : 0xb98cff,
+      });
       const geometry = new THREE.SphereGeometry(rankFive ? 0.23 : 0.2, 8, 6);
       const material = new THREE.MeshBasicMaterial({ color: rankFive ? 0xfff2c4 : 0xb8e8ff, transparent: true, opacity: 0.72, depthWrite: false });
       const mesh = new THREE.Mesh(geometry, material);
@@ -2251,7 +2615,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     for (const event of world.events) {
       if (this.seenEventIds.has(event.eventId)) continue;
       this.seenEventIds.add(event.eventId);
-      if (event.type === 'cast') this.createSlash(event);
+      if (event.type === 'cast') {
+        this.createSlash(event);
+        this.createSkillCastVfx(event);
+      }
       if (event.type === 'skillTelegraph') this.createSkillTelegraph(event);
       if (event.type === 'shot') this.createShot(event, now);
       if (event.type === 'impact') this.createImpact(event);
@@ -2289,7 +2656,35 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
             this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
           }
           const target = world.entities.find((entity) => entity.id === event.targetId);
-          if (target?.kind === 'player' && !this.reducedMotion) this.shakeUntil = now + 110;
+          if (target?.kind === 'enemy') {
+            const y = Math.max(0.65, (target.height ?? 1.7) * 0.68);
+            this.vfx?.burst({
+              preset: 'spark',
+              count: event.critical ? 12 : 6,
+              x: target.x,
+              y,
+              z: target.z,
+              spreadRadius: 0.12,
+              speed: event.critical ? [1.2, 4] : [0.65, 2.6],
+              upward: event.critical ? [0.8, 3.4] : [0.4, 2],
+              colors: event.critical ? [0xffa13c, 0xffdb7a, 0xfff2c4] : [0xfff1cb, 0xffd987],
+              startSize: event.critical ? 0.32 : 0.22,
+              lifeMs: event.critical ? [380, 680] : [300, 520],
+            });
+            if (event.critical) {
+              this.vfx?.emit('star', target.x, y, target.z, {
+                cell: 'flare_01',
+                color: 0xffbd62,
+                startSize: 0.9,
+                endSize: 0.1,
+                lifeMs: 180,
+                alpha: 0.9,
+              });
+            }
+          }
+          if (target?.kind === 'player' && target.playerId === this.localPlayerId) this.addShake(0.08, 110);
+          const source = world.entities.find((entity) => entity.id === event.sourceId);
+          if (event.critical && source?.kind === 'player' && source.playerId === this.localPlayerId) this.addShake(0.06, 80);
         }
       }
       if (event.type === 'pickup') this.createDamageNumber(event);
@@ -2853,6 +3248,13 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
 
   render(previous, world, alpha) {
     const now = performance.now();
+    const renderTick = previous.tick + (world.tick - previous.tick) * alpha;
+    const stageKey = world.stageId ?? world.arena?.id;
+    if (this.lastVfxStageKey !== undefined && this.lastVfxStageKey !== stageKey) {
+      this.vfx?.clear();
+      this.peakFrameMs = 0;
+    }
+    this.lastVfxStageKey = stageKey;
     const dt = Math.min(0.08, (now - this.lastRender) / 1000);
     this.lastRender = now;
     const quality = this.qualityController.recordFrame(dt * 1000);
@@ -2939,9 +3341,9 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       let shakeX = 0;
       let shakeZ = 0;
       if (!this.reducedMotion && now < this.shakeUntil) {
-        const strength = (this.shakeUntil - now) / 110;
-        shakeX = Math.sin(now * 0.11) * 0.08 * strength;
-        shakeZ = Math.cos(now * 0.13) * 0.05 * strength;
+        const strength = (this.shakeUntil - now) / Math.max(1, this.shakeDurationMs);
+        shakeX = Math.sin(now * 0.11) * this.shakeAmplitude * strength;
+        shakeZ = Math.cos(now * 0.13) * this.shakeAmplitude * 0.65 * strength;
       }
       this.camera.lookAt(this.camera.position.x + shakeX, 0, targetZ + shakeZ);
       this.updateWallFade(targetZ);
@@ -2950,7 +3352,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     this.updatePresentation(world, now);
     this.updateOccluderFades(world, now);
     this.updateDebugOverlays(world, now);
+    this.vfx?.update(dt * 1000, this.camera, renderTick);
     this.renderer.render(this.scene, this.camera);
+    this.lastFrameMs = performance.now() - now;
+    this.peakFrameMs = Math.max(this.peakFrameMs ?? 0, this.lastFrameMs);
   }
 
   resizeCanvas() {
@@ -3029,6 +3434,9 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     this.debugAttackLines.clear();
     this.debugDodgeRing = null;
     this.vfxLayer.remove();
+    this.vfx?.dispose();
+    this.vfx = null;
+    if (window.__devinarokVfxStats === this.vfxStatsProvider) delete window.__devinarokVfxStats;
     disposeSceneResources(this.scene);
     this.renderer.dispose();
   }

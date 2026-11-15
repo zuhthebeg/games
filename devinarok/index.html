@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#100e13">
   <title>데비나로크</title>
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/game.css?v=2198e816c6">
+  <link rel="stylesheet" href="css/game.css?v=f6385952ab">
   <script type="importmap">
     {
       "imports": {
@@ -18,6 +18,7 @@
         "./js/content/lineages.js": "./js/content/lineages.js?v=86957ac660",
         "./js/content/mastery.js": "./js/content/mastery.js?v=00076114a3",
         "./js/content/objectives.js": "./js/content/objectives.js?v=9efcd2228b",
+        "./js/content/skill-icons.js": "./js/content/skill-icons.js?v=649aa0ff13",
         "./js/content/skills.js": "./js/content/skills.js?v=2753dad936",
         "./js/content/stages.js": "./js/content/stages.js?v=1c7dad1ab2",
         "./js/content/talents.js": "./js/content/talents.js?v=f7bdeb370b",
@@ -28,7 +29,7 @@
         "./js/debug/combat.js": "./js/debug/combat.js?v=e1f22e75ec",
         "./js/debug/panel.js": "./js/debug/panel.js?v=3c6c238388",
         "./js/debug/state.js": "./js/debug/state.js?v=f2bbbe822a",
-        "./js/main.js": "./js/main.js?v=ad9a3cddfa",
+        "./js/main.js": "./js/main.js?v=06295bdb46",
         "./js/net/bot-policy.js": "./js/net/bot-policy.js?v=4394734784",
         "./js/net/cast-timeline.js": "./js/net/cast-timeline.js?v=90c6cf90ab",
         "./js/net/clock-input-scheduler.js": "./js/net/clock-input-scheduler.js?v=61a2d824df",
@@ -47,7 +48,9 @@
         "./js/render/outline-style.js": "./js/render/outline-style.js?v=35f2b64d02",
         "./js/render/player-look.js": "./js/render/player-look.js?v=0ada419f95",
         "./js/render/quality.js": "./js/render/quality.js?v=1cac60e619",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=c19090e271",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=c21d818812",
+        "./js/render/vfx-pool.js": "./js/render/vfx-pool.js?v=d234fd0aa1",
+        "./js/render/vfx.js": "./js/render/vfx.js?v=297b083e22",
         "./js/sanctuary/arena.js": "./js/sanctuary/arena.js?v=30304389b0",
         "./js/sanctuary/state.js": "./js/sanctuary/state.js?v=290d1bb3db",
         "./js/sanctuary/vfx.js": "./js/sanctuary/vfx.js?v=56a54d7f52",
@@ -133,12 +136,12 @@
       <div id="controls" class="controls">
         <div class="joystick" data-joystick><span data-joystick-knob></span></div>
         <div class="buttons">
-          <button class="attack-button" data-button="1"><span>공격</span><small id="auto-attack-chip" class="auto-attack-chip" hidden>자동</small></button>
+          <button class="attack-button" data-button="1"><i class="skill-button-icon" aria-hidden="true"></i><span>공격</span><small id="auto-attack-chip" class="auto-attack-chip" hidden>자동</small></button>
           <button data-button="2">회피</button>
-          <button data-button="4"><span>기술 1</span><small class="skill-rank-badge" hidden></small></button>
-          <button data-button="8"><span>기술 2</span><small class="skill-rank-badge" hidden></small></button>
-          <button data-button="16"><span>기술 3</span><small class="skill-rank-badge" hidden></small></button>
-          <button data-button="128" class="skill-four-button"><span>기술 4</span><small class="skill-rank-badge" hidden></small><small class="skill-unlock-badge" hidden>Lv7</small></button>
+          <button data-button="4"><i class="skill-button-icon" aria-hidden="true"></i><span>기술 1</span><small class="skill-rank-badge" hidden></small></button>
+          <button data-button="8"><i class="skill-button-icon" aria-hidden="true"></i><span>기술 2</span><small class="skill-rank-badge" hidden></small></button>
+          <button data-button="16"><i class="skill-button-icon" aria-hidden="true"></i><span>기술 3</span><small class="skill-rank-badge" hidden></small></button>
+          <button data-button="128" class="skill-four-button"><i class="skill-button-icon" aria-hidden="true"></i><span>기술 4</span><small class="skill-rank-badge" hidden></small><small class="skill-unlock-badge" hidden>Lv7</small></button>
           <button class="potion-button" data-button="64"><span>물약 Q</span><b id="potion-count">0</b></button>
           <button id="sanctuary-interact" class="sanctuary-interact" hidden>상호작용</button>
         </div>
@@ -214,6 +217,6 @@
       <div id="counter-toast" aria-live="polite" hidden></div>
     </section>
   </main>
-  <script type="module" src="js/main.js?v=ad9a3cddfa"></script>
+  <script type="module" src="js/main.js?v=06295bdb46"></script>
 </body>
 </html>

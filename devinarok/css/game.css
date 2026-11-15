@@ -96,9 +96,16 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .buttons button[data-button="8"] { left: 66px; top: 22px; width: 64px; height: 64px; }
 .buttons button[data-button="16"] { left: 132px; top: 0; width: 64px; height: 64px; }
 .buttons button[data-button="128"] { left: 198px; top: 22px; width: 64px; height: 64px; }
+.buttons button[data-button="4"], .buttons button[data-button="8"], .buttons button[data-button="16"], .buttons button[data-button="128"] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
 .buttons button[data-button="2"] { left: 48px; top: 166px; width: 84px; height: 84px; border: 2px solid #f0b94f; border-radius: 50%; background: #49372be8; font-weight: 800; }
 .buttons button[data-button="64"] { left: 0; top: 0; width: 48px; height: 48px; border-color: #6396a5 !important; font-size: 10px; }
 .buttons .attack-button { left: 148px; top: 154px; width: 96px; height: 96px; min-width: 96px; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-color: #e5a477; background: #71362feF; font-size: 14px; font-weight: 800; }
+.skill-button-icon, .skill-icon { display: inline-block; flex: 0 0 auto; background-image: url('../assets/vfx/skill-icons.webp'); background-size: 800% 300%; background-repeat: no-repeat; }
+.skill-button-icon { width: 26px; height: 26px; border-radius: 5px; }
+.buttons button.cooldown-active .skill-button-icon { opacity: .45; filter: grayscale(.7); }
+.skill-icon { width: 30px; height: 30px; vertical-align: middle; border-radius: 5px; }
+.mastery-row header strong { display: inline-flex; align-items: center; gap: 7px; }
+.character-equipment .skill-icon { margin-right: 7px; }
 .skill-unlock-badge { position: absolute; right: -5px; top: -7px; padding: 2px 5px; border: 1px solid #e5be72; border-radius: 8px; background: #17131a; color: #ffe5ad; font: 700 10px/1.2 system-ui, sans-serif; }
 .skill-four-button.is-locked { border-color: #887b69; color: #b7a9ac; }
 .skill-four-button.is-locked > span { opacity: .7; }

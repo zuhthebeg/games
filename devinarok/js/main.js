@@ -34,6 +34,7 @@ import {
   isEvolved, LINEAGES, lineageAllowsFamily, lineageChangeCost, lineageDisplayName, lineageOf, playerFamily,
 } from './content/lineages.js';
 import { FAMILY_SKILLS, SKILLS, skillsFor } from './content/skills.js';
+import { skillIconPosition } from './content/skill-icons.js';
 import {
   MASTERY_MAX_XP, MASTERY_THRESHOLDS, masteryBonus, masteryRank, nextThreshold,
 } from './content/mastery.js';
@@ -1059,6 +1060,8 @@ function updateFamilySkillControls(family, lineage = lineageOf(character)) {
       if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
     } else if (button?.querySelector('span')) button.querySelector('span').textContent = SKILLS[name].name;
     else if (button) button.textContent = SKILLS[name].name;
+    const icon = button?.querySelector('.skill-button-icon');
+    if (icon) icon.style.backgroundPosition = skillIconPosition(name) ?? '0% 0%';
     const tag = button?.querySelector('.lineage-skill-badge');
     if (name !== baseNames[index] && button && !tag) {
       const badge = document.createElement('small');
@@ -1933,7 +1936,7 @@ function renderInventory(compareUid = '', filter = inventoryFilter) {
       const progress = next === null ? 100 : Math.max(0, Math.min(100, (xp - current) / (next - current) * 100));
       const bonus = masteryBonus(rank);
       const locked = index === 3 && character.level < 7;
-      return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}${skillKey !== baseSkills[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
+      return `<article class="mastery-row${locked ? ' locked' : ''}"><header><strong><span class="skill-icon" style="background-position:${skillIconPosition(skillKey)}" aria-hidden="true"></span>${SKILLS[skillKey].name}${locked ? ' · Lv7 잠금' : ''}${skillKey !== baseSkills[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''}</strong><span class="mastery-stars" aria-label="숙련도 ${rank}단계">${'★'.repeat(rank)}${'☆'.repeat(5 - rank)}</span></header><div class="mastery-xp"><span>${next === null ? '최대' : `${xp} / ${next}`}</span><div class="mastery-xp-track"><i style="width:${progress}%"></i></div></div><small>피해 +${bonus.damagePct}% · 재사용 −${bonus.cooldownPct}%</small></article>`;
     }).join('');
     hubPanel.innerHTML = `<h2>장비함 · ${inventory.length}/40</h2>${inventoryTabs}<div class="mastery-list">${skills}</div><p class="mastery-footer">적 근처에서 스킬을 쓰면 숙련도가 올라요 · ★5 각성 시 이펙트가 바뀌어요</p><button data-close>닫기</button>`;
     updateInventoryUpgradeBadge();
@@ -2162,7 +2165,7 @@ function renderPanel(kind, compareUid = '') {
     const baseSkillNames = FAMILY_SKILLS[family] ?? FAMILY_SKILLS.sword;
     const skillNames = skillsFor(family, lineageId);
     const skillDescriptions = skillNames.map((name, index) => (
-      `<li><strong>${SKILLS[name].name}</strong>${name !== baseSkillNames[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''} · ${LINEAGE_SKILL_COPY[name] ?? FAMILY_SKILL_COPY[family][index]}</li>`
+      `<li><span class="skill-icon" style="background-position:${skillIconPosition(name)}" aria-hidden="true"></span><strong>${SKILLS[name].name}</strong>${name !== baseSkillNames[index] ? '<small class="lineage-skill-tag">해골 전용</small>' : ''} · ${LINEAGE_SKILL_COPY[name] ?? FAMILY_SKILL_COPY[family][index]}</li>`
     )).join('');
     const gear = EQUIPMENT_SLOTS.map((slot) => {
       const item = inventory.find((entry) => entry.slot === slot.key);
@@ -2295,15 +2298,21 @@ function updateHud(current) {
     $('#hp-fill').style.width = `${hero.hp / hero.maxHp * 100}%`;
     $('#potion-count').textContent = String(hero.potions);
     const skillNames = skillsFor(hero.family ?? 'sword', hero.lineage);
+    const attackIcon = $('#controls .attack-button .skill-button-icon');
+    if (attackIcon) attackIcon.style.backgroundPosition = skillIconPosition(`basic:${hero.family ?? 'sword'}`) ?? '0% 0%';
     for (const [id, buttonValue] of [[1, 4], [2, 8], [3, 16], [4, 128]]) {
       const button = $(`#controls [data-button="${buttonValue}"]`);
-      const skill = SKILLS[skillNames[id - 1]];
+      const skillKey = skillNames[id - 1];
+      const skill = SKILLS[skillKey];
+      const icon = button?.querySelector('.skill-button-icon');
+      if (icon) icon.style.backgroundPosition = skillIconPosition(skillKey) ?? '0% 0%';
       const rank = hero.masteryRanks?.[id] ?? hero.mastery?.[id - 1] ?? 0;
       const cooldownBonus = masteryBonus(rank).cooldownPct;
       const max = Math.max(1, Math.round(skill.cooldownTicks
         * (1 - Math.min(60, hero.stats.skillCooldownReduction) / 100)
         * (1 - cooldownBonus / 100)));
       if (button) button.style.setProperty('--cooldown', `${(hero.skillCooldowns[id] / max) * 100}%`);
+      button?.classList.toggle('cooldown-active', hero.skillCooldowns[id] > 0);
       const rankBadge = button?.querySelector('.skill-rank-badge');
       if (rankBadge) {
         rankBadge.hidden = rank < 1;
@@ -3212,6 +3221,8 @@ if (DEV_MODE) {
     setPartyInputAutoDrive,
     get partyInputSeq() { return input?.seq ?? null; },
     get partyInputDriverStats() { return { ...partyInputDriverStats }; },
+    updateHud: () => updateHud(world),
+    updateFamilySkillControls,
     enterHub,
     settleStage,
     forceOutcome(outcome = 'clear') { completeStage(world, outcome); return settleStage(outcome); },

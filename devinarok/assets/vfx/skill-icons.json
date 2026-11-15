@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "image": "skill-icons.webp",
+  "width": 960,
+  "height": 360,
+  "columns": 8,
+  "rows": 3,
+  "cellSize": 120,
+  "cells": {
+    "spin": 0,
+    "dash": 1,
+    "guard": 2,
+    "quake": 3,
+    "deadBurst": 4,
+    "pierce": 5,
+    "vault": 6,
+    "volley": 7,
+    "poisonArrow": 8,
+    "rain": 9,
+    "flame": 10,
+    "frost": 11,
+    "cursedHands": 12,
+    "blink": 13,
+    "meteor": 14,
+    "basic:sword": 15,
+    "basic:crossbow": 16,
+    "basic:staff": 17
+  },
+  "sources": {
+    "spin": {
+      "row": 0,
+      "column": 6,
+      "transform": "source cell"
+    },
+    "dash": {
+      "row": 0,
+      "column": 0,
+      "transform": "source cell"
+    },
+    "guard": {
+      "row": 0,
+      "column": 5,
+      "transform": "source cell"
+    },
+    "quake": {
+      "row": 1,
+      "column": 5,
+      "transform": "source cell"
+    },
+    "deadBurst": {
+      "row": 1,
+      "column": 8,
+      "transform": "source cell"
+    },
+    "pierce": {
+      "row": 0,
+      "column": 1,
+      "transform": "source cell"
+    },
+    "vault": {
+      "row": 0,
+      "column": 8,
+      "transform": "source cell"
+    },
+    "volley": {
+      "row": 0,
+      "column": 7,
+      "transform": "source cell"
+    },
+    "poisonArrow": {
+      "row": 1,
+      "column": 7,
+      "transform": "source cell"
+    },
+    "rain": {
+      "row": 0,
+      "column": 7,
+      "transform": "vertical flip; pale-blue tint"
+    },
+    "flame": {
+      "row": 0,
+      "column": 9,
+      "transform": "source cell"
+    },
+    "frost": {
+      "row": 1,
+      "column": 4,
+      "transform": "source cell"
+    },
+    "cursedHands": {
+      "row": 1,
+      "column": 6,
+      "transform": "purple tint"
+    },
+    "blink": {
+      "row": 1,
+      "column": 1,
+      "transform": "source cell"
+    },
+    "meteor": {
+      "row": 0,
+      "column": 4,
+      "transform": "red-orange crystal; fire background; trace_05 streak at 45 degrees"
+    },
+    "basic:sword": {
+      "row": 0,
+      "column": 0,
+      "transform": "source cell"
+    },
+    "basic:crossbow": {
+      "row": 0,
+      "column": 1,
+      "transform": "source cell"
+    },
+    "basic:staff": {
+      "row": 1,
+      "column": 3,
+      "transform": "source cell"
+    }
+  }
+}
