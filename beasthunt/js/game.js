@@ -1,6 +1,7 @@
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
+import { VERSION } from './net/protocol.js?v=20261116r20';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
 import { Sim, R_ARENA } from './sim.js?v=20261114fix';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261114r11';
@@ -132,7 +133,7 @@ export class Hunt {
     this.audioClaims=[];const seen=new Map(),weaponSeen=new Map();
     const listener=ev=>{try{
       const d=JSON.parse(ev.data),q=d.data?.bh,from=d.from,c=q?.payload;
-      if(d.type!=='rt'||q?.type!=='hit'||q.v!==2||q.hunt!==this.session?.hunt||from===this.localId||!['gs','db','bow'].includes(roster[from]?.save.weapon)||!Number.isSafeInteger(q.seq)||q.seq<=(seen.get(from)??-1))return;
+      if(d.type!=='rt'||q?.type!=='hit'||q.v!==VERSION||q.hunt!==this.session?.hunt||from===this.localId||!['gs','db','bow'].includes(roster[from]?.save.weapon)||!Number.isSafeInteger(q.seq)||q.seq<=(seen.get(from)??-1))return;
       if(!Number.isFinite(c?.hostTick)||!Number.isFinite(c.raw)||c.raw<=0||!Object.hasOwn(this.def.parts,c.part))return;
       seen.set(from,q.seq);if(roster[from]?.save.weapon!=='gs'){const key=from+':'+c.hostTick;if(weaponSeen.has(key))return;weaponSeen.set(key,true);if(weaponSeen.size>128)weaponSeen.delete(weaponSeen.keys().next().value);}this.audioClaims.push({from,c});if(this.audioClaims.length>16)this.audioClaims.shift();
     }catch{} };

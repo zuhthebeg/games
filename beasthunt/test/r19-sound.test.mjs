@@ -1,3 +1,4 @@
+import {VERSION} from '../js/net/protocol.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -75,8 +76,8 @@ function method(name,params,bindings={}){const src=fs.readFileSync(new URL('../j
 test('R19 actual socket observer: roster actors, sequence/tick dedup, scheduled attenuation, listener cleanup (not WAN)',()=>{
  let callback,removed=0;const socket={addEventListener(n,f){callback=f;},removeEventListener(n,f){assert.equal(f,callback);removed++;}},roster={r:{save:{weapon:'bow'}}},{v,calls}=recorder(),local=player('db'),remote={...player('bow','r'),x:10};
  const ctx={localId:'local',session:{hunt:'hunt',rep:{clock:{playTick:100},hunters:new Map([['r',{sample:()=>remote}]])}},def:{parts:{head:1.25}},m:{state:'idle'},p:local,weaponSound:v,gsSound:{event(){throw Error('new weapon must not route to GS');}}};
- method('observeAudioSocket','socket,roster').call(ctx,socket,roster);
- const send=(seq,hostTick=100)=>callback({data:JSON.stringify({type:'rt',from:'r',data:{bh:{type:'hit',v:2,hunt:'hunt',seq,payload:{hostTick,raw:10,part:'head'}}}})});
+ method('observeAudioSocket','socket,roster',{VERSION}).call(ctx,socket,roster);
+ const send=(seq,hostTick=100)=>callback({data:JSON.stringify({type:'rt',from:'r',data:{bh:{type:'hit',v:VERSION,hunt:'hunt',seq,payload:{hostTick,raw:10,part:'head'}}}})});
  send(1);send(1);send(2);assert.equal(ctx.audioClaims.length,1);
  globalThis.document={hidden:false};method('remoteAudioHits','').call(ctx);assert.deepEqual(calls.map(c=>c.name),['bow_hit']);assert.equal(calls[0].volume,.5);assert.equal(ctx.audioClaims.length,0);
  send(3,101);method('remoteAudioHits','').call(ctx);assert.equal(calls.length,1);ctx.paused=true;method('remoteAudioHits','').call(ctx);assert.equal(ctx.audioClaims.length,0);ctx.detachAudio();assert.equal(removed,1);

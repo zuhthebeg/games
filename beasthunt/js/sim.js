@@ -87,7 +87,7 @@ export class Sim {
   take(action) { const n = this.p.buffer[action]; if (n > 0) { this.p.buffer[action] = 0; return true; } return false; }
   // Pause/lifecycle boundary: an explicit authoritative mutation, included in snapshots.
   clearInputs() {
-    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; delete p.bPending; delete p.guardArm; delete p.heavyPressAt; delete p.heavyReleasedAfter; delete p.guardRelease; }
+    for (const p of this.players) { p.input = neutralInput(); p.buffer = {}; delete p.bPending; delete p.guardArm; delete p.heavyPressAt; delete p.heavyReleasedAfter; delete p.guardRelease; delete p.comboNext; delete p.comboGrace; delete p.comboWeapon; }
   }
   // Drain once per step; events are transient presentation output, not replay state.
   drainEvents() { const events = this.events; this.events = []; return events; }
@@ -143,7 +143,20 @@ export class Sim {
   restore(snapshot) {
     if (!Object.hasOwn(snapshot,'network')) delete this.network;
     Object.assign(this, JSON.parse(JSON.stringify(snapshot))); this.def = MONSTERS[this.q.mon];
-    this.hr = this.q.hr ? HR : { hp: 1, dmg: 1, spd: 1 }; this.events = []; return this;
+    this.hr = this.q.hr ? HR : { hp: 1, dmg: 1, spd: 1 }; this.events = [];
+    // The queue is owner-local snapshot state, never a count or a second input
+    // lifetime. Reject malformed/stale fields instead of replaying a command.
+    for (const p of this.players) {
+      const W=WTYPES[p.weapon], normal=Number.isInteger(p.combo)&&p.combo>=0&&(W?.light[p.combo]||W?.combo?.moves[p.combo]);
+      if(this.over || p.comboWeapon!==p.weapon || !normal || !['atk','idle'].includes(p.state) ||
+        p.state==='atk'&&(!p.cur||['dur','h0','h1','mv','multi','shot'].some(k=>p.cur[k]!==normal[k])) ||
+        p.state==='idle'&&p.comboGrace===undefined ||
+        p.comboNext!==undefined&&p.comboNext!==true || p.comboNext&&p.state!=='atk' ||
+        p.comboGrace!==undefined&&(!Number.isFinite(p.comboGrace)||p.comboGrace<=0||p.comboGrace>.15||p.state!=='idle')) {
+        delete p.comboNext;delete p.comboGrace;delete p.comboWeapon;
+      }
+    }
+    return this;
   }
   // ---------- geometry helpers ----------
   mYaw() { return this.m.yaw + this.m.spin; }
@@ -164,8 +177,13 @@ export class Sim {
   clampArena(o, R) { const r = Math.hypot(o.x, o.z); if (r > R) { o.x *= R / r; o.z *= R / r; return true; } return false; }
 
   // ---------- player ----------
+  clearCombo() { const p=this.p;delete p.comboNext;delete p.comboGrace;delete p.comboWeapon;if('attack' in p.buffer)p.buffer.attack=0; }
+  // A normal link cannot truncate the authored active interval (notably GS B
+  // spin). A hit/miss is resolved first by the real contact loop below.
+  canLink() { const p=this.p,a=p.cur;return p.state==='atk'&&a&&p.hits>=(a.multi||1)&&p.t+1e-9>=Math.max(a.dur*.7,a.h1); }
   startAtk(move, frac, comboIdx, myaw, hasMv) {
     const p = this.p, m = this.m;
+    this.clearCombo();if(comboIdx>=0)p.comboWeapon=this.wt;
     delete p.guardArm; delete p.guardRelease; delete p.bPending;
     if (this.network) p.attackTick = this.network.viewTick ?? this.tick;
     p.state = 'atk'; p.t = 0; p.cur = move; p.hits = 0; p.combo = comboIdx; p.spin = 0;
@@ -175,7 +193,14 @@ export class Sim {
     if (!move.shot) this.sound(p.mv > 1.5 || this.wt === 'gs' ? 'swingH' : 'swing');
   }
   updPlayer(dt, {recovery = false} = {}) {
-    const p = this.p, W = this.W, inp = p.input; p.t += dt; p.inv = Math.max(0, p.inv - dt); p.stDelay -= dt;
+    const p = this.p, W = this.W, inp = p.input;
+    if(recovery || this.over || p.comboWeapon && (p.comboWeapon!==this.wt || !['idle','atk'].includes(p.state))) this.clearCombo();
+    if(p.comboGrace!==undefined){p.comboGrace-=dt;if(p.comboGrace<=1e-9){delete p.comboGrace;delete p.comboWeapon;}}
+    // Collapse repeated normal press edges to ONE successor, retained only for
+    // this action. An edge arriving at/after its original 260ms deadline is not
+    // admitted by step(), including while local hitstop pauses this updater.
+    if(!recovery && !this.over && p.state==='atk' && p.combo>=0 && p.comboWeapon===this.wt && this.take('attack'))p.comboNext=true;
+    p.t += dt; p.inv = Math.max(0, p.inv - dt); p.stDelay -= dt;
     const fx = Math.sin(inp.aimYaw), fz = Math.cos(inp.aimYaw);
     let wx = fx * inp.moveZ / 127 - fz * inp.moveX / 127, wz = fz * inp.moveZ / 127 + fx * inp.moveX / 127; const ml = Math.hypot(wx, wz), hasMv = ml > .15, myaw = hasMv ? Math.atan2(wx, wz) : p.yaw;
     if (hasMv) { wx /= ml; wz /= ml; }
@@ -185,18 +210,18 @@ export class Sim {
     // No speculative attack: tap fires on release; charge begins after 180ms.
     if (this.wt === 'gs' && !recovery) {
       if (p.bPending) {
-        const canLink=p.state==='idle'||p.state==='atk'&&p.hits>=(p.cur.multi||1)&&p.t>=p.cur.dur*.7;
+        const canLink=p.state==='idle'||this.canLink();
         // Preserve existing defensive priority before resolving a delayed B.
         if(canLink && p.buffer.roll>0 && p.st>=W.rollCost){this.take('roll');this.startRoll(myaw);}
         else if(p.state==='idle' && p.buffer.potion>0 && p.potions>0 && p.hp<p.maxHp){
-          this.take('potion');delete p.bPending;p.potions--;p.state='drink';p.t=0;this.sound('potion');
+          this.take('potion');this.clearCombo();delete p.bPending;p.potions--;p.state='drink';p.t=0;this.sound('potion');
         }
       }
       if (p.bPending) {
         p.bPending.time += dt;
         if (!inp.heavyHeld || p.bPending.time > .18 + 1e-9) {
           const b = p.bPending; delete p.bPending;
-          if (p.state === 'idle' || p.state === 'atk' && p.hits >= (p.cur.multi || 1) && p.t >= p.cur.dur*.7) {
+          if (p.state === 'idle' || this.canLink()) {
             if (!inp.heavyHeld && (Number.isFinite(inp.heavyHoldMs)?inp.heavyHoldMs/1000:b.time) <= .18 + 1e-9) {
               const node=b.toNode??(p.state==='atk'&&p.combo>=0?W.combo.next[p.combo][1]:3);
               this.startAtk(W.light[node]||W.combo.moves[node],0,node,myaw,hasMv);
@@ -210,8 +235,8 @@ export class Sim {
         const sprint = inp.sprint && hasMv && p.st > 1; if (sprint) { p.st -= 11 * dt; p.stDelay = .5; }
         walk(W.speed * (sprint ? 1.45 : 1));
         if (this.take('roll') && p.st >= W.rollCost) { this.startRoll(myaw); break; }
-        if (this.take('potion') && p.potions > 0 && p.hp < p.maxHp) { delete p.bPending; p.potions--; p.state = 'drink'; p.t = 0; this.sound('potion'); break; }
-        if (this.take('attack')) { this.startAtk(W.light[0], 0, 0, myaw, hasMv); if(this.wt==='gs' && inp.attackHeld) p.guardArm=true; break; }
+        if (this.take('potion') && p.potions > 0 && p.hp < p.maxHp) { this.clearCombo();delete p.bPending; p.potions--; p.state = 'drink'; p.t = 0; this.sound('potion'); break; }
+        if (this.take('attack')) { this.startCombo(0, myaw, hasMv); if(this.wt==='gs' && inp.attackHeld) p.guardArm=true; break; }
         if (this.take('heavy')) this.startHeavy(myaw, hasMv);
         break;
       }
@@ -239,7 +264,7 @@ export class Sim {
         if (recovery) { p.hits = p.cur?.multi || 1; if (p.t >= (p.cur?.dur ?? 0)) { p.state = 'idle'; p.spin = 0; } break; }
         if(p.guardArm){
           if(!inp.attackHeld) delete p.guardArm;
-          else if(p.t>=.20-1e-9){delete p.guardArm;p.state='guard';p.t=0;p.spin=0;p.kbx=p.kbz=0;break;}
+          else if(p.t>=.20-1e-9){this.clearCombo();delete p.guardArm;p.state='guard';p.t=0;p.spin=0;p.kbx=p.kbz=0;break;}
         }
         const a = p.cur, n = a.multi || 1;
         if (a.sw === 'spin') { if (p.t > a.h0 && p.t < a.h1) this.advance(a.lunge / (a.h1 - a.h0) * dt); p.spin = clamp((p.t - a.h0) / (a.h1 - a.h0), 0, 1) * TAU * 2; }
@@ -250,14 +275,13 @@ export class Sim {
           else if (n > 1) { this.meleeHit(a); p.hits++; }
           else if (this.meleeHit(a) || p.t > a.h1) p.hits++; else break;
         }
-        if (p.hits >= n && p.t >= a.dur * .7) {
+        if (this.canLink()) {
           if (this.take('roll') && p.st >= W.rollCost) { this.startRoll(myaw); break; }
-          if(this.wt==='gs' && p.combo>=0 && this.take('attack')){this.startCombo(0,myaw,hasMv);break;}
-          if (this.wt!=='gs' && p.combo >= 0 && p.combo + 1 < W.light.length && this.take('attack')) { this.startAtk(W.light[p.combo + 1], 0, p.combo + 1, myaw, hasMv); break; }
+          if (p.combo>=0 && p.comboNext) { this.startCombo(0,myaw,hasMv);break; }
           if (a.shot && this.take('attack')) { this.startAtk(W.light[0], 0, 0, myaw, hasMv); break; }
           if (this.take('heavy')) { this.startHeavy(myaw, hasMv); break; }
         }
-        if (p.t >= a.dur) { p.state = 'idle'; p.spin = 0; }
+        if (p.t >= a.dur) { p.state = 'idle'; p.spin = 0; if(p.combo>=0 && p.comboWeapon===this.wt && !this.over)p.comboGrace=.15; }
         break;
       }
       case 'roll': {
@@ -282,13 +306,15 @@ export class Sim {
     this.clampArena(p, R_ARENA);
   }
   advance(v) { const p = this.p; p.x += Math.sin(p.yaw) * v; p.z += Math.cos(p.yaw) * v; }
-  startRoll(yaw) { const p = this.p; delete p.guardArm; delete p.guardRelease; delete p.bPending; p.state = 'roll'; p.t = 0; p.yaw = yaw; p.st -= this.W.rollCost; p.stDelay = .7; p.inv = Math.max(p.inv, .38); p.spin = 0; p.clv = 0; this.sound('roll'); this.burst('dust', p.x, .2, p.z, 4, 2, .4, 0); }
+  startRoll(yaw) { const p = this.p; this.clearCombo(); delete p.guardArm; delete p.guardRelease; delete p.bPending; p.state = 'roll'; p.t = 0; p.yaw = yaw; p.st -= this.W.rollCost; p.stDelay = .7; p.inv = Math.max(p.inv, .38); p.spin = 0; p.clv = 0; this.sound('roll'); this.burst('dust', p.x, .2, p.z, 4, 2, .4, 0); }
   startCombo(button,myaw,hasMv) {
-    const p=this.p,W=this.W,node=p.state==='atk'&&p.combo>=0 ? W.combo.next[p.combo][button] : button===0?0:3;
-    this.startAtk(W.light[node] || W.combo.moves[node],0,node,myaw,hasMv);
+    const p=this.p,W=this.W,linked=p.combo>=0&&(p.state==='atk'||p.comboGrace>0);
+    const node=this.wt==='gs' ? (linked?W.combo.next[p.combo][button]:button===0?0:3) : linked?(p.combo+1)%W.light.length:0;
+    this.startAtk(W.light[node] || W.combo?.moves[node],0,node,myaw,hasMv);
   }
-  beginCharge(myaw,hasMv){const p=this.p;p.state='charge';p.t=0;p.clv=0;if(hasMv)p.yaw=myaw;}
+  beginCharge(myaw,hasMv){const p=this.p;this.clearCombo();p.state='charge';p.t=0;p.clv=0;if(hasMv)p.yaw=myaw;}
   startHeavy(myaw, hasMv) {
+    this.clearCombo();
     if(this.wt==='gs'){
       const p=this.p,age=p.heavyPressAt===undefined?0:Math.max(0,this.clock-p.heavyPressAt),released=p.heavyReleasedAfter;
       delete p.heavyPressAt;delete p.heavyReleasedAfter;
@@ -343,7 +369,7 @@ export class Sim {
       dmg=Math.max(1,Math.round(dmg*(broken?.6:.15)));heavy=false;
       this.emit('guard',{playerId:p.id,broken,damage:dmg,cost});
     }
-    delete p.guardArm;delete p.bPending;
+    this.clearCombo();delete p.guardArm;delete p.bPending;
     p.hp -= dmg; p.healLeft = 0; p.drank = false; p.spin = 0; this.emit('shake', { amount: guarded ? .12 : heavy ? .7 : .4 }); this.sound('hurt');
     let dx = p.x - sx, dz = p.z - sz; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
     this.burst('blood', p.x, 1.2, p.z, 6, 3, .4); this.emit('flash', { playerId: p.id });
@@ -560,7 +586,7 @@ export class Sim {
   }
 
   // ---------- flow ----------
-  finish(win, delay) { if (this.over) return; this.over = true; this.win = win; this.endT = delay; }
+  finish(win, delay) { if (this.over) return; for(const p of this.players){delete p.comboNext;delete p.comboGrace;delete p.comboWeapon;if('attack' in p.buffer)p.buffer.attack=0;} this.over = true; this.win = win; this.endT = delay; }
   result() {
     if (this.cachedResult) return JSON.parse(JSON.stringify(this.cachedResult));
     const loot = this.win ? rollLoot(this.q, this.m.broke, () => this.random()) : {};

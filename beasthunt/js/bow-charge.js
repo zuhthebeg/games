@@ -25,14 +25,16 @@ export class BowChargeFX extends GSChargeFX {
 }
 export function attachBowChargePresentation(hunt){
  const low=/[?&]lowfx=1/.test(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const effects=new Map(),sync=hunt.syncHunter.bind(hunt),dispose=hunt.dispose.bind(hunt);
+ const effects=new Map(),sync=hunt.syncHunter.bind(hunt),dispose=hunt.dispose.bind(hunt),stopAudio=hunt.stopAudio?.bind(hunt);
+ // Pause/hide/end all call stopAudio, including frames without actor sync.
+ hunt.stopAudio=function(){for(const fx of effects.values()){fx.group.visible=false;fx.clearArrow();fx.stage=-1;fx.age=1;}stopAudio?.();};
  hunt.bowChargeEffects=effects;
  hunt.syncHunter=function(p,H,dt,cache=this){
   sync(p,H,dt,cache);
   for(const [actor,fx]of effects)if(actor.root.parent!==hunt.scene){fx.dispose();effects.delete(actor);}
   if(p.weapon!=='bow'){const fx=effects.get(H);if(fx){fx.dispose();effects.delete(H);}return;}
   let fx=effects.get(H);if(!fx){fx=new BowChargeFX(hunt.scene,low,hunt.in.isTouch,H.weaponColor,reduced);effects.set(H,fx);}
-  fx.update(p,H,dt,hunt.clock);
+  fx.update(hunt.paused||hunt.over||document.hidden?{...p,state:"idle"}:p,H,dt,hunt.clock);
  };
  hunt.dispose=function(){for(const fx of effects.values())fx.dispose();effects.clear();dispose();};
 }

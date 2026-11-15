@@ -3,7 +3,7 @@ const finite=n=>typeof n==='number' && Number.isFinite(n);
 // The caller provides the authenticated rt sender and its roster-bound loadout.
 // Validation is pure with respect to Sim: accepted claims are applied by host only.
 export class HitClaims {
-  constructor() { this.history=[]; this.sequences=new Map(); this.moves=new Map(); this.accepted=0; this.rejected=0; this.reasons={};this.schemaDetails={}; }
+  constructor() { this.history=[]; this.sequences=new Map(); this.moves=new Map(); this.shots=new Map(); this.accepted=0; this.rejected=0; this.reasons={};this.schemaDetails={}; }
   record(sim) {
     this.history.push({tick:sim.tick,parts:sim.mParts().map(p=>({...p}))});
     while(this.history.length && this.history[0].tick<sim.tick-60) this.history.shift();
@@ -39,6 +39,15 @@ export class HitClaims {
     const minTicks=(move.multi>1 ? (move.h1-move.h0)/(move.multi-1) : move.dur*.65)*60;
     // Compare claimed playback ticks, not arrival time: TCP bursts are not spam.
     if(actionTick-(this.moves.get(key)??-Infinity)<Math.floor(minTicks)) return no('interval');
+    if(move.shot){
+      // Different graded light IDs still represent one bow, not three firing
+      // lanes. Compare release identities in either impact order: an older
+      // long-flight shot may legitimately arrive after a newer short one.
+      const shots=(this.shots.get(from)||[]).filter(t=>t>=sim.tick-120);
+      const gap=Math.floor(Math.min(...W.light.map(a=>a.dur),W.heavy.dur)*.65*60);
+      if(shots.some(t=>Math.abs(t-actionTick)<gap))return no('interval');
+      this.shots.set(from,[...shots,actionTick].slice(-8));
+    }
     this.moves.set(key,actionTick);this.accepted++;
     return {ok:true,part:c.part,raw:c.raw,x:part.x,z:part.z,mv:maxMv};
   }
