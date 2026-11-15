@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
 import { Sim, R_ARENA } from './sim.js?v=20261114fix';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261114r11';
-import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb } from 'bh/models';
+import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb, disposeHunterActors } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS } from 'bh/audio';
 import { GSSoundView } from './gs-sound.js?v=20261114r11';
 
@@ -328,5 +328,5 @@ export class Hunt {
   }
   stopAudio() { stopAllGS(); }
   resize(w, h) { this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
-  dispose() { this.debug?.dispose(); this.G.dispose?.(); this.detachAudio?.(); this.gsSound?.dispose(); stopAllGS(); this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
+  dispose() { disposeHunterActors(this.scene); this.debug?.dispose(); this.G.dispose?.(); this.detachAudio?.(); this.gsSound?.dispose(); stopAllGS(); this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
 }

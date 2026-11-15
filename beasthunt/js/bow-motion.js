@@ -8,19 +8,20 @@ const UNARMED = ['roll', 'drink', 'dead', 'down'];
 const Y = new THREE.Vector3(0, 1, 0), V = () => new THREE.Vector3(), Q = () => new THREE.Quaternion();
 const clamp = THREE.MathUtils.clamp;
 
-export function createBowMotion(model, clips, bow) {
+export function createBowMotion(model, clips, bow, { erika = false } = {}) {
   const mixer = new THREE.AnimationMixer(model), actions = {};
-  for (const source of recoveryClips(clips)) {
+  for (const source of (erika ? clips : recoveryClips(clips))) {
     const a = mixer.clipAction(source); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.paused = true; actions[source.name] = a;
   }
   const bones = {}; model.traverse(o => { if (o.isBone) bones[o.name.replace('mixamorig:', '').replace('mixamorig', '')] = o; });
+  model.updateMatrixWorld(true);
   const socket = new THREE.Group(); socket.name = 'bow-left-hand-socket';
   socket.scale.setScalar(1 / bones.LeftHand.getWorldScale(V()).x);
   bones.LeftHand.add(socket); socket.add(bow);
   // Left palm midpoint; bone units are cm, socket children are metres.
   socket.position.copy(bones.LeftHandMiddle1.position).multiplyScalar(.5);
   const low = /[?&]lowfx=1/.test(location.search), reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const b = { model, mixer, actions, bones, socket, bow, low, reduced, key: null, lastT: 0, combo: null, clipTime: 0, lastPos: null, idleTime: 0, draw: 0, string: null, nockArrow: null, dirW: { walkF: 0, walkB: 0, walkL: 0, walkR: 0 } };
+  const b = { erika, model, mixer, actions, bones, socket, bow, low, reduced, key: null, lastT: 0, combo: null, clipTime: 0, lastPos: null, idleTime: 0, draw: 0, string: null, nockArrow: null, dirW: { walkF: 0, walkB: 0, walkL: 0, walkR: 0 } };
   return b;
 }
 
@@ -125,8 +126,14 @@ export function syncHunterBow(p, H, dt, clock = 0) {
   } else for (const k in b.dirW) { const a = b.actions[k]; if (a && a._walk) { a.fadeOut(.1); a._walk = false; } b.dirW[k] = 0; }
   if (action && wanted !== 'walk') { action.time = time; b.clipTime = time; } else if (wanted === 'walk') b.clipTime = time;
   b.lastPos = { x: p.x, z: p.z };
+  // R14 already baked recovery once. Zero-first presentation floor owns only
+  // toe support, not cloth/body collision, and never mutates the sim root.
+  if (b.erika) b.model.position.y = 0;
   b.mixer.update(Math.max(0, dt));
-  groundRecovery(b,p);
+  if (b.erika) {
+    b.model.updateWorldMatrix(true,true);
+    b.model.position.y = Math.max(0,-Math.min(...['LeftToeBase','RightToeBase'].map(n=>b.bones[n].getWorldPosition(V()).y)));
+  } else groundRecovery(b,p);
   // Geometry bends +X toward the tips/string. Point +X back toward the
   // string hand, not arbitrary hand-local X (which put string over the grip).
   // Keep a vertical limb axis in the palm-to-palm plane.

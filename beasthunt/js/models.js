@@ -4,7 +4,7 @@ import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261114r11';
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261115er';
 import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261114r11';
 import { createWarrokMotion } from './warrok-motion.js?v=20261114wk';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
@@ -78,12 +78,22 @@ export function loadHunterGS() {
  }
  return gsLoad;
 }
-let bowLoad, bowAsset;
+let bowLoad, bowAsset, paladinBowLoad;
+export const paladinBowLoadState = { status: 'idle', error: null };
+function loadPaladinBow() {
+ if (!paladinBowLoad) {
+  paladinBowLoadState.status='loading';
+  paladinBowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-bow.glb?v=20261114r11',import.meta.url).href)
+   .then(asset=>{paladinBowLoadState.status='ready';return asset;})
+   .catch(error=>{paladinBowLoadState.status='failed';paladinBowLoadState.error=String(error);return null;});
+ }
+ return paladinBowLoad;
+}
 export const hunterBowLoad = { status: 'idle', ms: 0, error: null };
 export function loadHunterBow() {
  if (!bowLoad) {
   const start=performance.now(); hunterBowLoad.status='loading';
-  bowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-bow.glb?v=20261114r11',import.meta.url).href)
+  bowLoad=new GLTFLoader().loadAsync(new URL('../assets/hunter-erika-bow.glb?v=20261115er',import.meta.url).href)
    .then(asset=>{bowAsset=asset;hunterBowLoad.status='ready';hunterBowLoad.ms=performance.now()-start;return asset;})
    .catch(error=>{hunterBowLoad.status='failed';hunterBowLoad.error=String(error);return null;});
  }
@@ -110,18 +120,47 @@ function hunterBowProp(dark,trim,steel){
 export function buildHunter(wt,wTier,aTier) {
  return wt==='gs' ? buildHunterGS(wTier,aTier) : wt==='bow' ? buildHunterBow(wTier,aTier) : wt==='db' ? buildHunterDb(wTier,aTier) : buildProceduralHunter(wt,wTier,aTier);
 }
+// Cached textures belong to the page template; geometry/material/skeleton to actor.
+function releaseHunterTree(root) {
+ const geometries=new Set(), materials=new Set(), skeletons=new Set();
+ root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m)materials.add(m);if(o.skeleton)skeletons.add(o.skeleton);});
+ geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());
+}
+export function disposeHunterActors(scene) {
+ const actors=[];scene.traverse(o=>{if(o.userData.disposeHunter)actors.push(o.userData.disposeHunter);});
+ actors.forEach(dispose=>dispose());
+}
 export function buildHunterBow(wTier,aTier) {
  const H=buildProceduralHunter('bow',wTier,aTier);H.weaponColor=WPN_COL[wTier-1];
- const upgrade=asset=>{
-  if(!asset)return H;
-  const model=cloneSkeleton(asset.scene);
-  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
-  const bow=hunterBowProp(M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
-  H.bow=createBowMotion(model,asset.animations,bow);
-  for(const c of [...H.root.children]){H.root.remove(c);c.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
-  H.root.add(model); return H;
+ H.skin='procedural';H.skinState='loading';let disposed=false;
+ H.dispose=()=>{if(disposed)return;disposed=true;H.skinState='disposed';
+  H.bow?.mixer.stopAllAction();if(H.bow)H.bow.mixer.uncacheRoot(H.bow.model);
+  releaseHunterTree(H.root);H.root.clear();H.bow=null;
  };
- H.ready=bowAsset ? Promise.resolve(upgrade(bowAsset)) : loadHunterBow().then(upgrade);
+ H.root.userData.disposeHunter=H.dispose;
+ H.root.addEventListener('removed',H.dispose);
+ const upgrade=(asset,erika)=>{
+  if(!asset||disposed||(!erika&&H.skin==='erika'))return H;
+  const model=cloneSkeleton(asset.scene);
+  model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=(Array.isArray(o.material)?o.material:[o.material]).map(source=>erika?source.clone():paladinMaterial(source,aTier));if(o.material.length===1)o.material=o.material[0];o.castShadow=true;o.frustumCulled=false;}});
+  model.updateMatrixWorld(true);
+  const bow=hunterBowProp(M(0x283238),M(aTier>=5?0xe8c35a:0xc6a77b,{metalness:.5}),M(WPN_COL[wTier-1],{metalness:.6,roughness:.3}));
+  const next=createBowMotion(model,asset.animations,bow,{erika});
+  H.bow?.mixer.stopAllAction();if(H.bow)H.bow.mixer.uncacheRoot(H.bow.model);
+  releaseHunterTree(H.root);H.root.clear();H.bow=next;H.root.add(model);
+  H.skin=erika?'erika':'paladin';return H;
+ };
+ if(bowAsset){upgrade(bowAsset,true);H.skinState='ready';H.ready=Promise.resolve(H);}
+ else {
+  // Keep the existing Paladin path live while the larger original streams.
+  const fallback=loadPaladinBow().then(asset=>upgrade(asset,false));
+  H.ready=loadHunterBow().then(async asset=>{
+   if(disposed)return H;
+   if(asset){upgrade(asset,true);H.skinState='ready';}
+   else {await fallback;if(!disposed)H.skinState='fallback';}
+   return H;
+  });
+ }
  return H;
 }
 export function buildHunterDb(wTier,aTier) {

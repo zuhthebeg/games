@@ -12,9 +12,9 @@
     "targetBindHeight": 5
   },
   "cache": {
-    "bh/models": "./js/models.js?v=20261115ww",
-    "bh/game": "./js/game.js?v=20261115ww",
-    "main": "./js/main.js?v=20261115ww",
+    "bh/models": "./js/models.js?v=20261115er",
+    "bh/game": "./js/game.js?v=20261115er",
+    "main": "./js/main.js?v=20261115er",
     "debug": "./hunt-debug.js?v=20261115ww"
   },
   "scope": "CPU skin/bounds and material metadata only; no native browser, pixels or visual PASS"

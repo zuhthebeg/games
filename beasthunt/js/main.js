@@ -6,7 +6,7 @@ import { Hunt } from 'bh/game';
 import { attachHuntDebug } from './hunt-debug.js?v=20261115ww';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
 import { Input } from 'bh/input';
-import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok } from 'bh/models';
+import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok, disposeHunterActors } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS } from 'bh/audio';
 import { t, getLang, nextLang, matName, LANG_LABEL } from 'bh/i18n';
 
@@ -47,7 +47,7 @@ const unlocked = (q) => DEBUG || !q.need || !!save.clears[q.need];
 // ---------- preview scene (hub backdrop) ----------
 function makePreview() {
   const q = QUESTS.find((x) => x.id === sel), d = MONSTERS[q.mon], B = BIOMES[d.biome];
-  if (preview) { preview.G.dispose?.(); preview.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+  if (preview) { disposeHunterActors(preview.scene); preview.G.dispose?.(); preview.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
   const scene = new THREE.Scene(); scene.background = new THREE.Color(B.sky).multiplyScalar(.55); scene.fog = new THREE.Fog(scene.background, 20, 60);
   scene.add(new THREE.HemisphereLight(B.amb[0], B.amb[1], 1.1));
   const sun = new THREE.DirectionalLight(B.sun, 2.2); sun.position.set(8, 14, 10); scene.add(sun);
