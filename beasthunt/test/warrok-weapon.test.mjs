@@ -80,7 +80,8 @@ test('Warrok cleaver: socketed grip, clip-swept reach/ground/left-hand metrics, 
  console.log('R13a measurements:',JSON.stringify({gripMax:+gripMax.toFixed(4),fistMax:+fistMax.toFixed(3),tipMinAtk:+tipMinAtk.toFixed(3),tipMinAll:+tipMinAll.toFixed(3),reachMax:+reachMax.toFixed(2),perClip:Object.fromEntries(Object.entries(rep).map(([k,r])=>[k,{tipMin:+r.tipMin.toFixed(3),reach:+r.reach.toFixed(2),left:[+r.leftMin.toFixed(2),+r.leftMax.toFixed(2)],torsoMin:+r.torsoMin.toFixed(3)}]))}));
  assert.ok(gripMax<=.02,'grip residual max '+gripMax.toFixed(4)+'m <= 0.02m');
  assert.ok(fistMax<=.3,'grip inside fist shell, nearest hand vert '+fistMax.toFixed(3)+'m');
- assert.ok(tipMinAtk>=-.05,'attack clip tip penetration '+tipMinAtk.toFixed(3)+'m >= -0.05m');
+ assert.ok(tipMinAtk>=-.02,'post-clamp attack tip '+tipMinAtk.toFixed(3)+'m >= -0.02m');
+ assert.ok(tipMinAll>=-.02,'post-clamp ALL clips tip >= -0.02m');
  const sweepR=MONSTERS.warrok.dims.sweepR;
  // Triangle inequality: scale the previous accepted reach envelope, then
  // add only the physical blade-length delta not already scaled with the body.
@@ -91,7 +92,7 @@ test('Warrok cleaver: socketed grip, clip-swept reach/ground/left-hand metrics, 
  assert.ok(Math.abs(tip.position.y*weapon.scale.y-2.43*2)<1e-12);
  for(const [mode,r] of Object.entries(rep)){
   assert.ok(r.pommelMin>=-.05,mode+' unchanged pommel floor '+r.pommelMin);
-  assert.ok(r.tipMin>=(['stomp','leap'].includes(mode)?-.15:-.05),mode+' R21 tip floor '+r.tipMin);
+  assert.ok(r.tipMin>=-.02,mode+' R21b post-clamp tip floor '+r.tipMin);
  }
  h.dispose();
 });
@@ -143,5 +144,32 @@ test('R21 blade-only extension preserves original handle guard pommel and measur
  const blade=weapon.getObjectByName('warrok-cleaver-blade');
  assert.deepEqual(blade.position.toArray(),[0,.35,0]);assert.deepEqual(blade.scale.toArray(),[1.5,1.5,2.35]);
  assert.ok(Math.abs(weapon.getObjectByName('warrok-weapon-tip').position.y*1.8-4.86)<1e-12);
+ h.dispose();
+});
+
+
+test('R21b blade ground clamp is root-only, deterministic, reversible, continuous and min-bounded',async()=>{
+ const h=hunt();if(!h.G.warrok)resolveLoad();await h.G.ready;
+ const {weapon}=h.G,blade=weapon.getObjectByName('warrok-cleaver-blade'),tip=weapon.getObjectByName('warrok-weapon-tip');
+ // Isolated exact primitive: the clamp must not adjust the parent or any rigid part.
+ weapon.removeFromParent();h.scene.add(weapon);weapon.position.set(0,3,0);weapon.rotation.set(0,0,Math.PI);
+ const rigid=weapon.children.filter(o=>o.isMesh&&o!==blade);
+ const before=rigid.map(o=>({p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()}));
+ const root=()=>weapon.localToWorld(new T.Vector3(0,.35,0));
+ const r0=root(),parentBefore=weapon.matrixWorld.clone();
+ const f=weapon.userData.groundClamp();h.scene.updateMatrixWorld(true);
+ assert.ok(f>.35&&f<1);assert.ok(Math.abs(tip.getWorldPosition(V()).y-.02)<1e-12);
+ assert.ok(root().distanceTo(r0)<1e-12);assert.deepEqual(blade.scale.toArray().slice(0,2),[1.5,1.5]);
+ assert.deepEqual(weapon.matrixWorld.elements,parentBefore.elements);
+ assert.deepEqual(rigid.map(o=>({p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()})),before);
+ assert.equal(weapon.userData.groundClamp(),f,'repeat is history independent');
+ // Re-entry from another pose must recover the exact same fraction.
+ weapon.rotation.set(0,0,0);assert.equal(weapon.userData.groundClamp(),1);assert.equal(blade.scale.z,2.35);
+ weapon.rotation.z=Math.PI;assert.equal(weapon.userData.groundClamp(),f);
+ // Moving through contact in small deterministic steps has no boundary snap.
+ let previous=null;for(let y=5;y>=2;y-=.001){weapon.position.y=y;weapon.userData.groundClamp();const v=tip.getWorldPosition(V());if(previous)assert.ok(v.distanceTo(previous)<=.001000001);previous=v;}
+ weapon.position.y=.1;assert.equal(weapon.userData.groundClamp(),.35,'minimum fraction retained even if root is below ground');
+ assert.ok(tip.getWorldPosition(V()).y<0,'infeasible min-fraction pose is not concealed by moving body');
+ weapon.rotation.z=0;assert.equal(weapon.userData.groundClamp(),1,'no accumulated shortening');
  h.dispose();
 });

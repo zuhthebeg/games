@@ -8,6 +8,7 @@ export async function measure(){const report={};for(const [variant,bodyFactor,bl
  const h=make();h.frame(1/60);await h.G.ready;const W=h.G.warrok,model=W.model,socket=h.G.weaponSocket,weapon=h.G.weapon;
  model.scale.multiplyScalar(bodyFactor/1.25);model.position.y*=bodyFactor/1.25;socket.scale.multiplyScalar(1.25/bodyFactor);// R21: the blade-only extension lives in its mesh, never scale the grip/pommel.
  const factor=variant==='reference1.0'?1:2;
+ weapon.userData.bladeSpan=1.35*factor-.35;
  weapon.getObjectByName('warrok-cleaver-blade').scale.set(factor===1?1:1.5,factor===1?1:1.5,1.35*factor-.35);
  weapon.getObjectByName('warrok-weapon-tip').position.y=1.35*factor;
  weapon.scale.setScalar(bladeLength/(1.35*factor));model.updateWorldMatrix(true,true);

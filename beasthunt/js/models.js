@@ -290,6 +290,24 @@ function buildWarrokCleaver() {
  const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35*bladeFactor,0);g.add(tip);
  const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
  g.scale.setScalar(1.8); // scale around the unchanged measured palm grip
+ // R21b: pose-only ground contact, AFTER the existing body-floor owner. Never
+ // use last frame's shortened tip: reconstruct the full authored blade first.
+ g.userData.bladeSpan=bladeSpan;
+ const grip=new THREE.Vector3(),root=new THREE.Vector3(),fullTip=new THREE.Vector3();
+ g.userData.groundClamp=()=>{
+  g.updateWorldMatrix(true,false);
+  const span=g.userData.bladeSpan;
+  grip.set(0,0,0).applyMatrix4(g.matrixWorld);
+  root.set(0,.35,0).applyMatrix4(g.matrixWorld);
+  fullTip.set(0,.35+span,0).applyMatrix4(g.matrixWorld);
+  // The grip-to-tip fraction is (grip.y-.02)/(grip.y-fullTip.y).
+  // Convert to blade-root fraction: the .35-local rigid haft MUST NOT shrink.
+  const fraction=fullTip.y<.02 ? THREE.MathUtils.clamp((root.y-.02)/(root.y-fullTip.y),.35,1) : 1;
+  b.scale.z=span*fraction;tip.position.y=.35+span*fraction;
+  b.updateMatrix();tip.updateMatrix();
+  g.userData.bladeFraction=fraction;
+  return fraction;
+ };
  return g;
 }
 // Socket Group parented to the right-hand bone; measured on the bind pose, so
@@ -339,6 +357,10 @@ export function buildWarrok() {
   const socket = warrokWeaponSocket(model);
   if (socket) { W.weaponSocket = socket; W.weapon = socket.userData.weapon; }
   W.warrok = createWarrokMotion(model, asset.animations);
+  // Keep the sole body-floor owner and its exact return value/behavior intact.
+  // Both production sync and explicit paused-pose ground calls share this path.
+  const ground=W.warrok.ground;
+  W.warrok.ground=()=>{const supportMin=ground();W.weapon?.userData.groundClamp();return supportMin;};
   for (const c of [...body.children]) { body.remove(c); c.geometry?.dispose(); c.material?.dispose(); }
   body.position.y = 0; body.add(model); W.warrok.ground();
   return W;
