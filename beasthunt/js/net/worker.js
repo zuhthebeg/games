@@ -1,5 +1,5 @@
 // World simulation lives here, not on the hidden document's throttled timers.
-import {HostSession} from './host.js';
+import {HostSession} from './host.js?v=20261116r20';
 const STEP_MS=1000/60;
 let session=null,timer=null,next=0;
 self.onmessage=({data})=>{

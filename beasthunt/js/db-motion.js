@@ -1,4 +1,4 @@
-import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js';
+import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js?v=20261116r20';
 import * as THREE from 'three';
 import { dualBladeClips, whirlwindTurns, groundPivot, groundRecovery } from './motion-authoring.js?v=20261114r11';
 // Presentation-only Mixamo one-hand sword clips; h2 is an X-reflected h.

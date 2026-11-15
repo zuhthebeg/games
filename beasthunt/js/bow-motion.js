@@ -1,5 +1,5 @@
-import { createBowChargeWalk, restoreBowChargeWalk, applyBowChargeWalk } from './bow-charge-walk.js';
-import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js';
+import { createBowChargeWalk, restoreBowChargeWalk, applyBowChargeWalk } from './bow-charge-walk.js?v=20261116r20';
+import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js?v=20261116r20';
 import * as THREE from 'three';
 import { recoveryClips, groundRecovery } from './motion-authoring.js?v=20261114r11';
 // Baked source markers (seconds), left-hand-local bow axes and right-hand

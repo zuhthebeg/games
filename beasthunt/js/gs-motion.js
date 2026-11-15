@@ -1,4 +1,4 @@
-import { normalRestart, restoreNormalPose, blendNormalPose, blendNormalSocket } from './normal-pose.js';
+import { normalRestart, restoreNormalPose, blendNormalPose, blendNormalSocket } from './normal-pose.js?v=20261116r20';
 import { prepareMaria, mariaMeta, mariaAxis, mariaRoll, mariaContact, saveMariaPose, restoreMariaPose, beginMariaFrame, blendMariaRelease, endMariaFrame } from './maria-gs.js?v=20261114maria';
 import * as THREE from 'three';
 import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js?v=20261114fix';

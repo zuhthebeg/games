@@ -179,3 +179,7 @@ test('queued snapshot must name the actual active normal move, not a heavy or id
   const snap=s.snapshot();Object.assign(snap.players[0],fields);const copy=sim('bow').restore(snap);assert.equal(copy.p.comboWeapon,undefined);assert.equal(copy.p.comboNext,undefined);
  }
 });
+
+test('R20 authenticated bow stage 1/2 raw ceilings and cross-lane spam at host entry',()=>{
+const roster={a:{save:save('bow')},b:{save:save('gs')}};const host=new HostSession({quest:{mon:'boar'},roster,hunt:'auth',host:'b',seed:1,transport:{sendState(){},sendEvent(){}}});const s=host.sim;s.tick=100;s.p.x=s.p.z=0;s.mParts=()=>[{n:'body',x:0,z:1,r:.5}];host.claims.record(s);let seq=1;const send=(from,node,actionTick,raw)=>host.receive(from,envelope('hit','auth',seq,{seq:seq++,hostTick:100,actionTick,part:'body',raw,moveId:'light:'+node}));const hp=s.m.hp;assert.equal(send('outsider',1,60,12),false);assert.equal(s.m.hp,hp);assert.equal(send('a',1,60,12.01),false);assert.equal(send('a',1,60,12),true);assert.equal(send('a',2,61,15),false);assert.equal(send('a',0,62,10),false);assert.equal(send('a',2,90,15),true);assert.equal(host.claims.accepted,2);
+});

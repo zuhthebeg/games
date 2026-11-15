@@ -1,4 +1,4 @@
-import { encodeMonster, decodeMonster, decodeHunter, validEnvelope, LatestState, SNAPSHOT_TICKS } from './protocol.js';
+import { encodeMonster, decodeMonster, decodeHunter, validEnvelope, LatestState, SNAPSHOT_TICKS } from './protocol.js?v=20261116r20';
 import { PlaybackClock } from './clock.js';
 import { TickBuffer, HpDisplay } from './interp.js';
 // These helpers only replicate presentation state. They do NOT step Sim or

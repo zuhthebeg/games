@@ -3,10 +3,10 @@ import * as THREE from 'three';
 import {QUESTS,WTYPES} from 'bh/data';
 import {buildHunter} from 'bh/models';
 import {t} from 'bh/i18n';
-import {GuestSession} from './guest.js';
-import {WorkerHost} from './worker-host.js';
+import {GuestSession} from './guest.js?v=20261116r20';
+import {WorkerHost} from './worker-host.js?v=20261116r20';
 import {attachRelay} from './transport.js';
-import {VERSION,envelope,byteLength} from './protocol.js';
+import {VERSION,envelope,byteLength} from './protocol.js?v=20261116r20';
 
 // Game-local adapter: the shared lobby/socket remain unmodified.
 export class Coop {

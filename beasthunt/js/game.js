@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { VERSION } from './net/protocol.js?v=20261116r20';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261114fix';
+import { Sim, R_ARENA } from './sim.js?v=20261116r20';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261114r11';
 import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb, disposeHunterActors } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS, preloadWeapon } from 'bh/audio';

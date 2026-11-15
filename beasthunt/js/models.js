@@ -4,8 +4,8 @@ import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261115er';
-import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261115vf';
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261116r20';
+import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261116r20';
 import { createWarrokMotion } from './warrok-motion.js?v=20261115vf';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
@@ -285,7 +285,7 @@ function buildWarrokCleaver() {
  b.rotation.set(-Math.PI/2,0,Math.PI);g.add(b);
  const tip=new THREE.Object3D();tip.name='warrok-weapon-tip';tip.position.set(0,1.35,0);g.add(tip);
  const pommel=new THREE.Object3D();pommel.name='warrok-weapon-pommel';pommel.position.set(0,-.75,0);g.add(pommel);
- g.scale.setScalar(3.6); // R20: exact whole-weapon x2 around the unchanged measured palm grip
+ g.scale.setScalar(1.8); // scale around the unchanged measured palm grip
  return g;
 }
 // Socket Group parented to the right-hand bone; measured on the bind pose, so

@@ -77,14 +77,14 @@ test('R19 actual socket observer: roster actors, sequence/tick dedup, scheduled 
  let callback,removed=0;const socket={addEventListener(n,f){callback=f;},removeEventListener(n,f){assert.equal(f,callback);removed++;}},roster={r:{save:{weapon:'bow'}}},{v,calls}=recorder(),local=player('db'),remote={...player('bow','r'),x:10};
  const ctx={localId:'local',session:{hunt:'hunt',rep:{clock:{playTick:100},hunters:new Map([['r',{sample:()=>remote}]])}},def:{parts:{head:1.25}},m:{state:'idle'},p:local,weaponSound:v,gsSound:{event(){throw Error('new weapon must not route to GS');}}};
  method('observeAudioSocket','socket,roster',{VERSION}).call(ctx,socket,roster);
- const send=(seq,hostTick=100)=>callback({data:JSON.stringify({type:'rt',from:'r',data:{bh:{type:'hit',v:VERSION,hunt:'hunt',seq,payload:{hostTick,raw:10,part:'head'}}}})});
- send(1);send(1);send(2);assert.equal(ctx.audioClaims.length,1);
+ const send=(seq,hostTick=100,version=VERSION)=>callback({data:JSON.stringify({type:'rt',from:'r',data:{bh:{type:'hit',v:version,hunt:'hunt',seq,payload:{hostTick,raw:10,part:'head'}}}})});
+ send(1,100,2);assert.equal(ctx.audioClaims.length,0);send(1);send(1);send(2);assert.equal(ctx.audioClaims.length,1);
  globalThis.document={hidden:false};method('remoteAudioHits','').call(ctx);assert.deepEqual(calls.map(c=>c.name),['bow_hit']);assert.equal(calls[0].volume,.5);assert.equal(ctx.audioClaims.length,0);
  send(3,101);method('remoteAudioHits','').call(ctx);assert.equal(calls.length,1);ctx.paused=true;method('remoteAudioHits','').call(ctx);assert.equal(ctx.audioClaims.length,0);ctx.detachAudio();assert.equal(removed,1);
 });
 test('R19 changed entry/direct imports versioned; rendering still uses both R17 visual adapters',()=>{
  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'),game=fs.readFileSync(new URL('../js/game.js',import.meta.url),'utf8'),main=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8'),page=fs.readFileSync(new URL('../sfx-test.html',import.meta.url),'utf8');
- for(const n of ['audio','game','main'])assert.ok(html.includes(n+'.js?v=20261115s19'));assert.ok(game.includes('./weapon-sound.js?v=20261115s19'));assert.ok(page.includes('./js/audio.js?v=20261115s19'));
+ assert.ok(html.includes('audio.js?v=20261115s19'));for(const n of ['game','main'])assert.ok(html.includes(n+'.js?v=20261116r20'));assert.ok(game.includes('./weapon-sound.js?v=20261115s19'));assert.ok(page.includes('./js/audio.js?v=20261116r20'));
  assert.ok(game.includes('syncHunterBow(p,H,dt,this.clock)'));assert.ok(game.includes('syncHunterDb(p,H,dt,this.clock)'));assert.ok(main.includes("void preloadWeapon('bow')"));assert.ok(main.includes("void preloadWeapon('db')"));
 });
 
