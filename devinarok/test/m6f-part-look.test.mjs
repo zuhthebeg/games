@@ -8,6 +8,7 @@ import {
   PART_SCALE,
   PART_TINTS,
   playerLookKey,
+  resolvePlayerBone,
   resolvePlayerParts,
   SHIELD_BY_WEAPON,
 } from '../js/render/player-look.js';
@@ -34,6 +35,60 @@ test('every head and body item resolves to a donor part or family fallback', () 
     const node = item.slot === 'head' ? parts.head : parts.cape;
     assert.ok(donorNodes.has(node), `${item.id} resolved to ${node}`);
   }
+});
+
+test('all weapon meshes are available from the matching hand-slot donor', () => {
+  const expected = [
+    ['1H_Sword', 'knight'],
+    ['2H_Sword', 'knight'],
+    ['1H_Crossbow', 'Rogue_Hooded'],
+    ['2H_Crossbow', 'Rogue_Hooded'],
+    ['1H_Wand', 'Mage'],
+    ['2H_Staff', 'Mage'],
+  ];
+  for (const [node, donor] of expected) {
+    assert.ok(DONOR_PARTS.some((part) => (
+      part.node === node && part.donor === donor && part.bone === 'handslot.r'
+    )), `${node} should be grafted from ${donor} to handslot.r`);
+  }
+});
+
+test('donor bone lookup supports skeleton GLB hand-slot names', () => {
+  const handSlot = {};
+  const root = {
+    getObjectByName(name) {
+      return name === 'handslotr' ? handSlot : null;
+    },
+  };
+  assert.equal(resolvePlayerBone(root, 'handslot.r'), handSlot);
+});
+
+test('skeleton lineage head resolution keeps compatible grafts visible without changing human rules', () => {
+  assert.equal(
+    resolvePlayerParts(baseLook({ family: 'staff', head: 'ember-helm' }), 'skeleton_mage').head,
+    'Skeleton_Mage_Hat',
+  );
+  assert.equal(
+    resolvePlayerParts(baseLook({ family: 'crossbow', head: 'patched-hood' }), 'skeleton_archer').head,
+    'Skeleton_Rogue_Hood',
+  );
+
+  assert.equal(resolvePlayerParts(baseLook({ family: 'crossbow', head: 'patched-hood' })).head, null);
+  assert.equal(resolvePlayerParts(baseLook({ family: 'staff', head: 'ember-helm' })).head, 'Mage_Hat');
+  assert.equal(
+    resolvePlayerParts(baseLook({ family: 'sword', head: 'guard-helm', body: 'guard-mail' })).head,
+    'Knight_Helmet',
+  );
+  assert.equal(
+    resolvePlayerParts(baseLook({ family: 'sword', head: 'guard-helm', body: 'guard-mail' })).cape,
+    'Knight_Cape',
+  );
+});
+
+test('player look cache keys distinguish lineage while retaining the human default', () => {
+  const look = baseLook({ family: 'crossbow', head: 'patched-hood' });
+  assert.equal(playerLookKey(look), playerLookKey(look, 'human'));
+  assert.notEqual(playerLookKey(look, 'skeleton_archer'), playerLookKey(look, 'human'));
 });
 
 test('head and body style tables map their authored items to the specified donor meshes', () => {
