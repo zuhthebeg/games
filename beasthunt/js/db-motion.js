@@ -8,9 +8,9 @@ const UNARMED = ['roll', 'drink', 'dead', 'down'];
 const Y = new THREE.Vector3(0, 1, 0), V = () => new THREE.Vector3();
 const clamp = THREE.MathUtils.clamp;
 
-export function createDbMotion(model, clips, db) {
+export function createDbMotion(model, clips, db, { arissa = false } = {}) {
   const mixer = new THREE.AnimationMixer(model), actions = {};
-  for (const source of dualBladeClips(clips)) {
+  for (const source of (arissa ? clips : dualBladeClips(clips))) {
     const a = mixer.clipAction(source); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.paused = true; actions[source.name] = a;
   }
   const bones = {}; model.traverse(o => { if (o.isBone) bones[o.name.replace('mixamorig:', '').replace('mixamorig', '')] = o; });
@@ -19,11 +19,19 @@ export function createDbMotion(model, clips, db) {
     const hand=bones[side+'Hand'],socket=new THREE.Group(); socket.name='db-'+side+'-hand-socket';
     socket.scale.setScalar(1 / hand.getWorldScale(V()).x); hand.add(socket);
     socket.position.copy(bones[side+'HandMiddle1'].position).multiplyScalar(.5);
-    // Model palm-local axes measured from Paladin bind; socket origin is grip.
-    socket.quaternion.setFromUnitVectors(Y,new THREE.Vector3(side==='Right'?1:-1,0,0));
+    if (arissa) {
+      // Measure this bind skeleton, not the Paladin constants. Production tip
+      // is socket -Y; Pinky1->Index1 radial axis and fingers define its plane.
+      const local = name => hand.worldToLocal(bones[side+name].getWorldPosition(V()));
+      const radial = local('HandIndex1').sub(local('HandPinky1')).normalize();
+      const finger = local('HandMiddle1').normalize();
+      const normal = radial.clone().cross(finger).normalize(), y = radial.clone().negate();
+      const width = y.clone().cross(normal).normalize(); normal.copy(width).cross(y).normalize();
+      socket.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(width,y,normal));
+    } else socket.quaternion.setFromUnitVectors(Y,new THREE.Vector3(side==='Right'?1:-1,0,0));
     socket.add(blades[side]); sockets[side]=socket;
   }
-  const b={model,mixer,actions,bones,sockets,blades,key:null,lastT:0,combo:null,clipTime:0,lastPos:null,idleTime:0,dirW:{walkF:0,walkB:0,walkL:0,walkR:0}};
+  const b={model,mixer,actions,bones,sockets,blades,arissa,key:null,lastT:0,combo:null,clipTime:0,lastPos:null,idleTime:0,dirW:{walkF:0,walkB:0,walkL:0,walkR:0}};
   return b;
 }
 
@@ -48,9 +56,16 @@ export function dbClipTime(p, name, meta) {
 
 export function syncHunterDb(p, H, dt, clock = 0) {
   const b = H.db; if (!b) return false;
+  // Zero-first: paused evaluation must never consume last frame's lift.
+  if (b.arissa) b.model.position.y = 0;
   H.root.position.set(p.x || 0, 0, p.z || 0); H.root.rotation.y = (p.yaw || 0) + (p.state === 'atk' && p.cur?.sw === 'spin' ? whirlwindTurns((p.t-p.cur.h0)/Math.max(1e-8,p.cur.h1-p.cur.h0))*Math.PI*2 : (p.spin || 0));
   H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(clock * 20) % 2 === 0);
-  const wanted = dbClipName(p), name = wanted === 'walk' ? 'walkF' : wanted, action = b.actions[name], meta = DB_CLIPS[name] || { duration: action ? action.getClip().duration : 1 };
+  const wanted = dbClipName(p), name = wanted === 'walk' ? 'walkF' : wanted, action = b.actions[name];
+  // Legacy metadata omits the source's terminal frame. The already-authored
+  // Arissa recovery must reach its actual endpoint, with identical sim seconds
+  // and impact markers; Paladin retains its existing mapper/helper path.
+  const baseMeta = DB_CLIPS[name] || { duration: action ? action.getClip().duration : 1 };
+  const meta = b.arissa && action ? { ...baseMeta, duration: action.getClip().duration } : baseMeta;
   const restart = b.key !== wanted || p.state === 'atk' && (p.t < b.lastT - .00001 || p.combo !== b.combo);
   if (restart) {
     const immediate = p.state === 'atk' || !b.key;
@@ -78,16 +93,28 @@ export function syncHunterDb(p, H, dt, clock = 0) {
       const target = w[k] / sum, cur = b.dirW[k] + (target - b.dirW[k]) * Math.min(1, dt * 10);
       b.dirW[k] = cur; a.enabled = true; a.setEffectiveWeight(cur);
       if (!a.isRunning()) { a.reset().play(); a.paused = true; }
-      a.time = (time / meta.duration) * (DB_CLIPS[k]?.duration || 1);
+      a.time = (time / meta.duration) * (b.arissa ? a.getClip().duration : (DB_CLIPS[k]?.duration || 1));
     }
   } else for (const k in b.dirW) { const a = b.actions[k]; if (a && a._walk) { a.fadeOut(.1); a._walk = false; } b.dirW[k] = 0; }
   if (action && wanted !== 'walk') { action.time = time; b.clipTime = time; } else if (wanted === 'walk') b.clipTime = time;
   b.lastPos = { x: p.x, z: p.z };
   b.mixer.update(Math.max(0, dt));
-  groundRecovery(b,{state:'idle'});
-  groundPivot(b,p.state==='atk' && p.cur?.sw==='spin');
-  groundRecovery(b,p);
+  if (b.arissa) groundArissa(b);
+  else {
+    groundRecovery(b,{state:'idle'});
+    groundPivot(b,p.state==='atk' && p.cur?.sw==='spin');
+    groundRecovery(b,p);
+  }
   for (const side of ['Right','Left']) b.blades[side].visible=!UNARMED.includes(p.state);
   return true;
 }
 ;
+// Sole Arissa presentation floor owner; no .015/.035 Paladin helpers, no yaw.
+// AFTER mixer/blend, measure at modelY=0. Clothing remains the baked pose's job.
+export function groundArissa(b) {
+  b.model.position.y = 0;
+  b.model.updateWorldMatrix(true,true);
+  const minToeY = Math.min(...['LeftToeBase','RightToeBase'].map(n=>b.bones[n].getWorldPosition(V()).y));
+  b.model.position.y = Math.max(0,-minToeY);
+  b.model.updateWorldMatrix(true,true);
+}

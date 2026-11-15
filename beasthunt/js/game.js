@@ -1,3 +1,4 @@
+// Presentation entry generation: 20261115ar (Arissa DB).
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
