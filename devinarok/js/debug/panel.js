@@ -702,7 +702,7 @@ export function mountDebugPanel(context) {
       const player = world.entities.find((entity) => entity.kind === 'player' && entity.playerId === context.character?.id);
       if (player && state.invulnerable) player.hp = player.maxHp;
       if (player && state.noCooldown) {
-        player.skillCooldowns = { 1: 0, 2: 0, 3: 0 };
+        player.skillCooldowns = { 1: 0, 2: 0, 3: 0, 4: 0 };
         player.dodgeCooldownTicks = 0;
         player.potionCooldownTicks = 0;
       }
