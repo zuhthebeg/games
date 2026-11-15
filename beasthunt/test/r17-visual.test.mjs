@@ -7,8 +7,10 @@ let db,warrok;
 const save=(name,r)=>{if(process.env.R17_REPORT_DIR)fs.writeFileSync(process.env.R17_REPORT_DIR+'/'+name+'.json',JSON.stringify(r,null,2));};
 test('R17b Warrok exact thirteen clips: whole skin/weapon reference frustum, grip and attack tip clearances',async()=>{
  warrok=await measureWarrok();save('warrok',warrok);const r=warrok.after;
- assert.equal(Object.keys(r.clips).length,13);assert.equal(r.outside,0);assert.equal(r.verticesOutside,0);assert.ok(r.gripMax<=.02);assert.ok(r.triangles<=200);assert.equal(r.bladeLength,2.43);
- for(const n of ['swipe','smash','spin','rush','leap','cast'])assert.ok(r.clips[n].tipMin>=(n==='smash'?-.15:-.05),n+' tip '+r.clips[n].tipMin);
+ assert.equal(Object.keys(r.clips).length,13);assert.equal(r.outside,0);assert.equal(r.verticesOutside,0);assert.ok(r.gripMax<=.02);assert.ok(r.triangles<=200);assert.equal(r.bladeLength,2.43*2); // R21 palm-to-tip length; body x1.25 unchanged.
+ // R21b replaces the old unshortened attack-only floor contract with the
+ // stricter post-clamp -2cm gate for EVERY clip; all other R17 gates stay.
+ for(const [n,c] of Object.entries(r.clips))assert.ok(c.tipMin>=-.02,n+' clamped tip '+c.tipMin);
  assert.ok(Math.abs(r.modelScale/warrok['reference1.0'].modelScale-1.25)<1e-12);
 });
 test('R17b single floor owner matches full CPU skin within 3cm, final skin >= -2cm, zero paused accumulation',()=>{

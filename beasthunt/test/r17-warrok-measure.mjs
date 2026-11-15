@@ -4,9 +4,14 @@ const T=await import('three'),{GLTFLoader}=await import('three/addons/loaders/GL
 GLTFLoader.prototype.loadAsync=async function(url){if(!String(url).includes('warrok.glb'))return null;const b=fs.readFileSync(new URL('../assets/warrok.glb',import.meta.url));return this.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');};
 const {Hunt}=await import('bh/game'),{QUESTS}=await import('bh/data');const V=()=>new T.Vector3();
 function make(){const el=new Proxy({}, {get:(o,k)=>o[k]??={style:{},classList:{toggle(){}}}});return new Hunt({shadowMap:{enabled:false},render(){}},QUESTS[6],{weapon:'db',w:{db:1,gs:1,bow:1},armor:1},{el,setMon(){},toast(){},dmg(){},flash(){}},{isTouch:false,take(){return false},takeLook(){return {x:0,y:0}},sample(){return {}}},()=>{});}
-export async function measure(){const report={};for(const [variant,bodyFactor,bladeLength]of [['reference1.0',1,1.35],['after',1.25,2.43],['body1.15',1.15,2.43],['body1.35',1.35,2.43]]){
+export async function measure(){const report={};for(const [variant,bodyFactor,bladeLength]of [['reference1.0',1,1.35],['after',1.25,2.43*2],['body1.15',1.15,2.43*2],['body1.35',1.35,2.43*2]]){
  const h=make();h.frame(1/60);await h.G.ready;const W=h.G.warrok,model=W.model,socket=h.G.weaponSocket,weapon=h.G.weapon;
- model.scale.multiplyScalar(bodyFactor/1.25);model.position.y*=bodyFactor/1.25;socket.scale.multiplyScalar(1.25/bodyFactor);weapon.scale.setScalar(bladeLength/1.35);model.updateWorldMatrix(true,true);
+ model.scale.multiplyScalar(bodyFactor/1.25);model.position.y*=bodyFactor/1.25;socket.scale.multiplyScalar(1.25/bodyFactor);// R21: the blade-only extension lives in its mesh, never scale the grip/pommel.
+ const factor=variant==='reference1.0'?1:2;
+ weapon.userData.bladeSpan=1.35*factor-.35;
+ weapon.getObjectByName('warrok-cleaver-blade').scale.set(factor===1?1:1.5,factor===1?1:1.5,1.35*factor-.35);
+ weapon.getObjectByName('warrok-weapon-tip').position.y=1.35*factor;
+ weapon.scale.setScalar(bladeLength/(1.35*factor));model.updateWorldMatrix(true,true);
  const bones={};model.traverse(o=>{if(o.isBone)bones[o.name.replace('mixamorig','')]=o;});const meshes=[];model.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
  const r={floorEnabled:true,bodyFactor,bladeLength,modelScale:model.scale.x,clips:{},outside:0,verticesOutside:0,gripMax:0,triangles:0};
  weapon.traverse(o=>{if(o.isMesh)r.triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;});
