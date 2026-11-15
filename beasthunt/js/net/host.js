@@ -1,8 +1,8 @@
-import {Sim} from '../sim.js?v=20261114fix';
-import {MAX_CARTS} from '../data.js?v=20261114fix';
-import {envelope,validEnvelope,decodeHunter} from './protocol.js';
-import {HostReplication,GuestReplication} from './replication.js';
-import {HitClaims} from './claims.js';
+import {Sim} from '../sim.js?v=20261116r20';
+import {MAX_CARTS} from '../data.js?v=20261116r20';
+import {envelope,validEnvelope,decodeHunter} from './protocol.js?v=20261116r20';
+import {HostReplication,GuestReplication} from './replication.js?v=20261116r20';
+import {HitClaims} from './claims.js?v=20261116r20';
 // Renderer-free world authority. Even the host's own hunter is an owner peer.
 export class HostSession {
   constructor({quest,roster,seed=1,hunt,host,transport}) {
@@ -15,7 +15,7 @@ export class HostSession {
     s.players.forEach((p,i)=>{p.x=(i-(ids.length-1)/2)*2;});
     this.rep=new HostReplication({hunt,transport});
     this.incoming=new GuestReplication({hunt,host,localId:'__world__'});
-    this.claims=new HitClaims();this.claims.record(s);
+    this.claims=new HitClaims(hunt);this.claims.record(s);
     this.hardEpoch=new Map();this.resumes=new Map();this.suspended=new Set();this.controlSeq=new Map();
     this.owners=new Map();this.cartSeq=new Map();this.eventSeq=0;this.ended=false;
   }
@@ -23,13 +23,14 @@ export class HostSession {
   initial() {this.event('full',{hostTick:this.sim.tick,snapshot:this.sim.snapshot(),cartSeq:Object.fromEntries(this.cartSeq)});}
   receive(from,p,nowMs=0) {
     if(!Object.hasOwn(this.roster,from) || !validEnvelope(p,this.hunt))return false;
+    if(this.claims.hunt!==this.hunt){this.claims=new HitClaims(this.hunt);this.claims.record(this.sim);}
     const s=this.sim;
     if(p.type==='hardResync') {
       const {nonce,epoch}=p.payload;
       if(typeof nonce!=='string'||nonce.length>160||!Number.isSafeInteger(epoch)||epoch<1||
         epoch<=(this.hardEpoch.get(from)??0)||p.seq<=(this.controlSeq.get(from)??-1))return false;
       this.hardEpoch.set(from,epoch);this.controlSeq.set(from,p.seq);
-      this.suspended.add(from);this.resumes.delete(from);this.owners.delete(from);
+      this.suspended.add(from);this.resumes.delete(from);this.owners.delete(from);this.claims.reset(from,s.tick);
       this.event('full',{hard:true,to:from,nonce,epoch,hostTick:s.tick,eventFloor:this.eventSeq,
         snapshot:s.snapshot(),cartSeq:Object.fromEntries(this.cartSeq)});return true;
     }
@@ -37,9 +38,13 @@ export class HostSession {
       if(p.seq<=(this.controlSeq.get(from)??-1))return false;
       this.controlSeq.set(from,p.seq);
       if(p.type==='resumed'){this.suspended.delete(from);this.resumes.delete(from);return true;}
-      this.suspended.add(from);
+      this.suspended.add(from);this.claims.reset(from,s.tick);
       if(p.type==='resumeRequest' && typeof p.payload.nonce==='string')this.resumes.set(from,p.payload.nonce);
       this.resumeAnchors();return true;
+    }
+    if(p.type==='hunterAction') {
+      if(this.suspended.has(from))return false;
+      return this.claims.observeAction(from,p.payload,p.seq,s.players.find(p=>p.id===from),s);
     }
     if(p.type==='hunter') {
       if(!this.incoming.receive(from,p,nowMs))return false;
@@ -50,13 +55,15 @@ export class HostSession {
       if(Math.hypot(vx,vz)>.3 || (prev?.value.state==='dead' && v.state!=='dead'))vx=vz=0;
       this.owners.set(from,{value:v,received:s.tick,vx,vz});
       Object.assign(player,{x:v.x,z:v.z,yaw:v.yaw,hp:Math.max(0,Math.min(player.maxHp,v.hp)),state:v.state});
+      this.claims.observe(player,s);
       return true;
     }
     if(p.type==='hit') {
       if(this.suspended.has(from))return false;
       const player=s.players.find(p=>p.id===from),hit=this.claims.validate(from,p.payload,player,s);
       if(!hit.ok)return false;
-      s.activeId=from;s.hitMonster(hit.part,hit.raw,hit.x,hit.z,hit.mv);
+      s.activeId=from;
+      for(const accepted of [hit,...(hit.ready||[])])s.hitMonster(accepted.part,accepted.raw,accepted.x,accepted.z,accepted.mv);
       s.stop=s.slow=0;this.flush();return true;
     }
     if(p.type==='cart') {

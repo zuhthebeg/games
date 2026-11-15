@@ -11,6 +11,7 @@ for(const w of ['gs','db','bow'])for(const state of ['idle','guard','atk','charg
 test('R11A world/nonlocal owner may not damage; local owner mitigation retains authority guard',()=>{
 for(const net of [{role:'world',partySize:1,localId:'p1'},{role:'owner',localId:'other'},{role:'owner',localId:'p1'}]){const s=new Sim(QUESTS[0],save('db'),1,net);s.startRoll(0);s.p.inv=0;s.p.t=.4;const before=s.p.hp;const accepted=s.hurt(32,0,0,true);assert.equal(accepted,net.role==='owner'&&net.localId==='p1');assert.equal(before-s.p.hp,accepted?16:0);assert.equal(s.p.state,'roll');}
 });
-test('R11A no-dodge bot 10800 snapshots and events remain exact d723a42d baseline',()=>{
+test('R11A historic no-dodge trace exact before intentional R20 combat delta',async()=>{
+const {frozenSim}=await import('./frozen-source.mjs');const {Sim:Sim}=await frozenSim('2b8f8e32');const {Sim:Old}=await frozenSim('d723a42d');
 let ticks=0;for(const w of ['gs','db','bow'])for(const seed of [1,42,999]){const a=new Sim(QUESTS[0],save(w),seed),b=new Old(QUESTS[0],save(w),seed);for(let i=0;i<1200;i++){const input={p1:{aimYaw:0,moveZ:i<250?127:0,light:i%50===0,heavy:i%300===0,heavyHeld:i%300<110}};a.step(input);b.step(input);assert.deepEqual(a.snapshot(),b.snapshot());assert.deepEqual(a.drainEvents(),b.drainEvents());ticks++;}}assert.equal(ticks,10800);
 });

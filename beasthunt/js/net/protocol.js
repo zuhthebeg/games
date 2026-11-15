@@ -1,5 +1,6 @@
 // Compact wire-only schema. This module never mutates simulation objects.
-export const VERSION = 2;
+// R20 graded normal move indices/damage and bounded owner combo semantics.
+export const VERSION = 3;
 export const SNAPSHOT_TICKS = 4;
 const q = (n, scale = 100) => Math.round(n * scale);
 export function envelope(type, hunt, seq, payload) {

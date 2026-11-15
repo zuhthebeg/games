@@ -1,0 +1,50 @@
+{
+  "reason": "R20 graded normal values + one-press queue and 150ms grace intentionally change combat traces; noncombat and sound side effects stay exact",
+  "traces": {
+    "gs:1": {
+      "sha256": "f640fbc53caf81904b31cb801940e02da9de3da564b87fcdaa6e5556cf5f68ed",
+      "hp": 0,
+      "monsterHP": 1578
+    },
+    "gs:42": {
+      "sha256": "fae5b1cd69610ebbdd0d3db1142fc73925884c0c7458e2657aaa98c567dfa83b",
+      "hp": 48,
+      "monsterHP": 1428
+    },
+    "gs:999": {
+      "sha256": "553763809eb1c8c9ebfa6c35fe688e3564f994d39eb274a1bef9c849a298ee7d",
+      "hp": 24,
+      "monsterHP": 1472
+    },
+    "db:1": {
+      "sha256": "6222a806d19e95d713eceaed83267b53215ee37b9c6bee6dc330f0f83bf7a231",
+      "hp": 100,
+      "monsterHP": 1703
+    },
+    "db:42": {
+      "sha256": "08469472a4e60979a7f9e9e8ae3b6089491d29a9adc603af5d71134e04ec34da",
+      "hp": 0,
+      "monsterHP": 1666
+    },
+    "db:999": {
+      "sha256": "9377fe6e0006dd1f1e49e2d8eb020d7927ad73fce991ca6ab95d4b0094aa588e",
+      "hp": 100,
+      "monsterHP": 1680
+    },
+    "bow:1": {
+      "sha256": "e8c594e6f22c4a4f9aa84e0940ba0a318c42ef3a528d46e736c18cea45afb849",
+      "hp": 100,
+      "monsterHP": 1594
+    },
+    "bow:42": {
+      "sha256": "0ce90f265ed76c2c22ad15ac59c15a2f70789de1c7e77e1fa4eaeb1870483054",
+      "hp": 70,
+      "monsterHP": 1605
+    },
+    "bow:999": {
+      "sha256": "a1b5384646504830130e27afe7fd25e85209cab61bd114ae2538b6f7396d6190",
+      "hp": 18,
+      "monsterHP": 1537
+    }
+  }
+}

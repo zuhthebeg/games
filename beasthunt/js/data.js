@@ -23,7 +23,7 @@ export const WTYPES = {
     speed: 5.4, rollCost: 24,
     light: [
       { dur: .78, h0: .30, h1: .46, mv: 1.0, reach: 3.7, arc: 1.3, lunge: 2.2, sw: 'v' },
-      { dur: .80, h0: .30, h1: .48, mv: 1.15, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
+      { dur: .80, h0: .30, h1: .48, mv: 1.25, reach: 3.7, arc: 1.7, lunge: 1.8, sw: 'h' },
       { dur: 1.10, h0: .48, h1: .66, mv: 1.8, reach: 4.0, arc: 1.3, lunge: 2.6, sw: 'v' },
     ],
     // Numeric A nodes preserve legacy combo snapshots; B nodes use 3/4.
@@ -38,16 +38,20 @@ export const WTYPES = {
   db: {
     speed: 6.8, rollCost: 17,
     light: [
-      { dur: .34, h0: .10, h1: .22, mv: .40, reach: 2.7, arc: 1.6, lunge: 1.3, sw: 'h' },
-      { dur: .34, h0: .10, h1: .22, mv: .40, reach: 2.7, arc: 1.6, lunge: 1.1, sw: 'h2' },
-      { dur: .34, h0: .10, h1: .22, mv: .42, reach: 2.7, arc: 1.6, lunge: 1.1, sw: 'h' },
-      { dur: .52, h0: .18, h1: .32, mv: .75, reach: 2.9, arc: 1.6, lunge: 1.6, sw: 'v' },
+      { dur: .34, h0: .10, h1: .22, mv: .35, reach: 2.7, arc: 1.6, lunge: 1.3, sw: 'h' },
+      { dur: .34, h0: .10, h1: .22, mv: .42, reach: 2.7, arc: 1.6, lunge: 1.1, sw: 'h2' },
+      { dur: .34, h0: .10, h1: .22, mv: .50, reach: 2.7, arc: 1.6, lunge: 1.1, sw: 'h' },
+      { dur: .52, h0: .18, h1: .32, mv: .85, reach: 2.9, arc: 1.6, lunge: 1.6, sw: 'v' },
     ],
     heavy: { charge: 0, cost: 22, multi: 5, mv0: .34, mv1: .34, dur: 1.0, h0: .12, h1: .86, reach: 2.9, arc: 6.4, lunge: 6, sw: 'spin' },
   },
   bow: {
     speed: 6.2, rollCost: 20,
-    light: [{ dur: .50, h0: .22, h1: .22, mv: .40, shot: true, sw: 'bow' }],
+    light: [
+      { dur: .50, h0: .22, h1: .22, mv: .35, shot: true, sw: 'bow' },
+      { dur: .50, h0: .22, h1: .22, mv: .40, shot: true, sw: 'bow' },
+      { dur: .50, h0: .22, h1: .22, mv: .50, shot: true, sw: 'bow' },
+    ],
     heavy: { charge: 1.2, mv0: .5, mv1: 2.0, dur: .55, h0: .12, h1: .12, shot: true, sw: 'bow' },
   },
 };

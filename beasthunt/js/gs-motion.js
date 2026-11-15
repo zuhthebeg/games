@@ -1,3 +1,4 @@
+import { normalRestart, restoreNormalPose, blendNormalPose, blendNormalSocket } from './normal-pose.js?v=20261116r20';
 import { prepareMaria, mariaMeta, mariaAxis, mariaRoll, mariaContact, saveMariaPose, restoreMariaPose, beginMariaFrame, blendMariaRelease, endMariaFrame } from './maria-gs.js?v=20261114maria';
 import * as THREE from 'three';
 import { createChargeWalk, applyChargeWalk, resetChargeWalk } from './gs-charge-walk.js?v=20261114fix';
@@ -105,6 +106,7 @@ export function solveLeftArm(gs) {
 }
 export function syncHunterGS(p,H,dt,clock=0) {
  const gs=H.gs;if(!gs)return false;
+ restoreNormalPose(gs);
  resetChargeWalk(gs);
  if(gs.maria)restoreMariaPose(gs);
  const chargeRestart=p.state==='charge'&&gs.lastPos?.state==='charge'&&p.t<gs.lastT-.00001;
@@ -112,7 +114,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
  H.root.position.set(p.x||0,0,p.z||0);H.root.rotation.y=(p.yaw||0)+(p.spin||0);
  H.root.visible=!(p.inv>0&&p.state!=='roll'&&Math.floor(clock*20)%2===0);
  const wanted=gsClipName(p),name=wanted==='guard'&&!gs.actions.guard?'charge':wanted,action=gs.actions[name],meta=(gs.maria?mariaMeta[name]:GS_CLIPS[name])||{...GS_CLIPS.charge,duration:action.getClip().duration};
- const restart=gs.key!==name || p.state==='atk'&&(p.t<gs.lastT-.00001||p.combo!==gs.combo);
+ const restart=gs.key!==name || normalRestart(gs,p);
  if(gs.maria)beginMariaFrame(gs,p,restart);
  if(restart){
   const immediate=p.state==='atk'||!gs.key;
@@ -137,6 +139,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
  const previous=gs.lastPos;gs.lastPos={x:p.x,z:p.z,state:p.state};
  // Paused actions seek from authoritative state, mixer time only drives fades.
  gs.mixer.update(Math.max(0,dt));
+ blendNormalPose(gs,p,restart);
  if(gs.maria)saveMariaPose(gs);else groundRecovery(gs,p);
  if(gs.maria)blendMariaRelease(gs,p,time);
  applyChargeWalk(gs,p,dt,chargeRestart?null:previous);
@@ -171,6 +174,7 @@ export function syncHunterGS(p,H,dt,clock=0) {
   if(gs.mariaReleaseAxis&&gs.mariaRelease){const u=THREE.MathUtils.clamp(time/.1,0,1);axis.copy(gs.mariaReleaseAxis.clone().lerp(axis,u*u*(3-2*u)).normalize());}
  }
  gs.socket.quaternion.setFromUnitVectors(Y,axis.normalize());
+ blendNormalSocket(gs,gs.socket);
  gs.sword.visible=!['roll','drink','dead','down'].includes(p.state);
  gs.wasUnarmed=['roll','drink','dead','down'].includes(p.state);
  gs.ikDelay=Math.max(0,(gs.ikDelay||0)-Math.max(0,dt));

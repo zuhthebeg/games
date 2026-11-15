@@ -1,3 +1,5 @@
+import { createBowChargeWalk, restoreBowChargeWalk, applyBowChargeWalk } from './bow-charge-walk.js?v=20261116r20';
+import { normalRestart, restoreNormalPose, blendNormalPose } from './normal-pose.js?v=20261116r20';
 import * as THREE from 'three';
 import { recoveryClips, groundRecovery } from './motion-authoring.js?v=20261114r11';
 // Baked source markers (seconds), left-hand-local bow axes and right-hand
@@ -22,6 +24,7 @@ export function createBowMotion(model, clips, bow, { erika = false } = {}) {
   socket.position.copy(bones.LeftHandMiddle1.position).multiplyScalar(.5);
   const low = /[?&]lowfx=1/.test(location.search), reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const b = { erika, model, mixer, actions, bones, socket, bow, low, reduced, key: null, lastT: 0, combo: null, clipTime: 0, lastPos: null, idleTime: 0, draw: 0, string: null, nockArrow: null, dirW: { walkF: 0, walkB: 0, walkL: 0, walkR: 0 } };
+  createBowChargeWalk(b,clips);
   return b;
 }
 
@@ -91,10 +94,12 @@ function updateString(b, p) {
 
 export function syncHunterBow(p, H, dt, clock = 0) {
   const b = H.bow; if (!b) return false;
+  restoreBowChargeWalk(b);
+  restoreNormalPose(b);
   H.root.position.set(p.x || 0, 0, p.z || 0); H.root.rotation.y = (p.yaw || 0) + (p.spin || 0);
   H.root.visible = !(p.inv > 0 && p.state !== 'roll' && Math.floor(clock * 20) % 2 === 0);
   const wanted = bowClipName(p), name = wanted === 'walk' ? 'walkF' : wanted, action = b.actions[name], meta = BOW_CLIPS[name] || { duration: action ? action.getClip().duration : 1 };
-  const restart = b.key !== wanted || p.state === 'atk' && (p.t < b.lastT - .00001 || p.combo !== b.combo);
+  const restart = b.key !== wanted || normalRestart(b,p);
   if (restart) {
     const immediate = p.state === 'atk' || !b.key;
     for (const a of Object.values(b.actions)) if (a !== action && (immediate || !a._walk)) { if (immediate) { a.stop(); a.enabled=false; a._walk=false; } else a.fadeOut(.1); }
@@ -130,6 +135,8 @@ export function syncHunterBow(p, H, dt, clock = 0) {
   // toe support, not cloth/body collision, and never mutates the sim root.
   if (b.erika) b.model.position.y = 0;
   b.mixer.update(Math.max(0, dt));
+ blendNormalPose(b,p,restart);
+  applyBowChargeWalk(b,p,dt);
   if (b.erika) {
     b.model.updateWorldMatrix(true,true);
     b.model.position.y = Math.max(0,-Math.min(...['LeftToeBase','RightToeBase'].map(n=>b.bones[n].getWorldPosition(V()).y)));

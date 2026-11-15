@@ -4,8 +4,8 @@ import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261115er';
-import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261115vf';
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261116r20';
+import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261116r20';
 import { createWarrokMotion } from './warrok-motion.js?v=20261115vf';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}

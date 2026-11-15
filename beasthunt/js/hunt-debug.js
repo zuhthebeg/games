@@ -1,4 +1,4 @@
-import { POTIONS } from './data.js?v=20261114fix';
+import { POTIONS } from './data.js?v=20261116r20';
 // Ephemeral SOLO test controls. Never installed on a session-owned simulation.
 export function attachHuntDebug(hunt, {search = '', mount = null, restart = null, initial = null} = {}) {
  if (hunt.session || new URLSearchParams(search).get('debug') !== '1') return null;
