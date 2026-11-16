@@ -204,7 +204,7 @@ test('set pieces glow stronger only while their set is active', () => {
 });
 
 test('hood and mage hat have per-part scale corrections', () => {
-  assert.equal(PART_SCALE.Skeleton_Rogue_Hood, 1.25);
+  assert.equal(PART_SCALE.Skeleton_Rogue_Hood, 0.85);
   assert.equal(PART_SCALE.Mage_Hat, 0.65);
 });
 

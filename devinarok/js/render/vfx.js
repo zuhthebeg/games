@@ -18,7 +18,12 @@ export const PARTICLE_CELLS = Object.freeze({
   trace_05: 13,
   slash_02: 14,
   circle_03: 15,
+  bone: 16,
+  crack_01: 17,
 });
+
+const PARTICLE_COLUMNS = 6;
+const PARTICLE_ROWS = 3;
 
 export const VFX_PRESETS = Object.freeze({
   ember: { cell: 'fire_01', blend: 'additive', color: 0xff7828, lifeMs: 720, startSize: 0.34, endSize: 0.04, gravity: 4.5, drag: 0.8, upward: [0.8, 3.2] },
@@ -29,7 +34,7 @@ export const VFX_PRESETS = Object.freeze({
   smoke: { cell: 'smoke_07', blend: 'normal', color: 0x51454b, lifeMs: 1200, startSize: 0.52, endSize: 1.25, gravity: -0.18, drag: 0.35, upward: [0.15, 0.65] },
   darkSmoke: { cell: 'smoke_07', blend: 'normal', color: 0x283b32, lifeMs: 1000, startSize: 0.48, endSize: 0.96, gravity: -0.15, drag: 0.4, upward: [0.15, 0.6] },
   dirt: { cell: 'dirt_02', blend: 'normal', color: 0x8b6944, lifeMs: 780, startSize: 0.24, endSize: 0.07, gravity: 7.8, drag: 0.5, upward: [1.2, 4.4] },
-  bone: { cell: 'star_07', blend: 'additive', color: 0xe8e2cc, lifeMs: 650, startSize: 0.26, endSize: 0.05, gravity: 2.2, drag: 0.45, upward: [0.7, 2.2] },
+  bone: { cell: 'bone', blend: 'additive', color: 0xe8e2cc, lifeMs: 650, startSize: 0.26, endSize: 0.05, gravity: 2.2, drag: 0.45, upward: [0.7, 2.2] },
   ice: { cell: 'trace_05', blend: 'additive', color: 0x9de6ff, lifeMs: 600, startSize: 0.16, endSize: 0.02, gravity: 3.3, drag: 0.45, stretch: 5, upward: [0.2, 1.1] },
   poison: { cell: 'circle_05', blend: 'additive', color: 0x80e84a, lifeMs: 650, startSize: 0.18, endSize: 0.03, gravity: -0.25, drag: 0.65, upward: [0.15, 1.0] },
   rainStreak: { cell: 'trace_05', blend: 'additive', color: 0xb4e5ff, lifeMs: 500, startSize: 0.15, endSize: 0.035, gravity: 0, drag: 0, stretch: 6, velocity: { x: 0, y: -16, z: 0 }, landing: true },
@@ -57,14 +62,17 @@ const PARTICLE_VERTEX_SHADER = `
   }
 `;
 const PARTICLE_FRAGMENT_SHADER = `
+  uniform float uAtlasColumns;
+  uniform float uAtlasRows;
   uniform sampler2D uAtlas;
   varying vec2 vUv;
   varying vec4 vColor;
   varying float vCell;
   void main() {
-    float column = mod(vCell, 4.0);
-    float row = floor(vCell / 4.0);
-    vec2 cellUv = (vec2(column, 3.0 - row) + clamp(vUv, vec2(0.003), vec2(0.997))) / 4.0;
+    float column = mod(vCell, uAtlasColumns);
+    float row = floor(vCell / uAtlasColumns);
+    vec2 cellUv = (vec2(column, uAtlasRows - 1.0 - row) + clamp(vUv, vec2(0.003), vec2(0.997)))
+      / vec2(uAtlasColumns, uAtlasRows);
     vec4 texel = texture2D(uAtlas, cellUv);
     float alpha = texel.a * vColor.a;
     if (alpha < 0.002) discard;
@@ -111,7 +119,11 @@ function makeParticleMesh(scene, texture, blend, capacity) {
     cell: makeAttribute(geometry, 'instanceCell', 1, capacity),
   };
   const material = new THREE.ShaderMaterial({
-    uniforms: { uAtlas: { value: texture } },
+    uniforms: {
+      uAtlas: { value: texture },
+      uAtlasColumns: { value: PARTICLE_COLUMNS },
+      uAtlasRows: { value: PARTICLE_ROWS },
+    },
     vertexShader: PARTICLE_VERTEX_SHADER,
     fragmentShader: PARTICLE_FRAGMENT_SHADER,
     transparent: true,
@@ -131,13 +143,13 @@ function makeParticleMesh(scene, texture, blend, capacity) {
 function makeCellGeometry(cell) {
   const geometry = new THREE.PlaneGeometry(1, 1);
   const attribute = geometry.attributes.uv;
-  const column = cell % 4;
-  const rowFromBottom = 3 - Math.floor(cell / 4);
+  const column = cell % PARTICLE_COLUMNS;
+  const rowFromBottom = PARTICLE_ROWS - 1 - Math.floor(cell / PARTICLE_COLUMNS);
   for (let index = 0; index < attribute.count; index += 1) {
     attribute.setXY(
       index,
-      (column + attribute.getX(index)) / 4,
-      (rowFromBottom + attribute.getY(index)) / 4,
+      (column + attribute.getX(index)) / PARTICLE_COLUMNS,
+      (rowFromBottom + attribute.getY(index)) / PARTICLE_ROWS,
     );
   }
   attribute.needsUpdate = true;
@@ -158,7 +170,7 @@ export class VfxSystem {
     this.fireballAtlas = fireballAtlas;
     this.particleCapacity = 700;
     this.particlePool = new FixedPool(this.particleCapacity, makeParticle);
-    this.decalGeometries = Array.from({ length: 16 }, (_, index) => makeCellGeometry(index));
+    this.decalGeometries = Array.from({ length: Object.keys(PARTICLE_CELLS).length }, (_, index) => makeCellGeometry(index));
     this.flipbookGeometry = new THREE.PlaneGeometry(1, 1);
     this.decalPool = new FixedPool(28, () => this.createDecalSlot());
     this.flipbookPool = new FixedPool(10, () => this.createFlipbookSlot());

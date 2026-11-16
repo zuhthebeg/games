@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import hashlib
 import json
+import math
 import os
+import random
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 
 GAME_DIR = Path(__file__).resolve().parents[1]
@@ -29,6 +31,8 @@ PARTICLE_NAMES = [
     "trace_05",
     "slash_02",
     "circle_03",
+    "bone",
+    "crack_01",
 ]
 ICON_SPECS = [
     ("spin", 0, 6, "source cell"),
@@ -107,14 +111,62 @@ def meteor_icon(sheet):
     return fire
 
 
+def bone_cell():
+    image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(image)
+    draw.line((62, 128, 194, 128), fill=(255, 255, 255, 255), width=38)
+    for x in (62, 194):
+        draw.ellipse((x - 36, 92, x + 12, 140), fill=(255, 255, 255, 255))
+        draw.ellipse((x - 12, 116, x + 36, 164), fill=(255, 255, 255, 255))
+    return image
+
+
+def crack_cell():
+    image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(image)
+    rng = random.Random(9017)
+    center = (128, 128)
+    for index in range(8):
+        angle = index * 2 * 3.141592653589793 / 8 + rng.uniform(-0.12, 0.12)
+        length = rng.randint(82, 112)
+        points = [center]
+        for step in range(1, 6):
+            radius = length * step / 5
+            offset = rng.uniform(-9, 9)
+            points.append((
+                round(center[0] + math.cos(angle + offset / 90) * radius),
+                round(center[1] + math.sin(angle + offset / 90) * radius),
+            ))
+        draw.line(points, fill=(255, 255, 255, 255), width=5, joint="curve")
+        for branch_at in (2, 3):
+            origin = points[branch_at]
+            branch_angle = angle + rng.choice((-1, 1)) * rng.uniform(0.45, 0.9)
+            branch = [origin]
+            for part in range(1, 4):
+                radius = part * rng.uniform(8, 13)
+                branch.append((
+                    round(origin[0] + math.cos(branch_angle + rng.uniform(-0.18, 0.18)) * radius),
+                    round(origin[1] + math.sin(branch_angle + rng.uniform(-0.18, 0.18)) * radius),
+                ))
+            draw.line(branch, fill=(255, 255, 255, 255), width=4, joint="curve")
+    return image
+
+
 def build_particles():
-    atlas = Image.new("RGBA", (1024, 1024), (255, 255, 255, 0))
+    columns = 6
+    rows = 3
+    atlas = Image.new("RGBA", (columns * 256, rows * 256), (255, 255, 255, 0))
     cells = {}
     for index, name in enumerate(PARTICLE_NAMES):
-        source = Image.open(KENNEY_DIR / f"{name}.png")
-        cell = alpha_from_luminance(source).resize((256, 256), Image.Resampling.LANCZOS)
-        x = index % 4 * 256
-        y = index // 4 * 256
+        if name == "bone":
+            cell = bone_cell()
+        elif name == "crack_01":
+            cell = crack_cell()
+        else:
+            source = Image.open(KENNEY_DIR / f"{name}.png")
+            cell = alpha_from_luminance(source).resize((256, 256), Image.Resampling.LANCZOS)
+        x = index % columns * 256
+        y = index // columns * 256
         atlas.alpha_composite(cell, (x, y))
         cells[name] = index
 
@@ -125,10 +177,10 @@ def build_particles():
     metadata = {
         "version": 1,
         "image": "particles.webp",
-        "width": 1024,
-        "height": 1024,
-        "columns": 4,
-        "rows": 4,
+        "width": columns * 256,
+        "height": rows * 256,
+        "columns": columns,
+        "rows": rows,
         "cellSize": 256,
         "cells": cells,
     }

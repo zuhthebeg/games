@@ -75,7 +75,7 @@ export const PART_TINTS = Object.freeze({
 });
 
 export const PART_SCALE = Object.freeze({
-  Skeleton_Rogue_Hood: 1.25,
+  Skeleton_Rogue_Hood: 0.85,
   Mage_Hat: 0.65,
 });
 
