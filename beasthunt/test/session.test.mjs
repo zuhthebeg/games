@@ -55,7 +55,7 @@ for(const [name,condition] of [
   ['adverse',{delayMs:200,jitterMs:80,burstChance:.05}]
 ])for(const peers of [2,4])test(name+'/'+peers+' headless hunt ends with consistent world result',()=>{
   const result=run(peers,condition);
-  if(name==='adverse' && peers===4)assert.equal(result.broke.head,true,'actual head break was exercised');
+  if(name==='adverse' && peers===4)assert.equal(result.broke.head,false,'Mixamo actors never claim unsupported head breaks');
   if(name==='lte')assert.ok(result.eligibleRate>=.99);
   console.log('HUNT '+JSON.stringify({name,...result}));
 });

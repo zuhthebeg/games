@@ -1,8 +1,8 @@
-import {Sim,FIXED_DT} from '../sim.js?v=20261116r20';
-import {envelope,encodeHunter,validEnvelope} from './protocol.js?v=20261116r20';
-import {PlaybackClock} from './clock.js';
-import {TickBuffer} from './interp.js';
-import {GuestReplication} from './replication.js?v=20261116r20';
+import {Sim,FIXED_DT} from '../sim.js?v=20261117mt1';
+import {envelope,encodeHunter,validEnvelope} from './protocol.js?v=20261117mt1';
+import {PlaybackClock} from './clock.js?v=20261117mt1';
+import {TickBuffer} from './interp.js?v=20261117mt1';
+import {GuestReplication} from './replication.js?v=20261117mt1';
 // All hunter input is executed here before any network response can arrive.
 // Only nonce-fenced hard recovery may restore a live local hunter.
 export class GuestSession {

@@ -39,7 +39,7 @@ test('R17b C idle and four walk clips carry downward/not upright, tips above -5c
 });
 test('R17b changed transitive floor/motion modules share the vf entry generation and no duplicate normalize lift',()=>{
  const get=n=>fs.readFileSync(new URL('../'+n,import.meta.url),'utf8');
- assert.ok(get('js/models.js').includes('warrok-motion.js?v=20261115vf'));assert.ok(get('js/warrok-motion.js').includes('warrok-floor.js?v=20261115vf'));
+ assert.ok(get('js/models.js').includes('warrok-motion.js?v=20261117mt1'));assert.ok(get('js/warrok-motion.js').includes('warrok-floor.js?v=20261115vf'));
  assert.ok(!get('js/models.js').includes('model.position.y = -box.min.y * k'));
  const floor=get('js/warrok-floor.js');assert.ok(!floor.includes('getVertexPosition('));assert.ok(!floor.includes('.geometry'));assert.ok(floor.includes('Math.max(0,-supportMin)'));
 });

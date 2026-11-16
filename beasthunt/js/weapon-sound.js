@@ -1,5 +1,5 @@
 // Presentation-only R19. No simulation, save, transport or action timing writes.
-import {soundVolume} from './gs-sound.js?v=20261114r11';
+import {soundVolume} from './gs-sound.js?v=20261117mt1';
 const supported=p=>p?.weapon==='db'||p?.weapon==='bow';
 export class WeaponSoundView {
   constructor(play){this.play=play;this.history=new Map();this.seen=new Map();this.hitActors=new Map();this.serial=0;}

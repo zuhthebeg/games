@@ -1,12 +1,12 @@
-import {safeLobby} from './safe-lobby.js';
+import {safeLobby} from './safe-lobby.js?v=20261117mt1';
 import * as THREE from 'three';
 import {QUESTS,WTYPES} from 'bh/data';
 import {buildHunter} from 'bh/models';
 import {t} from 'bh/i18n';
-import {GuestSession} from './guest.js?v=20261116r20';
-import {WorkerHost} from './worker-host.js?v=20261116r20';
-import {attachRelay} from './transport.js';
-import {VERSION,envelope,byteLength} from './protocol.js?v=20261116r20';
+import {GuestSession} from './guest.js?v=20261117mt1';
+import {WorkerHost} from './worker-host.js?v=20261117mt1';
+import {attachRelay} from './transport.js?v=20261117mt1';
+import {VERSION,envelope,byteLength} from './protocol.js?v=20261117mt1';
 
 // Game-local adapter: the shared lobby/socket remain unmodified.
 export class Coop {
@@ -47,6 +47,7 @@ export class Coop {
     if(!this.owner){this.profiles.set(this.uid,this.profile());ws.sendRt({bhHello:this.profile()});}
     if(this.uid!==this.roster.hostUser && (!this.lastPing || performance.now()-this.lastPing>1000)){this.lastPing=performance.now();ws.sendRt({bhPing:this.lastPing});}
     this.decorate();
+    this.announceModelReady();
     if(this.owner && this.lobby._ws?._ws?.readyState>=2)this.lostHost();
   }
   decorate(){
@@ -80,6 +81,7 @@ export class Coop {
     if(this.owner && (d.hostUser!==this.plan.host || !d.players.some(p=>p.user===this.plan.host)))this.lostHost();
     const ids=new Set(d.players.map(p=>p.user));
     for(const [id,r] of this.remotes)if(!ids.has(id)){r.H.root.removeFromParent();r.H.root.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});r.label.remove();this.remotes.delete(id);this.owner?.rep.hunters.delete(id);}
+    this.startLoadedWorld();
     if(this.world)this.world.worker.postMessage({type:'roster',ids:[...ids]});
     this.decorate();
   }
@@ -108,12 +110,32 @@ export class Coop {
     try {const stored=sessionStorage.getItem('bh_reward:'+plan.id);if(stored&&stored!=='1')this.owner.sim.cachedResult=JSON.parse(stored).result;}catch(_) { /* legacy or unavailable storage */ }
     this.owner.seq=Date.now()*1000;
     this.owner.render=(h,dt)=>this.render(h,dt);
-    if(this.uid===plan.host)this.world=new WorkerHost({quest,roster:plan.roster,seed:plan.seed,hunt:plan.id,host:plan.host},(p,channel)=>{
+    this.modelIsReady=false;this.modelsReady=new Set();this.worldOptions=this.uid===plan.host?{quest,roster:plan.roster,seed:plan.seed,hunt:plan.id,host:plan.host}:null;
+    /* Authority is not spawned until every current participant has its actor. */
+    this.worldPackets=(p,channel)=>{
       this.packet(this.uid,p);this.bytes+=byteLength(p);
       if(channel==='state')this.relay.sendState(p);else this.relay.sendEvent(p,{final:p.type==='end'});
-    });
+    };
     this.lobby._hideLobby();this.lobby._hideResult();this.start(plan.quest,this.owner);
     this.send(envelope('resync',plan.id,0,{}),'state');
+  }
+  modelReady(session){
+    if(!this.plan || session!==this.owner)return;
+    this.modelIsReady=true;this.announceModelReady();
+  }
+  announceModelReady(){
+    // Reliable event delivery can race the host installing its plan; repeat on
+    // the existing service cadence until a full authority snapshot confirms it.
+    if(!this.modelIsReady || !this.owner || this.owner.initialized || !this.plan)return;
+    const packet=envelope('modelReady',this.plan.id,0,{});
+    this.packet(this.uid,packet);this.relay.sendEvent(packet);
+  }
+  startLoadedWorld(){
+    if(this.world || !this.worldOptions || !this.modelsReady)return;
+    const ids=this.roster.players.map(p=>p.user).filter(id=>Object.hasOwn(this.plan.roster,id));
+    if(ids.length<2 || !ids.every(id=>this.modelsReady.has(id)))return;
+    const roster=Object.fromEntries(ids.map(id=>[id,this.worldOptions.roster[id]]));
+    this.world=new WorkerHost({...this.worldOptions,roster},this.worldPackets);
   }
   send(p,channel){
     this.bytes+=byteLength(p);this.world?.receive(this.uid,p);
@@ -121,6 +143,11 @@ export class Coop {
   }
   packet(from,p){
     if(!p)return;
+    if(p.type==='modelReady'){
+      if(this.plan && p.v===VERSION && p.hunt===this.plan.id && p.seq===0 && Object.hasOwn(this.plan.roster,from)){
+        this.modelsReady?.add(from);this.startLoadedWorld();
+      }return;
+    }
     this.world?.receive(from,p);
     if(!this.owner || !Object.hasOwn(this.plan.roster,from))return;
     if(p.type==='hunterAction' && p.hunt===this.plan.id && p.v===VERSION && p.payload.id===from){
@@ -154,7 +181,7 @@ export class Coop {
     document.getElementById('latency').textContent=o.recovery?.phase==='hard'?t('syncing'):(o.disconnected||o.recovery)?t('connecting'):Math.round(this.uid===this.plan.host?0:(this.rtt||0))+' ms';
     this.frames.push({at:performance.now(),x:h.G.root.position.x,z:h.G.root.position.z,state:h.m.state,dt,fixedSteps:h.fixedSteps,visible:h.G.root.visible,hostTick:o.rep.world?.tick,playTick:view,ownerTick:h.sim.tick,phase:h.m.ak,attackTime:h.m.t,eventSeq:o.hostSeq,epoch:o.epoch,recovery:o.recovery?.phase??null,ownerCorrections:o.positionCorrections});if(this.frames.length>36000)this.frames.shift();
   }
-  stop(){this.world?.close();this.world=null;this.owner=null;for(const r of this.remotes.values())r.label.remove();this.remotes.clear();document.getElementById('party').hidden=true;document.getElementById('latency').textContent='';}
+  stop(){this.modelIsReady=false;this.worldOptions=null;this.modelsReady=null;this.worldPackets=null;this.world?.close();this.world=null;this.owner=null;for(const r of this.remotes.values())r.label.remove();this.remotes.clear();document.getElementById('party').hidden=true;document.getElementById('latency').textContent='';}
   waiting(){this.stop();this.plan=null;this.lobby.goToWaitingRoom();this.decorate();}
   close(){sessionStorage.removeItem('bh_room');clearInterval(this.timer);this.stop();this.relay?.close();this.ws?.leave();this.lobby._hideLobby();this.lobby._hideModeSelect();this.lobby._hideResult();this.leave();}
 }

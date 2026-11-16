@@ -8,7 +8,7 @@ globalThis.self=globalThis;globalThis.location={search:''};globalThis.matchMedia
 globalThis.document={hidden:false};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
-const {syncHunterBow}=await import('../js/bow-motion.js?v=20261115er');
+const {syncHunterBow}=await import('../js/bow-motion.js?v=20261117mt1');
 const path=n=>new URL('../assets/'+n,import.meta.url);
 async function parse(n){const b=fs.readFileSync(path(n)),loader=new GLTFLoader();loader.register(()=>({name:'CPU_TEXTURE_PLACEHOLDER',loadTexture:async()=>new T.Texture()}));return loader.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');}
 const erika=await parse('hunter-erika-bow.glb'),paladin=await parse('hunter-bow.glb');
@@ -90,7 +90,7 @@ test('Erika real Hunt uses unchanged bow simulation and remote render entry; eve
  for(const hz of [30,60,144]){
   const save={weapon:'bow',w:{bow:1,gs:1,db:1},armor:1},saved=JSON.stringify(save);
   const el=new Proxy({}, {get:(o,k)=>o[k]??={style:{},classList:{toggle(){}}}});
-  const h=new Hunt({shadowMap:{enabled:false},render(){}},QUESTS[0],save,{el,setMon(){},toast(){},dmg(){},flash(){}},{isTouch:false,take(){return false;},takeLook(){return {x:0,y:0};},sample(){return {};}},()=>{});
+  const h=new Hunt({shadowMap:{enabled:false},render(){}},QUESTS[6],save,{el,setMon(){},toast(){},dmg(){},flash(){}},{isTouch:false,take(){return false;},takeLook(){return {x:0,y:0};},sample(){return {};}},()=>{});
   if(h.H.skin!=='erika'){settle('hunter-bow',paladin);settle('hunter-erika-bow',erika);}await h.H.ready;h.skipRender=true;
   for(let i=0;i<hz;i++){h.frame(1/hz);assert.equal(h.H.skin,'erika');assert.equal(h.H.root.parent,h.scene);frameCount++;}
   assert.equal(h.sim.tick,60);const before=JSON.stringify(h.sim.snapshot());

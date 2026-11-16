@@ -88,8 +88,9 @@ test('local movement and dodge ticks match solo exactly without monster contact'
   }
 });
 test('head threshold scales with party size and snapshot restores ownership mode',()=>{
-  const one=make({role:'world',partySize:1}),two=make({role:'world',partySize:2});
-  one.hitMonster('head',200,0,0,1);two.hitMonster('head',200,0,0,1);
+  // Only Warrok still has supported head breaks; retain the strict scale oracle.
+  const one=new Sim(QUESTS[6],save,1,{role:'world',partySize:1}),two=new Sim(QUESTS[6],save,1,{role:'world',partySize:2});
+  one.hitMonster('head',400,0,0,1);two.hitMonster('head',400,0,0,1);
   assert.equal(one.m.broke.head,true);assert.equal(two.m.broke.head,false);
   const clone=make().restore(two.snapshot());assert.deepEqual(clone.snapshot(),two.snapshot());
   clone.restore(make().snapshot());assert.ok(!('network' in clone));

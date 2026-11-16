@@ -1,12 +1,13 @@
+import {buildMonsterActor} from './monster-actor.js?v=20261117mt1';
 // Original faceted fieldcraft: lofted anatomy, articulated joints, no external assets.
 import * as THREE from 'three';
 import { MONSTERS } from 'bh/data';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createGSMotion, syncHunterGS } from 'bh/gs-motion';
-import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261116r20';
-import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261116r20';
-import { createWarrokMotion } from './warrok-motion.js?v=20261115vf';
+import { createBowMotion, syncHunterBow } from './bow-motion.js?v=20261117mt1';
+import { createDbMotion, syncHunterDb } from './db-motion.js?v=20261117mt1';
+import { createWarrokMotion } from './warrok-motion.js?v=20261117mt1';
 export { syncHunterGS, syncHunterBow, syncHunterDb };
 function mergeGeometries(gs){const p=[],ix=[];let offset=0;for(const g of gs){p.push(...g.attributes.position.array);const idx=g.index?g.index.array:Array.from({length:g.attributes.position.count},(_,i)=>i);for(const i of idx)ix.push(i+offset);offset+=g.attributes.position.count;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;}
 const M = (color,o={}) => new THREE.MeshStandardMaterial({color,flatShading:true,roughness:.85,...o});
@@ -241,6 +242,7 @@ export function loadWarrok() {
  return warrokLoad;
 }
 export function buildMonster(id){
+ if(MONSTERS[id]?.actor)return buildMonsterActor(id,MONSTERS[id].dims.h*2*MONSTERS[id].scale);
  if (id === 'warrok') return buildWarrok();
  const d=MONSTERS[id].dims,root=G(),body=G(0,d.h,0);root.add(body);
  const boar=id==='boar',frost=id==='frost',ember=id==='ember';

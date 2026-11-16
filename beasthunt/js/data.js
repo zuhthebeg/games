@@ -87,6 +87,14 @@ export const MONSTERS = {
   },
 };
 
+// Regional stats and persistent IDs stay unchanged; only anatomy is replaced.
+for (const [id,actor,bw,h,headZ,armX] of [
+ ['boar','Maw',.92,1.85,.32,1.05],['frost','Mutant',.9,1.9,.28,1],['ember','Pumpkinhulk',.95,2.1,.3,1.15],
+]) {
+ const d=MONSTERS[id];Object.assign(d,{actor,biped:true,brk:{},parts:{head:d.parts.head,body:d.parts.body,legs:d.parts.legs,arms:1.05}});
+ d.dims={h,bw,projectileY:{boar:2.7,frost:3.26,ember:3.7}[id],bh:h*.7,hz:.6,headZ,tailLen:0,tailN:0,tailW:0,legX:.4,legZ:0,armX,armZ:.12,sweepR:armX+1.3,legCoords:[[1,0],[-1,0]]};
+}
+
 export const QUESTS = [
   { id: 'q1', mon: 'boar', hr: 0, shards: 400, gold: 20, need: null },
   { id: 'q2', mon: 'frost', hr: 0, shards: 900, gold: 40, need: 'q1' },
@@ -107,8 +115,9 @@ export function rollLoot(q, broke, rnd = Math.random) {
   const p = PREFIX[q.mon], out = {};
   const add = (k, n = 1) => { out[k] = (out[k] || 0) + n; };
   for (let i = 0; i < 3 + (q.hr ? 1 : 0); i++) add(rnd() < .55 ? p + '_hide' : p + '_fang');
-  if (broke.head) add(p + '_horn');
-  if (broke.tail) add(p + '_tail');
+  // Compatibility: former guaranteed break slots become clear slots, never stack.
+  if (MONSTERS[q.mon].actor || broke.head) add(p + '_horn');
+  if (MONSTERS[q.mon].actor || broke.tail) add(p + '_tail');
   if (broke.arms) add(p + '_claw');
   if (q.hr) add(p + '_gem');
   return out;

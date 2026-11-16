@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {Sim} from '../js/sim.js';import {QUESTS} from '../js/data.js';import {trace} from './main-training-trace.mjs';import {frozenSim} from './frozen-source.mjs';
+const legacy=JSON.parse(fs.readFileSync(new URL('r20-traces.json',import.meta.url)));
+const current=JSON.parse(fs.readFileSync(new URL('main-training-traces.json',import.meta.url)));
+test('production Mixamo anatomy: combat 10800-tick full digests/HP, audio observational',()=>{for(const w of ['gs','db','bow'])for(const seed of [1,42,999]){const key=w+':'+seed;assert.notEqual(current.combat[key].sha256,legacy.traces[key].sha256);assert.deepEqual(trace(Sim,QUESTS[0],w,seed),current.combat[key]);assert.deepEqual(trace(Sim,QUESTS[0],w,seed,true,true),current.combat[key]);}});
+test('production Mixamo anatomy: noncombat 10800-tick full digests/HP',()=>{for(const w of ['gs','db','bow'])for(const seed of [1,42,999])assert.deepEqual(trace(Sim,QUESTS[0],w,seed,false),current.noncombat[w+':'+seed]);});
+test('Warrok actual normal hunts remain exact frozen pre-roster snapshot/event/HP digests, 10800 ticks',async()=>{const {Sim:Old}=await frozenSim('c75b5b19');for(const w of ['gs','db','bow'])for(const seed of [1,42,999])assert.deepEqual(trace(Sim,QUESTS[6],w,seed),trace(Old,QUESTS[6],w,seed));});

@@ -67,7 +67,7 @@ test('shared three-cart limit, individual respawn and party failure',()=>{
 });
 test('sweep hits each player once and projectiles hit non-target players',()=>{
   const s=new Sim(QUESTS[0],save('gs'));const b=s.addPlayer('b',save('db')),a=s.players[0];
-  Object.assign(s.m,{x:0,z:0,yaw:0});Object.assign(a,{x:3,z:0});Object.assign(b,{x:-3,z:0});
+  Object.assign(s.m,{x:0,z:0,yaw:0});Object.assign(a,{x:2,z:0});Object.assign(b,{x:-2,z:0});
   s.startMonAtk('sweep');s.m.t=.8+.2;s.updMon(.01);
   assert.ok(a.hp<a.maxHp && b.hp<b.maxHp);const hp=a.hp;
   a.inv=0;s.updMon(.01);assert.equal(a.hp,hp);
@@ -113,7 +113,7 @@ test('render interpolation uses shortest yaw and never mutates sim state',()=>{
 test('sim dependency graph contains no three/DOM/audio/platform randomness',()=>{
   const sim=fs.readFileSync(new URL('../js/sim.js',import.meta.url),'utf8');
   assert.doesNotMatch(sim,/\b(?:THREE|window|document|performance|requestAnimationFrame)\b|Math\.random|from\s+['"][^'"]*(?:three|models|audio|input)/);
-  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261116r20']);
+  const imports=[...sim.matchAll(/from\s+['"]([^'"]+)/g)].map(m=>m[1]);assert.deepEqual(imports,['./data.js?v=20261117mt1']);
 });
 
 test('live snapshot preserves charged moves, hitstop, enemy shots and arrow ownership',()=>{

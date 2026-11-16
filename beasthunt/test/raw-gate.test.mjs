@@ -53,7 +53,7 @@ test('late bite event retains 100ms windup then all three physical contact ticks
 });
 
 test('real owner HP changes on bite movement completion, never first two active ticks',()=>{
- const s=new Sim(QUESTS[0],save,1,{role:'owner',localId:'p1'});Object.assign(s.m,{x:0,z:0,yaw:0});Object.assign(s.p,{x:0,z:5.5});s.startMonAtk('bite');const hp=s.p.hp;
+ const s=new Sim(QUESTS[0],save,1,{role:'owner',localId:'p1'});Object.assign(s.m,{x:0,z:0,yaw:0});Object.assign(s.p,{x:0,z:2.9});s.startMonAtk('bite');const hp=s.p.hp;
  for(let i=0;i<60;i++){s.tick++;s.updMon(FIXED_DT);s.drainEvents();if(s.m.biteTicks===1||s.m.biteTicks===2)assert.equal(s.p.hp,hp);if(s.m.biteTicks===3)break;}
  assert.equal(s.m.biteTicks,3);assert.ok(s.p.hp<hp);const hitHp=s.p.hp;
  for(let i=0;i<20;i++){s.p.inv=0;s.p.state='idle';s.tick++;s.updMon(FIXED_DT);s.drainEvents();assert.equal(s.p.hp,hitHp);}

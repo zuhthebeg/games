@@ -1,6 +1,6 @@
 // Compact wire-only schema. This module never mutates simulation objects.
 // R20 graded normal move indices/damage and bounded owner combo semantics.
-export const VERSION = 3;
+export const VERSION = 4;
 export const SNAPSHOT_TICKS = 4;
 const q = (n, scale = 100) => Math.round(n * scale);
 export function envelope(type, hunt, seq, payload) {
@@ -18,7 +18,7 @@ export function encodeMonster(sim, seq, hunt) {
     k: sim.tick,
     m: [q(m.x), q(m.z), q(m.y), q(m.yaw, 1000), q(m.spin, 1000),
       m.state, m.startTick ?? sim.tick - Math.round(m.t * 60), q(m.t, 1000),
-      m.hp, m.maxHp, q(m.brk.head), q(m.brk.tail), q(m.brk.legs),
+      m.hp, m.maxHp, q(m.brk.head), q(m.brk.tail ?? 0), q(m.brk.legs),
       +m.broke.head | (+m.broke.tail << 1), +m.enr, m.targetId ?? null, m.ak],
     p: sim.projs.map(p => [p.id, q(p.x), q(p.z), q(p.vx), q(p.vz),
       q(p.life, 1000), q(p.rad), p.dmg, +p.heavy, p.kind]),

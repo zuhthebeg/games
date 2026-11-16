@@ -1,0 +1,97 @@
+{
+  "reason": "Mixamo biped collider/part-break schema replaces quadruped head/tail; regional stats, weapon rules and seed/input schedule unchanged.",
+  "combat": {
+    "gs:1": {
+      "sha256": "84ac59573140998d0e205b46e63eb8c2f7b0e8e46f777f75eb3c81904f938b52",
+      "hp": 0,
+      "monsterHP": 1597
+    },
+    "gs:42": {
+      "sha256": "3c8ffa84f47c0cd090a62ed0086eebf1b2ac11fe8a374c47719e79287c3ad6e9",
+      "hp": 24,
+      "monsterHP": 1440
+    },
+    "gs:999": {
+      "sha256": "26bef5bdeb0610db993c8a24eb4c7a8fae86de349225a8a6bb1c517b14ae1b4d",
+      "hp": 24,
+      "monsterHP": 1446
+    },
+    "db:1": {
+      "sha256": "e80506fb6c6ce4cb61753d38918ae88defa67eba3a8e9190c18cc9a77b543f84",
+      "hp": 0,
+      "monsterHP": 1672
+    },
+    "db:42": {
+      "sha256": "50f1356c3eddc404632aefac044e2626a40f4665d3b9832c55229ea32a7a8504",
+      "hp": 0,
+      "monsterHP": 1665
+    },
+    "db:999": {
+      "sha256": "ece0d58678ca1a8609b385006232efb078ac89dcd1f671c0f27a65fd48869c67",
+      "hp": 100,
+      "monsterHP": 1693
+    },
+    "bow:1": {
+      "sha256": "1c406b7cbaf6904c280b8e6be6bbbd76f35fa4baa62a9d8461dd0076890428f7",
+      "hp": 20,
+      "monsterHP": 1514
+    },
+    "bow:42": {
+      "sha256": "5bcec6326662e77e21ca2b6d96613dfd9082c8a8cd730bcaead51e9c9ef900a4",
+      "hp": 0,
+      "monsterHP": 1533
+    },
+    "bow:999": {
+      "sha256": "8ae13470e132e2be074951858dcb9c4e8540f99abedb6008564cf5a04ee374fe",
+      "hp": 50,
+      "monsterHP": 1505
+    }
+  },
+  "noncombat": {
+    "gs:1": {
+      "sha256": "4515f3a139038e0ffb2cdcd64ea94256ddc50545331de2d87d4ea5085ba5555e",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "gs:42": {
+      "sha256": "22fb9a030056bc856f30674d1618a57db8b90c8d74a781548e287be641c102d3",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "gs:999": {
+      "sha256": "cb0671f661f0e4bc0a5ceafa65db1f218d1e532479088006eda1ce905a316adf",
+      "hp": 0,
+      "monsterHP": 1800
+    },
+    "db:1": {
+      "sha256": "af6103e242bf8badf83ae7d9e3dabd882f70ab8fe8f88a4b637b694e5f381fb0",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "db:42": {
+      "sha256": "6a68c201d115ea4818e048bf2f4c1172f922f6001095b51ee1f625463e93fffa",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "db:999": {
+      "sha256": "619565dc4f5c049439574724691f808d642a3ba6aa7ad0ec71085f803af63d49",
+      "hp": 0,
+      "monsterHP": 1800
+    },
+    "bow:1": {
+      "sha256": "d498d310fdd152d5476ca867485b55d90b60f160fc8a28ed904547f90a3bebd3",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "bow:42": {
+      "sha256": "0ae879943cd27395c2e9d1ad152fb7088690e455fbefc4cdbb4123ed38cff035",
+      "hp": 100,
+      "monsterHP": 1800
+    },
+    "bow:999": {
+      "sha256": "c05924b5ec62a4b126ef27d1fde0bc5b4e0854a6db869a514923ea2f3b93adfe",
+      "hp": 0,
+      "monsterHP": 1800
+    }
+  }
+}

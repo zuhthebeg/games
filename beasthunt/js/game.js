@@ -1,14 +1,15 @@
+import {buildMonsterActor} from './monster-actor.js?v=20261117mt1';
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
-import { VERSION } from './net/protocol.js?v=20261116r20';
+import { VERSION } from './net/protocol.js?v=20261117mt1';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261116r20';
-import { FixedClock, interpolatePose } from './fixed.js?v=20261114r11';
+import { Sim, R_ARENA } from './sim.js?v=20261117mt1';
+import { FixedClock, interpolatePose } from './fixed.js?v=20261117mt1';
 import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb, disposeHunterActors } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS, preloadWeapon } from 'bh/audio';
-import { GSSoundView } from './gs-sound.js?v=20261114r11';
-import { WeaponSoundView } from './weapon-sound.js?v=20261115s19';
+import { GSSoundView } from './gs-sound.js?v=20261117mt1';
+import { WeaponSoundView } from './weapon-sound.js?v=20261117mt1';
 
 import { GSImpacts, crossedImpact, isHeavy, chargeTier } from 'bh/gs-impact';
 export { R_ARENA };
@@ -22,9 +23,9 @@ const ease = (k) => k * k * (3 - 2 * k);
 const PCOL = { spark: 0xffe27a, weak: 0xff9a2a, dust: 0xb9a888, fire: 0xff7a1e, ice: 0x9fe8ff, heal: 0x7dffa0, blood: 0xd8433a };
 
 export class Hunt {
-  constructor(renderer, quest, save, ui, input, onEnd, session = null) {
+  constructor(renderer, quest, save, ui, input, onEnd, session = null, practice = null) {
     this.r = renderer; this.q = quest; this.save = save; this.ui = ui; this.in = input; this.onEnd = onEnd;
-    this.session = session; this.sim = session?.sim || new Sim(quest, save, crypto.getRandomValues(new Uint32Array(1))[0]);
+    this.practice = practice; this.session = session; this.sim = practice?.sim || session?.sim || new Sim(quest, save, crypto.getRandomValues(new Uint32Array(1))[0]);
     this.localId = this.sim.players[0].id;
     this.gsSound = new GSSoundView(sfx,stopSfx); this.weaponSound = new WeaponSoundView(sfx); if(this.p.weapon==='gs')void preloadGS(); else void preloadWeapon(this.p.weapon);
     // Compatibility aliases for the HUD and existing __bh debug consumers.
@@ -34,7 +35,9 @@ export class Hunt {
     this.restoreGeneration = session?.restoreGeneration ?? 0;
     const d = this.def;
     const sc = this.scene = new THREE.Scene(), ar = this.arena = buildArena(d.biome, R_ARENA); sc.add(ar.group);
-    sc.background = new THREE.Color(ar.B.sky); sc.fog = new THREE.Fog(ar.B.sky, ar.B.fog[0], ar.B.fog[1]);
+    // The exercise is a visibly separate projection ring, never a story encounter.
+    if(practice){const practiceArena=new THREE.Mesh(new THREE.RingGeometry(7.8,8,64),new THREE.MeshBasicMaterial({color:0x63dcff,side:THREE.DoubleSide}));practiceArena.rotation.x=-PI/2;practiceArena.position.y=.04;sc.add(practiceArena);}
+    sc.background = new THREE.Color(practice ? 0x122539 : ar.B.sky); sc.fog = new THREE.Fog(ar.B.sky, ar.B.fog[0], ar.B.fog[1]);
     sc.add(new THREE.HemisphereLight(ar.B.amb[0], ar.B.amb[1], 1.2));
     const sun = this.sun = new THREE.DirectionalLight(ar.B.sun, 1.9); sc.add(sun); sc.add(sun.target);
     if (renderer.shadowMap.enabled) {
@@ -43,7 +46,7 @@ export class Hunt {
     }
     this.cam = new THREE.PerspectiveCamera(58, 1, .2, 420);
     this.H = buildHunter(this.wt, save.w[this.wt], save.armor); sc.add(this.H.root);
-    this.G = buildMonster(quest.mon); sc.add(this.G.root);
+    this.G = practice ? buildMonsterActor('practice',3.7) : buildMonster(quest.mon); sc.add(this.G.root);
     if (d.biome === 'volcano') { const rim = new THREE.DirectionalLight(0x9ddcff, 2.4); rim.position.set(-12, 9, -8); sc.add(rim); }
     this.hp0 = { headRx: 0, headZ: 0, jaw: 0, bodyY: 0, bodyRx: 0, bodyRz: 0, tailCurl: 0, tailLift: 0 };
     this.mp = Object.assign({}, this.hp0);
@@ -154,6 +157,8 @@ export class Hunt {
   }
   breakVisual(part) {
     const G = this.G;
+    // Biped actors deliberately have no breakable parts or quadruped fragments.
+    if(G.status)return;
     if (G.warrok !== undefined) {
       const d = this.def.dims;
       const [x, z] = part === 'head' ? this.mPt(0, d.headZ + .8) : this.mPt(0, d.armZ);
@@ -185,6 +190,7 @@ export class Hunt {
 
 
   frame(rdt) {
+    if(this.G.status && this.G.status!=='ready'){this.in.clear();this.sim.clearInputs();this.ticker.reset();if(!this.skipRender)this.r.render(this.scene,this.cam);return;}
     if (this.paused && !this.session) { this.ticker.reset(); if (!this.skipRender) this.r.render(this.scene,this.cam); return; }
     if (this.in.take('pause')) { this.ui.pause(); if (!this.session) { this.ticker.reset(); return; } }
     // Camera input belongs to presentation, and only its yaw enters tick commands.
@@ -234,6 +240,7 @@ export class Hunt {
     const p = this.p, H = this.H, m = this.m, G = this.G, d = this.def.dims, t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
     this.syncHunter(p, H, dt);
     // monster
+    if (G.status) {G.root.position.set(m.x,m.y,m.z);G.root.rotation.y=m.yaw+m.spin;G.motion?.sync(m,dt);this.lockRing.visible=this.lock&&m.state!=='dead';this.lockRing.position.set(m.x,.08,m.z);this.lockRing.scale.setScalar(d.bw*this.def.scale*1.7);return;}
     if (G.warrok !== undefined) {
       G.root.position.set(m.x, m.y, m.z); G.root.rotation.y = m.yaw + m.spin;
       if (G.warrok) G.warrok.sync(m, dt, m.enr);
@@ -324,7 +331,7 @@ export class Hunt {
     this.sun.target.position.set(p.x, 0, p.z); this.sun.position.set(p.x + 16, 30, p.z + 10);
   }
   updHud() {
-    const p = this.p, m = this.m, e = this.ui.el, left = Math.max(0, TIME_LIMIT - this.time);
+    const p = this.p, m = this.m, e = this.ui.el, left = Math.max(0, this.practice ? 180 - this.practice.elapsed : TIME_LIMIT - this.time);
     e.hp.style.width = (p.hp / p.maxHp * 100) + '%'; e.hpHeal.style.width = (Math.min(p.maxHp, p.hp + p.healLeft) / p.maxHp * 100) + '%';
     e.st.style.width = p.st + '%'; e.mon.style.width = ((this.session?.displayHp ?? m.hp) / m.maxHp * 100) + '%';
     e.timer.textContent = Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0');

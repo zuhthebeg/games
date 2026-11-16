@@ -1,5 +1,5 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE, ROLL_HIT_MULT } from './data.js?v=20261116r20';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE, ROLL_HIT_MULT } from './data.js?v=20261117mt1';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
@@ -54,7 +54,7 @@ export class Sim {
     const broke = { head: false };
     if (brkParts.tail != null) broke.tail = false;
     if (brkParts.arms != null) broke.arms = false;
-    this.m = { x: 0, z: 12, y: 0, yaw: PI, spin: 0, hp: mhp, maxHp: mhp, state: 'idle', t: 0, dur: 0, atk: null, ak: null, last: '', think: 1, enr: false, enrT: 0, enrStage: 0, rageQ: false, walk: 0, moving: 0, stag: 0, brk: brkParts, broke, legTh: d.brk.legs * this.hr.hp, flag: 0, hitP: false, fired: 0, tick: 0, fx: 0, fz: 0, tx: 0, tz: 0, roared: false };
+    this.m = { x: 0, z: 12, y: 0, yaw: PI, spin: 0, hp: mhp, maxHp: mhp, state: 'idle', t: 0, dur: 0, atk: null, ak: null, last: '', think: 1, enr: false, enrT: 0, enrStage: 0, rageQ: false, walk: 0, moving: 0, stag: 0, brk: brkParts, broke, legTh: (d.brk.legs ?? 0) * this.hr.hp, flag: 0, hitP: false, fired: 0, tick: 0, fx: 0, fz: 0, tx: 0, tz: 0, roared: false };
 
     if (this.network?.role === 'world') {
       const count = this.network.partySize ?? 1;
@@ -432,7 +432,7 @@ export class Sim {
     const hrk = this.hr.hp * (this.network?.role === 'world' ? COOP_HP_SCALE[(this.network.partySize ?? 1)-1] : 1); let newlyBroken = false;
     if (part !== 'legs' && d.brk[part] != null) {
       if (!m.broke[part]) { m.brk[part] += dmg; if (m.brk[part] >= d.brk[part] * hrk) { this.breakPart(part); newlyBroken = true; } }
-    } else if (part === 'legs' && m.hp > 0) { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
+    } else if (part === 'legs' && d.brk.legs != null && m.hp > 0) { m.brk.legs += dmg; if (m.brk.legs >= m.legTh && m.state !== 'topple') { m.brk.legs = 0; m.legTh *= 1.35; return this.setMon('topple', 4.6, 'topple'); } }
     if (m.hp <= 0) return this.monDie();
     if (newlyBroken) return;
     if (m.stag >= m.maxHp * .13 && m.state !== 'topple' && m.state !== 'roar') { m.stag = 0; this.setMon('flinch', .95); }
@@ -565,7 +565,7 @@ export class Sim {
   }
 
   updProjs(dt) {
-    const y = this.def.dims.h * this.def.scale * .75;
+    const y = (this.def.dims.projectileY ?? this.def.dims.h * .75) * this.def.scale;
     for (let i = this.projs.length - 1; i >= 0; i--) {
       const q = this.projs[i]; q.x += q.vx * dt; q.z += q.vz * dt; q.life -= dt; q.y = Math.max(1.1, y * Math.min(1, q.life));
       this.emit('chanceBurst', { chance: .7, args: [q.kind, q.x, q.y, q.z, 1, 1.5, .35, 0] });

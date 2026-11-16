@@ -53,7 +53,7 @@ test('R18 weak variants preserve approximately -4 LU final contrast to the match
 });
 test('R18 same-name GS assets retain sx; changed shared importer carries s19 cache generation; palette remains 30 lazy URLs',()=>{
  const index=fs.readFileSync(path.join(root,'beasthunt/index.html'),'utf8');
- assert.ok(index.includes('"bh/audio":"./js/audio.js?v=20261115s19"'));
+ assert.ok(index.includes('"bh/audio":"./js/audio.js?v=20261117mt1"'));
  const urls=Object.values(GS_SAMPLES).flat();assert.equal(urls.length,30);
  for(const url of urls){const u=new URL(url);assert.equal(u.search,'?v=20261115sx');assert.ok(fs.existsSync(fileURLToPath(u)));}
 });

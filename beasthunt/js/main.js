@@ -1,12 +1,13 @@
-import { attachBowChargePresentation } from './bow-charge.js?v=20261116r20';
+import {Training,deliverHuntResult,clearPracticeInput} from './training.js?v=20261117mt1';
+import { attachBowChargePresentation } from './bow-charge.js?v=20261117mt1';
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
-import { Coop } from './net/coop.js?v=20261116r20';
+import { Coop } from './net/coop.js?v=20261117mt1';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachHuntDebug } from './hunt-debug.js?v=20261116r20';
-import { attachGSChargePresentation } from './gs-charge.js?v=20261114r11';
+import { attachHuntDebug } from './hunt-debug.js?v=20261117mt1';
+import { attachGSChargePresentation } from './gs-charge.js?v=20261117mt1';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok, disposeHunterActors } from 'bh/models';
 import { initAudio, sfx, setMuted, isMuted, preloadGS, preloadWeapon } from 'bh/audio';
@@ -40,7 +41,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2))
 renderer.shadowMap.enabled = !coarse && !/[?&]lowfx=1/.test(location.search); renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const input = new Input(canvas, $('touch'));
 
-let coop = null;
+let coop = null, practice = null, loadGeneration = 0;
 let hunt = null, sel = QUESTS[0].id, tab = 'quest', preview = null;
 const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 const unlocked = (q) => DEBUG || !q.need || !!save.clears[q.need];
@@ -49,7 +50,7 @@ const unlocked = (q) => DEBUG || !q.need || !!save.clears[q.need];
 // ---------- preview scene (hub backdrop) ----------
 function makePreview() {
   const q = QUESTS.find((x) => x.id === sel), d = MONSTERS[q.mon], B = BIOMES[d.biome];
-  if (preview) { disposeHunterActors(preview.scene); preview.G.dispose?.(); preview.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+  if (preview) { disposeHunterActors(preview.scene); preview.G.dispose?.(); preview.scene.traverse((o) => {o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m?.dispose();}); }
   const scene = new THREE.Scene(); scene.background = new THREE.Color(B.sky).multiplyScalar(.55); scene.fog = new THREE.Fog(scene.background, 20, 60);
   scene.add(new THREE.HemisphereLight(B.amb[0], B.amb[1], 1.1));
   const sun = new THREE.DirectionalLight(B.sun, 2.2); sun.position.set(8, 14, 10); scene.add(sun);
@@ -64,7 +65,8 @@ function framePreview(dt) {
   const p = preview; p.t += dt; const a = p.t * .22 + .9, wide = stage.clientWidth > stage.clientHeight * 1.15, r = (wide ? 15 : 21) * p.d.scale;
   p.cam.position.set(Math.sin(a) * r, 5.2, Math.cos(a) * r); p.cam.lookAt(0, wide ? 2.2 : 3.4, 0);
   if (wide) p.cam.setViewOffset(stage.clientWidth, stage.clientHeight, -stage.clientWidth * .2, 0, stage.clientWidth, stage.clientHeight); else p.cam.clearViewOffset();
-  if (p.G.warrok !== undefined) {
+  if (p.G.status) {p.G.motion?.sync({state:'idle',t:p.t},dt);}
+  else if (p.G.warrok !== undefined) {
     if (p.G.warrok) p.G.warrok.sync({ state: 'idle', t: p.t, dur: 0, enr: false, moving: 0, atk: null, ak: null }, dt, false);
   } else {
     p.G.tail.forEach((s, i) => { s.rotation.y = Math.sin(p.t * 1.5 + i * .6) * .14; });
@@ -85,6 +87,7 @@ function renderHub() {
   $('tabQuest').textContent = t('tab_quest'); $('tabForge').textContent = t('tab_forge');
   $('tabQuest').classList.toggle('on', tab === 'quest'); $('tabForge').classList.toggle('on', tab === 'forge');
   $('panelQuest').hidden = tab !== 'quest'; $('panelForge').hidden = tab !== 'forge';
+  $('practiceEntry').textContent=t('practice_entry'); $('practiceSkip').textContent=t('practice_skip');$('practiceRetry').textContent=t('practice_retry');$('loadRetry').textContent=t('practice_retry');$('loadLeave').textContent=t('back');
   $('depart').textContent = t('depart'); $('coop').textContent = t('coop');
   // quests
   $('quests').innerHTML = QUESTS.map((q) => {
@@ -117,7 +120,7 @@ function renderHub() {
 }
 $('hub').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; initAudio();
-  if (b.dataset.q) { sel = b.dataset.q; if (MONSTERS[QUESTS.find((x) => x.id === sel)?.mon]?.biped) void loadWarrok(); sfx('ui'); makePreview(); renderHub(); }
+  if (b.dataset.q) { sel = b.dataset.q; if (QUESTS.find((x) => x.id === sel)?.mon==='warrok') void loadWarrok(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.w) { save.weapon = b.dataset.w; if(save.weapon==='gs')void preloadGS(); else if(save.weapon==='bow'){void preloadWeapon('bow');void loadHunterBow();} else if(save.weapon==='db'){void preloadWeapon('db');void loadHunterDb();} persist(); sfx('ui'); makePreview(); renderHub(); }
   else if (b.dataset.up) {
     const key = b.dataset.up, isA = key === 'armor', tier = isA ? save.armor : save.w[key], u = UPG[tier], kind = isA ? 'a' : 'w';
@@ -132,7 +135,12 @@ $('tabForge').onclick = () => { tab = 'forge'; sfx('ui'); renderHub(); };
 $('langBtn').onclick = () => { nextLang(); renderHub(); };
 $('muteBtn').onclick = () => { setMuted(!isMuted()); renderHub(); };
 $('depart').onclick = () => startHunt(sel);
-$('coop').onclick = () => { if (coop) return; coop = new Coop({save, quest:()=>sel, start:startHunt, leave:()=>{coop=null;endHunt();}}); };
+$('practiceEntry').onclick = () => startPractice();
+$('practiceSkip').onclick = () => endHunt();
+$('practiceRetry').onclick = () => startPractice();
+$('loadRetry').onclick = () => {if(practice)startPractice();else if(hunt){const qid=hunt.q.id,session=hunt.session;startHunt(qid,session);}};
+$('loadLeave').onclick = () => {if(hunt?.session){coop?.close();return;}endHunt();};
+$('coop').onclick = () => { if (coop || practice) return; coop = new Coop({save, quest:()=>sel, start:startHunt, leave:()=>{coop=null;endHunt();}}); };
 
 // ---------- hunt HUD ----------
 const ui = {
@@ -148,7 +156,8 @@ const ui = {
   pause() { setPaused(true); },
 };
 function setPaused(p) {
-  if (!hunt || hunt.over) return; $('pauseTitle').textContent=t(hunt.session?'menu':'paused'); hunt.paused = p; if(p)hunt?.stopAudio?.(); $('pause').hidden = !p; input.enabled = !p; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
+  if (!hunt || hunt.over) return; $('pauseTitle').textContent=t(hunt.session?'menu':'paused'); hunt.paused = p; if(p)hunt?.stopAudio?.(); $('pause').hidden = !p; input.enabled = !p && (!hunt.G.status||hunt.G.status==='ready') && !practice?.done && !document.hidden; input.clear(); hunt.sim?.clearInputs(); hunt.ticker?.reset();
+  if(p && practice){clearPracticeInput(input,$('touch'));const actor=hunt.p;actor.state='idle';actor.t=0;actor.cur=null;actor.spin=0;actor.clv=0;}
   if (p && document.pointerLockElement) document.exitPointerLock();
 }
 $('resume').onclick = () => setPaused(false);
@@ -161,21 +170,44 @@ document.addEventListener('pointerlockchange', () => { if (!document.pointerLock
 function clearCombatUI() {
   $('toast').className = ''; $('toast').textContent = ''; $('dmg').replaceChildren(); $('flash').className = '';
 }
+function watchMonster(owner) {
+ const generation=++loadGeneration;
+ if(!owner.G.status){if(owner.session)coop?.modelReady(owner.session);return;}
+ input.enabled=false;input.clear();owner.sim.clearInputs();
+ $('assetLoad').hidden=false;$('loadLabel').textContent=t('model_loading');$('loadRetry').hidden=true;
+ owner.G.ready.then(()=>{if(hunt!==owner||generation!==loadGeneration)return;
+  if(owner.G.status==='ready'){$('assetLoad').hidden=true;input.clear();owner.sim.clearInputs();owner.ticker.reset();input.enabled=!owner.paused&&!document.hidden;if(owner.session)coop?.modelReady(owner.session);}
+  else {$('loadLabel').textContent=t('model_failed');$('loadRetry').hidden=false;owner.stopAudio();}
+ });
+}
+function startPractice(){
+ if(coop)return;
+ if(hunt)endHunt();
+ const exercise=practice=new Training(save);
+ const owner=new Hunt(renderer,exercise.quest,exercise.save,ui,input,res=>deliverHuntResult(hunt,owner,practice,res,onHuntEnd,()=>finishPractice()),null,exercise);
+ exercise.owner=owner;hunt=owner;attachGSChargePresentation(owner);attachBowChargePresentation(owner);
+ $('hub').hidden=true;$('hud').hidden=false;$('touch').hidden=!input.isTouch;$('result').hidden=true;$('pause').hidden=true;$('practiceHud').hidden=false;
+ document.body.classList.add('hunting');input.clear();input.enabled=false;ui.setMon('practice',0);watchMonster(owner);resize();updatePractice();
+}
+function updatePractice(){if(!practice)return;$('practiceInstruction').textContent=t('practice_'+practice.stage+(practice.stage==='attack'?'_'+practice.save.weapon:''));}
+function finishPractice(){if(!practice||hunt!==practice.owner)return;hunt.stopAudio();clearPracticeInput(input,$('touch'));if(document.pointerLockElement)document.exitPointerLock();hunt.sim.clearInputs();input.enabled=false;input.releaseAll?.();$('touch').hidden=true;updatePractice();}
 function startHunt(qid, session = null, debugOptions = null) {
+  if(practice && session)return;
   const q = QUESTS.find((x) => x.id === qid); if (!q || (!session && !unlocked(q))) return;
   if (hunt) endHunt();
   initAudio(); sfx('ui'); clearCombatUI();
-  hunt = new Hunt(renderer, q, save, ui, input, onHuntEnd, session);
+  const owner=new Hunt(renderer,q,save,ui,input,res=>deliverHuntResult(hunt,owner,practice,res,onHuntEnd,()=>finishPractice()),session);hunt=owner;
   attachGSChargePresentation(hunt);
   attachBowChargePresentation(hunt);
   attachHuntDebug(hunt, {search:location.search, mount:$('stage'), initial:debugOptions, restart:options=>startHunt(qid,null,options)});
   if(session)hunt.observeAudioSocket(coop?.ws?._ws,coop?.plan?.roster||{});
   $('hub').hidden = true; $('hud').hidden = false; $('touch').hidden = !input.isTouch; $('result').hidden = true; $('pause').hidden = true;
-  document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();
+  document.body.classList.add('hunting'); input.clear(); input.enabled = true; resize();watchMonster(owner);
   if (!DEBUG && window.gtag) window.gtag('event', 'bh_quest_start', { quest: q.id, weapon: save.weapon });
 }
 const rewarded = new Set();
 function onHuntEnd(res) {
+  if(practice || !hunt)return;
   let duplicate=false, resultKey=null;
   if (hunt?.session) {
     const id=coop.plan.id;resultKey="bh_reward:"+id;
@@ -208,6 +240,9 @@ function onHuntEnd(res) {
   $('result').hidden = false; $('touch').hidden = true;
 }
 function endHunt() {
+  ++loadGeneration;if(practice)clearPracticeInput(input,$('touch'));practice?.dispose();practice=null;
+  input.releaseAll?.();if(document.pointerLockElement)document.exitPointerLock();
+  $('assetLoad').hidden=true;$('practiceHud').hidden=true;$('pause').hidden=true;
   clearCombatUI();
   if (hunt) { hunt.debug?.dispose(); hunt.dispose(); hunt = null; }
   input.enabled = false; input.clear(); document.body.classList.remove('hunting');
@@ -227,7 +262,7 @@ window.addEventListener('resize', resize); window.addEventListener('orientationc
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(.1, (now - last) / 1000); last = now;
-  try { if (hunt) hunt.frame(dt); else if (preview) framePreview(dt); } catch (err) { console.error('[beasthunt]', err); }
+  try { if (hunt) {hunt.frame(dt);updatePractice();} else if (preview) framePreview(dt); } catch (err) { console.error('[beasthunt]', err); }
   requestAnimationFrame(loop);
 }
 makePreview(); renderHub(); requestAnimationFrame(loop);

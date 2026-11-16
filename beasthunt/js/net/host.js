@@ -1,8 +1,8 @@
-import {Sim} from '../sim.js?v=20261116r20';
-import {MAX_CARTS} from '../data.js?v=20261116r20';
-import {envelope,validEnvelope,decodeHunter} from './protocol.js?v=20261116r20';
-import {HostReplication,GuestReplication} from './replication.js?v=20261116r20';
-import {HitClaims} from './claims.js?v=20261116r20';
+import {Sim} from '../sim.js?v=20261117mt1';
+import {MAX_CARTS} from '../data.js?v=20261117mt1';
+import {envelope,validEnvelope,decodeHunter} from './protocol.js?v=20261117mt1';
+import {HostReplication,GuestReplication} from './replication.js?v=20261117mt1';
+import {HitClaims} from './claims.js?v=20261117mt1';
 // Renderer-free world authority. Even the host's own hunter is an owner peer.
 export class HostSession {
   constructor({quest,roster,seed=1,hunt,host,transport}) {
