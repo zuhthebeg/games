@@ -1,12 +1,12 @@
-import {Training,deliverHuntResult,clearPracticeInput} from './training.js?v=20261117mt1';
+import {Training,deliverHuntResult,clearPracticeInput} from './training.js?v=20261117wl1';
 import { attachBowChargePresentation } from './bow-charge.js?v=20261117mt1';
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
-import { Coop } from './net/coop.js?v=20261117mt1';
+import { Coop } from './net/coop.js?v=20261117wl1';
 // Beast Hunt — hub UI, save data, preview scene, glue.
 import * as THREE from 'three';
 import { MONSTERS, QUESTS, ATK, ARMOR, TIERS, UPG, WTYPES } from 'bh/data';
 import { Hunt } from 'bh/game';
-import { attachHuntDebug } from './hunt-debug.js?v=20261117mt1';
+import { attachHuntDebug } from './hunt-debug.js?v=20261117wl1';
 import { attachGSChargePresentation } from './gs-charge.js?v=20261117mt1';
 import { Input } from 'bh/input';
 import { buildMonster, buildHunter, BIOMES, syncHunterGS, syncHunterBow, syncHunterDb, loadHunterBow, loadHunterDb, loadWarrok, disposeHunterActors } from 'bh/models';

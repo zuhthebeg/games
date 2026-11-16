@@ -1,7 +1,7 @@
 // Browser adapter. The caller owns lobby lifetime and terminates this worker.
 export class WorkerHost {
   constructor(options,onPacket) {
-    this.worker=new Worker(new URL('./worker.js?v=20261117mt1',import.meta.url),{type:'module'});
+    this.worker=new Worker(new URL('./worker.js?v=20261117wl1',import.meta.url),{type:'module'});
     this.worker.onmessage=({data})=>{
       if(data.type==='state' || data.type==='event')onPacket(data.packet,data.type);
     };

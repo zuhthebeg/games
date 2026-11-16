@@ -1,3 +1,4 @@
+import {attachMonsterWeapon} from './monster-weapon.js?v=20261117wl1';
 // Original GLB art stays immutable in the page cache; each actor owns its GPU objects.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -17,7 +18,7 @@ const ATTACK={bite:'swipe',stomp:'smash',sweep:'spin',charge:'rush',leap:'leap',
 export function buildMonsterActor(id,height){
  const root=new THREE.Group(),name=MONSTER_ACTORS[id];let disposed=false;
  const actor={root,status:'loading',motion:null};
- actor.dispose=()=>{if(disposed)return;disposed=true;actor.status='disposed';const w=actor.motion;if(w){w.mixer.stopAllAction();w.mixer.uncacheRoot(w.model);const gs=new Set(),ms=new Set(),ss=new Set();w.model.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.skeleton)ss.add(o.skeleton);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m)ms.add(m);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());ss.forEach(s=>s.dispose());}root.clear();};
+ actor.dispose=()=>{if(disposed)return;disposed=true;actor.status='disposed';const w=actor.motion;if(w){w.mixer.stopAllAction();w.mixer.uncacheRoot(w.model);const gs=new Set(),ms=new Set(),ss=new Set();root.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.skeleton)ss.add(o.skeleton);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m)ms.add(m);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());ss.forEach(s=>s.dispose());}root.clear();};
  actor.ready=loadMonsterActor(id).then(asset=>{
   if(disposed)return actor;
   const model=clone(asset.scene),meshes=[];model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();o.castShadow=true;o.frustumCulled=false;meshes.push(o);}});
@@ -28,9 +29,10 @@ export function buildMonsterActor(id,height){
   const clips=asset.animations.map(c=>c.clone());
   const mixer=new THREE.AnimationMixer(model),actions=Object.fromEntries(clips.map(c=>[c.name,mixer.clipAction(c)])),v=new THREE.Vector3();
   const w=actor.motion={model,mixer,actions,current:null,clock:0};
+  w.weapon=attachMonsterWeapon(model,id,height,root);
   let hips;model.traverse(o=>{if(o.isBone&&(o.name.endsWith('Hips')||o.name==='hynzbr'))hips=o;});
   const support=(MONSTER_SUPPORTS[name]||[]).map(([mi,i])=>[meshes[mi],i]);
-  w.ground=()=>{model.position.set(0,0,0);root.updateMatrixWorld(true);if(hips){root.worldToLocal(hips.getWorldPosition(v));model.position.x=-v.x;model.position.z=-v.z;if(w.baseHipY===undefined)w.baseHipY=v.y;if(w.inPlaceLeap)model.position.y=-Math.max(0,v.y-w.baseHipY);root.updateMatrixWorld(true);}let min=Infinity;for(const [mesh,i] of support){mesh.getVertexPosition(i,v);min=Math.min(min,v.applyMatrix4(mesh.matrixWorld).y-root.position.y);}if(!Number.isFinite(min))throw new Error('Invalid monster support');model.position.y+=Math.max(0,-min+.015);root.updateMatrixWorld(true);return min;};
+  w.ground=()=>{model.position.set(0,0,0);root.updateMatrixWorld(true);if(hips){root.worldToLocal(hips.getWorldPosition(v));model.position.x=-v.x;model.position.z=-v.z;if(w.baseHipY===undefined)w.baseHipY=v.y;if(w.inPlaceLeap)model.position.y=-Math.max(0,v.y-w.baseHipY);root.updateMatrixWorld(true);}let min=Infinity;for(const [mesh,i] of support){mesh.getVertexPosition(i,v);min=Math.min(min,v.applyMatrix4(mesh.matrixWorld).y-root.position.y);}if(!Number.isFinite(min))throw new Error('Invalid monster support');model.position.y+=Math.max(0,-min+.015);root.updateMatrixWorld(true);w.weapon?.sync();return min;};
   w.sync=(m,dt)=>{
    w.inPlaceLeap=m.state==='atk'&&m.ak==='leap';
    let want='idle',one=false,dur=0;

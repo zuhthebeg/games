@@ -84,7 +84,7 @@ test('R19 actual socket observer: roster actors, sequence/tick dedup, scheduled 
 });
 test('R19 changed entry/direct imports versioned; rendering still uses both R17 visual adapters',()=>{
  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'),game=fs.readFileSync(new URL('../js/game.js',import.meta.url),'utf8'),main=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8'),page=fs.readFileSync(new URL('../sfx-test.html',import.meta.url),'utf8');
- assert.ok(html.includes('audio.js?v=20261117mt1'));for(const n of ['game','main'])assert.ok(html.includes(n+'.js?v=20261117mt1'));assert.ok(game.includes('./weapon-sound.js?v=20261117mt1'));assert.ok(page.includes('./js/audio.js?v=20261117mt1'));
+ assert.ok(html.includes('audio.js?v=20261117mt1'));for(const n of ['game','main'])assert.ok(html.includes(n+'.js?v=20261117wl1'));assert.ok(game.includes('./weapon-sound.js?v=20261117mt1'));assert.ok(page.includes('./js/audio.js?v=20261117mt1'));
  assert.ok(game.includes('syncHunterBow(p,H,dt,this.clock)'));assert.ok(game.includes('syncHunterDb(p,H,dt,this.clock)'));assert.ok(main.includes("void preloadWeapon('bow')"));assert.ok(main.includes("void preloadWeapon('db')"));
 });
 

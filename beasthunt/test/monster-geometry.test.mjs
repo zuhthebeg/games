@@ -11,7 +11,7 @@ test('Mixamo main bodies have no invisible tails or unsupported break rewards',(
  assert.ok(s.mParts().some(p=>p.n==='arms'));assert.ok(!s.mParts().some(p=>p.n==='tail'));assert.deepEqual(d.brk,{});
  s.hitMonster('head',100,0,0,1);assert.ok(!s.drainEvents().some(e=>e.type==='break'));
  }
- assert.deepEqual(QUESTS.map(q=>q.id),Array.from({length:8},(_,i)=>'q'+(i+1)));
+ assert.deepEqual(QUESTS.slice(0,8).map(q=>q.id),Array.from({length:8},(_,i)=>'q'+(i+1)));
 });
 test('legacy forge tail/horn costs remain reachable without duplicate break windfall',()=>{
  for(const mon of ['boar','frost','ember']){
@@ -25,7 +25,7 @@ test('changed biped contact contract rejects previous wire v3',()=>{assert.equal
 
 test('all eight actual quests: seeded determinism, retained HP/reward/save contracts and no new break flags',()=>{
  const budget=[[1800,400,20],[3200,900,40],[5000,1600,60],[3420,1500,50],[6080,2400,70],[9500,3600,100],[6800,4200,120],[12920,5600,150]];
- for(const [i,q]of QUESTS.entries())for(const weapon of ['gs','db','bow']){
+ for(const [i,q]of QUESTS.slice(0,8).entries())for(const weapon of ['gs','db','bow']){
  const gear={...save,weapon},bytes=JSON.stringify(gear),a=new Sim(q,gear,33129),b=new Sim(q,gear,33129);
  assert.deepEqual([a.m.maxHp,q.shards,q.gold],budget[i]);
  for(let k=0;k<360;k++){const input={p1:{moveZ:k<120?127:0,light:k%45===0,heavy:k%180===0,heavyHeld:k%180<60,dodge:k%120===90}};a.step(input);b.step(input);assert.deepEqual(a.drainEvents(),b.drainEvents());}

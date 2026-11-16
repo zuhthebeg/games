@@ -1,10 +1,10 @@
-import {buildMonsterActor} from './monster-actor.js?v=20261117mt1';
+import {buildMonsterActor} from './monster-actor.js?v=20261117wl1';
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
 import * as THREE from 'three';
 import { VERSION } from './net/protocol.js?v=20261117mt1';
 import { WTYPES, TIME_LIMIT, MAX_CARTS } from 'bh/data';
-import { Sim, R_ARENA } from './sim.js?v=20261117mt1';
+import { Sim, R_ARENA } from './sim.js?v=20261117wl1';
 import { FixedClock, interpolatePose } from './fixed.js?v=20261117mt1';
 import { buildHunter, buildMonster, buildArena, syncHunterGS, syncHunterBow, syncHunterDb, disposeHunterActors } from 'bh/models';
 import { sfx, stopSfx, stopAllGS, preloadGS, preloadWeapon } from 'bh/audio';

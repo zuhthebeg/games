@@ -1,5 +1,5 @@
 // Ephemeral solo owner. No storage, wallet, room, analytics or real-save references.
-import {Sim} from './sim.js?v=20261117mt1';
+import {Sim} from './sim.js?v=20261117wl1';
 import {MONSTERS} from 'bh/data';
 export class Training {
  constructor(realSave){

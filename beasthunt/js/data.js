@@ -87,6 +87,11 @@ export const MONSTERS = {
   },
 };
 
+// Preserve the original procedural anatomy before the live actor substitutions.
+for (const [id,archetype] of [['bramble','boar'],['legacy_frost','frost'],['legacy_ember','ember']]) {
+ MONSTERS[id]={...structuredClone(MONSTERS[archetype]),archetype};
+}
+
 // Regional stats and persistent IDs stay unchanged; only anatomy is replaced.
 for (const [id,actor,bw,h,headZ,armX] of [
  ['boar','Maw',.92,1.85,.32,1.05],['frost','Mutant',.9,1.9,.28,1],['ember','Pumpkinhulk',.95,2.1,.3,1.15],
@@ -104,9 +109,12 @@ export const QUESTS = [
   { id: 'q6', mon: 'ember', hr: 1, shards: 3600, gold: 100, need: 'q5' },
   { id: 'q7', mon: 'warrok', hr: 0, shards: 4200, gold: 120, need: 'q6' },
   { id: 'q8', mon: 'warrok', hr: 1, shards: 5600, gold: 150, need: 'q7' },
+  { id: 'q9', mon: 'bramble', hr: 1, shards: 1500, gold: 50, need: 'q8' },
+  { id: 'q10', mon: 'legacy_frost', hr: 1, shards: 2400, gold: 70, need: 'q9' },
+  { id: 'q11', mon: 'legacy_ember', hr: 1, shards: 3600, gold: 100, need: 'q10' },
 ];
 export const HR = { hp: 1.9, dmg: 1.45, spd: 1.1 };
-export const PREFIX = { boar: 'b', frost: 'f', ember: 'e', warrok: 'w' };
+export const PREFIX = { boar: 'b', frost: 'f', ember: 'e', warrok: 'w', bramble: 'b', legacy_frost: 'f', legacy_ember: 'e' };
 export const TIME_LIMIT = 600;
 export const MAX_CARTS = 3;
 export const POTIONS = 5;

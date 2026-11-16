@@ -1,4 +1,4 @@
-import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261117mt1';
+import { WTYPES, ATK, DMG_SCALE } from '../data.js?v=20261117wl1';
 const finite=n=>typeof n==='number' && Number.isFinite(n);
 const normal=(W,node)=>W?.light[node]||W?.combo?.moves[node];
 const lane=(from,weapon)=>JSON.stringify([from,weapon]);

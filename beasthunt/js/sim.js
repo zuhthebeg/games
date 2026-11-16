@@ -1,5 +1,5 @@
 // Pure 60Hz combat rules. No renderer, clock, platform input or browser globals.
-import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE, ROLL_HIT_MULT } from './data.js?v=20261117mt1';
+import { MONSTERS, WTYPES, ATK, ARMOR, DMG_SCALE, HR, TIME_LIMIT, MAX_CARTS, POTIONS, rollLoot, COOP_HP_SCALE, ROLL_HIT_MULT } from './data.js?v=20261117wl1';
 export const FIXED_DT = 1 / 60;
 // moveX/moveZ are camera-local signed 8-bit axes (-127..127); aimYaw is radians.
 // light/heavy/dodge/potion/lock are one-tick press edges; held flags are levels.
@@ -164,7 +164,7 @@ export class Sim {
   mParts() {
     const d = this.def.dims, s = this.def.scale, out = [], add = (n, lx, lz, r) => { const [x, z] = this.mPt(lx, lz); out.push({ n, x, z, r: r * s }); };
     add('head', 0, d.headZ, 1.15); add('body', 0, d.hz * .45, d.bw * 1.02); add('body', 0, -d.hz * .45, d.bw * 1.02);
-    const legCoords = d.legCoords || (this.q.mon === 'ember' ? [[1, -1], [-1, -1]] : [[1, d.legZ], [-1, d.legZ], [1, -d.legZ], [-1, -d.legZ]]);
+    const legCoords = d.legCoords || ((this.def.archetype || this.q.mon) === 'ember' ? [[1, -1], [-1, -1]] : [[1, d.legZ], [-1, d.legZ], [1, -d.legZ], [-1, -d.legZ]]);
     for (const [sx, lz] of legCoords) add('legs', sx * d.legX * 1.05, lz, .78);
     if (d.armX) for (const sx of [-1, 1]) add('arms', sx * d.armX, d.armZ, .85);
     if (d.tailLen > 0) {

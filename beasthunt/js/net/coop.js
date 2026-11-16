@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import {QUESTS,WTYPES} from 'bh/data';
 import {buildHunter} from 'bh/models';
 import {t} from 'bh/i18n';
-import {GuestSession} from './guest.js?v=20261117mt1';
-import {WorkerHost} from './worker-host.js?v=20261117mt1';
+import {GuestSession} from './guest.js?v=20261117wl1';
+import {WorkerHost} from './worker-host.js?v=20261117wl1';
 import {attachRelay} from './transport.js?v=20261117mt1';
 import {VERSION,envelope,byteLength} from './protocol.js?v=20261117mt1';
 

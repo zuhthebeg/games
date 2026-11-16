@@ -1,4 +1,4 @@
-import {buildMonsterActor} from './monster-actor.js?v=20261117mt1';
+import {buildMonsterActor} from './monster-actor.js?v=20261117wl1';
 // Original faceted fieldcraft: lofted anatomy, articulated joints, no external assets.
 import * as THREE from 'three';
 import { MONSTERS } from 'bh/data';
@@ -245,7 +245,7 @@ export function buildMonster(id){
  if(MONSTERS[id]?.actor)return buildMonsterActor(id,MONSTERS[id].dims.h*2*MONSTERS[id].scale);
  if (id === 'warrok') return buildWarrok();
  const d=MONSTERS[id].dims,root=G(),body=G(0,d.h,0);root.add(body);
- const boar=id==='boar',frost=id==='frost',ember=id==='ember';
+ const archetype=MONSTERS[id].archetype||id,boar=archetype==='boar',frost=archetype==='frost',ember=archetype==='ember';
  const C=boar?[0x624731,0x352f2a,0xdac49c,0xffd36b]:frost?[0xc4d9e2,0x48667d,0x8ad9ea,0x88eaff]:[0x943e32,0x352f44,0xe6a36b,0xffb23a];
  const ma=M(C[0]),mb=M(C[1]),mc=M(C[2]),black=M(0x17242b),tooth=M(0xf4e5c2),eyeMat=M(0x141c22,{emissive:C[3],emissiveIntensity:1.2});
  const rings=boar?[[-2,-.2,.55,.65],[-1.2,0,1.3,1.05],[.3,.25,1.5,1.45],[1.25,.1,1.15,1.25],[1.9,-.12,.68,.7]]:frost?[[-2.2,.35,.48,.55],[-1.25,.45,.7,.65],[.25,.4,.75,.75],[1.2,.65,.85,.95],[1.85,.9,.5,.7]]:[[-2,-.25,.6,.65],[-1.1,.05,1.25,1.15],[0,.9,1.1,1.5],[.9,1.65,.75,1.3],[1.4,2.25,.5,.85]];
