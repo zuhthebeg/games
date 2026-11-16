@@ -9,9 +9,14 @@ Approved user request 33129: Mixamo main actors and one Gobkit training projecti
 
 Exact existing derived GLB bytes copied without decimation, recoloring, material/texture rewriting or rig replacement. The three Mixamo rigs have respectively 64/37/66 bones and retain all thirteen original named clips. Orc retains its seven own clips. Runtime actor clones own geometry/material/skeleton/mixer; page templates own original embedded textures.
 
+## License evidence
+
+- Adobe official Mixamo FAQ (verified 2026-11-17): https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html — characters and animations may be used royalty-free in personal, commercial and non-profit projects, explicitly including video games. This ledger covers incorporation in this game, not standalone asset resale or a model-download product. Raw FBX remains private.
+- Gobkit official free-model metadata: https://gobkit.com/api/free and gallery https://gobkit.com/freebies — the acquired OrcChainBrute metadata records CC0 1.0. License text: https://creativecommons.org/publicdomain/zero/1.0/legalcode.en . Source metadata and original model hashes were recorded during acquisition and independently checked against the copied file.
+
 ## Necessary progression compatibility
 
-Quest IDs, save key, material IDs, forge costs, stock, HP, quest shards and wallet gold are unchanged. New main actors have no supported part-break presentation, so their former one-horn and one-tail break slots become one-horn and one-tail clear slots. This is an explicit change in accessibility, not an additional reward roll: it does not exceed the former fully-broken clear budget (5 low-rank / 7 high-rank total materials), and supplied break flags never stack another copy. Warrok loot is unchanged. Parent independent spec/sim/economy review must assess this compatibility decision before release.
+Quest IDs, save key, material IDs, forge costs, stock, HP, quest shards and wallet gold are unchanged. New main actors have no supported part-break presentation, so their former one-horn and one-tail break slots become one-horn and one-tail clear slots. This is an explicit change in accessibility, not an additional reward roll: it does not exceed the former fully-broken clear budget (5 low-rank / 7 high-rank total materials), and supplied break flags never stack another copy. Warrok loot is unchanged. Independent economy review B2 confirmed the exact trade-off: compared with an old clear breaking neither part, each affected clear now yields two more materials (LR 3 to 5; HR 5 to 7); compared with an old clear breaking both parts, the budget is identical. There is no extra loot RNG draw, stacking bonus, forge-cost change or existing-stock modification. Parent product decision on 2026-11-17 accepts this bounded accessibility increase because the approved new roster has no part-break mechanic and existing crafting materials must remain obtainable. This is not a claim that old no-break-clear yields are unchanged.
 
 ## Technical transforms
 
