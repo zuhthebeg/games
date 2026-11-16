@@ -27,9 +27,10 @@ export class Coop {
   status(key){this.lobby._setStatus(t(key));}
   service(){
     const ws=this.lobby._ws;
+    if(this.ws && ws!==this.ws && this.owner && !this.owner.initialized)this.lostHost();
     if(ws && ws!==this.ws){
       this.locked=false;this.relay?.close();this.ws=ws;sessionStorage.setItem('bh_room',this.lobby.room);
-      this.relay=attachRelay(ws,{uid:this.uid,onPacket:(from,p)=>this.packet(from,p),
+      this.relay=attachRelay(ws,{uid:this.uid,onPacket:(from,p,channel)=>this.packet(from,p,channel),
         onStarted:()=>this.started(),onRoster:d=>this.rosterChanged(d)});
       // Lobby's generic opponent-left modal is not appropriate for a PvE party.
       const prior=ws.onEvent;ws.onEvent=e=>{if(e?.type==='opponent_left')return;prior?.(e);};
@@ -47,8 +48,8 @@ export class Coop {
     if(!this.owner){this.profiles.set(this.uid,this.profile());ws.sendRt({bhHello:this.profile()});}
     if(this.uid!==this.roster.hostUser && (!this.lastPing || performance.now()-this.lastPing>1000)){this.lastPing=performance.now();ws.sendRt({bhPing:this.lastPing});}
     this.decorate();
+    if(this.owner && ws._ws?.readyState>=2)this.lostHost();
     this.announceModelReady();
-    if(this.owner && this.lobby._ws?._ws?.readyState>=2)this.lostHost();
   }
   decorate(){
     const mode=document.querySelector('#mpl-mode');if(mode){
@@ -80,6 +81,8 @@ export class Coop {
     if(this.pendingPlan && d.hostUser){const plan=this.pendingPlan;this.pendingPlan=null;this.begin(plan);}
     if(this.owner && (d.hostUser!==this.plan.host || !d.players.some(p=>p.user===this.plan.host)))this.lostHost();
     const ids=new Set(d.players.map(p=>p.user));
+    if(this.owner && !this.owner.initialized && (!ids.has(this.uid) ||
+      d.players.filter(p=>Object.hasOwn(this.plan.roster,p.user)).length<2))this.lostHost();
     for(const [id,r] of this.remotes)if(!ids.has(id)){r.H.root.removeFromParent();r.H.root.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});r.label.remove();this.remotes.delete(id);this.owner?.rep.hunters.delete(id);}
     this.startLoadedWorld();
     if(this.world)this.world.worker.postMessage({type:'roster',ids:[...ids]});
@@ -119,21 +122,28 @@ export class Coop {
     this.lobby._hideLobby();this.lobby._hideResult();this.start(plan.quest,this.owner);
     this.send(envelope('resync',plan.id,0,{}),'state');
   }
+  loadingConnected(){
+    return !!(this.owner && !this.owner.disconnected && !this.owner.sim?.over && this.ws &&
+      this.lobby._ws===this.ws && this.ws._ws?.readyState===1);
+  }
   modelReady(session){
-    if(!this.plan || session!==this.owner)return;
+    if(!this.plan || session!==this.owner || !this.loadingConnected())return;
     this.modelIsReady=true;this.announceModelReady();
   }
   announceModelReady(){
-    // Reliable event delivery can race the host installing its plan; repeat on
-    // the existing service cadence until a full authority snapshot confirms it.
-    if(!this.modelIsReady || !this.owner || this.owner.initialized || !this.plan)return;
+    // rt authenticates the sender; reliable BH_EVENT.from is only nominal.
+    // Retry on the existing 200ms cadence until authority confirms readiness.
+    if(!this.modelIsReady || !this.loadingConnected() || this.owner.initialized || !this.plan)return;
     const packet=envelope('modelReady',this.plan.id,0,{});
-    this.packet(this.uid,packet);this.relay.sendEvent(packet);
+    // Only this actual local model callback may mark our own actor ready.
+    this.modelsReady?.add(this.uid);this.startLoadedWorld();this.relay.sendState(packet);
   }
   startLoadedWorld(){
-    if(this.world || !this.worldOptions || !this.modelsReady)return;
+    if(this.world || !this.worldOptions || !this.modelsReady || !this.modelIsReady || !this.loadingConnected() ||
+      this.uid!==this.plan.host || this.roster.hostUser!==this.plan.host)return;
     const ids=this.roster.players.map(p=>p.user).filter(id=>Object.hasOwn(this.plan.roster,id));
-    if(ids.length<2 || !ids.every(id=>this.modelsReady.has(id)))return;
+    if(ids.length<2){this.lostHost();return;}
+    if(!ids.every(id=>this.modelsReady.has(id)))return;
     const roster=Object.fromEntries(ids.map(id=>[id,this.worldOptions.roster[id]]));
     this.world=new WorkerHost({...this.worldOptions,roster},this.worldPackets);
   }
@@ -141,10 +151,10 @@ export class Coop {
     this.bytes+=byteLength(p);this.world?.receive(this.uid,p);
     if(channel==='state')this.relay.sendState(p);else this.relay.sendEvent(p);
   }
-  packet(from,p){
+  packet(from,p,channel){
     if(!p)return;
     if(p.type==='modelReady'){
-      if(this.plan && p.v===VERSION && p.hunt===this.plan.id && p.seq===0 && Object.hasOwn(this.plan.roster,from)){
+      if(channel==='state' && this.loadingConnected() && this.plan && p.v===VERSION && p.hunt===this.plan.id && p.seq===0 && Object.hasOwn(this.plan.roster,from)){
         this.modelsReady?.add(from);this.startLoadedWorld();
       }return;
     }
@@ -155,7 +165,7 @@ export class Coop {
     }
     this.owner.receive(from,p,performance.now());
   }
-  lostHost(){if(this.owner&&!this.owner.sim.over){this.owner.initialized=true;this.owner.disconnected=true;const end=this.owner.pending.find(p=>p.type==='end')?.payload;if(end){this.owner.sim.time=end.time;this.owner.sim.carts=end.carts;this.owner.sim.m.broke={...end.broke};}this.owner.sim.finish(end?.win??false,0);}}
+  lostHost(){if(this.owner&&!this.owner.sim.over){this.modelIsReady=false;this.worldOptions=null;this.owner.initialized=true;this.owner.disconnected=true;const end=this.owner.pending.find(p=>p.type==='end')?.payload;if(end){this.owner.sim.time=end.time;this.owner.sim.carts=end.carts;this.owner.sim.m.broke={...end.broke};}this.owner.sim.finish(end?.win??false,0);}}
   render(h,dt){
     const o=this.owner,view=o.rep.clock.playTick;
     const hud=document.getElementById('party');hud.hidden=false;
