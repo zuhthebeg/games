@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import{QUESTS,MONSTERS}from'../js/data.js';
+const source=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');const expression=source.match(/\$\('quests'\)\.innerHTML = ([\s\S]*?)\.join\(''\);/)[1]+".join('')";
+function render(clears={}){const save={clears},before=JSON.stringify(save);const html=vm.runInNewContext(expression,{QUESTS,MONSTERS,save,sel:'q1',unlocked:q=>!q.need||!!save.clears[q.need],t:k=>k,fmtT:String});assert.equal(JSON.stringify(save),before);return html;}
+function card(html,id){return html.match(new RegExp('<button[^>]*data-q="'+id+'"[^>]*>[\\s\\S]*?</button>'))[0];}
+test('locked roster still identifies every monster including both Warrok quests',()=>{const html=render();for(const q of QUESTS)assert.ok(card(html,q.id).includes('mon_'+q.mon),q.id+' must name its monster');});
+test('naming locked Warrok does not grant quest access',()=>{for(const id of['q7','q8']){const c=card(render(),id);assert.match(c,/<button[^>]*disabled/);assert.match(c,/class="[^"]*lock/);}});
+test('existing q6 and q7 unlock dependencies remain unchanged',()=>{let h=render({q6:{n:1}});assert.doesNotMatch(card(h,'q7'),/<button[^>]*disabled/);assert.match(card(h,'q8'),/<button[^>]*disabled/);h=render({q6:{n:1},q7:{n:1}});assert.doesNotMatch(card(h,'q8'),/<button[^>]*disabled/);});
+test('open roster keeps existing names and rewards',()=>{const html=render(Object.fromEntries(QUESTS.map(q=>[q.id,{n:1,best:20}])));for(const q of QUESTS){const c=card(html,q.id);assert.ok(c.includes('mon_'+q.mon));assert.ok(c.includes(String(q.shards)));assert.doesNotMatch(c,/<button[^>]*disabled/);}});

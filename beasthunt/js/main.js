@@ -94,7 +94,7 @@ function renderHub() {
     const open = unlocked(q), c = save.clears[q.id];
     return `<button class="q ${q.id === sel ? 'sel' : ''} ${open ? '' : 'lock'} b-${MONSTERS[q.mon].biome}" data-q="${q.id}" ${open ? '' : 'disabled'}>
       <span class="qr">${'★'.repeat(QUESTS.indexOf(q) % 3 + 1)} ${t('rank' + q.hr)}</span>
-      <span class="qn">${open ? t('q_hunt') + ' · ' + t('mon_' + q.mon) : t('locked')}</span>
+      <span class="qn">${open ? '' : '🔒 '}${t('q_hunt') + ' · ' + t('mon_' + q.mon)}</span>
       <span class="qm">${t('reward')}: ${q.shards} ${t('currency')}${c ? ' · ' + t('best') + ': ' + fmtT(c.best) : ''}</span></button>`;
   }).join('');
   // loadout
