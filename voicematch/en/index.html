@@ -179,6 +179,14 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .lb-row .rk-no.top{color:var(--amber)}
 .lb-row .nick{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-row .pct{font-weight:800;color:var(--lime)}
+/* Entry preview reuses the leaderboard rows and existing panel/button palette. */
+#entry-ranking{margin-top:18px;background:var(--panel);border-radius:14px;padding:14px 12px}
+#entry-ranking h2{font-size:14px;color:var(--amber)}
+#entry-rank-hint,#entry-rank-date{font-size:11px;color:var(--mut);line-height:1.5;margin-top:4px}
+#entry-ranking .all-btn{color:var(--txt);margin-top:8px;min-height:40px}
+.lb-status{padding:12px 4px;color:var(--mut);font-size:12px;line-height:1.5;text-align:center}
+#lb-retry{display:block;margin:8px auto;min-height:40px}
+#entry-ranking button:focus-visible,#lb-box button:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 #lb-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
 /* 수록 가수 전체 목록 — "내 최애가 없다"는 오해를 푸는 게 목적이라 검색이 먼저 온다 */
 .all-btn{margin-top:12px;border:1px solid oklch(0.45 0.07 295);background:transparent;color:var(--mut);
@@ -332,6 +340,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <button class="key start" id="btn-start"></button>
     </div>
     <p class="tip" id="t-tipintro"></p>
+    <section id="entry-ranking" aria-labelledby="entry-rank-title">
+      <h2 id="entry-rank-title"></h2>
+      <p id="entry-rank-hint"></p>
+      <p id="entry-rank-date"></p>
+      <div id="entry-rank-list" aria-live="polite" aria-busy="false"></div>
+      <button class="all-btn" id="btn-entry-board" aria-haspopup="dialog"></button>
+      <button class="all-btn hidden" id="btn-entry-retry"></button>
+    </section>
+
     <style>
 /* 크로스 프로모 — 보이스매치 다크 팔레트에 맞춘다.
    크림 배경 + 링크색(연보라) 제목으로 뒀더니 대비가 죽고 화면에서 떠 보였다. */
@@ -443,7 +460,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260826d2"></script>
+<script src="/voicematch/i18n.js?v=20261116rank1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -464,6 +481,7 @@ function applyLang(){
   $('btn-stop').textContent=t('stop');
   $('t-tipintro').innerHTML=t('tipIntro');
   $('btn-all').textContent=t('alBtn');
+  renderEntryRanking();
   $('xpromo-t').textContent=t('xpromoT');
   $('xpromo-s').textContent=t('xpromoS');
   // 동물상 판독기는 ko/en/ja/tw만 있다. es·id는 영어로 보낸다(없는 로케일로 링크하면 404).
@@ -821,25 +839,100 @@ async function rankFlow(top){
 }
 let lastRank=null;let lastGenres=null;
 function vmFlag(c){return(!c||!/^[A-Z]{2}$/.test(c))?'':String.fromCodePoint(...[...c].map(ch=>0x1F1E6+ch.charCodeAt(0)-65))+' '}
+// All browsing is public GET-only; no account, recording or reward action is invoked here.
+async function fetchBoard(url,day){
+  const controller=new AbortController();let timer;
+  try{
+    const request=(async()=>{
+      const response=await fetch(url,{method:'GET',credentials:'omit',signal:controller.signal});
+      if(!response.ok)throw new Error('leaderboard HTTP');
+      const data=await response.json();
+      if(!data||data.success!==true||!Array.isArray(data.rankings)||
+        (day&&data.day!==day)||data.rankings.some(row=>!row||typeof row.nickname!=='string'||
+          !Number.isFinite(row.pct)||row.pct<0||row.pct>100))throw new Error('leaderboard response');
+      return data;
+    })();
+    return await Promise.race([request,new Promise((_,reject)=>{
+      timer=setTimeout(()=>{controller.abort();reject(new Error('leaderboard timeout'));},8000);
+    })]);
+  }finally{clearTimeout(timer);}
+}
+function boardStatus(key){return '<div class="lb-status">'+escHtml(t(key))+'</div>';}
+function boardRows(data,u,limit){
+  const rows=data.rankings.slice(0,limit||data.rankings.length);
+  if(!rows.length)return boardStatus('lb_empty');
+  let html=rows.map((row,i)=>{
+    const me=u&&row.user_id===u.userId;
+    return '<div class="lb-row'+(me?' me':'')+'"><span class="rk-no'+(i<3?' top':'')+'">'+(i+1)+
+      '</span><span class="nick">'+vmFlag(row.country)+escHtml(row.nickname)+(me?' ('+escHtml(t('lb_me'))+')':'')+
+      '</span><span class="pct">'+row.pct+'%</span></div>';
+  }).join('');
+  if(u&&Number.isInteger(data.myRank)&&data.myRank>rows.length&&Number.isFinite(data.myPct))
+    html+='<div class="lb-row me"><span class="rk-no">'+data.myRank+'</span><span class="nick">'+escHtml(t('lb_me'))+
+      '</span><span class="pct">'+data.myPct+'%</span></div>';
+  return html;
+}
+function openBoard(title){
+  // Avoid duplicate modal IDs on repeated taps; keep the original trigger for focus return.
+  const existing=$('lb-modal');if(existing&&existing.closeBoard)existing.closeBoard();
+  const opener=document.activeElement;
+  const m=document.createElement('div');m.id='lb-modal';
+  m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-labelledby','lb-title');
+  m.innerHTML='<div id="lb-box"><h3 id="lb-title"></h3><div id="lb-content" aria-live="polite"></div><button id="lb-close"></button></div>';
+  document.body.appendChild(m);
+  const heading=m.querySelector('#lb-title'),content=m.querySelector('#lb-content'),close=m.querySelector('#lb-close');
+  heading.textContent=title;content.innerHTML=boardStatus('lb_loading');content.setAttribute('aria-busy','true');
+  close.textContent=t('lb_close');
+  m.closeBoard=()=>{m.remove();if(opener&&opener.isConnected)opener.focus();};
+  close.onclick=m.closeBoard;
+  m.onclick=e=>{if(e.target===m)m.closeBoard();};
+  m.onkeydown=e=>{
+    if(e.key==='Escape'){e.preventDefault();m.closeBoard();}
+    if(e.key==='Tab'){
+      const buttons=[...m.querySelectorAll('button:not([disabled])')];
+      const first=buttons[0],last=buttons[buttons.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  };
+  close.focus();
+  return {m,heading,content};
+}
+function boardRetry(board,retry){
+  const button=document.createElement('button');button.id='lb-retry';button.className='all-btn';
+  button.textContent=t('lb_retry');button.onclick=retry;board.content.appendChild(button);
+}
 async function showBoard(slug){
   const u=authUser();
   const s=(window._singersCache||[]).find(x=>x.slug===slug)||{slug,name:slug};
-  let html=`<h3>${t('lb_title')(singerName(s,LANG))}</h3>`;
+  const board=openBoard(t('lb_title')(singerName(s,LANG)));
+  const load=async()=>{
+    if(board.content.contains(document.activeElement))board.m.querySelector('#lb-close').focus();
+    board.content.innerHTML=boardStatus('lb_loading');board.content.setAttribute('aria-busy','true');
+    try{
+      const q=u?'&me='+encodeURIComponent(u.userId):'';
+      const data=await fetchBoard(RANK_API+'?artist='+encodeURIComponent(slug)+q);
+      if(board.m.isConnected)board.content.innerHTML=boardRows(data,u);
+    }catch(e){if(board.m.isConnected){board.content.innerHTML=boardStatus('lb_error');boardRetry(board,load);}}
+    finally{board.content.setAttribute('aria-busy','false');}
+  };
+  return load();
+}
+let entryRankSeq=0;
+async function renderEntryRanking(){
+  const seq=++entryRankSeq,day=dailyDayUTC(),list=$('entry-rank-list'),retry=$('btn-entry-retry');
+  $('entry-rank-title').textContent=t('entryRankTitle');
+  $('entry-rank-hint').textContent=t('entryRankHint');
+  $('entry-rank-date').textContent=day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6)+' UTC';
+  $('btn-entry-board').textContent=t('entryRankView');
+  $('btn-entry-board').onclick=()=>showDailyBoard(true);
+  retry.textContent=t('lb_retry');retry.onclick=()=>renderEntryRanking();retry.classList.add('hidden');
+  list.innerHTML=boardStatus('lb_loading');list.setAttribute('aria-busy','true');
   try{
-    const q=u?`&me=${encodeURIComponent(u.userId)}`:'';
-    const r=await fetch(`${RANK_API}?artist=${slug}${q}`).then(x=>x.json());
-    const rows=r.rankings||[];
-    if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
-    rows.forEach((row,i)=>{
-      const me=u&&row.user_id===u.userId;
-      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
-    });
-    if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
-  }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}
-  html+=`<button id="lb-close" onclick="document.getElementById('lb-modal').remove()">${t('lb_close')}</button>`;
-  const m=document.createElement('div');m.id='lb-modal';m.innerHTML=`<div id="lb-box">${html}</div>`;
-  m.onclick=e=>{if(e.target===m)m.remove();};
-  document.body.appendChild(m);
+    const data=await fetchBoard(DAILY_API+'?day='+day+'&limit=3',day);
+    if(seq===entryRankSeq)list.innerHTML=boardRows(data,null,3);
+  }catch(e){if(seq===entryRankSeq){list.innerHTML=boardStatus('lb_error');retry.classList.remove('hidden');}}
+  finally{if(seq===entryRankSeq)list.setAttribute('aria-busy','false');}
 }
 /* ---- 오늘의 도전 (Daily Challenge) ----
  * 매일 UTC 날짜 해시로 gk 풀(해외에서도 알려진 가수)에서 1명이 전 유저 공통으로 뽑힌다.
@@ -851,11 +944,11 @@ function dailyDayUTCOffset(off){const d=new Date();d.setUTCDate(d.getUTCDate()+o
 function getDailyStreak(){return{last:localStorage.getItem('vm_streak_last')||'',n:parseInt(localStorage.getItem('vm_streak_n')||'0',10)};}
 function updateDailyStreak(day){const{last,n}=getDailyStreak();if(last===day)return n;const newN=(last===dailyDayUTCOffset(-1))?n+1:1;localStorage.setItem('vm_streak_last',day);localStorage.setItem('vm_streak_n',String(newN));return newN;}
 function dailyHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
-async function dailyTarget(){
+async function dailyTarget(day=dailyDayUTC()){
   const singers=await ensureSingers();if(!singers)return null;
   const pool=singers.filter(s=>!s.intl&&s.gk).sort((a,b)=>a.slug<b.slug?-1:a.slug>b.slug?1:0);
   if(!pool.length)return null;
-  return pool[dailyHash('vmdaily-'+dailyDayUTC())%pool.length];
+  return pool[dailyHash('vmdaily-'+day)%pool.length];
 }
 function dailyPct(target){
   if(!lastQ||!target||!window._singersCache)return null;
@@ -945,37 +1038,30 @@ async function shareDaily(){
   const url='https://game.cocy.io/voicematch/'+(LANG!=='ko'?LANG+'/':'')+'?utm_source=share&utm_medium=daily&utm_campaign=voicetwin';
   await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share');
 }
-async function showDailyBoard(){
-  const u=authUser();
-  const tgt=await dailyTarget();
-  let html=`<h3>${t('dailyBoardTitle')(tgt?singerName(tgt,LANG):'')}</h3>`;
-  // 어제의 1위 명예의전당
-  try{
-    const yr=await fetch(DAILY_API+'?day='+dailyDayUTCOffset(-1)+'&limit=3').then(x=>x.json());
-    const yrows=(yr.rankings||[]).slice(0,3);
-    if(yrows.length){
-      html+=`<div class="lb-sec-t">${t('dailyYesterday')}</div>`;
-      yrows.forEach((row,i)=>{
-        html+=`<div class="lb-row"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}</span><span class="pct">${row.pct}%</span></div>`;
-      });
-      html+=`<div class="lb-divider"></div>`;
+async function showDailyBoard(publicOnly=false){
+  const u=publicOnly?null:authUser(),day=dailyDayUTC(),yday=dailyDayUTCOffset(-1);
+  const board=openBoard(t('dailyBoardBtn'));
+  // Target metadata must not hold up the public leaderboard if the singer database is unavailable.
+  dailyTarget(day).then(tgt=>{if(tgt&&board.m.isConnected)board.heading.textContent=t('dailyBoardTitle')(singerName(tgt,LANG));}).catch(()=>{});
+  const load=async()=>{
+    if(board.content.contains(document.activeElement))board.m.querySelector('#lb-close').focus();
+    board.content.innerHTML=boardStatus('lb_loading');board.content.setAttribute('aria-busy','true');
+    const q=u?'&me='+encodeURIComponent(u.userId):'';
+    const [today,yesterday]=await Promise.allSettled([
+      fetchBoard(DAILY_API+'?day='+day+q,day),
+      fetchBoard(DAILY_API+'?day='+yday+'&limit=3',yday)
+    ]);
+    if(!board.m.isConnected)return;
+    let html='<div class="lb-sec-t">'+escHtml(t('dailyToday'))+' · '+day+' UTC</div>';
+    html+=today.status==='fulfilled'?boardRows(today.value,u):boardStatus('lb_error');
+    if(yesterday.status==='rejected'||yesterday.value.rankings.length){
+      html+='<div class="lb-divider"></div><div class="lb-sec-t">'+escHtml(t('dailyYesterdayTop3'))+' · '+yday+' UTC</div>';
+      html+=yesterday.status==='fulfilled'?boardRows(yesterday.value,null,3):boardStatus('lb_error');
     }
-  }catch(e){}
-  try{
-    const q=u?`?me=${encodeURIComponent(u.userId)}`:'';
-    const r=await fetch(DAILY_API+q).then(x=>x.json());
-    const rows=r.rankings||[];
-    if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
-    rows.forEach((row,i)=>{
-      const me=u&&row.user_id===u.userId;
-      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
-    });
-    if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
-  }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}
-  html+=`<button id="lb-close" onclick="document.getElementById('lb-modal').remove()">${t('lb_close')}</button>`;
-  const m=document.createElement('div');m.id='lb-modal';m.innerHTML=`<div id="lb-box">${html}</div>`;
-  m.onclick=e=>{if(e.target===m)m.remove();};
-  document.body.appendChild(m);
+    board.content.innerHTML=html;board.content.setAttribute('aria-busy','false');
+    if(today.status==='rejected'||yesterday.status==='rejected')boardRetry(board,load);
+  };
+  return load();
 }
 /* ---- 결과 ---- */
 function comment(s){return t('c_'+s.g+'_'+s.kind)||'';}
