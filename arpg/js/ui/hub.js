@@ -196,7 +196,12 @@ export class HubUI {
       const node = event.target.closest('[data-action="open-item"]');
       if (!node || node.disabled) return;
       pressOrigin = { x: event.clientX, y: event.clientY };
-      pressTimer = setTimeout(() => this.action('open-item', node.dataset), 500);
+      const pageToken = this.pageToken;
+      pressTimer = setTimeout(() => {
+        // A held card owns only the render where its gesture began.
+        if (this.pageToken !== pageToken || this.root.hidden || !this.root.contains(node)) return;
+        this.action('open-item', node.dataset);
+      }, 500);
     });
     this.root.addEventListener('pointermove', (event) => {
       if (pressOrigin && Math.hypot(event.clientX - pressOrigin.x, event.clientY - pressOrigin.y) > 8) clearTimeout(pressTimer);
