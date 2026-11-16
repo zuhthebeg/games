@@ -6,13 +6,14 @@ import { ARENA } from '../sim/arena.js';
 import { attackReach } from '../core/attack-assist.js';
 import { COMBO_TIMELINES, pickAimTarget } from '../sim/world.js';
 import { ITEMS, RARITIES } from '../content/items.js';
+import { ENEMIES } from '../content/enemies.js';
 import { LINEAGES, lineageDisplayName, lineageOf } from '../content/lineages.js';
 import { SKILLS, skillsFor } from '../content/skills.js';
 import {
   DONOR_PARTS,
-  PART_SCALE,
   playerLookKey,
   playerModelKey,
+  playerPartScale,
   resolvePlayerBone,
   resolvePlayerParts,
 } from './player-look.js';
@@ -26,6 +27,13 @@ import {
 import { castVisualKey } from '../net/cast-timeline.js';
 import { isPerfectDodgeWindowActive } from './dodge-window.js';
 import { VfxSystem } from './vfx.js';
+import { deathTierForEntity } from './death-effects.js';
+import {
+  emitCriticalConfirmationSparks,
+  emitHitSparks,
+  emitPredictedHitSparks,
+} from './hit-feedback.js';
+import { hitReactionOffset } from './hit-reaction.js';
 
 const ASSET = (path) => new URL(`../../${path}`, import.meta.url).href;
 const LINEAGE_COLORS = Object.freeze({
@@ -48,6 +56,36 @@ const LINEAGE_RING_MATERIALS = Object.freeze(Object.fromEntries(
     toneMapped: false,
   })]),
 ));
+function ribbonGeometry(points, width) {
+  const positions = [];
+  const colors = [];
+  const indices = [];
+  const segmentCount = points.length - 1;
+  for (let index = 0; index < points.length; index += 1) {
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const tangentX = next.x - previous.x;
+    const tangentZ = next.z - previous.z;
+    const length = Math.hypot(tangentX, tangentZ) || 1;
+    const normalX = -tangentZ / length * width / 2;
+    const normalZ = tangentX / length * width / 2;
+    const point = points[index];
+    positions.push(point.x + normalX, point.y, point.z + normalZ);
+    positions.push(point.x - normalX, point.y, point.z - normalZ);
+    const alpha = index / Math.max(1, points.length - 1);
+    colors.push(1, 1, 1, alpha, 1, 1, 1, alpha);
+    if (index === segmentCount) continue;
+    const vertex = index * 2;
+    indices.push(vertex, vertex + 2, vertex + 1, vertex + 1, vertex + 2, vertex + 3);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.setDrawRange(0, 0);
+  geometry.computeVertexNormals();
+  return { geometry, segmentCount };
+}
 const M0_MODELS = {
   knight: 'assets/chars/Knight.glb',
   Barbarian: 'assets/chars/Barbarian.glb',
@@ -174,7 +212,7 @@ function applyPlayerLook(root, look = {}, lineage = 'human') {
   root.traverse((node) => {
     if (!PLAYER_PARTS.has(node.name)) return;
     const baseScale = node.userData.playerPartBaseScale ??= node.scale.toArray();
-    const scaleFactor = PART_SCALE[node.name] ?? 1;
+    const scaleFactor = playerPartScale(node.name, lineage);
     node.scale.set(
       baseScale[0] * scaleFactor,
       baseScale[1] * scaleFactor,
@@ -401,9 +439,10 @@ export class ArenaRenderer {
     this.doorVisuals = [];
     this.seenEventIds = new Set();
     this.seenCastKeys = new Set();
+    this.enemyTraits = new Map();
     this.slashes = new Map();
     this.damageNumbers = [];
-    this.deathPuffs = [];
+    this.hitReactions = new Map();
     this.transientEffects = [];
     this.ashPoints = null;
     this.ashPositions = null;
@@ -1505,7 +1544,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   graftPlayerParts(root) {
     const existingParts = new Set();
     root.traverse((node) => existingParts.add(node.name));
-    for (const { node, donor, bone } of DONOR_PARTS) {
+    for (const { node, donor, bone, resetPosition } of DONOR_PARTS) {
       if (existingParts.has(node)) continue;
       const donorPart = this.models.get(donor)?.getObjectByName(node);
       const parent = resolvePlayerBone(root, bone);
@@ -1514,6 +1553,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       graft.position.copy(donorPart.position);
       graft.quaternion.copy(donorPart.quaternion);
       graft.scale.copy(donorPart.scale);
+      if (resetPosition) graft.position.set(0, 0, 0);
       parent.add(graft);
       existingParts.add(node);
     }
@@ -1569,6 +1609,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     else root.scale.setScalar(entity.kind === 'player'
       ? (entity.modelScale ?? 0.95) * (entity.evolved ? 1.08 : 1)
       : entity.modelScale ?? (entity.kind === 'loot' ? 1 : 0.95));
+    const baseScale = root.scale.clone();
     const modelBounds = entity.kind === 'player' ? new THREE.Box3().setFromObject(root) : null;
     const screenCenterY = modelBounds && !modelBounds.isEmpty()
       ? (modelBounds.min.y + modelBounds.max.y) / 2
@@ -1686,6 +1727,8 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }]));
     const visual = {
       root,
+      baseScale,
+      interpolatedPosition: new THREE.Vector3(entity.x, 0, entity.z),
       mixer,
       actions,
       currentAction: null,
@@ -1803,16 +1846,37 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
       }
     }
-    const closed = skillId === 1 || (counter && event.family === 'staff');
-    const curve = new THREE.CatmullRomCurve3(points, closed);
-    const geometry = new THREE.TubeGeometry(curve, closed ? 40 : 28, counter ? 0.09 : skillId === 3 ? 0.085 : skillId === 1 ? 0.05 : 0.065, 6, closed);
-    const material = new THREE.MeshBasicMaterial({
-      color: rankFive ? 0xfff2c4 : counter ? 0xffe08a : skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43,
+    const width = counter ? 0.22 : skillId === 3 ? 0.45 : skillId === 1 ? 0.22 : 0.32;
+    const { geometry, segmentCount } = ribbonGeometry(points, width);
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(rankFive ? 0xfff2c4 : counter ? 0xffe08a : skillId === 3 ? 0x8bd3ff : skillId === 1 ? 0xffce73 : 0xff8b43) },
+        uOpacity: { value: 0.96 },
+      },
+      vertexShader: `
+        attribute vec4 color;
+        varying vec4 vColor;
+        void main() {
+          vColor = color;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        varying vec4 vColor;
+        void main() {
+          gl_FragColor = vec4(uColor * vColor.rgb, uOpacity * vColor.a);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `,
       transparent: true,
-      opacity: 0.96,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthTest: false,
       depthWrite: false,
-      fog: false,
+      toneMapped: false,
     });
     const mesh = new THREE.Mesh(geometry, material);
     if (rankFive) mesh.scale.setScalar(1.15);
@@ -1829,7 +1893,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       startTick,
       endTick: startTick + duration,
       facing: counter ? event.angle ?? this.worldEntity(event.entityId)?.facing ?? 0 : this.worldEntity(event.entityId)?.facing ?? 0,
+      skill: skillId,
       mesh,
+      segmentCount,
+      slashSpriteEmitted: false,
     });
   }
 
@@ -1844,6 +1911,46 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
 
   worldEntity(entityId) {
     return this.currentWorld?.entities.find((entity) => entity.id === entityId);
+  }
+
+  hitSparks(target, critical, extrasOnly = false) {
+    emitHitSparks(this.vfx, target, critical, extrasOnly);
+  }
+
+  markSlashHit(event, world) {
+    for (const effect of this.slashes.values()) {
+      if (effect.castId !== event.castId || effect.hit) continue;
+      effect.hit = true;
+      if (effect.slashSpriteEmitted) continue;
+      const target = world.entities.find((entity) => entity.id === event.targetId);
+      if (!target) continue;
+      effect.slashSpriteEmitted = true;
+      this.vfx?.emit('spark', target.x, Math.max(0.65, (target.height ?? 1.7) * 0.68), target.z, {
+        cell: 'slash_02',
+        color: effect.counter ? 0xffe08a : effect.skill === 3 ? 0x8bd3ff : 0xffd38a,
+        startSize: 0.62,
+        endSize: 0.12,
+        lifeMs: 320,
+        alpha: 0.9,
+      });
+    }
+  }
+
+  triggerEnemyHitReaction(event, world, now) {
+    if (this.reducedMotion) return;
+    const target = world.entities.find((entity) => entity.id === event.targetId);
+    if (target?.kind !== 'enemy') return;
+    const source = world.entities.find((entity) => entity.id === event.sourceId || entity.playerId === event.sourceId);
+    const dx = source ? target.x - source.x : Math.cos(target.facing ?? 0);
+    const dz = source ? target.z - source.z : Math.sin(target.facing ?? 0);
+    const boss = deathTierForEntity(target, this.enemyTraits.get(target.id)).boss;
+    this.hitReactions.set(target.id, {
+      startTime: now,
+      directionX: dx,
+      directionZ: dz,
+      distance: boss ? 0.04 : 0.12,
+      squash: !boss,
+    });
   }
 
   masteryRankForSkill(playerId, skill) {
@@ -1862,6 +1969,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
 
   createDamageNumber(event) {
     const pickup = event.type === 'pickup';
+    const critical = Boolean(event.critical);
     if (pickup && (
       !event.auto || event.lootType !== 'gold' || event.playerId !== this.localPlayerId
     )) return;
@@ -1869,10 +1977,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const element = document.createElement('span');
     element.className = pickup
       ? 'damage-number gold-pickup'
-      : event.guarded ? 'damage-number guarded' : 'damage-number';
+      : critical ? 'damage-number critical' : event.guarded ? 'damage-number guarded' : 'damage-number';
     element.textContent = pickup
       ? `+${event.gold} G`
-      : event.guarded ? `막음 −${event.damage}` : `−${event.damage}`;
+      : critical ? `−${event.damage}!` : event.guarded ? `막음 −${event.damage}` : `−${event.damage}`;
     this.vfxLayer.appendChild(element);
     this.damageNumbers.push({
       element,
@@ -1881,6 +1989,8 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       z: pickup ? event.z : null,
       startTime: performance.now(),
       duration: pickup ? 700 : 850,
+      critical,
+      horizontalOffset: pickup ? 0 : Math.random() * 36 - 18,
     });
     while (this.damageNumbers.length > 24) this.removeDamageNumber(0);
   }
@@ -1916,32 +2026,74 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   createDeathPuff(event, world) {
     const entity = world.entities.find((item) => item.id === event.entityId);
     if (!entity) return;
-    const geometry = new THREE.SphereGeometry(0.13, 6, 4);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xb9a99b,
-      transparent: true,
-      opacity: 0.68,
-      depthWrite: false,
-      fog: false,
-    });
-    const group = new THREE.Group();
-    for (const [x, y, z] of [[0, 0.3, 0], [-0.22, 0.18, 0.12], [0.19, 0.2, -0.1], [0.06, 0.12, 0.22]]) {
-      const puff = new THREE.Mesh(geometry, material);
-      puff.position.set(x, y, z);
-      group.add(puff);
+    const x = entity.x;
+    const z = entity.z;
+    const tier = deathTierForEntity(entity, this.enemyTraits.get(entity.id));
+    const { boss, elite } = tier;
+    if (entity.kind === 'enemy') this.enemyTraits.delete(entity.id);
+    const tierScale = elite ? 1.5 : 1;
+    const scaledCount = (count) => this.vfx?.scaleCount(count) ?? count;
+    if (entity.kind === 'player') {
+      this.vfx?.burst({
+        preset: 'smoke', count: scaledCount(4), x, y: 0.3, z,
+        spreadRadius: 0.2, startSize: 0.28, endSize: 0.7,
+        lifeMs: 700, color: 0x8c827b, upward: [0.2, 0.65],
+      });
+      return;
     }
-    group.position.set(entity.x, 0, entity.z);
-    this.scene.add(group);
-    this.deathPuffs.push({ group, geometry, material, startTime: performance.now(), duration: 520 });
-    while (this.deathPuffs.length > 12) this.removeDeathPuff(0);
-  }
-
-  removeDeathPuff(index) {
-    const [effect] = this.deathPuffs.splice(index, 1);
-    if (!effect) return;
-    this.scene.remove(effect.group);
-    effect.geometry.dispose();
-    effect.material.dispose();
+    this.vfx?.burst({
+      preset: 'bone', count: scaledCount(boss ? 30 : Math.round(10 * tierScale)),
+      x, y: 0.55, z, spreadRadius: boss ? 0.42 : 0.28,
+      speed: boss ? [3, 9] : [1.5, 4.5], upward: boss ? [1.5, 4] : [0.8, 2.8],
+      startSize: boss ? 0.34 : 0.28, endSize: 0.05, lifeMs: 820,
+      colors: [0xe8e2cc, 0xf4ebd7, 0xc9c2b3],
+    });
+    this.vfx?.burst({
+      preset: 'smoke', count: scaledCount(boss ? 12 : Math.round(6 * tierScale)),
+      x, y: 0.35, z, spreadRadius: boss ? 0.5 : 0.3,
+      startSize: boss ? 0.72 : 0.42, endSize: boss ? 1.5 : 0.9,
+      lifeMs: boss ? 1600 : 950, color: 0x746b66, upward: [0.2, 0.8],
+    });
+    if (!boss && !this.reducedMotion) {
+      this.vfx?.burst({
+        preset: 'wisp', count: scaledCount(Math.round(2 * tierScale)),
+        x, y: 0.5, z, spreadRadius: 0.28, startSize: 0.6, endSize: 0.13,
+        lifeMs: 900, color: 0x83f5ff, alpha: 0.95, cell: 'flame_05',
+        upward: [1.35, 1.8], gravity: -0.4,
+      });
+    }
+    if (elite) {
+      this.vfx?.decal({
+        cell: 'circle_03', blend: 'additive', color: 0xe9c56e,
+        x, y: 0.065, z, radius: 0.85, startRadius: 0.35, endRadius: 0.85,
+        opacity: 0.85, lifeMs: 1100, fadeOut: 0.5,
+      });
+    }
+    if (boss) {
+      const radius = Math.max(1.1, entity.radius ?? 0.9);
+      this.vfx?.flash(x, 0.9, z, 0xfff0cf, 5, 160);
+      if (!this.reducedMotion) {
+        this.vfx?.emit('spark', x, 1.85, z, {
+          cell: 'flare_01', color: 0xfff0cf, startSize: 1.25, endSize: 0.08,
+          lifeMs: 160, alpha: 0.95, fadeIn: 0.02, upward: 0, gravity: 0,
+        });
+        this.vfx?.emit('spark', x, 1.8, z, {
+          cell: 'circle_05', color: 0xff7d35, startSize: 1.7, endSize: 0.12,
+          lifeMs: 160, alpha: 0.8, fadeIn: 0.02, upward: 0, gravity: 0,
+        });
+      }
+      this.vfx?.decal({
+        cell: 'circle_03', blend: 'additive', color: 0xff9b48,
+        x, y: 0.065, z, radius: radius * 1.8, startRadius: 0.25, endRadius: radius * 1.8,
+        opacity: 1, lifeMs: 450, fadeOut: 0.65,
+      });
+      this.vfx?.burst({
+        preset: 'ember', count: scaledCount(24), x, y: 0.55, z,
+        spreadRadius: 0.42, speed: [3, 9], upward: [1.2, 4],
+        startSize: 0.36, endSize: 0.04, lifeMs: 850,
+      });
+      this.addShake(0.3, 300);
+    }
   }
 
   addTransient(mesh, geometry, material, { startTime = null, durationMs = null, startTick = null, endTick = null, update = null } = {}) {
@@ -2045,6 +2197,15 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
   createDeadBurst(event) {
     const { originX: x, originZ: z, radius } = event.shape;
     this.createImpactRing(x, z, radius, 0xe5dfcb, event.resolveTick, event.resolveTick + 20);
+    this.vfx?.decal({
+      cell: 'crack_01', blend: 'normal', x, y: 0.065, z, radius: radius * 1.12,
+      color: 0x2b2018, opacity: 0.9, opacityScale: 1, lifeMs: 1500, fadeOut: 0.25,
+    });
+    this.vfx?.decal({
+      cell: 'crack_01', blend: 'additive', x, y: 0.075, z, radius: radius * 1.12,
+      color: 0xff9d43, opacity: 0.18, opacityScale: 1, lifeMs: 1500,
+      fadeIn: this.reducedMotion ? 0 : 0.27, fadeOut: 0.55,
+    });
     this.vfx?.decal({
       cell: 'circle_03',
       x,
@@ -2252,7 +2413,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       z,
       radius: radius * (event.skillName === 'meteor' ? 1 : 0.95),
       color,
-      opacity: event.skillName === 'meteor' ? 0.95 : 0.62,
+      opacity: event.skillName === 'meteor' ? 0.95 : event.skillName === 'quake' ? 0.86 : 0.75,
       opacityScale: event.skillName === 'meteor' ? 1 : 1.25,
       startTick: event.startTick,
       endTick: event.resolveTick,
@@ -2439,7 +2600,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         z,
         radius: radius * (rankFive ? 1.2 : 1),
         color: rankFive ? 0xffdb9e : 0xff6b2e,
-        opacity: 0.56,
+        opacity: 0.78,
         startTick: event.resolveTick,
         endTick: event.endsTick,
         fadeIn: 0.1,
@@ -2453,7 +2614,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         z,
         radius: radius * 0.96,
         y: 0.16,
-        rate: 40,
+        rate: 48,
         startTick: event.resolveTick,
         endTick: event.endsTick,
         options: {
@@ -2462,7 +2623,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
           startSize: rankFive ? 0.95 : 0.82,
           endSize: 0.12,
           lifeMs: 700,
-          upward: [0.8, 2.4],
+          upward: [1.2, 2.8],
         },
       });
       this.vfx?.decal({
@@ -2511,7 +2672,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         z,
         radius: radius * 0.86,
         color: 0x9de6ff,
-        opacity: 0.5,
+        opacity: 0.72,
         lifeMs: 800,
       });
       this.vfx?.burst({
@@ -2524,7 +2685,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         upward: [0.2, 1.6],
         color: 0xa9eaff,
         cell: 'slash_02',
-        startSize: 0.45,
+        startSize: 0.62,
         endSize: 0.04,
         stretch: 2.1,
         lifeMs: [420, 720],
@@ -2532,9 +2693,21 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       this.vfx?.burst({ preset: 'smoke', count: 7, x, y: 0.18, z, spreadRadius: 0.7, speed: [0.1, 0.8], upward: [0.1, 0.4], color: 0xb9e6f3, lifeMs: [500, 850] });
       if (event.ownerId === this.localPlayerId) this.addShake(0.08, 120);
     } else if (event.kind === 'quake') {
-      this.vfx?.decal({ cell: 'scorch_02', x, z, radius: radius * 1.15, color: 0x1b0e09, opacity: 0.95, opacityScale: 1, lifeMs: 1500, blend: 'normal' });
+      this.vfx?.decal({
+        cell: 'crack_01', blend: 'normal', x, y: 0.065, z, radius: radius * 1.18,
+        color: 0x2b1b12, opacity: 0.95, opacityScale: 1, lifeMs: 1500, fadeOut: 0.22,
+      });
+      this.vfx?.decal({
+        cell: 'crack_01', blend: 'additive', x, y: 0.075, z, radius: radius * 1.18,
+        color: 0xffa14b, opacity: 0.18, opacityScale: 1, lifeMs: 1500,
+        fadeIn: this.reducedMotion ? 0 : 0.27, fadeOut: 0.55,
+      });
       this.vfx?.decal({ cell: 'circle_03', x, z, radius: 0.25, endRadius: radius * 1.25, color: 0xe5be72, opacity: 0.95, lifeMs: 520 });
-      this.vfx?.burst({ preset: 'dirt', count: 20, x, y: 0.16, z, spreadRadius: radius * 0.25, speed: [1.2, 5], upward: [1, 4.8], color: 0xb38a58, lifeMs: [500, 900] });
+      this.vfx?.burst({
+        preset: 'dirt', count: 20, x, y: 0.16, z, spreadRadius: radius * 0.25,
+        speed: [1.2, 5], upward: [1, 4.8], color: 0xb38a58,
+        startSize: 0.38, endSize: 0.08, lifeMs: [500, 900],
+      });
       this.vfx?.burst({ preset: 'smoke', count: 10, x, y: 0.12, z, spreadRadius: radius * 0.45, speed: [0.2, 1.4], upward: [0.15, 0.75], color: 0x90775f, lifeMs: [500, 950] });
       if (event.ownerId === this.localPlayerId) this.addShake(0.22, 220);
     } else if (event.kind === 'meteor') {
@@ -2592,7 +2765,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         z,
         radius: radius * 1.05,
         color: 0x83cbff,
-        opacity: 0.62,
+        opacity: 0.82,
         startTick: event.resolveTick,
         endTick: rainEndTick,
         fadeIn: 0.08,
@@ -2669,10 +2842,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       if (event.type === 'cast') {
         this.createSlash(event);
       } else if (event.type === 'predictedHit') {
-        for (const effect of this.slashes.values()) {
-          if (effect.castId === event.castId) effect.hit = true;
-        }
+        this.markSlashHit(event, world);
         this.predictedFlashUntil.set(event.targetId, now + 150);
+        emitPredictedHitSparks(this.vfx, event, this.currentWorld);
+        this.triggerEnemyHitReaction(event, world, now);
         if (!this.reducedMotion) {
           if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
           this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
@@ -2686,6 +2859,14 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     for (const event of world.events) {
       if (this.seenEventIds.has(event.eventId)) continue;
       this.seenEventIds.add(event.eventId);
+      if (event.type === 'spawn' && event.enemyKind) {
+        this.enemyTraits.set(event.entityId, {
+          enemyKind: event.enemyKind,
+          elite: event.elite === true,
+          boss: event.boss === true,
+        });
+        while (this.enemyTraits.size > 512) this.enemyTraits.delete(this.enemyTraits.keys().next().value);
+      }
       if (event.type === 'cast') {
         this.createSlash(event);
         this.createSkillCastVfx(event);
@@ -2716,47 +2897,24 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         );
       }
       if (event.type === 'hit') {
-        for (const effect of this.slashes.values()) {
-          if (effect.castId === event.castId) effect.hit = true;
-        }
+        this.markSlashHit(event, world);
         this.createDamageNumber(event);
         if (event.guarded) this.createGuardSpark(event, world, now);
-        if (event.damage > 0 && !event.predictedLocally) {
-          if (!this.reducedMotion) {
-            if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
-            this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
-          }
+        if (event.damage > 0) {
           const target = world.entities.find((entity) => entity.id === event.targetId);
-          if (target?.kind === 'enemy') {
-            const y = Math.max(0.65, (target.height ?? 1.7) * 0.68);
-            this.vfx?.burst({
-              preset: 'spark',
-              count: event.critical ? 12 : 6,
-              x: target.x,
-              y,
-              z: target.z,
-              spreadRadius: 0.12,
-              speed: event.critical ? [1.2, 4] : [0.65, 2.6],
-              upward: event.critical ? [0.8, 3.4] : [0.4, 2],
-              colors: event.critical ? [0xffa13c, 0xffdb7a, 0xfff2c4] : [0xfff1cb, 0xffd987],
-              startSize: event.critical ? 0.32 : 0.22,
-              sizeScale: 1.4,
-              lifeMs: event.critical ? [380, 680] : [300, 520],
-            });
-            if (event.critical) {
-              this.vfx?.emit('star', target.x, y, target.z, {
-                cell: 'flare_01',
-                color: 0xffbd62,
-                startSize: 0.9,
-                endSize: 0.1,
-                lifeMs: 180,
-                alpha: 0.9,
-              });
+          if (event.predictedLocally) {
+            emitCriticalConfirmationSparks(this.vfx, event, target);
+          } else {
+            if (!this.reducedMotion) {
+              if (this.hitstopUntil <= now) this.hitstopStartedAt = now;
+              this.hitstopUntil = Math.min(this.hitstopStartedAt + 60, Math.max(this.hitstopUntil, now + 55));
             }
+            this.hitSparks(target, event.critical);
+            this.triggerEnemyHitReaction(event, world, now);
+            if (target?.kind === 'player' && target.playerId === this.localPlayerId) this.addShake(0.08, 110);
+            const source = world.entities.find((entity) => entity.id === event.sourceId);
+            if (event.critical && source?.kind === 'player' && source.playerId === this.localPlayerId) this.addShake(0.06, 80);
           }
-          if (target?.kind === 'player' && target.playerId === this.localPlayerId) this.addShake(0.08, 110);
-          const source = world.entities.find((entity) => entity.id === event.sourceId);
-          if (event.critical && source?.kind === 'player' && source.playerId === this.localPlayerId) this.addShake(0.06, 80);
         }
       }
       if (event.type === 'pickup') this.createDamageNumber(event);
@@ -2785,7 +2943,15 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       if (entity && visible) {
         effect.mesh.position.set(entity.x, 0.72, entity.z);
         effect.mesh.rotation.y = -effect.facing;
-        effect.mesh.material.opacity = tick <= effect.endTick ? 0.9 : 0.9 * (1 - (tick - effect.endTick) / 4);
+        const progress = this.reducedMotion ? 1 : THREE.MathUtils.clamp(
+          (tick - effect.startTick) / Math.max(1, effect.endTick - effect.startTick),
+          0,
+          1,
+        );
+        effect.mesh.geometry.setDrawRange(0, Math.ceil(effect.segmentCount * progress) * 6);
+        effect.mesh.material.uniforms.uOpacity.value = this.reducedMotion
+          ? 0.76
+          : 0.96 * (tick <= effect.endTick ? 1 : 1 - (tick - effect.endTick) / 4);
       }
       if (!entity || tick > effect.endTick + 3) {
         this.removeSlash(castKey);
@@ -2813,22 +2979,12 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
         target?.z ?? effect.z,
       ).project(this.camera);
       const rect = this.canvas.getBoundingClientRect();
-      effect.element.style.left = `${(point.x + 1) * rect.width / 2}px`;
+      effect.element.style.left = `${(point.x + 1) * rect.width / 2 + effect.horizontalOffset}px`;
       effect.element.style.top = `${(1 - point.y) * rect.height / 2}px`;
       effect.element.style.opacity = String(1 - progress);
-      effect.element.style.transform = `translate(-50%, ${-progress * 12}px)`;
-    }
-
-    for (let index = this.deathPuffs.length - 1; index >= 0; index -= 1) {
-      const effect = this.deathPuffs[index];
-      const progress = (now - effect.startTime) / effect.duration;
-      if (progress >= 1) {
-        this.removeDeathPuff(index);
-        continue;
-      }
-      effect.group.scale.setScalar(0.7 + progress * 1.7);
-      effect.group.position.y = progress * 0.2;
-      effect.material.opacity = 0.68 * (1 - progress);
+      const popProgress = Math.min(1, elapsed / 120);
+      const popScale = 1 + (this.reducedMotion ? 0 : effect.critical ? 0.7 : 0.25) * (1 - popProgress) ** 2;
+      effect.element.style.transform = `translate(-50%, ${-progress * 12}px) scale(${popScale})`;
     }
     this.updateTransientEffects(world, now);
   }
@@ -3369,12 +3525,43 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       }
       const old = before.get(entity.id) ?? entity;
       if (!hitstop) {
-        visual.root.position.set(old.x + (entity.x - old.x) * alpha, 0, old.z + (entity.z - old.z) * alpha);
+        visual.interpolatedPosition.set(old.x + (entity.x - old.x) * alpha, 0, old.z + (entity.z - old.z) * alpha);
+        visual.root.position.copy(visual.interpolatedPosition);
         const oldFacing = Number.isFinite(old.facing) ? old.facing : 0;
         const entityFacing = Number.isFinite(entity.facing) ? entity.facing : oldFacing;
         const facing = oldFacing + shortestAngleDelta(oldFacing, entityFacing) * alpha;
         visual.root.rotation.y = Math.PI / 2 - facing;
         this.updateAnimation(entity, visual, dt);
+      }
+      const reaction = this.hitReactions.get(entity.id);
+      if (reaction) {
+        const elapsed = now - reaction.startTime;
+        const offset = hitReactionOffset(
+          elapsed,
+          reaction.directionX,
+          reaction.directionZ,
+          reaction.distance,
+        );
+        visual.root.position.set(
+          visual.interpolatedPosition.x + offset.x,
+          visual.interpolatedPosition.y,
+          visual.interpolatedPosition.z + offset.z,
+        );
+        if (reaction.squash) {
+          const progress = THREE.MathUtils.clamp(elapsed / 60, 0, 1);
+          const pulse = elapsed <= 60
+            ? 1 - (1 - progress) ** 2
+            : (1 - THREE.MathUtils.clamp((elapsed - 60) / 120, 0, 1)) ** 2;
+          visual.root.scale.set(
+            visual.baseScale.x * (1 + 0.08 * pulse),
+            visual.baseScale.y * (1 - 0.08 * pulse),
+            visual.baseScale.z * (1 + 0.08 * pulse),
+          );
+        }
+        if (elapsed >= 180) {
+          visual.root.scale.copy(visual.baseScale);
+          this.hitReactions.delete(entity.id);
+        }
       }
       visual.root.visible = !entity.dead || entity.deathTicks > 0;
       visual.shadow.visible = !entity.dead;
@@ -3382,7 +3569,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       this.updateEntityMaterials(entity, visual, now);
     }
     for (const [id, visual] of this.entities) {
-      if (!activeIds.has(id)) this.removeEntityVisual(id, visual);
+      if (!activeIds.has(id)) {
+        this.hitReactions.delete(id);
+        this.removeEntityVisual(id, visual);
+      }
     }
     this.updateTelegraphs(world);
     const player = world.entities.find((entity) => entity.kind === 'player');
@@ -3473,6 +3663,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       effect.mesh.material.dispose();
     }
     this.slashes.clear();
+    this.enemyTraits.clear();
     this.predictedFlashUntil.clear();
     this.transientEffects.forEach((effect) => {
       this.scene.remove(effect.mesh);
@@ -3483,7 +3674,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     this.ashPoints = null;
     this.damageNumbers.forEach((effect) => effect.element.remove());
     this.damageNumbers = [];
-    for (let index = this.deathPuffs.length - 1; index >= 0; index -= 1) this.removeDeathPuff(index);
+    this.hitReactions.clear();
     for (const decal of this.telegraphs.values()) {
       this.scene.remove(decal.mesh);
       decal.mesh.traverse((node) => {
