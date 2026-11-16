@@ -144,6 +144,46 @@ async function setArcherLook(client, facing) {
   await delay(250);
 }
 
+async function setHumanHoodLook(client, facing) {
+  await client.evaluate(`(() => {
+    const api = window.__devinarok;
+    const player = api.world.entities.find((entity) => entity.kind === 'player');
+    player.lineage = 'human';
+    player.family = 'sword';
+    player.characterKind = 'knight';
+    player.facing = ${facing};
+    player.look = {
+      family: 'sword',
+      weapon: '1H_Sword',
+      weaponItem: 'rusted-sword',
+      weaponRarity: 'common',
+      offhand: 'Round_Shield',
+      helmet: true,
+      head: 'patched-hood',
+      headRarity: 'rare',
+      cape: false,
+      body: null,
+      bodyRarity: null,
+      setId: null,
+    };
+    api.character.lineage = 'human';
+    api.character.family = 'sword';
+    const renderer = api.renderer;
+    const canvas = renderer.canvas;
+    const frustum = 8;
+    renderer.frustumHeight = frustum;
+    renderer.cameraFollowOffsetZ = 0.8;
+    renderer.camera.left = -frustum * canvas.clientWidth / canvas.clientHeight / 2;
+    renderer.camera.right = frustum * canvas.clientWidth / canvas.clientHeight / 2;
+    renderer.camera.top = frustum / 2;
+    renderer.camera.bottom = -frustum / 2;
+    renderer.mobileCameraOverlayKey = '';
+    renderer.camera.updateProjectionMatrix();
+    api.render();
+  })()`);
+  await delay(250);
+}
+
 async function inspectArcher(client) {
   return client.evaluate(`(() => {
     const api = window.__devinarok;
@@ -161,6 +201,8 @@ async function inspectArcher(client) {
     return {
       mode: api.world.mode,
       lineage: player.lineage,
+      family: player.family,
+      headItem: player.look?.head ?? null,
       weaponParent: weapon?.parent?.name ?? null,
       weaponLocalPosition: weapon?.position.toArray() ?? null,
       weaponWorldPosition: worldPosition(weapon),
@@ -308,6 +350,12 @@ try {
     const diagnosis = await inspectArcher(client);
     await screenshot(client, `archer-${phase}-hub-angle-${angle}`, { phase, ...diagnosis });
   }
+  for (const [facing, angle] of [[0, '0'], [Math.PI / 2, '90']]) {
+    await setHumanHoodLook(client, facing);
+    const humanDiagnosis = await inspectArcher(client);
+    await screenshot(client, `human-hood-sword-family-hub-angle-${angle}`, { phase, ...humanDiagnosis });
+  }
+  await setArcherLook(client, 0);
 
   await client.evaluate('window.__devinarok.startStage("C1")');
   await waitFor(client, 'window.__devinarok.world?.mode === "stage" && Boolean(window.__devinarok.renderer?.entities.size)', 90000);

@@ -7,6 +7,7 @@ import {
   HEAD_STYLES,
   PART_SCALE,
   PART_TINTS,
+  playerPartScale,
   playerLookKey,
   resolvePlayerBone,
   resolvePlayerParts,
@@ -51,6 +52,7 @@ test('all weapon meshes are available from the matching hand-slot donor', () => 
       part.node === node && part.donor === donor && part.bone === 'handslot.r'
     )), `${node} should be grafted from ${donor} to handslot.r`);
   }
+  assert.equal(DONOR_PARTS.find(({ node }) => node === '2H_Crossbow')?.resetPosition, true);
 });
 
 test('donor bone lookup supports skeleton GLB hand-slot names', () => {
@@ -70,6 +72,10 @@ test('skeleton lineage head resolution keeps compatible grafts visible without c
   );
   assert.equal(
     resolvePlayerParts(baseLook({ family: 'crossbow', head: 'patched-hood' }), 'skeleton_archer').head,
+    'Skeleton_Rogue_Hood',
+  );
+  assert.equal(
+    resolvePlayerParts(baseLook({ family: 'sword', head: 'patched-hood' }), 'human').head,
     'Skeleton_Rogue_Hood',
   );
 
@@ -203,8 +209,14 @@ test('set pieces glow stronger only while their set is active', () => {
   assert.deepEqual(activeWeaponTints.offhand, activeWeaponTints.weapon);
 });
 
-test('hood and mage hat have per-part scale corrections', () => {
-  assert.equal(PART_SCALE.Skeleton_Rogue_Hood, 0.85);
+test('hood scale preserves the human fit and uses the native skeleton fit', () => {
+  assert.equal(PART_SCALE.Skeleton_Rogue_Hood, 1.25);
+  assert.equal(playerPartScale('Skeleton_Rogue_Hood', 'human'), 1.25);
+  assert.equal(playerPartScale('Skeleton_Rogue_Hood', 'skeleton_knight'), 1);
+  assert.equal(playerPartScale('Skeleton_Rogue_Hood', 'skeleton_archer'), 1);
+  assert.equal(playerPartScale('Skeleton_Rogue_Hood', 'skeleton_mage'), 1);
+  assert.equal(playerPartScale('Skeleton_Rogue_Hood'), 1.25);
+  assert.equal(playerPartScale('Mage_Hat', 'skeleton_mage'), 0.65);
   assert.equal(PART_SCALE.Mage_Hat, 0.65);
 });
 

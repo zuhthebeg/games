@@ -5,7 +5,7 @@ export const DONOR_PARTS = Object.freeze([
   { node: '1H_Sword', donor: 'knight', bone: 'handslot.r' },
   { node: '2H_Sword', donor: 'knight', bone: 'handslot.r' },
   { node: '1H_Crossbow', donor: 'Rogue_Hooded', bone: 'handslot.r' },
-  { node: '2H_Crossbow', donor: 'Rogue_Hooded', bone: 'handslot.r' },
+  { node: '2H_Crossbow', donor: 'Rogue_Hooded', bone: 'handslot.r', resetPosition: true },
   { node: '1H_Wand', donor: 'Mage', bone: 'handslot.r' },
   { node: '2H_Staff', donor: 'Mage', bone: 'handslot.r' },
   { node: 'Knight_Helmet', donor: 'knight', bone: 'head' },
@@ -75,9 +75,14 @@ export const PART_TINTS = Object.freeze({
 });
 
 export const PART_SCALE = Object.freeze({
-  Skeleton_Rogue_Hood: 0.85,
+  Skeleton_Rogue_Hood: 1.25,
   Mage_Hat: 0.65,
 });
+
+export function playerPartScale(part, lineage = 'human') {
+  if (part === 'Skeleton_Rogue_Hood' && lineage !== 'human') return 1;
+  return PART_SCALE[part] ?? 1;
+}
 
 const HEAD_FALLBACK = Object.freeze({
   sword: 'Knight_Helmet',

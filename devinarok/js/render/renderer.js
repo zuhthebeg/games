@@ -11,9 +11,9 @@ import { LINEAGES, lineageDisplayName, lineageOf } from '../content/lineages.js'
 import { SKILLS, skillsFor } from '../content/skills.js';
 import {
   DONOR_PARTS,
-  PART_SCALE,
   playerLookKey,
   playerModelKey,
+  playerPartScale,
   resolvePlayerBone,
   resolvePlayerParts,
 } from './player-look.js';
@@ -212,7 +212,7 @@ function applyPlayerLook(root, look = {}, lineage = 'human') {
   root.traverse((node) => {
     if (!PLAYER_PARTS.has(node.name)) return;
     const baseScale = node.userData.playerPartBaseScale ??= node.scale.toArray();
-    const scaleFactor = PART_SCALE[node.name] ?? 1;
+    const scaleFactor = playerPartScale(node.name, lineage);
     node.scale.set(
       baseScale[0] * scaleFactor,
       baseScale[1] * scaleFactor,
@@ -1541,10 +1541,10 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     }
   }
 
-  graftPlayerParts(root, lineageId) {
+  graftPlayerParts(root) {
     const existingParts = new Set();
     root.traverse((node) => existingParts.add(node.name));
-    for (const { node, donor, bone } of DONOR_PARTS) {
+    for (const { node, donor, bone, resetPosition } of DONOR_PARTS) {
       if (existingParts.has(node)) continue;
       const donorPart = this.models.get(donor)?.getObjectByName(node);
       const parent = resolvePlayerBone(root, bone);
@@ -1553,9 +1553,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
       graft.position.copy(donorPart.position);
       graft.quaternion.copy(donorPart.quaternion);
       graft.scale.copy(donorPart.scale);
-      if (lineageId === 'skeleton_archer' && node === '2H_Crossbow') {
-        graft.position.set(0, 0, 0);
-      }
+      if (resetPosition) graft.position.set(0, 0, 0);
       parent.add(graft);
       existingParts.add(node);
     }
@@ -1567,7 +1565,7 @@ if (outlineLen > 1e-6) gl_Position.xy += (outlineDir / outlineLen) * uOutlinePx 
     const source = this.models.get(assetKey);
     const root = source ? SkeletonUtils.clone(source) : new THREE.Group();
     const lineageId = entity.kind === 'player' ? lineageOf(entity) : null;
-    if (entity.kind === 'player') this.graftPlayerParts(root, lineageId);
+    if (entity.kind === 'player') this.graftPlayerParts(root);
     const materials = cloneMaterials(root);
     if (entity.kind === 'enemy' && entity.enemyKind === 'ashwarden') {
       root.traverse((node) => {
