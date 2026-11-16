@@ -1,10 +1,10 @@
 {
   "version": 1,
   "image": "particles.webp",
-  "width": 1024,
-  "height": 1024,
-  "columns": 4,
-  "rows": 4,
+  "width": 1536,
+  "height": 768,
+  "columns": 6,
+  "rows": 3,
   "cellSize": 256,
   "cells": {
     "circle_05": 0,
@@ -22,6 +22,8 @@
     "twirl_02": 12,
     "trace_05": 13,
     "slash_02": 14,
-    "circle_03": 15
+    "circle_03": 15,
+    "bone": 16,
+    "crack_01": 17
   }
 }

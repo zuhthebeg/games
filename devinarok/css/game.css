@@ -127,6 +127,7 @@ h1 { margin: 8px 0 0; font-size: clamp(48px, 12vw, 92px); letter-spacing: .04em;
 .combat-vfx-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
 .damage-number { position: absolute; color: #ffd29a; font: 800 24px/1 system-ui, sans-serif; text-shadow: 0 2px 3px #1b0d0a, 0 0 12px #ff8c47; white-space: nowrap; will-change: transform, opacity; }
 .damage-number.guarded { color: #ccd3dc; text-shadow: 0 2px 3px #10141b, 0 0 10px #71839a; }
+.damage-number.critical { color: #ffe066; font-size: 34px; text-shadow: 0 2px 3px #30120c, 0 0 8px #ff4b24, 0 0 18px #ff762e; }
 .damage-number.gold-pickup { color: #ffe27d; font-size: 16px; text-shadow: 0 2px 4px #251800, 0 0 10px #eebc38; }
 .sanctuary-mode #controls .buttons > button:not(#sanctuary-interact) { display: none; }
 .sanctuary-mode #sanctuary-interact { display: block; min-width: 142px; padding: 12px 15px; border-color: #e1b65d; background: #6b301fe8; color: #ffedc4; font-weight: 800; }
@@ -792,6 +793,7 @@ body.large-text .party-name-tag { font-size: 13.2px; }
 body.large-text #toast,
 body.large-text .tutorial-card { font-size: 15.6px; }
 body.large-text .damage-number { font-size: 28.8px; }
+body.large-text .damage-number.critical { font-size: 40.8px; }
 body.large-text .tutorial-card { line-height: 1.45; }
 @keyframes tutorial-pulse {
   0%, 100% { box-shadow: 0 0 0 0 #e8c77a44; }
