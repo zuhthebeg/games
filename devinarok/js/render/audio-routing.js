@@ -22,6 +22,8 @@ const FAMILY_SKILL_SOUNDS = Object.freeze({
   staff: Object.freeze({ 1: 'flame', 2: 'frost', 3: 'blink', 4: 'staff-cast' }),
 });
 
+const BOSS_ENEMY_KINDS = new Set(['commander', 'ashwarden', 'skeletonking']);
+
 export function castSoundFor(event = {}) {
   if (event.skillId === 'counter') {
     if (event.family === 'crossbow') return 'crossbow-shot';
@@ -43,6 +45,23 @@ export function hitSoundLayers(event = {}, source = null) {
     { name: isSwordMeleeSkill ? 'heavy-hit' : 'impact', gain: 1 },
     ...(event.critical ? [{ name: 'crit-hit', gain: 0.7 }] : []),
   ];
+}
+
+export function deathSoundLayers(event = {}, world = {}) {
+  const dead = world.entities?.find((entity) => entity.id === event.entityId);
+  const layers = ['enemy-death'];
+  if (dead?.kind === 'enemy') {
+    layers.push(dead.boss || BOSS_ENEMY_KINDS.has(dead.enemyKind) ? 'boss-death' : 'bone-snap');
+  }
+  return layers;
+}
+
+export function impactSoundFor(event = {}) {
+  if (event.kind === 'meteor') return 'meteor-impact';
+  if (event.kind === 'flame') return 'flame';
+  if (event.kind === 'frost') return 'frost';
+  if (event.kind === 'quake' || event.kind === 'deadBurst') return 'heavy-slam';
+  return 'impact';
 }
 
 export function canPlayBoneSnap(now, previousAt = -Infinity, minIntervalMs = 70) {

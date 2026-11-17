@@ -5,7 +5,9 @@ import { AttackInputAssistant, autoAttackDefault, buildPartyAssistedInput } from
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
-import { canPlayBoneSnap, castSoundFor, hitSoundLayers } from './render/audio-routing.js';
+import {
+  canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor,
+} from './render/audio-routing.js';
 import { PartyClient } from './ui/party.js';
 import { ClockInputScheduler } from './net/clock-input-scheduler.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
@@ -580,11 +582,7 @@ function handleAudioEvent(event, current) {
     }
   }
   if (event.type === 'impact') {
-    const sound = event.kind === 'meteor' ? 'meteor-impact'
-      : event.kind === 'flame' ? 'flame'
-        : event.kind === 'frost' ? 'frost'
-          : ['quake', 'deadBurst'].includes(event.kind) ? 'heavy-slam'
-            : 'impact';
+    const sound = impactSoundFor(event);
     audio.play(sound, { gain, ...(sound === 'heavy-slam' ? { rate: 0.85 } : {}) });
   }
   if (event.type === 'perfectBlock') audio.play('shield-clang', { gain });
@@ -624,17 +622,15 @@ function handleAudioEvent(event, current) {
     audio.play('enemy-death');
   }
   if (event.type === 'death') {
-    const dead = current?.entities?.find((entity) => entity.id === event.entityId);
-    const isEnemy = dead?.kind === 'enemy';
-    audio.play('enemy-death', { gain });
-    if (isEnemy) {
-      const now = performance.now();
-      if (canPlayBoneSnap(now, lastBoneSnapAt)) {
-        const source = audio.play('bone-snap', { gain, minIntervalMs: 70 });
-        if (source) lastBoneSnapAt = now;
-      }
-      if (dead?.boss || ['commander', 'ashwarden', 'skeletonking'].includes(dead?.enemyKind)) {
-        audio.play('boss-death', { gain });
+    for (const name of deathSoundLayers(event, current)) {
+      if (name === 'bone-snap') {
+        const now = performance.now();
+        if (canPlayBoneSnap(now, lastBoneSnapAt)) {
+          const source = audio.play(name, { gain, minIntervalMs: 70 });
+          if (source) lastBoneSnapAt = now;
+        }
+      } else {
+        audio.play(name, { gain });
       }
     }
   }
