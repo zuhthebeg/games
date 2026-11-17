@@ -5,6 +5,7 @@ import { AttackInputAssistant, autoAttackDefault, buildPartyAssistedInput } from
 import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
+import { canPlayBoneSnap, castSoundFor, hitSoundLayers } from './render/audio-routing.js';
 import { PartyClient } from './ui/party.js';
 import { ClockInputScheduler } from './net/clock-input-scheduler.js';
 import { partyHttpBase, partyRoomsMarkup, quickJoinParty, sortPartyRooms } from './ui/party-finder.js';
@@ -529,44 +530,73 @@ function renderTutorialCard() {
   $('#tutorial-skip').hidden = false;
 }
 
-function playCastSound(event) {
-  if (event.skillId === 'counter') {
-    if (event.family === 'crossbow') audio.play('crossbow-shot');
-    else if (event.family === 'staff') audio.play('staff-cast');
-    else audio.play('sword-swing');
-  } else if (event.skill !== undefined) {
-    const sounds = {
-      sword: { 3: 'shield-clang', 4: 'impact' },
-      crossbow: { 1: 'crossbow-shot', 2: 'crossbow-shot', 3: 'crossbow-shot', 4: 'crossbow-shot' },
-      staff: { 1: 'flame', 2: 'frost', 3: 'blink', 4: 'impact' },
-    };
-    const lineageSounds = {
-      deadBurst: 'impact',
-      poisonArrow: 'crossbow-shot',
-      cursedHands: 'summon',
-    };
-    audio.play(lineageSounds[event.skillKey] ?? sounds[event.family]?.[event.skill] ?? 'staff-cast');
-  } else if (event.family === 'staff') audio.play('staff-cast');
-  else if (event.family !== 'crossbow') audio.play('sword-swing');
+let lastBoneSnapAt = -Infinity;
+
+function soundGainFor(event, current) {
+  const source = current?.entities?.find((entity) => (
+    entity.kind === 'player' && (entity.id === event.sourceId || entity.id === event.killerId)
+  ));
+  const ownerId = event.playerId ?? event.ownerId ?? source?.playerId;
+  const localPlayerId = partyClient?.runId ? partyClient.playerId : character?.id;
+  return partyClient?.runId && ownerId != null && ownerId !== localPlayerId ? 0.6 : 1;
+}
+
+function playCastSound(event, gain = 1) {
+  const sound = castSoundFor(event);
+  if (sound) {
+    if (event.skillKey === 'rain') {
+      audio.play(sound, { gain });
+      setTimeout(() => audio.play(sound, { gain }), 150);
+      setTimeout(() => audio.play(sound, { gain }), 300);
+    } else {
+      audio.play(sound, { gain, ...(sound === 'heavy-slam' ? { rate: 0.85 } : {}) });
+    }
+  }
+  if (event.skillKey === 'poisonArrow') audio.play('magic-whoosh', { gain, rate: 0.75 });
 }
 
 function handleAudioEvent(event, current) {
   const localPlayer = current?.entities.find((entity) => (
     entity.kind === 'player' && entity.playerId === character?.id
   ));
+  const gain = soundGainFor(event, current);
   if (event.type === 'cast') {
-    if (!event.predictedLocally) playCastSound(event);
+    if (!event.predictedLocally) playCastSound(event, gain);
     if (event.skillId === 'counter' && event.playerId === character?.id) {
       showCounterToast(localPlayer);
       showCounterPresentation();
     }
   }
-  if (event.type === 'shot') audio.play('crossbow-shot');
-  if (event.type === 'impact') audio.play(event.kind === 'flame' ? 'flame' : event.kind === 'frost' ? 'frost' : 'impact');
-  if (event.type === 'perfectBlock') audio.play('shield-clang');
+  if (event.type === 'skillTelegraph' && event.skillName === 'meteor') {
+    audio.play('meteor-fall', { gain: gain * 0.8 });
+  }
+  if (event.type === 'shot') {
+    const owner = current?.entities?.find((entity) => (
+      entity.kind === 'player' && entity.playerId === event.ownerId
+    ));
+    if (event.skillKey !== 'poisonArrow') {
+      if (owner?.family === 'staff') audio.play('magic-whoosh', { gain, rate: 0.75 });
+      else audio.play('crossbow-shot', { gain });
+    }
+  }
+  if (event.type === 'impact') {
+    const sound = event.kind === 'meteor' ? 'meteor-impact'
+      : event.kind === 'flame' ? 'flame'
+        : event.kind === 'frost' ? 'frost'
+          : ['quake', 'deadBurst'].includes(event.kind) ? 'heavy-slam'
+            : 'impact';
+    audio.play(sound, { gain, ...(sound === 'heavy-slam' ? { rate: 0.85 } : {}) });
+  }
+  if (event.type === 'perfectBlock') audio.play('shield-clang', { gain });
   else if (event.type === 'hit') {
-    if (event.blocked || event.guarded) audio.play('shield-clang');
-    else if (!event.predictedLocally) audio.play('impact');
+    if (event.blocked || event.guarded) audio.play('shield-clang', { gain });
+    else if (event.damage > 0) {
+      const source = current?.entities?.find((entity) => entity.id === event.sourceId);
+      for (const layer of hitSoundLayers(event, source)) {
+        if (event.predictedLocally && layer.name !== 'crit-hit') continue;
+        audio.play(layer.name, { gain: gain * layer.gain });
+      }
+    }
   }
   if (
     (event.type === 'dodge' && (event.playerId === character?.id || event.entityId === localPlayer?.id))
@@ -593,7 +623,21 @@ function handleAudioEvent(event, current) {
     showActionToast('목표 실패');
     audio.play('enemy-death');
   }
-  if (event.type === 'death') audio.play('enemy-death');
+  if (event.type === 'death') {
+    const dead = current?.entities?.find((entity) => entity.id === event.entityId);
+    const isEnemy = dead?.kind === 'enemy';
+    audio.play('enemy-death', { gain });
+    if (isEnemy) {
+      const now = performance.now();
+      if (canPlayBoneSnap(now, lastBoneSnapAt)) {
+        const source = audio.play('bone-snap', { gain, minIntervalMs: 70 });
+        if (source) lastBoneSnapAt = now;
+      }
+      if (dead?.boss || ['commander', 'ashwarden', 'skeletonking'].includes(dead?.enemyKind)) {
+        audio.play('boss-death', { gain });
+      }
+    }
+  }
   if (
     event.type === 'boneRevival'
     && event.playerId === (partyClient?.runId ? partyClient.playerId : character?.id)
@@ -1767,7 +1811,7 @@ function partyLoop(time) {
     nextWorld = partyClient.viewWorld(time) ?? world;
     if (nextWorld) renderer.consumePredictedEvents(predictedEvents, nextWorld, time);
     for (const event of predictedEvents) {
-      if (event.type === 'cast') playCastSound(event);
+      if (event.type === 'cast') playCastSound(event, soundGainFor(event, nextWorld));
       else if (event.type === 'predictedHit') audio.play('impact');
     }
   }

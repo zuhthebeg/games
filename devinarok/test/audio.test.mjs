@@ -1,6 +1,83 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import test from 'node:test';
-import { AUDIO_NAMES, AudioManager, SHARED_SFX_NAMES } from '../js/render/audio.js';
+import {
+  AUDIO_NAMES, AudioManager, chooseVariant, jitteredRate, SHARED_SFX_NAMES, SOUND_FILES,
+} from '../js/render/audio.js';
+
+test('every audio name, including all variants, resolves to a packaged asset', () => {
+  const audioDirectory = new URL('../assets/audio/', import.meta.url);
+  for (const [name, files] of Object.entries(SOUND_FILES)) {
+    for (const file of Array.isArray(files) ? files : [files]) {
+      assert.ok(existsSync(new URL(file, audioDirectory)), `${name} is missing ${file}`);
+    }
+  }
+});
+
+test('variant selection and pitch jitter are deterministic with injected randomness', () => {
+  assert.equal(chooseVariant(['a', 'b', 'c'], () => 0.67), 'c');
+  assert.equal(chooseVariant('single', () => 0.5), 'single');
+  assert.ok(Math.abs(jitteredRate(0.85, () => 0) - 0.8075) < 1e-12);
+  assert.equal(jitteredRate(2, () => 0.5), 2);
+
+  const randomValues = [0.8, 0];
+  const sources = [];
+  const audio = new AudioManager({ random: () => randomValues.shift() ?? 0.5 });
+  audio.context = {
+    createBufferSource() {
+      const source = {
+        playbackRate: { value: 1 },
+        connect(target) { return target; },
+        start() { sources.push(this); },
+      };
+      return source;
+    },
+    createGain() {
+      return { gain: { value: 1 }, connect(target) { return target; } };
+    },
+  };
+  audio.sfxBus = {};
+  const variants = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  audio.buffers.set('slash-whoosh', variants);
+  audio.buffers.set('impact', {});
+  audio.buffers.set('hub-bgm', {});
+
+  audio.play('slash-whoosh', { rate: 0.85 });
+  assert.equal(sources[0].buffer, variants[2]);
+  assert.ok(Math.abs(sources[0].playbackRate.value - 0.8075) < 1e-12);
+  audio.play('impact', { rate: 0.72, jitter: false });
+  assert.equal(sources[1].playbackRate.value, 0.72);
+  audio.play('hub-bgm', { rate: 0.6, bus: 'bgm' });
+  assert.equal(sources[2].playbackRate.value, 0.6);
+});
+
+test('per-name minimum intervals supplement the four-source voice cap', () => {
+  let now = 0;
+  const sources = [];
+  const audio = new AudioManager({ random: () => 0.5, now: () => now });
+  audio.context = {
+    createBufferSource() {
+      const source = {
+        playbackRate: { value: 1 },
+        connect(target) { return target; },
+        start() { sources.push(this); },
+      };
+      return source;
+    },
+    createGain() {
+      return { gain: { value: 1 }, connect(target) { return target; } };
+    },
+  };
+  audio.sfxBus = {};
+  audio.buffers.set('bone-snap', {});
+  audio.play('bone-snap', { minIntervalMs: 70 });
+  now = 69;
+  audio.play('bone-snap', { minIntervalMs: 70 });
+  assert.equal(sources.length, 1);
+  now = 70;
+  audio.play('bone-snap', { minIntervalMs: 70 });
+  assert.equal(sources.length, 2);
+});
 
 test('audio files fail independently and missing buffers do not affect music playback', async () => {
   const audioContextDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
@@ -68,6 +145,8 @@ test('scene audio loads shared effects and only the requested regional loop', as
   try {
     await audio.loadScene('forest-bgm');
     assert.ok(SHARED_SFX_NAMES.every((name) => audio.buffers.has(name)));
+    assert.equal(audio.buffers.get('slash-whoosh').length, 3);
+    assert.equal(audio.buffers.get('arrow-flight').length, 2);
     assert.ok(audio.buffers.has('forest-bgm'));
     assert.ok(!audio.buffers.has('castle-bgm'));
     assert.ok(!audio.buffers.has('sanctuary-bgm'));

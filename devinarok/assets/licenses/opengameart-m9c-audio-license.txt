@@ -1,0 +1,19 @@
+M9c audio source-license evidence
+
+The linked OpenGameArt source pages identify these works as CC0 and list the authors below:
+
+- 80 CC0 RPG SFX — rubberduck — https://opengameart.org/content/80-cc0-rpg-sfx
+- 100 CC0 SFX — rubberduck — https://opengameart.org/content/100-cc0-sfx
+- Synthesized explosion — qubodup — https://opengameart.org/content/synthesized-explosion
+- Chunky Explosion — Joth — https://opengameart.org/content/chunky-explosion
+- Fantasy Weapons and Apparel SFX Library — Vehicle — https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
+
+Pinned source artifacts:
+
+- 80-CC0-RPG-SFX_0.zip — SHA-256 `1c2f06ff4e8563b5b8b745b23cf213c1474142a69bb82bd8f5e10d9b3f7a7bbd`
+- 100-CC0-SFX_0.zip — SHA-256 `a5c135878c132f1c59cca54e60061c296cd0ac27ad031ca2c41b8cd5cab3c706`
+- synthetic_explosion_1.flac — SHA-256 `54b42deac4e2180f68bc87c86fd325b5b5896be3d35882ecaefd06fc756565b1`
+- chunky-explosion.mp3 — SHA-256 `4de53bffac187e59d3f5b43096df2f8fcb4160076b65b71a67074947950e025f`
+- weapons-apparel.zip — SHA-256 `81cc6317f21b68f8e7f2b23a5a0f5f33c301c39ee41347307eec02201be989e5`
+
+The 80 CC0 RPG SFX and 100 CC0 SFX archive hashes pin the source packs; member paths and generated-file hashes are recorded in the M9c audio table in `assets-ledger.md`. The Weapons and Apparel archive is also recorded in the M4 ledger. Selected source audio was trimmed, converted to mono Ogg Vorbis at approximately q4, loudness-adjusted, and peak-limited; these processing steps do not alter the source license.
