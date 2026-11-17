@@ -543,8 +543,18 @@ function soundGainFor(event, current) {
   return partyClient?.runId && ownerId != null && ownerId !== localPlayerId ? 0.6 : 1;
 }
 
-function playCastSound(event, gain = 1) {
-  const sound = castSoundFor(event);
+function playCastSound(event, gain = 1, world = null) {
+  const localPlayerId = partyClient?.runId ? partyClient.playerId : character?.id;
+  const localPlayer = world?.entities?.find((entity) => (
+    entity.kind === 'player'
+    && (
+      entity.playerId === localPlayerId
+      || entity.id === localPlayerId
+      || entity.playerId === world.localPlayerId
+      || entity.id === world.localPlayerId
+    )
+  ));
+  const sound = castSoundFor(event, world, localPlayer?.family ?? character?.family);
   if (sound) {
     if (event.skillKey === 'rain') {
       audio.play(sound, { gain });
@@ -563,7 +573,7 @@ function handleAudioEvent(event, current) {
   ));
   const gain = soundGainFor(event, current);
   if (event.type === 'cast') {
-    if (!event.predictedLocally) playCastSound(event, gain);
+    if (!event.predictedLocally) playCastSound(event, gain, current);
     if (event.skillId === 'counter' && event.playerId === character?.id) {
       showCounterToast(localPlayer);
       showCounterPresentation();
@@ -1807,7 +1817,7 @@ function partyLoop(time) {
     nextWorld = partyClient.viewWorld(time) ?? world;
     if (nextWorld) renderer.consumePredictedEvents(predictedEvents, nextWorld, time);
     for (const event of predictedEvents) {
-      if (event.type === 'cast') playCastSound(event, soundGainFor(event, nextWorld));
+      if (event.type === 'cast') playCastSound(event, soundGainFor(event, nextWorld), nextWorld);
       else if (event.type === 'predictedHit') audio.play('impact');
     }
   }

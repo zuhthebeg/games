@@ -24,7 +24,15 @@ const FAMILY_SKILL_SOUNDS = Object.freeze({
 
 const BOSS_ENEMY_KINDS = new Set(['commander', 'ashwarden', 'skeletonking']);
 
-export function castSoundFor(event = {}) {
+export function castSoundFor(event = {}, world = null, fallbackFamily = null) {
+  const source = world?.entities?.find((entity) => entity.id === event.entityId);
+  const localPlayerIds = [world?.localPlayerId, world?.soloPlayerId].filter((id) => id != null);
+  const localPlayer = world?.entities?.find((entity) => (
+    entity.kind === 'player'
+    && (localPlayerIds.includes(entity.id) || localPlayerIds.includes(entity.playerId))
+  ));
+  const family = event.family ?? source?.family ?? localPlayer?.family ?? fallbackFamily;
+  event = { ...event, family };
   if (event.skillId === 'counter') {
     if (event.family === 'crossbow') return 'crossbow-shot';
     if (event.family === 'staff') return 'staff-cast';
@@ -32,9 +40,9 @@ export function castSoundFor(event = {}) {
   }
   if (event.skillKey && Object.hasOwn(SKILL_SOUNDS, event.skillKey)) return SKILL_SOUNDS[event.skillKey];
   if (event.skill !== undefined) return FAMILY_SKILL_SOUNDS[event.family]?.[event.skill] ?? 'staff-cast';
-  if (event.family === 'staff') return 'staff-cast';
   if (event.family === 'sword') return event.step ? 'slash-whoosh' : 'sword-swing';
-  return null;
+  if (event.family === 'crossbow' || event.family === 'staff') return null;
+  return 'sword-swing';
 }
 
 export function hitSoundLayers(event = {}, source = null) {

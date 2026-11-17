@@ -42,7 +42,32 @@ test('cast routing covers every family and lineage skill plus counters', () => {
   assert.equal(castSoundFor({ family: 'sword', skillId: 'counter' }), 'sword-swing');
   assert.equal(castSoundFor({ family: 'crossbow', skillId: 'counter' }), 'crossbow-shot');
   assert.equal(castSoundFor({ family: 'staff', skillId: 'counter' }), 'staff-cast');
-  assert.equal(castSoundFor({ family: 'staff', step: 1 }), 'staff-cast');
+  assert.equal(castSoundFor({ family: 'staff', step: 1 }), null);
+});
+
+test('basic cast routing resolves the source family and avoids duplicate ranged sounds', () => {
+  const cast = { type: 'cast', step: 1, entityId: 42 };
+  assert.equal(
+    castSoundFor(cast, { entities: [{ id: 42, kind: 'player', family: 'sword' }] }),
+    'slash-whoosh',
+  );
+  assert.equal(
+    castSoundFor(cast, { entities: [{ id: 42, kind: 'player', family: 'crossbow' }] }),
+    null,
+  );
+  assert.equal(
+    castSoundFor(cast, { entities: [{ id: 42, kind: 'player', family: 'staff' }] }),
+    null,
+  );
+  assert.equal(castSoundFor(cast), 'sword-swing');
+  assert.equal(
+    castSoundFor(
+      { step: 1, entityId: 99 },
+      { localPlayerId: 'local', entities: [{ id: 7, playerId: 'local', kind: 'player', family: 'staff' }] },
+      'sword',
+    ),
+    null,
+  );
 });
 
 test('critical hits layer a crit sound and bone snaps obey their minimum interval', () => {
