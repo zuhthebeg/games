@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { ENEMIES } from '../js/content/enemies.js';
 import { debugKillEnemy } from '../js/debug/combat.js';
 import { FAMILY_SKILLS, LINEAGE_SKILL_SWAPS, SKILLS, skillsFor } from '../js/content/skills.js';
-import { decodeMessage, encodeMessage } from '../js/net/protocol.js';
 import {
   canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor, predictedHitSoundLayers,
 } from '../js/render/audio-routing.js';
 import { createStageWorld } from '../js/sim/world.js';
-import { PartyClient } from '../js/ui/party.js';
 
 const EXPECTED_SKILL_SOUNDS = {
   spin: 'slash-whoosh',
@@ -98,7 +97,7 @@ test('predicted party hits route skill damage and defer critical layers', () => 
   );
 });
 
-test('boss death routing sees the solo entity and party protocol extras', () => {
+test('boss death routing uses solo fields and server-shaped party entities', () => {
   const world = createStageWorld({ seed: 37, stageId: 'KB' });
   const boss = world.entities.find((entity) => entity.kind === 'enemy' && entity.boss);
   assert.ok(boss);
@@ -110,33 +109,30 @@ test('boss death routing sees the solo entity and party protocol extras', () => 
   assert.ok(event);
   assert.deepEqual(deathSoundLayers(event, world), ['enemy-death', 'boss-death']);
 
-  const snapshot = decodeMessage(encodeMessage({
-    t: 'snap',
-    full: true,
-    ents: [boss],
-  }));
-  const protocolBoss = snapshot.ents[0];
-  assert.equal(protocolBoss.boss, true);
-  const partyClient = Object.create(PartyClient.prototype);
-  Object.assign(partyClient, {
-    stageWorld: { tick: 0, entities: [], roomIndex: 0, openDoors: {} },
-    predictor: {
-      getPlayer: () => ({ id: 'local-player', playerId: 'local-player', kind: 'player', x: 0, z: 0 }),
-      getVisualPosition: () => ({ x: 0, z: 0 }),
-      getVisualFacing: () => 0,
-    },
-    session: { clock: { getEstimate: () => 100 } },
-    interpolation: { sampleIntoEstimate: () => ({ entities: snapshot.ents }) },
-    lastSnapshot: { tick: 1, ev: [] },
-    lastFrameTelemetryAt: 100,
-    viewEntityPool: new Map(),
-    reviveProgress: new Map(),
-    playerId: 'local-player',
-  });
-  const partyWorld = partyClient.viewWorld(100);
-  const partyBoss = partyWorld.entities.find((entity) => entity.id === boss.id);
-  assert.equal(partyBoss.boss, true);
-  assert.deepEqual(deathSoundLayers(event, partyWorld), ['enemy-death', 'boss-death']);
+  const serverBoss = {
+    id: boss.id,
+    kind: 'enemy',
+    model: boss.model,
+    maxHp: boss.maxHp,
+    hp: 0,
+    dead: true,
+  };
+  assert.equal('boss' in serverBoss, false);
+  assert.deepEqual(deathSoundLayers(event, { entities: [serverBoss] }, { boss: true }), ['enemy-death', 'boss-death']);
+  assert.deepEqual(deathSoundLayers(event, { entities: [serverBoss] }), ['enemy-death', 'boss-death']);
+
+  const serverMinion = {
+    id: 'normal-skeleton',
+    kind: 'enemy',
+    model: ENEMIES.minion.model,
+    maxHp: ENEMIES.minion.hp,
+    hp: 0,
+    dead: true,
+  };
+  assert.deepEqual(
+    deathSoundLayers({ entityId: serverMinion.id }, { entities: [serverMinion] }),
+    ['enemy-death', 'bone-snap'],
+  );
 });
 
 test('meteor impact kind routes to the meteor sound', () => {
