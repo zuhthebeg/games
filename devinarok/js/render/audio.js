@@ -1,7 +1,17 @@
-const SOUND_FILES = {
+export const SOUND_FILES = Object.freeze({
   'sword-swing': 'sword-swing.ogg',
+  'slash-whoosh': Object.freeze(['slash-whoosh-1.ogg', 'slash-whoosh-2.ogg', 'sword-swing.ogg']),
   impact: 'impact.ogg',
   'enemy-death': 'enemy-death.ogg',
+  'meteor-fall': 'meteor-fall.ogg',
+  'meteor-impact': 'meteor-impact.ogg',
+  'boss-death': 'boss-death.ogg',
+  'heavy-slam': 'heavy-slam.ogg',
+  'crit-hit': 'crit-hit.ogg',
+  'bone-snap': 'bone-snap.ogg',
+  'magic-whoosh': 'magic-whoosh.ogg',
+  'arrow-flight': Object.freeze(['arrow-flight-1.ogg', 'arrow-flight-2.ogg']),
+  'heavy-hit': 'heavy-hit.ogg',
   'door-open': 'door-open.ogg',
   coins: 'coins.ogg',
   potion: 'potion.ogg',
@@ -24,11 +34,21 @@ const SOUND_FILES = {
   'forest-bgm': 'forest-bgm.ogg',
   'castle-bgm': 'castle-bgm.ogg',
   'sanctuary-bgm': 'sanctuary-bgm.ogg',
-};
+});
 
 const MUSIC_NAMES = new Set(['hub-bgm', 'combat-bgm', 'forest-bgm', 'castle-bgm', 'sanctuary-bgm']);
 export const SHARED_SFX_NAMES = Object.keys(SOUND_FILES).filter((name) => !MUSIC_NAMES.has(name));
 export const AUDIO_NAMES = Object.freeze(Object.keys(SOUND_FILES));
+
+export function chooseVariant(variants, random = Math.random) {
+  const files = Array.isArray(variants) ? variants : [variants];
+  if (files.length === 1) return files[0];
+  return files[Math.floor(random() * files.length)];
+}
+
+export function jitteredRate(rate, random = Math.random) {
+  return rate * (0.95 + random() * 0.1);
+}
 
 function scheduleGain(param, value, now, seconds) {
   if (!param) return;
@@ -42,7 +62,10 @@ function scheduleGain(param, value, now, seconds) {
 }
 
 export class AudioManager {
-  constructor() {
+  constructor({
+    random = Math.random,
+    now = () => globalThis.performance?.now?.() ?? Date.now(),
+  } = {}) {
     this.context = typeof AudioContext === 'undefined' ? null : new AudioContext();
     this.master = this.context?.createGain() ?? null;
     this.bgmBus = this.context?.createGain() ?? null;
@@ -58,6 +81,9 @@ export class AudioManager {
     this.buffers = new Map();
     this.pendingLoads = new Map();
     this.activeSfx = new Map();
+    this.lastPlayedAt = new Map();
+    this.random = random;
+    this.now = now;
     this.music = null;
     this.musicName = null;
     this.desiredMusic = null;
@@ -69,16 +95,23 @@ export class AudioManager {
   async load(names) {
     if (!this.context) return;
     await Promise.all([...new Set(names)].map(async (name) => {
-      const file = SOUND_FILES[name];
-      if (!file || this.buffers.has(name)) return;
+      const files = SOUND_FILES[name];
+      if (!files || this.buffers.has(name)) return;
       if (!this.pendingLoads.has(name)) {
         const load = (async () => {
           try {
-            const response = await fetch(new URL(`../../assets/audio/${file}`, import.meta.url));
-            if (!response.ok) throw new Error(`Audio fetch failed: ${file}`);
-            this.buffers.set(name, await this.context.decodeAudioData(await response.arrayBuffer()));
-          } catch (error) {
-            console.warn(`Audio load skipped (${name})`, error);
+            const loaded = await Promise.all((Array.isArray(files) ? files : [files]).map(async (file) => {
+              try {
+                const response = await fetch(new URL(`../../assets/audio/${file}`, import.meta.url));
+                if (!response.ok) throw new Error(`Audio fetch failed: ${file}`);
+                return await this.context.decodeAudioData(await response.arrayBuffer());
+              } catch (error) {
+                console.warn(`Audio load skipped (${name}: ${file})`, error);
+                return null;
+              }
+            }));
+            const buffers = loaded.filter(Boolean);
+            if (buffers.length) this.buffers.set(name, Array.isArray(files) ? buffers : buffers[0]);
           } finally {
             this.pendingLoads.delete(name);
           }
@@ -101,18 +134,25 @@ export class AudioManager {
     if (this.context?.state === 'suspended') await this.context.resume();
   }
 
-  play(name, { rate = 1, loop = false, gain = 1, bus = 'sfx' } = {}) {
+  play(name, {
+    rate = 1, loop = false, gain = 1, bus = 'sfx', jitter = true, minIntervalMs = 0,
+  } = {}) {
     if (!this.context || this.muted || !this.buffers.has(name)) return;
+    const now = this.now();
     let active;
     if (bus === 'sfx' && !loop) {
+      const lastPlayedAt = this.lastPlayedAt.get(name);
+      if (minIntervalMs > 0 && lastPlayedAt !== undefined && now - lastPlayedAt < minIntervalMs) return;
       active = this.activeSfx.get(name);
       if (active?.size >= 4) return;
       if (!active) this.activeSfx.set(name, active = new Set());
     }
     const source = this.context.createBufferSource();
     const volume = this.context.createGain();
-    source.buffer = this.buffers.get(name);
-    source.playbackRate.value = rate;
+    source.buffer = chooseVariant(this.buffers.get(name), this.random);
+    source.playbackRate.value = jitter && bus !== 'bgm' && !MUSIC_NAMES.has(name)
+      ? jitteredRate(rate, this.random)
+      : rate;
     source.loop = loop;
     volume.gain.value = gain;
     source.connect(volume).connect(bus === 'bgm' ? this.bgmBus : this.sfxBus);
@@ -127,6 +167,7 @@ export class AudioManager {
     if (active) {
       active.add(source);
       source.onended = release;
+      if (minIntervalMs > 0) this.lastPlayedAt.set(name, now);
     }
     source.start();
     return source;
@@ -182,5 +223,6 @@ export class AudioManager {
     this.desiredMusic = null;
     this.context?.close();
     this.buffers.clear();
+    this.lastPlayedAt.clear();
   }
 }
