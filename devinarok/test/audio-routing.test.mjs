@@ -4,7 +4,7 @@ import { debugKillEnemy } from '../js/debug/combat.js';
 import { FAMILY_SKILLS, LINEAGE_SKILL_SWAPS, SKILLS, skillsFor } from '../js/content/skills.js';
 import { decodeMessage, encodeMessage } from '../js/net/protocol.js';
 import {
-  canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor,
+  canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor, predictedHitSoundLayers,
 } from '../js/render/audio-routing.js';
 import { createStageWorld } from '../js/sim/world.js';
 import { PartyClient } from '../js/ui/party.js';
@@ -80,6 +80,22 @@ test('critical hits layer a crit sound and bone snaps obey their minimum interva
   ]);
   assert.equal(canPlayBoneSnap(170, 100), true);
   assert.equal(canPlayBoneSnap(169, 100), false);
+});
+
+test('predicted party hits route skill damage and defer critical layers', () => {
+  const source = { family: 'sword' };
+  assert.deepEqual(
+    predictedHitSoundLayers({ type: 'predictedHit', skill: 1 }, source).map(({ name }) => name),
+    ['heavy-hit'],
+  );
+  assert.deepEqual(
+    predictedHitSoundLayers({ type: 'predictedHit', skill: 0 }, source).map(({ name }) => name),
+    ['impact'],
+  );
+  assert.deepEqual(
+    predictedHitSoundLayers({ type: 'predictedHit', skill: 1, critical: true }, source).map(({ name }) => name),
+    ['heavy-hit'],
+  );
 });
 
 test('boss death routing sees the solo entity and party protocol extras', () => {

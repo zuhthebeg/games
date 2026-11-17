@@ -55,6 +55,10 @@ export function hitSoundLayers(event = {}, source = null) {
   ];
 }
 
+export function predictedHitSoundLayers(event = {}, source = null) {
+  return hitSoundLayers(event, source).filter((layer) => layer.name !== 'crit-hit');
+}
+
 export function deathSoundLayers(event = {}, world = {}) {
   const dead = world.entities?.find((entity) => entity.id === event.entityId);
   const layers = ['enemy-death'];

@@ -6,7 +6,7 @@ import { FixedStepLoop } from './core/loop.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { AudioManager } from './render/audio.js';
 import {
-  canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor,
+  canPlayBoneSnap, castSoundFor, deathSoundLayers, hitSoundLayers, impactSoundFor, predictedHitSoundLayers,
 } from './render/audio-routing.js';
 import { PartyClient } from './ui/party.js';
 import { ClockInputScheduler } from './net/clock-input-scheduler.js';
@@ -1818,7 +1818,13 @@ function partyLoop(time) {
     if (nextWorld) renderer.consumePredictedEvents(predictedEvents, nextWorld, time);
     for (const event of predictedEvents) {
       if (event.type === 'cast') playCastSound(event, soundGainFor(event, nextWorld), nextWorld);
-      else if (event.type === 'predictedHit') audio.play('impact');
+      else if (event.type === 'predictedHit') {
+        const source = nextWorld?.entities?.find((entity) => entity.id === event.sourceId);
+        const gain = soundGainFor(event, nextWorld);
+        for (const layer of predictedHitSoundLayers(event, source)) {
+          audio.play(layer.name, { gain: gain * layer.gain });
+        }
+      }
     }
   }
   if (partyRendererReady && (
