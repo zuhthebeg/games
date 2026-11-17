@@ -1,3 +1,4 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import {register} from 'node:module';
 import {createHash} from 'node:crypto';
 register('./offline-loader.mjs',import.meta.url);
 globalThis.self=globalThis;globalThis.location={search:''};globalThis.matchMedia=()=>({matches:false});
-globalThis.document={hidden:false};globalThis.window={};
+globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const {syncHunterBow}=await import('../js/bow-motion.js?v=20261117mt1');

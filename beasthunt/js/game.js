@@ -1,3 +1,4 @@
+import {ContactShadows} from './contact-shadows.js?v=20261117sh';
 import {buildMonsterActor} from './monster-actor.js?v=20261117wl1';
 // Presentation entry generation: 20261115vf (R17 visual candidate; acceptance gated).
 // Beast Hunt — presentation and browser adapter. Combat lives in sim.js.
@@ -48,11 +49,13 @@ export class Hunt {
     this.H = buildHunter(this.wt, save.w[this.wt], save.armor); sc.add(this.H.root);
     this.G = practice ? buildMonsterActor('practice',3.7) : buildMonster(quest.mon); sc.add(this.G.root);
     if (d.biome === 'volcano') { const rim = new THREE.DirectionalLight(0x9ddcff, 2.4); rim.position.set(-12, 9, -8); sc.add(rim); }
+    this.contactShadows = new ContactShadows(sc,renderer.shadowMap.enabled);
+    this.contactShadows.attach(this.G,this.m,this.def);
     this.hp0 = { headRx: 0, headZ: 0, jaw: 0, bodyY: 0, bodyRx: 0, bodyRz: 0, tailCurl: 0, tailLift: 0 };
     this.mp = Object.assign({}, this.hp0);
     this.cy = 0; this.cp = .32; this.cd = input.isTouch ? 11 : 9.5; this.ct = new THREE.Vector3(0, 1.7, -30); this.shake = 0;
     this.paused = false; this.buildFx();
-    this.syncModels(0); this.updCam(0, true); this.updHud();
+    this.syncModels(0); this.contactShadows.update(); this.updCam(0, true); this.updHud();
     ui.setMon(quest.mon, quest.hr);
   }
 
@@ -232,6 +235,7 @@ export class Hunt {
     this.syncProjectiles(alpha);
     if(this.session){const covered=this.session.recovery && this.session.recovery.phase!=='active';this.G.root.visible=!covered;if(covered)for(const q of [...this.projPool,...this.arrowPool])q.visible=false;}
     this.updHud(); this.session?.render?.(this, rdt);
+    this.contactShadows?.update();
     if (!this.skipRender) this.r.render(this.scene,this.cam);
   }
 
@@ -239,6 +243,7 @@ export class Hunt {
   syncModels(dt) {
     const p = this.p, H = this.H, m = this.m, G = this.G, d = this.def.dims, t = this.clock, kf = dt > 0 ? 1 - Math.exp(-16 * dt) : 1;
     this.syncHunter(p, H, dt);
+    this.contactShadows?.attach(G,m,this.def);
     // monster
     if (G.status) {G.root.position.set(m.x,m.y,m.z);G.root.rotation.y=m.yaw+m.spin;G.motion?.sync(m,dt);this.lockRing.visible=this.lock&&m.state!=='dead';this.lockRing.position.set(m.x,.08,m.z);this.lockRing.scale.setScalar(d.bw*this.def.scale*1.7);return;}
     if (G.warrok !== undefined) {
@@ -277,6 +282,7 @@ export class Hunt {
     this.lockRing.visible = this.lock && m.state !== 'dead'; this.lockRing.position.x = m.x; this.lockRing.position.z = m.z; this.lockRing.scale.setScalar(d.hz * this.def.scale * 1.15); this.lockRing.rotation.y = t * .8;
   }
   syncHunter(p, H, dt, cache = this) {
+    this.contactShadows?.attach(H,p);
     if(!this.over && !this.paused && !document.hidden){this.gsSound?.update(p,this.p,p.id!==this.localId);this.weaponSound?.update(p,this.p,p.id!==this.localId);}
     const skinned=p.weapon==='gs' ? !!(H.gs && syncHunterGS(p,H,dt,this.clock)) : p.weapon==='bow' ? !!(H.bow && syncHunterBow(p,H,dt,this.clock)) : p.weapon==='db' ? !!(H.db && syncHunterDb(p,H,dt,this.clock)) : false;
     if (p.state==='charge') H.chargeLevel=Math.min(2,Math.floor(p.clv||0));
@@ -341,5 +347,5 @@ export class Hunt {
   }
   stopAudio() { this.weaponSound?.suspend(); stopAllGS(); }
   resize(w, h) { this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
-  dispose() { disposeHunterActors(this.scene); this.debug?.dispose(); this.G.dispose?.(); this.detachAudio?.(); this.gsSound?.dispose(); this.weaponSound?.dispose(); stopAllGS(); this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
+  dispose() { this.contactShadows?.dispose(); disposeHunterActors(this.scene); this.debug?.dispose(); this.G.dispose?.(); this.detachAudio?.(); this.gsSound?.dispose(); this.weaponSound?.dispose(); stopAllGS(); this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((x) => x.dispose()); } }); }
 }

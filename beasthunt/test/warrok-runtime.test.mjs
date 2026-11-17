@@ -1,3 +1,4 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,7 +8,7 @@ register('./offline-loader.mjs',import.meta.url);
 // animations and materials below are the unchanged production bytes.
 globalThis.self=globalThis;
 globalThis.createImageBitmap=async()=>({width:2048,height:2048});
-globalThis.location={search:''};globalThis.document={hidden:false};globalThis.window={};
+globalThis.location={search:''};globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 let resolveLoad;let fail=false;
@@ -65,7 +66,7 @@ test('Warrok source bytes and affected transitive URLs are pinned without relaxi
  const {createHash}=await import('node:crypto');const fixture=JSON.parse(fs.readFileSync(new URL('./warrok-runtime-baseline.json',import.meta.url)));
  const bytes=fs.readFileSync(new URL('../'+fixture.asset,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),fixture.sha256);
  const g=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)));assert.equal(g.skins[0].joints.length,fixture.joints);assert.equal(g.images.length,fixture.images);assert.equal(g.animations.length,fixture.clips);
- const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'),main=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');for(const key of ['bh/models','bh/game','main'])assert.ok(html.includes(fixture.cache[key].replace(/v=[^/]+$/,'v=20261117wl1')));assert.ok(main.includes(fixture.cache.debug.replace('20261115ww','20261117wl1')));
+ const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'),main=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');for(const key of ['bh/models','bh/game','main'])assert.ok(html.includes(fixture.cache[key].replace(/v=[^/]+$/,key==='bh/game'?'v=20261117sh':'v=20261117wl1')));assert.ok(main.includes(fixture.cache.debug.replace('20261115ww','20261117wl1')));
 });
 test('real Hunt frame/interpolation and reversible speed stay finite at 30/60/144Hz',async()=>{
  const {attachHuntDebug}=await import('../js/hunt-debug.js');

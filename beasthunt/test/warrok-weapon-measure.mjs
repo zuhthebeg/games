@@ -1,3 +1,4 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 // R13a measurement probe: derive Warrok right-hand socket constants from the
 // production GLB and its 13 retargeted greatsword clips. No guessed constants.
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import {register} from 'node:module';
 register('./offline-loader.mjs',import.meta.url);
 globalThis.self=globalThis;
 globalThis.createImageBitmap=async()=>({width:2048,height:2048});
-globalThis.location={search:''};globalThis.document={hidden:false};globalThis.window={};
+globalThis.location={search:''};globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const {clone:cloneSkeleton}=await import('three/addons/utils/SkeletonUtils.js');

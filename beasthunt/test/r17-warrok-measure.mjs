@@ -1,5 +1,6 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import fs from 'node:fs';import {register} from 'node:module';register('./offline-loader.mjs',import.meta.url);
-globalThis.self=globalThis;globalThis.createImageBitmap=async()=>({width:2048,height:2048});globalThis.location={search:''};globalThis.document={hidden:false};globalThis.window={};
+globalThis.self=globalThis;globalThis.createImageBitmap=async()=>({width:2048,height:2048});globalThis.location={search:''};globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three'),{GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 GLTFLoader.prototype.loadAsync=async function(url){if(!String(url).includes('warrok.glb'))return null;const b=fs.readFileSync(new URL('../assets/warrok.glb',import.meta.url));return this.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');};
 const {Hunt}=await import('bh/game'),{QUESTS}=await import('bh/data');const V=()=>new T.Vector3();

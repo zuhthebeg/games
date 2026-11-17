@@ -1,7 +1,8 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import fs from 'node:fs';
 import {register} from 'node:module';
 register('./offline-loader.mjs',import.meta.url);
-globalThis.self=globalThis;globalThis.location={search:''};globalThis.document={hidden:false};globalThis.window={};
+globalThis.self=globalThis;globalThis.location={search:''};globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three');const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const {clone}=await import('three/addons/utils/SkeletonUtils.js');
 const {createDbMotion,groundArissa,DB_CLIPS}=await import('../js/db-motion.js');

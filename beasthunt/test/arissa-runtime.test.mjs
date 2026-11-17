@@ -1,3 +1,4 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import {register} from 'node:module';
 import {createHash} from 'node:crypto';
 register('./offline-loader.mjs',import.meta.url);
 globalThis.self=globalThis;globalThis.location={search:''};globalThis.matchMedia=()=>({matches:false});
-globalThis.document={hidden:false};globalThis.window={};
+globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three');
 const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const {syncHunterDb,groundArissa,DB_CLIPS}=await import('../js/db-motion.js?v=20261117mt1');
@@ -66,7 +67,7 @@ test('Arissa exact approved bytes, sixteen unchanged original clip names and clo
  assert.equal(arissa.animations.length,16);assert.deepEqual(arissa.animations.map(c=>c.name),paladin.animations.map(c=>c.name));
  for(const c of arissa.animations)assert.ok(Math.abs(c.duration-paladin.animations.find(x=>x.name===c.name).duration)<1e-6,c.name);
  const root=new URL('../',import.meta.url),html=fs.readFileSync(new URL('index.html',root),'utf8'),models=fs.readFileSync(new URL('js/models.js',root),'utf8');
- for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v='+'20261117wl1'));
+ for(const n of ['main','game','models'])assert.ok(html.includes(n+'.js?v='+(n==='game'?'20261117sh':'20261117wl1')));
  assert.ok(models.includes('db-motion.js?v=20261117mt1'));assert.ok(models.includes('hunter-arissa-db.glb?v=20261115vf'));
  for(const n of ['main','game'])assert.ok(fs.readFileSync(new URL('js/'+n+'.js',root),'utf8').includes('20261117mt1'));
  measurements.clips=arissa.animations.map(c=>({name:c.name,duration:c.duration}));

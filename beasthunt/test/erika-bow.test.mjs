@@ -9,7 +9,7 @@ test('Erika exact approved binary with fourteen original clip clocks',()=>{
  for(const a of g.animations){assert.ok(meta[a.name],a.name);const duration=Math.max(...a.samplers.map(s=>g.accessors[s.input].max[0]));assert.ok(Math.abs(duration-meta[a.name].duration)<1e-6,a.name);}
 });
 test('Erika changed entry and adapter modules use one exact cache generation',()=>{
- const html=fs.readFileSync(new URL('index.html',root),'utf8');for(const n of ['main','models','game'])assert.ok(html.includes(n+'.js?v='+'20261117wl1'),n);
+ const html=fs.readFileSync(new URL('index.html',root),'utf8');for(const n of ['main','models','game'])assert.ok(html.includes(n+'.js?v='+(n==='game'?'20261117sh':'20261117wl1')),n);
  const models=fs.readFileSync(new URL('js/models.js',root),'utf8');assert.ok(models.includes('bow-motion.js?v=20261117mt1'));
  assert.ok(models.includes('hunter-erika-bow.glb?v=20261115er'));
 });

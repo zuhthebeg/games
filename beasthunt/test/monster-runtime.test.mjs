@@ -1,5 +1,6 @@
+import {createCanvasElement} from './canvas-stub.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {register} from 'node:module';register('./offline-loader.mjs',import.meta.url);
-globalThis.self=globalThis;globalThis.createImageBitmap=async()=>({width:2048,height:2048});globalThis.location={search:''};globalThis.document={hidden:false};globalThis.window={};
+globalThis.self=globalThis;globalThis.createImageBitmap=async()=>({width:2048,height:2048});globalThis.location={search:''};globalThis.document={hidden:false,createElement:createCanvasElement};globalThis.window={};
 const T=await import('three'),{GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const requests=[],assets={},pending=new Map();let fail=false;
 GLTFLoader.prototype.loadAsync=async function(url){const name=String(url).includes('/monsters/')?String(url).split('/monsters/')[1].split('.glb')[0]:null;if(!name)return null;requests.push(name);await new Promise(r=>pending.set(name,r));if(fail){fail=false;throw Error('offline');}const b=fs.readFileSync(new URL('../assets/monsters/'+name+'.glb',import.meta.url));return assets[name]=await this.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');};
