@@ -533,6 +533,7 @@ function renderTutorialCard() {
 }
 
 let lastBoneSnapAt = -Infinity;
+const enemyAudioTraits = new Map();
 
 function soundGainFor(event, current) {
   const source = current?.entities?.find((entity) => (
@@ -568,6 +569,14 @@ function playCastSound(event, gain = 1, world = null) {
 }
 
 function handleAudioEvent(event, current) {
+  if (event.type === 'spawn' && event.enemyKind && event.entityId != null) {
+    enemyAudioTraits.set(event.entityId, {
+      enemyKind: event.enemyKind,
+      elite: event.elite === true,
+      boss: event.boss === true,
+    });
+    while (enemyAudioTraits.size > 512) enemyAudioTraits.delete(enemyAudioTraits.keys().next().value);
+  }
   const localPlayer = current?.entities.find((entity) => (
     entity.kind === 'player' && entity.playerId === character?.id
   ));
@@ -632,7 +641,8 @@ function handleAudioEvent(event, current) {
     audio.play('enemy-death');
   }
   if (event.type === 'death') {
-    for (const name of deathSoundLayers(event, current)) {
+    const traits = renderer?.enemyTraits?.get(event.entityId) ?? enemyAudioTraits.get(event.entityId);
+    for (const name of deathSoundLayers(event, current, traits)) {
       if (name === 'bone-snap') {
         const now = performance.now();
         if (canPlayBoneSnap(now, lastBoneSnapAt)) {
@@ -643,6 +653,7 @@ function handleAudioEvent(event, current) {
         audio.play(name, { gain });
       }
     }
+    enemyAudioTraits.delete(event.entityId);
   }
   if (
     event.type === 'boneRevival'
@@ -726,6 +737,7 @@ function stopWorld() {
   sanctuaryBurnAudio = null;
   renderer?.destroy();
   loop = input = renderer = null;
+  enemyAudioTraits.clear();
 }
 
 async function showTitle() {

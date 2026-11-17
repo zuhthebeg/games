@@ -1,3 +1,5 @@
+import { deathTierForEntity } from './death-effects.js';
+
 const SKILL_SOUNDS = Object.freeze({
   spin: 'slash-whoosh',
   dash: 'slash-whoosh',
@@ -21,8 +23,6 @@ const FAMILY_SKILL_SOUNDS = Object.freeze({
   crossbow: Object.freeze({ 1: 'arrow-flight', 2: 'crossbow-shot', 3: 'arrow-flight', 4: 'arrow-flight' }),
   staff: Object.freeze({ 1: 'flame', 2: 'frost', 3: 'blink', 4: 'staff-cast' }),
 });
-
-const BOSS_ENEMY_KINDS = new Set(['commander', 'ashwarden', 'skeletonking']);
 
 export function castSoundFor(event = {}, world = null, fallbackFamily = null) {
   const source = world?.entities?.find((entity) => entity.id === event.entityId);
@@ -59,11 +59,11 @@ export function predictedHitSoundLayers(event = {}, source = null) {
   return hitSoundLayers(event, source).filter((layer) => layer.name !== 'crit-hit');
 }
 
-export function deathSoundLayers(event = {}, world = {}) {
-  const dead = world.entities?.find((entity) => entity.id === event.entityId);
+export function deathSoundLayers(event = {}, world = {}, traits = {}) {
+  const dead = world?.entities?.find((entity) => entity.id === event.entityId);
   const layers = ['enemy-death'];
   if (dead?.kind === 'enemy') {
-    layers.push(dead.boss || BOSS_ENEMY_KINDS.has(dead.enemyKind) ? 'boss-death' : 'bone-snap');
+    layers.push(deathTierForEntity(dead, traits).boss ? 'boss-death' : 'bone-snap');
   }
   return layers;
 }
