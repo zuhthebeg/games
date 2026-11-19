@@ -493,9 +493,13 @@ const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 /* ---- 이벤트 카운터 (VM-I10) ---- */
 // 방문→녹음→분석→결과 퍼널. ev/loc/ref만 보낸다(세션·계정·UA 없음). 실패는 전부 무시.
 const EV_API='https://relay.cocy.io/api/voicematch/event';
-const VM_EV=['visit','rec_start','analyze_done','result_view','share','login_tap'];
-function vmRefOf(u){
+const VM_EV=['visit','rec_start','analyze_done','result_view','share','login_tap','visit_return','newchip_tap','req_done_seen','daily_play','invite_open'];
+function vmRefOf(u,landing){
   try{
+    const url=new URL(landing||(typeof location!=='undefined'?location.href:'https://game.cocy.io/voicematch/'));
+    if(url.searchParams.get('utm_source')==='share')return 'share';
+    if(/[#&](d|g)=/.test(url.hash))return 'invite';
+    if(u&&new URL(u).hostname==='game.cocy.io')return 'portal';
     const h=new URL(u||'').hostname;
     if(!h)return 'direct';
     if(/(^|\.)threads\.(net|com)$/.test(h))return 'threads';
@@ -507,7 +511,7 @@ function vmRefOf(u){
   }catch(e){return 'direct';}
 }
 const VM_REF=vmRefOf(document.referrer);
-const VM_FIRST=new Set(['visit','rec_start','analyze_done','result_view']);
+const VM_FIRST=new Set(['visit','rec_start','analyze_done','result_view','visit_return','invite_open','daily_play']);
 const vmSent=new Set();
 function vmEv(ev){
   try{
@@ -523,7 +527,11 @@ function vmEv(ev){
   }catch(e){}
 }
 // visit는 세션당 1회 — storage가 막혀 있어도 비콘 실패로 두고 페이지 로직은 건드리지 않는다
-function vmVisit(){vmEv('visit');}
+function vmVisit(){
+  vmEv('visit');
+  try{const today=new Date().toISOString().slice(0,10),prev=localStorage.getItem('vm_visit_day');if(prev&&prev!==today)vmEv('visit_return');localStorage.setItem('vm_visit_day',today);}catch(e){}
+  if(typeof location!=='undefined'&&/[#&](d|g)=/.test(location.hash))vmEv('invite_open');
+}
 vmVisit();
 
 function applyLang(){
@@ -1072,6 +1080,7 @@ async function renderDailyPanel(){
   const pct=tgt?dailyPct(tgt):null;
   if(!tgt||pct==null){box.classList.add('hidden');return;}
   _dailyLast={tgt,pct};
+  vmEv('daily_play');
   const day=dailyDayUTC();
   const diff=dailyDiffVs(getDailyLastPct(),dailyDayUTCOffset(-1),pct);
   saveDailyLastPct(day,pct);
@@ -1730,6 +1739,7 @@ function trackReq(id,artist){
 }
 function showReqToast(name){
   if(document.querySelector('.req-toast'))return;
+  vmEv('req_done_seen');
   const el=document.createElement('div');el.className='req-toast';
   const txt=document.createElement('div');txt.className='rt-t';txt.textContent=t('reqDone')(name);
   const cta=document.createElement('button');cta.className='rt-b';cta.textContent=t('reqDoneCta');
@@ -1827,7 +1837,7 @@ function renderRecentSingers(){
       +'<time datetime="'+a.added+'">'+a.added.slice(5).replace('-','/')+'</time>'
       +'<span>'+escHtml(poolLabel)+'</span>';
     b.setAttribute('aria-label',name+' · '+t('recentAdded')+': '+a.added+' · '+poolLabel);
-    b.onclick=()=>{selectRecentPool(a);openArtistList(a.slug);};
+    b.onclick=()=>{vmEv('newchip_tap');selectRecentPool(a);openArtistList(a.slug);};
     item.appendChild(b);chips.appendChild(item);
   }
 }

@@ -86,3 +86,13 @@ test('funnel events are first-only across retries, language changes and reloads'
 test('blocked storage keeps first-only guard in memory',()=>{
   const h=harness();h.run("sessionStorage.getItem=()=>{throw Error('blocked')};for(let i=0;i<3;i++)vmEv('rec_start')");assert.equal(h.beacons.length,2);
 });
+
+test('landing attribution precedes referrer without accepting arbitrary enums',()=>{
+ const h=harness();for(const [url,ref,want] of [
+ ['https://game.cocy.io/voicematch/tw/?utm_source=share#g=abc','https://threads.net/','share'],
+ ['https://game.cocy.io/voicematch/#d=abc','https://game.cocy.io/','invite'],
+ ['https://game.cocy.io/voicematch/#g=abc','https://x.com/','invite'],
+ ['https://game.cocy.io/voicematch/','https://game.cocy.io/','portal'],
+ ['https://game.cocy.io/voicematch/?utm_source=attacker','https://google.com/','google']])assert.equal(h.run(`vmRefOf(${JSON.stringify(ref)},${JSON.stringify(url)})`),want);
+});
+test('new event whitelist accepts only approved signals',()=>{const h=harness();h.run("['visit_return','newchip_tap','req_done_seen','daily_play','invite_open'].forEach(vmEv)");assert.equal(h.beacons.length,6);});

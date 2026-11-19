@@ -155,7 +155,7 @@ for(const lang of locales)test('actual initial page script boots and permits pre
   await h.elements.get('btn-entry-board').click();
   assert.ok(h.elements.get('lb-modal'));
   assert.ok(h.requests.every(r=>(r.options.method||'GET')==='GET'));
-  assert.equal(h.storage.size,0);
+  assert.deepEqual([...h.storage.keys()],['vm_visit_day']);
 });
 
 test('late response cannot replace a newer preview',async()=>{
@@ -186,7 +186,7 @@ test('failed initial leaderboard still permits the existing microphone consent s
   await flush();assert.match(h.elements.get('entry-rank-list').innerHTML,/Could not load/);
   await h.elements.get('btn-start').click();
   assert.match(h.elements.get('mic-t').textContent,/mic/i);
-  assert.equal(h.storage.size,0);
+  assert.deepEqual([...h.storage.keys()],['vm_visit_day']);
   assert.ok(h.requests.every(r=>(r.options.method||'GET')==='GET'));
 });
 

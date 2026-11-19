@@ -18,7 +18,7 @@ function harness(data={recent:[]},lang='en',idle=true){
   }
   for(const id of ['recent-singers','recent-chips','recent-title','btn-all'])elements.set(id,new Element());
   const document={createElement:()=>new Element(),body:new Element()};
-  const ctx=vm.createContext({localStorage:{setItem(){}},updateIntroPoolBtn(){},poolPref:'kr',document,console,Date,setTimeout:(fn,ms)=>timers.push({fn,ms}),window:idle?{requestIdleCallback:(fn,opt)=>idles.push({fn,opt})}:{},fetch:async url=>{requests.push(url);if(data instanceof Error)throw data;return{ok:data?.ok!==false,json:async()=>data};},openArtistList:slug=>opened.push(slug)});
+  const ctx=vm.createContext({vmEv(){},localStorage:{setItem(){}},updateIntroPoolBtn(){},poolPref:'kr',document,console,Date,setTimeout:(fn,ms)=>timers.push({fn,ms}),window:idle?{requestIdleCallback:(fn,opt)=>idles.push({fn,opt})}:{},fetch:async url=>{requests.push(url);if(data instanceof Error)throw data;return{ok:data?.ok!==false,json:async()=>data};},openArtistList:slug=>opened.push(slug)});
   vm.runInContext(i18n,ctx);
   ctx.elements=elements;
   vm.runInContext("const $=id=>elements.get(id);let LANG="+JSON.stringify(lang)+";const t=k=>I18N[LANG][k];"+esc+source,ctx);

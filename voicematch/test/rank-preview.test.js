@@ -36,7 +36,7 @@ function harness(handler=()=>BOARD,lang='ko'){
   document.body=new Element('body');
   const box=new Element('div');box.id='r-daily';box.classList.add('hidden');document.body.appendChild(box);
   const storage=new Map();
-  const ctx=vm.createContext({document,console,URLSearchParams,AbortController,Math,JSON,
+  const ctx=vm.createContext({vmEv(){},document,console,URLSearchParams,AbortController,Math,JSON,
     Date:class extends Date{constructor(...a){super(...(a.length?a:['2026-11-16T03:00:00Z']));}},
     setTimeout:(fn,ms)=>{timers.set(++timer,{fn,ms});return timer;},clearTimeout:id=>timers.delete(id),
     localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,String(v))},
