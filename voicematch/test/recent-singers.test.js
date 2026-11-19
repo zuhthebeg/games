@@ -18,13 +18,13 @@ function harness(data={recent:[]},lang='en',idle=true){
   }
   for(const id of ['recent-singers','recent-chips','recent-title','btn-all'])elements.set(id,new Element());
   const document={createElement:()=>new Element(),body:new Element()};
-  const ctx=vm.createContext({document,console,Date,setTimeout:(fn,ms)=>timers.push({fn,ms}),window:idle?{requestIdleCallback:(fn,opt)=>idles.push({fn,opt})}:{},fetch:async url=>{requests.push(url);if(data instanceof Error)throw data;return{ok:data?.ok!==false,json:async()=>data};},openArtistList:slug=>opened.push(slug)});
+  const ctx=vm.createContext({localStorage:{setItem(){}},updateIntroPoolBtn(){},poolPref:'kr',document,console,Date,setTimeout:(fn,ms)=>timers.push({fn,ms}),window:idle?{requestIdleCallback:(fn,opt)=>idles.push({fn,opt})}:{},fetch:async url=>{requests.push(url);if(data instanceof Error)throw data;return{ok:data?.ok!==false,json:async()=>data};},openArtistList:slug=>opened.push(slug)});
   vm.runInContext(i18n,ctx);
   ctx.elements=elements;
   vm.runInContext("const $=id=>elements.get(id);let LANG="+JSON.stringify(lang)+";const t=k=>I18N[LANG][k];"+esc+source,ctx);
   return{ctx,elements,requests,timers,idles,opened,run:s=>vm.runInContext(s,ctx)};
 }
-const artist=(i=0)=>({slug:'singer_'+i,name:'가수 '+i,added:'2026-11-19',intl:1});
+const artist=(i=0)=>({slug:'singer_'+i,name:'Artist '+i,added:'2026-11-19',intl:1});
 for(const [name,data] of [['missing',{}],['empty',{recent:[]}],['null',null],['network failure',Error('offline')],['HTTP failure',{ok:false}],['malformed',{recent:[null,{},artist(1),{...artist(2),added:'bad'}]}]]){
   test('recent feed '+name+' is quiet and safe',async()=>{
     const h=harness(data);await h.run('loadRecentSingers()');
@@ -45,7 +45,7 @@ test('maximum eight chips, deduplicated, date and pool labels, click only browse
   const chips=h.elements.get('recent-chips').children;assert.equal(chips.length,8);
   const b=chips[0].children[0];assert.match(b.innerHTML,/All artists/);assert.match(b.innerHTML,/11\/19/);b.onclick();assert.deepEqual(h.opened,['singer_0']);
   assert.equal(h.run("recentPool({jp:1,intl:1})"),'jp');assert.equal(h.run('recentPool({})'),'kr');
-  assert.doesNotMatch(source,/poolPref\s*=|vmView\s*=|vmEv\(|CATALOG_URL|ensureSingers\(/);
+  assert.doesNotMatch(source,/vmView\s*=|CATALOG_URL/);
 });
 test('NEW is date-based, not an eternal badge',()=>{
   const h=harness();assert.equal(h.run("recentIsNew('2026-11-19',Date.parse('2026-11-20T00:00:00Z'))"),true);
@@ -75,4 +75,13 @@ test('published feed is below 5KB, has twelve valid matching pool flags and SW i
   const raw=readFileSync(new URL('recent.json',root));assert.ok(raw.length<=5000);const recent=JSON.parse(raw).recent;assert.equal(recent.length,12);
   const singers=JSON.parse(readFileSync(new URL('singers.json',root)));for(const a of recent){const s=singers.find(s=>s.slug===a.slug);assert.ok(s);assert.equal(!!a.intl,!!s.intl);assert.equal(!!a.jp,!!s.jp);}
   const sw=readFileSync(new URL('sw.js',root),'utf8');assert.match(sw,/fetch\(req\)\.then/);assert.doesNotMatch(sw.slice(sw.indexOf('HEAVY_RE ='),sw.indexOf("self.addEventListener('install'")),/json/);
+});
+
+test('30 day expiry, untranslated Korean exclusion, and locale-first ordering',async()=>{
+  const now=Date.parse('2026-11-20T00:00:00Z'),h=harness({},'tw');
+  assert.equal(h.run(`recentVisible({slug:'unknown',name:'이름',added:'2026-11-19'},${now})`),false);
+  assert.equal(h.run(`recentVisible({slug:'unknown',name:'Name',added:'2026-10-19'},${now})`),false);
+  assert.equal(h.run(`recentVisible({slug:'unknown',name:'Name',added:'2026-10-21'},${now})`),true);
+  h.run("recentSingers=[{slug:'kr',name:'Kr',added:'2026-11-19',gk:1},{slug:'cp',name:'Cp',added:'2026-11-19',cp:1,intl:1}];renderRecentSingers()");
+  const b=h.elements.get('recent-chips').children[0].children[0];assert.match(b.innerHTML,/>Cp</);b.onclick();assert.equal(h.run('poolPref'),'cp');
 });

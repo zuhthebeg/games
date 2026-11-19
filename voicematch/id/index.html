@@ -1802,7 +1802,10 @@ function recentName(a){
     ||(LANG==='tw'&&typeof TW_NAMES!=='undefined'&&TW_NAMES[a.slug]);
   return known?singerName(a,LANG):/^[\x00-\x7f]+$/.test(a.name)?a.name:a.slug.split('_').join(' ');
 }
-function recentPool(a){return a.jp?'jp':a.intl?'all':'kr';}
+function recentPool(a){return a.cp?'cp':a.jp?'jp':a.intl?'all':'kr';}
+function recentVisible(a,now=Date.now()){const age=now-Date.parse(a.added+'T00:00:00Z');return age>=0&&age<=30*86400000&&(LANG==='ko'||!/[가-힣]/.test(singerName(a,LANG)));}
+function recentPriority(a){return LANG==='tw'?!!a.cp:LANG==='ja'?!!a.jp:LANG==='ko'?!a.intl:!!a.gk;}
+function selectRecentPool(a){poolPref=recentPool(a);try{localStorage.setItem('vm_poolpref',poolPref);}catch(e){}updateIntroPoolBtn();}
 function recentIsNew(added,now=Date.now()){
   const age=now-Date.parse(added+'T00:00:00Z');
   return Number.isFinite(age)&&age>=0&&age<14*86400000;
@@ -1812,8 +1815,9 @@ function renderRecentSingers(){
   if(!el||!chips)return;
   $('recent-title').textContent=t('recentTitle');
   chips.innerHTML='';
-  el.classList.toggle('hidden',!recentSingers.length);
-  for(const a of recentSingers){
+  const visible=recentSingers.filter(a=>recentVisible(a)).sort((a,b)=>Number(recentPriority(b))-Number(recentPriority(a))).slice(0,8);
+  el.classList.toggle('hidden',!visible.length);
+  for(const a of visible){
     const item=document.createElement('div');item.setAttribute('role','listitem');
     const b=document.createElement('button');b.type='button';b.className='recent-chip';
     const name=recentName(a),poolLabel=t('recentPool'+recentPool(a));
@@ -1823,7 +1827,7 @@ function renderRecentSingers(){
       +'<time datetime="'+a.added+'">'+a.added.slice(5).replace('-','/')+'</time>'
       +'<span>'+escHtml(poolLabel)+'</span>';
     b.setAttribute('aria-label',name+' · '+t('recentAdded')+': '+a.added+' · '+poolLabel);
-    b.onclick=()=>openArtistList(a.slug);
+    b.onclick=()=>{selectRecentPool(a);openArtistList(a.slug);};
     item.appendChild(b);chips.appendChild(item);
   }
 }
@@ -1837,7 +1841,7 @@ async function loadRecentSingers(){
       .filter(a=>a&&typeof a.slug==='string'&&/^[a-z0-9_-]+$/.test(a.slug)
         &&typeof a.name==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(a.added)
         &&Number.isFinite(Date.parse(a.added+'T00:00:00Z'))&&!seen.has(a.slug)&&seen.add(a.slug))
-      .slice(0,8);
+      .slice(0,12);
   }catch(e){recentSingers=[];}
   renderRecentSingers();
 }
