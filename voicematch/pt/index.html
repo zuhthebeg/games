@@ -476,6 +476,35 @@ let LANG=detectLang();
 // 로케일에 키가 없으면 en으로 폴백한다(없는 키를 함수처럼 호출하면 터진다).
 const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 
+/* ---- 이벤트 카운터 (VM-I10) ---- */
+// 방문→녹음→분석→결과 퍼널. ev/loc/ref만 보낸다(세션·계정·UA 없음). 실패는 전부 무시.
+const EV_API='https://relay.cocy.io/api/voicematch/event';
+const VM_EV=['visit','rec_start','analyze_done','result_view','share','login_tap'];
+function vmRefOf(u){
+  try{
+    const h=new URL(u||'').hostname;
+    if(!h)return 'direct';
+    if(/(^|\.)threads\.(net|com)$/.test(h))return 'threads';
+    if(/(^|\.)instagram\.com$/.test(h))return 'instagram';
+    if(/(^|\.)facebook\.com$/.test(h))return 'facebook';
+    if(/(^|\.)(x\.com|twitter\.com|t\.co)$/.test(h))return 'x';
+    if(/(^|\.)google\.[a-z.]+$/.test(h))return 'google';
+    return 'other';
+  }catch(e){return 'direct';}
+}
+const VM_REF=vmRefOf(document.referrer);
+function vmEv(ev){
+  try{
+    if(VM_EV.indexOf(ev)<0)return;
+    const body=JSON.stringify({ev:ev,loc:LANG,ref:VM_REF});
+    if(navigator.sendBeacon)navigator.sendBeacon(EV_API,new Blob([body],{type:'application/json'}));
+    else fetch(EV_API,{method:'POST',body:body,keepalive:true,headers:{'Content-Type':'application/json'}}).catch(()=>{});
+  }catch(e){}
+}
+// visit는 세션당 1회 — storage가 막혀 있어도 비콘 실패로 두고 페이지 로직은 건드리지 않는다
+function vmVisit(){try{if(!sessionStorage.getItem('vm_ev_visit')){sessionStorage.setItem('vm_ev_visit','1');vmEv('visit');}}catch(e){try{vmEv('visit');}catch(e2){}}}
+vmVisit();
+
 function applyLang(){
   setTimeout(()=>{try{initInAppBar();}catch(e){}},0);
   // 내부 코드 tw는 BCP-47이 아니다(tw=트위어). 크롤러·광고 타게팅이 언어를 오판하므로 정식 태그로 바꾼다.
@@ -701,6 +730,7 @@ async function startRec(primed){
   }
   localStorage.setItem('vm_mic_primed','1');
   try{dataLayer.push({event:'vm_record_start'});}catch(e){}
+  vmEv('rec_start');
   show('s-rec');
   audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   recRate=audioCtx.sampleRate;
@@ -756,6 +786,7 @@ async function analyzePcm(pcm,rate,append){
       const cp=new Float32Array(p16);
       worker.postMessage({type:'analyze',pcm:cp,append:!!append},[cp.buffer]);
     });
+    vmEv('analyze_done');
     // 무음이면 이번 테이크는 없던 것으로 둔다(누적 카운트도 올리지 않는다).
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     takeCount=done.takes||1; appendNext=false;
@@ -1064,6 +1095,7 @@ async function renderDailyPanel(){
 }
 async function shareDaily(){
   if(!_dailyLast)return;
+  vmEv('share');
   try{dataLayer.push({event:'vm_daily_share'});}catch(e){}
   const url='https://game.cocy.io/voicematch/'+(LANG!=='ko'?LANG+'/':'')+'?utm_source=share&utm_medium=daily&utm_campaign=voicetwin';
   await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share');
@@ -1198,6 +1230,7 @@ $('btn-pool').onclick=()=>{
   updatePoolBtn();
 };
 function renderResult(rank,rankAll,rankJp,genres,report){
+  vmEv('result_view');
   lastRankKr=rank;lastRankAll=rankAll||null;lastRankJp=rankJp||null;
   vmView=(poolPref==='all'&&lastRankAll)?'all':(poolPref==='jp'&&lastRankJp)?'jp':'kr';
   lastGenres=genres||null;
@@ -1854,6 +1887,7 @@ const X_TAGS={ko:'#목소리노래방',en:'#VoiceMatch #kpop',ja:'#声診断 #�
    이미지는 인텐트로 못 붙인다 — 이미지까지 올리려면 기본 공유(btn-share)를 써야 한다. */
 $('btn-threads').onclick=()=>{
   if(!lastResult)return;
+  vmEv('share');
   const top=lastResult[0];
   const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
   const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
@@ -1862,12 +1896,14 @@ $('btn-threads').onclick=()=>{
 };
 $('btn-x').onclick=()=>{
   if(!lastResult)return;
+  vmEv('share');
   const top=lastResult[0];
   const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
   const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
 };
 $('btn-share').onclick=async()=>{
+  vmEv('share');
   const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
   const top=lastResult[0];
   const url=`https://game.cocy.io/voicematch/${LANG!=='ko'?'?lang='+LANG:''}`;
@@ -1878,6 +1914,12 @@ $('btn-share').onclick=async()=>{
 
 window.SharedWalletConfig={labels:{login:t('navLogin'),logout:t('navLogout')}};
 try{if(typeof SharedWallet!=='undefined'&&SharedWallet.init&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}
+// 로그인 버튼 탭 카운트 — nav 로그인·결과/데일리 패널 로그인 등 모든 showLogin 호출을 한곳에서 잡는다
+try{if(typeof SharedWallet!=='undefined'&&SharedWallet.showLogin&&!SharedWallet._vmEvLogin){
+  SharedWallet._vmEvLogin=true;
+  const _vmSL=SharedWallet.showLogin.bind(SharedWallet);
+  SharedWallet.showLogin=function(){vmEv('login_tap');return _vmSL.apply(SharedWallet,arguments);};
+}}catch(e){}
 applyLang();drawLineup();
 document.querySelectorAll('.lg').forEach(b=>{const old=b.onclick;b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);
 window.SharedWalletConfig={labels:{login:t('navLogin'),logout:t('navLogout')}};
