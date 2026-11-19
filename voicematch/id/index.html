@@ -331,6 +331,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <!-- 인트로 -->
   <section id="s-intro">
+    <div id="challenge-banner" class="hidden" style="overflow-wrap:anywhere;color:var(--lime);margin-bottom:12px"></div>
     <div class="screen" style="margin-top:14px;padding:30px 20px">
       <div class="badge">VOICE MATCH</div>
       <h1 class="hero-t" id="t-hero"></h1>
@@ -481,7 +482,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20261120g1"></script>
+<script src="/voicematch/i18n.js?v=20261120s1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -535,7 +536,25 @@ function vmVisit(){
 }
 vmVisit();
 
+/* ---- 공유 경로·도전 랜딩 ---- */
+function vmShareUrl(medium,top,hash){
+  const u=new URL('https://game.cocy.io/voicematch/'+(LANG==='ko'?'':LANG+'/'));
+  u.searchParams.set('utm_source','share');u.searchParams.set('utm_medium',medium);
+  if(hash)u.hash=hash;
+  else if(top&&/^[a-z0-9_-]+$/.test(top.slug)&&Number.isFinite(top.pct))u.hash='c='+top.slug+'.'+Math.max(0,Math.min(100,Math.round(top.pct)));
+  return u.href;
+}
+function vmChallenge(hash){const m=String(hash||'').match(/^#c=([a-z0-9_-]{1,80})\.(\d{1,3})$/);return m&&Number(m[2])<=100?{slug:m[1],pct:Number(m[2])}:null;}
+async function renderChallenge(){
+  const el=$('challenge-banner');if(!el)return;
+  const c=vmChallenge(location.hash);if(!c){el.classList.add('hidden');return;}
+  const singers=await ensureSingers(),s=singers&&singers.find(s=>s.slug===c.slug);if(!s){el.classList.add('hidden');return;}
+  el.textContent=t('challengeFriend')+': '+singerName(s,LANG)+' '+c.pct+'% — '+t('challengeAction');el.classList.remove('hidden');
+}
+/* ---- 공유 경로 끝 ---- */
+
 function applyLang(){
+  renderChallenge();
   setTimeout(()=>{try{initInAppBar();}catch(e){}},0);
   // 내부 코드 tw는 BCP-47이 아니다(tw=트위어). 크롤러·광고 타게팅이 언어를 오판하므로 정식 태그로 바꾼다.
   document.documentElement.lang=({tw:'zh-Hant',pt:'pt-BR'})[LANG]||LANG;
@@ -1131,7 +1150,7 @@ async function shareDaily(){
   if(!_dailyLast)return;
   vmEv('share');
   try{dataLayer.push({event:'vm_daily_share'});}catch(e){}
-  const url='https://game.cocy.io/voicematch/'+(LANG!=='ko'?LANG+'/':'')+'?utm_source=share&utm_medium=daily&utm_campaign=voicetwin';
+  const url=vmShareUrl('daily',{slug:_dailyLast.tgt.slug,pct:_dailyLast.pct});
   await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share');
 }
 async function showDailyBoard(publicOnly=false){
@@ -1435,8 +1454,7 @@ function buildInviteUrl(name){
   const top=lastResult&&lastResult[0];
   const payload={v:1,n:name||'',s:top?top.slug:'',p:top?top.pct:0,e:b64uEnc(packEmb(lastQ))};
   if(lastPitch){payload.lo=lastPitch.lo;payload.hi=lastPitch.hi;}
-  return `https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#d=`
-    +b64uEnc(new TextEncoder().encode(JSON.stringify(payload)));
+  return vmShareUrl('invite',null,'d='+b64uEnc(new TextEncoder().encode(JSON.stringify(payload))));
 }
 async function shareOrCopy(txt,btnId){
   if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){}}
@@ -1532,7 +1550,7 @@ function renderDuetPanels(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
   $('duet-share').onclick=async()=>{
-    const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+    const url=vmShareUrl('duet');
     const txt=t('duetShareText')(DUET.in.n||DUET_ANON[LANG]||'friend',d.total)+'\n'+url;
     try{dataLayer.push({event:'vm_duet_share'});}catch(e){}
     try{
@@ -1665,14 +1683,14 @@ function drawGroupCard(st){
 async function shareGroupCard(){
   const st=GROUP.state;if(!groupFormed(st))return;
   const blob=await new Promise(r=>drawGroupCard(st).toBlob(r,'image/png'));if(!blob)return;
-  const file=new File([blob],'voicematch-team.png',{type:'image/png'}),url='https://game.cocy.io/voicematch/'+(LANG==='ko'?'':LANG+'/')+'#g='+st.id;
+  const file=new File([blob],'voicematch-team.png',{type:'image/png'}),url=vmShareUrl('invite',null,'g='+st.id);
   const data={files:[file],title:st.teamName,text:st.teamName+' · '+st.teamScore+'%\n'+url};
   if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){}}
   else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='voicematch-team.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 }
 async function shareGroupInvite(){
   const st=GROUP.state;if(!st)return;
-  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#g=${st.id}`;
+  const url=vmShareUrl('invite',null,'g='+st.id);
   await shareOrCopy(t('grpInviteText')(st.teamName,grpName(st.target))+'\n'+url,'grp-share');
 }
 function renderGroupBox(msg){
@@ -2014,7 +2032,7 @@ $('btn-threads').onclick=()=>{
   if(!lastResult)return;
   vmEv('share');
   const top=lastResult[0];
-  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+  const url=vmShareUrl('threads',top);
   const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
   window.open('https://www.threads.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
   try{dataLayer.push({event:'vm_share_threads'});}catch(e){}
@@ -2023,7 +2041,7 @@ $('btn-x').onclick=()=>{
   if(!lastResult)return;
   vmEv('share');
   const top=lastResult[0];
-  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+  const url=vmShareUrl('x',top);
   const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
 };
@@ -2031,7 +2049,7 @@ $('btn-share').onclick=async()=>{
   vmEv('share');
   const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
   const top=lastResult[0];
-  const url=`https://game.cocy.io/voicematch/${LANG!=='ko'?'?lang='+LANG:''}`;
+  const url=vmShareUrl('native',top);
   const data={files:[f],title:t('title'),text:I18N[LANG].shareText(singerName(top,LANG),top.pct)+' '+url};
   if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){}}
   else $('btn-save').click();
