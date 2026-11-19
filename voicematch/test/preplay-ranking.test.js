@@ -13,7 +13,7 @@ function harness(handler=()=>({success:true,rankings:[],day:'20261116',entries:0
   const elements=new Map(), requests=[], timers=new Map();let timer=0;
   const document={activeElement:null,documentElement:{},querySelectorAll:()=>[],addEventListener(){},createElement:tag=>new Element(tag),getElementById:id=>elements.get(id)||null};
   class Element{
-    constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.attributes={};this.style={};this.dataset={};this._html='';this.textContent='';this.isConnected=true;this.listeners={};this.classList={add(){},remove(){},toggle(){}};}
+    constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.attributes={};this.style={};this.dataset={};this._html='';this.textContent='';this.isConnected=true;this.listeners={};const classes=new Set();this.classList={add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k),toggle(k,v){if(v===undefined)v=!classes.has(k);v?classes.add(k):classes.delete(k);}};}
     set id(v){this._id=v;elements.set(v,this);}get id(){return this._id;}
     set innerHTML(value){this._html=value;this.children=[];for(const m of value.matchAll(/<(button|div|h3|p|span)[^>]*id="([^"]+)"[^>]*>/g)){const el=new Element(m[1]);el.id=m[2];this.appendChild(el);}}
     get innerHTML(){return this._html;}

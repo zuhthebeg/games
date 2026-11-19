@@ -253,6 +253,10 @@ canvas{display:none}
   font-size:11.5px;font-weight:800;padding:8px 11px;cursor:pointer;font-family:inherit}
 .req-toast .rt-x{flex:none;background:none;border:0;color:#8f7fa3;font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
 /* 듀엣 궁합 — 초대장은 URL 해시에 담긴 상대 임베딩. 서버 저장 없음 */
+#intro-social{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding:10px;border:1px solid oklch(0.5 0.08 295);border-radius:12px;background:var(--panel);min-width:0}
+#intro-social button{flex:1 1 0;min-width:0;min-height:44px;padding:9px 8px;border:0;border-radius:9px;background:var(--panel2);color:var(--txt);font:inherit;font-size:14px;font-weight:800;overflow-wrap:anywhere;cursor:pointer}
+#intro-social button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+#social-notice{margin:10px 0 0;color:var(--lime);font-size:12px;line-height:1.4;overflow-wrap:anywhere}
 #duet-banner{margin-top:12px;background:oklch(0.3 0.09 350/.45);border:1px solid var(--pink);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6}
 #duet-banner b{color:var(--pink)}
 .duet-instant{display:block;width:100%;margin-top:9px;border:none;border-radius:9px;padding:11px 8px;
@@ -331,6 +335,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <!-- 인트로 -->
   <section id="s-intro">
+    <p id="social-notice" class="hidden" role="status" aria-live="polite"></p>
     <div id="challenge-banner" class="hidden" style="overflow-wrap:anywhere;color:var(--lime);margin-bottom:12px"></div>
     <div class="screen" style="margin-top:14px;padding:30px 20px">
       <div class="badge">VOICE MATCH</div>
@@ -354,6 +359,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="remote">
       <button class="key start" id="btn-start"></button>
+    </div>
+    <div id="intro-social" class="hidden">
+      <button type="button" id="btn-social-duet"></button>
+      <button type="button" id="btn-social-group"></button>
     </div>
     <p class="tip" id="t-tipintro"></p>
     <section id="entry-ranking" aria-labelledby="entry-rank-title">
@@ -482,7 +491,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20261120t1"></script>
+<script src="/voicematch/i18n.js?v=20261120x1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -601,6 +610,7 @@ function applyLang(){
     else db.classList.add('hidden');
   }
   try{renderGroupBanner();}catch(e){}
+  renderIntroSocial();
   try{renderDailyBanner();}catch(e){}
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
@@ -1304,6 +1314,7 @@ function renderResult(rank,rankAll,rankJp,genres,report,rankCp){
   renderReqBox();
   renderDuetPanels();
   renderGroupPanels();
+  consumeSocialIntent();
   try{renderDailyPanel();}catch(e){}
   rankFlow(rank[0]);
 }
@@ -1775,7 +1786,52 @@ async function renderGroupPanels(){
   }
   if(GROUP.in&&!GROUP.state)GROUP.state=await groupFetch(GROUP.in);
   renderGroupBox();
+  consumeSocialIntent();
 }
+
+/* ---- 인트로 소셜 진입 ---- */
+// Storage-disabled browsers still keep the choice for this page only.
+let socialIntent=null;
+function readSocialIntent(){
+  let value=socialIntent;
+  try{value=sessionStorage.getItem('vm_social_intent')||value;}catch(e){}
+  return value==='duet'||value==='group'?value:null;
+}
+function renderIntroSocial(){
+  const card=$('intro-social'),notice=$('social-notice');if(!card||!notice)return;
+  const invited=!!(DUET.in||GROUP.in)||['duet-banner','group-banner'].some(id=>{const el=$(id);return el&&!el.classList.contains('hidden');});
+  card.classList.toggle('hidden',invited);
+  const intent=readSocialIntent();
+  notice.textContent=intent?t(intent==='duet'?'socialDuetHint':'socialGroupHint'):'';
+  notice.classList.toggle('hidden',invited||!intent);
+  for(const kind of ['duet','group']){
+    const btn=$('btn-social-'+kind);if(!btn)continue;
+    btn.textContent=t(kind==='duet'?'socialDuet':'socialGroup');
+    btn.onclick=()=>selectSocialIntent(kind);
+  }
+}
+function socialScroll(el){
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});
+}
+function selectSocialIntent(kind){
+  if(kind!=='duet'&&kind!=='group')return;
+  socialIntent=kind;
+  try{sessionStorage.setItem('vm_social_intent',kind);}catch(e){}
+  if(lastQ){show('s-result');consumeSocialIntent();return;}
+  renderIntroSocial();
+  const start=$('btn-start');if(start){start.focus({preventScroll:true});socialScroll(start);}
+}
+function consumeSocialIntent(){
+  const intent=readSocialIntent();if(!intent||!lastQ)return;
+  const result=$('s-result'),cta=$('r-'+intent+'cta');
+  if(!result||result.classList.contains('hidden')||!cta||cta.classList.contains('hidden'))return;
+  socialIntent=null;
+  try{sessionStorage.removeItem('vm_social_intent');}catch(e){}
+  renderIntroSocial();
+  socialScroll(cta);
+}
+/* ---- 인트로 소셜 끝 ---- */
 
 /* ---- 내 요청 추적: 처리되면 재방문 때 알려준다 (요청자 본인에게만, 1회) ---- */
 const REQ_TRACK_KEY='vm_my_reqs';
