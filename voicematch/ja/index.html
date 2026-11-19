@@ -272,6 +272,9 @@ canvas{display:none}
 #r-duet .ga-tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pink),var(--amber));width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
 #r-duet .ga-p{font-size:11px;font-weight:800;color:var(--mut)}
 .duet-btns{display:flex;gap:8px;margin-top:12px}
+/* 그룹 만들기 버튼 8개가 한 줄 flex라 모바일에서 가로로 넘쳤다 → 2열 랩 */
+.duet-btns.grp-btns{flex-wrap:wrap}
+.duet-btns.grp-btns button{flex:1 1 calc(50% - 4px);min-width:0;overflow-wrap:anywhere}
 .duet-btns button{flex:1;border:none;border-radius:10px;padding:11px 6px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Pretendard;background:var(--pink);color:oklch(0.18 0.06 350)}
 #r-duetcta{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-duetcta .sl-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center}
@@ -1696,7 +1699,7 @@ async function renderGroupPanels(){
     if(lastQ&&!GROUP.in){
       cta.innerHTML=`<div class="sl-t">${t('grpCtaT')}</div><div class="duet-sub">${t('grpCtaS')}</div>
         <div class="req-row"><input id="grp-team" maxlength="24" placeholder="${t('grpTeamPh')}"></div>
-        <div class="duet-btns">${Object.keys(VM_GROUPS).map(k=>`<button data-grp="${k}">${VM_GROUPS[k].label} · ${t('grpCreate')}</button>`).join('')}</div>`;
+        <div class="duet-btns grp-btns">${Object.keys(VM_GROUPS).map(k=>`<button data-grp="${k}">${VM_GROUPS[k].label} · ${t('grpCreate')}</button>`).join('')}</div>`;
       cta.classList.remove('hidden');
       cta.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>createGroup(b.dataset.grp));
     }else cta.classList.add('hidden');
