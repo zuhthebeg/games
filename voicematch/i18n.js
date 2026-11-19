@@ -1,6 +1,7 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
+    recentTitle: "새로 추가된 가수", recentAdded: "추가일", recentPoolkr: "K-POP·가요", recentPooljp: "J-POP", recentPoolall: "전체",
     entryRankTitle: "🎯 오늘의 도전 TOP 3",
     entryRankHint: "오늘의 지정 가수 닮은꼴 · 매일 00:00 UTC 갱신",
     entryRankView: "🏆 랭킹 먼저 보기",
@@ -98,6 +99,7 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
+    recentTitle: "New singers", recentAdded: "Added", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "All artists",
     entryRankTitle: "🎯 Daily Challenge TOP 3",
     entryRankHint: "Today’s featured artist voice twins · Resets at 00:00 UTC",
     entryRankView: "🏆 View rankings first",
@@ -195,6 +197,7 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
+    recentTitle: "新着アーティスト", recentAdded: "追加日", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "全アーティスト",
     entryRankTitle: "🎯 今日のチャレンジ TOP 3",
     entryRankHint: "今日の指定歌手のそっくり度 · 毎日00:00 UTC更新",
     entryRankView: "🏆 先にランキングを見る",
@@ -292,6 +295,7 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
+    recentTitle: "Nuevos artistas", recentAdded: "Añadido", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "Todos",
     entryRankTitle: "🎯 Reto del día TOP 3",
     entryRankHint: "Voces similares al artista del día · Reinicio a las 00:00 UTC",
     entryRankView: "🏆 Ver el ranking primero",
@@ -389,6 +393,7 @@ const I18N = {
     c_F_솔로: 'voz clara y firme', c_F_그룹: 'voz fresca y brillante', c_F_밴드: 'voz de directo',
   },
   tw: {
+    recentTitle: "新加入的歌手", recentAdded: "加入日期", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "全部歌手",
     entryRankTitle: "🎯 每日挑戰 TOP 3",
     entryRankHint: "今日指定歌手的聲音相似度 · 每日00:00 UTC更新",
     entryRankView: "🏆 先看排行榜",
@@ -486,6 +491,7 @@ const I18N = {
     c_F_솔로: '清亮扎實嗓音', c_F_그룹: '清新音色嗓音', c_F_밴드: '現場演出型嗓音',
   },
   id: {
+    recentTitle: "Penyanyi baru", recentAdded: "Ditambahkan", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "Semua artis",
     entryRankTitle: "🎯 Tantangan Harian TOP 3",
     entryRankHint: "Kemiripan suara dengan artis hari ini · Diulang pukul 00.00 UTC",
     entryRankView: "🏆 Lihat peringkat dulu",
@@ -583,6 +589,7 @@ const I18N = {
     c_F_솔로: 'suara jernih dan kuat', c_F_그룹: 'suara segar dan cerah', c_F_밴드: 'suara live session',
   },
   pt: {
+    recentTitle: "Novos artistas", recentAdded: "Adicionado", recentPoolkr: "K-POP", recentPooljp: "J-POP", recentPoolall: "Todos",
     entryRankTitle: "🎯 Desafio do dia TOP 3",
     entryRankHint: "Vozes parecidas com o artista do dia · Reinicia às 00:00 UTC",
     entryRankView: "🏆 Ver ranking primeiro",
