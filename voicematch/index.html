@@ -482,7 +482,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20261120s1"></script>
+<script src="i18n.js?v=20261120t1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -627,8 +627,16 @@ function updateIntroPoolBtn(){
 }
 $('btn-pool-intro').onclick=async()=>{await ensureSingers();poolPref=nextPool(poolPref,introHasPool('jp'),introHasPool('cp'));localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
 
-const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','요아소비|YOASOBI','미세스그린애플|Mrs. GREEN APPLE','+400'];
-function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
+const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','요아소비|YOASOBI','미세스그린애플|Mrs. GREEN APPLE'];
+function drawLineup(){
+  const cp=LANG==='tw'?['周杰倫','蔡依林','五月天','鄧紫棋','林俊傑']:[];
+  const names=cp.concat(PREVIEW.map(p=>{const[ko,en]=p.split('|');return LANG==='ko'?ko:(en||ko);}));
+  const count=(window._singersCache||[]).length;
+  if(count)names.push('Σ '+count);
+  $('lineup').innerHTML=names.map(n=>'<span class="lu">'+n+'</span>').join('');
+}
+async function loadLineupCount(){try{await ensureSingers();drawLineup();updateIntroPoolBtn();}catch(e){}}
+setTimeout(loadLineupCount,1500);
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
 const worker=new Worker('analyzer.js?v=20261120cp');
