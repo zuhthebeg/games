@@ -140,3 +140,12 @@ test('every locale has dailyEstRank and dailyVsYday',()=>{
     assert.equal(typeof h.run('t("dailyVsYday")'),'function',lang);
   }
 });
+
+test('footprints promo: 7 locales, below animalface promo', () => {
+  for (const loc of ['ko','en','ja','es','tw','id','pt']) {
+    const blk = i18n.slice(i18n.indexOf(`\n  ${loc}: {`));
+    assert.ok(/xpromo2T: '.+', xpromo2S: '.+'/.test(blk.slice(0, 20000)), loc);
+  }
+  assert.ok(html.indexOf('id="xpromo"') < html.indexOf('id="xpromo2"'));
+  assert.ok(html.includes("page.cocy.io/footprints/"));
+});

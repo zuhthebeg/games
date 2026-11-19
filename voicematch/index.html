@@ -361,11 +361,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 .xpromo b{font-size:13px;font-weight:800;line-height:1.35;color:var(--txt)}
 .xpromo em{font-size:11px;font-style:normal;color:var(--mut);line-height:1.45;margin-top:3px}
 .xpromo .go{flex:0 0 auto;font-size:15px;font-weight:800;color:var(--lime)}
+.xpromo + .xpromo{margin-top:10px}
     </style>
     <!-- 크로스 프로모 — 같은 "내 얼굴/목소리로 나를 재본다" 결이라 이탈이 아니라 회유에 가깝다 -->
     <a class="xpromo" id="xpromo" href="https://game.cocy.io/animalface/" target="_blank" rel="noopener">
       <img src="https://game.cocy.io/animalface/icon.svg" alt="" width="40" height="40">
       <span><b id="xpromo-t"></b><em id="xpromo-s"></em></span>
+      <span class="go">→</span>
+    </a>
+    <a class="xpromo" id="xpromo2" href="https://page.cocy.io/footprints/" target="_blank" rel="noopener">
+      <img src="https://page.cocy.io/footprints/icon.svg" alt="" width="40" height="40">
+      <span><b id="xpromo2-t"></b><em id="xpromo2-s"></em></span>
       <span class="go">→</span>
     </a>
   </section>
@@ -460,7 +466,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20261118i03"></script>
+<script src="i18n.js?v=20261119fp"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -484,6 +490,11 @@ function applyLang(){
   renderEntryRanking();
   $('xpromo-t').textContent=t('xpromoT');
   $('xpromo-s').textContent=t('xpromoS');
+  $('xpromo2-t').textContent=t('xpromo2T');
+  $('xpromo2-s').textContent=t('xpromo2S');
+  // 발자국은 ko/en/tw만 있다. ja·es·id·pt는 영어로 보낸다.
+  $('xpromo2').href='https://page.cocy.io/footprints/'
+    + ({en:'en/',ja:'en/',tw:'tw/',es:'en/',id:'en/',pt:'en/'}[LANG]||'');
   // 동물상 판독기는 ko/en/ja/tw만 있다. es·id는 영어로 보낸다(없는 로케일로 링크하면 404).
   $('xpromo').href='https://game.cocy.io/animalface/'
     + ({en:'en/',ja:'ja/',tw:'tw/',es:'en/',id:'en/',pt:'en/'}[LANG]||'');
