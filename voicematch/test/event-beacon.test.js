@@ -75,3 +75,14 @@ test('loc는 현재 LANG 값을 그대로 보낸다',async()=>{
     assert.equal(JSON.parse(await h.beacons[0].b.text()).loc,lang);
   }
 });
+
+test('funnel events are first-only across retries, language changes and reloads',()=>{
+  const storage=new Map(),h=harness({storage});
+  h.run("for(let i=0;i<3;i++){vmEv('rec_start');vmEv('analyze_done');vmEv('result_view');}LANG='tw';vmEv('result_view')");
+  assert.equal(h.beacons.length,4);
+  const again=harness({storage});again.run("vmEv('rec_start');vmEv('analyze_done');vmEv('result_view')");assert.equal(again.beacons.length,0);
+  h.run("vmEv('share');vmEv('share');vmEv('login_tap');vmEv('login_tap')");assert.equal(h.beacons.length,8);
+});
+test('blocked storage keeps first-only guard in memory',()=>{
+  const h=harness();h.run("sessionStorage.getItem=()=>{throw Error('blocked')};for(let i=0;i<3;i++)vmEv('rec_start')");assert.equal(h.beacons.length,2);
+});

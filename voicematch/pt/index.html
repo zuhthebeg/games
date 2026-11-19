@@ -507,16 +507,23 @@ function vmRefOf(u){
   }catch(e){return 'direct';}
 }
 const VM_REF=vmRefOf(document.referrer);
+const VM_FIRST=new Set(['visit','rec_start','analyze_done','result_view']);
+const vmSent=new Set();
 function vmEv(ev){
   try{
     if(VM_EV.indexOf(ev)<0)return;
+    if(VM_FIRST.has(ev)){
+      if(vmSent.has(ev))return;
+      vmSent.add(ev);
+      try{const key='vm_ev_'+ev;if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch(e){}
+    }
     const body=JSON.stringify({ev:ev,loc:LANG,ref:VM_REF});
     if(navigator.sendBeacon)navigator.sendBeacon(EV_API,new Blob([body],{type:'application/json'}));
     else fetch(EV_API,{method:'POST',body:body,keepalive:true,headers:{'Content-Type':'application/json'}}).catch(()=>{});
   }catch(e){}
 }
 // visit는 세션당 1회 — storage가 막혀 있어도 비콘 실패로 두고 페이지 로직은 건드리지 않는다
-function vmVisit(){try{if(!sessionStorage.getItem('vm_ev_visit')){sessionStorage.setItem('vm_ev_visit','1');vmEv('visit');}}catch(e){try{vmEv('visit');}catch(e2){}}}
+function vmVisit(){vmEv('visit');}
 vmVisit();
 
 function applyLang(){
