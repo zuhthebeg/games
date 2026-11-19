@@ -67,7 +67,7 @@ test('chip opens existing catalog prefiltered to exact slug; All button remains 
 test('seven locales have keys, correct feed URL and bumped shared i18n',()=>{
   const h=harness();for(const l of ['ko','en','ja','es','pt','tw','id']){
     for(const k of ['recentTitle','recentAdded','recentPoolkr','recentPooljp','recentPoolall'])assert.equal(h.run('typeof I18N.'+l+'.'+k),'string');
-    const page=readFileSync(new URL(l+'/index.html',root),'utf8');assert.match(page,/RECENT_URL='\/voicematch\/recent.json'/);assert.match(page,/i18n.js\?v=20261120cp/);
+    const page=readFileSync(new URL(l+'/index.html',root),'utf8');assert.match(page,/RECENT_URL='\/voicematch\/recent.json'/);assert.match(page,/i18n.js\?v=20261120n1/);
   }
   assert.match(html,/#recent-chips\{[^}]*overflow-x:auto/);
 });
