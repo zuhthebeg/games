@@ -480,7 +480,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20261119i11"></script>
+<script src="/voicematch/i18n.js?v=20261120cp"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -576,7 +576,7 @@ function applyLang(){
   try{renderDailyBanner();}catch(e){}
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
-  if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
+  if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres,null,lastRankCp);
 }
 const LANGS=['ko','en','ja','es','pt','tw','id'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
@@ -584,31 +584,33 @@ document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;loca
 
 // ?pool=jp|kr|all — 홍보 링크가 특정 풀로 바로 열리게 하는 오버라이드(저장까지 해서 재방문에도 유지)
 const poolQ=new URLSearchParams(location.search).get('pool');
-let poolPref=(['kr','jp','all'].includes(poolQ))?poolQ:(localStorage.getItem('vm_poolpref')||(LANG==='ja'?'jp':'kr'));
-if(['kr','jp','all'].includes(poolQ))localStorage.setItem('vm_poolpref',poolQ);
+let poolPref=(['kr','jp','cp','all'].includes(poolQ))?poolQ:(localStorage.getItem('vm_poolpref')||(LANG==='ja'?'jp':LANG==='tw'?'cp':'kr'));
+if(['kr','jp','cp','all'].includes(poolQ))localStorage.setItem('vm_poolpref',poolQ);
 // 풀 3종 순환: K-POP → J-POP → 전체. hasJp=false면 J-POP 건너뜀(플래그 유실 등으로 풀이 빌 때)
-const POOL_ORDER=['kr','jp','all'];
-const poolNow=v=>v==='kr'?t('modeNowKr'):v==='jp'?t('modeNowJp'):t('modeNowAll');
-const poolSwitch=v=>v==='kr'?t('modeSwitchKr'):v==='jp'?t('modeSwitchJp'):t('modeSwitchAll');
-function nextPool(v,hasJp){const ord=POOL_ORDER.filter(p=>p!=='jp'||hasJp);const i=ord.indexOf(v);return ord[(i+1)%ord.length];}
+const POOL_ORDER=['kr','jp','cp','all'];
+const poolNow=v=>v==='kr'?t('modeNowKr'):v==='jp'?t('modeNowJp'):v==='cp'?t('modeNowCp'):t('modeNowAll');
+const poolSwitch=v=>v==='kr'?t('modeSwitchKr'):v==='jp'?t('modeSwitchJp'):v==='cp'?t('modeSwitchCp'):t('modeSwitchAll');
+function nextPool(v,hasJp,hasCp=false){const ord=POOL_ORDER.filter(p=>(p!=='jp'||hasJp)&&(p!=='cp'||hasCp));const i=ord.indexOf(v);return ord[(i+1)%ord.length];}
+function introHasPool(p){return !!(window._singersCache||[]).some(s=>s[p]);}
 function updateIntroPoolBtn(){
+  if(window._singersCache&&!introHasPool(poolPref)&&['jp','cp'].includes(poolPref))poolPref='kr';
   $('mode-badge-intro').textContent=poolNow(poolPref);
-  $('btn-pool-intro').textContent=poolSwitch(nextPool(poolPref,true));
+  $('btn-pool-intro').textContent=poolSwitch(nextPool(poolPref,introHasPool('jp'),introHasPool('cp')));
 }
-$('btn-pool-intro').onclick=()=>{poolPref=nextPool(poolPref,true);localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
+$('btn-pool-intro').onclick=async()=>{await ensureSingers();poolPref=nextPool(poolPref,introHasPool('jp'),introHasPool('cp'));localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
 
 const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','요아소비|YOASOBI','미세스그린애플|Mrs. GREEN APPLE','+400'];
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('/voicematch/analyzer.js?v=20260819dt');
+const worker=new Worker('/voicematch/analyzer.js?v=20261120cp');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('/voicematch/singers.json?v=20260820g1').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('/voicematch/singers.json?v=20260820g1').then(r=>r.json()).then(j=>{window._singersCache=j;updateIntroPoolBtn();return j;}),
       (async()=>{
         const r=await fetch('/voicematch/ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -818,7 +820,7 @@ async function analyzePcm(pcm,rate,append){
     // 상대가 결과 링크를 보내오면 다시 부르지 않고 바로 케미를 보여준다
     if(done.q&&done.rank)saveDuetSelf(done);
     try{dataLayer.push({event:'vm_result_shown',takes:takeCount});}catch(e){}
-    renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report);
+    renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report,done.rankCp);
     renderAddTake();
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';resetErrBtn();show('s-err');
@@ -1183,7 +1185,7 @@ function renderReport(report){
     box.querySelectorAll('.rp-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
   try{dataLayer.push({event:'vm_report',vm_report_keys:report.cards.map(c=>c.key).join(',')});}catch(e){}
 }
-let lastRankKr=null,lastRankAll=null,lastRankJp=null,vmView='kr';
+let lastRankKr=null,lastRankAll=null,lastRankJp=null,lastRankCp=null,vmView='kr';
 function applyRank(rank){
   lastResult=rank;
   const top=rank[0];
@@ -1239,7 +1241,7 @@ function updatePoolBtn(){
   const b=$('btn-pool'),hint=$('r-poolhint'),unit=$('mode-unit-result'),badge=$('mode-badge-result');
   if(!lastRankAll){unit.classList.add('hidden');hint.classList.add('hidden');return;}
   badge.textContent=poolNow(vmView);
-  b.textContent=poolSwitch(nextPool(vmView,!!lastRankJp));
+  b.textContent=poolSwitch(nextPool(vmView,!!lastRankJp,!!lastRankCp));
   unit.classList.remove('hidden');
   const lowScore=vmView==='kr'&&lastRankKr&&lastRankKr[0].pct<80;
   unit.classList.toggle('hint',lowScore);
@@ -1247,16 +1249,16 @@ function updatePoolBtn(){
   hint.classList.toggle('hidden',!lowScore);
 }
 $('btn-pool').onclick=()=>{
-  vmView=nextPool(vmView,!!lastRankJp);
-  applyRank(vmView==='kr'?lastRankKr:vmView==='jp'?lastRankJp:lastRankAll);
+  vmView=nextPool(vmView,!!lastRankJp,!!lastRankCp);
+  applyRank(vmView==='kr'?lastRankKr:vmView==='jp'?lastRankJp:vmView==='cp'?lastRankCp:lastRankAll);
   updatePoolBtn();
 };
-function renderResult(rank,rankAll,rankJp,genres,report){
+function renderResult(rank,rankAll,rankJp,genres,report,rankCp){
   vmEv('result_view');
-  lastRankKr=rank;lastRankAll=rankAll||null;lastRankJp=rankJp||null;
-  vmView=(poolPref==='all'&&lastRankAll)?'all':(poolPref==='jp'&&lastRankJp)?'jp':'kr';
+  lastRankKr=rank;lastRankAll=rankAll||null;lastRankJp=rankJp||null;lastRankCp=rankCp||null;
+  vmView=(poolPref==='all'&&lastRankAll)?'all':(poolPref==='jp'&&lastRankJp)?'jp':(poolPref==='cp'&&lastRankCp)?'cp':'kr';
   lastGenres=genres||null;
-  applyRank(vmView==='all'?lastRankAll:vmView==='jp'?lastRankJp:rank);
+  applyRank(vmView==='all'?lastRankAll:vmView==='jp'?lastRankJp:vmView==='cp'?lastRankCp:rank);
   show('s-result');
   lastRank=null;
   updatePoolBtn();

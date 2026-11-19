@@ -368,6 +368,7 @@ async function analyze(pcm16k, append) {
     || topRank(scored.filter(s => !s.intl)) || rankAll;
   // J-POP 풀: singers.json의 jp 플래그(수동 관리, merge_final PRESERVE). 비면 null — UI가 토글에서 숨긴다
   const rankJp = topRank(scored.filter(s => s.jp));
+  const rankCp = topRank(scored.filter(s => s.cp));
 
   // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
   const AXES = [
@@ -411,7 +412,7 @@ async function analyze(pcm16k, append) {
     }
   } catch (e) { pitch = null; }
 
-  return { rank: rankKr, rankAll, rankJp, genres, report, takes: takes.length, q, pitch };
+  return { rank: rankKr, rankAll, rankJp, rankCp, genres, report, takes: takes.length, q, pitch };
 }
 
 onmessage = async (ev) => {
