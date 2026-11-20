@@ -504,7 +504,7 @@ const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 /* ---- 이벤트 카운터 (VM-I10) ---- */
 // 방문→녹음→분석→결과 퍼널. ev/loc/ref만 보낸다(세션·계정·UA 없음). 실패는 전부 무시.
 const EV_API='https://relay.cocy.io/api/voicematch/event';
-const VM_EV=['visit','rec_start','analyze_done','result_view','share','login_tap','visit_return','newchip_tap','req_done_seen','daily_play','invite_open'];
+const VM_EV=['visit','rec_start','analyze_done','result_view','share','login_tap','visit_return','newchip_tap','req_done_seen','daily_play','invite_open','social_tap_duet','social_tap_group'];
 function vmRefOf(u,landing){
   try{
     const url=new URL(landing||(typeof location!=='undefined'?location.href:'https://game.cocy.io/voicematch/'));
@@ -522,7 +522,7 @@ function vmRefOf(u,landing){
   }catch(e){return 'direct';}
 }
 const VM_REF=vmRefOf(document.referrer);
-const VM_FIRST=new Set(['visit','rec_start','analyze_done','result_view','visit_return','invite_open','daily_play']);
+const VM_FIRST=new Set(['visit','rec_start','analyze_done','result_view','visit_return','invite_open','daily_play','social_tap_duet','social_tap_group']);
 const vmSent=new Set();
 function vmEv(ev){
   try{
@@ -1807,7 +1807,8 @@ function renderIntroSocial(){
   for(const kind of ['duet','group']){
     const btn=$('btn-social-'+kind);if(!btn)continue;
     btn.textContent=t(kind==='duet'?'socialDuet':'socialGroup');
-    btn.onclick=()=>selectSocialIntent(kind);
+    // Intro activation only; each choice is first-only per session via vmEv.
+    btn.onclick=()=>{vmEv(kind==='duet'?'social_tap_duet':'social_tap_group');selectSocialIntent(kind);};
   }
 }
 function socialScroll(el){

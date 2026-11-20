@@ -96,3 +96,12 @@ test('landing attribution precedes referrer without accepting arbitrary enums',(
  ['https://game.cocy.io/voicematch/?utm_source=attacker','https://google.com/','google']])assert.equal(h.run(`vmRefOf(${JSON.stringify(ref)},${JSON.stringify(url)})`),want);
 });
 test('new event whitelist accepts only approved signals',()=>{const h=harness();h.run("['visit_return','newchip_tap','req_done_seen','daily_play','invite_open'].forEach(vmEv)");assert.equal(h.beacons.length,6);});
+
+for(const ev of ['social_tap_duet','social_tap_group'])test(ev+' is first-only per session, independent of locale, reload and the other choice',async()=>{
+ const storage=new Map(),h=harness({storage,referrer:'https://threads.net/'});h.run("vmEv('"+ev+"');vmEv('"+ev+"');LANG='tw';vmEv('"+ev+"')");
+ assert.equal(h.beacons.length,2);assert.deepEqual(await beaconBody(h),{ev,loc:'ko',ref:'threads'});
+ const again=harness({storage});again.run("vmEv('"+ev+"')");assert.equal(again.beacons.length,0);
+ const fresh=harness();fresh.run("vmEv('"+ev+"')");assert.equal(fresh.beacons.length,2);
+ const blocked=harness();blocked.run("sessionStorage.getItem=()=>{throw Error('blocked')};vmEv('"+ev+"');vmEv('"+ev+"')");assert.equal(blocked.beacons.length,2);
+});
+test('duet and group each have their own session-first guard',()=>{const h=harness();h.run("['social_tap_duet','social_tap_group','social_tap_duet','social_tap_group'].forEach(vmEv)");assert.equal(h.beacons.length,3);});

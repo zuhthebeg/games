@@ -1,0 +1,9 @@
+# VM-X2: introductory social entry taps
+
+- `social_tap_duet` and `social_tap_group` are distinct whitelisted events, emitted only by the existing introductory card button activation handlers. Mouse/touch and keyboard button activation share the same click handler.
+- Rendering, language changes, restored pending intent, `selectSocialIntent` calls, result rendering, intent consumption and result CTA activation do not emit these events. Returning users tapping the introductory card with an existing analysis do emit, then follow the unchanged result-CTA navigation path.
+- Both use the existing `vmEv` session-first policy: independently at most one emission attempt per event per sessionStorage lifetime (including reloads and language changes). A person may trigger both once. Duplicate taps still perform the existing selection/focus/scroll/navigation behavior.
+- Guards use `vmSent` plus `sessionStorage["vm_ev_" + ev]`. Blocked storage retains only the current-page in-memory guard; reload deduplication is unavailable then. New independent storage permits a new attempt. Browsers may clone sessionStorage into a newly opened tab; no claim of unique tab/user counting is made.
+- Guards are set before transport. Failed/rejected beacons are not retried; transport behavior is unchanged (sendBeacon when present, keepalive fetch only when absent). These count first activation attempts, not guaranteed delivery, unique users, recordings, creations or participation completions.
+- Payload remains `{ev, loc: LANG, ref: VM_REF}`. `ref` remains existing landing/referrer attribution, never duet/group intent. No new schema, identifiers, voice data or PII.
+- Server whitelist and analytics zero-fill/totals include both events. Admin presents them as auxiliary counts, not sequential funnel steps, with zero fallback for older API responses.
