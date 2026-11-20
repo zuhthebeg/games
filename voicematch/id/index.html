@@ -491,7 +491,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20261120x1"></script>
+<script src="/voicematch/i18n.js?v=20261120rq1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -1837,7 +1837,13 @@ function consumeSocialIntent(){
 /* ---- 내 요청 추적: 처리되면 재방문 때 알려준다 (요청자 본인에게만, 1회) ---- */
 const REQ_TRACK_KEY='vm_my_reqs';
 const REQ_STATUS_API='https://relay.cocy.io/api/voicematch/request-status';
-function loadReqs(){try{const a=JSON.parse(localStorage.getItem(REQ_TRACK_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+const reqSeenInPage=new Set();
+let reqCheckBusy=false;
+function loadReqs(){try{
+  const a=JSON.parse(localStorage.getItem(REQ_TRACK_KEY)||'[]'),ids=new Set();
+  return (Array.isArray(a)?a:[]).filter(x=>x&&Number.isSafeInteger(x.id)&&x.id>0
+    &&typeof x.artist==='string'&&Number.isFinite(x.ts)&&!ids.has(x.id)&&ids.add(x.id)).slice(-20);
+}catch(e){return [];}}
 function saveReqs(a){try{localStorage.setItem(REQ_TRACK_KEY,JSON.stringify(a.slice(-20)));}catch(e){}}
 function trackReq(id,artist){
   const a=loadReqs();
@@ -1845,39 +1851,48 @@ function trackReq(id,artist){
   a.push({id:id,artist:artist,ts:Date.now()});
   saveReqs(a);
 }
-function showReqToast(name){
-  if(document.querySelector('.req-toast'))return;
-  vmEv('req_done_seen');
+function showReqToast(name,status='done'){
+  if(document.querySelector('.req-toast'))return false;
   const el=document.createElement('div');el.className='req-toast';
-  const txt=document.createElement('div');txt.className='rt-t';txt.textContent=t('reqDone')(name);
+  const txt=document.createElement('div');txt.className='rt-t';txt.textContent=t(status==='failed'?'reqFailed':'reqDone')(name.slice(0,80));
   const cta=document.createElement('button');cta.className='rt-b';cta.textContent=t('reqDoneCta');
   const x=document.createElement('button');x.className='rt-x';x.textContent='×';x.setAttribute('aria-label','close');
   cta.onclick=()=>{el.remove();try{dataLayer.push({event:'vm_request_done_cta'});}catch(e){}show('s-intro');};
   x.onclick=()=>el.remove();
-  el.appendChild(txt);el.appendChild(cta);el.appendChild(x);
+  el.setAttribute('role','status');
+  el.appendChild(txt);if(status==='done')el.appendChild(cta);el.appendChild(x);
   document.body.appendChild(el);
-  setTimeout(()=>{if(el.isConnected)el.remove();},12000);
+  if(status==='done')vmEv('req_done_seen');
+  setTimeout(()=>{if(el.isConnected)el.remove();checkMyReqs();},12000);
+  return true;
 }
 async function checkMyReqs(){
-  const mine=loadReqs();
-  if(!mine.length)return;
-  // 30일 지난 건 어차피 안 알려도 되니 정리한다
-  const fresh=mine.filter(x=>Date.now()-(x.ts||0)<30*24*3600*1000);
-  if(fresh.length!==mine.length)saveReqs(fresh);
-  if(!fresh.length)return;
+  if(reqCheckBusy)return;
+  reqCheckBusy=true;
   try{
+    const mine=loadReqs();
+    const fresh=mine.filter(x=>!reqSeenInPage.has(x.id)&&Date.now()-x.ts<30*24*3600*1000);
+    if(fresh.length!==mine.length)saveReqs(fresh);
+    if(!fresh.length)return;
     const r=await fetch(REQ_STATUS_API+'?ids='+fresh.map(x=>x.id).join(','));
     if(!r.ok)return;
     const j=await r.json();
-    const rows=(j&&j.requests)||[];
-    const doneIds=[];let notify=null;
-    rows.forEach(row=>{
-      if(row.status==='done'){doneIds.push(row.id);if(!notify)notify=fresh.find(x=>x.id===row.id);}
-      else if(row.status==='failed'||row.status==='canceled')doneIds.push(row.id); // 조용히 정리
-    });
-    if(doneIds.length)saveReqs(fresh.filter(x=>doneIds.indexOf(x.id)<0));  // 한 번 알렸으면 다시 안 뜬다
-    if(notify)showReqToast(notify.artist);
-  }catch(e){}
+    if(!Array.isArray(j?.requests))return;
+    const rows=new Map();
+    for(const row of j.requests)if(row&&Number.isSafeInteger(row.id)&&!rows.has(row.id))rows.set(row.id,row);
+    const consumed=new Set();let shown=false;
+    for(const own of fresh){
+      const row=rows.get(own.id);
+      if(!row)continue;
+      if(row.status==='canceled')consumed.add(own.id);
+      else if(!shown&&(row.status==='done'||row.status==='failed')&&showReqToast(own.artist,row.status)){
+        shown=true;consumed.add(own.id);
+      }
+    }
+    // An occupied single notice slot must not consume other terminal requests.
+    for(const id of consumed)reqSeenInPage.add(id);
+    if(consumed.size)saveReqs(loadReqs().filter(x=>!consumed.has(x.id)));
+  }catch(e){}finally{reqCheckBusy=false;}
 }
 
 // 첫 화면 로딩(모델 fetch 등)과 경합하지 않게 조금 늦춰서 확인한다
@@ -1942,6 +1957,7 @@ function renderRecentSingers(){
     // Catalog browsing does not change either intro or result pool toggles.
     b.innerHTML='<b>'+escHtml(name)+'</b>'
       +(recentIsNew(a.added)?'<small>NEW</small>':'')
+      +(a.req===1?'<small>'+escHtml(t('recentRequested'))+'</small>':'')
       +'<time datetime="'+a.added+'">'+a.added.slice(5).replace('-','/')+'</time>'
       +'<span>'+escHtml(poolLabel)+'</span>';
     b.setAttribute('aria-label',name+' · '+t('recentAdded')+': '+a.added+' · '+poolLabel);

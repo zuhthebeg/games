@@ -67,7 +67,7 @@ test('chip opens existing catalog prefiltered to exact slug; All button remains 
 test('seven locales have keys, correct feed URL and bumped shared i18n',()=>{
   const h=harness();for(const l of ['ko','en','ja','es','pt','tw','id']){
     for(const k of ['recentTitle','recentAdded','recentPoolkr','recentPooljp','recentPoolall'])assert.equal(h.run('typeof I18N.'+l+'.'+k),'string');
-    const page=readFileSync(new URL(l+'/index.html',root),'utf8');assert.match(page,/RECENT_URL='\/voicematch\/recent.json'/);assert.match(page,/i18n.js\?v=20261120x1/);
+    const page=readFileSync(new URL(l+'/index.html',root),'utf8');assert.match(page,/RECENT_URL='\/voicematch\/recent.json'/);assert.match(page,/i18n.js\?v=20261120rq1/);
   }
   assert.match(html,/#recent-chips\{[^}]*overflow-x:auto/);
 });
@@ -84,4 +84,11 @@ test('30 day expiry, untranslated Korean exclusion, and locale-first ordering',a
   assert.equal(h.run(`recentVisible({slug:'unknown',name:'Name',added:'2026-10-21'},${now})`),true);
   h.run("recentSingers=[{slug:'kr',name:'Kr',added:'2026-11-19',gk:1},{slug:'cp',name:'Cp',added:'2026-11-19',cp:1,intl:1}];renderRecentSingers()");
   const b=h.elements.get('recent-chips').children[0].children[0];assert.match(b.innerHTML,/>Cp</);b.onclick();assert.equal(h.run('poolPref'),'cp');
+});
+
+test('requested marker needs explicit numeric provenance flag, not date or aliases',async()=>{
+  for(const req of [undefined,0,'1',true,1]){
+    const h=harness({recent:[{...artist(0),req,al:['Requested']}]});await h.run('loadRecentSingers()');
+    assert.equal(h.elements.get('recent-chips').children[0].children[0].innerHTML.includes('Requested'),req===1);
+  }
 });
