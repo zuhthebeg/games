@@ -787,7 +787,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   sheet.onclick=e=>{ if(e.target===sheet) $('mic-no').onclick(); };
 });
 
+let recordingDay=null;
 async function startRec(primed){
+  clearDailyResult();
+  if(!appendNext)dailyAudioDay=null;
+  recordingDay=dailyDayUTC();
   try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_start_click'});}catch(e){}
   if(!primed && (isInApp() || !(await micAlreadyOk()))){ showMicSheet(); return; }
   try{
@@ -837,7 +841,7 @@ async function stopRec(){
   try{dataLayer.push({event:'vm_record_done'});}catch(e){}
   const pcm=new Float32Array(total);let o=0;for(const c of pcmChunks){pcm.set(c,o);o+=c.length;}
   show('s-ana');$('ana-t').textContent=t('judging');
-  await analyzePcm(pcm,recRate,appendNext);
+  await analyzePcm(pcm,recRate,appendNext,recordingDay);
 }
 async function resampleTo16k(pcm,rate){
   if(rate===16000)return pcm;
@@ -848,7 +852,9 @@ async function resampleTo16k(pcm,rate){
   const s=oc.createBufferSource();s.buffer=buf;s.connect(oc.destination);s.start();
   return (await oc.startRendering()).getChannelData(0);
 }
-async function analyzePcm(pcm,rate,append){
+async function analyzePcm(pcm,rate,append,sourceDay=dailyDayUTC()){
+  const day=append&&dailyAudioDay?dailyAudioDay:sourceDay;
+  clearDailyResult();
   try{
     await loadModel();
     $('ana-bar').style.width='75%';$('ana-t').textContent=t('judging2');$('ana-s').textContent=t('analyzeSub');
@@ -866,11 +872,11 @@ async function analyzePcm(pcm,rate,append){
     // 무음이면 이번 테이크는 없던 것으로 둔다(누적 카운트도 올리지 않는다).
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     takeCount=done.takes||1; appendNext=false;
-    if(done.q)lastQ=done.q;
+    if(done.q)setDailyResult(done.q,day);
     if(done.pitch)lastPitch=done.pitch;
     // 듀엣 회신 루프용: 내 목소리 벡터+결과를 이 기기에 저장 —
     // 상대가 결과 링크를 보내오면 다시 부르지 않고 바로 케미를 보여준다
-    if(done.q&&done.rank)saveDuetSelf(done);
+    if(done.q&&done.rank)saveDuetSelf(done,day);
     try{dataLayer.push({event:'vm_result_shown',takes:takeCount});}catch(e){}
     renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report,done.rankCp);
     renderAddTake();
@@ -1048,8 +1054,9 @@ async function renderEntryRanking(){
   list.innerHTML=boardStatus('lb_loading');list.setAttribute('aria-busy','true');
   try{
     const data=await fetchBoard(DAILY_API+'?day='+day+'&limit=3',day);
-    if(seq===entryRankSeq)list.innerHTML=boardRows(data,null,3);
-  }catch(e){if(seq===entryRankSeq){list.innerHTML=boardStatus('lb_error');retry.classList.remove('hidden');}}
+    if(seq===entryRankSeq&&day===dailyDayUTC())list.innerHTML=boardRows(data,null,3);
+    else if(seq===entryRankSeq){list.innerHTML='';retry.classList.remove('hidden');}
+  }catch(e){if(seq===entryRankSeq){list.innerHTML=day===dailyDayUTC()?boardStatus('lb_error'):'';retry.classList.remove('hidden');}}
   finally{if(seq===entryRankSeq)list.setAttribute('aria-busy','false');}
 }
 /* ---- 오늘의 도전 (Daily Challenge) ----
@@ -1057,47 +1064,87 @@ async function renderEntryRanking(){
  * 점수는 로케일과 무관하게 항상 같은 풀(gk)에서 워커 topRank와 동일한
  * hub 보정 + tanh 상대 스케일로 계산 — 전 세계가 같은 기준으로 겨룬다. */
 const DAILY_API='https://relay.cocy.io/api/rankings/voicematch-daily';
-function dailyDayUTC(){const d=new Date();return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
-function dailyDayUTCOffset(off){const d=new Date();d.setUTCDate(d.getUTCDate()+off);return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
+function dailyDayUTC(d=new Date()){return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
+function dailyDayUTCOffset(off,day=dailyDayUTC()){const d=new Date(Date.UTC(+day.slice(0,4),+day.slice(4,6)-1,+day.slice(6,8)+off));return dailyDayUTC(d);}
 function getDailyStreak(){return{last:localStorage.getItem('vm_streak_last')||'',n:parseInt(localStorage.getItem('vm_streak_n')||'0',10)};}
-function updateDailyStreak(day){const{last,n}=getDailyStreak();if(last===day)return n;const newN=(last===dailyDayUTCOffset(-1))?n+1:1;localStorage.setItem('vm_streak_last',day);localStorage.setItem('vm_streak_n',String(newN));return newN;}
+function updateDailyStreak(day){const{last,n}=getDailyStreak();if(last===day)return n;const newN=(last===dailyDayUTCOffset(-1,day))?n+1:1;localStorage.setItem('vm_streak_last',day);localStorage.setItem('vm_streak_n',String(newN));return newN;}
 function getDailyLastPct(){try{const v=JSON.parse(localStorage.getItem('vm_daily_last')||'null');return(v&&/^\d{8}$/.test(v.day)&&Number.isFinite(v.pct))?v:null;}catch(e){return null;}}
 function saveDailyLastPct(day,pct){try{localStorage.setItem('vm_daily_last',JSON.stringify({day,pct}));}catch(e){}}
 // 저장된 지난 결과가 어제 것일 때만 부호 있는 %p 차이(없으면 null)
 function dailyDiffVs(rec,yday,pct){return(rec&&rec.day===yday&&Number.isFinite(rec.pct))?pct-rec.pct:null;}
 function dailyHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+// Daily work belongs to an audio query and its original UTC day, never a later repaint.
+let dailyResult=null,dailyAudioDay=null,dailyPanelSeq=0,dailyBannerSeq=0;
+function clearDailyResult(){
+  dailyResult=null;_dailyLast=null;++dailyPanelSeq;
+  const box=$('r-daily');if(box)box.classList.add('hidden');
+}
+function setDailyResult(q,day){
+  clearDailyResult();lastQ=q;dailyAudioDay=day;
+  dailyResult={q,day};
+}
+function ownsDaily(owner){return !!owner&&dailyResult===owner&&lastQ===owner.q&&owner.day===dailyDayUTC();}
+function currentDailyShare(){
+  if(_dailyLast&&ownsDaily(_dailyLast.owner))return _dailyLast;
+  if(_dailyLast){_dailyLast=null;const box=$('r-daily');if(box)box.classList.add('hidden');}
+  return null;
+}
+let dailyObservedDay=dailyDayUTC();
+function expireDailyViews(){
+  const day=dailyDayUTC();if(day===dailyObservedDay)return;
+  dailyObservedDay=day;clearDailyResult();++dailyBannerSeq;++entryRankSeq;
+  const banner=$('daily-banner');if(banner)banner.classList.add('hidden');
+  const list=$('entry-rank-list');if(list){list.innerHTML='';list.setAttribute('aria-busy','false');}
+  const retry=$('btn-entry-retry');if(retry)retry.classList.remove('hidden');
+  const modal=$('lb-modal');if(modal&&modal.dailyBoard&&modal.closeBoard)modal.closeBoard();
+}
+function watchDailyRollover(){
+  const now=new Date();
+  setTimeout(()=>{expireDailyViews();watchDailyRollover();},Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1)-now.getTime()+1);
+}
+document.addEventListener('visibilitychange',expireDailyViews);
+window.addEventListener?.('focus',expireDailyViews);
+watchDailyRollover();
 async function dailyTarget(day=dailyDayUTC()){
   const singers=await ensureSingers();if(!singers)return null;
   const pool=singers.filter(s=>!s.intl&&s.gk).sort((a,b)=>a.slug<b.slug?-1:a.slug>b.slug?1:0);
   if(!pool.length)return null;
   return pool[dailyHash('vmdaily-'+day)%pool.length];
 }
-function dailyPct(target){
-  if(!lastQ||!target||!window._singersCache)return null;
+function dailyPct(target,q=lastQ){
+  if(!q||!target||!window._singersCache)return null;
   const HUB_ALPHA=0.45;
   const pool=window._singersCache.filter(s=>!s.intl&&s.gk);
   if(pool.length<4)return null;
-  const cs=pool.map(s=>cosv(lastQ,s.emb)-HUB_ALPHA*(s.hub||0));
-  return relPct(cosv(lastQ,target.emb)-HUB_ALPHA*(target.hub||0),cs);
+  const cs=pool.map(s=>cosv(q,s.emb)-HUB_ALPHA*(s.hub||0));
+  return relPct(cosv(q,target.emb)-HUB_ALPHA*(target.hub||0),cs);
 }
 async function renderDailyBanner(){
   const el=$('daily-banner');if(!el)return;
-  const tgt=await dailyTarget();if(!tgt){el.classList.add('hidden');return;}
+  const seq=++dailyBannerSeq,day=dailyDayUTC();
+  el.classList.add('hidden');
+  const current=()=>seq===dailyBannerSeq&&day===dailyDayUTC();
+  const tgt=await dailyTarget(day);if(!current())return;
+  if(!tgt){el.classList.add('hidden');return;}
   el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)));
   el.classList.remove('hidden');
-  el.onclick=()=>{try{dataLayer.push({event:'vm_daily_banner_tap'});}catch(e){}const b=$('btn-start');if(b)b.click();};
+  el.onclick=()=>{if(!current()){el.classList.add('hidden');return;}try{dataLayer.push({event:'vm_daily_banner_tap'});}catch(e){}const b=$('btn-start');if(b)b.click();};
   // 참여자 수는 있으면 붙이고 없으면 조용히 생략
   try{
-    const r=await fetch(DAILY_API+'?limit=1').then(x=>x.json());
-    if(r.success&&r.entries>0)el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)))+' · '+t('dailyCount')(r.entries);
+    const r=await fetch(DAILY_API+'?day='+day+'&limit=1').then(x=>x.json());
+    if(!current()){if(seq===dailyBannerSeq)el.classList.add('hidden');return;}
+    if(r.success&&r.day===day&&r.entries>0)el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)))+' · '+t('dailyCount')(r.entries);
   }catch(e){}
+  if(!current()){if(seq===dailyBannerSeq)el.classList.add('hidden');return;}
   // 어제 참여한 사람에게 스트릭 뱃지 — 오늘 도전 동기부여
   const{last:sl,n:sn}=getDailyStreak();
-  if(sn>=2&&sl===dailyDayUTCOffset(-1)){
+  if(sn>=2&&sl===dailyDayUTCOffset(-1,day)){
     el.innerHTML+=' <b style="color:var(--lime)">'+t('dailyStreak')(sn)+'</b>';
   }
 }
-function claimDailyGold(btn,day,rank){
+function claimDailyGold(btn,day,rank,seq){
+  const current=currentDailyShare(),u=authUser();
+  if(!current||current.seq!==seq||current.owner.day!==day||current.rank!==rank||!u||!u.registered||current.userId!==u.userId)return;
   const key='vm_daily_claimed_'+day;
   if(localStorage.getItem(key))return;
   localStorage.setItem(key,'1');
@@ -1118,36 +1165,41 @@ function claimDailyGold(btn,day,rank){
 let _dailyLast=null;
 async function renderDailyPanel(){
   const box=$('r-daily');if(!box)return;
-  const tgt=await dailyTarget();
-  const pct=tgt?dailyPct(tgt):null;
-  if(!tgt||pct==null){box.classList.add('hidden');return;}
-  _dailyLast={tgt,pct};
-  vmEv('daily_play');
-  const day=dailyDayUTC();
-  const diff=dailyDiffVs(getDailyLastPct(),dailyDayUTCOffset(-1),pct);
-  saveDailyLastPct(day,pct);
+  const seq=++dailyPanelSeq,owner=dailyResult;
+  _dailyLast=null;box.classList.add('hidden');
+  if(!ownsDaily(owner))return;
+  const day=owner.day,u=authUser(),userId=u&&u.registered?u.userId:null;
+  const current=()=>seq===dailyPanelSeq&&ownsDaily(owner)&&((authUser()?.registered?authUser().userId:null)===userId);
+  const tgt=await dailyTarget(day);
+  if(!current())return;
+  const pct=tgt?dailyPct(tgt,owner.q):null;
+  if(!current()||!tgt||pct==null)return;
+  const diff=dailyDiffVs(getDailyLastPct(),dailyDayUTCOffset(-1,day),pct);
   const nm=escHtml(singerName(tgt,LANG));
   let inner=`<div class="dl-t">${t('dailyT')}</div>
     <div class="dl-row"><span class="dl-nm">${nm}</span><span class="dl-p">${pct}%</span></div>`;
-  const u=authUser();
-  let submitted=false;
+  let submitted=false,rank=null;
   if(u&&u.registered){
     try{
+      if(!current())return; // Last client check before dispatch; server arrival time is outside client control.
       const r=await fetch(DAILY_API,{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({userId:u.userId,artist:tgt.slug,pct})}).then(x=>x.json());
+      if(!current()||(r.success&&r.day!==day))return;
       if(r.success&&r.myRank){
+        rank=r.myRank;
         submitted=true;
         try{dataLayer.push({event:'vm_daily_submit'});}catch(e){}
         const streakN=updateDailyStreak(r.day);
         const claimed=localStorage.getItem('vm_daily_claimed_'+r.day);
         const rewardBtn=(r.myRank<=10&&!claimed)
-          ?`<button class="dl-main" onclick="claimDailyGold(this,'${r.day}',${r.myRank})">${t('rewardClaimBtn')(rewardForRank(r.myRank).toLocaleString())}</button>`:'';
+          ?`<button class="dl-main" onclick="claimDailyGold(this,'${r.day}',${r.myRank},${seq})">${t('rewardClaimBtn')(rewardForRank(r.myRank).toLocaleString())}</button>`:'';
         inner+=`<div class="dl-rank">${t('dailyMyRank')(r.myRank)}</div>`;
         if(streakN>=2)inner+=`<div class="dl-streak">${t('dailyStreak')(streakN)}</div>`;
         inner+=`<div class="dl-btns">${rewardBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
       }
     }catch(e){}
   }
+  if(!current())return;
   if(!submitted){
     const streakN=updateDailyStreak(day);
     const diffRow=diff==null?'':`<div class="dl-rank">${t('dailyVsYday')(diff)}</div>`;
@@ -1159,21 +1211,29 @@ async function renderDailyPanel(){
       :`<button class="dl-main" onclick="try{SharedWallet.showLogin()}catch(e){}">${t('lb_loginBtn')}</button>`;
     inner+=`${diffRow}${streakRow}${loginRow}<div class="dl-btns">${loginBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
   }
+  if(!current())return;
+  saveDailyLastPct(day,pct);
+  _dailyLast={tgt,pct,owner,rank,userId,seq};
+  vmEv('daily_play');
   box.innerHTML=inner;box.classList.remove('hidden');
 }
 async function shareDaily(){
-  if(!_dailyLast)return;
+  const shared=currentDailyShare();if(!shared)return;
   vmEv('share');
   try{dataLayer.push({event:'vm_daily_share'});}catch(e){}
   const url=vmShareUrl('daily',{slug:_dailyLast.tgt.slug,pct:_dailyLast.pct});
-  await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share');
+  await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share',()=>currentDailyShare()===shared);
 }
 async function showDailyBoard(publicOnly=false){
-  const u=publicOnly?null:authUser(),day=dailyDayUTC(),yday=dailyDayUTCOffset(-1);
-  const board=openBoard(t('dailyBoardBtn'));
+  const u=publicOnly?null:authUser(),day=dailyDayUTC(),yday=dailyDayUTCOffset(-1,day);
+  const board=openBoard(t('dailyBoardBtn'));board.m.dailyBoard=true;
+  let seq=0;
+  const current=()=>board.m.isConnected&&day===dailyDayUTC()&&(publicOnly||(authUser()?.userId||null)===(u?.userId||null));
   // Target metadata must not hold up the public leaderboard if the singer database is unavailable.
-  dailyTarget(day).then(tgt=>{if(tgt&&board.m.isConnected)board.heading.textContent=t('dailyBoardTitle')(singerName(tgt,LANG));}).catch(()=>{});
+  dailyTarget(day).then(tgt=>{if(tgt&&current())board.heading.textContent=t('dailyBoardTitle')(singerName(tgt,LANG));}).catch(()=>{});
   const load=async()=>{
+    if(!current()){if(board.m.isConnected)board.m.closeBoard();return;}
+    const request=++seq;
     if(board.content.contains(document.activeElement))board.m.querySelector('#lb-close').focus();
     board.content.innerHTML=boardStatus('lb_loading');board.content.setAttribute('aria-busy','true');
     const q=u?'&me='+encodeURIComponent(u.userId):'';
@@ -1181,7 +1241,8 @@ async function showDailyBoard(publicOnly=false){
       fetchBoard(DAILY_API+'?day='+day+q,day),
       fetchBoard(DAILY_API+'?day='+yday+'&limit=3',yday)
     ]);
-    if(!board.m.isConnected)return;
+    if(request!==seq||!board.m.isConnected)return;
+    if(!current()){board.m.closeBoard();return;}
     let html='<div class="lb-sec-t">'+escHtml(t('dailyToday'))+' · '+day+' UTC</div>';
     html+=today.status==='fulfilled'?boardRows(today.value,u):boardStatus('lb_error');
     if(yesterday.status==='rejected'||yesterday.value.rankings.length){
@@ -1444,10 +1505,10 @@ async function renderDuetSetlist(box){
 }
 /* 회신 루프: 내 벡터+결과를 이 기기에 저장해뒀다가, 상대가 보낸 결과 링크(#d=)를 열면
    다시 부르지 않고 즉시 케미를 계산한다. 초대한 사람도 결과를 보는 유일한 경로(서버 없음). */
-function saveDuetSelf(done){
+function saveDuetSelf(done,day){
   try{
     localStorage.setItem('vm_duet_self',JSON.stringify(
-      {q:b64uEnc(packEmb(done.q)),pitch:done.pitch||null,rank:done.rank,ts:Date.now()}));
+      {q:b64uEnc(packEmb(done.q)),pitch:done.pitch||null,rank:done.rank,day,ts:Date.now()}));
   }catch(e){}
 }
 function loadDuetSelf(){
@@ -1464,7 +1525,8 @@ async function duetInstant(){
   if(!window._singersCache){
     try{window._singersCache=await fetch('singers.json?v=20260820g1').then(r=>r.json());}catch(e){return;}
   }
-  lastQ=unpackEmb(b64uDec(s.q));lastPitch=s.pitch||null;
+  // Legacy saved audio has no captured UTC day; keep duet working, hide its daily panel.
+  setDailyResult(unpackEmb(b64uDec(s.q)),s.day||null);lastPitch=s.pitch||null;
   try{dataLayer.push({event:'vm_duet_instant'});}catch(e){}
   renderResult(s.rank,null,null,null,null);
 }
@@ -1474,14 +1536,18 @@ function buildInviteUrl(name){
   if(lastPitch){payload.lo=lastPitch.lo;payload.hi=lastPitch.hi;}
   return vmShareUrl('invite',null,'d='+b64uEnc(new TextEncoder().encode(JSON.stringify(payload))));
 }
-async function shareOrCopy(txt,btnId){
+async function shareOrCopy(txt,btnId,current=()=>true){
+  const button=$(btnId);
+  if(!current())return;
   if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){}}
+  if(!current())return;
   try{await navigator.clipboard.writeText(txt);}
   catch(e){
+    if(!current())return;
     const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';
     document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e2){}ta.remove();
   }
-  const b=$(btnId);if(b)b.textContent=t('duetCopied');
+  const b=$(btnId);if(current()&&b&&b===button)b.textContent=t('duetCopied');
 }
 async function makeInvite(){
   if(!lastQ)return;
@@ -2067,7 +2133,7 @@ function renderReqBox(){
 }
 $('btn-start').onclick=()=>startRec();  // 이벤트 객체가 primed 인자로 들어가면 안내 시트를 건너뛴다
 $('btn-stop').onclick=stopRec;
-$('btn-retry').onclick=()=>{takeCount=0;appendNext=false;try{worker.postMessage({type:'resetTakes'});}catch(e){}$('r-addtake').classList.add('hidden');show('s-intro');};
+$('btn-retry').onclick=()=>{clearDailyResult();dailyAudioDay=null;takeCount=0;appendNext=false;try{worker.postMessage({type:'resetTakes'});}catch(e){}$('r-addtake').classList.add('hidden');show('s-intro');};
 $('btn-reclen').onclick=cycleRecLen;
 
 /* ---- 공유 카드 ---- */
@@ -2090,7 +2156,7 @@ function drawCard(){
   x.strokeStyle='rgba(190,150,220,.4)';x.setLineDash([6,8]);x.beginPath();x.moveTo(80,650);x.lineTo(W-80,650);x.stroke();x.setLineDash([]);
   x.fillStyle='#f5eefb';x.font='700 30px Pretendard';
   lastResult.slice(1,4).forEach((s,i)=>{x.fillText(`${i+2}. ${singerName(s,LANG)}  ${s.pct}%`,W/2,712+i*46);});
-  if(_dailyLast&&_dailyLast.tgt){
+  if(currentDailyShare()){
     const dnm=singerName(_dailyLast.tgt,LANG);
     x.fillStyle='#b9f455';x.font='600 20px Pretendard';
     x.fillText(t('cardDailyBadge')(dnm,_dailyLast.pct),W/2,H-56);
