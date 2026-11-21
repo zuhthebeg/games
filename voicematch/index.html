@@ -727,7 +727,20 @@ function loadModel(){
 }
 
 /* ---- 녹음 ---- */
-let audioCtx,stream,proc,pcmChunks,recRate,recTimer,recLeft;
+let audioCtx,stream,proc,captureSource,pcmChunks,recRate,recTimer,recLeft;
+// Release each resource independently: a platform cleanup failure must not skip the rest.
+function cleanupCapture(){
+  const ctx=audioCtx,media=stream,processor=proc,source=captureSource,timer=recTimer;
+  audioCtx=stream=proc=captureSource=recTimer=null;
+  try{clearInterval(timer);}catch(e){}
+  if(processor){
+    try{processor.onaudioprocess=null;}catch(e){}
+    try{processor.disconnect();}catch(e){}
+  }
+  try{source?.disconnect();}catch(e){}
+  try{for(const track of media?.getTracks()||[]){try{track.stop();}catch(e){}}}catch(e){}
+  try{const closing=ctx?.close();if(closing)Promise.resolve(closing).catch(()=>{});}catch(e){}
+}
 /* 녹음 길이·테이크 수.
    실측(가수 5명 홀드아웃 곡, 본인이 1위로 나오는 비율):
      10초 1회 51% · 20초 1회 61% · 30초 1회 65% · 10초 2회 73% · 10초 3회 82%.
@@ -850,34 +863,37 @@ async function startRec(primed){
     $('btn-restart').onclick=()=>{ show('s-intro'); startRec(true); };
     show('s-err');return;
   }
-  localStorage.setItem('vm_mic_primed','1');
-  try{dataLayer.push({event:'vm_record_start'});}catch(e){}
-  vmEv('rec_start');
-  show('s-rec');
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  recRate=audioCtx.sampleRate;
-  const src=audioCtx.createMediaStreamSource(stream);
-  proc=audioCtx.createScriptProcessor(4096,1,1);
-  pcmChunks=[];
-  const bars=$('eq').children;
-  proc.onaudioprocess=e=>{
-    const d=e.inputBuffer.getChannelData(0);
-    pcmChunks.push(new Float32Array(d));
-    let q=0;for(let i=0;i<d.length;i+=16)q+=d[i]*d[i];
-    const lv=Math.min(1,Math.sqrt(q/(d.length/16))*9);
-    for(let i=0;i<bars.length;i++)bars[i].style.height=(6+lv*(18+Math.random()*32))+'px';
-  };
-  src.connect(proc);proc.connect(audioCtx.destination);
-  recLeft=recSec;$('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';
-  recTimer=setInterval(()=>{recLeft--;
-    if(recLeft<=0){stopRec();return;}
-    $('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';},1000);
-  loadModel().catch(()=>{});
+  try{localStorage.setItem('vm_mic_primed','1');}catch(e){}
+  try{
+    try{dataLayer.push({event:'vm_record_start'});}catch(e){}
+    vmEv('rec_start');
+    show('s-rec');
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    recRate=audioCtx.sampleRate;
+    captureSource=audioCtx.createMediaStreamSource(stream);
+    proc=audioCtx.createScriptProcessor(4096,1,1);
+    pcmChunks=[];
+    const bars=$('eq').children;
+    proc.onaudioprocess=e=>{
+      const d=e.inputBuffer.getChannelData(0);
+      pcmChunks.push(new Float32Array(d));
+      let q=0;for(let i=0;i<d.length;i+=16)q+=d[i]*d[i];
+      const lv=Math.min(1,Math.sqrt(q/(d.length/16))*9);
+      for(let i=0;i<bars.length;i++)bars[i].style.height=(6+lv*(18+Math.random()*32))+'px';
+    };
+    captureSource.connect(proc);proc.connect(audioCtx.destination);
+    recLeft=recSec;$('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';
+    recTimer=setInterval(()=>{recLeft--;
+      if(recLeft<=0){stopRec();return;}
+      $('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';},1000);
+    loadModel().catch(()=>{});
+  }catch(e){
+    cleanupCapture();pcmChunks=[];
+    $('err-t').innerHTML=t('errAnalyze');resetErrBtn();show('s-err');
+  }
 }
 async function stopRec(){
-  clearInterval(recTimer);
-  try{proc.disconnect();}catch(e){}
-  stream.getTracks().forEach(tk=>tk.stop());
+  cleanupCapture();
   const total=pcmChunks.reduce((a,c)=>a+c.length,0);
   if(total<recRate*2.5){try{dataLayer.push({event:'vm_too_short'});}catch(e){}$('err-t').innerHTML=t('errShort');resetErrBtn();show('s-err');return;}
   try{dataLayer.push({event:'vm_record_done'});}catch(e){}
