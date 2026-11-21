@@ -1063,8 +1063,6 @@ function getDailyStreak(){return{last:localStorage.getItem('vm_streak_last')||''
 function updateDailyStreak(day){const{last,n}=getDailyStreak();if(last===day)return n;const newN=(last===dailyDayUTCOffset(-1))?n+1:1;localStorage.setItem('vm_streak_last',day);localStorage.setItem('vm_streak_n',String(newN));return newN;}
 function getDailyLastPct(){try{const v=JSON.parse(localStorage.getItem('vm_daily_last')||'null');return(v&&/^\d{8}$/.test(v.day)&&Number.isFinite(v.pct))?v:null;}catch(e){return null;}}
 function saveDailyLastPct(day,pct){try{localStorage.setItem('vm_daily_last',JSON.stringify({day,pct}));}catch(e){}}
-// 서버 voicematch-daily.ts의 myRank와 같은 규칙 — 나보다 pct가 큰 행 수 + 1 (동점은 같은 순위)
-function estDailyRank(rankings,pct){return 1+(rankings||[]).reduce((n,r)=>n+((r&&Number.isFinite(r.pct)&&r.pct>pct)?1:0),0);}
 // 저장된 지난 결과가 어제 것일 때만 부호 있는 %p 차이(없으면 null)
 function dailyDiffVs(rec,yday,pct){return(rec&&rec.day===yday&&Number.isFinite(rec.pct))?pct-rec.pct:null;}
 function dailyHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
@@ -1152,13 +1150,6 @@ async function renderDailyPanel(){
   }
   if(!submitted){
     const streakN=updateDailyStreak(day);
-    // 공개 일일 보드와 비교한 예상 순위 — 제출 전이라 "예상". 실패 시 조용히 생략
-    let estRow='';
-    try{
-      const data=await fetchBoard(DAILY_API+'?day='+day+'&limit=50',day);
-      const total=Number.isFinite(data.entries)?data.entries:data.rankings.length;
-      if(total>0)estRow=`<div class="dl-rank">${t('dailyEstRank')(total,estDailyRank(data.rankings,pct))}</div>`;
-    }catch(e){}
     const diffRow=diff==null?'':`<div class="dl-rank">${t('dailyVsYday')(diff)}</div>`;
     const streakRow=streakN>=2?`<div class="dl-streak">${t('dailyStreak')(streakN)}</div>`:'';
     // 등록계정인데 제출만 실패(네트워크 등)면 로그인 안내는 생략하고 보드/공유만 노출
@@ -1166,7 +1157,7 @@ async function renderDailyPanel(){
       :`<div class="dl-login">${t('lb_login')}</div>`;
     const loginBtn=(u&&u.registered)?''
       :`<button class="dl-main" onclick="try{SharedWallet.showLogin()}catch(e){}">${t('lb_loginBtn')}</button>`;
-    inner+=`${estRow}${diffRow}${streakRow}${loginRow}<div class="dl-btns">${loginBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
+    inner+=`${diffRow}${streakRow}${loginRow}<div class="dl-btns">${loginBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
   }
   box.innerHTML=inner;box.classList.remove('hidden');
 }

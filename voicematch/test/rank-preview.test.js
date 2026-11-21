@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const i18n=readFileSync(new URL('../i18n.js',import.meta.url),'utf8');
-const source=html.slice(html.indexOf('/* ---- 랭킹 ---- */'),html.indexOf('/* ---- 결과 ---- */'));
+const pages=['','ko','en','ja','es','pt','tw','id'].map(locale=>({locale,html:readFileSync(new URL('../'+(locale?locale+'/':'')+'index.html',import.meta.url),'utf8')}));
 const esc=html.slice(html.indexOf('function escHtml('),html.indexOf('\n',html.indexOf('function escHtml(')));
 
 // renderDailyPanel까지 돌리려는 slice 밖 의존성은 실제 구현을 prelude로 얹는다.
@@ -21,7 +21,8 @@ const BOARD={success:true,day:'20261116',entries:3,rankings:[
   {user_id:'b',nickname:'BBB',pct:60,country:'TW'},
 ]};
 
-function harness(handler=()=>BOARD,lang='ko'){
+function harness(handler=()=>BOARD,lang='ko',page=html){
+  const source=page.slice(page.indexOf('/* ---- 랭킹 ---- */'),page.indexOf('/* ---- 결과 ---- */'));
   const elements=new Map(),requests=[],timers=new Map();let timer=0;
   const document={activeElement:null,querySelectorAll:()=>[],addEventListener(){},createElement:tag=>new Element(tag),getElementById:id=>elements.get(id)||null};
   class Element{
@@ -48,24 +49,6 @@ function harness(handler=()=>BOARD,lang='ko'){
   return {ctx,box,requests,storage,run:s=>vm.runInContext(s,ctx)};
 }
 
-test('estDailyRank: ties share the same rank (server pct > ? rule)',()=>{
-  const h=harness();
-  assert.equal(h.run("estDailyRank([{pct:90},{pct:80},{pct:80},{pct:70}],80)"),2);
-  assert.equal(h.run("estDailyRank([{pct:80},{pct:80}],80)"),1);
-});
-test('estDailyRank: empty board means rank 1',()=>{
-  const h=harness();
-  assert.equal(h.run("estDailyRank([],55)"),1);
-  assert.equal(h.run("estDailyRank(null,55)"),1);
-});
-test('estDailyRank: I am first when nobody beats my pct',()=>{
-  const h=harness();
-  assert.equal(h.run("estDailyRank([{pct:90},{pct:80}],99)"),1);
-});
-test('estDailyRank: I am last when everyone beats my pct',()=>{
-  const h=harness();
-  assert.equal(h.run("estDailyRank([{pct:90},{pct:80},{pct:70}],10)"),4);
-});
 test('dailyDiffVs: signed %p only when the stored result is yesterday',()=>{
   const h=harness();
   assert.equal(h.run("dailyDiffVs({day:'20261115',pct:40},'20261115',55)"),15);
@@ -83,28 +66,54 @@ test('getDailyLastPct validates shape; saveDailyLastPct roundtrips',()=>{
   h.run("saveDailyLastPct('20261116',55)");
   assert.deepEqual(h.run("getDailyLastPct()"),{day:'20261116',pct:55});
 });
-test('non-login result shows estimated rank, streak and login CTA; public GET only',async()=>{
-  const h=harness();
-  h.run('lastQ=[1,0,0,0]');
-  await h.run('renderDailyPanel()');
-  assert.equal(h.box.classList.contains('hidden'),false);
-  assert.match(h.box.innerHTML,/오늘 3명 중 예상 3위/);       // pct=55 < 70,60 → est 3 of 3
-  assert.match(h.box.innerHTML,/로그인하면 랭킹에 이름을 남길 수 있어요/);
-  assert.equal(h.storage.get('vm_streak_last'),'20261116');
-  assert.equal(h.storage.get('vm_streak_n'),'1');
-  assert.equal(h.storage.get('vm_daily_last'),'{"day":"20261116","pct":55}');
-  assert.equal(h.requests.length,1);
-  assert.match(h.requests[0].url,/^https:\/\/relay\.cocy\.io\/api\/rankings\/voicematch-daily\?day=20261116&limit=50$/);
-  assert.equal(h.requests[0].options.method||'GET','GET');
-});
-test('board fetch failure omits the estimate silently, panel still renders',async()=>{
-  const h=harness(()=>new Error('offline'));
-  h.run('lastQ=[1,0,0,0]');
-  await h.run('renderDailyPanel()');
-  assert.equal(h.box.classList.contains('hidden'),false);
-  assert.doesNotMatch(h.box.innerHTML,/예상/);
-  assert.match(h.box.innerHTML,/오늘의 랭킹/);
-});
+const fixtures={
+  'absent provenance':BOARD,
+  'untrusted artist metadata':{...BOARD,artist:'s0',scoreVersion:'claimed',rankings:BOARD.rankings.map(r=>({...r,artist:'s0'}))},
+  'entries above 50':{...BOARD,entries:60,rankings:Array.from({length:50},()=>({pct:90}))},
+  'known truncated list':{...BOARD,entries:10,rankings:[{pct:90}]},
+  'offline':new Error('offline'),
+};
+for(const {locale,html:page} of pages){
+  for(const [label,board] of Object.entries(fixtures)){
+    test(`${locale||'root'}: unsubmitted ${label} never fetches or renders an estimate`,async()=>{
+      const h=harness(()=>board,locale||'ko',page);
+      h.run("lastQ=[1,0,0,0];saveDailyLastPct('20261115',40);localStorage.setItem('vm_streak_last','20261115');localStorage.setItem('vm_streak_n','3')");
+      await h.run('renderDailyPanel()');
+      assert.equal(h.requests.length,0,'no estimate GET, even for plausible artist metadata');
+      assert.equal(h.box.classList.contains('hidden'),false);
+      assert.deepEqual([...h.box.innerHTML.matchAll(/<div class="dl-rank">(.*?)<\/div>/g)].map(m=>m[1]),
+        [h.run("t('dailyVsYday')(15)")],'only yesterday diff, no estimated rank text');
+      assert.match(h.box.innerHTML,/55%/);
+      for(const key of ['lb_login','lb_loginBtn','dailyBoardBtn','dailyShareBtn'])assert.ok(h.box.innerHTML.includes(h.run(`t('${key}')`)),key);
+      assert.ok(h.box.innerHTML.includes(h.run("t('dailyVsYday')(15)")));
+      assert.ok(h.box.innerHTML.includes(h.run("t('dailyStreak')(4)")));
+      assert.match(h.box.innerHTML,/showDailyBoard\(\)/);
+      assert.match(h.box.innerHTML,/shareDaily\(\)/);
+      assert.match(h.box.innerHTML,/SharedWallet.showLogin\(\)/);
+      assert.equal(h.storage.get('vm_streak_last'),'20261116');
+      assert.equal(h.storage.get('vm_streak_n'),'4');
+      assert.equal(h.storage.get('vm_daily_last'),'{"day":"20261116","pct":55}');
+      assert.equal(h.run('typeof estDailyRank'),'undefined','estimate-only helper removed');
+    });
+  }
+  for(const failure of [{success:false},new Error('offline')]){
+    test(`${locale||'root'}: failed registered submission retains local result and actions without estimate GET`,async()=>{
+      const h=harness((url,o)=>o.method==='POST'?failure:BOARD,locale||'ko',page);
+      const jwt='h.'+Buffer.from(JSON.stringify({sub:'u9',isAnonymous:false,nickname:'Me'})).toString('base64')+'.x';
+      h.run(`lastQ=[1,0,0,0];localStorage.setItem('cocy_auth_token','${jwt}');saveDailyLastPct('20261115',40)`);
+      await h.run('renderDailyPanel()');
+      assert.equal(h.requests.length,1,'only the existing submission POST');
+      assert.equal(h.requests[0].options.method,'POST');
+      assert.deepEqual(JSON.parse(h.requests[0].options.body),{userId:'u9',artist:h.run('_dailyLast.tgt.slug'),pct:55});
+      assert.match(h.box.innerHTML,/55%/);
+      assert.deepEqual([...h.box.innerHTML.matchAll(/<div class="dl-rank">(.*?)<\/div>/g)].map(m=>m[1]),[h.run("t('dailyVsYday')(15)")]);
+      assert.doesNotMatch(h.box.innerHTML,/dl-login|dl-main/);
+      assert.match(h.box.innerHTML,/showDailyBoard\(\)/);
+      assert.match(h.box.innerHTML,/shareDaily\(\)/);
+      assert.equal(h.storage.get('vm_daily_last'),'{"day":"20261116","pct":55}');
+    });
+  }
+}
 test('yesterday record produces signed %p line, then today overwrites it',async()=>{
   const h=harness();
   h.run('lastQ=[1,0,0,0]');
@@ -121,22 +130,29 @@ test('non-login streak continues from yesterday and renders',async()=>{
   assert.match(h.box.innerHTML,/🔥 4일 연속 도전 중!/);
   assert.equal(h.storage.get('vm_streak_n'),'4');
 });
-test('registered submit path unchanged: real rank, no estimate, local record still saved',async()=>{
-  const h=harness((url,o)=>o.method==='POST'?{success:true,day:'20261116',myRank:5,myPct:55}:BOARD);
-  h.run('lastQ=[1,0,0,0]');
-  const jwt='h.'+Buffer.from(JSON.stringify({sub:'u9',isAnonymous:false,nickname:'Me'})).toString('base64')+'.x';
-  h.run(`localStorage.setItem('cocy_auth_token','${jwt}')`);
-  await h.run('renderDailyPanel()');
-  assert.match(h.box.innerHTML,/오늘 전세계 5위!/);
-  assert.doesNotMatch(h.box.innerHTML,/예상/);
-  assert.equal(h.storage.get('vm_daily_last'),'{"day":"20261116","pct":55}');
-  assert.equal(h.requests.length,1);
-  assert.equal(h.requests[0].options.method,'POST');
-});
-test('every locale has dailyEstRank and dailyVsYday',()=>{
+for(const {locale,html:page} of pages){
+  test(`${locale||'root'}: registered submit, real rank, reward and ordinary daily share remain`,async()=>{
+    const h=harness((url,o)=>o.method==='POST'?{success:true,day:'20261116',myRank:5,myPct:55}:BOARD,locale||'ko',page);
+    const jwt='h.'+Buffer.from(JSON.stringify({sub:'u9',isAnonymous:false,nickname:'Me'})).toString('base64')+'.x';
+    h.run(`lastQ=[1,0,0,0];localStorage.setItem('cocy_auth_token','${jwt}')`);
+    await h.run('renderDailyPanel()');
+    assert.deepEqual([...h.box.innerHTML.matchAll(/<div class="dl-rank">(.*?)<\/div>/g)].map(m=>m[1]),[h.run("t('dailyMyRank')(5)")]);
+    assert.match(h.box.innerHTML,/claimDailyGold\(this,'20261116',5\)/);
+    assert.match(h.box.innerHTML,/showDailyBoard\(\)/);
+    assert.match(h.box.innerHTML,/shareDaily\(\)/);
+    assert.equal(h.storage.get('vm_daily_last'),'{"day":"20261116","pct":55}');
+    assert.equal(h.requests.length,1);
+    assert.equal(h.requests[0].options.method,'POST');
+    h.run("var shared=[];function vmShareUrl(kind,data){return 'fixture:'+kind+':'+data.slug+':'+data.pct;}async function shareOrCopy(text,id){shared.push({text,id});}");
+    await h.run('shareDaily()');
+    assert.equal(h.run('shared.length'),1);
+    assert.equal(h.run('shared[0].id'),'dl-share');
+    assert.equal(h.run('shared[0].text'),h.run("t('dailyShareText')(singerName(_dailyLast.tgt,LANG),55)+'\\nfixture:daily:'+_dailyLast.tgt.slug+':55'"));
+  });
+}
+test('every locale retains dailyVsYday',()=>{
   for(const lang of ['ko','en','ja','es','pt','tw','id']){
     const h=harness(undefined,lang);
-    assert.equal(typeof h.run('t("dailyEstRank")'),'function',lang);
     assert.equal(typeof h.run('t("dailyVsYday")'),'function',lang);
   }
 });
