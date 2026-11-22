@@ -796,7 +796,7 @@ function initInAppBar(){
 /* ---- 마이크 권한 ---- */
 // 이미 허용된 브라우저에는 안내를 띄우지 않는다(Permissions API 없는 사파리는 localStorage로 대체).
 async function micAlreadyOk(){
-  if(localStorage.getItem('vm_mic_primed'))return true;
+  try{if(localStorage.getItem('vm_mic_primed'))return true;}catch(e){}
   try{
     const st=await navigator.permissions.query({name:'microphone'});
     return st.state==='granted';
@@ -833,7 +833,7 @@ function hideMicSheet(){ $('mic-sheet').classList.add('hidden'); }
 document.addEventListener('DOMContentLoaded',()=>{
   const sheet=$('mic-sheet'); if(!sheet)return;
   $('mic-go').onclick=()=>{
-    localStorage.setItem('vm_mic_primed','1');
+    try{localStorage.setItem('vm_mic_primed','1');}catch(e){}
     hideMicSheet();
     try{dataLayer.push({event:'vm_mic_prime_accept'});}catch(e){}
     startRec(true);
