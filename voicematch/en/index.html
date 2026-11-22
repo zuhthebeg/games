@@ -774,14 +774,19 @@ function isInApp(){
 }
 async function copyPageUrl(btn){
   const url = location.href.split('#')[0];
-  try{ await navigator.clipboard.writeText(url); }
+  let copied=false;
+  try{ await navigator.clipboard.writeText(url); copied=true; }
   catch(e){
-    const ta=document.createElement('textarea');
-    ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    try{ document.execCommand('copy'); }catch(e2){}
-    ta.remove();
+    let ta;
+    try{
+      ta=document.createElement('textarea');
+      ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      copied=document.execCommand('copy')===true;
+    }catch(e2){}
+    finally{ if(ta) ta.remove(); }
   }
+  if(!copied) return;
   if(btn) btn.textContent=t('inappCopied');
   try{dataLayer.push({event:'vm_inapp_copy'});}catch(e){}
 }
