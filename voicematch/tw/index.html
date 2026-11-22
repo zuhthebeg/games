@@ -1603,13 +1603,16 @@ async function shareOrCopy(txt,btnId,current=()=>true){
   if(!current())return;
   if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){}}
   if(!current())return;
-  try{await navigator.clipboard.writeText(txt);}
+  let copied=false;
+  try{await navigator.clipboard.writeText(txt);copied=true;}
   catch(e){
     if(!current())return;
     const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';
-    document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e2){}ta.remove();
+    try{document.body.appendChild(ta);ta.select();copied=document.execCommand('copy')===true;}
+    catch(e2){}
+    finally{ta.remove();}
   }
-  const b=$(btnId);if(current()&&b&&b===button)b.textContent=t('duetCopied');
+  const b=$(btnId);if(copied&&current()&&b&&b===button)b.textContent=t('duetCopied');
 }
 async function makeInvite(){
   if(!lastQ)return;
