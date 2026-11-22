@@ -2259,7 +2259,7 @@ $('btn-share').onclick=async()=>{
   const top=lastResult[0];
   const url=vmShareUrl('native',top);
   const data={files:[f],title:t('title'),text:I18N[LANG].shareText(singerName(top,LANG),top.pct)+' '+url};
-  if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){}}
+  if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){if(e?.name!=='AbortError')$('btn-save').click();}}
   else $('btn-save').click();
 };
 
