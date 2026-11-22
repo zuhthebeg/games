@@ -1677,8 +1677,9 @@ function renderDuetPanels(){
   if(!d){box.classList.add('hidden');box.innerHTML='';return;}
   const nameA=escHtml(DUET.in.n||DUET_ANON[LANG]||'friend');
   const sA=(window._singersCache||[]).find(x=>x.slug===DUET.in.s);
-  const tops=(sA&&DUET.in.p)
-    ?`<div class="duet-tops">${nameA}: ${escHtml(singerName(sA,LANG))} ${DUET.in.p}%`
+  const p=DUET.in.p;
+  const tops=(sA&&typeof p==='number'&&Number.isFinite(p)&&p>=0&&p<=100)
+    ?`<div class="duet-tops">${nameA}: ${escHtml(singerName(sA,LANG))} ${p}%`
       +(lastResult&&lastResult[0]?` · ${t('duetMe')}: ${escHtml(singerName(lastResult[0],LANG))} ${lastResult[0].pct}%`:'')+'</div>'
     :'';
   const bar=(label,v)=>v==null?'':`<div class="ga-row"><span class="ga-nm">${label}</span><div class="ga-tr"><i data-w="${v}"></i></div><span class="ga-p">${v}</span></div>`;
