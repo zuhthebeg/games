@@ -2229,9 +2229,20 @@ function drawCard(){
   return c;
 }
 async function cardBlob(){await document.fonts.load("40px 'Black Han Sans'");drawCard();
-  return new Promise(r=>$('card').toBlob(r,'image/png'));}
-$('btn-save').onclick=async()=>{const b=await cardBlob();const a=document.createElement('a');
-  a.href=URL.createObjectURL(b);a.download='voicematch.png';a.click();};
+  const b=await new Promise(r=>$('card').toBlob(r,'image/png'));
+  if(!(b instanceof Blob)||!b.size||b.type!=='image/png')throw new Error('Card unavailable');
+  return b;}
+function cardFailure(){
+  $('err-t').textContent=t('reqErr');
+  $('btn-restart').textContent=t('micRetry');
+  $('btn-restart').onclick=()=>{resetErrBtn();show('s-result');};
+  show('s-err');
+}
+$('btn-save').onclick=async()=>{
+  try{const b=await cardBlob();const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='voicematch.png';a.click();
+  }catch(e){cardFailure();}
+};
 const X_TAGS={ko:'#목소리노래방',en:'#VoiceMatch #kpop',ja:'#声診断 #ボイスマッチ',es:'#VoiceMatch #kpop',tw:'#聲音分身',id:'#VoiceMatch #kpop',pt:'#VoiceMatch #kpop'};
 /* 스레드 공유 — 유입의 대부분이 Threads(대만 핀 포스트 2.6K 좋아요)인데 X 버튼만 있었다.
    intent/post?text= 가 작성창을 문구+링크로 채워준다(2026-08-16 실제 확인, 링크 프리뷰도 붙음).
@@ -2255,12 +2266,14 @@ $('btn-x').onclick=()=>{
 };
 $('btn-share').onclick=async()=>{
   vmEv('share');
-  const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
-  const top=lastResult[0];
-  const url=vmShareUrl('native',top);
-  const data={files:[f],title:t('title'),text:I18N[LANG].shareText(singerName(top,LANG),top.pct)+' '+url};
-  if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){if(e?.name!=='AbortError')$('btn-save').click();}}
-  else $('btn-save').click();
+  try{
+    const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
+    const top=lastResult[0];
+    const url=vmShareUrl('native',top);
+    const data={files:[f],title:t('title'),text:I18N[LANG].shareText(singerName(top,LANG),top.pct)+' '+url};
+    if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){if(e?.name!=='AbortError')$('btn-save').click();}}
+    else $('btn-save').click();
+  }catch(e){cardFailure();}
 };
 
 window.SharedWalletConfig={labels:{login:t('navLogin'),logout:t('navLogout')}};
