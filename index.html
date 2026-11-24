@@ -15,10 +15,11 @@
     <title>🎮 Game Portal - game.cocy.io</title>
     <link rel="icon" href="https://cocy.io/favicon.ico">
     <script src="/lib/multiplayer.js?v=20260705v1"></script>
-    <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
+    <script src="/lib/shared-wallet.js?v=20261125a11y1"></script>
     <style>
         :root {
             --primary: #ec4899;
+            --primary-fill: #c92b77;
             --secondary: #8b5cf6;
             --accent: #f59e0b;
             --bg: #0f0f1a;
@@ -75,7 +76,7 @@
         }
 
         .auth-btn {
-            background: rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.28);
             border: none;
             color: white;
             padding: 6px 14px;
@@ -85,7 +86,7 @@
             transition: all 0.2s;
         }
 
-        .auth-btn:hover { background: rgba(255,255,255,0.3); }
+        .auth-btn:hover { background: rgba(0,0,0,0.36); }
 
         .tabs {
             display: flex;
@@ -110,8 +111,8 @@
 
         .tab:hover { border-color: var(--primary); color: var(--text); }
         .tab.active {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: var(--primary-fill);
+            border-color: var(--primary-fill);
             color: white;
         }
 
@@ -180,14 +181,14 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             padding: 2px 6px;
             border-radius: 8px;
             font-weight: 600;
         }
 
-        .badge-new { background: var(--primary); }
-        .badge-hot { background: var(--accent); }
+        .badge-new { background: var(--primary-fill); }
+        .badge-hot { background: var(--accent); color: #252c38; }
 
         /* 호버 시 게임플레이 프리뷰 영상 (video 필드 있는 앱만, 데스크톱 전용) */
         .card-video {

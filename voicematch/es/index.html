@@ -37,7 +37,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta name="twitter:description" content="Canta 10 segundos y la IA encuentra tu gemelo vocal del K-pop. Funciona dentro de tu navegador: tu voz nunca sale del dispositivo.">
 <meta name="twitter:image" content="https://game.cocy.io/voicematch/og-es.png">
 <link rel="icon" href="/voicematch/icon.svg" type="image/svg+xml">
-<script src="/lib/shared-wallet.js?v=20260809pf2"></script>
+<script src="/lib/shared-wallet.js?v=20261125a11y1"></script>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <script type="application/ld+json">
@@ -66,7 +66,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .marq{font-family:'Black Han Sans';font-size:19px;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .marq .no{font-size:11px;font-family:Pretendard;font-weight:600;color:var(--amber);border:1px solid var(--amber);padding:3px 9px;border-radius:3px;letter-spacing:2px;white-space:nowrap}
 .langs{display:flex;gap:4px;margin-top:10px}
-.lg{border:1px solid oklch(0.45 0.07 295);background:transparent;color:var(--mut);font-size:10.5px;font-weight:700;
+.lg{border:1px solid oklch(0.45 0.07 295);background:transparent;color:var(--mut);font-size:12px;font-weight:700;
   border-radius:999px;padding:3px 9px;cursor:pointer;letter-spacing:.5px}
 .lg.on{background:var(--pink);border-color:var(--pink);color:oklch(0.18 0.06 350)}
 .screen{margin-top:16px;background:oklch(0.16 0.03 290);border-radius:10px;padding:22px 20px 20px;position:relative;
@@ -82,6 +82,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .key:disabled{opacity:.45;cursor:default}
 .tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--mut);line-height:1.7}
 
+#t-tipintro{font-size:12px}
 .tip b{color:var(--lime)}
 .hidden{display:none!important}
 
@@ -124,8 +125,8 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 #recent-title{font-size:12px;color:var(--mut);margin:0 0 8px}
 #recent-chips{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:2px 2px 8px}
 .recent-chip{flex:none;display:flex;align-items:center;gap:6px;min-height:44px;border:1px solid var(--panel2);border-radius:22px;background:var(--panel2);color:var(--txt);padding:8px 12px;font:inherit;font-size:12px;cursor:pointer}
-.recent-chip small{color:var(--lime);font-size:10px}
-.recent-chip time{color:var(--mut);font-size:10px}
+.recent-chip small{color:var(--lime);font-size:12px}
+.recent-chip time{color:#d2bafc;font-size:12px}
 .recent-chip:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 .pool-toggle{display:block;width:100%;border:none;background:var(--panel2);
   color:var(--txt);font-family:Pretendard;font-size:13px;font-weight:800;padding:11px 8px;cursor:pointer;letter-spacing:.3px}
@@ -157,7 +158,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .rp-body{flex:1;min-width:0}
 .rp-h{display:flex;align-items:baseline;gap:6px}
 .rp-h b{font-size:12.5px;font-weight:800}
-.rp-v{font-size:10.5px;font-weight:700;color:var(--lime);margin-left:auto;flex-shrink:0}
+.rp-v{font-size:11px;font-weight:700;color:var(--lime);margin-left:auto;flex-shrink:0}
 .rp-c{font-size:11.5px;color:var(--mut);font-weight:600;margin-top:2px;line-height:1.35}
 .rp-tr{height:6px;background:oklch(0.3 0.05 300);border-radius:99px;overflow:hidden;margin-top:6px}
 .rp-tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,oklch(0.7 0.14 300),var(--lime));width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
@@ -175,7 +176,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .sl-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px;margin-top:5px;
   text-decoration:none;color:var(--txt)}
 .sl-row .sl-song{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
-.sl-row .sl-artist{font-size:10.5px;color:var(--mut);white-space:nowrap;flex-shrink:0}
+.sl-row .sl-artist{font-size:11px;color:var(--mut);white-space:nowrap;flex-shrink:0}
 .sl-row .sl-play{color:var(--pink);font-size:13px;flex-shrink:0}
 #r-rankline button{border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
   background:var(--amber);color:oklch(0.3 0.06 85);margin-top:6px}
@@ -191,7 +192,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 /* Entry preview reuses the leaderboard rows and existing panel/button palette. */
 #entry-ranking{margin-top:18px;background:var(--panel);border-radius:14px;padding:14px 12px}
 #entry-ranking h2{font-size:14px;color:var(--amber)}
-#entry-rank-hint,#entry-rank-date{font-size:11px;color:var(--mut);line-height:1.5;margin-top:4px}
+#entry-rank-hint,#entry-rank-date{font-size:12px;color:var(--mut);line-height:1.5;margin-top:4px}
 #entry-ranking .all-btn{color:var(--txt);margin-top:8px;min-height:40px}
 .lb-status{padding:12px 4px;color:var(--mut);font-size:12px;line-height:1.5;text-align:center}
 #lb-retry{display:block;margin:8px auto;min-height:40px}
@@ -212,7 +213,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .al-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;font-size:13px}
 .al-row:nth-child(odd){background:oklch(0.24 0.04 295/.5)}
 .al-row b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.al-row span{font-size:10.5px;color:var(--mut);flex-shrink:0}
+.al-row span{font-size:11px;color:var(--mut);flex-shrink:0}
 .al-none{text-align:center;color:var(--mut);font-size:12.5px;padding:26px 0}
 #al-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
 .reward-claim{border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
