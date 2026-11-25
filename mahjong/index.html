@@ -1174,7 +1174,7 @@ function renderPlayer(){
   const handSig=p.hand.join(',')+'|'+selTile+'|'+((G.currentPlayer===0&&G.phase==='discard')?(G.lastDraw||''):'');
   const handChanged=setSig(hr,handSig);
   if(_dealAnim||handChanged){
-    // 손패 타일 엘리먼트 재사용(패값별 풀) — innerHTML 전체교체 시 <img> 재디코드로 생기는 깜빡임 방지.
+    // 손패 타일 엘리먼트 재사용(패값별 풀) — innerHTML 전체교체 시 img 요소 재디코드로 생기는 깜빡임 방지.
     // 기존 노드는 그대로 두고 순서만 재배치(append=이동, 이미지 재로드 없음). 뽑은 패 1장만 새로 생성.
     const pool={};Array.from(hr.children).forEach(el=>{const k=el.dataset.tile;if(k){(pool[k]=pool[k]||[]).push(el);}});
     // 갓 뽑은/깡 보충패는 정렬 손패에서 빼서 맨 오른쪽에 따로(쯔모기리·보충패 식별).

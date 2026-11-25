@@ -17,13 +17,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta property="og:description" content="눈·코·입 468개 점을 실측해서 28종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/animalface/">
+<meta property="og:image" content="https://game.cocy.io/animalface/img/fox.webp">
+<meta property="og:image:alt" content="동물상 판독기의 여우 이미지">
 <link rel="canonical" href="https://game.cocy.io/animalface/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/animalface/">
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/animalface/">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
 <meta name="twitter:description" content="얼굴 468개 점을 실측해서 38종 동물상 중 내 얼굴을 찾아줍니다. 사진은 기기 밖으로 나가지 않아요.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -1342,7 +1344,7 @@ $('rec').onclick = async () => {
     const name = ranked ? NAME(ranked[0].a) : 'animalface';
     $('gifOut').innerHTML =
       `<div class="hint">${T('gifHint', { kb: (blob.size/1024).toFixed(0) })}</div>
-       <img src="${url}" style="width:100%;border-radius:12px;margin-top:6px">
+       <img src="${url}" alt="${T('mirror')} GIF" style="width:100%;border-radius:12px;margin-top:6px">
        <a class="btn sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px"
           href="${url}" download="${name}.gif">${T('gifSave')}</a>`;
   } catch (e) {

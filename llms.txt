@@ -1,41 +1,56 @@
 # cocy (game.cocy.io)
 
-> 설치 없이 브라우저에서 바로 즐기는 무료 웹게임·정보 미니사이트 모음. 모든 게임은 모바일·PC 모두 지원하며 한국어가 기본(일부 多언어). 로그인하면 게임 전반에서 공용 골드 지갑을 쓰고, 일부 게임은 relay.cocy.io 기반 실시간 멀티플레이(CPU 봇 자동 채움)를 지원한다.
+> 설치 없이 브라우저에서 바로 즐기는 웹게임과 정보 미니사이트 모음. 카드·보드게임, 퍼즐, 아케이드, RPG 등 카테고리별로 게임을 찾아보세요.
+
+## 목소리 노래방 (VOICE MATCH)
+- [목소리 노래방](https://game.cocy.io/voicematch/): 10초만 불러보세요. 내 목소리와 가장 닮은 K-POP 가수를 AI가 찾아드립니다. 녹음은 폰 밖으로 나가지 않습니다.
 
 ## 화투·마작·카드 (Classic / Card)
-- [대만 마작 (台灣麻將)](https://game.cocy.io/mahjong/): 16타일 대만 마작. CPU 3인 싱글 + 실시간 멀티, 한국어/繁體中文/English. 타이 ×10만G 보상.
-- [일본 리치마작 (立直麻雀)](https://game.cocy.io/riichi/): 13타일, 리치·도라·역(役) 점수계산, CPU 3인. 한국어/일본어.
-- [맞고·고스톱 (화투)](https://game.cocy.io/gostop/): 정통룰 화투. 광·띠·끗·피·고도리·고/스톱·피박/광박·흔들기·폭탄·총통. 2인 맞고 + 3~4인 고스톱, CPU/실시간 멀티.
-- [블랙잭](https://game.cocy.io/blackjack/): 딜러와 1:1 블랙잭. 골드 베팅, 3:2 배당, 연승 보너스.
-- [조커런](https://game.cocy.io/jokerrun/): 포커 로그라이크. 핸드 조합 + 조커로 점수 폭발.
+- [대만 마작 (台灣麻將)](https://game.cocy.io/mahjong/): 16장 대만 마작을 무료로. CPU 3명과 싱글 플레이, 실시간 멀티플레이, 골드 베팅, 패 콜 음성 지원. 한국어·繁體中文.
+- [맞고·고스톱 (화투)](https://game.cocy.io/gostop/): 화투 맞고(2인)를 무료로. CPU와 싱글, 광·띠·끗·피·고도리 점수, 고/스톱·피박·광박. 한국 전통 화투 게임.
+- [블랙잭](https://game.cocy.io/blackjack/): SharedWallet 골드로 베팅하는 모바일 블랙잭. Hit, Stand, Double Down, Split, 연승 보너스를 지원하는 다크 카지노 스타일 게임.
+- [조커런](https://game.cocy.io/jokerrun/): 조커런은 포커 로그라이크 카드 배틀입니다. 손패를 조합해 포커 기술로 공격하고, 전투 보상으로 조커를 모아 공격력과 연격을 키워 보스에 도전하세요.
 
 ## 보드게임 (Board)
-- [삥탄](https://game.cocy.io/pingtan/): 3~4인 전략 보드게임 — 자원·건설·거래.
-- [삥패](https://game.cocy.io/ppingpae/): 타일 정리 보드게임 — 런·그룹·조커 활용.
-- [삼인 사목](https://game.cocy.io/connect4/): 3인 실시간 사목(커넥트4) 대결.
-- [오목](https://game.cocy.io/gomoku/): 실시간 1:1 오목 대결.
+- [삥탄](https://game.cocy.io/pingtan/): 친구들과 건설하고 거래하고 자원을 빼앗는 멀티플레이 보드게임. 설치 없이 링크를 열면 플레이할 수 있습니다.
+- [삥패](https://game.cocy.io/ppingpae/): 타일 정리 보드게임 - 런/그룹/조커 활용
+- [삼인 사목](https://game.cocy.io/connect4/): 3인 실시간 사목 대결
+- [오목](https://game.cocy.io/gomoku/): 실시간 1:1 오목 대결
 
 ## 아케이드·액션 (Arcade / Action)
-- [스네이크](https://game.cocy.io/snake/): 먹이 하나당 +100G. 로그인해 골드 모으기.
-- [지뢰찾기](https://game.cocy.io/minesweeper/): 난이도별 지뢰수 ×100만G 클리어 보상. 깃발모드·롱프레스 모바일 최적화.
-- [벽돌깨기](https://game.cocy.io/breakout/): 클래식 벽돌깨기.
-- [블록 블라스트](https://game.cocy.io/blockblast/): 8×8 블록 퍼즐, 콤보 터뜨리기.
-- [블럭 퍼즐](https://game.cocy.io/blockpuzzle/): 블럭 조합 퍼즐.
-- [타일 슬라이더](https://game.cocy.io/tileslider/): 슬라이딩 숫자·이미지 퍼즐.
-- [라인러시 / Line Rush](https://game.cocy.io/linerush/): 라인을 그어 영역을 확보하는 터치 아케이드.
-- [3쿠션 당구 시뮬레이터](https://game.cocy.io/billiards/): PBA 3쿠션 물리 시뮬 — 초구·스핀·다이아몬드 시스템.
+- [감자특공대 Spud Squad](https://game.cocy.io/spudsquad/): 감자 네 명이 힘을 합쳐 20개 웨이브를 돌파하는 실시간 협동 서바이벌 게임
+- [비트드롭 BEAT DROP](https://game.cocy.io/rhythmproto/): AI가 만든 케이팝 20곡으로 즐기는 리듬게임.
+- [스네이크](https://game.cocy.io/snake/): 먹이 하나당 +100G! 로그인해서 골드 모으기
+- [지뢰찾기](https://game.cocy.io/minesweeper/): 난이도별 골드 보상! 클리어 보너스 + 시간 보너스
+- [벽돌깨기](https://game.cocy.io/breakout/): 클래식 벽돌깨기 게임
+- [라인러시 / Line Rush](https://game.cocy.io/linerush/): 라인을 그어 영역을 확보하고 배경을 해방하는 터치 아케이드
+- [당구 3D · 3구](https://game.cocy.io/billiards3d/): 3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 파이브앤하프 다이아몬드 시스템·끊어/밀어 스트로크
+
+## 퍼즐·음감 (Puzzle / Ear Training)
+- [팝매치 · Pop Match](https://game.cocy.io/match3/): 무료 매치-3 퍼즐. 60초 시간제, 콤보 폭발, 골드 보상과 랭킹. 한국어·繁體中文·English. 설치 없이 브라우저에서 바로.
+- [스도쿠 · Sudoku](https://game.cocy.io/sudoku/): 무료 스도쿠. 쉬움·보통·어려움 난이도, 골드 보상과 랭킹. 한국어·繁體中文·English 지원. 설치 없이 브라우저에서 바로 플레이.
+- [블록 블라스트](https://game.cocy.io/blockblast/): 8×8 보드에 블록을 놓고, 완성한 줄을 지워 콤보를 만드는 퍼즐.
+- [블럭 퍼즐](https://game.cocy.io/blockpuzzle/): 블록을 배치해 고득점을 노리는 2D 퍼즐.
+- [타일 슬라이더](https://game.cocy.io/tileslider/): 3×3부터 9×9까지 숫자나 이미지를 맞추는 슬라이딩 퍼즐.
+- [틀린 음 찾기](https://game.cocy.io/wrongnote/): 오디오판 틀린그림찾기 — 듣고, 탭하고, 내 귀를 진단받는다. 매일 5문제, 귀 나이 진단과 이모지 공유까지. 무료 웹 음감 게임.
+- [멜로디 에코](https://game.cocy.io/melodyecho/): 멜로디를 듣고 건반으로 따라 치고, 리듬을 탭으로 재현하세요. 적응형 레벨로 내 청음 레벨을 진단하는 무료 음감 게임 — 음감 시리즈 2탄.
 
 ## 캐주얼 (Casual)
-- [사다리 게임](https://game.cocy.io/ladder/): 사다리 타기.
+- [동물상 판독기](https://game.cocy.io/animalface/): 사진 한 장으로 닮은 동물상을 찾아줍니다. 표정 미러링과 GIF 공유를 지원하며 사진은 기기 밖으로 나가지 않습니다.
+- [플레이DNA](https://game.cocy.io/playdna/): 문항 하나 없이, 미니게임 3개로 당신의 행동만 측정합니다. 풍선 불기·신호등 반사·세 개의 문 — 8개 유형 중 당신의 플레이DNA를 찾아보세요.
+- [사다리 게임](https://game.cocy.io/ladder/): 순서정하기와 당첨자 뽑기를 한 번에 할 수 있는 사다리게임입니다. AI 이름 인식으로 텍스트/이미지에서 참가자 이름을 빠르게 설정하고 랜덤 결과를 확인하세요.
 
 ## RPG·강화 (RPG)
-- [Untitled · 잿빛 여관](https://game.cocy.io/arpg/): 1~4인 협동 액션 RPG. 텔레그래프 회피·반격 전투, 고블린부터 수호룡까지, 강화·제작·스킬 숙련. 설치 없이 브라우저에서.
-- [무기 강화 & 배틀](https://game.cocy.io/enhance/): 디아블로식 등급 시스템. 무기 강화·배틀로 골드 획득, 무기별 숙련도(최대 Lv.100).
+- [비스트헌트](https://game.cocy.io/beasthunt/): 거대한 야수의 공격을 읽고 구르고 베어내는 3D 헌팅 액션 RPG. 부위 파괴로 소재를 얻어 무기와 방어구를 강화하세요. 설치 없이 브라우저에서 무료.
+- [데비나로크](https://game.cocy.io/devinarok/): 3D 액션 RPG 체험판. 기사로 해골 무리에 맞서는 게임.
+- [Untitled · 잿빛 여관](https://game.cocy.io/arpg/): 잿빛 여관에서 시작하는 1~4인 협동 액션 RPG. 텔레그래프를 읽고 구르고 반격하며 고블린부터 수호룡까지. 설치 없이 브라우저에서 무료로.
+- [무기 강화 & 배틀](https://game.cocy.io/enhance/): 디아블로 스타일의 등급 시스템. 무기를 강화하고 배틀로 골드를 얻는 게임.
 
 ## 정보·도구 (Info / Tools)
-- [D2R 룬워드 조합기](https://game.cocy.io/d2r-runewords/): 디아블로2 레저렉션 룬 순서 선택 → 룬워드 검색, 장비/직업/레벨 필터.
-- [D2R 가이드](https://game.cocy.io/d2r/): 디아블로2 레저렉션 레벨업 가이드 & 악마술사 빌드.
-- [피크민 트래커](https://game.cocy.io/pikmin/): 피크민 수집 관리.
+- [D2R 룬워드 조합기](https://game.cocy.io/d2r-runewords/): 디아블로 2 레저렉션(D2R) 룬워드 조합기. 33개 룬을 순서대로 선택하고, 장비 유형·직업·레벨·소켓 수로 필터링. 80+ 룬워드 옵션 상세 확인.
+- [D2R 가이드](https://game.cocy.io/d2r/): 디아블로2 레저렉션 악마술사(Warlock) 빌드 가이드, 신규 룬워드(Authority, Void, Vigilance, Ritual), 레벨 1~99 경험치 효율 테이블. D2R Reign of the Warlock DLC.
+- [D2R 악마술사(Warlock) 공략](https://game.cocy.io/d2r-warlock/): 디아블로2 레저렉션 악마술사(Warlock) 종합 공략. 스킬 트리 시뮬레이터, 빌드 가이드, 장비/룬워드, 레벨링 가이드.
+- [피크민 트래커](https://game.cocy.io/pikmin/): 피크민 블룸의 디코레이션 수집 현황을 체크하고 관리할 수 있는 체크리스트입니다.
 
 ## 전체 목록
-- [game.cocy.io 홈](https://game.cocy.io/): 위 게임 전체를 카테고리별로 모은 홈.
+- [game.cocy.io 홈](https://game.cocy.io/): 위 게임과 게임 관련 도구를 카테고리별로 모은 홈.
