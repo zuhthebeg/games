@@ -325,29 +325,6 @@ canvas{display:none}
 #r-groupcta input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
 #r-groupcta .duet-btns button{background:var(--amber);color:oklch(0.3 0.06 85)}
 #grp-claim{background:var(--lime)!important;color:oklch(0.25 0.06 130)!important;animation:rewpulse 1.4s ease-in-out infinite}
-/* Korean-only, optional rap challenge. */
-#vm-rap-entry{display:none;margin-top:16px}
-html[lang="ko"] #vm-rap-entry:not([hidden]){display:block}
-#vm-rap-entry h2{color:var(--mut);font-size:12px;margin:0 0 6px}
-#vm-rap-open{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:10px 12px;min-height:48px;border:1px solid oklch(0.5 0.08 295);background:var(--panel);box-shadow:none}
-#vm-rap-open > span:first-child,#vm-rap-words span{background:var(--panel2);color:var(--lime);font-weight:800;border-radius:8px;padding:5px 8px}
-#vm-rap-open > span:nth-child(2){flex:1}
-#vm-rap-open small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
-#vm-rap-dialog{position:fixed;inset:var(--rap-keyboard-top,0) 0 0;width:min(420px,calc(100% - 24px));max-height:calc(100% - 24px);max-height:var(--rap-keyboard-height,calc(100dvh - 24px));overflow:auto;margin:auto;padding:16px;border:1px solid oklch(0.5 0.08 295);border-radius:14px;background:var(--panel);color:var(--txt);overscroll-behavior:contain}
-#vm-rap-dialog:not([open]){display:none}
-#vm-rap-dialog.rap-keyboard{bottom:auto;margin:0 auto}
-#vm-rap-dialog::backdrop{background:rgba(15,10,22,.82)}
-#vm-rap-dialog h2{font-size:24px;margin:6px 0 10px}
-#vm-rap-close{min-height:44px;padding:8px 12px}
-#vm-rap-words{display:flex;flex-wrap:wrap;gap:6px}
-#vm-rap-status,#vm-rap-hints,.rap-note{font-size:13px;line-height:1.5;color:var(--mut);margin-top:10px}
-#vm-rap-beat{margin-top:8px;font-variant-numeric:tabular-nums;font-weight:800;color:var(--lime)}
-#vm-rap-action{width:100%;min-height:48px;background:var(--pink);color:oklch(0.18 0.06 350);margin-top:12px}
-#vm-rap-action[aria-disabled="true"]{opacity:.65;cursor:default}
-#vm-rap-audio{width:100%;margin-top:12px}
-#vm-rap-dialog label{display:block;font-size:13px;margin:16px 0 5px}
-#vm-rap-lyrics{display:block;width:100%;resize:vertical;padding:8px;border:1px solid oklch(0.5 0.08 295);border-radius:8px;font:inherit;font-size:16px;color:inherit;background:var(--panel2)}
-#vm-rap-entry :focus-visible,#vm-rap-dialog :focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -386,12 +363,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="remote">
       <button class="key start" id="btn-start"></button>
     </div>
-    <section id="vm-rap-entry" aria-labelledby="vm-rap-entry-title" lang="ko" hidden>
-      <h2 id="vm-rap-entry-title">오늘의 챌린지</h2>
-      <button class="key" type="button" id="vm-rap-open" aria-haspopup="dialog">
-        <span>랩</span><span>오늘의 4마디<small>제시어 두 개로 4마디 만들기</small></span><span aria-hidden="true">→</span>
-      </button>
-    </section>
     <div id="intro-social" class="hidden">
       <button type="button" id="btn-social-duet"></button>
       <button type="button" id="btn-social-group"></button>
@@ -526,19 +497,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="remote"><button class="key start" id="btn-restart" onclick="location.reload()"></button></div>
   </section>
 </div>
-<dialog id="vm-rap-dialog" aria-labelledby="vm-rap-title" lang="ko">
-  <button class="key" type="button" id="vm-rap-close" autofocus>← 돌아가기</button>
-  <h2 id="vm-rap-title">오늘의 4마디</h2>
-  <p id="vm-rap-words" aria-label="오늘의 제시어"></p>
-  <p id="vm-rap-status" role="status"></p>
-  <p id="vm-rap-beat" aria-hidden="true" hidden></p>
-  <button class="key" type="button" id="vm-rap-action">녹음 시작</button>
-  <audio id="vm-rap-audio" aria-label="녹음한 4마디" controls preload="metadata" hidden></audio>
-  <label for="vm-rap-lyrics">가사 적기 · 선택</label>
-  <textarea id="vm-rap-lyrics" rows="4" maxlength="800" placeholder="한 줄에 한 마디, 최대 네 줄" aria-describedby="vm-rap-hints" autocomplete="off" spellcheck="false"></textarea>
-  <p id="vm-rap-hints" role="status"></p>
-  <p class="rap-note">녹음과 가사는 업로드하지 않아요. 이 화면을 닫으면 사라져요.</p>
-</dialog>
 <canvas id="card" width="720" height="900"></canvas>
 <script src="/voicematch/i18n.js?v=20261120rq1"></script>
 <script>
@@ -547,7 +505,6 @@ const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).c
 $('roomno').textContent='NO. '+String(Math.floor(1000+Math.random()*9000));
 
 let LANG=detectLang();
-let rapChallenge;
 // 로케일에 키가 없으면 en으로 폴백한다(없는 키를 함수처럼 호출하면 터진다).
 const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 
@@ -617,10 +574,6 @@ function applyLang(){
   setTimeout(()=>{try{initInAppBar();}catch(e){}},0);
   // 내부 코드 tw는 BCP-47이 아니다(tw=트위어). 크롤러·광고 타게팅이 언어를 오판하므로 정식 태그로 바꾼다.
   document.documentElement.lang=({tw:'zh-Hant',pt:'pt-BR'})[LANG]||LANG;
-  if(LANG==='ko'&&!rapChallenge){
-    rapChallenge=import('/voicematch/rap-challenge.js?v=20261128a')
-      .then(({mountRapChallenge})=>mountRapChallenge()).catch(()=>{rapChallenge=null;});
-  }
   $('t-title').textContent=t('title');
   $('t-hero').innerHTML=t('hero');
   $('t-herosub').innerHTML=t('heroSub');
