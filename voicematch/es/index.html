@@ -1601,18 +1601,26 @@ function buildInviteUrl(name){
 async function shareOrCopy(txt,btnId,current=()=>true){
   const button=$(btnId);
   if(!current())return;
+  // Keep the rendered label and latest attempt per actual button, not per ID.
+  const attempts=shareOrCopy.buttonAttempts??=new WeakMap();
+  const attempt=button&&{label:attempts.get(button)?.label??button.textContent};
+  if(button){
+    attempts.set(button,attempt);
+    if(button.textContent!==attempt.label)button.textContent=attempt.label;
+  }
+  const active=()=>current()&&(!button||attempts.get(button)===attempt);
   if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){}}
-  if(!current())return;
+  if(!active())return;
   let copied=false;
   try{await navigator.clipboard.writeText(txt);copied=true;}
   catch(e){
-    if(!current())return;
+    if(!active())return;
     const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';
     try{document.body.appendChild(ta);ta.select();copied=document.execCommand('copy')===true;}
     catch(e2){}
     finally{ta.remove();}
   }
-  const b=$(btnId);if(copied&&current()&&b&&b===button)b.textContent=t('duetCopied');
+  const b=$(btnId);if(copied&&active()&&b&&b===button)b.textContent=t('duetCopied');
 }
 async function makeInvite(){
   if(!lastQ)return;
