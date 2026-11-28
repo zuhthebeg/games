@@ -46,7 +46,7 @@ try{
     if(__copy.mode==='ok')return Promise.resolve();
     return Promise.reject(new DOMException('fixture clipboard denied','NotAllowedError'));
    }}});
-   document.execCommand=cmd=>{__copy.execs.push({cmd,url:document.querySelector('textarea')?.value});return __copy.legacy;};
+   document.execCommand=cmd=>{__copy.execs.push({cmd,url:document.querySelector('textarea:not(#vm-rap-lyrics)')?.value});return __copy.legacy;};
   });
   await ctx.routeWebSocket('**/*',async socket=>{sockets++;await socket.close();});
   await ctx.route('**/*',async route=>{
@@ -68,7 +68,7 @@ try{
    return {idle:t('inappCopy'),copied:t('inappCopied')};
   });
   eq(labels.idle!==labels.copied,true,`${lang} distinct labels`);
-  const status=()=>page.evaluate(()=>({writes:__copy.writes,execs:__copy.execs,areas:document.querySelectorAll('textarea').length,
+  const status=()=>page.evaluate(()=>({writes:__copy.writes,execs:__copy.execs,areas:document.querySelectorAll('textarea:not(#vm-rap-lyrics)').length,
    events:window.dataLayer.filter(x=>x?.event==='vm_inapp_copy').length}));
   const verify=async(btn,label,reason)=>{
    const tag=`${lang||'root'} ${reason}`;
