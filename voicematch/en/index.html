@@ -773,11 +773,17 @@ function isInApp(){
   if (/(iPhone|iPad|iPod)/.test(ua) && !/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)) return true;
   return false;
 }
+const inAppCopyAttempts=new WeakMap();
 async function copyPageUrl(btn){
+  const attempt={};
+  inAppCopyAttempts.set(btn,attempt);
+  btn.textContent=t('inappCopy');
+  const ownsAttempt=()=>inAppCopyAttempts.get(btn)===attempt&&btn.isConnected&&!btn.closest('.hidden');
   const url = location.href.split('#')[0];
   let copied=false;
   try{ await navigator.clipboard.writeText(url); copied=true; }
   catch(e){
+    if(!ownsAttempt()) return;
     let ta;
     try{
       ta=document.createElement('textarea');
@@ -788,7 +794,8 @@ async function copyPageUrl(btn){
     finally{ if(ta) ta.remove(); }
   }
   if(!copied) return;
-  if(btn) btn.textContent=t('inappCopied');
+  if(ownsAttempt()) btn.textContent=t('inappCopied');
+  // Preserve analytics for a copy that already started and actually succeeded.
   try{dataLayer.push({event:'vm_inapp_copy'});}catch(e){}
 }
 function initInAppBar(){
@@ -828,6 +835,7 @@ function showMicSheet(){
   // 인앱이어도 시도 자체는 막지 않는다(동작하는 웹뷰가 있다)
   $('mic-go').textContent=inapp?t('inappTry'):t('micPrimeGo');
   const cp=$('mic-copy');
+  inAppCopyAttempts.delete(cp); // This persistent button is reused on each opening.
   cp.textContent=t('inappCopy');
   cp.classList.toggle('hidden',!inapp);
   cp.onclick=()=>copyPageUrl(cp);
